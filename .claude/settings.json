@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "session-start": {
+      "command": "bash .claude/session-start-hook.sh",
+      "description": "Build and test YAWL project when session starts",
+      "enabled": true
+    }
+  },
+  "project": {
+    "name": "YAWL (Yet Another Workflow Language)",
+    "version": "5.2",
+    "description": "BPM/Workflow system with powerful modelling language",
+    "buildSystem": "Ant",
+    "mainLanguage": "Java",
+    "javaVersion": "11+"
+  },
+  "ide": {
+    "type": "Ant",
+    "buildFile": "build/build.xml"
+  },
+  "testing": {
+    "framework": "JUnit",
+    "command": "ant unitTest",
+    "coverage": false
+  },
+  "development": {
+    "sourceDir": "src",
+    "testDir": "test",
+    "buildDir": "classes",
+    "outputDir": "output"
+  }
+}
