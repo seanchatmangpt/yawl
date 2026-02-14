@@ -41,7 +41,7 @@
         ]
       }
     ],
-    "PostToolUse_DISABLED_FOR_SETUP": [
+    "PostToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
