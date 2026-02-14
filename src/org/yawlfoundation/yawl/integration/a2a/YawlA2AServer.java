@@ -54,18 +54,13 @@ public class YawlA2AServer {
 
         System.out.println("Starting YAWL A2A Server on port " + port + "...");
 
-        // TODO: When A2A SDK is available, implement:
-        // AgentCard card = createYawlAgentCard();
-        // AgentExecutor executor = new YawlAgentExecutor();
-        // A2AServer server = new A2AServerBuilder()
-        //     .withCard(card)
-        //     .withExecutor(executor)
-        //     .withJsonRpcTransport(port)
-        //     .build();
-        // server.start();
-
-        running = true;
-        System.out.println("YAWL A2A Server started successfully");
+        throw new UnsupportedOperationException(
+                "A2A SDK integration required. Add A2A SDK dependency and implement:\n" +
+                "  - AgentCard definition\n" +
+                "  - AgentExecutor implementation\n" +
+                "  - Transport layer (JSON-RPC, gRPC, etc.)\n" +
+                "  - Server lifecycle management"
+        );
     }
 
     /**

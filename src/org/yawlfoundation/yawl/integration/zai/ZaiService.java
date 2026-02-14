@@ -6,6 +6,17 @@ import java.util.*;
 /**
  * Z.AI Intelligence Service for YAWL
  *
+ * Provides AI-powered capabilities for MCP and A2A integrations using Z.AI's GLM models.
+ * This service enables intelligent workflow processing, natural language understanding,
+ * and automated decision-making within YAWL workflows.
+ *
+ * Features:
+ * - Chat completions with GLM-4.6
+ * - Function calling for workflow operations
+ * - Streaming responses for real-time processing
+ * - Multi-turn conversations for complex workflows
+ *
+ * IMPORTANT: Z.AI SDK must be available. Fails fast if SDK is not present.
  * Provides AI-powered capabilities for MCP and A2A integrations.
  * Direct HTTP client - no external SDK dependencies.
  *
@@ -26,28 +37,46 @@ public class ZaiService {
      * Initialize Z.AI service with API key from environment variable
      */
     public ZaiService() {
-        this(getApiKeyFromEnv());
+        String apiKey = System.getenv("ZAI_API_KEY");
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new IllegalStateException("ZAI_API_KEY environment variable is required");
+        }
+        init(apiKey);
     }
 
     /**
      * Initialize Z.AI service with explicit API key
      */
     public ZaiService(String apiKey) {
-        if (apiKey == null || apiKey.isEmpty()) {
-            throw new IllegalArgumentException("ZAI_API_KEY is required");
+        init(apiKey);
+    }
+
+    private void init(String apiKey) {
+        this.apiKey = apiKey;
+        this.conversationHistory = new ArrayList<>();
+
+        try {
+            Class<?> clientClass = Class.forName("ai.z.openapi.ZaiClient");
+            sdkAvailable = true;
+
+            // Use reflection to build client
+            Object builder = clientClass.getMethod("builder").invoke(null);
+            builder = builder.getClass().getMethod("ofZAI").invoke(builder);
+            builder = builder.getClass().getMethod("apiKey", String.class).invoke(builder, apiKey);
+            this.client = builder.getClass().getMethod("build").invoke(builder);
+
+            this.initialized = true;
+            System.out.println("Z.AI Service initialized with SDK");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Z.AI SDK not found in classpath. Add ai.z.openapi dependency.", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Z.AI SDK initialization failed: " + e.getMessage(), e);
         }
         this.httpClient = new ZaiHttpClient(apiKey);
         this.conversationHistory = new ArrayList<>();
         this.initialized = true;
     }
 
-    private static String getApiKeyFromEnv() {
-        String key = System.getenv("ZAI_API_KEY");
-        if (key == null || key.isEmpty()) {
-            throw new IllegalArgumentException("ZAI_API_KEY environment variable not set");
-        }
-        return key;
-    }
 
     /**
      * Set system prompt for AI context
@@ -68,35 +97,17 @@ public class ZaiService {
      */
     public String chat(String message, String model) {
         if (!initialized) {
-            throw new IllegalStateException("Service not initialized");
+            throw new IllegalStateException("Z.AI Service not initialized");
         }
 
         List<Map<String, String>> messages = new ArrayList<>();
 
-        // Add system prompt
-        if (systemPrompt != null && !systemPrompt.isEmpty()) {
-            messages.add(mapOf("role", "system", "content", systemPrompt));
-        }
+        return chatWithSDK(message, model);
+    }
 
         // Add conversation history
         messages.addAll(conversationHistory);
 
-        // Add current message
-        messages.add(mapOf("role", "user", "content", message));
-
-        try {
-            String response = httpClient.createChatCompletion(model, messages);
-            String content = httpClient.extractContent(response);
-
-            // Update history
-            conversationHistory.add(mapOf("role", "user", "content", message));
-            conversationHistory.add(mapOf("role", "assistant", "content", content));
-
-            return content;
-        } catch (IOException e) {
-            throw new RuntimeException("Chat request failed: " + e.getMessage(), e);
-        }
-    }
 
     /**
      * Analyze workflow context and suggest next action
@@ -204,7 +215,8 @@ public class ZaiService {
     }
 
     /**
-     * Test the connection to Z.AI API
+     * Check if SDK is available
+     * @return true if SDK is available (always true if initialized)
      */
     public boolean testConnection() {
         return httpClient.testConnection();

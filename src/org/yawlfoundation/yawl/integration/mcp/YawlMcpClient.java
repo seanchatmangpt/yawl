@@ -123,8 +123,7 @@ public class YawlMcpClient {
 
         System.out.println("Fetching MCP resource: " + resourceUri);
 
-        // TODO: Implement actual MCP resource fetching via HTTP
-        return "Resource content from: " + resourceUri;
+        throw new UnsupportedOperationException("MCP SDK integration required. Add MCP SDK dependency to implement resource fetching.");
     }
 
     /**
