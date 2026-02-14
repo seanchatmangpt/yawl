@@ -115,22 +115,22 @@ public class ZaiFunctionService {
         registerFunction("start_workflow", args -> {
             String workflowId = (String) args.get("workflow_id");
             String inputData = args.get("input_data") != null ? args.get("input_data").toString() : null;
-            return executeStartWorkflow(workflowId, inputData);
+            return startWorkflow(workflowId, inputData);
         });
 
         registerFunction("get_workflow_status", args -> {
             String caseId = (String) args.get("case_id");
-            return executeGetStatus(caseId);
+            return getWorkflowStatus(caseId);
         });
 
         registerFunction("complete_task", args -> {
             String caseId = (String) args.get("case_id");
             String taskId = (String) args.get("task_id");
             String outputData = args.get("output_data") != null ? args.get("output_data").toString() : null;
-            return executeCompleteTask(caseId, taskId, outputData);
+            return completeTask(caseId, taskId, outputData);
         });
 
-        registerFunction("list_workflows", args -> executeListWorkflows());
+        registerFunction("list_workflows", args -> listWorkflows());
     }
 
     /**
@@ -272,7 +272,7 @@ public class ZaiFunctionService {
         }
     }
 
-    private String executeStartWorkflow(String workflowId, String inputData) throws IOException {
+    private String startWorkflow(String workflowId, String inputData) throws IOException {
         ensureConnection();
 
         YSpecificationID specID = parseSpecificationID(workflowId);
@@ -288,7 +288,7 @@ public class ZaiFunctionService {
                "\", \"case_id\": \"" + caseId + "\"}";
     }
 
-    private String executeGetStatus(String caseId) throws IOException {
+    private String getWorkflowStatus(String caseId) throws IOException {
         ensureConnection();
 
         List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
@@ -313,7 +313,7 @@ public class ZaiFunctionService {
                "\", \"status\": \"running\", \"current_tasks\": " + tasksJson + "}";
     }
 
-    private String executeCompleteTask(String caseId, String taskId, String outputData) throws IOException {
+    private String completeTask(String caseId, String taskId, String outputData) throws IOException {
         ensureConnection();
 
         List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
@@ -351,7 +351,7 @@ public class ZaiFunctionService {
                "\", \"task_id\": \"" + taskId + "\"}";
     }
 
-    private String executeListWorkflows() throws IOException {
+    private String listWorkflows() throws IOException {
         ensureConnection();
 
         String sessionA = interfaceAClient.connect(yawlUsername, yawlPassword);
