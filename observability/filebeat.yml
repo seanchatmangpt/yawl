@@ -1,0 +1,127 @@
+filebeat.inputs:
+  # Read logs from Docker containers
+  - type: docker
+    enabled: true
+    containers.ids:
+      - '*'
+    containers.path: /var/lib/docker/containers
+    processors:
+      - add_kubernetes_metadata:
+          in_cluster: false
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+    fields:
+      service: yawl
+      environment: production
+
+  # Read system logs
+  - type: filestream
+    enabled: true
+    id: system-logs
+    paths:
+      - /var/log/syslog
+      - /var/log/auth.log
+    fields:
+      log_type: system
+      service: infrastructure
+
+  # Read application logs
+  - type: filestream
+    enabled: true
+    id: app-logs
+    paths:
+      - /var/log/yawl/*.log
+    multiline.pattern: '^\['
+    multiline.negate: true
+    multiline.match: after
+    fields:
+      log_type: application
+      service: yawl
+
+  # Read web server logs (nginx)
+  - type: filestream
+    enabled: true
+    id: nginx-logs
+    paths:
+      - /var/log/nginx/access.log
+      - /var/log/nginx/error.log
+    multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+    multiline.negate: false
+    multiline.match: after
+    fields:
+      log_type: nginx
+      service: webserver
+
+  # Read database logs
+  - type: filestream
+    enabled: true
+    id: db-logs
+    paths:
+      - /var/log/postgresql/postgresql.log
+      - /var/log/mysql/error.log
+    fields:
+      log_type: database
+      service: database
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+processors:
+  # Add cloud metadata
+  - add_cloud_metadata: ~
+  - add_host_metadata: ~
+
+  # Add container metadata
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - add_kubernetes_metadata:
+      in_cluster: true
+
+  # Parse JSON logs
+  - decode_json_fields:
+      fields: ["message"]
+      process_array: false
+      max_depth: 1
+      target: "json"
+      overwrite_keys: true
+
+  # Add geolocation data
+  - script:
+      lang: javascript
+      source: >
+        function process(event) {
+          var timestamp = new Date();
+          event.Put("@timestamp", timestamp);
+        }
+
+output.elasticsearch:
+  enabled: true
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD:changeme}"
+  index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  bulk_max_size: 4096
+  compression_level: 1
+  worker: 4
+
+# Optional: Send to Logstash instead
+# output.logstash:
+#   enabled: false
+#   hosts: ["logstash:5044"]
+#   index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# HTTP server for monitoring
+http.enabled: true
+http.host: 0.0.0.0
+http.port: 5066

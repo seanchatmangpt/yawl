@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ApplicationMetadata
+metadata:
+  name: yawl
+  namespace: gcp-marketplace
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/version: "1.0.0"
+
+spec:
+  title: "YAWL - Yet Another Workflow Language"
+  shortDescription: "Workflow automation and orchestration platform"
+  longDescription: |
+    YAWL (Yet Another Workflow Language) is a powerful workflow automation and
+    orchestration platform designed for complex business processes. It provides:
+
+    - Visual workflow design and execution
+    - Support for complex control flow patterns
+    - Integration with external systems and services
+    - Real-time monitoring and analytics
+    - Multi-user collaboration features
+    - Audit trail and compliance tracking
+    - RESTful API for integration
+
+  version: "1.0.0"
+  release: "1.0.0"
+
+  images:
+    - name: yawl
+      image: yawl:1.0.0
+    - name: yawl-engine
+      image: yawl-engine:1.0.0
+    - name: yawl-ui
+      image: yawl-ui:1.0.0
+
+  deployerServiceAccount:
+    description: "Service account for deploying YAWL"
+
+  clusterConstraints:
+    requiredClusterVersion: "1.24"
+    supportedOperatingSystems:
+      - name: "Container-Optimized OS"
+        osLogo: "https://cloud.google.com/images/social-icon-google-cloud-1200-630.png"
+      - name: "Ubuntu LTS"
+        osLogo: "https://assets.ubuntu.com/v1/06b2e5fb-ubuntu-logo.png"
+
+  properties:
+    - name: YAWL_REPLICAS
+      label: "Number of replicas"
+      description: "Number of YAWL pod replicas to deploy"
+      type: integer
+      default: 3
+      constraints:
+        - allowedValues: [1, 2, 3, 5]
+
+    - name: STORAGE_CLASS
+      label: "Storage class"
+      description: "Storage class for persistent volumes"
+      type: string
+      default: "standard"
+
+    - name: ENABLE_MONITORING
+      label: "Enable Prometheus monitoring"
+      description: "Enable Prometheus monitoring for YAWL"
+      type: boolean
+      default: true
+
+    - name: YAWL_DOMAIN
+      label: "Domain name"
+      description: "Domain name for YAWL ingress"
+      type: string
+      required: true
+
+  supportInfo:
+    url: "https://yawl.org/support"
+    description: "Visit YAWL documentation and support portal"
+
+  tagline: "Enterprise-grade workflow automation"
+
+  maintainers:
+    - name: "YAWL Team"
+      url: "https://yawl.org"
+
+  links:
+    - description: "YAWL Documentation"
+      url: "https://yawl.org/docs"
+    - description: "YAWL GitHub Repository"
+      url: "https://github.com/yawl/yawl"
+    - description: "YAWL Community Forum"
+      url: "https://forum.yawl.org"

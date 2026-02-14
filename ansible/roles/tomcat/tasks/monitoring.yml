@@ -1,0 +1,76 @@
+---
+# Tomcat Application Monitoring Setup
+
+- name: Download Prometheus JMX Exporter
+  get_url:
+    url: "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_exporter/0.17.2/jmx_exporter-0.17.2.jar"
+    dest: "/opt/jmx_exporter.jar"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+  args:
+    creates: /opt/jmx_exporter.jar
+
+- name: Create JMX exporter configuration
+  template:
+    src: jmx-exporter-config.yml.j2
+    dest: "/opt/jmx-exporter-config.yml"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+
+- name: Configure Tomcat JVM for JMX monitoring
+  lineinfile:
+    path: /etc/default/tomcat
+    regexp: "^JAVA_OPTS="
+    line: 'JAVA_OPTS="{{ java_opts }} -javaagent:/opt/jmx_exporter.jar={{ yawl_metrics_port }}:/opt/jmx-exporter-config.yml"'
+    state: present
+  notify: restart tomcat
+
+- name: Install Node exporter on application server
+  shell: |
+    useradd --no-create-home --shell /bin/false node_exporter 2>/dev/null || true
+    cd /tmp && \
+    curl -sL https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz | tar xzf -
+    cp node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/
+    chown node_exporter:node_exporter /usr/local/bin/node_exporter
+  args:
+    creates: /usr/local/bin/node_exporter
+
+- name: Create node exporter systemd service
+  template:
+    src: node-exporter.service.j2
+    dest: /etc/systemd/system/node-exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start node exporter
+  systemd:
+    name: node-exporter
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: Create YAWL application metrics collector script
+  template:
+    src: yawl-metrics-collector.sh.j2
+    dest: /usr/local/bin/yawl-metrics-collector.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Setup metrics collection cron job
+  cron:
+    name: "YAWL metrics collection"
+    minute: "*/1"
+    job: "/usr/local/bin/yawl-metrics-collector.sh > /var/log/yawl/metrics-collector.log 2>&1"
+    user: "{{ tomcat_user }}"
+
+- name: Create custom metrics endpoint
+  template:
+    src: metrics-endpoint.jsp.j2
+    dest: "{{ tomcat_home }}/webapps/ROOT/metrics.jsp"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'

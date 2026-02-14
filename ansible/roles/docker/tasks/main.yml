@@ -1,0 +1,176 @@
+---
+# Docker Installation and Configuration Tasks
+
+- name: Install Docker prerequisites
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install Docker CE
+  apt:
+    name:
+      - "docker-ce={{ docker_version }}*"
+      - "docker-ce-cli={{ docker_version }}*"
+      - containerd.io
+    state: present
+
+- name: Install Docker Compose
+  shell: |
+    curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+  args:
+    creates: /usr/local/bin/docker-compose
+
+- name: Create Docker daemon configuration directory
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: Configure Docker daemon
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart docker
+
+- name: Create Docker group
+  group:
+    name: docker
+    state: present
+
+- name: Add deployment user to Docker group
+  user:
+    name: "{{ deployment_user }}"
+    groups: docker
+    append: yes
+
+- name: Enable Docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Create Docker network for YAWL
+  docker_network:
+    name: "{{ docker_network_name }}"
+    driver: "{{ docker_network_driver }}"
+    ipam_config:
+      - subnet: "{{ docker_network_subnet }}"
+        gateway: "{{ docker_network_gateway }}"
+    state: present
+
+- name: Install Python Docker module
+  pip:
+    name: docker
+    state: present
+
+- name: Pull YAWL application image
+  docker_image:
+    name: "yawl:{{ yawl_version }}"
+    source: pull
+    pull: yes
+  register: yawl_image_pull
+  retries: 3
+  delay: 10
+
+- name: Pull PostgreSQL exporter image
+  docker_image:
+    name: "prometheuscommunity/postgres-exporter:latest"
+    source: pull
+    pull: yes
+
+- name: Pull Redis image
+  docker_image:
+    name: "redis:7-alpine"
+    source: pull
+    pull: yes
+
+- name: Pull Node exporter image
+  docker_image:
+    name: "prom/node-exporter:latest"
+    source: pull
+    pull: yes
+
+- name: Create Docker volumes for persistent storage
+  docker_volume:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - yawl-data
+    - yawl-logs
+    - redis-data
+
+- name: Create YAWL data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ deployment_user }}"
+    group: "{{ deployment_group }}"
+    mode: '0755'
+  loop:
+    - "{{ yawl_data_dir }}"
+    - "{{ yawl_logs_dir }}"
+    - "{{ yawl_config_dir }}"
+
+- name: Setup log rotation for Docker containers
+  template:
+    src: logrotate-docker.j2
+    dest: /etc/logrotate.d/yawl-docker
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Setup Docker resource limits
+  template:
+    src: docker-limits.conf.j2
+    dest: /etc/systemd/system/docker.service.d/limits.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart docker
+
+- name: Install Docker health check script
+  template:
+    src: docker-health-check.sh.j2
+    dest: /usr/local/bin/docker-health-check.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create docker health check cron job
+  cron:
+    name: "Docker container health check"
+    minute: "*/5"
+    job: "/usr/local/bin/docker-health-check.sh > /var/log/yawl/docker-health-check.log 2>&1"
+    user: root
+
+- name: Verify Docker installation
+  shell: docker --version
+  register: docker_version_check
+
+- name: Display Docker version
+  debug:
+    msg: "Docker installed: {{ docker_version_check.stdout }}"

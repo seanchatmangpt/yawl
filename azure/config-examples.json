@@ -1,0 +1,384 @@
+{
+  "deployment_examples": {
+    "production_high_performance": {
+      "description": "High-performance production deployment with maximum reliability",
+      "configuration": {
+        "environment": "production",
+        "location": "eastus",
+        "projectName": "yawl",
+        "appServicePlanSku": "P3V2",
+        "appServiceInstanceCount": 5,
+        "databaseName": "yawl",
+        "databaseAdminUsername": "yawladmin",
+        "databaseSkuName": "Standard_D8s_v3",
+        "databaseStorageSizeGB": 256,
+        "databaseBackupRetentionDays": 30,
+        "applicationGatewaySkuName": "WAF_v2",
+        "applicationGatewayMinCapacity": 3,
+        "applicationGatewayMaxCapacity": 20,
+        "keyVaultSkuName": "premium",
+        "logRetentionDays": 90,
+        "tags": {
+          "environment": "production",
+          "application": "yawl",
+          "tier": "premium",
+          "sla": "99.99%"
+        }
+      },
+      "estimated_monthly_cost": "$1,800",
+      "performance": "High",
+      "redundancy": "Maximum",
+      "use_case": "Enterprise production workloads"
+    },
+    "production_balanced": {
+      "description": "Balanced production deployment for typical enterprise use",
+      "configuration": {
+        "environment": "production",
+        "location": "eastus",
+        "projectName": "yawl",
+        "appServicePlanSku": "P2V2",
+        "appServiceInstanceCount": 3,
+        "databaseName": "yawl",
+        "databaseAdminUsername": "yawladmin",
+        "databaseSkuName": "Standard_D4s_v3",
+        "databaseStorageSizeGB": 128,
+        "databaseBackupRetentionDays": 30,
+        "applicationGatewaySkuName": "WAF_v2",
+        "applicationGatewayMinCapacity": 2,
+        "applicationGatewayMaxCapacity": 10,
+        "keyVaultSkuName": "premium",
+        "logRetentionDays": 30,
+        "tags": {
+          "environment": "production",
+          "application": "yawl",
+          "tier": "standard",
+          "sla": "99.9%"
+        }
+      },
+      "estimated_monthly_cost": "$1,325",
+      "performance": "Medium-High",
+      "redundancy": "High",
+      "use_case": "General enterprise production"
+    },
+    "staging_optimized": {
+      "description": "Cost-optimized staging environment for testing and QA",
+      "configuration": {
+        "environment": "staging",
+        "location": "eastus",
+        "projectName": "yawl",
+        "appServicePlanSku": "P1V2",
+        "appServiceInstanceCount": 2,
+        "databaseName": "yawl",
+        "databaseAdminUsername": "yawladmin",
+        "databaseSkuName": "Standard_B4ms",
+        "databaseStorageSizeGB": 64,
+        "databaseBackupRetentionDays": 14,
+        "applicationGatewaySkuName": "Standard_v2",
+        "applicationGatewayMinCapacity": 1,
+        "applicationGatewayMaxCapacity": 5,
+        "keyVaultSkuName": "standard",
+        "logRetentionDays": 14,
+        "tags": {
+          "environment": "staging",
+          "application": "yawl",
+          "tier": "standard",
+          "sla": "99%"
+        }
+      },
+      "estimated_monthly_cost": "$650",
+      "performance": "Medium",
+      "redundancy": "Medium",
+      "use_case": "Testing, QA, pre-production"
+    },
+    "development_minimal": {
+      "description": "Minimal development environment for testing and development",
+      "configuration": {
+        "environment": "development",
+        "location": "eastus",
+        "projectName": "yawl",
+        "appServicePlanSku": "P1V2",
+        "appServiceInstanceCount": 1,
+        "databaseName": "yawl",
+        "databaseAdminUsername": "yawladmin",
+        "databaseSkuName": "Standard_B2s",
+        "databaseStorageSizeGB": 32,
+        "databaseBackupRetentionDays": 7,
+        "applicationGatewaySkuName": "Standard_v2",
+        "applicationGatewayMinCapacity": 1,
+        "applicationGatewayMaxCapacity": 2,
+        "keyVaultSkuName": "standard",
+        "logRetentionDays": 7,
+        "tags": {
+          "environment": "development",
+          "application": "yawl",
+          "tier": "basic",
+          "sla": "no-sla"
+        }
+      },
+      "estimated_monthly_cost": "$350",
+      "performance": "Low",
+      "redundancy": "Low",
+      "use_case": "Development, testing, proof of concept"
+    }
+  },
+  "azure_regions": {
+    "primary_regions": [
+      {
+        "name": "East US",
+        "code": "eastus",
+        "description": "Primary Azure region in US East Coast",
+        "latency_tier": "low",
+        "services": "All"
+      },
+      {
+        "name": "West US",
+        "code": "westus",
+        "description": "Primary Azure region in US West Coast",
+        "latency_tier": "low",
+        "services": "All"
+      },
+      {
+        "name": "Europe West",
+        "code": "westeurope",
+        "description": "Primary Azure region in Western Europe",
+        "latency_tier": "low",
+        "services": "All"
+      },
+      {
+        "name": "Southeast Asia",
+        "code": "southeastasia",
+        "description": "Primary Azure region in Southeast Asia",
+        "latency_tier": "low",
+        "services": "All"
+      }
+    ],
+    "secondary_regions": [
+      {
+        "name": "East US 2",
+        "code": "eastus2",
+        "description": "Secondary region in US East Coast",
+        "latency_tier": "low",
+        "services": "All"
+      },
+      {
+        "name": "Central Europe",
+        "code": "centraleurope",
+        "description": "Secondary region in Central Europe",
+        "latency_tier": "low",
+        "services": "All"
+      }
+    ]
+  },
+  "app_service_skus": {
+    "premium_v2": {
+      "P1V2": {
+        "vCpus": 1,
+        "ram_gb": 3.5,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$150",
+        "use_case": "Development, light production"
+      },
+      "P2V2": {
+        "vCpus": 2,
+        "ram_gb": 7,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$300",
+        "use_case": "General production"
+      },
+      "P3V2": {
+        "vCpus": 4,
+        "ram_gb": 14,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$600",
+        "use_case": "High-performance production"
+      }
+    },
+    "premium_v3": {
+      "P1V3": {
+        "vCpus": 2,
+        "ram_gb": 8,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$200",
+        "use_case": "Modern workloads with better performance"
+      },
+      "P2V3": {
+        "vCpus": 4,
+        "ram_gb": 16,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$400",
+        "use_case": "High-performance production workloads"
+      },
+      "P3V3": {
+        "vCpus": 8,
+        "ram_gb": 32,
+        "storage_gb": 250,
+        "estimated_monthly_cost": "$800",
+        "use_case": "Maximum performance and scale"
+      }
+    }
+  },
+  "database_skus": {
+    "burstable": {
+      "Standard_B2s": {
+        "vCpus": 2,
+        "ram_gb": 4,
+        "max_iops": 3000,
+        "estimated_monthly_cost": "$200",
+        "use_case": "Development, light testing"
+      },
+      "Standard_B4ms": {
+        "vCpus": 4,
+        "ram_gb": 16,
+        "max_iops": 6000,
+        "estimated_monthly_cost": "$400",
+        "use_case": "General production, small to medium workloads"
+      }
+    },
+    "general_purpose": {
+      "Standard_D2s_v3": {
+        "vCpus": 2,
+        "ram_gb": 8,
+        "max_iops": 6000,
+        "estimated_monthly_cost": "$300",
+        "use_case": "Small production workloads"
+      },
+      "Standard_D4s_v3": {
+        "vCpus": 4,
+        "ram_gb": 16,
+        "max_iops": 12000,
+        "estimated_monthly_cost": "$550",
+        "use_case": "Medium production workloads"
+      },
+      "Standard_D8s_v3": {
+        "vCpus": 8,
+        "ram_gb": 32,
+        "max_iops": 24000,
+        "estimated_monthly_cost": "$1000",
+        "use_case": "Large production workloads"
+      }
+    }
+  },
+  "application_gateway_skus": {
+    "standard_v2": {
+      "name": "Standard_v2",
+      "tier": "Standard",
+      "autoscale": true,
+      "waf": false,
+      "min_capacity": 1,
+      "max_capacity": 10,
+      "estimated_monthly_cost_per_unit": "$50",
+      "use_case": "General web applications"
+    },
+    "waf_v2": {
+      "name": "WAF_v2",
+      "tier": "WAF",
+      "autoscale": true,
+      "waf": true,
+      "waf_ruleset": "OWASP_3.2",
+      "min_capacity": 1,
+      "max_capacity": 125,
+      "estimated_monthly_cost_per_unit": "$70",
+      "use_case": "Production with security requirements"
+    }
+  },
+  "monitoring_configuration": {
+    "log_retention_days": [
+      {
+        "days": 7,
+        "use_case": "Development, minimal logging"
+      },
+      {
+        "days": 30,
+        "use_case": "Standard production"
+      },
+      {
+        "days": 90,
+        "use_case": "Compliance, audit trails"
+      }
+    ],
+    "alert_thresholds": {
+      "app_service_cpu_percent": 85,
+      "app_service_memory_percent": 80,
+      "database_cpu_percent": 85,
+      "database_storage_percent": 85,
+      "application_gateway_cpu_percent": 75
+    },
+    "autoscale_rules": {
+      "app_service": {
+        "scale_up_trigger_cpu": 70,
+        "scale_down_trigger_cpu": 30,
+        "scale_up_trigger_memory": 80,
+        "cooldown_minutes": 5
+      },
+      "application_gateway": {
+        "min_capacity": 2,
+        "max_capacity": 10,
+        "autoscale_duration": "automatic"
+      }
+    }
+  },
+  "security_recommendations": {
+    "tls_versions": {
+      "recommended": "TLS1_2",
+      "alternative": "TLS1_3"
+    },
+    "firewall_rules": {
+      "database": {
+        "allow_vnet": true,
+        "allow_azure_services": true,
+        "allow_external": false
+      }
+    },
+    "managed_identity": {
+      "enabled": true,
+      "used_for": ["Key Vault access", "Database connections"]
+    },
+    "key_vault": {
+      "soft_delete_days": 90,
+      "purge_protection": true,
+      "sku": "premium"
+    }
+  },
+  "backup_configuration": {
+    "database_backups": {
+      "frequency": "daily",
+      "retention_days": 30,
+      "geo_redundant": true,
+      "point_in_time_restore": true
+    },
+    "storage_backups": {
+      "type": "geo_redundant_storage",
+      "replication": "GRS"
+    }
+  },
+  "cost_optimization": {
+    "reserved_instances": {
+      "description": "Save 30-72% with reserved instances",
+      "terms": ["1-year", "3-year"],
+      "recommendation": "Use for production workloads"
+    },
+    "spot_instances": {
+      "description": "Experimental, up to 90% savings",
+      "recommendation": "Not recommended for production"
+    },
+    "auto_shutdown": {
+      "description": "Automatic shutdown for dev/test",
+      "recommendation": "Enable for development environments"
+    },
+    "right_sizing": {
+      "tips": [
+        "Monitor actual CPU/memory usage",
+        "Right-size based on usage patterns",
+        "Use smaller SKUs for non-critical environments",
+        "Consider shared resources where appropriate"
+      ]
+    }
+  },
+  "disaster_recovery": {
+    "rto_minutes": 15,
+    "rpo_minutes": 5,
+    "backup_strategy": "Geo-redundant daily backups",
+    "restore_procedure": "Point-in-time restore available for past 30 days",
+    "testing_frequency": "Monthly"
+  }
+}

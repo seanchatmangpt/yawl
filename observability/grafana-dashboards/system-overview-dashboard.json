@@ -1,0 +1,175 @@
+{
+  "dashboard": {
+    "title": "System Overview",
+    "tags": ["system", "infrastructure", "overview"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "CPU Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "{{ instance }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "CPU Usage",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "thresholds": "60,80"
+      },
+      {
+        "id": 2,
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "{{ instance }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Memory Usage",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "thresholds": "70,85"
+      },
+      {
+        "id": 3,
+        "title": "Disk Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100",
+            "legendFormat": "{{ device }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Disk Usage",
+            "min": 0,
+            "max": 100
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Network I/O",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "RX {{ device }}"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total[5m])",
+            "legendFormat": "TX {{ device }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "Bps",
+            "label": "Network I/O"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "System Load Average",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "node_load1",
+            "legendFormat": "1m {{ instance }}"
+          },
+          {
+            "expr": "node_load5",
+            "legendFormat": "5m {{ instance }}"
+          },
+          {
+            "expr": "node_load15",
+            "legendFormat": "15m {{ instance }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Load Average"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Running Processes",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "node_procs_running"
+          }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(node_cpu_seconds_total, instance)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "version": 0
+  }
+}

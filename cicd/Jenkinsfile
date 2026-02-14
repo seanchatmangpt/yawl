@@ -1,0 +1,326 @@
+pipeline {
+    agent any
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+        timeout(time: 1, unit: 'HOURS')
+        timestamps()
+    }
+
+    environment {
+        DOCKER_IMAGE = "${BUILD_TAG}"
+        DOCKER_REGISTRY = "docker.io"
+        GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        BUILD_TIMESTAMP = sh(script: "date +%s", returnStdout: true).trim()
+    }
+
+    parameters {
+        choice(
+            name: 'DEPLOYMENT_TARGET',
+            choices: ['aws', 'gcp', 'azure', 'digitalocean'],
+            description: 'Select deployment target'
+        )
+        booleanParam(
+            name: 'SKIP_TESTS',
+            defaultValue: false,
+            description: 'Skip test stages'
+        )
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    echo "Checking out code from repository..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Build') {
+            parallel {
+                stage('Build Docker Image') {
+                    steps {
+                        script {
+                            echo "Building Docker image: ${DOCKER_IMAGE}"
+                            sh '''
+                                docker build \
+                                    -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE} \
+                                    -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest \
+                                    -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GIT_COMMIT_SHORT} \
+                                    .
+                            '''
+                        }
+                    }
+                }
+
+                stage('Build Artifacts') {
+                    steps {
+                        script {
+                            echo "Building application artifacts..."
+                            sh '''
+                                npm ci
+                                npm run build --if-present
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            when {
+                expression { !params.SKIP_TESTS }
+            }
+            parallel {
+                stage('Lint') {
+                    steps {
+                        script {
+                            echo "Running linter..."
+                            sh '''
+                                npm run lint --if-present || true
+                            '''
+                        }
+                    }
+                }
+
+                stage('Unit Tests') {
+                    steps {
+                        script {
+                            echo "Running unit tests..."
+                            sh '''
+                                npm test --if-present -- --coverage
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'junit.xml'
+                            publishHTML([
+                                reportDir: 'coverage',
+                                reportFiles: 'index.html',
+                                reportName: 'Code Coverage Report'
+                            ])
+                        }
+                    }
+                }
+
+                stage('Integration Tests') {
+                    steps {
+                        script {
+                            echo "Running integration tests..."
+                            sh '''
+                                npm run test:integration --if-present
+                            '''
+                        }
+                    }
+                }
+
+                stage('Security Scan') {
+                    steps {
+                        script {
+                            echo "Running security scan..."
+                            sh '''
+                                npm audit --audit-level=moderate || true
+                                npm run security:scan --if-present || true
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    echo "Pushing Docker image to registry..."
+                    sh '''
+                        echo "${DOCKER_REGISTRY_PASSWORD}" | docker login -u "${DOCKER_REGISTRY_USER}" --password-stdin ${DOCKER_REGISTRY}
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GIT_COMMIT_SHORT}
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to AWS') {
+            when {
+                branch 'main'
+                expression { params.DEPLOYMENT_TARGET == 'aws' }
+            }
+            steps {
+                script {
+                    echo "Deploying to AWS..."
+                    sh '''
+                        aws configure set default.region us-east-1
+                        aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+                        aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+
+                        # Deploy to ECS
+                        aws ecs update-service \
+                            --cluster ${AWS_ECS_CLUSTER} \
+                            --service ${AWS_ECS_SERVICE} \
+                            --force-new-deployment
+
+                        # Deploy to Elastic Beanstalk
+                        aws elasticbeanstalk create-app-version \
+                            --application-name ${AWS_EB_APP} \
+                            --version-label ${BUILD_TIMESTAMP} \
+                            --source-bundle S3Bucket=${AWS_S3_BUCKET},S3Key=${BUILD_TIMESTAMP}.zip
+
+                        aws elasticbeanstalk update-environment \
+                            --environment-name ${AWS_EB_ENV} \
+                            --version-label ${BUILD_TIMESTAMP}
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo "AWS deployment completed successfully"
+                }
+                failure {
+                    echo "AWS deployment failed"
+                }
+            }
+        }
+
+        stage('Deploy to GCP') {
+            when {
+                branch 'main'
+                expression { params.DEPLOYMENT_TARGET == 'gcp' }
+            }
+            steps {
+                script {
+                    echo "Deploying to Google Cloud Platform..."
+                    sh '''
+                        echo ${GCP_SA_KEY} | base64 -d > ${WORKSPACE}/gcp-key.json
+                        gcloud auth activate-service-account --key-file ${WORKSPACE}/gcp-key.json
+                        gcloud config set project ${GCP_PROJECT_ID}
+                        gcloud auth configure-docker
+
+                        # Push to GCR
+                        docker tag ${DOCKER_REGISTRY}/${DOCKER_IMAGE} gcr.io/${GCP_PROJECT_ID}/app:${BUILD_TIMESTAMP}
+                        docker push gcr.io/${GCP_PROJECT_ID}/app:${BUILD_TIMESTAMP}
+
+                        # Deploy to Cloud Run
+                        gcloud run deploy ${GCP_SERVICE_NAME} \
+                            --image gcr.io/${GCP_PROJECT_ID}/app:${BUILD_TIMESTAMP} \
+                            --region us-central1 \
+                            --platform managed \
+                            --allow-unauthenticated
+
+                        # Deploy to GKE
+                        gcloud container clusters get-credentials ${GCP_GKE_CLUSTER} --region us-central1
+                        kubectl set image deployment/${GCP_DEPLOYMENT_NAME} \
+                            app=gcr.io/${GCP_PROJECT_ID}/app:${BUILD_TIMESTAMP}
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo "GCP deployment completed successfully"
+                }
+                failure {
+                    echo "GCP deployment failed"
+                }
+            }
+        }
+
+        stage('Deploy to Azure') {
+            when {
+                branch 'main'
+                expression { params.DEPLOYMENT_TARGET == 'azure' }
+            }
+            steps {
+                script {
+                    echo "Deploying to Microsoft Azure..."
+                    sh '''
+                        az login --service-principal \
+                            -u ${AZURE_CLIENT_ID} \
+                            -p ${AZURE_CLIENT_SECRET} \
+                            --tenant ${AZURE_TENANT_ID}
+
+                        az container registry login --name ${AZURE_REGISTRY}
+
+                        # Build and push to ACR
+                        az acr build \
+                            --registry ${AZURE_REGISTRY} \
+                            --image app:${BUILD_TIMESTAMP} .
+
+                        # Deploy to App Service
+                        az webapp deployment source config-zip \
+                            --resource-group ${AZURE_RESOURCE_GROUP} \
+                            --name ${AZURE_APP_NAME} \
+                            --src ./dist.zip
+
+                        # Deploy to AKS
+                        az aks get-credentials \
+                            --resource-group ${AZURE_RESOURCE_GROUP} \
+                            --name ${AZURE_AKS_CLUSTER}
+
+                        kubectl set image deployment/${AZURE_DEPLOYMENT_NAME} \
+                            app=${AZURE_REGISTRY}.azurecr.io/app:${BUILD_TIMESTAMP}
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo "Azure deployment completed successfully"
+                }
+                failure {
+                    echo "Azure deployment failed"
+                }
+            }
+        }
+
+        stage('Deploy to DigitalOcean') {
+            when {
+                branch 'main'
+                expression { params.DEPLOYMENT_TARGET == 'digitalocean' }
+            }
+            steps {
+                script {
+                    echo "Deploying to DigitalOcean..."
+                    sh '''
+                        npm install -g doctl
+
+                        doctl auth init --access-token ${DIGITALOCEAN_TOKEN}
+
+                        # Create new deployment
+                        doctl apps create-deployment --app-id ${DIGITALOCEAN_APP_ID}
+
+                        # List deployments
+                        doctl apps list-deployments --app-id ${DIGITALOCEAN_APP_ID}
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo "DigitalOcean deployment completed successfully"
+                }
+                failure {
+                    echo "DigitalOcean deployment failed"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo "Cleaning up workspace..."
+                cleanWs()
+            }
+        }
+        success {
+            echo "Pipeline completed successfully"
+        }
+        failure {
+            echo "Pipeline failed"
+        }
+    }
+}

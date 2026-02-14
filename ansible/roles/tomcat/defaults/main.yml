@@ -1,0 +1,59 @@
+---
+# Tomcat Default Variables
+
+tomcat_version: 9.0.68
+tomcat_port: 8080
+tomcat_shutdown_port: 8005
+tomcat_ajp_port: 8009
+tomcat_user: tomcat
+tomcat_user_id: 91
+tomcat_user_group: tomcat
+tomcat_home: /usr/local/tomcat
+tomcat_webapps_dir: /usr/local/tomcat/webapps
+tomcat_logs_dir: /var/log/tomcat
+tomcat_work_dir: /var/lib/tomcat
+
+# Java Configuration
+java_version: 11
+java_home: /usr/lib/jvm/java-11-openjdk-amd64
+java_heap_min: 512m
+java_heap_max: 2048m
+java_opts: "-XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+# Thread Configuration
+tomcat_max_threads: 200
+tomcat_min_spare_threads: 10
+tomcat_max_http_header_size: 8192
+tomcat_compression_enabled: true
+tomcat_compression_min_size: 2048
+
+# Session Configuration
+tomcat_session_timeout: 1440
+tomcat_session_persistence: true
+tomcat_session_manager: manager
+
+# YAWL Configuration
+yawl_version: latest
+yawl_war_file: yawl.war
+yawl_context: /yawl
+yawl_db_port: 5432
+yawl_db_name: yawl
+yawl_db_user: yawl
+yawl_db_pool_size: 20
+yawl_db_max_idle_time: 600
+yawl_db_connection_timeout: 30000
+
+# SSL/TLS
+tomcat_ssl_enabled: false
+tomcat_ssl_cert_file: /etc/yawl/ssl/server.crt
+tomcat_ssl_key_file: /etc/yawl/ssl/server.key
+
+# Monitoring
+yawl_monitoring_enabled: true
+yawl_metrics_port: 9090
+
+# Performance Tuning
+tomcat_server_backlog: 100
+tomcat_accept_count: 100
+tomcat_keep_alive_timeout: 60000
+tomcat_max_keep_alive_requests: 100

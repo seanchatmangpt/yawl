@@ -1,0 +1,180 @@
+{
+  "PolicyName": "YAWL-Application-Policy",
+  "Description": "HIPAA, SOC2, PCI-DSS compliant IAM policy for YAWL application",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EC2InstanceManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": [
+            "us-east-1",
+            "us-west-2"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "KMSKeyAccess",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey",
+        "kms:ListKeys",
+        "kms:GetKeyPolicy",
+        "kms:GetKeyRotationStatus"
+      ],
+      "Resource": "arn:aws:kms:*:ACCOUNT-ID:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Environment": "production"
+        }
+      }
+    },
+    {
+      "Sid": "S3BucketAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:GetBucketVersioning"
+      ],
+      "Resource": [
+        "arn:aws:s3:::yawl-production/*",
+        "arn:aws:s3:::yawl-production"
+      ]
+    },
+    {
+      "Sid": "S3BucketPutObject",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::yawl-production/*",
+      "Condition": {
+        "StringEquals": {
+          "s3:x-amz-server-side-encryption": "AES256"
+        }
+      }
+    },
+    {
+      "Sid": "RDSAccess",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBClusters",
+        "rds:DescribeDBClusterMembers",
+        "rds:ListTagsForResource"
+      ],
+      "Resource": "arn:aws:rds:*:ACCOUNT-ID:db/*"
+    },
+    {
+      "Sid": "RDSEnhancedMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "rds:CreateDBClusterSnapshot",
+        "rds:CreateDBSnapshot"
+      ],
+      "Resource": "arn:aws:rds:*:ACCOUNT-ID:cluster:*"
+    },
+    {
+      "Sid": "SecretsManagerAccess",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:ListSecrets"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:ACCOUNT-ID:secret:yawl/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": [
+            "10.0.0.0/8"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "SecretsManagerRotation",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:RotateSecret",
+        "secretsmanager:UpdateSecretVersionStage"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:ACCOUNT-ID:secret:yawl/*"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:ACCOUNT-ID:log-group:/aws/yawl/*"
+    },
+    {
+      "Sid": "CloudTrailAccess",
+      "Effect": "Allow",
+      "Action": [
+        "cloudtrail:LookupEvents",
+        "cloudtrail:GetTrailStatus",
+        "cloudtrail:DescribeTrails"
+      ],
+      "Resource": "arn:aws:cloudtrail:*:ACCOUNT-ID:trail/yawl-*"
+    },
+    {
+      "Sid": "CloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AssumeRoleAccess",
+      "Effect": "Allow",
+      "Action": [
+        "sts:AssumeRole"
+      ],
+      "Resource": "arn:aws:iam::ACCOUNT-ID:role/YAWL-Application-Role"
+    },
+    {
+      "Sid": "DenyUnencryptedTransport",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*",
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
+        }
+      }
+    },
+    {
+      "Sid": "DenyDeleteEncryptionKey",
+      "Effect": "Deny",
+      "Action": [
+        "kms:ScheduleKeyDeletion",
+        "kms:DisableKey"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

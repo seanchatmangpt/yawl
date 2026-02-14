@@ -1,0 +1,321 @@
+---
+# Azure IAM Roles and Assignments for YAWL
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-iam-developer-role
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  developer-role.json: |
+    {
+      "name": "YAWL-Developer-Role",
+      "description": "Azure RBAC role for YAWL developers with limited permissions",
+      "type": "CustomRole",
+      "assignableScopes": [
+        "/subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-development"
+      ],
+      "permissions": [
+        {
+          "actions": [
+            "Microsoft.Compute/virtualMachines/read",
+            "Microsoft.Compute/virtualMachines/instanceView/read",
+            "Microsoft.Compute/virtualMachines/listKeys/action"
+          ],
+          "notActions": [
+            "Microsoft.Compute/virtualMachines/delete",
+            "Microsoft.Compute/virtualMachines/write"
+          ]
+        },
+        {
+          "actions": [
+            "Microsoft.Storage/storageAccounts/read",
+            "Microsoft.Storage/storageAccounts/listKeys/action",
+            "Microsoft.Storage/storageAccounts/blobServices/containers/read"
+          ],
+          "notActions": [
+            "Microsoft.Storage/storageAccounts/delete",
+            "Microsoft.Storage/storageAccounts/write"
+          ]
+        },
+        {
+          "actions": [
+            "Microsoft.Sql/servers/read",
+            "Microsoft.Sql/servers/databases/read"
+          ],
+          "notActions": [
+            "Microsoft.Sql/servers/delete",
+            "Microsoft.Sql/servers/write"
+          ]
+        },
+        {
+          "actions": [
+            "Microsoft.ContainerRegistry/registries/read",
+            "Microsoft.ContainerRegistry/registries/listCredentials/action"
+          ],
+          "notActions": []
+        },
+        {
+          "actions": [
+            "Microsoft.Insights/diagnosticSettings/read"
+          ],
+          "notActions": []
+        }
+      ]
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-iam-compliance-role
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  compliance-role.json: |
+    {
+      "name": "YAWL-Compliance-Officer-Role",
+      "description": "Azure RBAC role for compliance officers and security auditors",
+      "type": "CustomRole",
+      "assignableScopes": [
+        "/subscriptions/SUBSCRIPTION-ID"
+      ],
+      "permissions": [
+        {
+          "actions": [
+            "*/read",
+            "Microsoft.Authorization/*/read",
+            "Microsoft.Insights/alertRules/*",
+            "Microsoft.ResourceHealth/availabilityStatuses/read"
+          ],
+          "notActions": [
+            "Microsoft.Compute/virtualMachines/write",
+            "Microsoft.Storage/storageAccounts/write",
+            "Microsoft.Sql/servers/write"
+          ]
+        },
+        {
+          "actions": [
+            "Microsoft.Security/securityAlerts/read",
+            "Microsoft.Security/securityAlertsSummaries/read",
+            "Microsoft.Security/securityRecommendations/read",
+            "Microsoft.Security/securityAssessments/read"
+          ],
+          "notActions": []
+        },
+        {
+          "actions": [
+            "Microsoft.PolicyInsights/policyEvaluations/action",
+            "Microsoft.PolicyInsights/policyMetadata/read"
+          ],
+          "notActions": []
+        },
+        {
+          "actions": [
+            "Microsoft.Monitor/diagnosticSettings/read",
+            "Microsoft.Monitor/logs/read"
+          ],
+          "notActions": []
+        }
+      ]
+    }
+
+---
+# Azure Policy Assignments for Compliance
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-policy-assignments
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  policies.yaml: |
+    policies:
+      # Storage encryption
+      - name: "Ensure storage accounts use HTTPS"
+        description: "Enforce secure transfer required for storage accounts"
+        type: "PolicyAssignment"
+        policyDefinitionId: "/providers/Microsoft.Authorization/policyDefinitions/2a1b9cdc-50ea-4826-89b2-7c0b6fb0a2c6"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+
+      # SQL encryption
+      - name: "Ensure SQL Server encryption enabled"
+        description: "Enforce transparent data encryption for SQL servers"
+        type: "PolicyAssignment"
+        policyDefinitionId: "/providers/Microsoft.Authorization/policyDefinitions/17f34910-48ea-4576-8d54-1a8228b32eba"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+
+      # Key Vault audit
+      - name: "Ensure Key Vault audit logging enabled"
+        description: "Enable audit logging for Key Vault operations"
+        type: "PolicyAssignment"
+        policyDefinitionId: "/providers/Microsoft.Authorization/policyDefinitions/951af2fa-529b-416e-ab6e-066fd85ac459"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+
+      # Network security
+      - name: "Ensure NSG rules audit"
+        description: "Audit network security group rules"
+        type: "PolicyAssignment"
+        policyDefinitionId: "/providers/Microsoft.Authorization/policyDefinitions/f6de0be7-9a8b-4a4b-92f4-acafafe554f3"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+
+      # RBAC audit
+      - name: "Audit RBAC changes"
+        description: "Enable audit logging for RBAC changes"
+        type: "PolicyAssignment"
+        policyDefinitionId: "/providers/Microsoft.Authorization/policyDefinitions/1b7aa243-30e4-4c4c-b50c-06251cf9a375"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+
+---
+# Azure Managed Identity for AKS
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-managed-identity
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  managed-identity.yaml: |
+    # Azure AD Managed Identity for YAWL
+    kind: ManagedIdentity
+    name: yawl-application-identity
+    resourceGroup: yawl-rg
+    location: eastus
+
+    # Federated Identity for AKS Pod Identity
+    federatedIdentity:
+      issuer: "https://eastus.oic.prod-aks.azure.com/SUBSCRIPTION-ID/RESOURCE-GROUP"
+      subject: "system:serviceaccount:default:yawl-app"
+
+    # Role assignments
+    roleAssignments:
+      - role: "Reader"
+        scope: "/subscriptions/SUBSCRIPTION-ID"
+      - role: "Storage Blob Data Reader"
+        scope: "/subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-rg/providers/Microsoft.Storage/storageAccounts/yawlsa"
+      - role: "Key Vault Secrets Officer"
+        scope: "/subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-rg/providers/Microsoft.KeyVault/vaults/yawl-kv"
+
+---
+# Kubernetes Service Account with Azure Pod Identity
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-app
+  namespace: default
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+  annotations:
+    azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+    azure.workload.identity/tenant-id: "00000000-0000-0000-0000-000000000000"
+
+---
+# Azure Conditional Access Policy Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-conditional-access
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  conditional-access.yaml: |
+    policies:
+      - name: "MFA Required for Sensitive Operations"
+        description: "Require MFA for users accessing sensitive resources"
+        conditions:
+          users:
+            - excludeRoles:
+                - "Global Administrator"
+          clientApps:
+            - "browser"
+            - "mobileAppsAndDesktopClients"
+          locations:
+            - "All"
+        grantControls:
+          operator: "AND"
+          builtInControls:
+            - "mfa"
+            - "approvedClientApps"
+        sessionControls:
+          persistentBrowserSession: false
+          cloudAppSecurity: "blockDownloads"
+
+      - name: "Block Legacy Authentication"
+        description: "Block all legacy authentication protocols"
+        conditions:
+          clientApps:
+            - "exchangeActiveSync"
+            - "other"
+        grantControls:
+          operator: "OR"
+          builtInControls:
+            - "block"
+
+      - name: "Require Compliant Devices"
+        description: "Require devices to be compliant or hybrid joined"
+        conditions:
+          deviceStates:
+            - "Compliant"
+            - "Hybrid Joined"
+        grantControls:
+          operator: "AND"
+          builtInControls:
+            - "compliantDevice"
+
+---
+# Azure Defender Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-defender-config
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  defender-config.yaml: |
+    defender:
+      plans:
+        - resource: "Sql servers"
+          tier: "Standard"
+        - resource: "App Services"
+          tier: "Standard"
+        - resource: "Storage"
+          tier: "Standard"
+        - resource: "Kubernetes"
+          tier: "Standard"
+        - resource: "Virtual machines"
+          tier: "Standard"
+
+      settings:
+        - name: "Vulnerability assessment"
+          enabled: true
+          autoProvisioning: true
+
+        - name: "Threat detection"
+          enabled: true
+          notificationEmail: "security@yawl.com"
+
+        - name: "Container registry scanning"
+          enabled: true
+
+        - name: "Compliance"
+          standards:
+            - "PCI DSS 3.2.1"
+            - "HIPAA/HITRUST"
+            - "SOC 2"

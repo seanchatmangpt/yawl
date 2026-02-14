@@ -1,0 +1,290 @@
+---
+# GCP IAM Roles and Bindings for YAWL
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMCustomRole
+metadata:
+  name: yawl-application-role
+  namespace: gcp-iam
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  displayName: "YAWL Application Role"
+  description: "Custom role for YAWL application with HIPAA, SOC2, PCI-DSS compliance"
+  includedPermissions:
+    # Compute Engine permissions
+    - compute.instances.get
+    - compute.instances.list
+    - compute.instances.getSerialPortOutput
+    - compute.disks.get
+    - compute.disks.list
+    - compute.networks.get
+    - compute.networks.list
+    - compute.firewalls.get
+    - compute.firewalls.list
+
+    # Cloud Storage permissions
+    - storage.buckets.get
+    - storage.buckets.list
+    - storage.objects.get
+    - storage.objects.list
+    - storage.objects.create
+    - storage.objects.delete
+    - storage.buckets.getIamPolicy
+    - storage.buckets.setIamPolicy
+
+    # Cloud SQL permissions
+    - cloudsql.instances.get
+    - cloudsql.instances.list
+    - cloudsql.instances.update
+    - cloudsql.databases.get
+    - cloudsql.databases.list
+    - cloudsql.databases.create
+    - cloudsql.backups.get
+    - cloudsql.backups.list
+    - cloudsql.backups.create
+
+    # Secret Manager permissions
+    - secretmanager.secrets.get
+    - secretmanager.secrets.list
+    - secretmanager.versions.access
+    - secretmanager.versions.list
+
+    # Logging permissions
+    - logging.logEntries.create
+    - logging.logs.list
+    - logging.logEntries.list
+    - logging.sinks.get
+    - logging.sinks.list
+
+    # Monitoring permissions
+    - monitoring.timeSeries.create
+    - monitoring.timeSeries.list
+    - monitoring.monitoredResourceDescriptors.get
+
+    # Cloud Trace permissions
+    - cloudtrace.traces.get
+    - cloudtrace.traces.list
+
+    # Cloud Audit permissions
+    - logging.admin
+
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMCustomRole
+metadata:
+  name: yawl-developer-role
+  namespace: gcp-iam
+spec:
+  displayName: "YAWL Developer Role"
+  description: "Limited developer role with read-only and development permissions"
+  includedPermissions:
+    # Read-only compute
+    - compute.instances.get
+    - compute.instances.list
+    - compute.disks.get
+    - compute.disks.list
+
+    # Read-only storage
+    - storage.buckets.get
+    - storage.buckets.list
+    - storage.objects.get
+    - storage.objects.list
+
+    # Read-only Cloud SQL
+    - cloudsql.instances.get
+    - cloudsql.instances.list
+    - cloudsql.databases.get
+    - cloudsql.databases.list
+
+    # Secret manager read
+    - secretmanager.secrets.get
+    - secretmanager.secrets.list
+    - secretmanager.versions.access
+
+    # Logging
+    - logging.logEntries.create
+    - logging.logEntries.list
+
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMCustomRole
+metadata:
+  name: yawl-security-officer-role
+  namespace: gcp-iam
+spec:
+  displayName: "YAWL Security Officer Role"
+  description: "Audit and compliance role for security officers"
+  includedPermissions:
+    # Audit permissions
+    - logging.admin
+    - logging.logEntries.list
+    - logging.logs.list
+    - logging.sinks.get
+
+    # IAM audit
+    - iam.roles.get
+    - iam.roles.list
+    - resourcemanager.organizations.getIamPolicy
+    - resourcemanager.projects.getIamPolicy
+
+    # Compute audit
+    - compute.instances.list
+    - compute.firewalls.list
+    - compute.networks.list
+
+    # Storage audit
+    - storage.buckets.getIamPolicy
+    - storage.buckets.list
+
+    # Cloud SQL audit
+    - cloudsql.instances.list
+    - cloudsql.backups.list
+
+    # Security Command Center
+    - securitycenter.findings.list
+    - securitycenter.assets.list
+    - securitycenter.sources.get
+
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  name: yawl-application-sa
+  namespace: gcp-iam
+spec:
+  displayName: "YAWL Application Service Account"
+  description: "Service account for YAWL application with minimal permissions"
+
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  name: yawl-workload-identity-sa
+  namespace: gcp-iam
+spec:
+  displayName: "YAWL Workload Identity Service Account"
+  description: "Service account for GKE Workload Identity"
+
+---
+# GCP IAM Policy Binding for Application Role
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccountPolicy
+metadata:
+  name: yawl-application-policy
+  namespace: gcp-iam
+spec:
+  resourceRef:
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+    name: yawl-application-sa
+  bindings:
+    - role: projects/PROJECT-ID/roles/yawl-application-role
+      members:
+        - serviceAccount:yawl-application-sa@PROJECT-ID.iam.gserviceaccount.com
+
+---
+# GCP Workload Identity Binding
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicy
+metadata:
+  name: yawl-workload-identity-policy
+  namespace: gcp-iam
+spec:
+  resourceRef:
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+    name: yawl-workload-identity-sa
+  bindings:
+    - role: roles/iam.workloadIdentityUser
+      members:
+        - serviceAccount:PROJECT-ID.svc.id.goog[default/yawl-app]
+
+---
+# GCP Custom Role for Developers
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMCustomRole
+metadata:
+  name: yawl-viewer-role
+  namespace: gcp-iam
+spec:
+  displayName: "YAWL Viewer Role"
+  description: "Read-only viewer role for stakeholders"
+  includedPermissions:
+    # Read-only permissions
+    - compute.instances.get
+    - compute.instances.list
+    - storage.buckets.get
+    - storage.buckets.list
+    - storage.objects.get
+    - logging.logEntries.list
+    - logging.logs.list
+    - monitoring.timeSeries.list
+
+---
+# GCP Organization Policy for compliance
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gcp-org-policy
+  namespace: gcp-iam
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  organization-policy.yaml: |
+    policies:
+      # Enforce CMEK for storage
+      - constraint: "storage.cmekEncryption"
+        description: "Enforce customer-managed encryption keys for Cloud Storage"
+        enforced: true
+        exceptions: []
+
+      # Enforce CMEK for Cloud SQL
+      - constraint: "sql.cmekEncryption"
+        description: "Enforce customer-managed encryption keys for Cloud SQL"
+        enforced: true
+        exceptions: []
+
+      # Restrict public IP addresses
+      - constraint: "compute.skipDefaultNetworkCreation"
+        description: "Prevent creation of default network"
+        enforced: true
+        exceptions: []
+
+      # Enforce uniform bucket-level access
+      - constraint: "storage.uniformBucketLevelAccess"
+        description: "Enforce uniform bucket-level access"
+        enforced: true
+        exceptions: []
+
+      # Restrict service account key creation
+      - constraint: "iam.disableServiceAccountCreation"
+        description: "Disable service account creation"
+        enforced: true
+        exceptions:
+          - "projects/PROJECT-ID"
+
+      # Restrict VPC Service Controls
+      - constraint: "accesscontextmanager.allowedPolicyMemberDomains"
+        description: "Restrict access to specific domains"
+        enforced: true
+        allowedValues:
+          - "C0123456789"  # Customer ID
+
+---
+# Kubernetes Service Account for GKE Workload Identity
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-workload-sa
+  namespace: default
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+  annotations:
+    iam.gke.io/gcp-service-account: yawl-workload-identity-sa@PROJECT-ID.iam.gserviceaccount.com

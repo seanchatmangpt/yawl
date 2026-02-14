@@ -1,0 +1,287 @@
+# Teradata Connection Configuration for YAWL Workflow Engine
+# This file contains all connection parameters for Teradata database integration
+# Copy to teradata-connection.properties and update with your actual values
+
+# ============================================================================
+# Teradata Database Connection Settings
+# ============================================================================
+
+# Teradata host address (IP or hostname)
+teradata.host=teradata-instance
+
+# Teradata listening port
+teradata.port=1025
+
+# Default database/catalog name
+teradata.database=yawl_workflow
+
+# Teradata character set (UTF8, ASCII, etc.)
+teradata.charset=UTF8
+
+# Session mode (TERADATA or TERA, default is TERA)
+teradata.session.mode=TERA
+
+# ============================================================================
+# User Authentication
+# ============================================================================
+
+# Primary database user for YAWL
+teradata.user=yawl_user
+
+# Password (recommend using Secret Manager for production)
+teradata.password=CHANGE_ME
+
+# Alternative user for fallback
+teradata.backup.user=yawl_backup
+
+# Enable logging in
+teradata.logon.timeout=30
+
+# ============================================================================
+# Connection Pool Configuration
+# ============================================================================
+
+# Maximum number of connections in pool
+teradata.pool.max.size=20
+
+# Minimum idle connections to maintain
+teradata.pool.min.idle=5
+
+# Time in milliseconds to wait for connection
+teradata.pool.connection.timeout=30000
+
+# Maximum time in milliseconds to keep a connection alive
+teradata.pool.max.lifetime=1800000
+
+# Idle timeout in milliseconds before connection is closed
+teradata.pool.idle.timeout=600000
+
+# Time between eviction runs in milliseconds
+teradata.pool.eviction.interval=30000
+
+# Validation query to test connection health
+teradata.pool.validation.query=SELECT 1
+
+# Test connections on borrow
+teradata.pool.test.on.borrow=true
+
+# Test connections while idle
+teradata.pool.test.while.idle=true
+
+# ============================================================================
+# Query Execution Settings
+# ============================================================================
+
+# Query timeout in seconds (0 = no timeout)
+teradata.query.timeout=600
+
+# Default query mode (EXEC or QUERY)
+teradata.query.mode=EXEC
+
+# Batch mode configuration
+teradata.batch.size=100
+
+# Fetch size for result sets
+teradata.fetch.size=5000
+
+# Enable LOB support for large objects
+teradata.lob.support=true
+
+# Maximum LOB size in bytes (100 MB)
+teradata.lob.max.size=104857600
+
+# ============================================================================
+# Transaction Settings
+# ============================================================================
+
+# Transaction isolation level (READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE)
+teradata.transaction.isolation=READ_COMMITTED
+
+# Enable auto-commit (true for auto-commit per statement)
+teradata.autocommit=false
+
+# Default transaction mode
+teradata.transaction.mode=BTET
+
+# ============================================================================
+# Security Settings
+# ============================================================================
+
+# Enable SSL/TLS encryption
+teradata.ssl.enabled=true
+
+# SSL certificate verification
+teradata.ssl.verify.certificate=true
+
+# Trust store path for SSL certificates
+teradata.ssl.truststore.path=/etc/ssl/certs/ca-bundle.crt
+
+# Trust store password
+teradata.ssl.truststore.password=CHANGE_ME
+
+# Enable encryption
+teradata.encryption.enabled=true
+
+# Encryption algorithm
+teradata.encryption.algorithm=AES
+
+# ============================================================================
+# Performance Tuning
+# ============================================================================
+
+# Enable query caching
+teradata.cache.enabled=true
+
+# Cache size in MB
+teradata.cache.size=256
+
+# Enable parallel processing
+teradata.parallel.enabled=true
+
+# Degree of parallelism (0 = auto)
+teradata.parallel.degree=0
+
+# Enable result set compression
+teradata.compression.enabled=true
+
+# Log all SQL statements (disable in production)
+teradata.sql.logging=false
+
+# Log query execution plans
+teradata.logging.query.plan=false
+
+# ============================================================================
+# Monitoring and Statistics
+# ============================================================================
+
+# Enable performance monitoring
+teradata.monitoring.enabled=true
+
+# Collect statistics at query level
+teradata.statistics.collection=true
+
+# Log slow queries (threshold in milliseconds)
+teradata.slow.query.threshold=5000
+
+# Enable diagnostic logging
+teradata.diagnostics.enabled=true
+
+# ============================================================================
+# Data Handling
+# ============================================================================
+
+# Default timestamp precision
+teradata.timestamp.precision=6
+
+# Handle NULL values as empty strings
+teradata.null.as.empty=false
+
+# Date format (ISO, US, EUR, INTERNAL)
+teradata.date.format=ISO
+
+# Time format (HH24:MI:SS, HH:MI:SS)
+teradata.time.format=HH24:MI:SS
+
+# ============================================================================
+# YAWL-Specific Settings
+# ============================================================================
+
+# YAWL workflow database schema
+yawl.schema.name=yawl_workflow
+
+# Audit logging table
+yawl.audit.table=audit_log
+
+# Enable audit logging
+yawl.audit.enabled=true
+
+# Process definition table
+yawl.process.table=process_definitions
+
+# Process instance table
+yawl.process.instance.table=process_instances
+
+# Task table
+yawl.task.table=tasks
+
+# Task instance table
+yawl.task.instance.table=task_instances
+
+# Participant table
+yawl.participant.table=participants
+
+# Worklist table
+yawl.worklist.table=worklist_items
+
+# ============================================================================
+# Connection Validation
+# ============================================================================
+
+# Validation query (test connection on startup)
+connection.validation.query=SELECT COUNT(*) FROM dbc.tables WHERE databasename='yawl_workflow'
+
+# Validate on startup
+connection.validate.on.startup=true
+
+# Retry failed connections
+connection.retry.enabled=true
+
+# Number of retry attempts
+connection.retry.attempts=3
+
+# Retry interval in milliseconds
+connection.retry.interval=1000
+
+# ============================================================================
+# Logging and Debugging
+# ============================================================================
+
+# Logging level (DEBUG, INFO, WARN, ERROR)
+logging.level=INFO
+
+# Teradata JDBC driver logging level
+teradata.driver.logging.level=INFO
+
+# Enable connection pool logging
+connection.pool.logging.enabled=true
+
+# Log connection events
+connection.pool.logging.events=true
+
+# ============================================================================
+# Advanced Settings
+# ============================================================================
+
+# JDBC driver class
+jdbc.driver.class=com.teradata.jdbc.TeraDriver
+
+# Connection attempt interval
+teradata.connection.attempt.interval=5000
+
+# Enable support for extended JDBC features
+teradata.extended.jdbc.features=true
+
+# Support for Teradata-specific data types
+teradata.extended.datatypes=true
+
+# Enable native SQL compilation
+teradata.native.sql.compilation=true
+
+# ============================================================================
+# Application-Level Settings
+# ============================================================================
+
+# Application name for monitoring
+application.name=YAWL-Workflow-Engine
+
+# Application version
+application.version=4.3
+
+# Environment (DEV, STAGING, PRODUCTION)
+environment=PRODUCTION
+
+# Tenant identifier for multi-tenant deployments
+tenant.id=default
+
+# Enable multi-tenancy
+multi.tenancy.enabled=false

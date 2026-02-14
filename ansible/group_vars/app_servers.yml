@@ -1,0 +1,146 @@
+---
+# Application Server Group Variables
+
+# Docker Configuration
+docker_version: 24.0.0
+docker_edition: ce
+docker_storage_driver: overlay2
+docker_storage_opts:
+  - dm.directlvm_device=/dev/sda
+  - dm.thinp_percent=95
+docker_log_driver: json-file
+docker_log_options:
+  max-size: 100m
+  max-file: "10"
+docker_insecure_registries: []
+docker_registry_mirrors: []
+
+# Docker Daemon Options
+docker_daemon_options:
+  log-driver: json-file
+  log-opts:
+    max-size: 100m
+    max-file: "10"
+  storage-driver: overlay2
+  userland-proxy: true
+  icc: false
+  default-ulimits:
+    nofile:
+      Name: nofile
+      Hard: 65536
+      Soft: 65536
+
+# Docker Network
+docker_network_name: yawl-network
+docker_network_driver: bridge
+docker_network_subnet: 172.18.0.0/16
+docker_network_gateway: 172.18.0.1
+
+# Tomcat Configuration
+tomcat_version: 9.0.68
+tomcat_port: 8080
+tomcat_shutdown_port: 8005
+tomcat_ajp_port: 8009
+tomcat_user: tomcat
+tomcat_user_id: 91
+tomcat_user_group: tomcat
+tomcat_home: /usr/local/tomcat
+tomcat_webapps_dir: /usr/local/tomcat/webapps
+tomcat_logs_dir: /var/log/tomcat
+tomcat_work_dir: /var/lib/tomcat
+
+# Tomcat JVM Settings
+java_version: 11
+java_home: /usr/lib/jvm/java-11-openjdk-amd64
+java_heap_min: 512m
+java_heap_max: 2048m
+java_opts: "-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ParallelRefProcEnabled"
+java_additional_opts:
+  - "-Dfile.encoding=UTF-8"
+  - "-Duser.timezone=UTC"
+  - "-Djava.awt.headless=true"
+
+# Tomcat Thread Configuration
+tomcat_max_threads: 200
+tomcat_min_spare_threads: 10
+tomcat_max_http_header_size: 8192
+tomcat_compression_enabled: true
+tomcat_compression_min_size: 2048
+
+# Tomcat Session Configuration
+tomcat_session_timeout: 1440  # 24 hours in minutes
+tomcat_session_persistence: true
+tomcat_session_manager: manager
+
+# YAWL Application Settings
+yawl_version: latest
+yawl_war_file: yawl.war
+yawl_context: /yawl
+yawl_home: /opt/yawl
+yawl_data_dir: /data/yawl
+yawl_logs_dir: /var/log/yawl
+yawl_config_dir: /etc/yawl
+yawl_http_port: 8080
+yawl_https_port: 8443
+
+# YAWL Database Configuration
+yawl_db_host: "{% if 'db_servers' in groups %}{{ groups['db_servers'][0] }}{% else %}localhost{% endif %}"
+yawl_db_port: 5432
+yawl_db_name: yawl
+yawl_db_user: yawl
+yawl_db_password: "{{ vault_yawl_db_password }}"
+yawl_db_pool_size: 20
+yawl_db_max_idle_time: 600
+yawl_db_connection_timeout: 30000
+
+# YAWL Cache Configuration
+yawl_cache_enabled: true
+yawl_cache_backend: redis
+yawl_redis_host: "{% if 'app_servers' in groups %}{{ groups['app_servers'][0] }}{% else %}localhost{% endif %}"
+yawl_redis_port: 6379
+yawl_redis_password: "{{ vault_redis_password }}"
+yawl_redis_db: 0
+yawl_cache_ttl: 3600
+
+# YAWL Monitoring
+yawl_monitoring_enabled: true
+yawl_metrics_port: 9090
+yawl_health_check_enabled: true
+yawl_health_check_path: /resourceService/
+yawl_health_check_interval: 30
+yawl_health_check_timeout: 10
+yawl_health_check_retries: 3
+
+# Application Server Load Balancing
+yawl_jvmroute_prefix: YAWL
+yawl_session_affinity: true
+yawl_session_replication: true
+yawl_sticky_sessions: true
+
+# Application Server Clustering
+yawl_clustering_enabled: true
+yawl_cluster_name: yawl-cluster
+yawl_cluster_discovery: static
+yawl_cluster_members:
+  - "app-node-1:8080"
+  - "app-node-2:8080"
+  - "app-node-3:8080"
+
+# Startup Configuration
+tomcat_startup_wait_time: 60
+tomcat_startup_health_check: true
+tomcat_auto_deploy: true
+
+# SSL/TLS Configuration
+tomcat_ssl_enabled: false  # Set to true if using HTTPS
+tomcat_ssl_cert_file: /etc/yawl/ssl/server.crt
+tomcat_ssl_key_file: /etc/yawl/ssl/server.key
+tomcat_ssl_key_password: "{{ vault_tomcat_ssl_key_password }}"
+
+# Performance Tuning
+tomcat_server_backlog: 100
+tomcat_accept_count: 100
+tomcat_keep_alive_timeout: 60000
+tomcat_max_keep_alive_requests: 100
+tomcat_disable_upload_timeout: true
+tomcat_upload_timeout: 600000

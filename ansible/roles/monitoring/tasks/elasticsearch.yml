@@ -1,0 +1,114 @@
+---
+# Elasticsearch Installation and Configuration
+
+- name: Install Java for Elasticsearch
+  apt:
+    name:
+      - openjdk-11-jdk-headless
+    state: present
+
+- name: Add Elasticsearch repository key
+  apt_key:
+    url: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+    state: present
+
+- name: Add Elasticsearch repository
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+    state: present
+
+- name: Install Elasticsearch
+  apt:
+    name: "elasticsearch={{ elasticsearch_version }}"
+    state: present
+
+- name: Create Elasticsearch data directory
+  file:
+    path: "{{ elasticsearch_data_dir }}"
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: '0755'
+
+- name: Configure Elasticsearch elasticsearch.yml
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+    backup: yes
+  notify: restart elasticsearch
+
+- name: Configure Elasticsearch JVM options
+  template:
+    src: jvm.options.j2
+    dest: /etc/elasticsearch/jvm.options.d/custom.options
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+  notify: restart elasticsearch
+
+- name: Enable and start Elasticsearch
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    state: started
+
+- name: Wait for Elasticsearch to be ready
+  uri:
+    url: "http://localhost:{{ elasticsearch_port }}/_cluster/health"
+    method: GET
+    status_code: 200
+  register: elasticsearch_ready
+  retries: 15
+  delay: 5
+
+- name: Create Elasticsearch index lifecycle management policy
+  uri:
+    url: "http://localhost:{{ elasticsearch_port }}/_ilm/policy/logstash-policy"
+    method: PUT
+    body_format: json
+    body:
+      policy:
+        phases:
+          hot:
+            min_age: 0ms
+            actions:
+              rollover:
+                max_primary_shard_size: 5gb
+          warm:
+            min_age: 30d
+            actions:
+              set_priority:
+                priority: 50
+          delete:
+            min_age: "{{ elasticsearch_retention_days }}d"
+            actions:
+              delete: {}
+  ignore_errors: yes
+
+- name: Create Elasticsearch index template
+  uri:
+    url: "http://localhost:{{ elasticsearch_port }}/_index_template/logstash"
+    method: PUT
+    body_format: json
+    body:
+      index_patterns:
+        - "logstash-*"
+      template:
+        settings:
+          number_of_shards: "{{ elasticsearch_index_number_of_shards }}"
+          number_of_replicas: "{{ elasticsearch_index_number_of_replicas }}"
+          index.lifecycle.name: logstash-policy
+          index.lifecycle.rollover_alias: logstash
+  ignore_errors: yes
+
+- name: Verify Elasticsearch cluster health
+  uri:
+    url: "http://localhost:{{ elasticsearch_port }}/_cluster/health"
+    method: GET
+  register: es_health
+  until: es_health.json.status != 'red'
+  retries: 5
+  delay: 10

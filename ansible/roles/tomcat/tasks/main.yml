@@ -1,0 +1,212 @@
+---
+# Tomcat Application Server Installation and Configuration
+
+- name: Install Java
+  apt:
+    name:
+      - "openjdk-{{ java_version }}-jdk-headless"
+      - "openjdk-{{ java_version }}-jdk"
+    state: present
+
+- name: Create Tomcat group
+  group:
+    name: "{{ tomcat_user }}"
+    state: present
+
+- name: Create Tomcat user
+  user:
+    name: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    uid: "{{ tomcat_user_id }}"
+    shell: /bin/nologin
+    home: "{{ tomcat_home }}"
+    createhome: no
+    state: present
+
+- name: Download Tomcat
+  get_url:
+    url: "https://archive.apache.org/dist/tomcat/tomcat-9/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "/tmp/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    checksum: "sha256:https://archive.apache.org/dist/tomcat/tomcat-9/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz.sha512"
+  register: tomcat_download
+  until: tomcat_download is succeeded
+  retries: 3
+  delay: 5
+
+- name: Create Tomcat installation directory
+  file:
+    path: "{{ tomcat_home }}"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0755'
+
+- name: Extract Tomcat
+  unarchive:
+    src: "/tmp/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "{{ tomcat_home }}"
+    extra_opts:
+      - --strip-components=1
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    remote_src: yes
+
+- name: Remove Tomcat webapps (except ROOT)
+  file:
+    path: "{{ tomcat_home }}/webapps/{{ item }}"
+    state: absent
+  loop:
+    - docs
+    - examples
+    - manager
+    - host-manager
+
+- name: Create Tomcat directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0755'
+  loop:
+    - "{{ tomcat_logs_dir }}"
+    - "{{ tomcat_work_dir }}"
+    - "{{ tomcat_home }}/webapps/yawl"
+
+- name: Configure Tomcat server.xml
+  template:
+    src: server.xml.j2
+    dest: "{{ tomcat_home }}/conf/server.xml"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+    backup: yes
+  notify: restart tomcat
+
+- name: Configure Tomcat context.xml
+  template:
+    src: context.xml.j2
+    dest: "{{ tomcat_home }}/conf/context.xml"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+    backup: yes
+  notify: restart tomcat
+
+- name: Configure Tomcat web.xml
+  template:
+    src: web.xml.j2
+    dest: "{{ tomcat_home }}/conf/web.xml"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+    backup: yes
+  notify: restart tomcat
+
+- name: Configure Tomcat logging.properties
+  template:
+    src: logging.properties.j2
+    dest: "{{ tomcat_home }}/conf/logging.properties"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+    backup: yes
+  notify: restart tomcat
+
+- name: Create Tomcat systemd service file
+  template:
+    src: tomcat.service.j2
+    dest: /etc/systemd/system/tomcat.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload systemd
+
+- name: Create Tomcat environment file
+  template:
+    src: tomcat.env.j2
+    dest: /etc/default/tomcat
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Deploy YAWL WAR file
+  copy:
+    src: "yawl.war"
+    dest: "{{ tomcat_home }}/webapps/"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+  when: yawl_war_file is defined
+  notify: restart tomcat
+  ignore_errors: yes
+
+- name: Create YAWL application configuration
+  template:
+    src: yawl-config.properties.j2
+    dest: "{{ yawl_config_dir }}/yawl.properties"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+  notify: restart tomcat
+
+- name: Setup Tomcat security manager
+  template:
+    src: catalina.policy.j2
+    dest: "{{ tomcat_home }}/conf/catalina.policy"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_user }}"
+    mode: '0644'
+    backup: yes
+
+- name: Enable and start Tomcat
+  systemd:
+    name: tomcat
+    enabled: yes
+    state: started
+
+- name: Wait for Tomcat to start
+  wait_for:
+    port: "{{ tomcat_port }}"
+    delay: 5
+    timeout: 60
+
+- name: Setup Tomcat log rotation
+  template:
+    src: logrotate-tomcat.j2
+    dest: /etc/logrotate.d/tomcat
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install monitoring agent for Tomcat
+  include_tasks: monitoring.yml
+  when: yawl_monitoring_enabled
+
+- name: Setup application startup health check
+  template:
+    src: tomcat-health-check.sh.j2
+    dest: /usr/local/bin/tomcat-health-check.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create Tomcat health check cron job
+  cron:
+    name: "Tomcat health check"
+    minute: "*/5"
+    job: "/usr/local/bin/tomcat-health-check.sh > /var/log/yawl/tomcat-health-check.log 2>&1"
+    user: root
+
+- name: Verify Tomcat installation
+  shell: "{{ tomcat_home }}/bin/version.sh"
+  register: tomcat_version_check
+  become_user: "{{ tomcat_user }}"
+
+- name: Display Tomcat version
+  debug:
+    msg: "Tomcat installed and configured successfully"

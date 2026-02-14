@@ -1,0 +1,434 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for YAWL Workflow Engine on AWS'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Environment name
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+
+  InstanceType:
+    Type: String
+    Default: t3.xlarge
+    AllowedValues:
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+    Description: EC2 instance type
+
+  DatabaseInstanceClass:
+    Type: String
+    Default: db.t3.medium
+    AllowedValues:
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.m5.large
+      - db.m5.xlarge
+    Description: RDS instance class
+
+  DBUsername:
+    Type: String
+    Default: yawladmin
+    NoEcho: true
+    Description: Database master username
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: Database master password (minimum 8 characters)
+    MinLength: 8
+
+Resources:
+  # VPC Configuration
+  YawlVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-vpc'
+
+  # Public Subnet
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YawlVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-subnet-1'
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YawlVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-subnet-2'
+
+  # Private Subnet for Database
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YawlVPC
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-private-subnet-1'
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YawlVPC
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-private-subnet-2'
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-igw'
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref YawlVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref YawlVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-rt'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  AssociatePublicSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  AssociatePublicSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Groups
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ALB
+      VpcId: !Ref YawlVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-alb-sg'
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EC2 instances
+      VpcId: !Ref YawlVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-ec2-sg'
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS
+      VpcId: !Ref YawlVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db-sg'
+
+  # RDS PostgreSQL Database
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for YAWL database
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db-subnet-group'
+
+  YawlDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-yawl-db'
+      Engine: postgres
+      EngineVersion: '14.7'
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      StorageType: gp3
+      AllocatedStorage: 100
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      BackupRetentionPeriod: 30
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'mon:04:00-mon:05:00'
+      MultiAZ: true
+      StorageEncrypted: true
+      EnableCloudwatchLogsExports:
+        - postgresql
+      EnableIAMDatabaseAuthentication: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db'
+
+  # Application Load Balancer
+  YawlALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${AWS::StackName}-alb'
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-alb'
+
+  # Target Group
+  YawlTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-tg'
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref YawlVPC
+      HealthCheckEnabled: true
+      HealthCheckPath: /resourceService/
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: '8080'
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: 200-299
+      TargetType: instance
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-tg'
+
+  # ALB Listener
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref YawlTargetGroup
+      LoadBalancerArn: !Ref YawlALB
+      Port: 80
+      Protocol: HTTP
+
+  # Auto Scaling Configuration
+  YawlLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub '${AWS::StackName}-lt'
+      LaunchTemplateData:
+        ImageId: !Sub 'ami-0c55b159cbfafe1f0'  # Amazon Linux 2 (replace with desired AMI)
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPairName
+        SecurityGroupIds:
+          - !Ref EC2SecurityGroup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            set -e
+            yum update -y
+            yum install -y docker
+            systemctl start docker
+            systemctl enable docker
+
+            # Download and run YAWL container
+            docker run -d \
+              --name yawl \
+              -p 8080:8080 \
+              -e YAWL_DB_HOST=<DB_ENDPOINT> \
+              -e YAWL_DB_PORT=5432 \
+              -e YAWL_DB_NAME=yawl \
+              -e YAWL_DB_USER=<DB_USERNAME> \
+              -e YAWL_DB_PASSWORD=<DB_PASSWORD> \
+              -e YAWL_HEAP_SIZE=1024m \
+              -e LOG_LEVEL=INFO \
+              --restart unless-stopped \
+              us-central1-docker.pkg.dev/PROJECT_ID/yawl/yawl:latest
+
+  YawlAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub '${AWS::StackName}-asg'
+      MinSize: '2'
+      MaxSize: '6'
+      DesiredCapacity: '3'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref YawlLaunchTemplate
+        Version: !GetAtt YawlLaunchTemplate.LatestVersionNumber
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      TargetGroupARNs:
+        - !Ref YawlTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-asg-instance'
+          PropagateAtLaunch: true
+
+  # Scaling Policies
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref YawlAutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: 1
+
+  ScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref YawlAutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: -1
+
+  CPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale up if CPU > 70%
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref ScaleUpPolicy
+
+  CPUAlarmLow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale down if CPU < 30%
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 30
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref ScaleDownPolicy
+
+  # S3 for Backups
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-yawl-backups-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldBackups
+            Status: Enabled
+            ExpirationInDays: 90
+            NoncurrentVersionExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-backups'
+
+Outputs:
+  LoadBalancerDNS:
+    Description: DNS name of the load balancer
+    Value: !GetAtt YawlALB.DNSName
+    Export:
+      Name: !Sub '${AWS::StackName}-ALB-DNS'
+
+  DatabaseEndpoint:
+    Description: RDS database endpoint
+    Value: !GetAtt YawlDatabase.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DB-Endpoint'
+
+  BackupBucketName:
+    Description: S3 bucket for backups
+    Value: !Ref BackupBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-Backup-Bucket'
+
+  YawlURL:
+    Description: YAWL application URL
+    Value: !Sub 'http://${YawlALB.DNSName}/resourceService'

@@ -1,0 +1,109 @@
+---
+# YAWL Workflow Engine - Multi-Node Deployment Playbook
+# This playbook orchestrates the complete deployment of YAWL across multiple nodes
+# including database setup, application servers, and monitoring infrastructure
+
+- name: YAWL Common Setup
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install essential packages
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - htop
+          - net-tools
+          - vim
+          - jq
+          - unzip
+          - ca-certificates
+        state: present
+
+    - name: Create YAWL directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/yawl
+        - /var/log/yawl
+        - /etc/yawl
+        - /data/yawl
+
+    - name: Create YAWL system user
+      user:
+        name: yawl
+        shell: /bin/bash
+        home: /home/yawl
+        createhome: yes
+        state: present
+
+    - name: Set timezone
+      timezone:
+        name: UTC
+
+---
+# PostgreSQL Database Server Deployment
+- name: Deploy PostgreSQL Databases
+  hosts: db_servers
+  become: yes
+  roles:
+    - postgres
+
+---
+# Docker and Application Server Deployment
+- name: Deploy Docker and YAWL Application
+  hosts: app_servers
+  become: yes
+  roles:
+    - docker
+    - tomcat
+
+---
+# Monitoring and Logging Infrastructure
+- name: Deploy Monitoring Stack
+  hosts: monitoring_servers
+  become: yes
+  roles:
+    - monitoring
+
+---
+# Post-Deployment Validation and Configuration
+- name: Validate YAWL Deployment
+  hosts: all
+  tasks:
+    - name: Health check - wait for services to be ready
+      uri:
+        url: "http://{{ inventory_hostname }}:8080/resourceService/"
+        method: GET
+        status_code: 200
+      retries: 10
+      delay: 10
+      register: health_check
+      when: "'app_servers' in group_names"
+      ignore_errors: yes
+
+    - name: Verify PostgreSQL connectivity
+      postgresql_query:
+        db: yawl
+        query: "SELECT version();"
+      register: db_version
+      when: "'db_servers' in group_names"
+      ignore_errors: yes
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          YAWL Deployment Summary:
+          ========================
+          Hostname: {{ inventory_hostname }}
+          IP Address: {{ ansible_default_ipv4.address }}
+          Groups: {{ group_names }}
+          Health Status: {% if health_check is succeeded %}OK{% else %}FAILED{% endif %}

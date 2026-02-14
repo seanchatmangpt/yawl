@@ -1,0 +1,115 @@
+packetbeat.interfaces.device: any
+
+packetbeat.flows:
+  timeout: 30s
+  period: 10s
+
+packetbeat.protocols:
+  # DNS protocol
+  - type: dns
+    enabled: true
+    ports: [53]
+    include_authorities: true
+    include_additionals: true
+
+  # HTTP protocol
+  - type: http
+    enabled: true
+    ports: [80, 8080, 8000, 5000, 8002]
+    hide_keywords: ["pass", "password", "passwd"]
+    send_headers: true
+    send_all_headers: false
+    transaction_timeout: 200ms
+
+  # HTTPS protocol
+  - type: tls
+    enabled: true
+    ports: [443, 8443]
+
+  # MySQL protocol
+  - type: mysql
+    enabled: true
+    ports: [3306]
+
+  # PostgreSQL protocol
+  - type: pgsql
+    enabled: true
+    ports: [5432]
+
+  # Redis protocol
+  - type: redis
+    enabled: true
+    ports: [6379]
+
+  # MongoDB protocol
+  - type: mongodb
+    enabled: true
+    ports: [27017]
+
+  # Memcache protocol
+  - type: memcache
+    enabled: true
+    ports: [11211]
+
+  # AMQP (RabbitMQ) protocol
+  - type: amqp
+    enabled: true
+    ports: [5672]
+
+  # ICMP protocol
+  - type: icmp
+    enabled: true
+
+  # DHCP protocol
+  - type: dhcp
+    enabled: true
+    ports: [67, 68]
+
+packetbeat.procs.enabled: true
+packetbeat.procs.monitored:
+  - process: nginx
+    cmdline_grep: nginx
+  - process: java
+    cmdline_grep: java
+  - process: python
+    cmdline_grep: python
+  - process: node
+    cmdline_grep: node
+
+packetbeat.ignore_outgoing: false
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - add_kubernetes_metadata:
+      in_cluster: true
+
+output.elasticsearch:
+  enabled: true
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD:changeme}"
+  index: "packetbeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  bulk_max_size: 4096
+  worker: 4
+
+# Optional: Send to Logstash
+# output.logstash:
+#   enabled: false
+#   hosts: ["logstash:5044"]
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/packetbeat
+  name: packetbeat
+  keepfiles: 7
+  permissions: 0644
+
+# HTTP server for monitoring
+http.enabled: true
+http.host: 0.0.0.0
+http.port: 5066

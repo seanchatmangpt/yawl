@@ -1,0 +1,205 @@
+{
+  "dashboard": {
+    "title": "Application Metrics",
+    "tags": ["application", "performance", "api"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (job)",
+            "legendFormat": "{{ job }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Requests per Second"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (job)",
+            "legendFormat": "{{ job }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Errors per Second"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Response Time (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "HTTP Status Distribution",
+        "type": "piechart",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (status)"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Active Connections",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "sum(http_active_connections)"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Total Requests",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "sum(http_requests_total)"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Error Count",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "sum(http_requests_total{status=~\"5..\"})"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Availability",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "(1 - (sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])))) * 100"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Request Rate by Endpoint",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (endpoint)",
+            "legendFormat": "{{ endpoint }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Requests per Second"
+          }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "templating": {
+      "list": [
+        {
+          "name": "job",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(http_requests_total, job)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "version": 0
+  }
+}

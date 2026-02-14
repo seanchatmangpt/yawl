@@ -1,0 +1,68 @@
+---
+# Logstash Installation and Configuration
+
+- name: Install Logstash
+  apt:
+    name: "logstash={{ elasticsearch_version }}"
+    state: present
+
+- name: Create Logstash configuration directory
+  file:
+    path: "{{ logstash_config_dir }}/conf.d"
+    state: directory
+    owner: logstash
+    group: logstash
+    mode: '0755'
+
+- name: Configure Logstash logstash.yml
+  template:
+    src: logstash.yml.j2
+    dest: "/etc/logstash/logstash.yml"
+    owner: logstash
+    group: logstash
+    mode: '0644'
+    backup: yes
+
+- name: Configure Logstash jvm.options
+  template:
+    src: logstash-jvm.options.j2
+    dest: "/etc/logstash/jvm.options"
+    owner: logstash
+    group: logstash
+    mode: '0644'
+
+- name: Configure Logstash pipeline
+  template:
+    src: logstash-pipeline.conf.j2
+    dest: "{{ logstash_config_dir }}/conf.d/yawl.conf"
+    owner: logstash
+    group: logstash
+    mode: '0644'
+  notify: restart logstash
+
+- name: Enable and start Logstash
+  systemd:
+    name: logstash
+    enabled: yes
+    state: started
+
+- name: Wait for Logstash to start
+  wait_for:
+    timeout: 30
+  register: logstash_wait
+  changed_when: false
+
+- name: Verify Logstash is running
+  shell: systemctl is-active logstash
+  register: logstash_status
+  changed_when: false
+
+- name: Setup Logstash monitoring
+  uri:
+    url: "http://localhost:9600/_node/stats"
+    method: GET
+    status_code: 200
+  register: logstash_stats
+  retries: 10
+  delay: 5
+  ignore_errors: yes

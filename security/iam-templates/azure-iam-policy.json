@@ -1,0 +1,88 @@
+{
+  "name": "YAWL-Application-Role",
+  "description": "Azure RBAC role for YAWL application with HIPAA, SOC2, PCI-DSS compliance",
+  "type": "CustomRole",
+  "assignableScopes": [
+    "/subscriptions/SUBSCRIPTION-ID"
+  ],
+  "permissions": [
+    {
+      "actions": [
+        "Microsoft.Compute/virtualMachines/read",
+        "Microsoft.Compute/virtualMachines/*/read",
+        "Microsoft.Compute/disks/read",
+        "Microsoft.Compute/networkInterfaces/read",
+        "Microsoft.Network/networkSecurityGroups/read",
+        "Microsoft.Network/virtualNetworks/read",
+        "Microsoft.Network/loadBalancers/read",
+        "Microsoft.Network/publicIPAddresses/read"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.Storage/storageAccounts/read",
+        "Microsoft.Storage/storageAccounts/listKeys/action",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.Sql/servers/read",
+        "Microsoft.Sql/servers/databases/read",
+        "Microsoft.Sql/servers/firewallRules/read"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.KeyVault/vaults/read",
+        "Microsoft.KeyVault/vaults/keys/read",
+        "Microsoft.KeyVault/vaults/secrets/read"
+      ],
+      "notActions": [],
+      "dataActions": [
+        "Microsoft.KeyVault/vaults/keys/encrypt/action",
+        "Microsoft.KeyVault/vaults/keys/decrypt/action",
+        "Microsoft.KeyVault/vaults/secrets/getSecret/action"
+      ],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.Insights/alertRules/read",
+        "Microsoft.Insights/diagnosticSettings/read",
+        "Microsoft.Insights/logs/read"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.Authorization/roleAssignments/read",
+        "Microsoft.Authorization/roleDefinitions/read"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    },
+    {
+      "actions": [
+        "Microsoft.ContainerService/managedClusters/read",
+        "Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action"
+      ],
+      "notActions": [],
+      "dataActions": [],
+      "notDataActions": []
+    }
+  ]
+}

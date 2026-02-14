@@ -1,0 +1,165 @@
+# YAWL Helm Chart Values
+# https://www.yawlfoundation.org
+
+replicaCount: 3
+
+image:
+  repository: us-central1-docker.pkg.dev/PROJECT_ID/yawl/yawl
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "yawl"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
+  sessionAffinity: ClientIP
+  sessionAffinityTimeout: 10800
+
+ingress:
+  enabled: true
+  className: "gce"
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "yawl-ip"
+    networking.gke.io/managed-certificates: "yawl-cert"
+  hosts:
+    - host: "yawl.example.com"
+      paths:
+        - path: "/"
+          pathType: Prefix
+  tls:
+    - secretName: yawl-tls
+      hosts:
+        - yawl.example.com
+
+resources:
+  limits:
+    cpu: 2
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - yawl
+          topologyKey: kubernetes.io/hostname
+
+# Database Configuration
+database:
+  host: cloudsql-proxy
+  port: 5432
+  name: yawl
+  user: yawl
+  password: ""  # Set via secrets
+  ssl: true
+  maxConnections: 20
+  minIdleConnections: 5
+
+# Application Configuration
+application:
+  loglevel: INFO
+  heapSize: "1024m"
+  environment: "production"
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /resourceService/
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /resourceService/
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Cloud SQL Proxy sidecar
+cloudsqlProxy:
+  enabled: true
+  image: gcr.io/cloudsql-docker/cloud-sql-proxy:2.7.0
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Redis Cache
+redis:
+  enabled: true
+  host: yawl-redis
+  port: 6379
+  ttl: 3600
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    scrapeInterval: 30s
+
+# Backup and Persistence
+backup:
+  enabled: true
+  schedule: "0 3 * * *"  # Daily at 3 AM UTC
+  retention: 30
+
+# Network Policy
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress

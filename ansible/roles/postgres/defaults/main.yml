@@ -1,0 +1,53 @@
+---
+# PostgreSQL Default Variables
+
+postgres_version: 14
+postgres_port: 5432
+postgres_user: yawl
+postgres_admin_user: postgres
+postgres_database: yawl
+postgres_test_database: yawl_test
+
+postgres_data_dir: /var/lib/postgresql/14/main
+postgres_backup_dir: /backups/postgres
+postgres_wal_backup_dir: /backups/postgres/wal-g
+
+# PostgreSQL Performance Tuning Defaults
+postgres_max_connections: 500
+postgres_shared_buffers: 256MB
+postgres_effective_cache_size: 1GB
+postgres_maintenance_work_mem: 64MB
+postgres_checkpoint_completion_target: 0.9
+postgres_wal_buffers: 16MB
+postgres_default_statistics_target: 100
+postgres_random_page_cost: 1.1
+postgres_effective_io_concurrency: 200
+postgres_work_mem: 4MB
+postgres_min_wal_size: 2GB
+postgres_max_wal_size: 8GB
+
+# Replication
+postgres_max_wal_senders: 10
+postgres_wal_keep_size: 5GB
+postgres_hot_standby: "on"
+postgres_hot_standby_feedback: "on"
+
+# SSL
+postgres_ssl_enabled: false
+postgres_ssl_cert_file: /etc/postgresql/ssl/server.crt
+postgres_ssl_key_file: /etc/postgresql/ssl/server.key
+
+# Monitoring
+postgres_monitoring_enabled: true
+postgres_monitoring_user: monitor
+
+# Backup
+postgres_backup_enabled: true
+postgres_backup_method: pg_basebackup
+postgres_backup_retention_days: 30
+postgres_wal_archiving_enabled: true
+
+# Replication defaults
+postgres_replication_role: primary
+postgres_primary_host: localhost
+postgres_primary_port: 5432

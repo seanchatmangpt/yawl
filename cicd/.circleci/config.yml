@@ -1,0 +1,418 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.0
+  docker: circleci/docker@2.2.0
+  aws-cli: circleci/aws-cli@4.0.0
+  gcp-cli: circleci/gcp-cli@3.0.0
+  azure-cli: circleci/azure-cli@2.0.0
+
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:20.10
+    working_directory: ~/project
+
+  docker-executor:
+    docker:
+      - image: cimg/docker:24.01
+    working_directory: ~/project
+
+commands:
+  install-dependencies:
+    description: "Install npm dependencies with caching"
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
+
+  build-application:
+    description: "Build application artifacts"
+    steps:
+      - run:
+          name: Build application
+          command: npm run build --if-present
+
+  run-linter:
+    description: "Run linter"
+    steps:
+      - run:
+          name: Run linter
+          command: npm run lint --if-present
+
+  run-unit-tests:
+    description: "Run unit tests with coverage"
+    steps:
+      - run:
+          name: Run unit tests
+          command: npm test --if-present -- --coverage
+      - store_test_results:
+          path: ~/project/junit.xml
+      - store_artifacts:
+          path: ~/project/coverage
+          destination: coverage-report
+
+  run-integration-tests:
+    description: "Run integration tests"
+    steps:
+      - run:
+          name: Run integration tests
+          command: npm run test:integration --if-present
+
+  security-scan:
+    description: "Run security audit"
+    steps:
+      - run:
+          name: Security audit
+          command: npm audit --audit-level=moderate || true
+      - run:
+          name: Custom security scan
+          command: npm run security:scan --if-present || true
+
+jobs:
+  build:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.18
+      - run:
+          name: Build Docker image
+          command: |
+            docker build \
+              -t $CIRCLE_REGISTRY/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 \
+              -t $CIRCLE_REGISTRY/$CIRCLE_PROJECT_REPONAME:latest \
+              .
+      - run:
+          name: Save Docker image
+          command: |
+            mkdir -p /tmp/docker-cache
+            docker save -o /tmp/docker-cache/image.tar \
+              $CIRCLE_REGISTRY/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1
+      - save_cache:
+          key: docker-image-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /tmp/docker-cache
+
+  build-artifacts:
+    executor: node-executor
+    steps:
+      - checkout
+      - install-dependencies
+      - build-application
+      - run:
+          name: Store build artifacts
+          command: tar czf /tmp/artifacts.tar.gz dist build
+      - save_cache:
+          key: build-artifacts-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /tmp/artifacts.tar.gz
+
+  test-lint:
+    executor: node-executor
+    steps:
+      - checkout
+      - install-dependencies
+      - run-linter
+      - store_artifacts:
+          path: ~/project/lint-results
+          destination: lint-results
+
+  test-unit:
+    executor: node-executor
+    steps:
+      - checkout
+      - install-dependencies
+      - run-unit-tests
+
+  test-integration:
+    executor: node-executor
+    docker:
+      - image: cimg/node:20.10
+      - image: cimg/postgres:15
+        environment:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+      - image: cimg/redis:7
+    steps:
+      - checkout
+      - install-dependencies
+      - run:
+          name: Wait for services
+          command: |
+            for i in {1..30}; do
+              nc -z localhost 5432 && nc -z localhost 6379 && break
+              sleep 1
+            done
+      - run-integration-tests
+
+  test-security:
+    executor: node-executor
+    steps:
+      - checkout
+      - install-dependencies
+      - security-scan
+
+  push-docker-image:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.18
+      - restore_cache:
+          key: docker-image-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Load Docker image
+          command: |
+            docker load -i /tmp/docker-cache/image.tar
+      - run:
+          name: Login to Docker registry
+          command: |
+            echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USER" --password-stdin
+      - run:
+          name: Push Docker image
+          command: |
+            docker push $CIRCLE_REGISTRY/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1
+            docker push $CIRCLE_REGISTRY/$CIRCLE_PROJECT_REPONAME:latest
+
+  deploy-aws:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Deploy to ECS
+          command: |
+            aws ecs update-service \
+              --cluster $AWS_ECS_CLUSTER \
+              --service $AWS_ECS_SERVICE \
+              --force-new-deployment \
+              --region us-east-1
+
+      - run:
+          name: Deploy to Elastic Beanstalk
+          command: |
+            aws elasticbeanstalk create-app-version \
+              --application-name $AWS_EB_APP \
+              --version-label $CIRCLE_SHA1 \
+              --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key=$CIRCLE_SHA1.zip \
+              --region us-east-1
+
+            aws elasticbeanstalk update-environment \
+              --environment-name $AWS_EB_ENV \
+              --version-label $CIRCLE_SHA1 \
+              --region us-east-1
+
+  deploy-gcp:
+    executor: gcp-cli/default
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.18
+      - gcp-cli/setup
+      - run:
+          name: Configure Docker for GCR
+          command: gcloud auth configure-docker
+      - run:
+          name: Build and push to GCR
+          command: |
+            docker build -t gcr.io/$GCP_PROJECT_ID/app:$CIRCLE_SHA1 .
+            docker push gcr.io/$GCP_PROJECT_ID/app:$CIRCLE_SHA1
+
+      - run:
+          name: Deploy to Cloud Run
+          command: |
+            gcloud run deploy $GCP_SERVICE_NAME \
+              --image gcr.io/$GCP_PROJECT_ID/app:$CIRCLE_SHA1 \
+              --region us-central1 \
+              --platform managed \
+              --allow-unauthenticated
+
+      - run:
+          name: Deploy to GKE
+          command: |
+            gcloud container clusters get-credentials $GCP_GKE_CLUSTER \
+              --region us-central1
+
+            kubectl set image deployment/$GCP_DEPLOYMENT_NAME \
+              app=gcr.io/$GCP_PROJECT_ID/app:$CIRCLE_SHA1
+
+  deploy-azure:
+    executor: azure-cli/default
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.18
+      - azure-cli/setup
+      - run:
+          name: Login to Azure
+          command: |
+            az login --service-principal \
+              -u $AZURE_CLIENT_ID \
+              -p $AZURE_CLIENT_SECRET \
+              --tenant $AZURE_TENANT_ID
+
+      - run:
+          name: Build and push to ACR
+          command: |
+            az container registry login --name $AZURE_REGISTRY
+            az acr build \
+              --registry $AZURE_REGISTRY \
+              --image app:$CIRCLE_SHA1 .
+
+      - run:
+          name: Deploy to App Service
+          command: |
+            az webapp deployment source config-zip \
+              --resource-group $AZURE_RESOURCE_GROUP \
+              --name $AZURE_APP_NAME \
+              --src ./dist.zip
+
+      - run:
+          name: Deploy to AKS
+          command: |
+            az aks get-credentials \
+              --resource-group $AZURE_RESOURCE_GROUP \
+              --name $AZURE_AKS_CLUSTER
+
+            kubectl set image deployment/$AZURE_DEPLOYMENT_NAME \
+              app=$AZURE_REGISTRY.azurecr.io/app:$CIRCLE_SHA1
+
+  deploy-digitalocean:
+    executor: node-executor
+    steps:
+      - checkout
+      - run:
+          name: Install doctl
+          command: npm install -g doctl
+
+      - run:
+          name: Configure doctl
+          command: doctl auth init --access-token ${DIGITALOCEAN_TOKEN}
+
+      - run:
+          name: Deploy to DigitalOcean App Platform
+          command: |
+            doctl apps create-deployment --app-id $DIGITALOCEAN_APP_ID
+
+workflows:
+  version: 2
+
+  build-test:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - build-artifacts:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - test-lint:
+          requires:
+            - build-artifacts
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - test-unit:
+          requires:
+            - build-artifacts
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - test-integration:
+          requires:
+            - build-artifacts
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - test-security:
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+
+      - push-docker-image:
+          requires:
+            - test-lint
+            - test-unit
+            - test-integration
+            - test-security
+          filters:
+            branches:
+              only: main
+
+      - deploy-aws:
+          requires:
+            - push-docker-image
+          filters:
+            branches:
+              only: main
+          context: aws-context
+
+      - deploy-gcp:
+          requires:
+            - push-docker-image
+          filters:
+            branches:
+              only: main
+          context: gcp-context
+
+      - deploy-azure:
+          requires:
+            - push-docker-image
+          filters:
+            branches:
+              only: main
+          context: azure-context
+
+      - deploy-digitalocean:
+          requires:
+            - push-docker-image
+          filters:
+            branches:
+              only: main
+          context: digitalocean-context
+
+  pull-request:
+    jobs:
+      - build-artifacts
+
+      - test-lint:
+          requires:
+            - build-artifacts
+
+      - test-unit:
+          requires:
+            - build-artifacts
+
+      - test-integration:
+          requires:
+            - build-artifacts

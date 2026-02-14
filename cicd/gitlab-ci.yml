@@ -1,0 +1,180 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+build:docker:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_JOB_TOKEN | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - docker build -t $DOCKER_IMAGE -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $DOCKER_IMAGE
+    - docker push $CI_REGISTRY_IMAGE:latest
+  artifacts:
+    reports:
+      dotenv: build.env
+  only:
+    - main
+    - develop
+
+build:artifacts:
+  stage: build
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run build --if-present
+  artifacts:
+    paths:
+      - dist/
+      - build/
+    expire_in: 1 hour
+  cache:
+    paths:
+      - node_modules/
+
+test:lint:
+  stage: test
+  image: node:20-alpine
+  needs: ["build:artifacts"]
+  script:
+    - npm ci
+    - npm run lint --if-present
+  cache:
+    paths:
+      - node_modules/
+  allow_failure: true
+
+test:unit:
+  stage: test
+  image: node:20-alpine
+  needs: ["build:artifacts"]
+  coverage: '/Lines\s*:\s*(\d+.\d+)%/'
+  script:
+    - npm ci
+    - npm test --if-present -- --coverage
+  artifacts:
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+      junit: junit.xml
+  cache:
+    paths:
+      - node_modules/
+
+test:integration:
+  stage: test
+  image: node:20-alpine
+  needs: ["build:artifacts"]
+  services:
+    - postgres:15
+    - redis:7
+  variables:
+    POSTGRES_DB: test_db
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    REDIS_HOST: redis
+  script:
+    - npm ci
+    - npm run test:integration --if-present
+  cache:
+    paths:
+      - node_modules/
+
+test:security:
+  stage: test
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm audit --audit-level=moderate || true
+    - npm run security:scan --if-present
+  cache:
+    paths:
+      - node_modules/
+  allow_failure: true
+
+deploy:aws:
+  stage: deploy
+  image: amazon/aws-cli:latest
+  environment:
+    name: aws-production
+    url: https://aws.example.com
+  before_script:
+    - export AWS_DEFAULT_REGION=us-east-1
+  script:
+    - aws ecs update-service --cluster $AWS_ECS_CLUSTER --service $AWS_ECS_SERVICE --force-new-deployment
+    - aws elasticbeanstalk create-app-version --application-name $AWS_EB_APP --version-label $CI_COMMIT_SHA --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key=$CI_COMMIT_SHA.zip
+    - aws elasticbeanstalk update-environment --environment-name $AWS_EB_ENV --version-label $CI_COMMIT_SHA
+  only:
+    - main
+  when: manual
+  needs: ["test:unit", "test:integration", "test:security"]
+
+deploy:gcp:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  environment:
+    name: gcp-production
+    url: https://gcp.example.com
+  before_script:
+    - echo $GCP_SA_KEY | base64 -d > ${HOME}/gcp-key.json
+    - gcloud auth activate-service-account --key-file ${HOME}/gcp-key.json
+    - gcloud config set project $GCP_PROJECT_ID
+    - gcloud auth configure-docker $GCP_REGISTRY
+  script:
+    - docker pull $DOCKER_IMAGE
+    - docker tag $DOCKER_IMAGE $GCP_REGISTRY/$GCP_PROJECT_ID/app:$CI_COMMIT_SHA
+    - docker push $GCP_REGISTRY/$GCP_PROJECT_ID/app:$CI_COMMIT_SHA
+    - gcloud run deploy $GCP_SERVICE_NAME --image $GCP_REGISTRY/$GCP_PROJECT_ID/app:$CI_COMMIT_SHA --region us-central1 --platform managed
+    - gcloud container clusters get-credentials $GCP_GKE_CLUSTER --region us-central1
+    - kubectl set image deployment/$GCP_DEPLOYMENT_NAME app=$GCP_REGISTRY/$GCP_PROJECT_ID/app:$CI_COMMIT_SHA
+  only:
+    - main
+  when: manual
+  needs: ["build:docker", "test:unit", "test:integration", "test:security"]
+
+deploy:azure:
+  stage: deploy
+  image: mcr.microsoft.com/azure-cli:latest
+  environment:
+    name: azure-production
+    url: https://azure.example.com
+  before_script:
+    - az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+  script:
+    - az container registry login --name $AZURE_REGISTRY
+    - az acr build --registry $AZURE_REGISTRY --image app:$CI_COMMIT_SHA .
+    - az webapp deployment source config-zip --resource-group $AZURE_RESOURCE_GROUP --name $AZURE_APP_NAME --src ./dist.zip
+    - az aks get-credentials --resource-group $AZURE_RESOURCE_GROUP --name $AZURE_AKS_CLUSTER
+    - kubectl set image deployment/$AZURE_DEPLOYMENT_NAME app=$AZURE_REGISTRY.azurecr.io/app:$CI_COMMIT_SHA
+  only:
+    - main
+  when: manual
+  needs: ["test:unit", "test:integration", "test:security"]
+
+deploy:digitalocean:
+  stage: deploy
+  image: node:20-alpine
+  environment:
+    name: digitalocean-production
+    url: https://digitalocean.example.com
+  before_script:
+    - npm install -g doctl
+  script:
+    - doctl auth init --access-token $DIGITALOCEAN_TOKEN
+    - doctl apps create-deployment --app-id $DIGITALOCEAN_APP_ID
+    - doctl apps list-deployments --app-id $DIGITALOCEAN_APP_ID
+  only:
+    - main
+  when: manual
+  needs: ["test:unit", "test:integration"]

@@ -1,0 +1,87 @@
+---
+# PostgreSQL Standby Replication Configuration
+
+- name: Stop PostgreSQL if running
+  systemd:
+    name: postgresql
+    state: stopped
+  ignore_errors: yes
+
+- name: Backup existing data directory
+  shell: |
+    mv {{ postgres_data_dir }} {{ postgres_data_dir }}.backup.{{ ansible_date_time.iso8601_basic_short }}
+  ignore_errors: yes
+
+- name: Create PostgreSQL data directory
+  file:
+    path: "{{ postgres_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Get base backup from primary
+  shell: |
+    sudo -u postgres pg_basebackup -h {{ postgres_primary_host }} -p {{ postgres_primary_port }} \
+      -U replicator -D {{ postgres_data_dir }} -Pv -W
+  environment:
+    PGPASSWORD: "{{ vault_postgres_replication_password }}"
+  register: base_backup_result
+
+- name: Create recovery configuration file
+  template:
+    src: recovery.conf.j2
+    dest: "{{ postgres_data_dir }}/recovery.conf"
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Create postgresql.conf for standby
+  template:
+    src: postgresql-standby.conf.j2
+    dest: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: Configure pg_hba.conf for standby
+  template:
+    src: pg_hba-standby.conf.j2
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: '0640'
+
+- name: Create .pgpass for password-less connections
+  template:
+    src: pgpass.j2
+    dest: /var/lib/postgresql/.pgpass
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Start PostgreSQL standby
+  systemd:
+    name: postgresql
+    state: started
+
+- name: Wait for PostgreSQL to be ready
+  wait_for:
+    port: "{{ postgres_port }}"
+    delay: 2
+    timeout: 30
+
+- name: Verify replication status
+  postgresql_query:
+    db: postgres
+    query: |
+      SELECT status, sync_priority, sync_state
+      FROM pg_stat_replication;
+  register: replication_status
+  become_user: postgres
+  retries: 5
+  delay: 5
+
+- name: Display replication status
+  debug:
+    msg: "Replication status: {{ replication_status.query_result }}"

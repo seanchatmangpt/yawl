@@ -1,0 +1,376 @@
+---
+# Example: Production YAWL Cluster with PostgreSQL
+apiVersion: yawl.io/v1beta1
+kind: YawlCluster
+metadata:
+  name: production-yawl
+  namespace: yawl
+  labels:
+    environment: production
+    team: platform
+spec:
+  # Cluster Size
+  size: 3
+  version: "5.2"
+
+  # Container Image
+  image:
+    repository: yawlfoundation/yawl
+    tag: "5.2"
+    pullPolicy: IfNotPresent
+
+  # Database Configuration
+  database:
+    type: postgresql
+    host: postgres-primary.default.svc.cluster.local
+    port: 5432
+    name: yawl_prod
+    username: yawl
+    passwordSecret:
+      name: yawl-db-credentials
+      key: password
+    sslEnabled: true
+    connectionPoolSize: 20
+
+  # Storage Configuration
+  persistence:
+    enabled: true
+    storageClass: fast-ssd
+    size: 20Gi
+    logsPersistence: true
+    logsSize: 10Gi
+
+  # Resource Configuration
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+  # JVM Configuration
+  jvm:
+    heapSize: "2048m"
+    initialHeapSize: "1024m"
+    gcType: G1GC
+    gcPauseTarget: 200
+    additionalOptions: "-XX:+UnlockDiagnosticVMOptions -XX:G1SummarizeRSetStatsPeriod=86400"
+
+  # Network Configuration
+  networking:
+    service:
+      type: LoadBalancer
+      port: 8080
+      targetPort: 8080
+      annotations:
+        cloud.google.com/load-balancer-type: "External"
+
+    ingress:
+      enabled: true
+      className: nginx
+      hosts:
+        - host: yawl-prod.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: yawl-tls-cert
+          hosts:
+            - yawl-prod.example.com
+
+    networkPolicy:
+      enabled: true
+
+  # Security Configuration
+  security:
+    tls:
+      enabled: false
+    rbac:
+      enabled: true
+      roleArn: "arn:aws:iam::123456789012:role/yawl-operator"
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+      allowPrivilegeEscalation: false
+
+  # High Availability
+  highAvailability:
+    enabled: true
+    podAntiAffinity: required
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - yawl
+            topologyKey: kubernetes.io/hostname
+
+  # Monitoring
+  monitoring:
+    prometheus:
+      enabled: true
+      port: 9090
+      interval: "30s"
+      path: "/metrics"
+    logging:
+      enabled: true
+      level: INFO
+      format: json
+    jaeger:
+      enabled: true
+      endpoint: "http://jaeger-collector.observability:14268/api/traces"
+
+  # Autoscaling
+  scaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+
+  # Backup Configuration
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+    retention: 14
+    destination: "s3://yawl-backups/production/"
+
+---
+# Example: Development YAWL Cluster with H2 Database
+apiVersion: yawl.io/v1beta1
+kind: YawlCluster
+metadata:
+  name: dev-yawl
+  namespace: yawl-dev
+  labels:
+    environment: development
+    team: developers
+spec:
+  # Minimal configuration for development
+  size: 1
+  version: "5.2"
+
+  image:
+    repository: yawlfoundation/yawl
+    tag: "5.2"
+    pullPolicy: Always
+
+  database:
+    type: h2
+    connectionPoolSize: 5
+
+  persistence:
+    enabled: true
+    storageClass: standard
+    size: 5Gi
+    logsPersistence: true
+    logsSize: 2Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  jvm:
+    heapSize: "512m"
+    initialHeapSize: "256m"
+    gcType: G1GC
+    gcPauseTarget: 200
+
+  networking:
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+
+    ingress:
+      enabled: false
+
+  security:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+
+  highAvailability:
+    enabled: false
+
+  monitoring:
+    logging:
+      enabled: true
+      level: DEBUG
+      format: text
+
+  scaling:
+    enabled: false
+
+---
+# Example: High-Availability YAWL Cluster with Advanced Features
+apiVersion: yawl.io/v1beta1
+kind: YawlCluster
+metadata:
+  name: ha-yawl-cluster
+  namespace: yawl
+spec:
+  size: 5
+  version: "5.2"
+
+  image:
+    repository: us-central1-docker.pkg.dev/my-project/yawl/yawl
+    tag: "5.2-custom"
+    pullPolicy: IfNotPresent
+    pullSecrets:
+      - gcr-json-key
+
+  database:
+    type: postgresql
+    host: cloudsql-proxy.yawl.svc.cluster.local
+    port: 5432
+    name: yawl_ha
+    username: yawl
+    passwordSecret:
+      name: yawl-db-credentials
+      key: password
+    sslEnabled: true
+    connectionPoolSize: 50
+
+  persistence:
+    enabled: true
+    storageClass: premium-ssd
+    size: 50Gi
+    logsPersistence: true
+    logsSize: 20Gi
+
+  resources:
+    requests:
+      cpu: 2
+      memory: 4Gi
+    limits:
+      cpu: 4
+      memory: 8Gi
+
+  jvm:
+    heapSize: "4096m"
+    initialHeapSize: "2048m"
+    gcType: G1GC
+    gcPauseTarget: 100
+    additionalOptions: "-XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled"
+
+  networking:
+    service:
+      type: LoadBalancer
+      port: 8080
+      targetPort: 8080
+
+    ingress:
+      enabled: true
+      className: nginx
+      hosts:
+        - host: yawl-ha.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+        - host: yawl-api.example.com
+          paths:
+            - path: /api
+              pathType: Prefix
+      tls:
+        - secretName: yawl-ha-tls
+          hosts:
+            - yawl-ha.example.com
+            - yawl-api.example.com
+
+    networkPolicy:
+      enabled: true
+
+  security:
+    tls:
+      enabled: true
+      certSecret: yawl-server-cert
+      keySecret: yawl-server-key
+    rbac:
+      enabled: true
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+      allowPrivilegeEscalation: false
+
+  highAvailability:
+    enabled: true
+    podAntiAffinity: required
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - yawl
+            topologyKey: kubernetes.io/hostname
+    tolerations:
+      - key: dedicated
+        operator: Equal
+        value: yawl
+        effect: NoSchedule
+
+  monitoring:
+    prometheus:
+      enabled: true
+      port: 9090
+      interval: "15s"
+      path: "/actuator/prometheus"
+    logging:
+      enabled: true
+      level: INFO
+      format: json
+    jaeger:
+      enabled: true
+      endpoint: "http://jaeger-agent.monitoring:6831"
+
+  scaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilization: 60
+    targetMemoryUtilization: 70
+
+  backup:
+    enabled: true
+    schedule: "0 1 * * *"
+    retention: 30
+    destination: "s3://yawl-backups/ha-cluster/"
+
+---
+# Database Secret (referenced by the clusters above)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yawl-db-credentials
+  namespace: yawl
+type: Opaque
+stringData:
+  password: "change-me-in-production"
+
+---
+# Example with minimal configuration
+apiVersion: yawl.io/v1beta1
+kind: YawlCluster
+metadata:
+  name: minimal-yawl
+  namespace: default
+spec:
+  size: 1
+
+  database:
+    type: h2
+
+  # All other fields will use defaults from webhook defaults mutation

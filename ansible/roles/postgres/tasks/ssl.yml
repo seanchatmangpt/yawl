@@ -1,0 +1,45 @@
+---
+# PostgreSQL SSL/TLS Configuration
+
+- name: Create self-signed certificate (if not provided)
+  shell: |
+    openssl req -new -newkey rsa:2048 -days 365 -nodes \
+      -x509 -keyout {{ postgres_ssl_key_file }} \
+      -out {{ postgres_ssl_cert_file }} \
+      -subj "/C=US/ST=State/L=City/O=YAWL/CN=postgresql"
+  args:
+    creates: "{{ postgres_ssl_cert_file }}"
+
+- name: Set SSL certificate permissions
+  file:
+    path: "{{ item }}"
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  loop:
+    - "{{ postgres_ssl_cert_file }}"
+    - "{{ postgres_ssl_key_file }}"
+
+- name: Enable SSL in PostgreSQL configuration
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^#?ssl = "
+    line: "ssl = on"
+    state: present
+  notify: restart postgresql
+
+- name: Set SSL certificate file path
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^#?ssl_cert_file = "
+    line: "ssl_cert_file = '{{ postgres_ssl_cert_file }}'"
+    state: present
+  notify: restart postgresql
+
+- name: Set SSL key file path
+  lineinline:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^#?ssl_key_file = "
+    line: "ssl_key_file = '{{ postgres_ssl_key_file }}'"
+    state: present
+  notify: restart postgresql

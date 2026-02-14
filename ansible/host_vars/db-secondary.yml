@@ -1,0 +1,27 @@
+---
+# Secondary Database Server Host Variables
+
+# Node-specific configuration
+node_role: secondary
+replication_role: standby
+
+# Standby-specific database settings
+postgres_primary_slot_name: standby_slot
+postgres_restore_command: "cp /backups/postgres/wal-g/%f %p"
+postgres_recovery_target_timeline: latest
+
+# Backup settings for standby
+backup_enabled: false  # Don't backup standby, backup from primary
+backup_from_primary: true
+
+# Monitoring overrides for standby
+postgres_monitoring_enabled: true
+postgres_monitoring_interval: 15s
+
+# PostgreSQL specific settings
+shared_buffers: 256MB
+effective_cache_size: 1GB
+
+# Standby-specific recovery settings
+recovery_pause_at_open_transaction_id: false
+recovery_min_apply_delay: 0

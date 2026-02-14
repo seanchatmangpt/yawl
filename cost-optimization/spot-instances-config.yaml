@@ -1,0 +1,341 @@
+# YAWL Spot Instances Configuration
+# Manages cost-optimized spot instance deployments for variable workloads
+# Spot instances provide up to 90% discount compared to on-demand pricing
+
+version: "1.0"
+name: yawl-spot-optimization
+
+# Global spot configuration
+spot_config:
+  # Enable spot instance usage
+  enabled: true
+
+  # Maximum price as percentage of on-demand (0.0-1.0)
+  max_price_percent: 0.35  # 35% of on-demand price
+
+  # Interruption tolerance
+  interruption_behavior: terminate  # terminate, stop, or hibernate
+  interruption_tolerance_percent: 5  # Allow up to 5% interruption rate
+
+  # Tagging for cost allocation
+  tags:
+    cost-optimization: "spot-instances"
+    management: "automated"
+    environment: "production"
+
+# Spot Fleet configurations
+spot_fleets:
+  - name: yawl-api-spot-fleet
+    description: "Spot instances for YAWL API servers (variable load)"
+    enabled: true
+
+    # Target capacity configuration
+    target_capacity: 3
+    capacity_type: "spot"
+    on_demand_base_capacity: 1  # Always keep 1 on-demand for stability
+    on_demand_percentage: 33     # 33% on-demand, 67% spot
+
+    # Instance specifications
+    instance_types:
+      - t3.xlarge      # Primary choice
+      - t3a.xlarge     # Alternative (10% cheaper)
+      - m5.large       # Fallback option
+      - m5a.large      # Alternative fallback
+
+    # Availability zones for diversification
+    availability_zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+
+    # Allocation strategy (price-capacity-optimized provides best reliability)
+    allocation_strategy: price-capacity-optimized
+
+    # AWS Launch template for instances
+    launch_template:
+      name: yawl-api-template
+      version: $Latest
+
+    # Pricing strategy
+    pricing:
+      max_price: null  # Use default (current spot price)
+      max_price_percent: 0.35
+
+    # Scale configuration
+    scaling:
+      min_size: 1
+      max_size: 10
+      desired_size: 3
+      scale_out_threshold: 70     # CPU % threshold
+      scale_in_threshold: 20
+      scale_out_cooldown: 300     # seconds
+      scale_in_cooldown: 600
+
+    # Monitoring
+    monitoring:
+      enabled: true
+      detailed: true
+      metrics:
+        - CPUUtilization
+        - NetworkIn
+        - NetworkOut
+        - SpotRequestsFulfilled
+        - SpotInstanceInterruptions
+
+  - name: yawl-worker-spot-fleet
+    description: "Spot instances for YAWL batch workers"
+    enabled: true
+
+    target_capacity: 5
+    capacity_type: "spot"
+    on_demand_base_capacity: 0  # All spot for batch work
+    on_demand_percentage: 0
+
+    instance_types:
+      - c5.2xlarge     # Compute optimized
+      - c5a.2xlarge    # AMD alternative
+      - c6i.2xlarge    # Intel alternative
+      - m5.2xlarge     # Fallback general purpose
+
+    availability_zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+
+    allocation_strategy: capacity-optimized
+
+    launch_template:
+      name: yawl-worker-template
+      version: $Latest
+
+    scaling:
+      min_size: 0
+      max_size: 20
+      desired_size: 5
+      scale_out_threshold: 60
+      scale_in_threshold: 10
+      scale_out_cooldown: 180
+      scale_in_cooldown: 300
+
+    monitoring:
+      enabled: true
+      detailed: true
+
+# Capacity Reservations for guaranteed capacity at lower cost
+capacity_reservations:
+  - name: yawl-api-reservation
+    instance_type: t3.xlarge
+    availability_zone: us-east-1a
+    quantity: 2
+    instance_family: t3
+    outpost_arn: null
+    platform: Linux/UNIX
+    tenancy: default
+
+  - name: yawl-worker-reservation
+    instance_type: c5.2xlarge
+    availability_zone: us-east-1a
+    quantity: 3
+    instance_family: c5
+    outpost_arn: null
+    platform: Linux/UNIX
+    tenancy: default
+
+# Savings Plans configuration
+savings_plans:
+  - name: yawl-compute-savings
+    type: "Compute"
+    commitment: "$10000"  # Annual commitment
+    hourly_commitment: "1.14"  # = $10000 / 8760 hours
+    payment_option: "ALL_UPFRONT"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+
+    # Services covered
+    services:
+      - EC2
+      - Fargate
+      - Lambda
+
+    # Regions covered
+    regions:
+      - us-east-1
+      - us-east-2
+      - us-west-2
+
+# Cost monitoring and alerts
+cost_monitoring:
+  enabled: true
+
+  # Daily cost tracking
+  daily_budget: 150  # USD per day
+
+  # Alert thresholds
+  alerts:
+    - threshold: 500
+      metric: daily_cost_usd
+      severity: warning
+      action: notify-team
+
+    - threshold: 800
+      metric: daily_cost_usd
+      severity: critical
+      action: [notify-team, auto-scale-down]
+
+    - threshold: 10
+      metric: spot_interruption_rate_percent
+      severity: warning
+      action: increase-on-demand-ratio
+
+  # Budget analysis period
+  analysis_period: daily
+
+  # Slack integration for notifications
+  notifications:
+    slack:
+      enabled: true
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channels:
+        - "#yawl-cost-optimization"
+        - "#devops"
+
+# Spot instance interruption handling
+interruption_handling:
+  # Monitor interruption notices
+  monitor_warnings: true
+
+  # Grace period for graceful shutdown
+  grace_period_seconds: 120
+
+  # Rebalance recommendations
+  listen_for_rebalance: true
+
+  # Automatic replacement strategy
+  replacement:
+    enabled: true
+    strategy: "launch-replacement-immediately"
+    max_replacement_time: 300  # seconds
+
+# Regional configuration
+regions:
+  us-east-1:
+    name: "N. Virginia"
+    enabled: true
+    spot_price_reduction_percent: 35
+    preferred_availability_zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+
+  us-east-2:
+    name: "Ohio"
+    enabled: false
+    spot_price_reduction_percent: 40
+
+  us-west-2:
+    name: "Oregon"
+    enabled: false
+    spot_price_reduction_percent: 38
+
+# Integration with autoscaling
+autoscaling:
+  # Kubernetes cluster autoscaler
+  karpenter:
+    enabled: false
+    provisioners:
+      - name: yawl-general
+        consolidation:
+          enabled: true
+          ttl_seconds_after_empty: 30
+        weight: 100
+        requirements:
+          - key: "karpenter.sh/capacity-type"
+            operator: In
+            values: ["spot", "on-demand"]
+          - key: "karpenter.sh/cpu"
+            operator: In
+            values: ["2", "4", "8"]
+          - key: "kubernetes.io/arch"
+            operator: In
+            values: ["amd64"]
+
+  # AWS Auto Scaling Groups
+  asg_integration:
+    enabled: true
+    target_tracking:
+      metric: CPUUtilization
+      target_value: 70
+    step_scaling:
+      scale_out_steps:
+        - lower_bound: 0
+          scaling_adjustment: 1
+      scale_in_steps:
+        - upper_bound: 30
+          scaling_adjustment: -1
+
+# Cost reporting
+reporting:
+  enabled: true
+
+  # Weekly cost report
+  weekly_report:
+    enabled: true
+    day: "Friday"
+    time: "09:00"
+    recipients:
+      - devops-team@example.com
+      - finance@example.com
+
+  # Monthly analysis
+  monthly_analysis:
+    enabled: true
+    day_of_month: 1
+    time: "10:00"
+
+  # Report details
+  include_in_report:
+    - spot_instance_savings
+    - reservation_utilization
+    - optimization_recommendations
+    - regional_cost_breakdown
+    - instance_type_analysis
+
+# Environment-specific overrides
+environments:
+  development:
+    target_capacity_multiplier: 0.5
+    on_demand_percentage: 50  # More on-demand for stability
+    max_price_percent: 0.4    # Higher tolerance
+
+  staging:
+    target_capacity_multiplier: 0.75
+    on_demand_percentage: 33
+    max_price_percent: 0.35
+
+  production:
+    target_capacity_multiplier: 1.0
+    on_demand_percentage: 33
+    max_price_percent: 0.35
+
+# Notes and best practices
+notes: |
+  1. Spot instance interruption is inevitable. Design for it:
+     - Use load balancers and auto-scaling
+     - Keep baseline capacity as on-demand
+     - Store state externally (databases, S3)
+
+  2. Monitor spot prices regularly:
+     - Prices fluctuate hourly
+     - Set up CloudWatch alerts for high prices
+
+  3. Diversify instance types:
+     - Use multiple instance types in fleets
+     - Improves success rate of launch requests
+
+  4. Reserved Instances complement Spot:
+     - RIs for baseline, predictable capacity
+     - Spot for variable, bursty workloads
+
+  5. Savings Plans provide flexibility:
+     - Better than RIs if you want to change instance types
+     - Covers EC2, Fargate, and Lambda

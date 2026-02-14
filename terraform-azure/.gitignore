@@ -1,0 +1,44 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformignore
+
+# Local variables
+terraform.tfvars
+!terraform.tfvars.example
+
+# IDE
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/
+*.iml
+
+# OS
+Thumbs.db
+.env
+.env.local
+
+# Certificates
+*.pfx
+*.pem
+*.key
+certificates/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+tmp/

@@ -1,0 +1,43 @@
+---
+# Filebeat Installation and Configuration
+
+- name: Install Filebeat
+  apt:
+    name: "filebeat={{ elasticsearch_version }}"
+    state: present
+
+- name: Create Filebeat configuration
+  template:
+    src: filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: filebeat
+    mode: '0600'
+    backup: yes
+  notify: restart filebeat
+
+- name: Load Filebeat modules
+  shell: "filebeat modules enable system,postgresql"
+  changed_when: false
+
+- name: Setup Filebeat index template
+  shell: "filebeat setup --index-management -E output.elasticsearch.hosts=['localhost:9200']"
+  changed_when: false
+  ignore_errors: yes
+
+- name: Enable and start Filebeat
+  systemd:
+    name: filebeat
+    enabled: yes
+    state: started
+
+- name: Wait for Filebeat to be ready
+  wait_for:
+    timeout: 10
+  register: filebeat_wait
+  changed_when: false
+
+- name: Verify Filebeat is running
+  shell: systemctl is-active filebeat
+  register: filebeat_status
+  changed_when: false

@@ -1,0 +1,279 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      method: GET
+      headers:
+        User-Agent: Prometheus Blackbox Exporter
+      body_size_limit: 1MiB
+      accept_header: "application/json"
+      valid_status_codes:
+        - 200
+        - 201
+        - 202
+        - 204
+        - 206
+        - 301
+        - 302
+        - 304
+        - 307
+        - 308
+
+  http_post_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"test": "data"}'
+      valid_status_codes:
+        - 200
+        - 201
+        - 202
+        - 204
+
+  http_5xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+      valid_status_codes:
+        - 500
+        - 502
+        - 503
+        - 504
+
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      ip_protocol_fallback: true
+
+  tcp_connect_tls:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      tls: true
+      ip_protocol_fallback: true
+      tls_config:
+        insecure_skip_verify: false
+
+  tcp_tls_auth:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      tls: true
+      tls_config:
+        cert_file: /etc/ssl/certs/client.crt
+        key_file: /etc/ssl/certs/client.key
+
+  grpc:
+    prober: grpc
+    timeout: 5s
+    grpc:
+      tls: true
+      preferred_ip_protocol: "ip4"
+
+  grpc_plain:
+    prober: grpc
+    timeout: 5s
+    grpc:
+      tls: false
+
+  ssh_banner:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^SSH-2.0-"
+        - send: "SSH-2.0-blackbox-exporter"
+        - expect: "^SSH-2.0-"
+
+  irc_banner:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - send: "QUIT"
+        - expect: ".*"
+
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"
+      source_ip_address: ""
+      payload_size: 56
+      dont_fragment: false
+
+  icmp_ttl:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      ttl: 128
+      preferred_ip_protocol: "ip4"
+
+  dns:
+    prober: dns
+    timeout: 10s
+    dns:
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+      query_name: "www.example.com"
+      query_type: "A"
+      valid_rcodes:
+        - NOERROR
+        - NXDOMAIN
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - ".*\\.local$"
+        fail_if_all_match_regexp:
+          - ".*\\.example\\.com$"
+        fail_if_not_matches_regexp:
+          - ".*\\.example\\.com$"
+
+  dns_mx:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "MX"
+      valid_rcodes:
+        - NOERROR
+
+  dns_cname:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "CNAME"
+
+  dns_soa:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "SOA"
+
+  dns_txt:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "TXT"
+
+  dns_ns:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "NS"
+
+  dns_recursion_desired:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "example.com"
+      query_type: "A"
+      recursion_desired: false
+
+  ftp_banner:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^220 "
+        - send: "QUIT"
+        - expect: "^221 "
+
+  pop3s_banner:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      tls: true
+      query_response:
+        - expect: "^\\+OK"
+        - send: "QUIT"
+        - expect: "^\\+OK"
+
+  smtp:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^220 ([^ ]+) ESMTP (.+)$"
+        - send: "EHLO prober"
+        - expect: "^250-STARTTLS"
+        - send: "STARTTLS"
+        - expect: "^220"
+        - starttls: true
+        - send: "EHLO prober"
+        - expect: "^250-AUTH"
+        - send: "QUIT"
+        - expect: "^221"
+
+  accepted_tcp_connections:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      ip_protocol_fallback: true
+
+  mongodb:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "OP_REPLY"
+
+  mysql:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^."
+        - send: "SELECT 1"
+        - expect: "^."
+
+  postgres:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^PostgreSQL"
+        - send: "QUIT"
+        - expect: "^I"
+
+  redis:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "\\+PONG"
+        - send: "PING"
+
+  rabbitmq:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: ".*AMQP.*"
+        - send: ""
+
+  memcached:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - send: "version"
+        - expect: "^VERSION"

@@ -1,0 +1,52 @@
+# Environment Configuration
+environment = "dev"
+project_name = "yawl"
+location = "East US"
+
+# Resource Group
+resource_group_name = "rg-yawl-dev"
+
+# Virtual Network
+vnet_name = "vnet-yawl-dev"
+vnet_cidr = "10.0.0.0/16"
+
+subnet_configs = {
+  "app-service" = {
+    cidr = "10.0.1.0/24"
+  }
+  "database" = {
+    cidr                          = "10.0.2.0/24"
+    enforce_private_link_endpoint = true
+  }
+  "monitoring" = {
+    cidr = "10.0.3.0/24"
+  }
+}
+
+enable_ddos_protection = false
+
+# App Service
+app_service_plan_name = "plan-yawl-dev"
+app_service_name = "app-yawl-dev"
+app_service_plan_sku = "B1"
+app_runtime_stack = "NODE|18-lts"
+
+# Database
+db_server_name = "mysql-yawl-dev"
+db_database_name = "yawl_db"
+db_admin_username = "adminyawl"
+db_admin_password = "ChangeMe@123456789"  # Use secrets management in production
+db_sku_name = "B_Standard_B1s"
+db_storage_mb = 51200
+db_version = "8.0"
+
+# Monitoring
+log_analytics_workspace_name = "law-yawl-dev"
+log_analytics_sku = "PerGB2018"
+app_insights_name = "appi-yawl-dev"
+log_retention_days = 30
+
+# Optional Features
+enable_backup = false
+enable_monitoring = true
+enable_private_endpoint = false

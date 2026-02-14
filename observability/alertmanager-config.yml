@@ -1,0 +1,197 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: ${SLACK_WEBHOOK_URL}
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+  opsgenie_api_url: https://api.opsgenie.com/
+  opsgenie_api_key: ${OPSGENIE_API_KEY}
+  hipchat_api_url: https://api.hipchat.com/
+  wechat_api_url: https://qyapi.weixin.qq.com/cgi-bin/
+  wechat_api_secret: ${WECHAT_API_SECRET}
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing configuration
+route:
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  # Sub-routes for specific alert categories
+  routes:
+    # Critical alerts - immediate action
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: true
+
+    # Service down - critical
+    - match:
+        alertname: ServiceDown
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      continue: true
+
+    # Infrastructure alerts - warning
+    - match:
+        severity: warning
+        component: infrastructure
+      receiver: 'warning-receiver'
+      group_interval: 10m
+      repeat_interval: 2h
+
+    # Application alerts - warning
+    - match:
+        severity: warning
+        component: application
+      receiver: 'app-receiver'
+      group_interval: 10m
+      repeat_interval: 2h
+
+    # Database alerts
+    - match:
+        component: database
+      receiver: 'database-receiver'
+      group_interval: 5m
+
+    # Informational alerts
+    - match:
+        severity: info
+      receiver: 'info-receiver'
+      group_interval: 30m
+      repeat_interval: 24h
+
+    # Monitoring system alerts
+    - match:
+        component: monitoring
+      receiver: 'monitoring-receiver'
+      group_wait: 10s
+
+# Receivers configuration
+receivers:
+  # Default receiver
+  - name: 'default-receiver'
+    slack_configs:
+      - channel: '#monitoring'
+        title: 'Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+  # Critical alerts receiver - multiple channels
+  - name: 'critical-receiver'
+    slack_configs:
+      - channel: '#critical-alerts'
+        title: 'CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'danger'
+    pagerduty_configs:
+      - service_key: ${PAGERDUTY_SERVICE_KEY}
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+    opsgenie_configs:
+      - api_key: ${OPSGENIE_API_KEY}
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        tags: 'critical,{{ .GroupLabels.service }}'
+        priority: 'P1'
+    email_configs:
+      - to: 'critical-alerts@example.com'
+        from: 'alertmanager@example.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: ${SMTP_USER}
+        auth_password: ${SMTP_PASSWORD}
+        headers:
+          Subject: 'CRITICAL Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          {{ range .Alerts }}
+          <h3>{{ .Labels.alertname }}</h3>
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
+          <p><strong>Service:</strong> {{ .Labels.service }}</p>
+          <p><strong>Time:</strong> {{ .StartsAt }}</p>
+          {{ end }}
+
+  # Warning alerts receiver
+  - name: 'warning-receiver'
+    slack_configs:
+      - channel: '#warnings'
+        title: 'Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+
+  # Application alerts receiver
+  - name: 'app-receiver'
+    slack_configs:
+      - channel: '#app-alerts'
+        title: 'App Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+
+  # Database alerts receiver
+  - name: 'database-receiver'
+    slack_configs:
+      - channel: '#database'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  # Info alerts receiver
+  - name: 'info-receiver'
+    slack_configs:
+      - channel: '#monitoring-info'
+        title: 'Info: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'good'
+
+  # Monitoring system receiver
+  - name: 'monitoring-receiver'
+    slack_configs:
+      - channel: '#monitoring-system'
+        title: 'Monitoring Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+    pagerduty_configs:
+      - service_key: ${PAGERDUTY_MONITORING_KEY}
+        description: 'Monitoring system: {{ .GroupLabels.alertname }}'
+
+# Inhibition rules - suppress certain alerts
+inhibit_rules:
+  # Suppress all non-critical alerts if there's a critical alert in the same service
+  - source_match:
+      severity: 'critical'
+    target_match_re:
+      severity: 'warning|info'
+    equal: ['service', 'instance']
+
+  # Suppress warning alerts if critical alert exists
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['instance']
+
+  # Suppress node alerts if node is down
+  - source_match:
+      alertname: 'NodeExporterDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['instance']
+
+  # Suppress child alerts when parent alert fires
+  - source_match:
+      alertname: 'HighCPUUsage'
+    target_match_re:
+      alertname: 'CriticalCPUUsage'
+    equal: ['instance']

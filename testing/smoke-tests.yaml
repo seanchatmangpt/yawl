@@ -1,0 +1,337 @@
+# YAWL Smoke Tests Configuration
+# Quick validation tests for all deployment platforms
+# Tests basic functionality and critical paths
+# Run before full test suite to quickly identify major issues
+
+version: '1.0'
+
+metadata:
+  name: YAWL Smoke Tests
+  description: Quick smoke tests for YAWL Workflow Engine across all platforms
+  author: YAWL Foundation
+  version: 1.0.0
+  created: 2024-02-14
+  updated: 2024-02-14
+
+test_suites:
+
+  # Kubernetes smoke tests
+  kubernetes:
+    enabled: true
+    description: Quick Kubernetes deployment validation
+    platform: kubernetes
+    timeout: 120
+    retry:
+      attempts: 3
+      delay: 5
+    tests:
+      - name: "K8s Cluster Connectivity"
+        description: Verify kubectl can connect to cluster
+        command: "kubectl cluster-info"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "K8s Namespace Ready"
+        description: Check YAWL namespace is active
+        command: "kubectl get namespace yawl"
+        expected_exit_code: 0
+        expected_output: "Active"
+        timeout: 10
+
+      - name: "K8s Deployment Exists"
+        description: Verify deployment resource exists
+        command: "kubectl get deployment yawl -n yawl"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "K8s Pods Running"
+        description: Check at least one pod is running
+        command: "kubectl get pods -n yawl -l app=yawl -o jsonpath='{.items[?(@.status.phase==\"Running\")].metadata.name}' | grep -c 'yawl'"
+        expected_exit_code: 0
+        timeout: 30
+
+      - name: "K8s Service Ready"
+        description: Verify service has endpoints
+        command: "kubectl get endpoints yawl -n yawl -o jsonpath='{.subsets[0].addresses[0].ip}'"
+        expected_exit_code: 0
+        timeout: 10
+        validation:
+          type: "ip_address"
+
+      - name: "K8s Resource Limits"
+        description: Check resource limits are configured
+        command: "kubectl get deployment yawl -n yawl -o jsonpath='{.spec.template.spec.containers[0].resources.limits}' | grep -q 'memory\\|cpu' && echo 'OK' || echo 'MISSING'"
+        expected_output: "OK"
+        timeout: 10
+
+      - name: "K8s Liveness Probe"
+        description: Verify liveness probes are configured
+        command: "kubectl get deployment yawl -n yawl -o jsonpath='{.spec.template.spec.containers[0].livenessProbe}' | grep -q 'httpGet' && echo 'OK' || echo 'MISSING'"
+        expected_output: "OK"
+        timeout: 10
+
+  # Docker Compose smoke tests
+  docker_compose:
+    enabled: true
+    description: Quick Docker Compose deployment validation
+    platform: docker-compose
+    timeout: 60
+    retry:
+      attempts: 2
+      delay: 5
+    compose_file: "/home/user/yawl/docker-compose.yml"
+    tests:
+      - name: "Compose File Valid"
+        description: Validate docker-compose.yml syntax
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml config > /dev/null"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "Container Status"
+        description: Check all containers are running
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml ps -q | wc -l"
+        expected_output: "[1-9]"
+        timeout: 15
+
+      - name: "Database Container"
+        description: Verify PostgreSQL container is running
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml ps postgres | grep -i running"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "Redis Container"
+        description: Verify Redis container is running
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml ps redis | grep -i running"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "YAWL Container"
+        description: Verify YAWL container is running
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml ps yawl | grep -i running"
+        expected_exit_code: 0
+        timeout: 10
+
+      - name: "Container Logs"
+        description: Check for error messages in logs
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml logs | grep -i error || echo 'OK'"
+        expected_output: "OK"
+        timeout: 10
+
+  # HTTP health checks
+  http:
+    enabled: true
+    description: HTTP endpoint smoke tests
+    platform: http
+    timeout: 60
+    tests:
+      - name: "Health Endpoint"
+        description: Check health endpoint responds
+        endpoint: "http://localhost:8080/resourceService/"
+        method: "GET"
+        expected_status: [200, 204]
+        timeout: 10
+
+      - name: "Response Time"
+        description: Verify response time is acceptable
+        endpoint: "http://localhost:8080/resourceService/"
+        method: "GET"
+        max_response_time: 2.0
+        timeout: 10
+
+      - name: "Service Availability"
+        description: Check service responds to requests
+        endpoint: "http://localhost:8080/resourceService/"
+        method: "HEAD"
+        expected_status: [200, 204, 404]
+        timeout: 5
+
+  # Database smoke tests
+  database:
+    enabled: true
+    description: Database connectivity smoke tests
+    platform: database
+    timeout: 60
+    connection:
+      host: "localhost"
+      port: 5432
+      user: "postgres"
+      database: "yawl"
+      password_env: "DB_PASSWORD"
+    tests:
+      - name: "Database Connection"
+        description: Test database connectivity
+        query: "SELECT 1;"
+        expected_rows: 1
+        timeout: 10
+
+      - name: "Database Version"
+        description: Verify PostgreSQL version
+        query: "SELECT version();"
+        expected_contains: "PostgreSQL"
+        timeout: 10
+
+      - name: "Tables Exist"
+        description: Check required tables exist
+        query: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';"
+        expected_min_value: 1
+        timeout: 10
+
+      - name: "Database Size"
+        description: Get database size
+        query: "SELECT pg_size_pretty(pg_database_size(current_database()));"
+        timeout: 10
+
+  # Cloud Run smoke tests
+  cloud_run:
+    enabled: true
+    condition: "GCP_PROJECT_ID is set"
+    description: Google Cloud Run deployment validation
+    platform: cloud-run
+    timeout: 60
+    environment:
+      - GCP_PROJECT_ID
+      - GCP_REGION
+      - CLOUD_RUN_SERVICE
+    tests:
+      - name: "Cloud Run Service Exists"
+        description: Check Cloud Run service exists
+        command: "gcloud run services describe ${CLOUD_RUN_SERVICE:-yawl-workflow} --region=${GCP_REGION:-us-central1} --project=${GCP_PROJECT_ID} --format='value(metadata.name)'"
+        expected_output: "yawl-workflow"
+        timeout: 10
+
+      - name: "Service Ready"
+        description: Verify service is ready
+        command: "gcloud run services describe ${CLOUD_RUN_SERVICE:-yawl-workflow} --region=${GCP_REGION:-us-central1} --project=${GCP_PROJECT_ID} --format='value(status.conditions[0].status)'"
+        expected_output: "True"
+        timeout: 10
+
+      - name: "Service URL"
+        description: Get service URL
+        command: "gcloud run services describe ${CLOUD_RUN_SERVICE:-yawl-workflow} --region=${GCP_REGION:-us-central1} --project=${GCP_PROJECT_ID} --format='value(status.url)'"
+        expected_output_regex: "^https://"
+        timeout: 10
+
+  # AWS smoke tests
+  aws:
+    enabled: true
+    condition: "AWS_REGION is set"
+    description: AWS deployment validation
+    platform: aws
+    timeout: 60
+    environment:
+      - AWS_REGION
+      - AWS_ACCOUNT_ID
+    tests:
+      - name: "CloudFormation Stack"
+        description: Check CloudFormation stack exists
+        command: "aws cloudformation describe-stacks --stack-name yawl --region=${AWS_REGION} --query 'Stacks[0].StackStatus' --output text"
+        expected_output: "CREATE_COMPLETE"
+        timeout: 10
+
+      - name: "ECS Service"
+        description: Verify ECS service is running
+        command: "aws ecs describe-services --cluster yawl --services yawl --region=${AWS_REGION} --query 'services[0].status' --output text"
+        expected_output: "ACTIVE"
+        timeout: 10
+
+      - name: "RDS Database"
+        description: Check RDS database is available
+        command: "aws rds describe-db-instances --db-instance-identifier yawl-postgres --region=${AWS_REGION} --query 'DBInstances[0].DBInstanceStatus' --output text"
+        expected_output: "available"
+        timeout: 10
+
+  # Azure smoke tests
+  azure:
+    enabled: true
+    condition: "AZURE_RESOURCE_GROUP is set"
+    description: Azure deployment validation
+    platform: azure
+    timeout: 60
+    environment:
+      - AZURE_RESOURCE_GROUP
+      - AZURE_SUBSCRIPTION_ID
+    tests:
+      - name: "Resource Group"
+        description: Check resource group exists
+        command: "az group show --name ${AZURE_RESOURCE_GROUP} --query 'properties.provisioningState' --output tsv"
+        expected_output: "Succeeded"
+        timeout: 10
+
+      - name: "Container Instance"
+        description: Verify container instance is running
+        command: "az container show --resource-group ${AZURE_RESOURCE_GROUP} --name yawl --query 'containers[0].properties.instanceView.currentState.state' --output tsv"
+        expected_output: "Running"
+        timeout: 10
+
+# Test execution configuration
+execution:
+  # Run in parallel when possible
+  parallel: true
+  max_parallel_tests: 5
+
+  # Reporting
+  reporting:
+    format: ["json", "junit", "html"]
+    output_dir: "/tmp/yawl-smoke-tests-results"
+    include_timing: true
+    include_logs: true
+
+  # Notifications
+  notifications:
+    enabled: false
+    slack_webhook_env: "SLACK_WEBHOOK_URL"
+    email_on_failure: false
+
+  # Continue on failure
+  continue_on_failure: false
+  fail_fast: true
+
+# Test data
+test_data:
+  workflow_name: "SmokeTestWorkflow"
+  task_name: "SmokeTestTask"
+
+# Post-test cleanup
+cleanup:
+  enabled: true
+  actions:
+    - description: "Remove test artifacts"
+      command: "rm -f /tmp/yawl-smoke-*.tmp"
+    - description: "Clear temporary files"
+      command: "docker-compose -f /home/user/yawl/docker-compose.yml logs --tail=100 > /tmp/yawl-smoke-test-logs.txt"
+
+# Reporting templates
+reporting:
+  summary_template: |
+    # YAWL Smoke Test Report
+
+    **Execution Date:** {{timestamp}}
+    **Duration:** {{duration}}s
+    **Platform:** {{platform}}
+
+    ## Summary
+    - **Total Tests:** {{total_tests}}
+    - **Passed:** {{passed_tests}}
+    - **Failed:** {{failed_tests}}
+    - **Skipped:** {{skipped_tests}}
+    - **Success Rate:** {{success_rate}}%
+
+    ## Results
+    {{results_table}}
+
+  failure_template: |
+    # Test Failure Report
+
+    **Test:** {{test_name}}
+    **Platform:** {{platform}}
+    **Error:** {{error_message}}
+    **Expected:** {{expected_output}}
+    **Actual:** {{actual_output}}
+    **Duration:** {{duration}}s
+
+# Thresholds for alerts
+thresholds:
+  response_time_warning_ms: 1000
+  response_time_critical_ms: 2000
+  error_rate_warning_percent: 5
+  error_rate_critical_percent: 10

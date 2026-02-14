@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  yawl:
+    image: yawl/yawl:1.0.0
+    container_name: yawl-app
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9090:9090"
+    environment:
+      - YAWL_ENVIRONMENT=production
+      - DATABASE_HOST=yawl-db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=yawldb
+      - DATABASE_USER=${DB_USER:-yawladmin}
+      - DATABASE_PASSWORD=${DB_PASSWORD:-changeme}
+      - REDIS_HOST=yawl-cache
+      - REDIS_PORT=6379
+      - LOG_LEVEL=INFO
+      - JAVA_OPTS=-Xmx1024m -Xms256m -XX:+UseG1GC
+      - ENABLE_MONITORING=${ENABLE_MONITORING:-true}
+      - ENABLE_AUTH=${ENABLE_AUTH:-true}
+    depends_on:
+      yawl-db:
+        condition: service_healthy
+      yawl-cache:
+        condition: service_healthy
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      - yawl-data:/home/yawl/data
+      - yawl-logs:/home/yawl/logs
+    labels:
+      - "com.yawl.description=YAWL Application Server"
+      - "com.yawl.version=1.0.0"
+
+  yawl-db:
+    image: postgres:14-alpine
+    container_name: yawl-db
+    environment:
+      - POSTGRES_USER=${DB_USER:-yawladmin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - POSTGRES_DB=yawldb
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=en_US.UTF-8
+    ports:
+      - "5432:5432"
+    networks:
+      - yawl-network
+    volumes:
+      - yawl-db-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-yawladmin} -d yawldb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      - "com.yawl.description=YAWL Database"
+      - "com.yawl.version=14"
+
+  yawl-cache:
+    image: redis:7-alpine
+    container_name: yawl-cache
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    networks:
+      - yawl-network
+    volumes:
+      - yawl-cache-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      - "com.yawl.description=YAWL Cache"
+      - "com.yawl.version=7"
+
+  # Optional: Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: yawl-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - yawl-network
+    depends_on:
+      - yawl
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    labels:
+      - "com.yawl.description=YAWL Prometheus Monitoring"
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: yawl-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - yawl-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    labels:
+      - "com.yawl.description=YAWL Grafana Visualization"
+
+networks:
+  yawl-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  yawl-data:
+    driver: local
+  yawl-logs:
+    driver: local
+  yawl-db-data:
+    driver: local
+  yawl-cache-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

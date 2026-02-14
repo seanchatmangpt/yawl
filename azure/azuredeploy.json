@@ -1,0 +1,1170 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Complete ARM template for YAWL Workflow Engine deployment on Azure with production-ready configuration",
+    "author": "YAWL Foundation",
+    "version": "5.2.0"
+  },
+  "parameters": {
+    "environment": {
+      "type": "string",
+      "defaultValue": "production",
+      "allowedValues": ["development", "staging", "production"],
+      "metadata": {
+        "description": "Environment name for resource naming and configuration"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for resource deployment"
+      }
+    },
+    "projectName": {
+      "type": "string",
+      "defaultValue": "yawl",
+      "metadata": {
+        "description": "Project name used for resource naming"
+      }
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "defaultValue": "P1V2",
+      "allowedValues": ["P1V2", "P2V2", "P3V2", "P1V3", "P2V3", "P3V3"],
+      "metadata": {
+        "description": "App Service Plan SKU for production workloads"
+      }
+    },
+    "appServiceInstanceCount": {
+      "type": "int",
+      "defaultValue": 3,
+      "minValue": 1,
+      "maxValue": 10,
+      "metadata": {
+        "description": "Initial number of App Service instances"
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "yawl",
+      "metadata": {
+        "description": "PostgreSQL database name"
+      }
+    },
+    "databaseAdminUsername": {
+      "type": "string",
+      "defaultValue": "yawladmin",
+      "metadata": {
+        "description": "PostgreSQL administrator username"
+      }
+    },
+    "databaseAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL administrator password"
+      }
+    },
+    "databaseSkuName": {
+      "type": "string",
+      "defaultValue": "Standard_B4ms",
+      "allowedValues": ["Standard_B2s", "Standard_B4ms", "Standard_D2s_v3", "Standard_D4s_v3", "Standard_D8s_v3"],
+      "metadata": {
+        "description": "PostgreSQL database SKU for compute"
+      }
+    },
+    "databaseStorageSizeGB": {
+      "type": "int",
+      "defaultValue": 128,
+      "minValue": 32,
+      "maxValue": 16384,
+      "metadata": {
+        "description": "PostgreSQL storage size in GB"
+      }
+    },
+    "databaseBackupRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 7,
+      "maxValue": 35,
+      "metadata": {
+        "description": "Database backup retention period in days"
+      }
+    },
+    "applicationGatewaySkuName": {
+      "type": "string",
+      "defaultValue": "WAF_v2",
+      "allowedValues": ["Standard_v2", "WAF_v2"],
+      "metadata": {
+        "description": "Application Gateway SKU (WAF_v2 recommended for production)"
+      }
+    },
+    "applicationGatewayMinCapacity": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 125,
+      "metadata": {
+        "description": "Application Gateway minimum capacity units"
+      }
+    },
+    "applicationGatewayMaxCapacity": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 1,
+      "maxValue": 125,
+      "metadata": {
+        "description": "Application Gateway maximum capacity units for autoscaling"
+      }
+    },
+    "keyVaultSkuName": {
+      "type": "string",
+      "defaultValue": "premium",
+      "allowedValues": ["standard", "premium"],
+      "metadata": {
+        "description": "Key Vault SKU (premium recommended for production)"
+      }
+    },
+    "enableDiagnostics": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Azure diagnostics and monitoring"
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 1,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Log retention period in days"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "production",
+        "application": "yawl",
+        "managed-by": "arm-template",
+        "cost-center": "engineering"
+      },
+      "metadata": {
+        "description": "Resource tags for organization and billing"
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
+    "resourceGroupName": "[resourceGroup().name]",
+    "appServicePlanName": "[concat(parameters('projectName'), '-asp-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "appServiceName": "[concat(parameters('projectName'), '-app-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "appServiceLogName": "[concat(parameters('projectName'), '-app-log-', variables('uniqueSuffix'))]",
+    "databaseServerName": "[concat(parameters('projectName'), '-db-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "vnetName": "[concat(parameters('projectName'), '-vnet-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "appGatewaySubnetName": "appgateway-subnet",
+    "appServiceSubnetName": "appservice-subnet",
+    "databaseSubnetName": "database-subnet",
+    "vnetAddressPrefix": "10.0.0.0/16",
+    "appGatewaySubnetPrefix": "10.0.1.0/24",
+    "appServiceSubnetPrefix": "10.0.2.0/24",
+    "databaseSubnetPrefix": "10.0.3.0/24",
+    "appGatewayName": "[concat(parameters('projectName'), '-appgw-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "appGatewayPublicIPName": "[concat(parameters('projectName'), '-appgw-pip-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "keyVaultName": "[concat(parameters('projectName'), '-kv-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "storageAccountName": "[concat(replace(parameters('projectName'), '-', ''), 'storage', variables('uniqueSuffix'))]",
+    "logAnalyticsWorkspaceName": "[concat(parameters('projectName'), '-law-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "applicationInsightsName": "[concat(parameters('projectName'), '-ai-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "userManagedIdentityName": "[concat(parameters('projectName'), '-identity-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "nsgName": "[concat(parameters('projectName'), '-nsg-', parameters('environment'), '-', variables('uniqueSuffix'))]",
+    "containerRegistryName": "[concat(replace(parameters('projectName'), '-', ''), 'acr', variables('uniqueSuffix'))]",
+    "appServiceDiagSettingsName": "[concat(parameters('projectName'), '-diag-appservice')]",
+    "databaseDiagSettingsName": "[concat(parameters('projectName'), '-diag-database')]",
+    "appGatewayDiagSettingsName": "[concat(parameters('projectName'), '-diag-appgateway')]",
+    "copy": [
+      {
+        "name": "locationsCopy",
+        "count": 1,
+        "input": "[parameters('location')]"
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-06-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard_GRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "allowBlobPublicAccess": false,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('applicationInsightsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "RetentionInDays": "[parameters('logRetentionDays')]",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[variables('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": "[parameters('logRetentionDays')]",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('userManagedIdentityName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[variables('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "[parameters('keyVaultSkuName')]"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "enableSoftDelete": true,
+        "enablePurgeProtection": true,
+        "softDeleteRetentionInDays": 90,
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userManagedIdentityName'))).principalId]",
+            "permissions": {
+              "keys": ["get", "list"],
+              "secrets": ["get", "list"],
+              "certificates": ["get", "list"]
+            }
+          }
+        ],
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "bypass": "AzureServices"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userManagedIdentityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[concat(variables('keyVaultName'), '/DatabasePassword')]",
+      "properties": {
+        "value": "[parameters('databaseAdminPassword')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[concat(variables('keyVaultName'), '/DatabaseUsername')]",
+      "properties": {
+        "value": "[parameters('databaseAdminUsername')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[concat(variables('keyVaultName'), '/DatabaseName')]",
+      "properties": {
+        "value": "[parameters('databaseName')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["[variables('vnetAddressPrefix')]"]
+        },
+        "subnets": [
+          {
+            "name": "[variables('appGatewaySubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('appGatewaySubnetPrefix')]"
+            }
+          },
+          {
+            "name": "[variables('appServiceSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('appServiceSubnetPrefix')]",
+              "delegations": [
+                {
+                  "name": "delegation",
+                  "properties": {
+                    "serviceName": "Microsoft.Web/serverFarms"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('databaseSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('databaseSubnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHTTP",
+            "properties": {
+              "description": "Allow HTTP traffic",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "description": "Allow HTTPS traffic",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowPostgreSQL",
+            "properties": {
+              "description": "Allow PostgreSQL traffic within VNet",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "5432",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "DenyAll",
+            "properties": {
+              "description": "Deny all other inbound traffic",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 4096,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers",
+      "apiVersion": "2017-12-01",
+      "name": "[variables('databaseServerName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('databaseSkuName')]",
+        "tier": "Standard",
+        "capacity": "[if(equals(parameters('databaseSkuName'), 'Standard_B2s'), 2, if(equals(parameters('databaseSkuName'), 'Standard_B4ms'), 4, if(equals(parameters('databaseSkuName'), 'Standard_D2s_v3'), 2, if(equals(parameters('databaseSkuName'), 'Standard_D4s_v3'), 4, 8))))]",
+        "family": "Gen5"
+      },
+      "properties": {
+        "createMode": "Default",
+        "version": "14",
+        "administratorLogin": "[parameters('databaseAdminUsername')]",
+        "administratorLoginPassword": "[parameters('databaseAdminPassword')]",
+        "storageProfile": {
+          "storageMB": "[mul(parameters('databaseStorageSizeGB'), 1024)]",
+          "backupRetentionDays": "[parameters('databaseBackupRetentionDays')]",
+          "geoRedundantBackup": "Enabled",
+          "storageAutogrow": "Enabled"
+        },
+        "sslEnforcement": "ENABLED",
+        "minimalTlsVersion": "TLS1_2",
+        "publicNetworkAccess": "Enabled",
+        "infrastructureEncryption": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers/databases",
+      "apiVersion": "2017-12-01",
+      "name": "[concat(variables('databaseServerName'), '/', parameters('databaseName'))]",
+      "properties": {
+        "charset": "UTF8",
+        "collation": "en_US.utf8"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers/firewallRules",
+      "apiVersion": "2017-12-01",
+      "name": "[concat(variables('databaseServerName'), '/AllowVNet')]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "255.255.255.255"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers/configurations",
+      "apiVersion": "2017-12-01",
+      "name": "[concat(variables('databaseServerName'), '/max_connections')]",
+      "properties": {
+        "value": "200",
+        "source": "user-override"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers/configurations",
+      "apiVersion": "2017-12-01",
+      "name": "[concat(variables('databaseServerName'), '/shared_preload_libraries')]",
+      "properties": {
+        "value": "pg_stat_statements",
+        "source": "user-override"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2021-01-15",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]",
+        "capacity": "[parameters('appServiceInstanceCount')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2021-01-15",
+      "name": "[variables('appServiceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userManagedIdentityName'))]": {}
+        }
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "TOMCAT|9.0-java11",
+          "alwaysOn": true,
+          "http20Enabled": true,
+          "minTlsVersion": "1.2",
+          "defaultDocuments": ["index.jsp"],
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "JAVA_OPTS",
+              "value": "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:G1NewCollectionHeapPercent=20 -XX:G1MaxNewGenPercent=30"
+            },
+            {
+              "name": "CATALINA_OPTS",
+              "value": "-Duser.timezone=UTC"
+            },
+            {
+              "name": "YAWL_DB_HOST",
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))).fullyQualifiedDomainName]"
+            },
+            {
+              "name": "YAWL_DB_PORT",
+              "value": "5432"
+            },
+            {
+              "name": "YAWL_DB_NAME",
+              "value": "[parameters('databaseName')]"
+            },
+            {
+              "name": "YAWL_DB_USER",
+              "value": "[parameters('databaseAdminUsername')]"
+            },
+            {
+              "name": "YAWL_DB_PASSWORD",
+              "value": "[parameters('databaseAdminPassword')]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).ConnectionString]"
+            },
+            {
+              "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+              "value": "~3"
+            },
+            {
+              "name": "XDT_MicrosoftApplicationInsights_Mode",
+              "value": "recommended"
+            },
+            {
+              "name": "LOG_LEVEL",
+              "value": "INFO"
+            },
+            {
+              "name": "ENVIRONMENT",
+              "value": "[parameters('environment')]"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "DefaultConnection",
+              "connectionString": "[concat('Server=tcp:', reference(resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))).fullyQualifiedDomainName, ',5432;Initial Catalog=', parameters('databaseName'), ';Persist Security Info=False;User ID=', parameters('databaseAdminUsername'), ';Password=', parameters('databaseAdminPassword'), ';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]",
+              "type": "PostgreSQL"
+            }
+          ]
+        },
+        "httpsOnly": true,
+        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('appServiceSubnetName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2021-01-15",
+      "name": "[concat(variables('appServiceName'), '/web')]",
+      "properties": {
+        "numberOfWorkers": 1,
+        "defaultDocuments": ["index.jsp"],
+        "netFrameworkVersion": "v4.0",
+        "requestTracingEnabled": false,
+        "remoteDebuggingEnabled": false,
+        "httpLoggingEnabled": true,
+        "detailedErrorLoggingEnabled": true,
+        "publishingUsername": "[concat('$', variables('appServiceName'))]",
+        "scmType": "None",
+        "use32BitWorkerProcess": false,
+        "webSocketsEnabled": false,
+        "managedPipelineMode": "Integrated",
+        "virtualApplications": [
+          {
+            "virtualPath": "/",
+            "physicalPath": "site\\wwwroot",
+            "preloadEnabled": true
+          }
+        ],
+        "loadBalancing": "LeastRequests",
+        "experiments": {
+          "rampUpRules": []
+        },
+        "autoHealEnabled": true,
+        "autoHealRules": {
+          "triggers": {
+            "statusCodes": [
+              {
+                "status": 500,
+                "subStatus": 0,
+                "count": 10,
+                "timeInterval": "00:01:00"
+              }
+            ]
+          },
+          "actions": {
+            "actionType": "Recycle",
+            "minProcessExecutionTime": "00:01:00"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/hostNameBindings",
+      "apiVersion": "2021-01-15",
+      "name": "[concat(variables('appServiceName'), '/', reference(resourceId('Microsoft.Web/sites', variables('appServiceName'))).defaultHostName)]",
+      "properties": {
+        "siteName": "[variables('appServiceName')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/autoscalesettings",
+      "apiVersion": "2015-04-01",
+      "name": "[concat(variables('appServicePlanName'), '-autoscale')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "profiles": [
+          {
+            "name": "Auto scale based on CPU",
+            "capacity": {
+              "minimum": "3",
+              "maximum": "10",
+              "default": "[string(parameters('appServiceInstanceCount'))]"
+            },
+            "rules": [
+              {
+                "metricTrigger": {
+                  "metricName": "CpuPercentage",
+                  "metricResourceId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 70
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "CpuPercentage",
+                  "metricResourceId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "LessThan",
+                  "threshold": 30
+                },
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "MemoryPercentage",
+                  "metricResourceId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 80
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                }
+              }
+            ]
+          }
+        ],
+        "enabled": true,
+        "targetResourceUri": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('appGatewayPublicIPName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('appGatewayName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('applicationGatewaySkuName')]",
+          "tier": "[parameters('applicationGatewaySkuName')]",
+          "capacity": "[parameters('applicationGatewayMinCapacity')]"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('appGatewaySubnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('appGatewayPublicIPName'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "port": 80
+            }
+          },
+          {
+            "name": "appGatewayFrontendPortHTTPS",
+            "properties": {
+              "port": 443
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "appGatewayBackendPool",
+            "properties": {
+              "backendAddresses": []
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "port": 80,
+              "protocol": "Http",
+              "cookieBasedAffinity": "Enabled",
+              "affinity": "CookieBasedAffinity",
+              "connectionDraining": {
+                "enabled": true,
+                "drainTimeoutInSec": 60
+              },
+              "pickHostNameFromBackendAddress": true,
+              "requestTimeout": 60,
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/probes', variables('appGatewayName'), 'appGatewayProbe')]"
+              }
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "appGatewayHttpListener",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('appGatewayName'), 'appGatewayFrontendIP')]"
+              },
+              "frontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('appGatewayName'), 'appGatewayFrontendPort')]"
+              },
+              "protocol": "Http"
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "appGatewayRule",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('appGatewayName'), 'appGatewayHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('appGatewayName'), 'appGatewayBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('appGatewayName'), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "appGatewayProbe",
+            "properties": {
+              "protocol": "Http",
+              "path": "/resourceService/",
+              "interval": 30,
+              "timeout": 10,
+              "unhealthyThreshold": 3,
+              "pickHostNameFromBackendHttpSettings": true
+            }
+          }
+        ],
+        "webApplicationFirewallConfiguration": "[if(equals(parameters('applicationGatewaySkuName'), 'WAF_v2'), json('{\"enabled\": true, \"firewallMode\": \"Detection\", \"ruleSetType\": \"OWASP\", \"ruleSetVersion\": \"3.2\"}'), json('null'))]",
+        "autoscaleConfiguration": {
+          "minCapacity": "[parameters('applicationGatewayMinCapacity')]",
+          "maxCapacity": "[parameters('applicationGatewayMaxCapacity')]"
+        },
+        "enableHttp2": true,
+        "enableFips": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('appGatewayPublicIPName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[variables('appServiceDiagSettingsName')]",
+      "scope": "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+        "logs": [
+          {
+            "category": "AppServiceHTTPLogs",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          },
+          {
+            "category": "AppServiceConsoleLogs",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          },
+          {
+            "category": "AppServiceAuditLogs",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[variables('databaseDiagSettingsName')]",
+      "scope": "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+        "logs": [
+          {
+            "category": "PostgreSQLLogs",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[variables('appGatewayDiagSettingsName')]",
+      "scope": "[resourceId('Microsoft.Network/applicationGateways', variables('appGatewayName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+        "logs": [
+          {
+            "category": "ApplicationGatewayAccessLog",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          },
+          {
+            "category": "ApplicationGatewayPerformanceLog",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          },
+          {
+            "category": "ApplicationGatewayFirewallLog",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true,
+            "retentionPolicy": {
+              "enabled": true,
+              "days": "[parameters('logRetentionDays')]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/applicationGateways', variables('appGatewayName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(parameters('projectName'), '-alert-high-cpu')]",
+      "location": "global",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "description": "Alert when App Service CPU is high",
+        "severity": 2,
+        "enabled": true,
+        "scopes": ["[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "CpuPercentage",
+              "metricName": "CpuPercentage",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(parameters('projectName'), '-alert-db-cpu')]",
+      "location": "global",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "description": "Alert when PostgreSQL CPU is high",
+        "severity": 2,
+        "enabled": true,
+        "scopes": ["[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "cpu_percent",
+              "metricName": "cpu_percent",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(parameters('projectName'), '-alert-db-storage')]",
+      "location": "global",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "description": "Alert when PostgreSQL storage is running low",
+        "severity": 2,
+        "enabled": true,
+        "scopes": ["[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "storage_percent",
+              "metricName": "storage_percent",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "appServiceUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('appServiceName'))).defaultHostName)]",
+      "metadata": {
+        "description": "URL of the deployed YAWL application"
+      }
+    },
+    "appGatewayPublicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('appGatewayPublicIPName'))).ipAddress]",
+      "metadata": {
+        "description": "Public IP address of Application Gateway"
+      }
+    },
+    "databaseServerFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/servers', variables('databaseServerName'))).fullyQualifiedDomainName]",
+      "metadata": {
+        "description": "PostgreSQL database server fully qualified domain name"
+      }
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))).vaultUri]",
+      "metadata": {
+        "description": "Key Vault URI for secret management"
+      }
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))).customerId]",
+      "metadata": {
+        "description": "Log Analytics Workspace ID"
+      }
+    },
+    "applicationInsightsInstrumentationKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).InstrumentationKey]",
+      "metadata": {
+        "description": "Application Insights instrumentation key"
+      }
+    },
+    "managedIdentityPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userManagedIdentityName'))).principalId]",
+      "metadata": {
+        "description": "Managed Identity Principal ID for RBAC assignments"
+      }
+    }
+  }
+}

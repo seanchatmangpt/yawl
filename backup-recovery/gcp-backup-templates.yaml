@@ -1,0 +1,490 @@
+#############################################################################
+# GCP Backup & Disaster Recovery Templates
+# Comprehensive backup strategy across GCP services
+# RTO: 20-30 minutes | RPO: 10-15 minutes
+#############################################################################
+
+---
+# Template 1: Cloud SQL Backup Configuration
+# RTO: 20 minutes | RPO: 10 minutes
+apiVersion: cloudsql.cnrm.cloud.google.com/v1beta1
+kind: SQLInstance
+metadata:
+  name: production-cloudsql-instance
+  namespace: gcp-backup
+spec:
+  databaseVersion: MYSQL_8_0
+  region: us-central1
+  settings:
+    tier: db-n1-highmem-4
+    availabilityType: REGIONAL
+    backupConfiguration:
+      enabled: true
+      startTime: "03:00"  # UTC
+      binaryLogEnabled: true
+      replicationLogArchivingEnabled: true
+      backupRetentionSettings:
+        retentionUnit: COUNT
+        retentionCount: 30  # 30 backups retention
+      transactionLogRetentionDays: 7
+      pointInTimeRecoveryEnabled: true
+    ipConfiguration:
+      ipv4Enabled: true
+      privateNetwork: projects/PROJECT_ID/global/networks/production-vpc
+      requireSsl: true
+    databaseFlags:
+      - name: cloudsql_iam_authentication
+        value: "on"
+      - name: log_error
+        value: "on"
+    maintenanceWindow:
+      day: 0  # Sunday
+      hour: 4
+      updateTrack: stable
+    insights:
+      queryInsightsEnabled: true
+      queryPlansPerMinute: 5
+      recordApplicationTags: true
+  masterRegion: us-central1
+  deletionPolicy: ABANDON
+---
+# Template 2: Cloud SQL Backup Service Account & Roles
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  name: cloudsql-backup-sa
+  namespace: gcp-backup
+spec:
+  displayName: Cloud SQL Backup Service Account
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicy
+metadata:
+  name: cloudsql-backup-iam-policy
+  namespace: gcp-backup
+spec:
+  resourceRef:
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+    name: cloudsql-backup-sa
+  bindings:
+    - role: roles/cloudsql.admin
+      members:
+        - serviceAccount:cloudsql-backup-sa@PROJECT_ID.iam.gserviceaccount.com
+    - role: roles/cloudsql.client
+      members:
+        - serviceAccount:cloudsql-backup-sa@PROJECT_ID.iam.gserviceaccount.com
+---
+# Template 3: Cloud Storage Cross-Region Backup
+# RTO: 30 minutes | RPO: 15 minutes
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
+kind: StorageBucket
+metadata:
+  name: production-data-primary
+  namespace: gcp-backup
+spec:
+  location: us-central1
+  storageClass: STANDARD
+  versioning:
+    enabled: true
+  lifecycle:
+    rule:
+      - action:
+          storageClass: NEARLINE
+          type: SetStorageClass
+        condition:
+          age: 7
+      - action:
+          storageClass: COLDLINE
+          type: SetStorageClass
+        condition:
+          age: 30
+      - action:
+          type: Delete
+        condition:
+          age: 90
+  uniformBucketLevelAccess:
+    enabled: true
+  encryption:
+    defaultKmsKeyName: projects/PROJECT_ID/locations/us-central1/keyRings/backup-keyring/cryptoKeys/storage-key
+  labels:
+    backup-type: "primary"
+    environment: "production"
+---
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
+kind: StorageBucket
+metadata:
+  name: production-data-backup
+  namespace: gcp-backup
+spec:
+  location: us-west1
+  storageClass: COLDLINE
+  versioning:
+    enabled: true
+  lifecycle:
+    rule:
+      - action:
+          type: Delete
+        condition:
+          age: 365
+  uniformBucketLevelAccess:
+    enabled: true
+  encryption:
+    defaultKmsKeyName: projects/PROJECT_ID/locations/us-west1/keyRings/backup-keyring/cryptoKeys/storage-key
+  labels:
+    backup-type: "replica"
+    environment: "production"
+---
+# Template 4: GCS Transfer Service Configuration
+# Automated replication with scheduling
+apiVersion: storagetransfer.cnrm.cloud.google.com/v1beta1
+kind: StorageTransferJob
+metadata:
+  name: production-data-replication
+  namespace: gcp-backup
+spec:
+  description: "Replicates production data to backup region daily"
+  status: ENABLED
+  projectId: PROJECT_ID
+  transferSpec:
+    gcsDataSource:
+      bucketName: production-data-primary
+      path: ""  # All paths
+    gcsDataSink:
+      bucketName: production-data-backup
+      path: ""
+  schedule:
+    scheduleStartDate:
+      year: 2026
+      month: 2
+      day: 14
+    scheduleEndDate:
+      year: 2027
+      month: 2
+      day: 14
+    repeatInterval: 86400s  # Daily
+    startTimeOfDay:
+      hours: 3
+      minutes: 0
+  notificationConfig:
+    pubsubTopic: projects/PROJECT_ID/topics/backup-notifications
+    eventPublished: TRANSFER_OPERATION_FAILED
+---
+# Template 5: GKE Cluster Backup & Restore Plan
+# RTO: 30 minutes | RPO: 15 minutes
+apiVersion: gkebackup.cnrm.cloud.google.com/v1beta1
+kind: GKEBackupBackupPlan
+metadata:
+  name: production-gke-backup-plan
+  namespace: gcp-backup
+spec:
+  cluster:
+    name: production-gke-cluster
+  backupConfig:
+    includeVolumeData: true
+    includeSecrets: true
+    allNamespaces: {}
+  backupSchedule:
+    cronSchedule: "0 3 * * *"  # Daily at 3 AM UTC
+    timeZone: "UTC"
+  retentionPolicy:
+    backupDeleteLockDays: 0
+    backupRetainDays: 30
+  labels:
+    environment: "production"
+    backup-strategy: "daily"
+---
+# Template 6: GKE Cluster Backup with AllNamespaces
+apiVersion: gkebackup.cnrm.cloud.google.com/v1beta1
+kind: GKEBackupRestorePlan
+metadata:
+  name: production-gke-restore-plan
+  namespace: gcp-backup
+spec:
+  cluster:
+    name: production-gke-cluster-backup
+  restoreConfig:
+    volumeDataRestorePolicy: RESTORE_VOLUME_DATA_FROM_BACKUP
+    clusterResourceRestoreScope:
+      selectedResources:
+        - serviceName: batch.cnrm.cloud.google.com
+        - serviceName: compute.cnrm.cloud.google.com
+    clusterResourceConflictPolicy: USE_EXISTING_VERSION
+    namespaceResourceRestoreScope:
+      allNamespaces: true
+---
+# Template 7: Firestore Backup & Export
+# RTO: 15 minutes | RPO: 5 minutes
+apiVersion: firestore.cnrm.cloud.google.com/v1beta1
+kind: FirestoreDatabase
+metadata:
+  name: production-firestore
+  namespace: gcp-backup
+spec:
+  name: production
+  type: FIRESTORE_NATIVE
+  locationId: us-central1
+  pointInTimeRecoveryEnabled: true
+  deleteProtectionState: DELETE_PROTECTION_ENABLED
+---
+# Template 8: Scheduled Firestore Exports to GCS
+apiVersion: dataflow.cnrm.cloud.google.com/v1beta1
+kind: DataflowFlexTemplateJob
+metadata:
+  name: firestore-export-job
+  namespace: gcp-backup
+spec:
+  name: firestore-export-daily
+  containerSpecGcsPath: gs://dataflow-templates-us-central1/latest/flex/Firestore_to_BigQuery
+  parameters:
+    project_id: PROJECT_ID
+    dataset_id: firestore_backups
+    source_collection_id: ""  # All collections
+  schedule: "0 3 * * *"  # Daily at 3 AM UTC
+  region: us-central1
+  serviceAccountEmail: firestore-backup-sa@PROJECT_ID.iam.gserviceaccount.com
+---
+# Template 9: Spanner Backup Configuration
+# RTO: 25 minutes | RPO: 5 minutes
+apiVersion: spanner.cnrm.cloud.google.com/v1beta1
+kind: SpannerBackupSchedule
+metadata:
+  name: production-spanner-backup
+  namespace: gcp-backup
+spec:
+  database: production-database
+  instance: production-instance
+  spec:
+    retentionDuration: 2592000s  # 30 days
+    backupScheduleSpec:
+      cronSpec: "0 3 * * *"  # Daily at 3 AM UTC
+---
+# Template 10: BigQuery Dataset Backup via Snapshots
+# RTO: 20 minutes | RPO: 10 minutes
+apiVersion: bigquery.cnrm.cloud.google.com/v1beta1
+kind: BigQueryDataset
+metadata:
+  name: production-analytics
+  namespace: gcp-backup
+spec:
+  datasetId: production_analytics
+  location: US
+  defaultTableExpirationMs: 7776000000  # 90 days
+  description: Production analytics dataset with backup snapshots
+  labels:
+    environment: "production"
+    backup-enabled: "true"
+  access:
+    - role: roles/bigquery.admin
+      specialGroup: projectOwners
+    - role: roles/bigquery.dataEditor
+      iamMember: backup-service@PROJECT_ID.iam.gserviceaccount.com
+  defaultPartitionExpirationMs: 2592000000  # 30 days
+---
+# Template 11: Backup Health Check & Monitoring
+apiVersion: monitoring.cnrm.cloud.google.com/v1beta1
+kind: MonitoringAlertPolicy
+metadata:
+  name: backup-failure-alert
+  namespace: gcp-backup
+spec:
+  displayName: Cloud Backup Failure Alert
+  conditions:
+    - displayName: Backup job failed
+      conditionThreshold:
+        filter: |
+          metric.type="cloudsql.googleapis.com/database/mysql/replication/replica_lag"
+          AND resource.type="cloudsql_database"
+          AND metric.value > 300  # 5 minutes lag
+        comparison: COMPARISON_GT
+        thresholdValue: 300
+        duration: 300s
+        aggregations:
+          - alignmentPeriod: 60s
+            perSeriesAligner: ALIGN_MAX
+  notificationChannels:
+    - projects/PROJECT_ID/notificationChannels/12345
+  alertStrategy:
+    autoClose: 1800s
+---
+# Template 12: Backup Metadata & Audit Logging
+apiVersion: logging.cnrm.cloud.google.com/v1beta1
+kind: LoggingLogView
+metadata:
+  name: backup-operations-log
+  namespace: gcp-backup
+spec:
+  bucketRef:
+    name: backup-logs-bucket
+  filter: |
+    resource.type="gce_instance"
+    protoPayload.methodName="storage.buckets.get"
+    protoPayload.resourceName=~".*backup.*"
+---
+# Template 13: KMS Encryption Keys for Backups
+apiVersion: cloudkms.cnrm.cloud.google.com/v1beta1
+kind: CloudKMSKeyRing
+metadata:
+  name: backup-keyring
+  namespace: gcp-backup
+spec:
+  location: us-central1
+---
+apiVersion: cloudkms.cnrm.cloud.google.com/v1beta1
+kind: CloudKMSCryptoKey
+metadata:
+  name: storage-backup-key
+  namespace: gcp-backup
+spec:
+  keyRingRef:
+    name: backup-keyring
+  rotationSchedule:
+    rotationPeriod: 2592000s  # 30 days
+    nextRotationTime: "2026-03-16T03:00:00Z"
+---
+# Template 14: Service Account for Backup Operations
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  name: gcp-backup-operator
+  namespace: gcp-backup
+spec:
+  displayName: GCP Backup Operations Service Account
+  description: "Service account for automated backup operations"
+---
+# Template 15: Role Binding for Backup Service Account
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  name: backup-sa-admin
+  namespace: gcp-backup
+spec:
+  member: serviceAccount:gcp-backup-operator@PROJECT_ID.iam.gserviceaccount.com
+  role: roles/gkebackup.admin
+---
+# Template 16: Backup Artifact Registry for Configuration
+apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+kind: ArtifactRegistryRepository
+metadata:
+  name: backup-configs
+  namespace: gcp-backup
+spec:
+  format: DOCKER
+  repositoryId: backup-configs
+  location: us-central1
+  description: "Repository for backup configuration artifacts"
+  labels:
+    purpose: "backup-management"
+---
+# Template 17: GCP Pub/Sub Topic for Backup Notifications
+apiVersion: pubsub.cnrm.cloud.google.com/v1beta1
+kind: PubSubTopic
+metadata:
+  name: backup-notifications
+  namespace: gcp-backup
+spec:
+  topicId: backup-notifications
+  labels:
+    service: backup
+    environment: production
+  messageRetentionDuration: 604800s  # 7 days
+---
+# Template 18: Pub/Sub Subscription for Backup Events
+apiVersion: pubsub.cnrm.cloud.google.com/v1beta1
+kind: PubSubSubscription
+metadata:
+  name: backup-alerts-subscription
+  namespace: gcp-backup
+spec:
+  topicRef:
+    name: backup-notifications
+  subscriptionId: backup-alerts
+  ackDeadlineSeconds: 60
+  messageRetentionDuration: 604800s
+  pushConfig:
+    pushEndpoint: https://monitoring.example.com/backup-alerts
+    oidcToken:
+      serviceAccountEmail: backup-sa@PROJECT_ID.iam.gserviceaccount.com
+---
+# Template 19: RTO/RPO Status Dashboard
+apiVersion: monitoring.cnrm.cloud.google.com/v1beta1
+kind: MonitoringDashboard
+metadata:
+  name: backup-rto-rpo-dashboard
+  namespace: gcp-backup
+spec:
+  dashboardJson: |
+    {
+      "displayName": "Backup RTO/RPO Status",
+      "mosaicLayout": {
+        "columns": 12,
+        "tiles": [
+          {
+            "width": 6,
+            "height": 4,
+            "widget": {
+              "title": "Cloud SQL Backup Lag (RPO)",
+              "xyChart": {
+                "dataSets": [
+                  {
+                    "timeSeriesQuery": {
+                      "timeSeriesFilter": {
+                        "filter": "metric.type=\"cloudsql.googleapis.com/database/mysql/replication/replica_lag\""
+                      }
+                    },
+                    "plotType": "LINE"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "xPos": 6,
+            "width": 6,
+            "height": 4,
+            "widget": {
+              "title": "GCS Replication Latency",
+              "xyChart": {
+                "dataSets": [
+                  {
+                    "timeSeriesQuery": {
+                      "timeSeriesFilter": {
+                        "filter": "metric.type=\"storagetransfer.googleapis.com/transfer_operation_duration\""
+                      }
+                    },
+                    "plotType": "LINE"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+---
+# Template 20: Cost Optimization - Backup Archive Policy
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
+kind: StorageBucketLifecycle
+metadata:
+  name: backup-archive-policy
+  namespace: gcp-backup
+spec:
+  bucketRef:
+    name: production-data-backup
+  rule:
+    - action:
+        type: Delete
+      condition:
+        age: 365  # Delete after 1 year
+        matchesPrefix:
+          - "temp/"
+    - action:
+        storageClass: ARCHIVE
+        type: SetStorageClass
+      condition:
+        age: 180  # Archive after 6 months
+    - action:
+        type: Delete
+      condition:
+        age: 2555  # Delete after 7 years (compliance)
+        isLive: false

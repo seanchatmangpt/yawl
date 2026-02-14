@@ -1,0 +1,24 @@
+apiVersion: v2
+name: yawl
+description: YAWL Workflow Engine Helm Chart for Kubernetes deployments
+type: application
+version: 5.2.0
+appVersion: "5.2"
+
+keywords:
+  - workflow
+  - bpm
+  - business-process-management
+  - enterprise
+
+home: https://www.yawlfoundation.org
+sources:
+  - https://github.com/yawlfoundation/yawl
+documentation: https://docs.yawlfoundation.org
+
+maintainers:
+  - name: YAWL Foundation
+    email: support@yawlfoundation.org
+    url: https://www.yawlfoundation.org
+
+icon: https://www.yawlfoundation.org/logo.png

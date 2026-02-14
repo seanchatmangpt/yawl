@@ -1,0 +1,35 @@
+---
+# Application Server Node 1 Variables
+
+# Node-specific configuration
+node_id: 1
+node_role: application
+primary_node: true
+cluster_leader: true
+
+# Docker daemon socket
+docker_socket: /var/run/docker.sock
+
+# Container-specific settings
+container_name_prefix: yawl-node-1
+docker_container_ids:
+  yawl: yawl-node-1-app
+  postgres_exporter: yawl-node-1-postgres-exp
+  redis: yawl-node-1-redis
+
+# Tomcat specific settings for this node
+tomcat_jvmroute: "{{ yawl_jvmroute_prefix }}-1"
+tomcat_shutdown_port: 8005
+tomcat_ajp_bind_address: 0.0.0.0
+
+# Node-specific monitoring
+node_monitoring_enabled: true
+node_export_port: 9100
+
+# Application configuration overrides
+yawl_instance_name: yawl-1
+yawl_instance_id: node-1
+
+# Specific port assignments
+yawl_app_port: 8080
+prometheus_exporter_port: 9090

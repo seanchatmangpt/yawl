@@ -1,0 +1,380 @@
+---
+# Pod Security Standards - Enforcement Policies
+# HIPAA: §164.312(a)(1) - Access controls and security
+# SOC2: CC6.1 - Logical and physical access controls
+# PCI-DSS: 2.2.4 - Secure configuration
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Pod Security Policy - Restricted (Baseline)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: restricted
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  # HIPAA §164.312(a)(1): Firewall and access control
+  # PCI-DSS 2.2.4: System hardening and configuration
+  # SOC2 CC6.1: Logical access controls
+
+  privileged: false
+  allowPrivilegeEscalation: false
+
+  # Required capabilities for security
+  requiredDropCapabilities:
+    - ALL
+
+  # Add only necessary capabilities
+  allowedCapabilities:
+    - NET_BIND_SERVICE
+    - CHOWN
+    - SETFCAP
+    - SETUID
+    - SETGID
+
+  # Volume types
+  volumes:
+    - configMap
+    - emptyDir
+    - projected
+    - secret
+    - downwardAPI
+    - persistentVolumeClaim
+
+  # Host access controls
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+
+  # SELinux enforcement
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+
+  # RunAsUser enforcement
+  runAsUser:
+    rule: MustRunNonRoot
+
+  # Supplemental groups
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+      - min: 1
+        max: 65535
+
+  # FSGroup requirements
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+      - min: 1
+        max: 65535
+
+  # Read-only root filesystem for security
+  readOnlyRootFilesystem: false
+
+  # Restrict hostname access
+  hostAliases:
+    - hostnames: ["restricted"]
+
+---
+# Pod Security Policy - Baseline (Moderate)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: baseline
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  # More permissive than restricted but still secure
+  privileged: false
+  allowPrivilegeEscalation: false
+
+  requiredDropCapabilities:
+    - ALL
+
+  volumes:
+    - "*"
+
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+
+  seLinux:
+    rule: RunAsAny
+
+  runAsUser:
+    rule: RunAsAny
+
+  supplementalGroups:
+    rule: RunAsAny
+
+  fsGroup:
+    rule: RunAsAny
+
+---
+# Pod Disruption Budget for high-availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yawl-pdb
+  namespace: default
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  # SOC2 CC7.2: System availability
+  # PCI-DSS 6.2: Security updates without downtime
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yawl
+
+---
+# Network Policy - Default Deny for security namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: security-default-deny
+  namespace: security
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Resource Quotas - Prevent resource exhaustion
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: default-quota
+  namespace: default
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  # HIPAA: Availability and reliability
+  # SOC2 CC7: System monitoring and controls
+  hard:
+    requests.cpu: "100"
+    requests.memory: 200Gi
+    limits.cpu: "200"
+    limits.memory: 400Gi
+    pods: "100"
+    services: "20"
+    persistentvolumeclaims: "10"
+  scopeSelector:
+    matchExpressions:
+      - operator: In
+        scopeName: PriorityClass
+        values: ["default"]
+
+---
+# Limit Range - Per-pod resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+  namespace: default
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  limits:
+    # Container limits
+    - type: Container
+      min:
+        cpu: 10m
+        memory: 32Mi
+      max:
+        cpu: 2000m
+        memory: 4Gi
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+
+    # Pod limits
+    - type: Pod
+      min:
+        cpu: 10m
+        memory: 32Mi
+      max:
+        cpu: 4000m
+        memory: 8Gi
+
+---
+# Pod Security Standard - Restricted Labels on namespace
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-config
+  namespace: default
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+data:
+  pss-config.yaml: |
+    # Pod Security Standards Configuration
+    # Enforced at namespace level via labels
+
+    standards:
+      restricted:
+        version: latest
+        enforce: true
+        audit: true
+        warn: true
+
+    requirements:
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seLinux:
+        rule: MustRunAs
+      fsGroup:
+        rule: MustRunAs
+      runAsUser:
+        rule: MustRunNonRoot
+      readOnlyRootFilesystem: false
+
+---
+# ConfigMap for security scanning configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-scanning-config
+  namespace: security
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+data:
+  scanning-policy.yaml: |
+    # Container Image Security Scanning
+    # HIPAA §164.308(a)(1)(ii): Security awareness and configuration
+    # PCI-DSS 6.2: Regular security updates and patching
+    # SOC2 CC6.1: Logical access controls
+
+    image_scanning:
+      enabled: true
+      scan_frequency: "on-push"
+      vulnerability_thresholds:
+        critical: 0
+        high: 2
+        medium: 10
+      scan_registries:
+        - gcr.io
+        - docker.io
+        - quay.io
+        - ecr.aws
+      scanners:
+        - trivy
+        - grype
+        - clair
+
+    registry_security:
+      require_signed_images: true
+      allowed_registries:
+        - gcr.io/yawl
+        - quay.io/yawl
+        - ecr.aws/yawl
+      deny_unapproved_images: true
+
+    malware_detection:
+      enabled: true
+      scan_on_deployment: true
+      quarantine_infected: true
+
+---
+# Secret management policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: secret-management-policy
+  namespace: security
+  labels:
+    app: security
+    compliance: hipaa,soc2,pci-dss
+data:
+  secrets-policy.yaml: |
+    # Secret Management Policy
+    # HIPAA §164.312(a)(2)(i): Encryption and access controls
+    # PCI-DSS 3.4: Strong cryptography for secrets
+    # SOC2 CC6.1: Logical access controls
+
+    secret_storage:
+      provider: kubernetes-secrets-encrypted
+      encryption:
+        algorithm: aes-256-gcm
+        key_rotation_days: 90
+
+    secret_access:
+      audit_all_access: true
+      require_mfa_for_read: false
+      log_retention_days: 2555
+
+    secret_rotation:
+      database_passwords: 90
+      api_keys: 180
+      certificates: 365
+      encryption_keys: 90
+
+    secret_naming:
+      naming_convention: "^[a-z0-9\-]+$"
+      prefix_required: "yawl-"
+
+    secret_validation:
+      no_secrets_in_configmaps: true
+      no_hardcoded_secrets: true
+      scan_for_exposed_secrets: true

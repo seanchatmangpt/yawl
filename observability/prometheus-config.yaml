@@ -1,0 +1,148 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'yawl-monitoring'
+    environment: 'production'
+    region: 'global'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'localhost:9093'
+
+rule_files:
+  - '/etc/prometheus/alerting-rules.yaml'
+  - '/etc/prometheus/recording-rules.yaml'
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+)(?::\d+)?'
+        target_label: instance
+
+  # Node Exporter - System Metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+)(?::\d+)?'
+        target_label: node
+
+  # Application Metrics
+  - job_name: 'application'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8080']
+    relabel_configs:
+      - source_labels: [__scheme__, __address__, __metrics_path__]
+        regex: ([^:]+)(?::\d+)?;(.*)
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 'localhost:8080'
+    scrape_interval: 10s
+
+  # Docker Container Metrics
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['localhost:9323']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # cAdvisor - Container Metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['localhost:8080']
+    metrics_path: '/metrics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Kubernetes Metrics (if applicable)
+  - job_name: 'kubernetes'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'container_.*|pod_.*|node_.*'
+        action: keep
+
+  # Custom Service Discovery
+  - job_name: 'service-discovery'
+    consul_sd_configs:
+      - server: 'localhost:8500'
+    relabel_configs:
+      - source_labels: [__meta_consul_service]
+        target_label: service
+      - source_labels: [__meta_consul_node]
+        target_label: node
+
+  # Blackbox Exporter - Service Availability
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - 'http://localhost:8080'
+          - 'http://localhost:9090'
+          - 'http://localhost:3000'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  # Custom Application Endpoints
+  - job_name: 'custom-app'
+    static_configs:
+      - targets:
+          - 'localhost:8080'
+        labels:
+          service: 'yawl-api'
+          tier: 'application'
+      - targets:
+          - 'localhost:5432'
+        labels:
+          service: 'yawl-db'
+          tier: 'database'
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '(http_|db_|cache_).*'
+        action: keep
+
+remote_write:
+  - url: 'http://localhost:9009/api/v1/push'
+    queue_config:
+      capacity: 10000
+      max_shards: 200
+      min_shards: 1
+      max_samples_per_send: 1000
+      batch_send_wait: 5s
+      min_back_off: 30ms
+      max_back_off: 100ms
+
+remote_read:
+  - url: 'http://localhost:9009/api/v1/read'
+
+service_discovery_config:
+  # Enables automatic discovery of targets
+  enable_lifecycle: true

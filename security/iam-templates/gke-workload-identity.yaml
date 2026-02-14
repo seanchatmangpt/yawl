@@ -1,0 +1,371 @@
+---
+# GKE Workload Identity Configuration
+# Enables pods to authenticate to GCP services without service account keys
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-workload
+  labels:
+    workload-identity: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Kubernetes Service Account for GKE Workload Identity
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-app-workload-sa
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    workload-identity: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Kubernetes Service Account for monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-monitoring-sa
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    component: monitoring
+    workload-identity: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Pod with Workload Identity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: yawl-app-pod
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  serviceAccountName: yawl-app-workload-sa
+  containers:
+    - name: yawl-app
+      image: gcr.io/yawl/app:latest
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT-ID"
+      volumeMounts:
+        - name: gcp-credentials
+          mountPath: /var/secrets/google
+          readOnly: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        readOnlyRootFilesystem: true
+  volumes:
+    - name: gcp-credentials
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: https://iamcredentials.googleapis.com/google.iam.credentials.v1.projects/-/serviceAccounts/yawl-app@PROJECT-ID.iam.gserviceaccount.com
+              expirationSeconds: 3600
+              path: token
+
+---
+# Deployment using Workload Identity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-app-deployment
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yawl
+  template:
+    metadata:
+      labels:
+        app: yawl
+        workload-identity: enabled
+    spec:
+      serviceAccountName: yawl-app-workload-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: app
+          image: gcr.io/yawl/app:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              value: "production"
+            - name: GOOGLE_CLOUD_PROJECT
+              value: "PROJECT-ID"
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: gcp-credentials
+              mountPath: /var/secrets/google
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: gcp-credentials
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: https://iamcredentials.googleapis.com/google.iam.credentials.v1.projects/-/serviceAccounts/yawl-app@PROJECT-ID.iam.gserviceaccount.com
+                  expirationSeconds: 3600
+                  path: token
+
+---
+# ConfigMap with GCP Setup Instructions
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gke-workload-identity-setup
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  SETUP_INSTRUCTIONS.md: |
+    # GKE Workload Identity Setup Guide
+
+    ## Prerequisites
+    - GKE cluster with Workload Identity enabled
+    - gcloud CLI configured
+    - kubectl configured to access your cluster
+
+    ## Setup Steps
+
+    ### 1. Create GCP Service Account
+    ```bash
+    gcloud iam service-accounts create yawl-app \
+      --display-name "YAWL Application Service Account" \
+      --project=PROJECT-ID
+    ```
+
+    ### 2. Grant IAM Roles to Service Account
+    ```bash
+    # Basic permissions
+    gcloud projects add-iam-policy-binding PROJECT-ID \
+      --member="serviceAccount:yawl-app@PROJECT-ID.iam.gserviceaccount.com" \
+      --role="roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+    gcloud projects add-iam-policy-binding PROJECT-ID \
+      --member="serviceAccount:yawl-app@PROJECT-ID.iam.gserviceaccount.com" \
+      --role="roles/storage.objectViewer"
+
+    gcloud projects add-iam-policy-binding PROJECT-ID \
+      --member="serviceAccount:yawl-app@PROJECT-ID.iam.gserviceaccount.com" \
+      --role="roles/cloudsql.client"
+    ```
+
+    ### 3. Bind Kubernetes Service Account to GCP Service Account
+    ```bash
+    gcloud iam service-accounts add-iam-policy-binding \
+      yawl-app@PROJECT-ID.iam.gserviceaccount.com \
+      --role roles/iam.workloadIdentityUser \
+      --member "serviceAccount:PROJECT-ID.svc.id.goog[yawl-workload/yawl-app-workload-sa]" \
+      --project=PROJECT-ID
+    ```
+
+    ### 4. Annotate Kubernetes Service Account
+    ```bash
+    kubectl annotate serviceaccount yawl-app-workload-sa \
+      iam.gke.io/gcp-service-account=yawl-app@PROJECT-ID.iam.gserviceaccount.com \
+      --namespace=yawl-workload
+    ```
+
+    ### 5. Deploy Kubernetes Resources
+    ```bash
+    kubectl apply -f gke-workload-identity.yaml
+    ```
+
+    ### 6. Verify Setup
+    ```bash
+    # Port-forward to pod
+    kubectl port-forward -n yawl-workload \
+      deployment/yawl-app-deployment 8080:8080
+
+    # Test from pod
+    kubectl exec -it -n yawl-workload \
+      deployment/yawl-app-deployment -- \
+      /bin/sh -c "curl -H 'Metadata-Flavor: Google' \
+      http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=https://yawl.example.com"
+    ```
+
+    ## HIPAA, SOC2, PCI-DSS Compliance
+
+    - Uses short-lived tokens (1 hour default)
+    - No static service account keys stored in pods
+    - Supports audit logging via Cloud Audit Logs
+    - Integrates with GCP VPC Service Controls
+    - Enables least-privilege access control
+    - Automatic token refresh
+
+  ENVIRONMENT_VARIABLES.md: |
+    # Environment Variables for Workload Identity
+
+    ## Required Variables
+    ```
+    GOOGLE_CLOUD_PROJECT=PROJECT-ID
+    GOOGLE_APPLICATION_CREDENTIALS=/var/secrets/google/key.json
+    ```
+
+    ## Optional Variables
+    ```
+    # HIPAA compliance settings
+    ENABLE_ENCRYPTION=true
+    ENCRYPTION_KEY_VERSION=1
+    LOG_LEVEL=INFO
+
+    # SOC2 compliance settings
+    ENABLE_AUDIT_LOG=true
+    AUDIT_LOG_BUCKET=yawl-audit-logs
+
+    # PCI-DSS compliance settings
+    ENABLE_DATA_ENCRYPTION=true
+    ENABLE_ACCESS_CONTROL=true
+    ```
+
+---
+# Example Deployment with Multiple Workload Identities
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-service
+  namespace: yawl-workload
+  labels:
+    app: yawl
+    service: yawl-service
+    compliance: hipaa,soc2,pci-dss
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yawl
+      service: yawl-service
+  template:
+    metadata:
+      labels:
+        app: yawl
+        service: yawl-service
+    spec:
+      serviceAccountName: yawl-app-workload-sa
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: yawl-service
+          image: gcr.io/yawl/service:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+          env:
+            - name: GOOGLE_CLOUD_PROJECT
+              valueFrom:
+                configMapKeyRef:
+                  name: gke-config
+                  key: project-id
+            - name: LOG_LEVEL
+              value: "INFO"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/cache
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir:
+            sizeLimit: 1Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - yawl
+                topologyKey: kubernetes.io/hostname

@@ -1,0 +1,912 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: yawlclusters.yawl.io
+  namespace: yawl-operator-system
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+    description: "YAWL Cluster CRD for managing YAWL Workflow Engine deployments on Kubernetes"
+spec:
+  group: yawl.io
+  names:
+    kind: YawlCluster
+    listKind: YawlClusterList
+    plural: yawlclusters
+    shortNames:
+      - yc
+    singular: yawlcluster
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: object
+          description: YawlCluster represents a YAWL Workflow Engine cluster deployment
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              description: Specification of the YAWL cluster
+              required:
+                - size
+              properties:
+                size:
+                  type: integer
+                  description: Number of YAWL replicas
+                  minimum: 1
+                  maximum: 100
+                  default: 3
+                version:
+                  type: string
+                  description: YAWL version
+                  default: "5.2"
+                  pattern: '^\d+\.\d+(\.\d+)?$'
+                image:
+                  type: object
+                  description: Container image settings
+                  properties:
+                    repository:
+                      type: string
+                      description: Docker image repository
+                      default: "yawlfoundation/yawl"
+                    tag:
+                      type: string
+                      description: Docker image tag
+                    pullPolicy:
+                      type: string
+                      enum: ["Always", "Never", "IfNotPresent"]
+                      default: "IfNotPresent"
+                    pullSecrets:
+                      type: array
+                      items:
+                        type: string
+                      description: List of image pull secret names
+                database:
+                  type: object
+                  description: Database configuration
+                  properties:
+                    type:
+                      type: string
+                      enum: ["postgresql", "mysql", "h2"]
+                      default: "postgresql"
+                    host:
+                      type: string
+                      description: Database host
+                    port:
+                      type: integer
+                      description: Database port
+                      minimum: 1
+                      maximum: 65535
+                    name:
+                      type: string
+                      description: Database name
+                      default: "yawl"
+                    username:
+                      type: string
+                      description: Database username
+                    passwordSecret:
+                      type: object
+                      description: Reference to secret containing database password
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                    sslEnabled:
+                      type: boolean
+                      default: false
+                    connectionPoolSize:
+                      type: integer
+                      minimum: 5
+                      maximum: 100
+                      default: 20
+                persistence:
+                  type: object
+                  description: Persistence configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    storageClass:
+                      type: string
+                      description: Kubernetes storage class name
+                    size:
+                      type: string
+                      description: PVC size
+                      default: "10Gi"
+                    logsPersistence:
+                      type: boolean
+                      default: true
+                    logsSize:
+                      type: string
+                      description: Logs PVC size
+                      default: "5Gi"
+                resources:
+                  type: object
+                  description: Resource requests and limits
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          default: "500m"
+                        memory:
+                          type: string
+                          default: "1Gi"
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          default: "2"
+                        memory:
+                          type: string
+                          default: "2Gi"
+                jvm:
+                  type: object
+                  description: JVM configuration
+                  properties:
+                    heapSize:
+                      type: string
+                      description: JVM heap size
+                      default: "1024m"
+                    initialHeapSize:
+                      type: string
+                      default: "512m"
+                    gcType:
+                      type: string
+                      enum: ["G1GC", "ParallelGC", "CMS"]
+                      default: "G1GC"
+                    gcPauseTarget:
+                      type: integer
+                      description: Max GC pause time in milliseconds
+                      default: 200
+                    additionalOptions:
+                      type: string
+                      description: Additional JVM options
+                networking:
+                  type: object
+                  description: Network configuration
+                  properties:
+                    service:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: ["ClusterIP", "LoadBalancer", "NodePort"]
+                          default: "ClusterIP"
+                        port:
+                          type: integer
+                          default: 8080
+                        targetPort:
+                          type: integer
+                          default: 8080
+                        nodePort:
+                          type: integer
+                          minimum: 30000
+                          maximum: 32767
+                    ingress:
+                      type: object
+                      description: Ingress configuration
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        className:
+                          type: string
+                        hosts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              host:
+                                type: string
+                              paths:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    pathType:
+                                      type: string
+                        tls:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              secretName:
+                                type: string
+                              hosts:
+                                type: array
+                                items:
+                                  type: string
+                    networkPolicy:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        ingress:
+                          type: array
+                          items:
+                            type: object
+                        egress:
+                          type: array
+                          items:
+                            type: object
+                security:
+                  type: object
+                  description: Security configuration
+                  properties:
+                    tls:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        certSecret:
+                          type: string
+                        keySecret:
+                          type: string
+                    rbac:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        roleArn:
+                          type: string
+                          description: AWS IAM role ARN (for IRSA)
+                    securityContext:
+                      type: object
+                      properties:
+                        runAsNonRoot:
+                          type: boolean
+                          default: true
+                        runAsUser:
+                          type: integer
+                          default: 1000
+                        fsGroup:
+                          type: integer
+                          default: 1000
+                        allowPrivilegeEscalation:
+                          type: boolean
+                          default: false
+                highAvailability:
+                  type: object
+                  description: High availability configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    podAntiAffinity:
+                      type: string
+                      enum: ["required", "preferred"]
+                      default: "preferred"
+                    topologySpreadConstraints:
+                      type: array
+                      items:
+                        type: object
+                    affinity:
+                      type: object
+                    tolerations:
+                      type: array
+                      items:
+                        type: object
+                monitoring:
+                  type: object
+                  description: Monitoring and observability configuration
+                  properties:
+                    prometheus:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        port:
+                          type: integer
+                          default: 9090
+                        interval:
+                          type: string
+                          default: "30s"
+                        path:
+                          type: string
+                          default: "/metrics"
+                    logging:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        level:
+                          type: string
+                          enum: ["DEBUG", "INFO", "WARN", "ERROR"]
+                          default: "INFO"
+                        format:
+                          type: string
+                          enum: ["text", "json"]
+                          default: "json"
+                    jaeger:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        endpoint:
+                          type: string
+                scaling:
+                  type: object
+                  description: Autoscaling configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    minReplicas:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                    maxReplicas:
+                      type: integer
+                      minimum: 1
+                      default: 10
+                    targetCPUUtilization:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 70
+                    targetMemoryUtilization:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 80
+                backup:
+                  type: object
+                  description: Backup configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: false
+                    schedule:
+                      type: string
+                      description: Cron schedule for backups
+                    retention:
+                      type: integer
+                      description: Number of backups to retain
+                      default: 7
+                    destination:
+                      type: string
+                      description: Backup destination (S3, GCS, etc.)
+            status:
+              type: object
+              description: Status of the YAWL cluster
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Creating", "Running", "Updating", "Degraded", "Failed", "Terminating"]
+                  description: Current phase of the cluster
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      lastUpdateTime:
+                        type: string
+                        format: date-time
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                replicas:
+                  type: integer
+                  description: Current number of replicas
+                readyReplicas:
+                  type: integer
+                  description: Number of ready replicas
+                updatedReplicas:
+                  type: integer
+                  description: Number of updated replicas
+                observedGeneration:
+                  type: integer
+                  description: Last observed generation
+                lastUpdateTime:
+                  type: string
+                  format: date-time
+                clusterVersion:
+                  type: string
+                  description: Currently running cluster version
+                endpoint:
+                  type: string
+                  description: Cluster access endpoint
+                databaseStatus:
+                  type: string
+                  enum: ["Connected", "Disconnected", "Initializing", "Error"]
+                errors:
+                  type: array
+                  items:
+                    type: string
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          description: Current phase of the cluster
+          jsonPath: .status.phase
+        - name: Replicas
+          type: integer
+          jsonPath: .status.replicas
+        - name: Ready
+          type: integer
+          jsonPath: .status.readyReplicas
+        - name: Version
+          type: string
+          jsonPath: .spec.version
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      subresources:
+        status: {}
+    - name: v1beta1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          description: YawlCluster represents a YAWL Workflow Engine cluster deployment
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              description: Specification of the YAWL cluster
+              required:
+                - size
+              properties:
+                size:
+                  type: integer
+                  description: Number of YAWL replicas
+                  minimum: 1
+                  maximum: 100
+                  default: 3
+                version:
+                  type: string
+                  description: YAWL version
+                  default: "5.2"
+                  pattern: '^\d+\.\d+(\.\d+)?$'
+                image:
+                  type: object
+                  description: Container image settings
+                  properties:
+                    repository:
+                      type: string
+                      description: Docker image repository
+                      default: "yawlfoundation/yawl"
+                    tag:
+                      type: string
+                      description: Docker image tag
+                    pullPolicy:
+                      type: string
+                      enum: ["Always", "Never", "IfNotPresent"]
+                      default: "IfNotPresent"
+                    pullSecrets:
+                      type: array
+                      items:
+                        type: string
+                      description: List of image pull secret names
+                database:
+                  type: object
+                  description: Database configuration
+                  required:
+                    - type
+                  properties:
+                    type:
+                      type: string
+                      enum: ["postgresql", "mysql", "h2"]
+                      default: "postgresql"
+                    host:
+                      type: string
+                      description: Database host
+                    port:
+                      type: integer
+                      description: Database port
+                      minimum: 1
+                      maximum: 65535
+                    name:
+                      type: string
+                      description: Database name
+                      default: "yawl"
+                    username:
+                      type: string
+                      description: Database username
+                    passwordSecret:
+                      type: object
+                      description: Reference to secret containing database password
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                    sslEnabled:
+                      type: boolean
+                      default: false
+                    connectionPoolSize:
+                      type: integer
+                      minimum: 5
+                      maximum: 100
+                      default: 20
+                persistence:
+                  type: object
+                  description: Persistence configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    storageClass:
+                      type: string
+                      description: Kubernetes storage class name
+                    size:
+                      type: string
+                      description: PVC size
+                      default: "10Gi"
+                    logsPersistence:
+                      type: boolean
+                      default: true
+                    logsSize:
+                      type: string
+                      description: Logs PVC size
+                      default: "5Gi"
+                resources:
+                  type: object
+                  description: Resource requests and limits
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          default: "500m"
+                        memory:
+                          type: string
+                          default: "1Gi"
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          default: "2"
+                        memory:
+                          type: string
+                          default: "2Gi"
+                jvm:
+                  type: object
+                  description: JVM configuration
+                  properties:
+                    heapSize:
+                      type: string
+                      description: JVM heap size
+                      default: "1024m"
+                    initialHeapSize:
+                      type: string
+                      default: "512m"
+                    gcType:
+                      type: string
+                      enum: ["G1GC", "ParallelGC", "CMS"]
+                      default: "G1GC"
+                    gcPauseTarget:
+                      type: integer
+                      description: Max GC pause time in milliseconds
+                      default: 200
+                    additionalOptions:
+                      type: string
+                      description: Additional JVM options
+                networking:
+                  type: object
+                  description: Network configuration
+                  properties:
+                    service:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: ["ClusterIP", "LoadBalancer", "NodePort"]
+                          default: "ClusterIP"
+                        port:
+                          type: integer
+                          default: 8080
+                        targetPort:
+                          type: integer
+                          default: 8080
+                        nodePort:
+                          type: integer
+                          minimum: 30000
+                          maximum: 32767
+                        annotations:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                    ingress:
+                      type: object
+                      description: Ingress configuration
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        className:
+                          type: string
+                        hosts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              host:
+                                type: string
+                              paths:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    pathType:
+                                      type: string
+                        tls:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              secretName:
+                                type: string
+                              hosts:
+                                type: array
+                                items:
+                                  type: string
+                    networkPolicy:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        ingress:
+                          type: array
+                          items:
+                            type: object
+                        egress:
+                          type: array
+                          items:
+                            type: object
+                security:
+                  type: object
+                  description: Security configuration
+                  properties:
+                    tls:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        certSecret:
+                          type: string
+                        keySecret:
+                          type: string
+                    rbac:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        roleArn:
+                          type: string
+                          description: AWS IAM role ARN (for IRSA)
+                    securityContext:
+                      type: object
+                      properties:
+                        runAsNonRoot:
+                          type: boolean
+                          default: true
+                        runAsUser:
+                          type: integer
+                          default: 1000
+                        fsGroup:
+                          type: integer
+                          default: 1000
+                        allowPrivilegeEscalation:
+                          type: boolean
+                          default: false
+                highAvailability:
+                  type: object
+                  description: High availability configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    podAntiAffinity:
+                      type: string
+                      enum: ["required", "preferred"]
+                      default: "preferred"
+                    topologySpreadConstraints:
+                      type: array
+                      items:
+                        type: object
+                    affinity:
+                      type: object
+                    tolerations:
+                      type: array
+                      items:
+                        type: object
+                monitoring:
+                  type: object
+                  description: Monitoring and observability configuration
+                  properties:
+                    prometheus:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        port:
+                          type: integer
+                          default: 9090
+                        interval:
+                          type: string
+                          default: "30s"
+                        path:
+                          type: string
+                          default: "/metrics"
+                    logging:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+                        level:
+                          type: string
+                          enum: ["DEBUG", "INFO", "WARN", "ERROR"]
+                          default: "INFO"
+                        format:
+                          type: string
+                          enum: ["text", "json"]
+                          default: "json"
+                    jaeger:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: false
+                        endpoint:
+                          type: string
+                scaling:
+                  type: object
+                  description: Autoscaling configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    minReplicas:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                    maxReplicas:
+                      type: integer
+                      minimum: 1
+                      default: 10
+                    targetCPUUtilization:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 70
+                    targetMemoryUtilization:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 80
+                backup:
+                  type: object
+                  description: Backup configuration
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: false
+                    schedule:
+                      type: string
+                      description: Cron schedule for backups
+                    retention:
+                      type: integer
+                      description: Number of backups to retain
+                      default: 7
+                    destination:
+                      type: string
+                      description: Backup destination (S3, GCS, etc.)
+            status:
+              type: object
+              description: Status of the YAWL cluster
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Creating", "Running", "Updating", "Degraded", "Failed", "Terminating"]
+                  description: Current phase of the cluster
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      lastUpdateTime:
+                        type: string
+                        format: date-time
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                replicas:
+                  type: integer
+                  description: Current number of replicas
+                readyReplicas:
+                  type: integer
+                  description: Number of ready replicas
+                updatedReplicas:
+                  type: integer
+                  description: Number of updated replicas
+                observedGeneration:
+                  type: integer
+                  description: Last observed generation
+                lastUpdateTime:
+                  type: string
+                  format: date-time
+                clusterVersion:
+                  type: string
+                  description: Currently running cluster version
+                endpoint:
+                  type: string
+                  description: Cluster access endpoint
+                databaseStatus:
+                  type: string
+                  enum: ["Connected", "Disconnected", "Initializing", "Error"]
+                errors:
+                  type: array
+                  items:
+                    type: string
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          description: Current phase of the cluster
+          jsonPath: .status.phase
+        - name: Replicas
+          type: integer
+          jsonPath: .status.replicas
+        - name: Ready
+          type: integer
+          jsonPath: .status.readyReplicas
+        - name: Version
+          type: string
+          jsonPath: .spec.version
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      subresources:
+        status: {}
+  conversion:
+    strategy: None

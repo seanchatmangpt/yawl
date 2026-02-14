@@ -1,0 +1,110 @@
+---
+# PostgreSQL Database Server Group Variables
+
+# PostgreSQL Configuration
+postgres_version: 14
+postgres_port: 5432
+postgres_user: yawl
+postgres_password: "{{ vault_postgres_password }}"  # Use ansible-vault
+postgres_admin_user: postgres
+postgres_admin_password: "{{ vault_postgres_admin_password }}"
+postgres_database: yawl
+postgres_test_database: yawl_test
+
+# Data Directory
+postgres_data_dir: /var/lib/postgresql/14/main
+postgres_backup_dir: /backups/postgres
+postgres_wal_backup_dir: /backups/postgres/wal-g
+
+# PostgreSQL Server Configuration
+postgres_max_connections: 500
+postgres_shared_buffers: 256MB
+postgres_effective_cache_size: 1GB
+postgres_maintenance_work_mem: 64MB
+postgres_checkpoint_completion_target: 0.9
+postgres_wal_buffers: 16MB
+postgres_default_statistics_target: 100
+postgres_random_page_cost: 1.1
+postgres_effective_io_concurrency: 200
+postgres_work_mem: 4MB
+postgres_min_wal_size: 2GB
+postgres_max_wal_size: 8GB
+postgres_default_idle_in_transaction_session_timeout: 600000
+
+# Replication Settings (for HA setup)
+postgres_max_wal_senders: 10
+postgres_wal_keep_size: 5GB
+postgres_hot_standby: on
+postgres_hot_standby_feedback: on
+
+# Backup Settings
+postgres_backup_enabled: true
+postgres_backup_method: pg_basebackup
+postgres_backup_retention_days: 30
+postgres_wal_archiving_enabled: true
+postgres_wal_archive_command: "test ! -f /backups/postgres/wal-g/%f && cp %p /backups/postgres/wal-g/%f"
+
+# Network Settings
+postgres_listen_addresses: "*"
+postgres_max_prepared_transactions: 100
+postgres_statement_timeout: 300000  # 5 minutes in milliseconds
+
+# Security Settings
+postgres_ssl_enabled: true
+postgres_ssl_cert_file: /etc/yawl/ssl/server.crt
+postgres_ssl_key_file: /etc/yawl/ssl/server.key
+postgres_ssl_ca_file: /etc/yawl/ssl/ca.crt
+postgres_password_encryption: scram-sha-256
+
+# Authentication
+postgres_hba_config:
+  - comment: "IPv4 local connections"
+    type: local
+    database: all
+    user: all
+    auth_method: peer
+  - comment: "IPv4 replication connections"
+    type: host
+    database: replication
+    user: all
+    address: 10.0.0.0/8
+    auth_method: md5
+  - comment: "IPv4 YAWL database connections"
+    type: host
+    database: yawl
+    user: yawl
+    address: 10.0.0.0/8
+    auth_method: md5
+
+# Monitoring
+postgres_monitoring_enabled: true
+postgres_monitoring_user: monitor
+postgres_monitoring_password: "{{ vault_postgres_monitoring_password }}"
+
+# Extensions
+postgres_extensions:
+  - name: pg_stat_statements
+    database: yawl
+  - name: uuid-ossp
+    database: yawl
+  - name: pgcrypto
+    database: yawl
+
+# Initialization SQL
+postgres_init_sql_files:
+  - src: init-database.sql
+    dest: /tmp/init-database.sql
+  - src: create-users.sql
+    dest: /tmp/create-users.sql
+
+# Performance Tuning
+postgres_autovacuum_enabled: true
+postgres_autovacuum_max_workers: 4
+postgres_autovacuum_naptime: 10s
+postgres_autovacuum_vacuum_threshold: 50
+postgres_autovacuum_vacuum_scale_factor: 0.1
+
+# Replication Node Type (set to 'primary' or 'standby')
+postgres_replication_role: "{% if inventory_hostname == 'db-primary' %}primary{% else %}standby{% endif %}"
+postgres_primary_host: db-primary
+postgres_primary_port: 5432

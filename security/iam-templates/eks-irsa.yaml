@@ -1,0 +1,460 @@
+---
+# EKS IAM Roles for Service Accounts (IRSA) Configuration
+# Enables pods to authenticate to AWS services
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-irsa
+  labels:
+    irsa: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Kubernetes Service Account for IRSA
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-app-irsa
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    irsa: enabled
+    compliance: hipaa,soc2,pci-dss
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/yawl-app-irsa-role
+
+---
+# Service Account for Database Access
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-db-irsa
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    component: database
+    irsa: enabled
+    compliance: hipaa,soc2,pci-dss
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/yawl-db-irsa-role
+
+---
+# Service Account for Monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-monitoring-irsa
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    component: monitoring
+    irsa: enabled
+    compliance: hipaa,soc2,pci-dss
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/yawl-monitoring-irsa-role
+
+---
+# ConfigMap with IRSA Setup Instructions
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eks-irsa-setup
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  SETUP_INSTRUCTIONS.md: |
+    # EKS IRSA (IAM Roles for Service Accounts) Setup Guide
+
+    ## Prerequisites
+    - EKS cluster with OIDC provider enabled
+    - AWS CLI configured
+    - kubectl configured to access your cluster
+
+    ## Setup Steps
+
+    ### 1. Enable OIDC Provider on EKS Cluster
+    ```bash
+    # Check if OIDC provider is already enabled
+    aws eks describe-cluster \
+      --name yawl-cluster \
+      --query 'cluster.identity.oidc.issuer' \
+      --output text
+
+    # If not enabled, enable it
+    eksctl utils associate-iam-oidc-provider \
+      --cluster=yawl-cluster \
+      --region=us-east-1 \
+      --approve
+    ```
+
+    ### 2. Get OIDC Provider URL
+    ```bash
+    OIDC_ID=$(aws eks describe-cluster \
+      --name yawl-cluster \
+      --query 'cluster.identity.oidc.issuer' \
+      --output text | cut -d '/' -f 5)
+
+    echo "OIDC_ID: $OIDC_ID"
+    ```
+
+    ### 3. Create IAM Role Trust Policy
+    ```bash
+    cat > trust-policy.json <<EOF
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Federated": "arn:aws:iam::ACCOUNT-ID:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/$OIDC_ID"
+          },
+          "Action": "sts:AssumeRoleWithWebIdentity",
+          "Condition": {
+            "StringEquals": {
+              "oidc.eks.us-east-1.amazonaws.com/id/$OIDC_ID:sub": "system:serviceaccount:yawl-irsa:yawl-app-irsa",
+              "oidc.eks.us-east-1.amazonaws.com/id/$OIDC_ID:aud": "sts.amazonaws.com"
+            }
+          }
+        }
+      ]
+    }
+    EOF
+    ```
+
+    ### 4. Create IAM Role
+    ```bash
+    aws iam create-role \
+      --role-name yawl-app-irsa-role \
+      --assume-role-policy-document file://trust-policy.json \
+      --description "YAWL App IRSA Role"
+
+    # Tag the role for compliance
+    aws iam tag-role \
+      --role-name yawl-app-irsa-role \
+      --tags Key=Environment,Value=production \
+                Key=Compliance,Value=hipaa,soc2,pci-dss \
+                Key=Application,Value=yawl
+    ```
+
+    ### 5. Attach IAM Policies to Role
+    ```bash
+    # Attach managed policies
+    aws iam attach-role-policy \
+      --role-name yawl-app-irsa-role \
+      --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+    aws iam attach-role-policy \
+      --role-name yawl-app-irsa-role \
+      --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+    # Attach custom policy
+    aws iam put-role-policy \
+      --role-name yawl-app-irsa-role \
+      --policy-name yawl-app-custom-policy \
+      --policy-document file://aws-iam-policy.json
+    ```
+
+    ### 6. Deploy Kubernetes Resources
+    ```bash
+    # Update annotations with correct AWS account ID and OIDC ID
+    sed -i "s/ACCOUNT-ID/$(aws sts get-caller-identity --query Account --output text)/g" eks-irsa.yaml
+
+    # Deploy
+    kubectl apply -f eks-irsa.yaml
+    ```
+
+    ### 7. Verify IRSA Setup
+    ```bash
+    # Check service account annotations
+    kubectl get sa yawl-app-irsa \
+      -n yawl-irsa \
+      -o jsonpath='{.metadata.annotations.eks\.amazonaws\.com/role-arn}'
+
+    # Verify IAM role trust relationships
+    aws iam get-role \
+      --role-name yawl-app-irsa-role \
+      --query 'Role.AssumeRolePolicyDocument'
+
+    # Test from pod
+    kubectl exec -it <pod-name> -n yawl-irsa -- \
+      aws sts get-caller-identity
+    ```
+
+    ## HIPAA, SOC2, PCI-DSS Compliance
+
+    - Uses temporary security credentials (1 hour default)
+    - No AWS access keys stored in pods
+    - Supports audit logging via CloudTrail
+    - Integrates with AWS IAM for fine-grained access control
+    - Automatic credential refresh every 15 minutes
+    - Works with AWS KMS for encryption key access
+    - Supports AWS Secrets Manager integration
+
+  ENVIRONMENT_VARIABLES.md: |
+    # Environment Variables for IRSA
+
+    ## Required Variables
+    ```
+    AWS_ROLE_ARN=arn:aws:iam::ACCOUNT-ID:role/yawl-app-irsa-role
+    AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
+    AWS_REGION=us-east-1
+    ```
+
+    ## Optional Variables
+    ```
+    # HIPAA compliance settings
+    ENABLE_ENCRYPTION=true
+    KMS_KEY_ID=arn:aws:kms:us-east-1:ACCOUNT-ID:key/12345678-1234-1234-1234-123456789012
+
+    # SOC2 compliance settings
+    ENABLE_AUDIT_LOG=true
+    CLOUDWATCH_LOG_GROUP=/aws/yawl/application
+
+    # PCI-DSS compliance settings
+    ENABLE_ACCESS_CONTROL=true
+    LOG_RETENTION_DAYS=2555
+    ```
+
+---
+# Deployment using IRSA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-app
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yawl
+  template:
+    metadata:
+      labels:
+        app: yawl
+        irsa: enabled
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: yawl-app-irsa
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: app
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl/app:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: AWS_ROLE_ARN
+              value: arn:aws:iam::123456789012:role/yawl-app-irsa-role
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+            - name: AWS_REGION
+              value: us-east-1
+            - name: ENVIRONMENT
+              value: production
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: aws-token
+              mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: aws-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: sts.amazonaws.com
+                  expirationSeconds: 86400
+                  path: token
+
+---
+# StatefulSet with IRSA for Database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: yawl-rds-proxy
+  namespace: yawl-irsa
+  labels:
+    app: yawl-rds-proxy
+    compliance: hipaa,soc2,pci-dss
+spec:
+  serviceName: yawl-rds-proxy
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yawl-rds-proxy
+  template:
+    metadata:
+      labels:
+        app: yawl-rds-proxy
+        irsa: enabled
+    spec:
+      serviceAccountName: yawl-db-irsa
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: rds-proxy
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl/rds-proxy:v1.0.0
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: AWS_ROLE_ARN
+              value: arn:aws:iam::123456789012:role/yawl-db-irsa-role
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+            - name: RDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-rds-config
+                  key: endpoint
+            - name: RDS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-rds-config
+                  key: port
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: aws-token
+              mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: aws-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: sts.amazonaws.com
+                  expirationSeconds: 86400
+                  path: token
+
+---
+# ConfigMap for RDS configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-rds-config
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  endpoint: yawl-db.c9akciq32.us-east-1.rds.amazonaws.com
+  port: "5432"
+  database: yawl_production
+  ssl_mode: require
+
+---
+# Network Policy for IRSA
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-irsa-network-policy
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      irsa: enabled
+  policyTypes:
+    - Egress
+  egress:
+    # Allow access to AWS services
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow RDS access
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# Pod Disruption Budget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yawl-app-pdb
+  namespace: yawl-irsa
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yawl

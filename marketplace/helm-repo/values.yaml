@@ -1,0 +1,261 @@
+# Default values for YAWL Helm Chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  projectName: yawl
+  environment: production
+  timezone: UTC
+
+# YAWL Application Configuration
+replicaCount: 3
+
+image:
+  repository: yawl/yawl
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: yawl.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: yawl-tls
+      hosts:
+        - yawl.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1536Mi
+  requests:
+    cpu: 500m
+    memory: 768Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - yawl
+          topologyKey: kubernetes.io/hostname
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+# YAWL Environment Configuration
+yawl:
+  environment: production
+  logLevel: INFO
+  enableMonitoring: true
+  enableAuth: true
+  javaOpts: "-Xmx1024m -Xms256m -XX:+UseG1GC"
+
+# Database Configuration
+postgresql:
+  enabled: true
+  auth:
+    username: yawladmin
+    password: "changeme123!"
+    database: yawldb
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClassName: "standard"
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# External PostgreSQL (if not using Helm subchart)
+externalPostgresql:
+  enabled: false
+  host: "postgresql.example.com"
+  port: 5432
+  username: yawladmin
+  password: "changeme123!"
+  database: yawldb
+  sslMode: require
+
+# Redis Cache Configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redis123!"
+  master:
+    persistence:
+      enabled: true
+      size: 2Gi
+      storageClassName: "standard"
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 2Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Persistence Configuration
+persistence:
+  enabled: true
+  storageClassName: "standard"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  mountPath: /home/yawl/data
+
+# Volume Mounts for temporary files
+tmpMount:
+  enabled: true
+  sizeLimit: 1Gi
+
+# Logging Configuration
+logging:
+  enabled: true
+  level: INFO
+  format: json
+  retention: 30
+
+# Monitoring and Observability
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
+  promtail:
+    enabled: false
+  jaeger:
+    enabled: false
+    endpoint: "http://jaeger-collector:14268/api/traces"
+
+# Network Policy
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# RBAC Configuration
+rbac:
+  create: true
+  rules: []
+
+# OpenShift specific settings
+openshift:
+  enabled: false
+  securityContextConstraints:
+    name: restricted
+
+# Backup and Recovery
+backup:
+  enabled: true
+  schedule: "0 1 * * *"
+  retention: 7
+  storageSize: 50Gi
+  s3:
+    enabled: false
+    bucket: ""
+    region: ""
+    credentials: ""
+
+# Feature Flags
+features:
+  advancedMonitoring: true
+  distributedTracing: false
+  serviceMesh: false
+  virtualNodeGroups: false

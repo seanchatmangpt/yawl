@@ -1,0 +1,276 @@
+# YAWL Helm Chart Values for Amazon Web Services (AWS)
+# This overrides the default values for AWS-specific configurations
+
+# AWS Account and Region
+global:
+  projectName: yawl
+  environment: production
+  aws:
+    region: "us-east-1"
+    accountId: "123456789012"
+    partition: "aws"
+
+# EKS Cluster Configuration
+eks:
+  clusterName: "yawl-cluster"
+  version: "1.27"
+  vpcId: "vpc-12345678"
+  subnets:
+    - "subnet-12345678"
+    - "subnet-87654321"
+    - "subnet-11111111"
+
+# ECR Container Registry
+image:
+  repository: "123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl/yawl"
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ecr-secret
+
+# IAM Role Mapping
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/yawl-sa-role"
+  name: yawl-ksa
+
+# EBS Storage Configuration
+persistence:
+  enabled: true
+  storageClassName: "ebs-sc"
+  size: 50Gi
+  accessMode: ReadWriteOnce
+  annotations:
+    ebs.csi.aws.com/iops: "3000"
+    ebs.csi.aws.com/throughput: "125"
+    ebs.csi.aws.com/encrypted: "true"
+
+# RDS for PostgreSQL
+postgresql:
+  enabled: false  # Use RDS instead
+
+externalPostgresql:
+  enabled: true
+  host: "yawl-db.c9akciq32.us-east-1.rds.amazonaws.com"
+  port: 5432
+  username: yawladmin
+  password: "changeme123!"
+  database: yawldb
+  sslMode: require
+  # AWS specific configuration
+  credentials:
+    secretName: rds-credentials
+    arn: "arn:aws:rds:us-east-1:123456789012:db:yawl-db"
+
+# ElastiCache for Redis
+redis:
+  enabled: false  # Use ElastiCache instead
+
+externalRedis:
+  enabled: true
+  host: "yawl-cache.abc123.cache.amazonaws.com"
+  port: 6379
+  auth:
+    enabled: true
+    password: "redis123!"
+  tls:
+    enabled: true
+
+# ALB Ingress Controller
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:123456789012:certificate/12345678"
+    alb.ingress.kubernetes.io/load-balancer-name: "yawl-alb"
+  hosts:
+    - host: yawl.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+# ACM Certificate
+certificate:
+  enabled: true
+  arn: "arn:aws:acm:us-east-1:123456789012:certificate/12345678"
+  domainName: "yawl.example.com"
+
+# IAM Roles for Service Accounts (IRSA)
+irsa:
+  enabled: true
+  roleArn: "arn:aws:iam::123456789012:role/yawl-pod-role"
+  policyArn:
+    - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+    - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+# CloudWatch Monitoring Integration
+monitoring:
+  enabled: true
+  aws:
+    enabled: true
+    cloudwatch:
+      namespace: "YAWL"
+      dimensions:
+        Environment: "production"
+        Service: "yawl"
+  serviceMonitor:
+    enabled: true
+  # CloudWatch Container Insights
+  containerInsights:
+    enabled: true
+    clusterName: "yawl-cluster"
+
+# CloudWatch Logs Integration
+logging:
+  enabled: true
+  aws:
+    enabled: true
+    logGroup: "/aws/eks/yawl-cluster/yawl"
+    region: "us-east-1"
+  fluentBit:
+    enabled: true
+    config: |
+      [SERVICE]
+          Flush         5
+          Log_Level     info
+
+      [INPUT]
+          Name              tail
+          Path              /var/log/containers/*yawl*.log
+          Parser            docker
+          Tag               kube.*
+          Refresh_Interval  5
+
+      [OUTPUT]
+          Name              cloudwatch_logs
+          Match             kube.*
+          log_group_name    /aws/eks/yawl-cluster/yawl
+          log_stream_prefix yawl-
+          region            us-east-1
+
+# AWS Backup Integration
+backup:
+  enabled: true
+  aws:
+    enabled: true
+    backupVault: "arn:aws:backup:us-east-1:123456789012:backup-vault:yawl-backup"
+  schedule: "0 2 * * *"
+  retention: 30
+  tags:
+    BackupSchedule: daily
+    BackupVault: yawl-backup
+
+# S3 for Artifact Storage
+s3:
+  enabled: true
+  bucket: "yawl-artifacts-123456789012"
+  region: "us-east-1"
+  prefix: "backups/"
+  encryption: "AES256"
+  versioningEnabled: true
+
+# Auto Scaling Configuration
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  # Karpenter integration (optional)
+  karpenter:
+    enabled: false
+    consolidationEnabled: true
+    ttlSecondsUntilExpired: 604800
+
+# Spot Instances
+spot:
+  enabled: true
+  interruptionHandler:
+    enabled: true
+
+# Network Configuration
+networkPolicy:
+  enabled: true
+  provider: "aws-vpc-cni"
+
+# Security Groups
+securityGroups:
+  enabled: true
+  controlPlane:
+    id: "sg-12345678"
+  nodes:
+    id: "sg-87654321"
+
+# EC2 Instance Types
+nodeGroups:
+  - name: "yawl-on-demand"
+    instanceTypes:
+      - "t3.large"
+      - "t3.xlarge"
+    desiredSize: 3
+    minSize: 2
+    maxSize: 10
+    spotPrice: false
+  - name: "yawl-spot"
+    instanceTypes:
+      - "t3.large"
+      - "t3.xlarge"
+    desiredSize: 0
+    minSize: 0
+    maxSize: 10
+    spotPrice: true
+
+# Node Selector
+nodeSelector:
+  workload-type: "yawl"
+  node-group: "on-demand"
+
+# Tolerations for Spot Instances
+tolerations:
+  - key: "capacity-type"
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+
+# AWS-specific annotations
+podAnnotations:
+  eks.amazonaws.com/compute-type: "ec2"
+
+# KMS Encryption
+encryption:
+  enabled: true
+  kmsKeyArn: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+  provider: "aws"
+
+# VPC Endpoint Access
+vpcEndpoint:
+  enabled: true
+  endpoints:
+    - "s3"
+    - "dynamodb"
+    - "ec2"
+    - "rds"
+
+# AWS X-Ray Integration (Distributed Tracing)
+xray:
+  enabled: false
+  daemon:
+    port: 2000
+
+# Secrets Manager Integration
+secretsManager:
+  enabled: true
+  rotationEnabled: true
+  rotationLambdaArn: "arn:aws:lambda:us-east-1:123456789012:function:rotate-yawl-secrets"
+
+# SNS for Notifications
+notifications:
+  enabled: true
+  sns:
+    topicArn: "arn:aws:sns:us-east-1:123456789012:yawl-alerts"

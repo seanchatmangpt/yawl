@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Parameter file for YAWL Workflow Engine ARM template deployment on Azure",
+    "author": "YAWL Foundation",
+    "version": "5.2.0"
+  },
+  "parameters": {
+    "environment": {
+      "value": "production"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "projectName": {
+      "value": "yawl"
+    },
+    "appServicePlanSku": {
+      "value": "P2V2"
+    },
+    "appServiceInstanceCount": {
+      "value": 3
+    },
+    "databaseName": {
+      "value": "yawl"
+    },
+    "databaseAdminUsername": {
+      "value": "yawladmin"
+    },
+    "databaseAdminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{keyVaultName}"
+        },
+        "secretName": "DatabasePassword"
+      }
+    },
+    "databaseSkuName": {
+      "value": "Standard_D4s_v3"
+    },
+    "databaseStorageSizeGB": {
+      "value": 128
+    },
+    "databaseBackupRetentionDays": {
+      "value": 30
+    },
+    "applicationGatewaySkuName": {
+      "value": "WAF_v2"
+    },
+    "applicationGatewayMinCapacity": {
+      "value": 2
+    },
+    "applicationGatewayMaxCapacity": {
+      "value": 10
+    },
+    "keyVaultSkuName": {
+      "value": "premium"
+    },
+    "enableDiagnostics": {
+      "value": true
+    },
+    "logRetentionDays": {
+      "value": 30
+    },
+    "tags": {
+      "value": {
+        "environment": "production",
+        "application": "yawl",
+        "managed-by": "arm-template",
+        "cost-center": "engineering",
+        "version": "5.2.0",
+        "owner": "platform-team"
+      }
+    }
+  }
+}

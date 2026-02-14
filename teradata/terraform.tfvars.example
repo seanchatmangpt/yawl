@@ -1,0 +1,80 @@
+# Example Terraform Variables for YAWL Teradata Deployment
+# Copy this file to terraform.tfvars and update with your actual values
+
+# GCP Configuration
+gcp_project_id = "your-gcp-project-id"
+gcp_region     = "us-central1"
+environment    = "prod"
+
+# Teradata Instance Configuration
+teradata_instance_name    = "yawl-teradata"
+teradata_instance_type    = "n2-highmem-8"
+teradata_disk_size        = 500
+teradata_disk_type        = "pd-ssd"
+teradata_version          = "17.20"
+teradata_admin_user       = "dbc"
+teradata_admin_password   = "ChangeMe123!@#"  # Use Secret Manager in production
+teradata_port             = 1025
+teradata_charset          = "UTF8"
+teradata_spool_space_gb   = 100
+teradata_temp_space_gb    = 50
+
+# YAWL Database Configuration
+yawl_database_name       = "yawl_workflow"
+yawl_db_user             = "yawl_user"
+yawl_db_password         = "ChangeMe456!@#"  # Use Secret Manager in production
+yawl_db_initial_space_gb = 50
+
+# GKE Configuration
+gke_node_count     = 3
+gke_min_nodes      = 3
+gke_max_nodes      = 10
+gke_machine_type   = "n2-standard-4"
+
+# Network Configuration
+network_name             = "yawl-teradata-network"
+subnet_cidr              = "10.0.0.0/20"
+enable_private_endpoint  = true
+allowed_cidr_blocks      = ["10.0.0.0/8", "203.0.113.0/24"]  # Add your network ranges
+
+# Security Configuration
+enable_encryption_at_rest   = true
+enable_encryption_in_transit = true
+backup_retention_days       = 30
+enable_automatic_backups    = true
+backup_window_start_hour    = 2
+
+# Monitoring and Logging
+enable_monitoring        = true
+enable_logging           = true
+log_retention_days       = 90
+alert_email              = "devops@example.com"
+cpu_threshold_percent    = 80
+memory_threshold_percent = 85
+disk_threshold_percent   = 90
+
+# Tags and Labels
+labels = {
+  application = "yawl"
+  database    = "teradata"
+  managed_by  = "terraform"
+  environment = "production"
+  team        = "data-engineering"
+  cost_center = "engineering"
+}
+
+tags = ["yawl", "teradata", "production", "critical"]
+
+# Docker Configuration
+docker_image_repository = "yawl-teradata"
+docker_image_tag        = "4.3-latest"
+
+# High Availability
+enable_multi_zone_deployment   = true
+enable_cross_region_replication = false
+replica_region                  = "us-west1"
+
+# Performance Tuning
+teradata_connection_pool_size = 20
+teradata_query_timeout_seconds = 600
+enable_query_caching          = true

@@ -1,0 +1,27 @@
+---
+# Primary Database Server Host Variables
+
+# Node-specific configuration
+node_role: primary
+replication_role: primary
+
+# Primary-specific database settings
+postgres_replication_slot_name: standby_slot
+postgres_replication_slot_type: physical
+
+# Backup settings for primary
+backup_schedule: "0 3 * * *"  # 3 AM daily
+backup_compression: true
+backup_compression_level: 9
+
+# Monitoring overrides for primary
+postgres_monitoring_enabled: true
+postgres_monitoring_interval: 10s
+
+# PostgreSQL specific settings
+shared_buffers: 256MB
+effective_cache_size: 1GB
+
+# Memory and CPU constraints (if limited)
+# max_memory: 8GB
+# cpu_cores: 4

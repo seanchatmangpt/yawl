@@ -1,0 +1,51 @@
+apiVersion: v2
+name: yawl
+description: YAWL - Yet Another Workflow Language Helm Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.24.0"
+
+keywords:
+  - workflow
+  - orchestration
+  - automation
+  - process
+  - engine
+
+home: https://yawl.org
+sources:
+  - https://github.com/yawl/yawl
+  - https://github.com/yawl/yawl-helm
+
+maintainers:
+  - name: YAWL Team
+    email: support@yawl.org
+    url: https://yawl.org
+
+icon: https://yawl.org/logo.png
+
+annotations:
+  category: Applications
+  licenses: LGPL-3.0
+  # Artifact Hub metadata
+  artifacthub.io/changes: |
+    - Initial release of YAWL Helm chart
+    - Support for Kubernetes 1.24+
+    - PostgreSQL database support
+    - Redis caching support
+    - Prometheus monitoring integration
+    - Ingress with TLS support
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/recommendations: |
+    - YAWL requires persistent storage for database
+    - Minimum 2GB RAM per pod recommended
+    - Use managed PostgreSQL for production deployments
+  artifacthub.io/links: |
+    - name: Support
+      url: https://yawl.org/support
+    - name: Documentation
+      url: https://docs.yawl.org
+    - name: Community Forum
+      url: https://forum.yawl.org

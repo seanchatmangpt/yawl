@@ -1,0 +1,72 @@
+---
+# PostgreSQL Primary Replication Configuration
+
+- name: Create replication user
+  postgresql_user:
+    name: replicator
+    password: "{{ vault_postgres_replication_password }}"
+    role_attr_flags: LOGIN,REPLICATION
+    state: present
+  become_user: postgres
+
+- name: Configure primary for replication
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - regexp: "^#?max_wal_senders = "
+      line: "max_wal_senders = {{ postgres_max_wal_senders }}"
+    - regexp: "^#?wal_keep_size = "
+      line: "wal_keep_size = {{ postgres_wal_keep_size }}"
+    - regexp: "^#?hot_standby = "
+      line: "hot_standby = {{ postgres_hot_standby }}"
+  notify: restart postgresql
+
+- name: Configure WAL archiving
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^#?archive_mode = "
+    line: "archive_mode = on"
+    state: present
+  when: postgres_wal_archiving_enabled
+  notify: restart postgresql
+
+- name: Configure archive command
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^#?archive_command = "
+    line: "archive_command = '{{ postgres_wal_archive_command }}'"
+    state: present
+  when: postgres_wal_archiving_enabled
+  notify: restart postgresql
+
+- name: Create replication slot
+  postgresql_query:
+    db: "{{ postgres_database }}"
+    query: |
+      SELECT * FROM pg_create_physical_replication_slot('{{ postgres_replication_slot_name }}', true);
+  become_user: postgres
+  ignore_errors: yes
+
+- name: Update pg_hba.conf for replication
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    regexp: "^# Replication connections"
+    line: |
+      # Replication connections
+      host    replication     replicator      10.0.0.0/8              md5
+    state: present
+  notify: restart postgresql
+
+- name: Flush handlers to apply changes
+  meta: flush_handlers
+
+- name: Create base backup directory
+  file:
+    path: "{{ postgres_backup_dir }}/base-backup"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0750'

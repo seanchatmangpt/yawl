@@ -1,0 +1,222 @@
+---
+# Monitoring Server Group Variables
+
+# Prometheus Configuration
+prometheus_version: latest
+prometheus_port: 9090
+prometheus_data_dir: /var/lib/prometheus
+prometheus_config_dir: /etc/prometheus
+prometheus_retention_time: 30d
+prometheus_retention_size: 50GB
+prometheus_storage_tsdb_path: /var/lib/prometheus/tsdb
+prometheus_storage_tsdb_retention_size: 50GB
+
+# Prometheus Scrape Configuration
+prometheus_scrape_interval: 15s
+prometheus_scrape_timeout: 10s
+prometheus_evaluation_interval: 15s
+prometheus_external_labels:
+  cluster: yawl-cluster
+  environment: production
+  region: primary
+
+# Prometheus Global Settings
+prometheus_global_settings:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+# Prometheus Targets
+prometheus_targets:
+  - job_name: yawl-app
+    static_configs:
+      - targets:
+          - 'app-node-1:9090'
+          - 'app-node-2:9090'
+          - 'app-node-3:9090'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+  - job_name: postgresql
+    static_configs:
+      - targets:
+          - 'db-primary:5432'
+          - 'db-secondary:5432'
+  - job_name: node
+    static_configs:
+      - targets:
+          - 'db-primary:9100'
+          - 'db-secondary:9100'
+          - 'app-node-1:9100'
+          - 'app-node-2:9100'
+          - 'app-node-3:9100'
+
+# Grafana Configuration
+grafana_version: latest
+grafana_port: 3000
+grafana_admin_user: admin
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
+grafana_data_dir: /var/lib/grafana
+grafana_config_dir: /etc/grafana
+grafana_provisioning_dir: /etc/grafana/provisioning
+grafana_dashboards_dir: /var/lib/grafana/dashboards
+grafana_logs_dir: /var/log/grafana
+grafana_plugins_dir: /var/lib/grafana/plugins
+
+# Grafana Datasources
+grafana_datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://localhost:9090
+    access: proxy
+    isDefault: true
+  - name: Elasticsearch
+    type: elasticsearch
+    url: http://localhost:9200
+    access: proxy
+    database: "logstash-*"
+    jsonData:
+      esVersion: "8.0.0"
+      timeField: "@timestamp"
+
+# Grafana Dashboards
+grafana_dashboards:
+  - name: YAWL Overview
+    source: grafana-yawl-overview.json
+  - name: Application Performance
+    source: grafana-app-performance.json
+  - name: Database Performance
+    source: grafana-db-performance.json
+  - name: System Resources
+    source: grafana-system-resources.json
+  - name: Kubernetes Cluster
+    source: grafana-k8s-cluster.json
+
+# Elasticsearch Configuration
+elasticsearch_version: 8.0.0
+elasticsearch_port: 9200
+elasticsearch_cluster_name: yawl-cluster
+elasticsearch_node_name: "{% if 'monitoring_servers' in groups %}{{ inventory_hostname }}{% endif %}"
+elasticsearch_data_dir: /var/lib/elasticsearch
+elasticsearch_logs_dir: /var/log/elasticsearch
+elasticsearch_heap_size: 2g
+elasticsearch_discovery_type: single-node
+elasticsearch_xpack_security_enabled: false
+elasticsearch_xpack_security_http_ssl_enabled: false
+elasticsearch_xpack_security_transport_ssl_enabled: false
+
+# Elasticsearch Index Settings
+elasticsearch_index_number_of_shards: 1
+elasticsearch_index_number_of_replicas: 0
+elasticsearch_index_refresh_interval: 1s
+elasticsearch_index_max_result_window: 10000
+
+# Kibana Configuration
+kibana_version: 8.0.0
+kibana_port: 5601
+kibana_data_dir: /var/lib/kibana
+kibana_logs_dir: /var/log/kibana
+kibana_elasticsearch_hosts:
+  - http://localhost:9200
+kibana_defaultAppId: discover
+kibana_timelion_enabled: true
+
+# Logstash Configuration
+logstash_version: 8.0.0
+logstash_port: 5000
+logstash_config_dir: /etc/logstash
+logstash_data_dir: /var/lib/logstash
+logstash_logs_dir: /var/log/logstash
+logstash_pipeline_workers: 4
+logstash_pipeline_batch_size: 125
+logstash_pipeline_batch_delay: 5
+
+# Logstash Inputs
+logstash_inputs:
+  - type: udp
+    port: 5140
+    codec: json
+  - type: tcp
+    port: 5141
+    codec: json
+  - type: http
+    port: 8888
+
+# Logstash Outputs
+logstash_outputs:
+  - type: elasticsearch
+    hosts:
+      - localhost:9200
+    index: "logstash-%{+YYYY.MM.dd}"
+
+# Filebeat Configuration
+filebeat_version: 8.0.0
+filebeat_logs_dir: /var/log/filebeat
+filebeat_data_dir: /var/lib/filebeat
+filebeat_config_file: /etc/filebeat/filebeat.yml
+filebeat_prospectors:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/yawl/*.log
+      - /usr/local/tomcat/logs/*.log
+    json.message_key: message
+    json.keys_under_root: true
+    fields:
+      app: yawl
+      environment: production
+
+# Alerts Configuration
+prometheus_alert_rules:
+  - name: YAWL High CPU Usage
+    condition: "process_cpu_seconds_total > 0.8"
+    for: 5m
+    severity: warning
+  - name: YAWL Pod Memory High
+    condition: "container_memory_usage_bytes > 1073741824"
+    for: 10m
+    severity: warning
+  - name: PostgreSQL High Connection Count
+    condition: "pg_stat_activity_count > 400"
+    for: 5m
+    severity: critical
+  - name: Disk Space Low
+    condition: "node_filesystem_avail_bytes / node_filesystem_size_bytes < 0.1"
+    for: 10m
+    severity: critical
+
+# Alertmanager Configuration
+alertmanager_version: latest
+alertmanager_port: 9093
+alertmanager_config_dir: /etc/alertmanager
+alertmanager_data_dir: /var/lib/alertmanager
+alertmanager_resolve_timeout: 5m
+
+# Alert Notification Configuration
+alertmanager_global:
+  resolve_timeout: 5m
+  slack_api_url: "{{ vault_slack_webhook_url }}"
+  email_from: "alerts@yawl.local"
+  email_smarthost: "smtp.gmail.com:587"
+
+# Node Exporter Configuration
+node_exporter_version: latest
+node_exporter_port: 9100
+node_exporter_textfile_dir: /var/lib/node_exporter/textfile_collector
+
+# Custom Metrics
+custom_metrics_enabled: true
+custom_metrics_collection_interval: 60
+
+# Retention and Cleanup
+logs_retention_days: 30
+metrics_retention_days: 365
+backup_retention_days: 30
+
+# Monitoring Stack Resource Limits
+prometheus_memory_limit: 2Gi
+prometheus_cpu_limit: 1000m
+grafana_memory_limit: 1Gi
+grafana_cpu_limit: 500m
+elasticsearch_memory_limit: 2Gi
+elasticsearch_cpu_limit: 1000m

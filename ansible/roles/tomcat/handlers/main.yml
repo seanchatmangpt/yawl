@@ -1,0 +1,25 @@
+---
+# Tomcat Handlers
+
+- name: restart tomcat
+  systemd:
+    name: tomcat
+    state: restarted
+  listen: "restart tomcat"
+
+- name: stop tomcat
+  systemd:
+    name: tomcat
+    state: stopped
+  listen: "stop tomcat"
+
+- name: start tomcat
+  systemd:
+    name: tomcat
+    state: started
+  listen: "start tomcat"
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+  listen: "reload systemd"

@@ -1,0 +1,315 @@
+api_key: ${DATADOG_API_KEY}
+app_key: ${DATADOG_APP_KEY}
+site: datadoghq.com
+
+# Basic configuration
+hostname: yawl-monitoring
+tags:
+  - environment:production
+  - service:yawl
+  - team:platform
+
+# Logging configuration
+logs_enabled: true
+logs_config:
+  service: yawl
+  logs:
+    # Docker logs
+    - type: docker
+      service: yawl-api
+      source: docker
+      tags:
+        - env:prod
+
+    # Syslog
+    - type: syslog
+      port: 514
+      protocol: tcp
+      service: yawl
+      source: syslog
+
+    # File logs
+    - type: file
+      path: /var/log/yawl/*.log
+      service: yawl
+      source: yawl
+      tags:
+        - app:yawl
+
+    - type: file
+      path: /var/log/nginx/access.log
+      service: nginx
+      source: nginx
+
+    - type: file
+      path: /var/log/postgresql/postgresql.log
+      service: postgresql
+      source: postgresql
+
+# APM (Application Performance Monitoring)
+apm_config:
+  enabled: true
+  apm_dd_url: https://trace.datadoghq.com
+  api_key: ${DATADOG_API_KEY}
+  hostname: yawl-monitoring
+  service: yawl
+  environment: production
+  tags:
+    - version:1.0.0
+
+  # Sampling rules
+  trace_sample_rate: 1.0
+
+  # Trace configuration
+  ignore_resources: false
+  log_file: /var/log/datadog/apm.log
+
+  # Receiver configuration
+  receiver_host: 0.0.0.0
+  receiver_port: 8126
+
+  # Connection pool settings
+  connection_pool_size: 10
+
+  # Span filtering rules
+  trace_rules:
+    - name: low_priority_services
+      resource: '^(health_check|heartbeat)$'
+      sample_rate: 0.1
+
+    - name: high_priority_services
+      service: 'api-server'
+      sample_rate: 1.0
+
+# Metrics configuration
+metrics:
+  enabled: true
+  host: localhost
+  port: 8125
+  interval: 15
+  namespace: yawl
+
+  custom_metrics:
+    # Application metrics
+    - type: counter
+      name: http.requests
+      tags:
+        - endpoint
+        - method
+        - status
+
+    - type: histogram
+      name: http.response.time
+      tags:
+        - endpoint
+        - method
+
+    - type: gauge
+      name: cache.size
+      tags:
+        - cache_type
+
+    - type: gauge
+      name: db.connections
+      tags:
+        - pool
+
+    - type: counter
+      name: errors
+      tags:
+        - error_type
+        - service
+
+# Process monitoring
+process_agent_config:
+  enabled: true
+  intervals:
+    process_check_interval: 10s
+    container_check_interval: 10s
+
+  process_discovery_interval: 4h
+
+  custom_sensitive_words:
+    - password
+    - passwd
+    - secret
+    - token
+    - api_key
+
+# System probe configuration (for network monitoring)
+system_probe_config:
+  enabled: true
+
+  # Network monitoring
+  network_enabled: true
+
+  # Service monitoring
+  service_monitoring_enabled: true
+
+  # eBPF configuration
+  ebpf_enabled: true
+  ebpf_map_cleaner_interval_seconds: 5
+
+# JMX configuration (for Java applications)
+jmx_config:
+  enabled: false
+  jmx_url: service:jmx:rmi:///jndi/rmi://localhost:9010/jmxrmi
+  jmx_user: datadog
+  jmx_password: ${DATADOG_JMX_PASSWORD}
+
+  metrics:
+    - include:
+        bean: "java.lang:*"
+        attribute:
+          - HeapMemoryUsage
+          - NonHeapMemoryUsage
+          - ThreadCount
+
+    - include:
+        bean: "org.apache.catalina.manager:*"
+        attribute:
+          - processingTime
+          - requestCount
+          - errorCount
+
+# Python integration
+python_config:
+  enabled: true
+  version: 3
+  additional_metrics: []
+
+# Docker integration
+docker_config:
+  enabled: true
+  docker_query_timeout: 5
+  docker_socket: /var/run/docker.sock
+
+  custom_metrics:
+    - type: container_cpu
+      tags:
+        - service
+
+    - type: container_memory
+      tags:
+        - service
+
+    - type: container_network
+      tags:
+        - service
+
+# Kubernetes integration
+kubernetes_config:
+  enabled: false
+  api_server_url: https://kubernetes.default:443
+  bearer_token_path: /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_path: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  kubelet_tls_verify: false
+  kubelet_client_crt: /var/run/secrets/kubernetes.io/serviceaccount/cert.pem
+  kubelet_client_key: /var/run/secrets/kubernetes.io/serviceaccount/key.pem
+
+# Postgres integration
+postgres_config:
+  enabled: true
+  hosts:
+    - host: localhost
+      port: 5432
+      username: postgres
+      password: ${POSTGRES_PASSWORD}
+      database: postgres
+      ssl: false
+
+  custom_queries:
+    - query: "SELECT datname, sum(heap_blks_read) FROM pg_catalog.pg_statio_user_tables GROUP BY datname;"
+      metric: yawl.db.cache.reads
+      tags:
+        - database
+
+# MySQL integration
+mysql_config:
+  enabled: false
+  host: localhost
+  port: 3306
+  user: datadog
+  password: ${MYSQL_PASSWORD}
+
+  custom_queries:
+    - query: "SELECT * FROM information_schema.INNODB_TRX"
+      metric: yawl.db.transactions
+
+# Redis integration
+redis_config:
+  enabled: false
+  host: localhost
+  port: 6379
+  password: ${REDIS_PASSWORD}
+
+# Nginx integration
+nginx_config:
+  enabled: true
+  status_url: http://localhost:8080/nginx_status
+
+# Alerts and Monitors
+monitors:
+  - name: High CPU Usage
+    type: metric alert
+    metric: system.cpu.user
+    threshold: 0.8
+    evaluation_window: 5m
+    severity: warning
+
+  - name: High Memory Usage
+    type: metric alert
+    metric: system.mem.pct_usable
+    threshold: 0.2
+    evaluation_window: 5m
+    severity: warning
+
+  - name: Service Down
+    type: service check
+    service: yawl-api
+    severity: critical
+
+  - name: High Error Rate
+    type: metric alert
+    metric: trace.flask.request.errors
+    threshold: 0.1
+    evaluation_window: 5m
+    severity: warning
+
+# Dashboards
+dashboards:
+  - name: System Overview
+    description: System metrics overview
+
+  - name: Application Performance
+    description: Application performance metrics
+
+  - name: Container Metrics
+    description: Docker container metrics
+
+# Synthetic tests
+synthetics:
+  - name: API Health Check
+    type: api
+    url: https://api.example.com/health
+    interval: 300
+    tags:
+      - env:prod
+
+  - name: Web Performance
+    type: browser
+    url: https://example.com
+    interval: 600
+    tags:
+      - env:prod
+
+# Logging
+logging:
+  log_file: /var/log/datadog/agent.log
+  log_level: INFO
+  log_to_syslog: false
+  log_to_console: false
+  syslog_uri: localhost:514
+  syslog_rfc: 5424
+  file_log_roll_count: 10
+  file_log_roll_size: 20971520

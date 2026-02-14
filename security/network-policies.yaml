@@ -1,0 +1,243 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  # HIPAA §164.312(a)(1): Access control - deny all by default
+  # SOC2 CC7.4: System monitoring - network segmentation
+  # PCI-DSS 1: Network segmentation requirements
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+  # Allow DNS only by default
+  # PCI-DSS 1.3: Restrict outbound traffic
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-ingress
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      monitoring: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  # HIPAA §164.312(b): Audit controls - allow monitoring access
+  # SOC2 CC7.2: System monitoring and logging
+  # PCI-DSS 10: Logging and monitoring
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internal-communication
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      tier: application
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              tier: application
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              tier: database
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 3306
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              tier: cache
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+  # PCI-DSS 1.2: Network traffic restriction
+  # HIPAA §164.312(a)(1): Firewall rules
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-isolation
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      tier: database
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: application
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 3306
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+  # HIPAA §164.312(a)(2)(i): Unique user identification
+  # PCI-DSS 1.3: Database isolation from internet
+  # SOC2 CC7.1: Restricted access to sensitive data
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: egress-allow-dns-external
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+  # Allow DNS queries to external resolvers
+  # PCI-DSS 1: Network segmentation
+  # HIPAA: Required for service availability
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-api-gateway
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+  # HIPAA §164.312(a)(2)(iv): Encryption in transit
+  # PCI-DSS 1: Public-facing API gateway
+  # SOC2 CC7: Protected network access
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-cross-namespace-egress
+  namespace: default
+  labels:
+    app: network-security
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector: {}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+  # PCI-DSS 1.2: Restrict inter-namespace communication
+  # HIPAA: Namespace isolation for multi-tenancy
+  # SOC2 CC7.4: Network segregation controls

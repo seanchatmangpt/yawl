@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # Elasticsearch - Search and analytics engine
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: yawl-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - xpack.security.enabled=true
+      - xpack.license.self_generated.type=basic
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - cluster.name=yawl-cluster
+      - node.name=es-node-1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    healthcheck:
+      test: curl -s http://localhost:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - observability
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # Kibana - Visualization and exploration platform
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.0
+    container_name: yawl-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - xpack.security.enabled=true
+      - SERVER_NAME=yawl-kibana
+      - SERVER_BASEPATH=/kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: curl -s http://localhost:5601/kibana/api/status >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - observability
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Logstash - Data processing pipeline
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.5.0
+    container_name: yawl-logstash
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./patterns:/usr/share/logstash/patterns:ro
+      - logstash-data:/usr/share/logstash/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Filebeat - Log shipper and collector
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.5.0
+    container_name: yawl-filebeat
+    user: root
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat-data:/usr/share/filebeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+    command: filebeat -e -strict.perms=false
+
+  # Metricbeat - Metrics collection
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.5.0
+    container_name: yawl-metricbeat
+    user: root
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    volumes:
+      - ./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+      - metricbeat-data:/usr/share/metricbeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+    command: metricbeat -e -strict.perms=false
+
+  # Packetbeat - Network data collection
+  packetbeat:
+    image: docker.elastic.co/beats/packetbeat:8.5.0
+    container_name: yawl-packetbeat
+    user: root
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    volumes:
+      - ./packetbeat.yml:/usr/share/packetbeat/packetbeat.yml:ro
+      - packetbeat-data:/usr/share/packetbeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+    command: packetbeat -e -strict.perms=false
+
+  # APM Server - Application Performance Monitoring
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.5.0
+    container_name: yawl-apm-server
+    ports:
+      - "8200:8200"
+    environment:
+      - apm-server.host=0.0.0.0:8200
+      - apm-server.auth.anonymous.enabled=true
+      - apm-server.kibana.enabled=true
+      - apm-server.kibana.host=kibana:5601
+      - apm-server.kibana.username=elastic
+      - apm-server.kibana.password=${ELASTIC_PASSWORD:-changeme}
+      - output.elasticsearch.hosts=http://elasticsearch:9200
+      - output.elasticsearch.username=elastic
+      - output.elasticsearch.password=${ELASTIC_PASSWORD:-changeme}
+    cap_add:
+      - CAP_SYS_PTRACE
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  logstash-data:
+    driver: local
+  filebeat-data:
+    driver: local
+  metricbeat-data:
+    driver: local
+  packetbeat-data:
+    driver: local
+
+networks:
+  observability:
+    driver: bridge

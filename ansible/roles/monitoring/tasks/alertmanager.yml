@@ -1,0 +1,78 @@
+---
+# Alertmanager Installation and Configuration
+
+- name: Create alertmanager user
+  user:
+    name: alertmanager
+    shell: /bin/nologin
+    home: "{{ alertmanager_data_dir }}"
+    createhome: no
+    state: present
+
+- name: Download Alertmanager
+  get_url:
+    url: "https://github.com/prometheus/alertmanager/releases/download/v0.25.0/alertmanager-0.25.0.linux-amd64.tar.gz"
+    dest: "/tmp/alertmanager-0.25.0.linux-amd64.tar.gz"
+  register: alertmanager_download
+  until: alertmanager_download is succeeded
+  retries: 3
+  delay: 5
+
+- name: Extract Alertmanager
+  unarchive:
+    src: "/tmp/alertmanager-0.25.0.linux-amd64.tar.gz"
+    dest: /opt
+    extra_opts:
+      - --strip-components=1
+      - alertmanager-0.25.0.linux-amd64
+    remote_src: yes
+
+- name: Create Alertmanager configuration directory
+  file:
+    path: "{{ alertmanager_config_dir }}"
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: '0755'
+
+- name: Create Alertmanager data directory
+  file:
+    path: "{{ alertmanager_data_dir }}"
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: '0755'
+
+- name: Configure Alertmanager alertmanager.yml
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+    backup: yes
+
+- name: Create Alertmanager systemd service
+  template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start Alertmanager
+  systemd:
+    name: alertmanager
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: Wait for Alertmanager to be ready
+  uri:
+    url: "http://localhost:{{ alertmanager_port }}/#/alerts"
+    method: GET
+    status_code: 200
+  register: alertmanager_ready
+  retries: 10
+  delay: 5
+  ignore_errors: yes

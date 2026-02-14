@@ -1,0 +1,66 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-network-policy
+  namespace: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app: yawl
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: yawl
+    - podSelector:
+        matchLabels:
+          app: yawl
+    ports:
+    - protocol: TCP
+      port: 8080
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: yawl
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: yawl
+      podSelector:
+        matchLabels:
+          app: cloudsql-proxy
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 169.254.169.254/32
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80

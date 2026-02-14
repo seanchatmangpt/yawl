@@ -1,0 +1,125 @@
+---
+# Monitoring Stack Installation and Configuration
+
+- name: Create monitoring user
+  user:
+    name: monitoring
+    shell: /bin/bash
+    home: /home/monitoring
+    createhome: yes
+    state: present
+
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: monitoring
+    group: monitoring
+    mode: '0755'
+  loop:
+    - "{{ prometheus_data_dir }}"
+    - "{{ prometheus_config_dir }}"
+    - "{{ grafana_data_dir }}"
+    - "{{ elasticsearch_data_dir }}"
+    - "{{ kibana_data_dir }}"
+    - "{{ logstash_config_dir }}"
+
+- name: Install Prometheus
+  include_tasks: prometheus.yml
+
+- name: Install Grafana
+  include_tasks: grafana.yml
+
+- name: Install Elasticsearch
+  include_tasks: elasticsearch.yml
+
+- name: Install Kibana
+  include_tasks: kibana.yml
+
+- name: Install Logstash
+  include_tasks: logstash.yml
+
+- name: Install Alertmanager
+  include_tasks: alertmanager.yml
+
+- name: Install Filebeat
+  include_tasks: filebeat.yml
+
+- name: Configure monitoring network access
+  template:
+    src: ufw-monitoring.rules.j2
+    dest: /etc/ufw/applications.d/yawl-monitoring
+    owner: root
+    group: root
+    mode: '0644'
+  when: firewall_enabled
+
+- name: Enable monitoring ufw rules
+  ufw:
+    rule: allow
+    app: "yawl-monitoring-{{ item }}"
+    state: enabled
+  loop:
+    - prometheus
+    - grafana
+    - elasticsearch
+    - kibana
+  when: firewall_enabled
+  ignore_errors: yes
+
+- name: Setup monitoring dashboard generation
+  template:
+    src: generate-dashboards.sh.j2
+    dest: /usr/local/bin/generate-dashboards.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Run dashboard generation
+  shell: /usr/local/bin/generate-dashboards.sh
+  environment:
+    GRAFANA_URL: "http://localhost:{{ grafana_port }}"
+    GRAFANA_USER: "{{ grafana_admin_user }}"
+    GRAFANA_PASSWORD: "{{ grafana_admin_password }}"
+
+- name: Setup monitoring backup
+  template:
+    src: backup-monitoring.sh.j2
+    dest: /usr/local/bin/backup-monitoring.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create monitoring backup cron job
+  cron:
+    name: "Monitoring backup"
+    hour: "2"
+    minute: "0"
+    job: "/usr/local/bin/backup-monitoring.sh > /var/log/yawl/monitoring-backup.log 2>&1"
+    user: root
+
+- name: Verify monitoring stack
+  uri:
+    url: "http://localhost:{{ item.port }}"
+    method: GET
+    status_code: 200
+  register: monitoring_check
+  retries: 10
+  delay: 5
+  loop:
+    - port: "{{ prometheus_port }}"
+      name: Prometheus
+    - port: "{{ grafana_port }}"
+      name: Grafana
+  ignore_errors: yes
+
+- name: Display monitoring stack status
+  debug:
+    msg: |
+      Monitoring Stack Deployed Successfully:
+      ========================================
+      Prometheus: http://localhost:{{ prometheus_port }}
+      Grafana: http://localhost:{{ grafana_port }} ({{ grafana_admin_user }} / password)
+      Elasticsearch: http://localhost:{{ elasticsearch_port }}
+      Kibana: http://localhost:{{ kibana_port }}
+      Alertmanager: http://localhost:{{ alertmanager_port }}

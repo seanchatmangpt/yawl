@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl
+  namespace: yawl
+  labels:
+    app: yawl
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yawl
+  namespace: yawl
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yawl
+  namespace: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: yawl
+subjects:
+- kind: ServiceAccount
+  name: yawl
+  namespace: yawl
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudsql-proxy
+  namespace: yawl
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudsql-proxy
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudsql-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudsql-proxy
+subjects:
+- kind: ServiceAccount
+  name: cloudsql-proxy
+  namespace: yawl

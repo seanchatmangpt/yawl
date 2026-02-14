@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.fullname" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "yawl.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "yawl.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: YAWL_DB_HOST
+          value: "{{ .Values.database.host }}"
+        - name: YAWL_DB_PORT
+          value: "{{ .Values.database.port }}"
+        - name: YAWL_DB_NAME
+          value: "{{ .Values.database.name }}"
+        - name: YAWL_DB_USER
+          value: "{{ .Values.database.user }}"
+        - name: YAWL_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "yawl.fullname" . }}-db
+              key: password
+        - name: YAWL_HEAP_SIZE
+          value: "{{ .Values.application.heapSize }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.application.loglevel }}"
+        {{- if .Values.redis.enabled }}
+        - name: REDIS_HOST
+          value: "{{ .Values.redis.host }}"
+        - name: REDIS_PORT
+          value: "{{ .Values.redis.port }}"
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.cloudsqlProxy.enabled }}
+      - name: cloud-sql-proxy
+        image: {{ .Values.cloudsqlProxy.image }}
+        command:
+          - "/cloud-sql-proxy"
+          - "PROJECT_ID:us-central1:yawl-postgres-14"
+        resources:
+          {{- toYaml .Values.cloudsqlProxy.resources | nindent 12 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

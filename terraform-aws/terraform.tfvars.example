@@ -1,0 +1,80 @@
+# YAWL ECS Fargate Terraform Configuration Example
+# Copy this file to terraform.tfvars and update with your specific values
+
+# AWS Configuration
+aws_region     = "us-east-1"
+aws_account_id = "123456789012" # Replace with your AWS account ID
+
+# Environment
+environment = "dev" # Options: dev, staging, prod
+
+# Project Configuration
+project_name = "YAWL"
+
+# VPC Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+public_subnets    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+private_subnets   = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+
+# RDS Configuration
+rds_allocated_storage      = 100
+rds_instance_class         = "db.t3.medium"  # Options: db.t3.micro, db.t3.small, db.t3.medium, db.t3.large, etc.
+rds_engine_version         = "15.3"
+rds_master_username        = "yawlroot"
+rds_master_password        = "ChangeMe12345!"  # Must be at least 8 characters
+rds_multi_az               = true
+rds_backup_retention_period = 7
+rds_deletion_protection    = true
+
+# ECS Configuration
+container_image  = "123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl:latest"
+container_port   = 8080
+task_cpu         = 1024      # Options: 256, 512, 1024, 2048, 4096
+task_memory      = 2048      # Options: 512-30720 (must be valid for CPU)
+desired_count    = 2
+min_capacity     = 2
+max_capacity     = 10
+target_cpu_utilization      = 70
+target_memory_utilization   = 80
+ecs_log_retention_days      = 7
+
+# ECS Environment Variables
+ecs_environment_variables = {
+  LOG_LEVEL     = "INFO"
+  APP_NAME      = "YAWL"
+  DEBUG         = "false"
+}
+
+# ECS Secrets (from AWS Secrets Manager or Parameter Store)
+# Format: "VARIABLE_NAME" = "arn:aws:secretsmanager:region:account-id:secret:name"
+# ecs_secrets = {
+#   DATABASE_PASSWORD = "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds-password"
+#   API_KEY = "arn:aws:secretsmanager:us-east-1:123456789012:secret:api-key"
+# }
+
+# ALB Configuration
+alb_target_port               = 8080
+health_check_path            = "/"
+health_check_matcher         = "200-299"
+alb_enable_deletion_protection = false
+alb_enable_access_logs       = false
+# alb_access_logs_bucket       = "yawl-alb-logs"
+ssl_certificate_arn          = null  # Provide ARN if using HTTPS
+
+# Monitoring Configuration
+enable_monitoring            = true
+alarm_email                  = "ops@example.com"
+# slack_webhook_url            = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+monitoring_log_retention_days = 7
+error_alarm_threshold        = 10
+
+# S3 Configuration
+s3_bucket_name = "yawl-app-data"
+
+# Additional Tags
+tags = {
+  Team        = "DevOps"
+  CostCenter  = "Engineering"
+  Compliance  = "HIPAA" # Add compliance tags as needed
+}

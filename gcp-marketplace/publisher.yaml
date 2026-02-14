@@ -1,0 +1,145 @@
+apiVersion: marketplace.cnprog.com/v1
+kind: Application
+metadata:
+  name: yawl
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  displayName: YAWL Workflow Engine
+  description: |
+    YAWL (Yet Another Workflow Language) is a powerful, open-source Business Process
+    Management (BPM) system based on a rigorous theoretical foundation. It enables
+    organizations to design, execute, monitor, and analyze complex business processes.
+
+    Features:
+    - Complete workflow lifecycle management
+    - Multi-service architecture for scalability
+    - PostgreSQL backend for reliability
+    - RESTful and XML-based APIs
+    - Real-time process monitoring
+    - Resource allocation and worklist management
+    - Support for complex process patterns
+
+  version: "5.2"
+  releaseVersion: "5.2.1"
+  releaseNotes: |
+    YAWL 5.2 - Enterprise Workflow Management Platform
+    - Kubernetes-native deployment
+    - Cloud SQL integration
+    - Advanced monitoring and logging
+    - High availability configuration
+    - Auto-scaling capabilities
+    - Production-ready security
+
+  restoreWarningMessage: "YAWL data is persistent. Ensure backups before reinstalling."
+
+  maintainers:
+  - name: YAWL Development Team
+    email: support@yawlfoundation.org
+
+  info:
+  - name: Website
+    value: https://www.yawlfoundation.org
+  - name: Documentation
+    value: https://docs.yawlfoundation.org
+  - name: Support
+    value: https://support.yawlfoundation.org
+
+  images:
+  - name: YAWL Engine
+    image: us-central1-docker.pkg.dev/PROJECT_ID/yawl/yawl:latest
+  - name: PostgreSQL
+    image: gcr.io/cloudsql-docker/cloud-sql-proxy:2.7.0
+
+  deployingStatuses:
+  - name: "Creating namespace"
+    type: "Creating"
+  - name: "Creating service account"
+    type: "Creating"
+  - name: "Deploying YAWL"
+    type: "Creating"
+  - name: "Deploying database"
+    type: "Deploying"
+  - name: "Waiting for readiness"
+    type: "Pending"
+
+  uiRules:
+  - displayRule: "app.kubernetes.io/name=yawl"
+    effect: "Hide"
+
+  properties:
+  - name: cpuAllocation
+    label: CPU Allocation
+    description: Number of CPUs to allocate
+    type: string
+    default: "2"
+    immutable: false
+
+  - name: memoryAllocation
+    label: Memory Allocation
+    description: Memory to allocate (in Gi)
+    type: string
+    default: "2"
+    immutable: false
+
+  - name: replicaCount
+    label: Replica Count
+    description: Number of YAWL instances
+    type: string
+    default: "3"
+    immutable: false
+
+  - name: databaseTier
+    label: Database Tier
+    description: Cloud SQL instance tier
+    type: string
+    default: "db-custom-2-7680"
+    immutable: true
+
+  - name: databaseBackupRetention
+    label: Backup Retention
+    description: Days to retain database backups
+    type: string
+    default: "30"
+    immutable: false
+
+  serviceAccount:
+  - name: yawl
+
+  addons:
+  - name: Google Cloud Monitoring
+    description: Integrated monitoring and alerting
+  - name: Google Cloud Logging
+    description: Centralized logging
+  - name: Cloud SQL Automatic Backups
+    description: Automated database backups
+
+  shortDescription: Enterprise BPM and Workflow Management Platform
+
+  solutionGroup: bpm-workflow
+
+  supportInfo: |
+    YAWL is a mature, production-ready workflow management platform.
+    For support, visit https://www.yawlfoundation.org/support
+
+  annotations:
+    marketplace.cloud.google.com/check-for-operator: "false"
+    marketplace.cloud.google.com/deploy-info: "kubernetes"
+    marketplace.cloud.google.com/operator-type: "k8s"
+
+  roles:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    name: yawl
+    rules:
+    - apiGroups: [""]
+      resources: ["pods", "pods/log"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources: ["services"]
+      verbs: ["get", "list"]
+    - apiGroups: ["apps"]
+      resources: ["deployments", "replicasets"]
+      verbs: ["get", "list"]

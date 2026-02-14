@@ -1,0 +1,124 @@
+---
+# Grafana Installation and Configuration
+
+- name: Add Grafana repository key
+  apt_key:
+    url: https://packages.grafana.com/gpg.key
+    state: present
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: "deb https://packages.grafana.com/oss/deb stable main"
+    state: present
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+
+- name: Create Grafana provisioning directories
+  file:
+    path: "{{ grafana_provisioning_dir }}/{{ item }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+  loop:
+    - datasources
+    - dashboards
+
+- name: Create Grafana dashboards directory
+  file:
+    path: "{{ grafana_dashboards_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
+- name: Configure Grafana
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: grafana
+    group: grafana
+    mode: '0644'
+    backup: yes
+  notify: restart grafana
+
+- name: Configure Grafana datasources
+  template:
+    src: grafana-datasources.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/datasources/prometheus.yml"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify: restart grafana
+
+- name: Configure Grafana dashboards provisioning
+  template:
+    src: grafana-dashboards.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/dashboards/dashboards.yml"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify: restart grafana
+
+- name: Create YAWL overview dashboard
+  template:
+    src: dashboard-yawl-overview.json.j2
+    dest: "{{ grafana_dashboards_dir }}/yawl-overview.json"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Create application performance dashboard
+  template:
+    src: dashboard-app-performance.json.j2
+    dest: "{{ grafana_dashboards_dir }}/app-performance.json"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Create database performance dashboard
+  template:
+    src: dashboard-db-performance.json.j2
+    dest: "{{ grafana_dashboards_dir }}/db-performance.json"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Enable and start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
+
+- name: Wait for Grafana to be ready
+  uri:
+    url: "http://localhost:{{ grafana_port }}/api/health"
+    method: GET
+    status_code: 200
+  register: grafana_ready
+  retries: 10
+  delay: 5
+
+- name: Setup Grafana admin password
+  shell: |
+    curl -X POST -H "Content-Type: application/json" \
+      -d '{"password":"{{ grafana_admin_password }}"}' \
+      http://admin:admin@localhost:{{ grafana_port }}/api/admin/users/1/password
+  ignore_errors: yes
+  tags:
+    - grafana_admin
+
+- name: Add notification channels to Grafana
+  grafana_notification:
+    name: "{{ item.name }}"
+    state: present
+    grafana_url: "http://localhost:{{ grafana_port }}"
+    grafana_api_key: "{{ grafana_api_key | default(omit) }}"
+    org_id: 1
+    type: "{{ item.type }}"
+    settings: "{{ item.settings | default(omit) }}"
+  loop: "{{ grafana_notification_channels | default([]) }}"
+  ignore_errors: yes

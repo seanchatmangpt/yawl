@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yawl-ingress
+  namespace: yawl
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "yawl-ip"
+    networking.gke.io/managed-certificates: "yawl-cert"
+    kubernetes.io/ingress.allow-http: "true"
+spec:
+  rules:
+  - host: "yawl.example.com"
+    http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: yawl
+            port:
+              number: 80
+  - http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: yawl
+            port:
+              number: 80

@@ -1,0 +1,235 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: yawl
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - type: bind
+        source: ./docker/init-db.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+    networks:
+      - yawl-overlay
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - db_password
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - target: 6379
+        published: 6379
+        protocol: tcp
+        mode: host
+    volumes:
+      - redis_data:/data
+    networks:
+      - yawl-overlay
+    command: redis-server --appendonly yes
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+
+  # YAWL Workflow Engine
+  yawl:
+    image: us-central1-docker.pkg.dev/PROJECT_ID/yawl/yawl:latest
+    environment:
+      YAWL_DB_HOST: postgres
+      YAWL_DB_PORT: 5432
+      YAWL_DB_NAME: yawl
+      YAWL_DB_USER: yawl
+      YAWL_DB_PASSWORD_FILE: /run/secrets/db_password
+      YAWL_HEAP_SIZE: 1024m
+      JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+      LOG_LEVEL: INFO
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - yawl_logs:/usr/local/tomcat/logs
+      - yawl_data:/data
+    networks:
+      - yawl-overlay
+    depends_on:
+      - postgres
+      - redis
+    deploy:
+      replicas: 3
+      labels:
+        - "com.example.description=YAWL Workflow Engine"
+      placement:
+        constraints:
+          - node.labels.tier == worker
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+      update_config:
+        parallelism: 1
+        delay: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+    secrets:
+      - db_password
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - target: 9090
+        published: 9090
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - type: bind
+        source: ./docker/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - yawl-overlay
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: ingress
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD_FILE: /run/secrets/grafana_password
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - type: bind
+        source: ./docker/grafana/provisioning
+        target: /etc/grafana/provisioning
+    networks:
+      - yawl-overlay
+    depends_on:
+      - prometheus
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+    secrets:
+      - grafana_password
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: ingress
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - type: bind
+        source: ./docker/nginx.conf
+        target: /etc/nginx/nginx.conf
+      - type: bind
+        source: ./docker/certs
+        target: /etc/nginx/certs
+    networks:
+      - yawl-overlay
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+networks:
+  yawl-overlay:
+    driver: overlay
+    driver_opts:
+      com.docker.network.driver.overlay.vxlanid: 4096
+    ipam:
+      config:
+        - subnet: 10.0.9.0/24
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  yawl_logs:
+  yawl_data:
+
+secrets:
+  db_password:
+    external: true
+    name: yawl_db_password
+  grafana_password:
+    external: true
+    name: yawl_grafana_password

@@ -1,0 +1,391 @@
+# Infracost Configuration for YAWL Cost Optimization
+# Infracost is an open-source tool that shows cloud cost estimates for infrastructure-as-code
+# https://www.infracost.io/
+
+version: 0.1
+
+# Core configuration
+core:
+  # Enable/disable Infracost
+  enabled: true
+
+  # Log level: debug, info, warning, error
+  log_level: info
+
+  # Whether to fetch prices from the Infracost Cloud API
+  enable_cloud_api: true
+
+  # Check for updates on startup
+  check_for_updates: true
+
+# Pricing configuration
+pricing:
+  # API key for Infracost Cloud API (set as environment variable INFRACOST_API_KEY)
+  # This is required for private registries and some features
+  api_key: "${INFRACOST_API_KEY}"
+
+  # Pricing data location (cloud or local)
+  pricing_data: cloud
+
+# Provider configurations
+providers:
+  # AWS provider
+  aws:
+    # AWS account ID (optional, used for cost breakdown)
+    account_id: null
+
+    # Default region for AWS resources (if not specified in IaC)
+    region: us-east-1
+
+    # Account billing data (optional, for more accurate pricing)
+    billing_account_id: null
+
+    # Assume role for cross-account access (optional)
+    assume_role: null
+
+  # GCP provider
+  gcp:
+    # Project ID
+    project_id: null
+
+    # Pricing region
+    region: us-central1
+
+  # Azure provider
+  azure:
+    # Subscription ID
+    subscription_id: null
+
+    # Tenant ID
+    tenant_id: null
+
+# Terraform configuration
+terraform:
+  # TF_VAR_* environment variables to pass to Terraform
+  vars: {}
+
+  # Environment variables
+  env_vars: {}
+
+# Output configuration
+output:
+  # Output format: json, html, table, sarif, csv
+  format: table
+
+  # Show resource changes (for CLI)
+  show_resources: true
+
+  # Show breakdown by provider
+  show_provider_breakdown: true
+
+  # Show skipped resources
+  show_skipped: true
+
+  # Show estimated ranges
+  show_ranges: true
+
+# Report configuration
+reporting:
+  # Generate HTML report
+  html_report:
+    enabled: true
+    output_file: ./cost-analysis-report.html
+    include_options:
+      - summary
+      - detailed_breakdown
+      - comparison
+      - recommendations
+
+  # Generate JSON report for programmatic use
+  json_report:
+    enabled: true
+    output_file: ./cost-analysis-report.json
+
+  # Slack integration
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#cost-optimization"
+    message_template: |
+      📊 YAWL Infrastructure Cost Analysis
+
+      *Total Monthly Cost:* ${TOTAL_COST}
+      *Change from Current:* ${COST_CHANGE}
+
+      *Top 5 Most Expensive Resources:*
+      ${TOP_RESOURCES}
+
+      *Estimated Savings Opportunities:*
+      ${SAVINGS_OPPORTUNITIES}
+
+  # Email reporting
+  email:
+    enabled: false
+    recipients:
+      - devops@example.com
+      - finance@example.com
+    frequency: weekly
+    day_of_week: Friday
+    time: "09:00"
+
+# Integration with CI/CD
+ci_integration:
+  # GitHub Actions
+  github:
+    enabled: true
+    # Add comment to PRs with cost estimate
+    add_pr_comment: true
+    # Fail if cost increases beyond threshold
+    fail_if_cost_increase: false
+    cost_increase_threshold: 100  # USD
+
+  # GitLab CI
+  gitlab:
+    enabled: false
+    add_mr_comment: true
+
+  # Azure Pipelines
+  azure_pipelines:
+    enabled: false
+
+# Policy configuration
+policies:
+  # Enable policy checks
+  enabled: true
+
+  # Policy file paths
+  policy_paths:
+    - ./policies/
+
+  # Warn if resources don't meet policies
+  warn_on_violations: true
+
+# Comparison configuration
+comparison:
+  # Compare against baseline
+  baseline_version: main
+
+  # Show cost difference
+  show_diff: true
+
+  # Highlight increases
+  highlight_increases: true
+
+# Resource filtering
+filtering:
+  # Include only certain resource types
+  include_resources:
+    # Compute
+    - aws_instance
+    - aws_autoscaling_group
+    - aws_ecs_task_definition
+    - aws_lambda_function
+    - google_compute_instance
+    - azure_virtual_machine
+
+    # Storage
+    - aws_ebs_volume
+    - aws_s3_bucket
+    - google_storage_bucket
+    - azure_storage_account
+
+    # Database
+    - aws_db_instance
+    - aws_rds_cluster
+    - google_sql_database_instance
+    - azure_mysql_server
+
+    # Networking
+    - aws_elastic_ip
+    - aws_nat_gateway
+    - aws_vpc_peering_connection
+    - google_compute_network
+    - azure_virtual_network
+
+  # Exclude certain resources
+  exclude_resources:
+    - aws_security_group
+    - aws_iam_role
+    - google_compute_firewall
+
+  # Include only resources with certain tags
+  include_tags:
+    environment: production
+    cost_tracked: "true"
+
+  # Exclude resources with certain tags
+  exclude_tags:
+    temporary: "true"
+    cost_tracking: "false"
+
+# Cost grouping
+grouping:
+  # Group costs by tag
+  by_tags:
+    - environment
+    - team
+    - project
+
+  # Group by provider
+  by_provider: true
+
+  # Group by resource type
+  by_resource_type: true
+
+# Budget configuration
+budget:
+  # Monthly budget limit
+  monthly_limit: 15000
+
+  # Quarterly budget limit
+  quarterly_limit: 45000
+
+  # Annual budget limit
+  annual_limit: 180000
+
+  # Alert thresholds (percentage of budget)
+  alert_thresholds:
+    warning: 80
+    critical: 95
+
+# Cost optimization recommendations
+recommendations:
+  # Enable recommendation engine
+  enabled: true
+
+  # Types of recommendations to show
+  types:
+    - right_sizing
+    - reserved_instances
+    - savings_plans
+    - spot_instances
+    - storage_optimization
+    - unused_resources
+
+  # Minimum savings to show (USD)
+  minimum_savings: 10
+
+# Advanced options
+advanced:
+  # Cache terraform plans
+  cache_tf_plans: true
+
+  # Parallel processing
+  max_parallel_processes: 4
+
+  # Retry failed API calls
+  max_retries: 3
+  retry_delay_ms: 1000
+
+  # Include cloud/enterprise features
+  enable_enterprise_features: false
+
+# Scheduled analysis
+scheduling:
+  # Run automated cost analysis
+  enabled: true
+
+  # Daily analysis at this time
+  daily_analysis:
+    enabled: true
+    time: "09:00"
+
+  # Weekly analysis on specific day
+  weekly_analysis:
+    enabled: true
+    day: Friday
+    time: "10:00"
+
+  # Monthly analysis
+  monthly_analysis:
+    enabled: true
+    day_of_month: 1
+    time: "10:00"
+
+# Integration with other tools
+integrations:
+  # Terraform Cloud/Enterprise
+  terraform_cloud:
+    enabled: false
+    organization: null
+    api_token: "${TFC_TOKEN}"
+
+  # AWS Cost Explorer
+  aws_cost_explorer:
+    enabled: true
+    compare_with_ce: true
+
+  # Terraform test framework
+  terraform_tests:
+    enabled: true
+    test_path: ./tests/
+
+# Cost categories for analysis
+cost_categories:
+  - name: Compute
+    resources:
+      - aws_instance
+      - aws_autoscaling_group
+      - google_compute_instance
+      - azure_virtual_machine
+
+  - name: Storage
+    resources:
+      - aws_ebs_volume
+      - aws_s3_bucket
+      - google_storage_bucket
+      - azure_storage_account
+
+  - name: Database
+    resources:
+      - aws_db_instance
+      - aws_rds_cluster
+      - google_sql_database_instance
+      - azure_mysql_server
+
+  - name: Networking
+    resources:
+      - aws_elastic_ip
+      - aws_nat_gateway
+      - google_compute_network
+      - azure_virtual_network
+
+  - name: Container & Serverless
+    resources:
+      - aws_ecs_task_definition
+      - aws_lambda_function
+      - google_cloud_run_service
+
+# Custom cost factors
+cost_modifiers:
+  # Multiply costs by a factor (useful for RI/SP coverage)
+  - resource_type: aws_instance
+    multiplier: 0.64  # 36% discount with 1-year all-upfront RI
+
+  - resource_type: aws_rds_cluster
+    multiplier: 0.65  # 35% discount with 1-year all-upfront RI
+
+# Usage estimation
+usage_file: ./infracost-usage.yml
+
+# Terraform variables
+tfvars_files:
+  - ./terraform.tfvars
+  - ./terraform.prod.tfvars
+
+# Quality assurance
+quality:
+  # Validate configuration on startup
+  validate_on_startup: true
+
+  # Check for deprecations
+  check_deprecations: true
+
+  # Suggest optimizations
+  suggest_optimizations: true
+
+# Examples of actual usage
+# Command line usage:
+# infracost breakdown --path=./reserved-instances.tf --format=table
+# infracost diff --path=./reserved-instances.tf --compare-to=git diff main
+# infracost comment pr --path=./reserved-instances.tf --github-token=$GITHUB_TOKEN

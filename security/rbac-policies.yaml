@@ -1,0 +1,349 @@
+---
+# RBAC Policies - HIPAA, SOC2, PCI-DSS Compliant
+# HIPAA §164.308(a)(3): Workforce security and authorization
+# SOC2 CC6: Logical access controls
+# PCI-DSS 7: Restricted access to data
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-admin
+  namespace: default
+  labels:
+    app: yawl
+    role: admin
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-developer
+  namespace: default
+  labels:
+    app: yawl
+    role: developer
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-viewer
+  namespace: default
+  labels:
+    app: yawl
+    role: viewer
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-operator
+  namespace: default
+  labels:
+    app: yawl
+    role: operator
+    compliance: hipaa,soc2,pci-dss
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-security-officer
+  namespace: default
+  labels:
+    app: yawl
+    role: security-officer
+    compliance: hipaa,soc2,pci-dss
+
+---
+# ClusterRole: Cluster Administrators
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-cluster-admin
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+  - nonResourceURLs: ["*"]
+    verbs: ["*"]
+
+---
+# ClusterRole: Developers (Limited access)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-developer-role
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  # Read deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  # Manage pods
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  # Create services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "create", "update"]
+  # Manage configmaps and secrets (for application config only)
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "create", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["app-secrets"]
+    verbs: ["get"]
+  # View events
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRole: Viewers (Read-only access)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-viewer-role
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  # Read-only access to most resources
+  - apiGroups: ["apps", "batch", ""]
+    resources: ["deployments", "statefulsets", "pods", "services", "configmaps", "events"]
+    verbs: ["get", "list", "watch"]
+  # View logs
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
+---
+# ClusterRole: Operators (Infrastructure management)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-operator-role
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  # Manage deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Manage pods
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "delete"]
+  # Manage services and networking
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  # Manage storage
+  - apiGroups: [""]
+    resources: ["persistentvolumes", "persistentvolumeclaims"]
+    verbs: ["get", "list"]
+  # View events and logs
+  - apiGroups: [""]
+    resources: ["events", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRole: Security Officers (Compliance and audit)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-security-officer-role
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  # HIPAA §164.312(b): Audit controls - view audit logs
+  # SOC2 CC7.2: System monitoring
+  # PCI-DSS 10: Logging and monitoring
+
+  # Read all resources for audit purposes
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+
+  # Manage RBAC (audit who has access)
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+
+  # Audit network policies
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+
+  # View security policies
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["get", "list", "watch"]
+
+  # View pod security standards
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["security-policy"]
+    verbs: ["get", "list"]
+
+  # View secrets for audit (read-only)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+
+---
+# ClusterRoleBinding: Admin
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-admin-binding
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: yawl-admin
+    namespace: default
+
+---
+# ClusterRoleBinding: Developer
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-developer-binding
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-developer-role
+subjects:
+  - kind: ServiceAccount
+    name: yawl-developer
+    namespace: default
+
+---
+# ClusterRoleBinding: Viewer
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-viewer-binding
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-viewer-role
+subjects:
+  - kind: ServiceAccount
+    name: yawl-viewer
+    namespace: default
+
+---
+# ClusterRoleBinding: Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-operator-binding
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-operator-role
+subjects:
+  - kind: ServiceAccount
+    name: yawl-operator
+    namespace: default
+
+---
+# ClusterRoleBinding: Security Officer
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-security-officer-binding
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-security-officer-role
+subjects:
+  - kind: ServiceAccount
+    name: yawl-security-officer
+    namespace: default
+
+---
+# Role: Namespace-level secret management for developers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-secret-manager
+  namespace: default
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules:
+  # HIPAA §164.312(a)(2)(i): Access controls for sensitive data
+  # PCI-DSS 7: Restricted access to secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["app-config"]
+    verbs: ["get", "update"]
+
+---
+# RoleBinding: App secret manager
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-secret-manager-binding
+  namespace: default
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-secret-manager
+subjects:
+  - kind: ServiceAccount
+    name: yawl-developer
+    namespace: default
+
+---
+# Deny all resource modification for viewers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: deny-modifications
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+rules: []

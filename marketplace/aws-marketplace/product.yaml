@@ -1,0 +1,329 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "YAWL - Yet Another Workflow Language CloudFormation Template for AWS Marketplace"
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Network Configuration"
+        Parameters:
+          - VpcId
+          - SubnetIds
+      - Label:
+          default: "YAWL Configuration"
+        Parameters:
+          - YAWLVersion
+          - InstanceType
+          - DesiredCapacity
+          - MaxCapacity
+          - DomainName
+      - Label:
+          default: "Database Configuration"
+        Parameters:
+          - DBInstanceClass
+          - DBName
+          - DBUser
+      - Label:
+          default: "Security Configuration"
+        Parameters:
+          - EnableSSL
+          - CertificateArn
+
+Parameters:
+  VpcId:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "VPC ID for YAWL deployment"
+
+  SubnetIds:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Subnet IDs for load balancer and instances"
+
+  YAWLVersion:
+    Type: String
+    Default: "1.0.0"
+    Description: "Version of YAWL to deploy"
+
+  InstanceType:
+    Type: String
+    Default: "t3.medium"
+    AllowedValues:
+      - "t3.medium"
+      - "t3.large"
+      - "t3.xlarge"
+      - "m5.large"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+    Description: "EC2 instance type for YAWL nodes"
+
+  DesiredCapacity:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    MaxValue: 20
+    Description: "Desired number of EC2 instances"
+
+  MaxCapacity:
+    Type: Number
+    Default: 10
+    MinValue: 1
+    MaxValue: 20
+    Description: "Maximum number of EC2 instances"
+
+  DomainName:
+    Type: String
+    Description: "Domain name for YAWL application"
+    AllowedPattern: "(?!-)[a-zA-Z0-9-]{1,63}(?<!-)"
+
+  DBInstanceClass:
+    Type: String
+    Default: "db.t3.small"
+    AllowedValues:
+      - "db.t3.small"
+      - "db.t3.medium"
+      - "db.m5.large"
+      - "db.m5.xlarge"
+    Description: "RDS instance class for database"
+
+  DBName:
+    Type: String
+    Default: "yawldb"
+    MinLength: 1
+    MaxLength: 63
+    Description: "Database name"
+
+  DBUser:
+    Type: String
+    Default: "yawladmin"
+    MinLength: 1
+    MaxLength: 16
+    Description: "Master database username"
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: "Master database password (minimum 8 characters)"
+
+  EnableSSL:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "Enable SSL/TLS for YAWL"
+
+  CertificateArn:
+    Type: String
+    Default: ""
+    Description: "ACM Certificate ARN for SSL (required if EnableSSL is true)"
+
+Conditions:
+  SSLEnabled: !Equals [!Ref EnableSSL, "true"]
+  HasCertificate: !Not [!Equals [!Ref CertificateArn, ""]]
+
+Resources:
+  # Security Group
+  YAWLSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Security group for YAWL application"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTP traffic"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTPS traffic"
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: "0.0.0.0/0"
+          Description: "YAWL API traffic"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-sg-${AWS::StackName}"
+
+  # RDS Database
+  DBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: "Subnet group for YAWL RDS database"
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-db-subnet-${AWS::StackName}"
+
+  YAWLDatabase:
+    Type: "AWS::RDS::DBInstance"
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub "yawl-db-${AWS::StackName}"
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      EngineVersion: "14.7"
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPassword
+      AllocatedStorage: 100
+      StorageType: gp3
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref YAWLSecurityGroup
+      BackupRetentionPeriod: 30
+      MultiAZ: true
+      StorageEncrypted: true
+      EnableCloudwatchLogsExports:
+        - postgresql
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-db-${AWS::StackName}"
+
+  # Application Load Balancer
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: !Sub "yawl-alb-${AWS::StackName}"
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !Ref YAWLSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-alb-${AWS::StackName}"
+
+  # Target Group
+  TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Sub "yawl-tg-${AWS::StackName}"
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: instance
+      HealthCheckEnabled: true
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-tg-${AWS::StackName}"
+
+  # HTTP Listener
+  HTTPListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      LoadBalancerArn: !GetAtt LoadBalancer.LoadBalancerArn
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !GetAtt TargetGroup.TargetGroupArn
+
+  # HTTPS Listener (Conditional)
+  HTTPSListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Condition: SSLEnabled
+    Properties:
+      LoadBalancerArn: !GetAtt LoadBalancer.LoadBalancerArn
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !GetAtt TargetGroup.TargetGroupArn
+
+  # Auto Scaling Group
+  LaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Sub "ami-yawl-${YAWLVersion}"
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds:
+          - !Ref YAWLSecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            set -e
+            echo "Starting YAWL installation..."
+            # Update system
+            apt-get update && apt-get upgrade -y
+            # Install Docker
+            apt-get install -y docker.io
+            systemctl start docker
+            systemctl enable docker
+            # Pull and run YAWL container
+            docker pull yawl:${YAWLVersion}
+            docker run -d \
+              --name yawl \
+              -p 8080:8080 \
+              -e DB_HOST=${YAWLDatabase.Endpoint.Address} \
+              -e DB_PORT=5432 \
+              -e DB_NAME=${DBName} \
+              -e DB_USER=${DBUser} \
+              -e DB_PASSWORD=${DBPassword} \
+              yawl:${YAWLVersion}
+            echo "YAWL installation complete"
+
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Sub "yawl-asg-${AWS::StackName}"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: !Ref MaxCapacity
+      DesiredCapacity: !Ref DesiredCapacity
+      VPCZoneIdentifier: !Ref SubnetIds
+      TargetGroupARNs:
+        - !GetAtt TargetGroup.TargetGroupArn
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: !Sub "yawl-instance-${AWS::StackName}"
+          PropagateAtLaunch: true
+
+Outputs:
+  LoadBalancerURL:
+    Description: "URL of the Application Load Balancer"
+    Value: !Sub "http://${LoadBalancer.DNSName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-LoadBalancerURL"
+
+  DatabaseEndpoint:
+    Description: "RDS Database endpoint"
+    Value: !GetAtt YAWLDatabase.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-DatabaseEndpoint"
+
+  DatabasePort:
+    Description: "RDS Database port"
+    Value: !GetAtt YAWLDatabase.Endpoint.Port
+    Export:
+      Name: !Sub "${AWS::StackName}-DatabasePort"
+
+  AutoScalingGroupName:
+    Description: "Auto Scaling Group name"
+    Value: !Ref AutoScalingGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ASGName"
+
+  SecurityGroupId:
+    Description: "Security Group ID"
+    Value: !Ref YAWLSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroupId"

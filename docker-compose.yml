@@ -1,0 +1,191 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: yawl-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yawl-secure-password
+      POSTGRES_DB: yawl
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d yawl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: yawl-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - yawl-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # YAWL Workflow Engine
+  yawl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yawl-engine
+    environment:
+      YAWL_DB_HOST: postgres
+      YAWL_DB_PORT: 5432
+      YAWL_DB_NAME: yawl
+      YAWL_DB_USER: yawl
+      YAWL_DB_PASSWORD: yawl-secure-password
+      YAWL_HEAP_SIZE: 1024m
+      JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+      LOG_LEVEL: INFO
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/usr/local/tomcat/logs
+      - ./data:/data
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/resourceService/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    cpus: '2'
+    mem_limit: 2g
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: yawl-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - yawl-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: yawl-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_INSTALL_PLUGINS: 'alexanderzobnin-zabbix-app'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - yawl-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Logging - Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
+    container_name: yawl-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - yawl-network
+    restart: unless-stopped
+
+  # Logging - Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.0.0
+    container_name: yawl-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - yawl-network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  # Logging - Filebeat
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.0.0
+    container_name: yawl-filebeat
+    volumes:
+      - ./docker/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/logs:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - yawl-network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+    command: filebeat -e -strict.perms=false
+
+  # Reverse Proxy - Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: yawl-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/certs:/etc/nginx/certs:ro
+    networks:
+      - yawl-network
+    depends_on:
+      - yawl
+    restart: unless-stopped
+
+networks:
+  yawl-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:

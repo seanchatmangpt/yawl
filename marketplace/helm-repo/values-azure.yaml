@@ -1,0 +1,278 @@
+# YAWL Helm Chart Values for Microsoft Azure
+# This overrides the default values for Azure-specific configurations
+
+# Azure Subscription and Region
+global:
+  projectName: yawl
+  environment: production
+  azure:
+    subscriptionId: "00000000-0000-0000-0000-000000000000"
+    resourceGroup: "yawl-rg"
+    region: "eastus"
+    tenantId: "00000000-0000-0000-0000-000000000000"
+
+# AKS Cluster Configuration
+aks:
+  clusterName: "yawl-cluster"
+  version: "1.27.0"
+  vnetName: "yawl-vnet"
+  vnetAddressPrefix: "10.0.0.0/8"
+  nodePoolSubnetPrefix: "10.1.0.0/16"
+
+# Azure Container Registry
+image:
+  repository: "myregistry.azurecr.io/yawl/yawl"
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# ACR Image Pull Secret
+imagePullSecrets:
+  - name: acr-secret
+
+# Managed Identity / Service Principal
+serviceAccount:
+  create: true
+  annotations:
+    azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+  name: yawl-ksa
+
+# Workload Identity (Azure AD Workload Identity)
+workloadIdentity:
+  enabled: true
+  clientId: "00000000-0000-0000-0000-000000000000"
+  tenantId: "00000000-0000-0000-0000-000000000000"
+  objectId: "00000000-0000-0000-0000-000000000000"
+
+# Azure Managed Disks for Persistence
+persistence:
+  enabled: true
+  storageClassName: "managed-csi"
+  size: 50Gi
+  accessMode: ReadWriteOnce
+  annotations:
+    azure.com/caching: "ReadWrite"
+
+# Azure Database for PostgreSQL
+postgresql:
+  enabled: false  # Use Azure Database instead
+
+externalPostgresql:
+  enabled: true
+  host: "yawl-server.postgres.database.azure.com"
+  port: 5432
+  username: "yawladmin@yawl-server"
+  password: "changeme123!"
+  database: yawldb
+  sslMode: require
+  # Azure specific configuration
+  credentials:
+    secretName: postgres-credentials
+    resourceId: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/yawl-rg/providers/Microsoft.DBforPostgreSQL/servers/yawl-server"
+
+# Azure Cache for Redis
+redis:
+  enabled: false  # Use Azure Cache instead
+
+externalRedis:
+  enabled: true
+  host: "yawl-redis.redis.cache.windows.net"
+  port: 6379
+  auth:
+    enabled: true
+    password: "redis123!"
+  tls:
+    enabled: true
+
+# Azure Application Gateway Ingress Controller
+ingress:
+  enabled: true
+  className: "azure/application-gateway"
+  annotations:
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    appgw.ingress.kubernetes.io/cookie-based-affinity: "Disabled"
+    appgw.ingress.kubernetes.io/request-timeout: "20"
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: yawl.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: yawl-tls
+      hosts:
+        - yawl.example.com
+
+# Application Gateway Configuration
+applicationGateway:
+  enabled: true
+  name: "yawl-appgw"
+  sku: "Standard_v2"
+  capacity:
+    minCapacity: 2
+    maxCapacity: 10
+  backendHttpSettings:
+    cookieBasedAffinity: Disabled
+    requestTimeout: 20
+
+# Azure Key Vault Integration
+keyVault:
+  enabled: true
+  name: "yawl-kv"
+  resourceGroup: "yawl-rg"
+  tenantId: "00000000-0000-0000-0000-000000000000"
+  clientId: "00000000-0000-0000-0000-000000000000"
+  secrets:
+    - name: "db-password"
+      version: ""
+    - name: "redis-password"
+      version: ""
+
+# Azure Monitor Integration
+monitoring:
+  enabled: true
+  azure:
+    enabled: true
+    workspaceId: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/yawl-rg/providers/microsoft.operationalinsights/workspaces/yawl-ws"
+    workspaceKey: "workspace-key"
+  serviceMonitor:
+    enabled: true
+  applicationInsights:
+    enabled: true
+    instrumentationKey: "00000000-0000-0000-0000-000000000000"
+    connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000"
+
+# Container Insights
+containerInsights:
+  enabled: true
+  clusterName: "yawl-cluster"
+  workspaceResourceId: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/yawl-rg/providers/microsoft.operationalinsights/workspaces/yawl-ws"
+
+# Logging Configuration
+logging:
+  enabled: true
+  azure:
+    enabled: true
+    workspace: "yawl-ws"
+    workspaceId: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/yawl-rg/providers/microsoft.operationalinsights/workspaces/yawl-ws"
+  omsAgent:
+    enabled: true
+    image: "mcr.microsoft.com/oms/agent"
+    tag: "latest"
+
+# Azure Backup Integration
+backup:
+  enabled: true
+  azure:
+    enabled: true
+    vaultName: "yawl-backup-vault"
+    vaultResourceGroup: "yawl-rg"
+  schedule: "0 2 * * *"
+  retention: 30
+  tags:
+    BackupPolicy: "daily"
+
+# Azure Storage Account
+storage:
+  enabled: true
+  accountName: "yawlbackupsa"
+  accountKey: ""
+  containerName: "yawl-backups"
+  resourceGroup: "yawl-rg"
+
+# Auto Scaling Configuration
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  # Vertical Pod Autoscaler
+  vpa:
+    enabled: true
+    updateMode: "auto"
+
+# Virtual Machine Scale Set Configuration
+vmss:
+  enabled: true
+  vmSize: "Standard_B2ms"
+  nodeCount: 3
+  minCount: 2
+  maxCount: 10
+  osDiskSizeGb: 128
+  osDiskType: "Premium_LRS"
+  enableAcceleratedNetworking: true
+
+# Network Security Group
+networkSecurityGroup:
+  enabled: true
+  name: "yawl-nsg"
+  rules:
+    - name: "allow-http"
+      priority: 100
+      direction: "Inbound"
+      access: "Allow"
+      protocol: "Tcp"
+      sourcePortRange: "*"
+      destinationPortRange: "80"
+      sourceAddressPrefix: "Internet"
+      destinationAddressPrefix: "*"
+    - name: "allow-https"
+      priority: 101
+      direction: "Inbound"
+      access: "Allow"
+      protocol: "Tcp"
+      sourcePortRange: "*"
+      destinationPortRange: "443"
+      sourceAddressPrefix: "Internet"
+      destinationAddressPrefix: "*"
+
+# Node Selector
+nodeSelector:
+  agentpool: "yawlnodepool"
+
+# Tolerations
+tolerations:
+  - key: "workload-type"
+    operator: "Equal"
+    value: "yawl"
+    effect: "NoSchedule"
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Azure-specific labels and annotations
+podAnnotations:
+  azure.workload.identity/use: "true"
+
+# Network Policy (using Azure Network Policy)
+networkPolicy:
+  enabled: true
+  provider: "azure"
+
+# Managed Identity Binding
+managedIdentity:
+  enabled: true
+  clientId: "00000000-0000-0000-0000-000000000000"
+  resourceId: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/yawl-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/yawl-identity"
+
+# Azure Service Bus Integration
+serviceBus:
+  enabled: false
+  connectionString: ""
+  queueName: "yawl-queue"
+
+# Azure Event Grid Integration
+eventGrid:
+  enabled: false
+  topicEndpoint: ""
+  topicKey: ""
+
+# Azure Cosmos DB (optional alternative to PostgreSQL)
+cosmosDb:
+  enabled: false
+  endpoint: "https://yawl.documents.azure.com:443/"
+  databaseId: "yawl"
+  containerId: "workflows"

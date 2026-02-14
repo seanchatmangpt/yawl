@@ -1,0 +1,195 @@
+---
+# AWS IAM Role for YAWL Application
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-iam-role-definition
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  role.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": [
+              "ec2.amazonaws.com",
+              "ecs-tasks.amazonaws.com",
+              "eks.amazonaws.com"
+            ]
+          },
+          "Action": "sts:AssumeRole"
+        },
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "AWS": "arn:aws:iam::ACCOUNT-ID:role/eks-worker-role"
+          },
+          "Action": "sts:AssumeRole",
+          "Condition": {
+            "StringEquals": {
+              "sts:ExternalId": "yawl-external-id-12345"
+            }
+          }
+        }
+      ]
+    }
+
+  pod-identity.yaml: |
+    # AWS Pod Identity for EKS
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: yawl-application-sa
+      namespace: default
+      labels:
+        app: yawl
+        compliance: hipaa,soc2,pci-dss
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/yawl-application-role
+
+---
+# AWS IAM User Policy for Developers
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-developer-policy
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  developer-policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "EC2ReadOnly",
+          "Effect": "Allow",
+          "Action": [
+            "ec2:Describe*",
+            "ec2:Get*"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "S3ReadDevelop",
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetObject",
+            "s3:ListBucket"
+          ],
+          "Resource": [
+            "arn:aws:s3:::yawl-develop/*",
+            "arn:aws:s3:::yawl-develop"
+          ]
+        },
+        {
+          "Sid": "RDSReadDevelop",
+          "Effect": "Allow",
+          "Action": [
+            "rds:DescribeDBInstances",
+            "rds:DescribeDBClusters"
+          ],
+          "Resource": "arn:aws:rds:*:ACCOUNT-ID:db/yawl-develop-*"
+        },
+        {
+          "Sid": "CloudWatchReadOnly",
+          "Effect": "Allow",
+          "Action": [
+            "cloudwatch:GetMetricStatistics",
+            "cloudwatch:ListMetrics",
+            "logs:GetLogEvents"
+          ],
+          "Resource": "*"
+        }
+      ]
+    }
+
+---
+# AWS IAM Role for Compliance and Audit
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-compliance-role
+  namespace: kube-system
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  compliance-policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AuditAccess",
+          "Effect": "Allow",
+          "Action": [
+            "cloudtrail:LookupEvents",
+            "cloudtrail:GetTrailStatus",
+            "cloudtrail:DescribeTrails",
+            "cloudtrail:ListTrails",
+            "cloudtrail:ListPublicKeys"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "ConfigAccess",
+          "Effect": "Allow",
+          "Action": [
+            "config:GetComplianceDetailsByConfigRule",
+            "config:DescribeComplianceByConfigRule",
+            "config:GetCompliance"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "SecurityHubAccess",
+          "Effect": "Allow",
+          "Action": [
+            "securityhub:GetFindings",
+            "securityhub:GetInsights",
+            "securityhub:ListFindings"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "GuardDutyAccess",
+          "Effect": "Allow",
+          "Action": [
+            "guardduty:GetFindings",
+            "guardduty:ListFindings",
+            "guardduty:GetDetector"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "IAMAudit",
+          "Effect": "Allow",
+          "Action": [
+            "iam:Get*",
+            "iam:List*"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "LogsAccess",
+          "Effect": "Allow",
+          "Action": [
+            "logs:FilterLogEvents",
+            "logs:GetLogEvents",
+            "logs:DescribeLogStreams",
+            "logs:DescribeLogGroups"
+          ],
+          "Resource": "*"
+        }
+      ]
+    }

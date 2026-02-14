@@ -1,0 +1,29 @@
+{
+  "debug": false,
+  "log-driver": "{{ docker_log_driver }}",
+  "log-opts": {
+    "max-size": "{{ docker_log_max_size }}",
+    "max-file": "{{ docker_log_max_file }}"
+  },
+  "storage-driver": "{{ docker_storage_driver }}",
+  "live-restore": true,
+  "icc": false,
+  "userland-proxy": true,
+  "default-ulimits": {
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 65536,
+      "Soft": 65536
+    }
+  },
+  "insecure-registries": {{ docker_insecure_registries | to_nice_json }},
+  "registry-mirrors": {{ docker_registry_mirrors | to_nice_json }},
+  "ipv6": false,
+  "ip": "0.0.0.0",
+  "default-address-pools": [
+    {
+      "base": "{{ docker_network_subnet }}",
+      "size": 24
+    }
+  ]
+}

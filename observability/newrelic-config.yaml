@@ -1,0 +1,385 @@
+common: &common_settings
+  license_key: ${NEW_RELIC_LICENSE_KEY}
+  api_key: ${NEW_RELIC_API_KEY}
+  app_name: yawl
+  environment: production
+  labels:
+    - env:production
+    - team:platform
+    - service:yawl
+
+# APM Configuration (New Relic APM Agent)
+apm:
+  <<: *common_settings
+  enabled: true
+
+  # Agent settings
+  agent:
+    enabled: true
+    log_file_path: /var/log/newrelic/newrelic_agent.log
+    log_level: info
+    log_file_count: 10
+    log_limit_in_kbytes: 20480
+
+    # Distributed tracing
+    distributed_tracing:
+      enabled: true
+
+    # Infinite Tracing
+    infinite_tracing:
+      enabled: false
+      trace_observer:
+        host: ${NEW_RELIC_TRACE_OBSERVER_HOST}
+        port: 443
+
+    # Custom instrumentation
+    custom_instrumentation_editor:
+      enabled: true
+
+    # Browser monitoring
+    browser_monitoring:
+      enabled: true
+      auto_instrument: true
+      loader: rum
+
+    # Real User Monitoring (RUM)
+    rum_config:
+      enabled: true
+      application_id: ${NEW_RELIC_APP_ID}
+      beacon: bam.nr-data.net
+      error_beacon: bam.nr-data.net
+      license_key: ${NEW_RELIC_LICENSE_KEY}
+      observation_zone: us
+
+    # Transaction settings
+    transaction_tracer:
+      enabled: true
+      transaction_threshold: apdex_f
+      record_sql: obfuscated
+      explain_enabled: true
+      explain_threshold: 0.5
+      stack_trace_threshold: 0.5
+      max_segments: 200
+      max_stack_depth: 50
+
+    # Error collection
+    error_collector:
+      enabled: true
+      record_database_queries: true
+      capture_events: true
+      max_event_samples_stored: 100
+      ignore_classes:
+        - javax.servlet.ServletException
+      ignore_messages:
+        - com.example.IgnoredException
+
+    # Attributes configuration
+    attributes:
+      enabled: true
+      include:
+        - "thread.*"
+        - "http.request.*"
+        - "http.response.*"
+      exclude:
+        - "request.headers.authorization"
+        - "request.headers.cookie"
+        - "request.headers.x-api-key"
+        - "request.parameters.password"
+        - "db.statement.password"
+
+    # Slow transactions
+    slow_transactions:
+      enabled: true
+      threshold_seconds: 4
+
+    # Thread profiler
+    thread_profiler:
+      enabled: true
+
+    # Custom events
+    custom_events:
+      enabled: true
+      max_samples_stored: 1000
+
+# Infrastructure Monitoring
+infrastructure:
+  <<: *common_settings
+  enabled: true
+
+  agent:
+    enabled: true
+    version: latest
+    log_file_path: /var/log/newrelic-infra/newrelic-infra.log
+    log_level: info
+
+    # Metrics
+    metrics:
+      enabled: true
+      interval: 15s
+
+      # System metrics
+      system_metrics:
+        - cpu
+        - memory
+        - disk
+        - network
+        - processes
+
+      # Custom metrics
+      custom_metrics:
+        - name: yawl.app.requests
+          type: gauge
+        - name: yawl.app.errors
+          type: counter
+        - name: yawl.db.connections
+          type: gauge
+
+    # Process monitoring
+    process_monitoring:
+      enabled: true
+      monitored_processes:
+        - nginx
+        - postgres
+        - redis
+        - java
+        - python
+        - node
+
+    # Log forwarding
+    log_forwarder:
+      enabled: true
+      logs:
+        - name: system
+          file: /var/log/syslog
+          attributes:
+            logtype: system
+
+        - name: application
+          file: /var/log/yawl/*.log
+          attributes:
+            logtype: application
+            service: yawl
+
+        - name: nginx
+          file: /var/log/nginx/access.log
+          attributes:
+            logtype: nginx
+
+        - name: postgresql
+          file: /var/log/postgresql/postgresql.log
+          attributes:
+            logtype: postgresql
+
+    # Kubernetes integration
+    kubernetes:
+      enabled: false
+      cluster_name: production
+      rbac_enabled: true
+
+    # Docker integration
+    docker:
+      enabled: true
+      socket: /var/run/docker.sock
+
+    # Flex integration (custom integrations)
+    flex:
+      enabled: true
+      metrics:
+        - name: custom_metric
+          commands:
+            - run: 'echo "{\"metric\": \"value\"}"'
+
+# Logs
+logs:
+  <<: *common_settings
+  enabled: true
+
+  agent:
+    enabled: true
+
+    # Log forwarding
+    log_forwarding:
+      enabled: true
+      max_queue_size: 100000
+
+      sources:
+        # System logs
+        - name: syslog
+          type: files
+          path: /var/log/syslog
+          attributes:
+            source: syslog
+
+        # Application logs
+        - name: app-logs
+          type: files
+          path: /var/log/yawl/*.log
+          attributes:
+            source: application
+            service: yawl
+
+        # Web server logs
+        - name: nginx-access
+          type: files
+          path: /var/log/nginx/access.log
+          attributes:
+            source: nginx
+            logtype: access
+
+        - name: nginx-error
+          type: files
+          path: /var/log/nginx/error.log
+          attributes:
+            source: nginx
+            logtype: error
+
+        # Database logs
+        - name: postgresql
+          type: files
+          path: /var/log/postgresql/postgresql.log
+          attributes:
+            source: postgresql
+            logtype: database
+
+# Synthetics Monitoring
+synthetics:
+  <<: *common_settings
+  enabled: true
+
+  monitors:
+    # API health check
+    - name: API Health Check
+      type: SIMPLE
+      url: https://api.example.com/health
+      frequency: 5
+      locations:
+        - AWS_US_EAST_1
+        - AWS_US_WEST_2
+      status_codes:
+        - 200
+      verify_ssl: true
+      tags:
+        - api
+        - health
+
+    # Web page monitoring
+    - name: Website Performance
+      type: BROWSER
+      url: https://example.com
+      frequency: 10
+      locations:
+        - AWS_US_EAST_1
+      script: |
+        // Browser script here
+        return true;
+      tags:
+        - web
+        - performance
+
+    # API steps monitoring
+    - name: API Flow Test
+      type: SCRIPTED_API
+      locations:
+        - AWS_US_EAST_1
+      frequency: 5
+      script: |
+        // API test script here
+        return true;
+      tags:
+        - api
+        - flow
+
+# Dashboards
+dashboards:
+  - name: Application Overview
+    description: Overall application health and performance
+    widgets:
+      - type: metric_timeseries
+        title: Transaction Rate
+        metric: newrelic.timeseries.requests_per_minute
+
+      - type: metric_timeseries
+        title: Error Rate
+        metric: newrelic.timeseries.error_rate
+
+      - type: metric_timeseries
+        title: Response Time
+        metric: newrelic.timeseries.response_time_milliseconds
+
+  - name: Infrastructure Health
+    description: Infrastructure health and resource utilization
+    widgets:
+      - type: metric_timeseries
+        title: CPU Usage
+        metric: SystemSample.cpuPercent
+
+      - type: metric_timeseries
+        title: Memory Usage
+        metric: SystemSample.memoryPercent
+
+      - type: metric_timeseries
+        title: Disk Usage
+        metric: StorageSample.diskUsedPercent
+
+# Alerts and Incident Management
+alerts:
+  - name: High Error Rate
+    type: NRQL
+    query: "SELECT count(*) FROM Transaction WHERE error = true"
+    threshold: 100
+    duration: 5
+    condition: above
+    severity: critical
+    notification_channels:
+      - slack
+      - pagerduty
+
+  - name: High Response Time
+    type: APM
+    metric: response_time
+    threshold: 1000
+    duration: 5
+    condition: above
+    severity: warning
+
+  - name: High CPU Usage
+    type: Infrastructure
+    metric: cpu.percent
+    threshold: 80
+    duration: 5
+    condition: above
+    severity: warning
+
+# User Configuration
+user_config:
+  <<: *common_settings
+
+  # Account settings
+  account_id: ${NEW_RELIC_ACCOUNT_ID}
+
+  # API endpoints
+  api_endpoint: api.newrelic.com
+
+  # Proxy settings (if required)
+  proxy:
+    enabled: false
+    host: proxy.example.com
+    port: 8080
+    username: ${PROXY_USER}
+    password: ${PROXY_PASSWORD}
+
+  # SSL/TLS settings
+  ssl:
+    enabled: true
+    verify_certificate: true
+    ca_bundle_path: /etc/ssl/certs/ca-bundle.crt
+
+# High-Security Mode
+high_security_mode: false
+
+# Data retention
+data_retention:
+  apm_data_retention_days: 8
+  events_data_retention_days: 8
+  infrastructure_data_retention_days: 8
+  logs_data_retention_days: 30

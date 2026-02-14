@@ -1,0 +1,143 @@
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+metricbeat.modules:
+  # System module
+  - module: system
+    period: 10s
+    metricsets:
+      - cpu
+      - load
+      - memory
+      - network
+      - process
+      - diskio
+      - filesystem
+    processes: ['.*']
+    include_top_n:
+      by_cpu: 5
+      by_memory: 5
+
+  # Docker module
+  - module: docker
+    period: 10s
+    hosts: ["unix:///var/run/docker.sock"]
+    metricsets:
+      - container
+      - cpu
+      - diskio
+      - healthcheck
+      - info
+      - memory
+      - network
+
+  # PostgreSQL module
+  - module: postgresql
+    period: 10s
+    enabled: true
+    hosts: ["postgres://user:password@localhost:5432/mydb"]
+    metricsets:
+      - database
+      - bgwriter
+      - activity
+
+  # Redis module
+  - module: redis
+    period: 10s
+    enabled: false
+    hosts: ["localhost:6379"]
+    metricsets:
+      - info
+      - keyspace
+      - key
+
+  # MongoDB module
+  - module: mongodb
+    period: 10s
+    enabled: false
+    hosts: ["localhost:27017"]
+    metricsets:
+      - status
+
+  # Nginx module
+  - module: nginx
+    period: 10s
+    enabled: false
+    hosts: ["http://localhost:80"]
+    metricsets:
+      - stubstatus
+
+  # Apache module
+  - module: apache
+    period: 10s
+    enabled: false
+    hosts: ["http://localhost:80"]
+    metricsets:
+      - status
+
+  # MySQL module
+  - module: mysql
+    period: 10s
+    enabled: false
+    hosts: ["root:password@tcp(localhost:3306)/"]
+    metricsets:
+      - status
+      - query
+
+  # Kubernetes module
+  - module: kubernetes
+    period: 10s
+    enabled: false
+    node_condition_querymap:
+      Ready: "ready"
+      MemoryPressure: "memory_pressure"
+      DiskPressure: "disk_pressure"
+      PIDPressure: "pid_pressure"
+      NetworkUnavailable: "network_unavailable"
+    hosts: ["${HOSTNAME}:10250"]
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    ssl.verification_mode: "none"
+    metricsets:
+      - node
+      - system
+      - pod
+      - container
+      - volume
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - add_kubernetes_metadata:
+      in_cluster: true
+
+output.elasticsearch:
+  enabled: true
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD:changeme}"
+  index: "metricbeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  bulk_max_size: 4096
+  worker: 4
+
+# Optional: Send to Logstash
+# output.logstash:
+#   enabled: false
+#   hosts: ["logstash:5044"]
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat
+  keepfiles: 7
+  permissions: 0644
+
+# HTTP server for monitoring
+http.enabled: true
+http.host: 0.0.0.0
+http.port: 5066

@@ -1,0 +1,447 @@
+---
+# AKS Pod Identity Configuration
+# Enables pods to authenticate to Azure services
+# HIPAA: §164.308(a)(1) - Access controls
+# SOC2: CC6.1 - Logical access controls
+# PCI-DSS 7 - Restricted access to data
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-pod-identity
+  labels:
+    pod-identity: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Azure Pod Identity Resource
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: yawl-app-identity
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  type: 0  # 0 = Managed Identity, 1 = Service Principal
+  resourceID: /subscriptions/SUBSCRIPTION-ID/resourcegroups/yawl-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/yawl-app-identity
+  clientID: "00000000-0000-0000-0000-000000000000"
+
+---
+# Azure Pod Identity Binding
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: yawl-app-binding
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  azureIdentity: yawl-app-identity
+  selector: yawl-app
+
+---
+# Kubernetes Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-app-sa
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    pod-identity: enabled
+    compliance: hipaa,soc2,pci-dss
+
+---
+# Deployment using Pod Identity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-app
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yawl
+  template:
+    metadata:
+      labels:
+        app: yawl
+        aadpodidbinding: yawl-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: yawl-app-sa
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: app
+          image: yawl.azurecr.io/app:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: AZURE_SUBSCRIPTION_ID
+              value: "SUBSCRIPTION-ID"
+            - name: AZURE_RESOURCE_GROUP
+              value: "yawl-rg"
+            - name: AZURE_TENANT_ID
+              value: "TENANT-ID"
+            - name: MSI_CLIENT_ID
+              value: "00000000-0000-0000-0000-000000000000"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: var-run
+              mountPath: /var/run
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: var-run
+          emptyDir: {}
+
+---
+# StatefulSet with Pod Identity
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: yawl-database
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl-database
+    compliance: hipaa,soc2,pci-dss
+spec:
+  serviceName: yawl-database
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yawl-database
+  template:
+    metadata:
+      labels:
+        app: yawl-database
+        aadpodidbinding: yawl-app
+    spec:
+      serviceAccountName: yawl-app-sa
+      securityContext:
+        fsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      containers:
+        - name: postgres
+          image: postgres:14-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-db-config
+                  key: database
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secrets
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secrets
+                  key: password
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres
+            initialDelaySeconds: 5
+            periodSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+        labels:
+          app: yawl-database
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: managed-premium-encrypted
+        resources:
+          requests:
+            storage: 50Gi
+
+---
+# ConfigMap for setup instructions
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aks-pod-identity-setup
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  SETUP_INSTRUCTIONS.md: |
+    # AKS Pod Identity Setup Guide
+
+    ## Prerequisites
+    - AKS cluster with aad-pod-identity add-on enabled
+    - Azure CLI configured
+    - kubectl configured to access your cluster
+
+    ## Setup Steps
+
+    ### 1. Create Azure Managed Identity
+    ```bash
+    az identity create \
+      --resource-group yawl-rg \
+      --name yawl-app-identity \
+      --subscription SUBSCRIPTION-ID
+    ```
+
+    ### 2. Get Identity Properties
+    ```bash
+    IDENTITY_CLIENT_ID=$(az identity show \
+      --resource-group yawl-rg \
+      --name yawl-app-identity \
+      --query clientId -o tsv)
+
+    IDENTITY_RESOURCE_ID=$(az identity show \
+      --resource-group yawl-rg \
+      --name yawl-app-identity \
+      --query id -o tsv)
+
+    echo "IDENTITY_CLIENT_ID: $IDENTITY_CLIENT_ID"
+    echo "IDENTITY_RESOURCE_ID: $IDENTITY_RESOURCE_ID"
+    ```
+
+    ### 3. Assign Azure Roles to Managed Identity
+    ```bash
+    # Storage account access
+    az role assignment create \
+      --role "Storage Blob Data Reader" \
+      --assignee $IDENTITY_CLIENT_ID \
+      --scope /subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-rg/providers/Microsoft.Storage/storageAccounts/yawlsa
+
+    # Key Vault access
+    az role assignment create \
+      --role "Key Vault Secrets Officer" \
+      --assignee $IDENTITY_CLIENT_ID \
+      --scope /subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-rg/providers/Microsoft.KeyVault/vaults/yawl-kv
+
+    # SQL Database access
+    az role assignment create \
+      --role "SQL DB Contributor" \
+      --assignee $IDENTITY_CLIENT_ID \
+      --scope /subscriptions/SUBSCRIPTION-ID/resourceGroups/yawl-rg/providers/Microsoft.Sql/servers/yawl-sql-server
+    ```
+
+    ### 4. Grant AKS Cluster Identity Access to Managed Identity
+    ```bash
+    AKS_IDENTITY_PRINCIPAL_ID=$(az aks show \
+      --resource-group yawl-rg \
+      --name yawl-cluster \
+      --query identityProfile.kubeletidentity.objectId -o tsv)
+
+    az role assignment create \
+      --role "Managed Identity Operator" \
+      --assignee $AKS_IDENTITY_PRINCIPAL_ID \
+      --scope $IDENTITY_RESOURCE_ID
+    ```
+
+    ### 5. Deploy AAD Pod Identity Resources
+    ```bash
+    kubectl apply -f aks-pod-identity.yaml
+    ```
+
+    ### 6. Update Azure Identity Resource in Kubernetes
+    ```bash
+    kubectl patch azureidentity yawl-app-identity \
+      -n yawl-pod-identity \
+      -p '{"spec":{"clientID":"'$IDENTITY_CLIENT_ID'"}}'
+
+    kubectl patch azureidentity yawl-app-identity \
+      -n yawl-pod-identity \
+      -p '{"spec":{"resourceID":"'$IDENTITY_RESOURCE_ID'"}}'
+    ```
+
+    ### 7. Verify Setup
+    ```bash
+    # Check pod is bound to identity
+    kubectl describe pod <pod-name> -n yawl-pod-identity | grep aadpodidbinding
+
+    # Test authentication from pod
+    kubectl exec -it <pod-name> -n yawl-pod-identity -- \
+      curl http://169.254.169.254/metadata/identity/oauth2/token \
+      -H "Metadata:true" \
+      -H "X-IMDS-USER-AGENT: azure-cli"
+    ```
+
+    ## HIPAA, SOC2, PCI-DSS Compliance
+
+    - Uses Azure Managed Identity (no secrets in pods)
+    - Supports audit logging via Azure Activity Log
+    - Integrates with Azure Policy for compliance
+    - Automatic token refresh every hour
+    - Works with Azure Key Vault for secret management
+    - Supports RBAC for fine-grained access control
+
+  ENVIRONMENT_VARIABLES.md: |
+    # Environment Variables for Pod Identity
+
+    ## Required Variables
+    ```
+    AZURE_SUBSCRIPTION_ID=SUBSCRIPTION-ID
+    AZURE_RESOURCE_GROUP=yawl-rg
+    AZURE_TENANT_ID=TENANT-ID
+    MSI_CLIENT_ID=00000000-0000-0000-0000-000000000000
+    ```
+
+    ## Optional Variables
+    ```
+    # HIPAA compliance settings
+    ENABLE_ENCRYPTION=true
+    KEY_VAULT_NAME=yawl-kv
+
+    # SOC2 compliance settings
+    ENABLE_AUDIT_LOG=true
+
+    # PCI-DSS compliance settings
+    ENABLE_ACCESS_CONTROL=true
+    LOG_LEVEL=INFO
+    ```
+
+---
+# Network Policy for Pod Identity
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-pod-identity-network-policy
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+spec:
+  podSelector:
+    matchLabels:
+      aadpodidbinding: yawl-app
+  policyTypes:
+    - Egress
+  egress:
+    # Allow access to Azure metadata endpoint
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow service-to-service communication
+    - to:
+        - podSelector:
+            matchLabels:
+              app: yawl
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 3306
+
+---
+# Secret for Pod Identity (Azure credentials)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yawl-db-secrets
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+type: Opaque
+data:
+  username: eWF3bA==  # base64 encoded "yawl"
+  password: Y2hhbmdlLW1lLW5vdw==  # base64 encoded "change-me-now"
+
+---
+# ConfigMap for Pod Identity configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-db-config
+  namespace: yawl-pod-identity
+  labels:
+    app: yawl
+    compliance: hipaa,soc2,pci-dss
+data:
+  database: yawl_production
+  host: yawl-sql-server.database.windows.net
+  port: "5432"

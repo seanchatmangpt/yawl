@@ -1,0 +1,33 @@
+---
+# Primary Monitoring Server Host Variables
+
+# Node-specific configuration
+node_role: monitoring
+primary_monitoring: true
+
+# Monitoring stack configuration
+monitoring_stack_primary: true
+alerting_enabled: true
+alerting_rules_path: /etc/prometheus/rules
+
+# Resource allocation for monitoring
+monitoring_memory_allocation: 8GB
+monitoring_cpu_allocation: 4
+
+# Data retention settings
+prometheus_retention_days: 30
+elasticsearch_retention_days: 30
+grafana_session_lifetime: 24h
+
+# Alert notification channels
+alert_channels:
+  - slack
+  - email
+  - pagerduty
+
+# Monitoring specific ports
+prometheus_port: 9090
+grafana_port: 3000
+elasticsearch_port: 9200
+kibana_port: 5601
+alertmanager_port: 9093

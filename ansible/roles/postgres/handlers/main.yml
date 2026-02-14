@@ -1,0 +1,18 @@
+---
+# PostgreSQL Handlers
+
+- name: restart postgresql
+  systemd:
+    name: postgresql
+    state: restarted
+  listen: "restart postgresql"
+
+- name: reload postgresql
+  shell: "sudo -u postgres /usr/lib/postgresql/{{ postgres_version }}/bin/pg_ctl reload -D {{ postgres_data_dir }}"
+  listen: "reload postgresql"
+
+- name: restart pgbouncer
+  systemd:
+    name: pgbouncer
+    state: restarted
+  listen: "restart pgbouncer"

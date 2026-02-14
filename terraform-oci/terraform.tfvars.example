@@ -1,0 +1,61 @@
+# OCI Provider Configuration - REQUIRED
+# Get these values from your OCI Console
+oci_tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+oci_user_ocid    = "ocid1.user.oc1..aaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+oci_fingerprint  = "12:34:56:78:90:ab:cd:ef:12:34:56:78:90:ab:cd:ef"
+oci_private_key  = file("~/.oci/oci_api_key.pem")  # Path to your OCI API private key
+
+# OCI Configuration
+oci_region    = "us-phoenix-1"  # Change to your desired region
+compartment_ocid = "ocid1.compartment.oc1..aaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Environment Configuration
+environment  = "production"  # or "staging", "dev"
+project_name = "yawl"
+
+# Network Configuration
+vcn_cidr             = "10.0.0.0/16"
+public_subnet_cidr   = "10.0.1.0/24"
+private_subnet_cidr  = "10.0.2.0/24"
+database_subnet_cidr = "10.0.3.0/24"
+availability_domain  = "1"  # Adjust to your preferred AD
+
+# Compute Configuration
+compute_instance_count = 2
+compute_shape          = "VM.Standard.E2.1.Micro"  # Free tier eligible
+compute_ocpus          = 1
+compute_memory_gb      = 6
+compute_image_os       = "Ubuntu"
+compute_image_version  = "22.04"
+ssh_public_key         = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."  # Your SSH public key
+
+# Database Configuration
+database_display_name         = "yawl-mysql-db"
+mysql_db_version              = "8.0"
+mysql_db_name                 = "yawldb"
+mysql_admin_username          = "admin"
+mysql_admin_password          = "ChangeMe!Secure123Password"  # Use a strong password
+mysql_shape                   = "MySQL.VM.Standard.E3.1.8GB"
+mysql_backup_retention_days   = 7
+mysql_enable_high_availability = true
+
+# Load Balancer Configuration
+load_balancer_display_name    = "yawl-lb"
+load_balancer_shape           = "flexible"
+load_balancer_min_bandwidth   = 10
+load_balancer_max_bandwidth   = 100
+lb_listener_port              = 443
+lb_backend_port               = 8080
+
+# Tags
+common_tags = {
+  "Project"     = "YAWL"
+  "ManagedBy"   = "Terraform"
+  "Environment" = "production"
+  "CostCenter"  = "Engineering"
+}
+
+tags = {
+  "Owner"   = "DevOps Team"
+  "Version" = "1.0"
+}

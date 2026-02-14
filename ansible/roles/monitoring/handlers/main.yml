@@ -1,0 +1,38 @@
+---
+# Monitoring Stack Handlers
+
+- name: restart prometheus
+  systemd:
+    name: prometheus
+    state: restarted
+  listen: "restart prometheus"
+
+- name: restart grafana
+  systemd:
+    name: grafana-server
+    state: restarted
+  listen: "restart grafana"
+
+- name: restart elasticsearch
+  systemd:
+    name: elasticsearch
+    state: restarted
+  listen: "restart elasticsearch"
+
+- name: restart kibana
+  systemd:
+    name: kibana
+    state: restarted
+  listen: "restart kibana"
+
+- name: restart logstash
+  systemd:
+    name: logstash
+    state: restarted
+  listen: "restart logstash"
+
+- name: restart filebeat
+  systemd:
+    name: filebeat
+    state: restarted
+  listen: "restart filebeat"

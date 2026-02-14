@@ -1,0 +1,113 @@
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # Step 2: Push Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:${SHORT_SHA}'
+
+  # Step 3: Create Cloud SQL instance if not exists
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    id: 'setup-sql'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_REGION}'
+      - 'CLOUDSDK_PROJECT=${PROJECT_ID}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud sql instances describe ${_DB_INSTANCE} --project=${PROJECT_ID} || \
+        gcloud sql instances create ${_DB_INSTANCE} \
+          --database-version=POSTGRES_14 \
+          --tier=db-custom-2-7680 \
+          --region=${_REGION} \
+          --network=${_NETWORK} \
+          --no-backup \
+          --enable-bin-log=false
+
+  # Step 4: Create YAWL database and user
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    id: 'setup-db'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_REGION}'
+      - 'CLOUDSDK_PROJECT=${PROJECT_ID}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud sql connect ${_DB_INSTANCE} --user=postgres --project=${PROJECT_ID} << EOF
+        CREATE DATABASE IF NOT EXISTS yawl;
+        CREATE USER IF NOT EXISTS yawl WITH PASSWORD '${_DB_PASSWORD}';
+        GRANT ALL PRIVILEGES ON DATABASE yawl TO yawl;
+        EOF
+
+  # Step 5: Deploy to GKE
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    id: 'deploy-gke'
+    args:
+      - run
+      - --filename=k8s/
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:${SHORT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_GKE_CLUSTER}
+      - --namespace=${_NAMESPACE}
+
+  # Step 6: Deploy to Cloud Run (alternative)
+  - name: 'gcr.io/cloud-builders/run'
+    id: 'deploy-cloud-run'
+    args:
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --set-env-vars=YAWL_DB_HOST=${_DB_HOST},YAWL_DB_PORT=5432,YAWL_DB_NAME=yawl,YAWL_DB_USER=yawl
+      - --set-secrets=YAWL_DB_PASSWORD=yawl-db-password:latest
+      - --allow-unauthenticated
+
+  # Step 7: Run health checks
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'health-check'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER}'
+    args:
+      - 'rollout'
+      - 'status'
+      - 'deployment/yawl'
+      - '-n'
+      - '${_NAMESPACE}'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/yawl:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPOSITORY: 'yawl'
+  _SERVICE_NAME: 'yawl-workflow'
+  _DB_INSTANCE: 'yawl-postgres-14'
+  _DB_HOST: 'cloudsql-proxy'
+  _DB_PASSWORD: 'yawl-secure-password'
+  _NETWORK: 'default'
+  _GKE_CLUSTER: 'yawl-cluster'
+  _NAMESPACE: 'default'
+
+timeout: '3600s'

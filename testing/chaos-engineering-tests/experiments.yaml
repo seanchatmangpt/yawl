@@ -1,0 +1,568 @@
+# YAWL Chaos Engineering Experiments
+# Using Chaos Toolkit to validate system resilience
+# Tests failure scenarios and recovery mechanisms
+
+version: 1.0.0
+
+title: YAWL Resilience Testing Suite
+description: >
+  Comprehensive chaos engineering experiments for YAWL Workflow Engine
+  testing resilience to infrastructure failures, resource constraints,
+  and service disruptions across all deployment platforms.
+
+configuration:
+  timeout: 600  # 10 minutes per experiment
+  verbosity: 2
+
+settings:
+  runStrategy:
+    strategy: "default"
+    concurrency: 1  # Run experiments sequentially
+
+hypothesis:
+  title: "YAWL should handle infrastructure failures gracefully"
+  description: >
+    When infrastructure components fail or degrade,
+    YAWL should either recover automatically or provide
+    graceful degradation without losing critical state.
+
+# Shared rollback procedures
+rollbacks:
+  - name: cleanup-resources
+    description: "Clean up any test-created resources"
+    steps:
+      - type: shell
+        command: "docker-compose -f /home/user/yawl/docker-compose.yml ps -q | xargs -r docker rm -f"
+        on-rollback: false
+
+experiments:
+
+  # Kubernetes experiments
+  - name: pod-restart
+    enabled: true
+    description: "Test pod restart handling"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+      selector:
+        app: yawl
+    steps:
+      - type: action
+        name: "kill-pod"
+        description: "Force restart a YAWL pod"
+        provider:
+          type: "kubernetes"
+          action: "terminate_pod"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            grace_period: 0
+
+      - type: probe
+        name: "pod-restart-detection"
+        description: "Verify pod has been restarted"
+        frequency: 10s
+        timeout: 60s
+        provider:
+          type: "kubernetes"
+          probe: "all_pods_ready"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+
+  - name: node-drain
+    enabled: true
+    description: "Test handling of node drain"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "drain-node"
+        description: "Drain a Kubernetes node"
+        provider:
+          type: "shell"
+          command: |
+            NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+            kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data --force
+
+      - type: probe
+        name: "pods-rescheduled"
+        description: "Verify pods are rescheduled"
+        frequency: 10s
+        timeout: 120s
+        provider:
+          type: "kubernetes"
+          probe: "all_pods_ready"
+          arguments:
+            namespace: "yawl"
+
+      - type: action
+        name: "uncordon-node"
+        description: "Uncordon the node"
+        provider:
+          type: "shell"
+          command: |
+            NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+            kubectl uncordon $NODE
+
+  - name: resource-exhaustion
+    enabled: true
+    description: "Test handling of resource exhaustion"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "create-stress-pod"
+        description: "Create a pod consuming resources"
+        provider:
+          type: "kubernetes"
+          action: "create_pod"
+          arguments:
+            namespace: "yawl"
+            name: "stress-pod"
+            image: "polinux/stress:latest"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+
+      - type: probe
+        name: "service-availability"
+        description: "Check YAWL service availability"
+        frequency: 5s
+        timeout: 60s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://yawl-service:8080/resourceService/"
+          expected_status: 200
+
+      - type: action
+        name: "cleanup-stress-pod"
+        description: "Remove stress pod"
+        provider:
+          type: "kubernetes"
+          action: "delete_pod"
+          arguments:
+            namespace: "yawl"
+            name: "stress-pod"
+
+  - name: network-partition
+    enabled: true
+    description: "Test handling of network partition"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "create-network-policy"
+        description: "Create restrictive network policy"
+        provider:
+          type: "kubernetes"
+          action: "create_resource"
+          arguments:
+            manifest: |
+              apiVersion: networking.k8s.io/v1
+              kind: NetworkPolicy
+              metadata:
+                name: test-partition
+                namespace: yawl
+              spec:
+                podSelector:
+                  matchLabels:
+                    app: yawl
+                policyTypes:
+                - Egress
+                egress:
+                - to:
+                  - podSelector:
+                      matchLabels:
+                        app: yawl
+
+      - type: probe
+        name: "pod-connectivity"
+        description: "Check pod-to-pod connectivity"
+        frequency: 10s
+        timeout: 60s
+        provider:
+          type: "kubernetes"
+          probe: "exec_command"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            command: "ping -c 1 yawl-service"
+
+      - type: action
+        name: "remove-network-policy"
+        description: "Remove network policy"
+        provider:
+          type: "kubernetes"
+          action: "delete_resource"
+          arguments:
+            kind: "NetworkPolicy"
+            name: "test-partition"
+            namespace: "yawl"
+
+  # Database failure experiments
+  - name: database-unavailable
+    enabled: true
+    description: "Test database unavailability handling"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "stop-database"
+        description: "Stop PostgreSQL database"
+        provider:
+          type: "kubernetes"
+          action: "scale_deployment"
+          arguments:
+            namespace: "yawl"
+            name: "postgres"
+            replicas: 0
+
+      - type: probe
+        name: "service-degradation"
+        description: "Monitor service behavior with no database"
+        frequency: 5s
+        timeout: 30s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://yawl-service:8080/resourceService/"
+
+      - type: action
+        name: "restore-database"
+        description: "Restore PostgreSQL database"
+        provider:
+          type: "kubernetes"
+          action: "scale_deployment"
+          arguments:
+            namespace: "yawl"
+            name: "postgres"
+            replicas: 1
+
+      - type: probe
+        name: "service-recovery"
+        description: "Verify service recovery"
+        frequency: 10s
+        timeout: 120s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://yawl-service:8080/resourceService/"
+          expected_status: 200
+
+  - name: database-latency
+    enabled: true
+    description: "Test handling of high database latency"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "inject-latency"
+        description: "Inject network latency to database"
+        provider:
+          type: "shell"
+          command: |
+            kubectl set env deployment/yawl -n yawl DB_QUERY_TIMEOUT=5000
+
+      - type: probe
+        name: "api-performance"
+        description: "Monitor API performance under database latency"
+        frequency: 2s
+        timeout: 60s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://yawl-service:8080/resourceService/"
+
+      - type: action
+        name: "remove-latency"
+        description: "Remove latency injection"
+        provider:
+          type: "shell"
+          command: |
+            kubectl set env deployment/yawl -n yawl DB_QUERY_TIMEOUT=30000
+
+  # Service disruption experiments
+  - name: service-degradation
+    enabled: true
+    description: "Test graceful degradation under load"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "generate-load"
+        description: "Generate high load on service"
+        provider:
+          type: "kubernetes"
+          action: "create_pod"
+          arguments:
+            namespace: "yawl"
+            name: "load-generator"
+            image: "grafana/k6:latest"
+            command:
+              - "k6"
+              - "run"
+              - "-"
+            stdin: |
+              import http from 'k6/http';
+              export default function() {
+                http.get('http://yawl-service:8080/resourceService/');
+              }
+
+      - type: probe
+        name: "error-rate"
+        description: "Monitor error rate under load"
+        frequency: 5s
+        timeout: 60s
+        provider:
+          type: "kubernetes"
+          probe: "exec_command"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            command: "tail -100 /var/log/yawl/app.log | grep -c ERROR || echo 0"
+
+      - type: action
+        name: "stop-load"
+        description: "Stop load generation"
+        provider:
+          type: "kubernetes"
+          action: "delete_pod"
+          arguments:
+            namespace: "yawl"
+            name: "load-generator"
+
+  - name: cascading-failure
+    enabled: true
+    description: "Test handling of cascading failures"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: action
+        name: "fail-pod-1"
+        description: "Fail first pod"
+        provider:
+          type: "kubernetes"
+          action: "terminate_pod"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            grace_period: 0
+
+      - type: action
+        name: "fail-pod-2"
+        description: "Fail second pod"
+        provider:
+          type: "kubernetes"
+          action: "terminate_pod"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            grace_period: 0
+
+      - type: probe
+        name: "minimum-availability"
+        description: "Verify minimum availability is maintained"
+        frequency: 5s
+        timeout: 60s
+        provider:
+          type: "kubernetes"
+          probe: "min_pods_ready"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+            minimum: 1
+
+  # Memory leak experiments
+  - name: memory-leak-detection
+    enabled: true
+    description: "Test memory leak detection and handling"
+    conditions:
+      - type: kubernetes
+        field: "ready"
+        value: "True"
+    provider:
+      type: "kubernetes"
+      namespace: "yawl"
+    steps:
+      - type: probe
+        name: "baseline-memory"
+        description: "Capture baseline memory usage"
+        frequency: 30s
+        timeout: 300s
+        provider:
+          type: "kubernetes"
+          probe: "pod_memory_usage"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+
+      - type: action
+        name: "generate-requests"
+        description: "Generate continuous requests"
+        provider:
+          type: "shell"
+          command: |
+            for i in {1..100}; do
+              curl -s http://localhost:8080/resourceService/ > /dev/null
+              sleep 1
+            done &
+
+      - type: probe
+        name: "memory-growth"
+        description: "Monitor memory growth"
+        frequency: 10s
+        timeout: 120s
+        provider:
+          type: "kubernetes"
+          probe: "pod_memory_usage"
+          arguments:
+            namespace: "yawl"
+            selector: "app=yawl"
+
+  # Docker Compose experiments
+  - name: docker-compose-container-crash
+    enabled: true
+    condition: "platform == docker-compose"
+    description: "Test container restart on crash"
+    steps:
+      - type: action
+        name: "crash-container"
+        description: "Force crash a container"
+        provider:
+          type: "process"
+          command: "docker-compose -f /home/user/yawl/docker-compose.yml kill yawl"
+
+      - type: probe
+        name: "auto-restart"
+        description: "Verify container auto-restart"
+        frequency: 5s
+        timeout: 30s
+        provider:
+          type: "shell"
+          command: "docker-compose -f /home/user/yawl/docker-compose.yml ps yawl | grep -q running"
+
+  - name: disk-space-exhaustion
+    enabled: true
+    description: "Test handling of disk space exhaustion"
+    steps:
+      - type: action
+        name: "fill-disk"
+        description: "Fill available disk space"
+        provider:
+          type: "shell"
+          command: |
+            dd if=/dev/zero of=/tmp/filler bs=1M count=1000 || true
+
+      - type: probe
+        name: "disk-handling"
+        description: "Monitor system behavior"
+        frequency: 5s
+        timeout: 30s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://localhost:8080/resourceService/"
+
+      - type: action
+        name: "cleanup-disk"
+        description: "Remove filler file"
+        provider:
+          type: "shell"
+          command: "rm -f /tmp/filler"
+
+  # Recovery verification
+  - name: recovery-time-objective
+    enabled: true
+    description: "Verify recovery time objectives"
+    steps:
+      - type: action
+        name: "baseline-state"
+        description: "Establish baseline state"
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://localhost:8080/resourceService/"
+
+      - type: action
+        name: "trigger-failure"
+        description: "Trigger simulated failure"
+        provider:
+          type: "shell"
+          command: "pkill -f 'tomcat' || true"
+
+      - type: probe
+        name: "recovery-time"
+        description: "Measure recovery time"
+        frequency: 1s
+        timeout: 300s
+        provider:
+          type: "http"
+          method: "GET"
+          url: "http://localhost:8080/resourceService/"
+          expected_status: 200
+
+rollback:
+  strategy: "always"
+  steps:
+    - type: shell
+      command: "docker-compose -f /home/user/yawl/docker-compose.yml up -d"
+    - type: kubernetes
+      action: "rollout_deployment"
+      arguments:
+        namespace: "yawl"
+        name: "yawl"
+
+# Reporting configuration
+reporting:
+  - type: console
+    verbosity: 2
+  - type: json
+    path: "/tmp/yawl-chaos-report.json"
+  - type: html
+    path: "/tmp/yawl-chaos-report.html"
+
+# Notifications
+notifications:
+  slack_webhook: "${SLACK_WEBHOOK_URL}"
+  include_results: true

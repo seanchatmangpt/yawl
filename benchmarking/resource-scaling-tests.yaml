@@ -1,0 +1,409 @@
+# YAWL Resource Scaling Tests Configuration
+# Define various load scenarios to test system scalability
+
+version: '1.0'
+metadata:
+  name: YAWL Resource Scaling Tests
+  description: Comprehensive resource scaling test scenarios
+  author: Performance Engineering Team
+  created: 2024-01-01
+  updated: 2024-01-01
+
+environments:
+  development:
+    base_url: http://localhost:8080
+    timeout: 30
+    retries: 2
+    think_time: 1000
+
+  staging:
+    base_url: https://staging-api.example.com
+    timeout: 30
+    retries: 3
+    think_time: 500
+
+  production:
+    base_url: https://api.example.com
+    timeout: 45
+    retries: 0
+    think_time: 500
+
+# Test scenarios with varying load profiles
+test_scenarios:
+  # Scenario 1: Smoke Test - Verify basic functionality
+  smoke_test:
+    enabled: true
+    description: Basic connectivity and functionality verification
+    duration: 60
+    stages:
+      - duration: 10
+        target_users: 1
+        description: Single user test
+    thresholds:
+      response_time_p95: 500
+      response_time_p99: 1000
+      error_rate: 0
+      throughput_min: 1
+
+  # Scenario 2: Load Test - Ramp up to production-like load
+  load_test:
+    enabled: true
+    description: Gradual load increase to baseline production volume
+    duration: 600  # 10 minutes
+    stages:
+      - duration: 60
+        target_users: 10
+        description: Ramp-up phase 1 - 10 users
+      - duration: 120
+        target_users: 50
+        description: Ramp-up phase 2 - 50 users
+      - duration: 300
+        target_users: 50
+        description: Sustained load - 50 users
+      - duration: 60
+        target_users: 25
+        description: Ramp-down phase 1 - 25 users
+      - duration: 60
+        target_users: 0
+        description: Ramp-down phase 2 - 0 users
+    thresholds:
+      response_time_p95: 500
+      response_time_p99: 1000
+      error_rate: 1
+      throughput_min: 100
+    metrics:
+      - response_time
+      - error_rate
+      - throughput
+      - resource_usage
+
+  # Scenario 3: Stress Test - Push system to limits
+  stress_test:
+    enabled: true
+    description: Gradually increase load to identify breaking point
+    duration: 900  # 15 minutes
+    stages:
+      - duration: 120
+        target_users: 50
+        description: Phase 1 - 50 users
+      - duration: 120
+        target_users: 100
+        description: Phase 2 - 100 users
+      - duration: 120
+        target_users: 200
+        description: Phase 3 - 200 users
+      - duration: 120
+        target_users: 500
+        description: Phase 4 - 500 users
+      - duration: 120
+        target_users: 1000
+        description: Phase 5 - 1000 users
+      - duration: 180
+        target_users: 0
+        description: Cool-down phase
+    thresholds:
+      response_time_p95: 2000
+      response_time_p99: 5000
+      error_rate: 10
+      throughput_min: 10
+    metrics:
+      - response_time
+      - error_rate
+      - throughput
+      - resource_usage
+      - memory_usage
+      - cpu_usage
+
+  # Scenario 4: Spike Test - Handle sudden traffic spikes
+  spike_test:
+    enabled: true
+    description: Sudden increase to peak load and back down
+    duration: 300  # 5 minutes
+    stages:
+      - duration: 60
+        target_users: 10
+        description: Baseline load - 10 users
+      - duration: 60
+        target_users: 500
+        description: Spike - Jump to 500 users
+      - duration: 60
+        target_users: 1000
+        description: Peak spike - 1000 users
+      - duration: 60
+        target_users: 10
+        description: Return to baseline - 10 users
+      - duration: 60
+        target_users: 0
+        description: Cool-down - 0 users
+    thresholds:
+      response_time_p95: 1500
+      response_time_p99: 3000
+      error_rate: 5
+      throughput_min: 50
+
+  # Scenario 5: Endurance Test - Long-running stability test
+  endurance_test:
+    enabled: true
+    description: Run steady load for extended period to detect memory leaks
+    duration: 3600  # 1 hour
+    stages:
+      - duration: 300
+        target_users: 20
+        description: Warm-up phase
+      - duration: 2700
+        target_users: 50
+        description: Sustained production load - 50 users
+      - duration: 300
+        target_users: 0
+        description: Cool-down phase
+      - duration: 60
+        target_users: 20
+        description: Recovery test - 20 users
+    thresholds:
+      response_time_p95: 600
+      response_time_p99: 1200
+      error_rate: 1
+      throughput_min: 80
+    metrics:
+      - response_time
+      - error_rate
+      - throughput
+      - resource_usage
+      - memory_trend
+      - connection_pool_size
+
+  # Scenario 6: Data Volume Scaling - Test with increasing data sizes
+  data_volume_scaling:
+    enabled: true
+    description: Test performance with varying dataset sizes
+    duration: 600  # 10 minutes
+    stages:
+      - duration: 120
+        target_users: 25
+        data_size: small     # < 1MB
+        description: Small dataset test
+      - duration: 120
+        target_users: 25
+        data_size: medium    # 1-100MB
+        description: Medium dataset test
+      - duration: 120
+        target_users: 25
+        data_size: large     # 100-500MB
+        description: Large dataset test
+      - duration: 120
+        target_users: 25
+        data_size: xlarge    # > 500MB
+        description: Extra large dataset test
+      - duration: 120
+        target_users: 0
+        description: Cool-down phase
+    thresholds:
+      response_time_p95: 2000
+      response_time_p99: 5000
+      error_rate: 2
+
+  # Scenario 7: Concurrent User Scaling - Test connection handling
+  concurrent_users_scaling:
+    enabled: true
+    description: Increase concurrent users incrementally
+    duration: 1200  # 20 minutes
+    stages:
+      - duration: 60
+        target_users: 10
+      - duration: 120
+        target_users: 25
+      - duration: 120
+        target_users: 50
+      - duration: 120
+        target_users: 100
+      - duration: 120
+        target_users: 250
+      - duration: 120
+        target_users: 500
+      - duration: 120
+        target_users: 1000
+      - duration: 180
+        target_users: 0
+    thresholds:
+      response_time_p95: 2000
+      response_time_p99: 5000
+      error_rate: 5
+
+# Endpoints to test
+endpoints:
+  health:
+    path: /health
+    method: GET
+    priority: high
+    critical: true
+    timeout: 5
+
+  get_resources:
+    path: /api/v1/resources
+    method: GET
+    priority: high
+    critical: true
+    timeout: 30
+    query_params:
+      limit: 100
+
+  get_resource_by_id:
+    path: /api/v1/resources/{id}
+    method: GET
+    priority: high
+    critical: false
+    timeout: 30
+
+  create_resource:
+    path: /api/v1/resources
+    method: POST
+    priority: medium
+    critical: true
+    timeout: 30
+    body:
+      name: "Test Resource"
+      description: "Generated for load testing"
+      type: "test"
+
+  update_resource:
+    path: /api/v1/resources/{id}
+    method: PUT
+    priority: medium
+    critical: false
+    timeout: 30
+
+  delete_resource:
+    path: /api/v1/resources/{id}
+    method: DELETE
+    priority: low
+    critical: false
+    timeout: 30
+
+  search_resources:
+    path: /api/v1/resources/search
+    method: GET
+    priority: medium
+    critical: false
+    timeout: 45
+    query_params:
+      q: "test"
+      limit: 50
+
+  paginated_resources:
+    path: /api/v1/resources
+    method: GET
+    priority: high
+    critical: false
+    timeout: 30
+    query_params:
+      page: 1
+      limit: 50
+
+  authenticated_endpoint:
+    path: /api/v1/resources/protected
+    method: GET
+    priority: medium
+    critical: false
+    timeout: 30
+    requires_auth: true
+
+# Resource utilization monitoring thresholds
+resource_thresholds:
+  cpu:
+    warning: 70
+    critical: 85
+    unit: percent
+
+  memory:
+    warning: 75
+    critical: 90
+    unit: percent
+
+  disk_io:
+    warning: 80
+    critical: 95
+    unit: percent
+
+  network_io:
+    warning: 75
+    critical: 90
+    unit: percent
+
+  database_connections:
+    warning: 80
+    critical: 95
+    unit: percent
+
+  api_response_time_p95:
+    warning: 800
+    critical: 1500
+    unit: milliseconds
+
+  api_response_time_p99:
+    warning: 1500
+    critical: 3000
+    unit: milliseconds
+
+  error_rate:
+    warning: 1
+    critical: 5
+    unit: percent
+
+# Database performance targets
+database_targets:
+  query_response_time_p95: 100  # milliseconds
+  query_response_time_p99: 200  # milliseconds
+  connection_pool_utilization_warning: 80  # percent
+  connection_pool_utilization_critical: 95  # percent
+  slow_query_threshold: 500  # milliseconds
+
+# Monitoring and alerting
+monitoring:
+  enabled: true
+  metrics_collection_interval: 5  # seconds
+  alerting_enabled: true
+
+  alert_rules:
+    - name: High Response Time
+      metric: response_time_p95
+      operator: '>'
+      threshold: 1000
+      duration: 60
+      severity: critical
+
+    - name: High Error Rate
+      metric: error_rate
+      operator: '>'
+      threshold: 5
+      duration: 60
+      severity: critical
+
+    - name: High CPU Usage
+      metric: cpu_usage
+      operator: '>'
+      threshold: 85
+      duration: 120
+      severity: warning
+
+    - name: High Memory Usage
+      metric: memory_usage
+      operator: '>'
+      threshold: 90
+      duration: 120
+      severity: warning
+
+# Reporting configuration
+reporting:
+  enabled: true
+  format: markdown
+  include_graphs: true
+  include_raw_data: true
+
+  sections:
+    - executive_summary
+    - test_configuration
+    - performance_results
+    - bottleneck_analysis
+    - resource_utilization
+    - recommendations
+    - appendix

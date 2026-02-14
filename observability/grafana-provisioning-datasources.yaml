@@ -1,0 +1,201 @@
+apiVersion: 1
+
+datasources:
+  # Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      exemplarTraceIdDestinations:
+        - name: Trace ID
+          url: http://tempo:3100/api/traces/$${__value.raw}
+          urlDisplayLabel: Open in Tempo
+          datasourceUid: tempo
+      alertmanagerUid: alertmanager
+
+  # Elasticsearch datasource
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: .kibana
+    isDefault: false
+    editable: true
+    jsonData:
+      esVersion: "8.5.0"
+      logMessageField: message
+      logLevelField: level
+      timeField: "@timestamp"
+      maxConcurrentShardRequests: 5
+      httpMethod: GET
+
+  # Jaeger datasource
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    isDefault: false
+    editable: true
+
+  # Tempo datasource
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      httpMethod: GET
+      tracesToMetrics:
+        datasourceUid: Prometheus
+        spanStartTimeShift: now-1h
+        spanEndTimeShift: now
+        tags:
+          - key: service.name
+            value: service
+          - key: span.kind
+            value: span.kind
+
+  # Loki datasource
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      alertmanagerUid: alertmanager
+
+  # Graphite datasource
+  - name: Graphite
+    type: graphite
+    access: proxy
+    url: http://graphite:80
+    isDefault: false
+    editable: true
+
+  # InfluxDB datasource
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    database: telegraf
+    isDefault: false
+    editable: true
+    secureJsonData:
+      password: influxdb_password
+    jsonData:
+      httpMode: GET
+      username: telegraf
+
+  # MySQL datasource
+  - name: MySQL
+    type: mysql
+    access: proxy
+    url: mysql:3306
+    database: yawl_monitoring
+    isDefault: false
+    editable: true
+    secureJsonData:
+      password: mysql_password
+    jsonData:
+      maxOpenConns: 100
+      maxIdleConns: 100
+      connMaxLifetime: 600
+      tlsAuthMethod: false
+      tlsClientCert: false
+      tlsClientKey: false
+      tlsServerName: ""
+      tlsSkipVerify: true
+      username: monitoring
+
+  # PostgreSQL datasource
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: yawl_monitoring
+    isDefault: false
+    editable: true
+    secureJsonData:
+      password: postgres_password
+    jsonData:
+      maxOpenConns: 100
+      maxIdleConns: 100
+      connMaxLifetime: 600
+      tlsMode: disable
+      username: monitoring
+      sslMode: disable
+
+  # MongoDB datasource
+  - name: MongoDB
+    type: grafana-mongodb-datasource
+    access: proxy
+    url: mongodb:27017
+    isDefault: false
+    editable: true
+    secureJsonData:
+      password: mongodb_password
+    jsonData:
+      username: monitoring
+      authSource: admin
+
+  # Redis datasource
+  - name: Redis
+    type: grafana-redis-datasource
+    access: proxy
+    url: redis:6379
+    isDefault: false
+    editable: true
+    jsonData:
+      client: standalone
+
+  # Splunk datasource
+  - name: Splunk
+    type: grafana-splunk-datasource
+    access: proxy
+    url: http://splunk:8000
+    isDefault: false
+    editable: true
+    secureJsonData:
+      password: splunk_password
+    jsonData:
+      username: admin
+
+  # Cloudwatch datasource
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      assumeRoleEnabled: false
+      authType: keys
+      defaultRegion: us-east-1
+
+  # Prometheus - Alertmanager
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    isDefault: false
+    editable: true
+    jsonData:
+      handleGrafanaManagedAlerts: true
+      implementation: prometheus
+
+  # TestData datasource
+  - name: TestData
+    type: testdata
+    access: proxy
+    isDefault: false
+    editable: true
+
+deleteDataSourcesConfig:
+  datasourcesToDelete:
+    - name: OldPrometheus
+      orgId: 1

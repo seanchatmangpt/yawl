@@ -1,0 +1,44 @@
+# YAWL Integration Tests Configuration
+# Override with environment variables or via command line
+
+base_url: http://localhost:8080
+api_base_url: http://localhost:8080/resourceService
+timeout: 30
+max_response_time: 2.0
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: yawl-secure-password
+  database: yawl
+  backup_dir: /var/lib/postgresql/backups
+
+docker:
+  compose_file: /home/user/yawl/docker-compose.yml
+  env_file: /home/user/yawl/.env
+
+kubernetes:
+  namespace: yawl
+  context: minikube
+  config: ~/.kube/config
+
+test_data:
+  workflow_name: TestWorkflow
+  task_name: TestTask
+  user_username: testuser
+  user_email: test@example.com
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: /tmp/yawl-integration-tests.log
+
+reporting:
+  output_dir: /tmp/yawl-integration-tests-results
+  include_timing: true
+  include_logs: true
+  formats:
+    - json
+    - junit
+    - html

@@ -1,0 +1,86 @@
+---
+# PostgreSQL Monitoring Exporter Setup
+
+- name: Install PostgreSQL exporter
+  shell: |
+    useradd --no-create-home --shell /bin/false postgres_exporter 2>/dev/null || true
+    cd /tmp && \
+    curl -sL https://github.com/prometheus-community/postgres_exporter/releases/download/v0.12.1/postgres_exporter-0.12.1.linux-amd64.tar.gz | tar xzf -
+    cp postgres_exporter-0.12.1.linux-amd64/postgres_exporter /usr/local/bin/
+    chown postgres_exporter:postgres_exporter /usr/local/bin/postgres_exporter
+  args:
+    creates: /usr/local/bin/postgres_exporter
+
+- name: Create postgres exporter database user
+  postgresql_user:
+    name: "{{ postgres_monitoring_user }}"
+    password: "{{ postgres_monitoring_password }}"
+    role_attr_flags: NOSUPERUSER,NOCANLOGIN
+    state: present
+  become_user: postgres
+
+- name: Create postgres exporter systemd service
+  template:
+    src: postgres-exporter.service.j2
+    dest: /etc/systemd/system/postgres-exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create postgres exporter environment file
+  template:
+    src: postgres-exporter.env.j2
+    dest: /etc/default/postgres-exporter
+    owner: postgres_exporter
+    group: postgres_exporter
+    mode: '0600'
+
+- name: Enable and start postgres exporter
+  systemd:
+    name: postgres-exporter
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: Verify postgres exporter is running
+  uri:
+    url: "http://localhost:9187/metrics"
+    method: GET
+    status_code: 200
+  register: exporter_check
+  retries: 5
+  delay: 5
+
+- name: Setup node exporter for system metrics
+  shell: |
+    useradd --no-create-home --shell /bin/false node_exporter 2>/dev/null || true
+    cd /tmp && \
+    curl -sL https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz | tar xzf -
+    cp node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/
+    chown node_exporter:node_exporter /usr/local/bin/node_exporter
+  args:
+    creates: /usr/local/bin/node_exporter
+
+- name: Create node exporter systemd service
+  template:
+    src: node-exporter.service.j2
+    dest: /etc/systemd/system/node-exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start node exporter
+  systemd:
+    name: node-exporter
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: Verify node exporter is running
+  uri:
+    url: "http://localhost:9100/metrics"
+    method: GET
+    status_code: 200
+  register: node_exporter_check
+  retries: 5
+  delay: 5

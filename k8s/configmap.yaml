@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-config
+  namespace: yawl
+data:
+  YAWL_ENV: "production"
+  LOG_LEVEL: "INFO"
+  TOMCAT_THREADS_MAX: "250"
+  TOMCAT_THREADS_MIN: "10"
+  JVM_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-logging-config
+  namespace: yawl
+data:
+  log4j2.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration packages="org.apache.logging.log4j.core">
+      <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+          <PatternLayout pattern="%d{ISO8601} [%t] %-5p %c{1} - %m%n"/>
+        </Console>
+        <RollingFile name="RollingFile" fileName="logs/yawl.log"
+                     filePattern="logs/yawl-%d{yyyy-MM-dd}-%i.log.gz">
+          <PatternLayout pattern="%d{ISO8601} [%t] %-5p %c{1} - %m%n"/>
+          <Policies>
+            <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            <SizeBasedTriggeringPolicy size="100MB"/>
+          </Policies>
+          <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+      </Appenders>
+      <Loggers>
+        <Root level="INFO">
+          <AppenderRef ref="Console"/>
+          <AppenderRef ref="RollingFile"/>
+        </Root>
+        <Logger name="org.yawlfoundation" level="DEBUG"/>
+        <Logger name="org.hibernate" level="WARN"/>
+        <Logger name="org.apache.catalina" level="INFO"/>
+      </Loggers>
+    </Configuration>
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-datasource-config
+  namespace: yawl
+data:
+  datasource.properties: |
+    hibernate.connection.driver_class=org.postgresql.Driver
+    hibernate.dialect=org.hibernate.dialect.PostgreSQL10Dialect
+    hibernate.show_sql=false
+    hibernate.format_sql=true
+    hibernate.generate_statistics=false
+    hibernate.jdbc.batch_size=20
+    hibernate.jdbc.fetch_size=50
+    hibernate.connection.isolation=2
+    hibernate.c3p0.acquire_increment=5
+    hibernate.c3p0.idle_test_period=60
+    hibernate.c3p0.max_size=20
+    hibernate.c3p0.max_statements=50
+    hibernate.c3p0.min_size=5
+    hibernate.c3p0.timeout=300

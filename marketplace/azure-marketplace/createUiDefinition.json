@@ -1,0 +1,416 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "projectName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Project Name",
+        "placeholder": "yawl",
+        "defaultValue": "yawl",
+        "toolTip": "The name for this deployment (3-24 characters, alphanumeric)",
+        "constraints": {
+          "required": true,
+          "validations": [
+            {
+              "regex": "^[a-z0-9]{3,24}$",
+              "message": "Project name must be 3-24 characters, lowercase alphanumeric"
+            }
+          ]
+        }
+      },
+      {
+        "name": "resourceGroupId",
+        "type": "Microsoft.Common.ResourceGroupSelector",
+        "label": "Resource Group",
+        "toolTip": "Create a new resource group or select existing",
+        "required": true
+      }
+    ],
+    "steps": [
+      {
+        "name": "appSettings",
+        "label": "Application Settings",
+        "elements": [
+          {
+            "name": "appSection",
+            "type": "Microsoft.Common.Section",
+            "label": "YAWL Application Configuration",
+            "elements": [
+              {
+                "name": "yawlVersion",
+                "type": "Microsoft.Common.DropDown",
+                "label": "YAWL Version",
+                "defaultValue": "1.0.0",
+                "toolTip": "Select the version of YAWL to deploy",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "1.0.0",
+                      "value": "1.0.0"
+                    },
+                    {
+                      "label": "0.9.0",
+                      "value": "0.9.0"
+                    },
+                    {
+                      "label": "0.8.0",
+                      "value": "0.8.0"
+                    }
+                  ],
+                  "required": true
+                }
+              },
+              {
+                "name": "vmSize",
+                "type": "Microsoft.Compute.SizeSelector",
+                "label": "Virtual Machine Size",
+                "toolTip": "Size of the virtual machine for YAWL deployment",
+                "recommendedSizes": [
+                  "Standard_B2s",
+                  "Standard_B2ms",
+                  "Standard_B4ms"
+                ],
+                "constraints": {
+                  "allowedSizes": [
+                    "Standard_B1s",
+                    "Standard_B1ms",
+                    "Standard_B2s",
+                    "Standard_B2ms",
+                    "Standard_B4ms",
+                    "Standard_D2s_v3",
+                    "Standard_D4s_v3"
+                  ],
+                  "required": true
+                },
+                "osPlatform": "Linux",
+                "count": 3
+              },
+              {
+                "name": "vmCount",
+                "type": "Microsoft.Common.Slider",
+                "label": "Number of VM Instances",
+                "subLabel": "Instances",
+                "min": 1,
+                "max": 10,
+                "step": 1,
+                "defaultValue": 3,
+                "toolTip": "Number of virtual machines to deploy for YAWL cluster"
+              },
+              {
+                "name": "enableMonitoring",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure Monitor",
+                "defaultValue": true,
+                "toolTip": "Enable Azure Monitor for application insights and metrics"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "databaseSettings",
+        "label": "Database Settings",
+        "elements": [
+          {
+            "name": "databaseSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Database Configuration",
+            "elements": [
+              {
+                "name": "dbType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Database Type",
+                "defaultValue": "PostgreSQL",
+                "toolTip": "Select the database type for YAWL",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "PostgreSQL",
+                      "value": "PostgreSQL"
+                    },
+                    {
+                      "label": "MySQL",
+                      "value": "MySQL"
+                    },
+                    {
+                      "label": "Azure SQL Database",
+                      "value": "AzureSQL"
+                    }
+                  ],
+                  "required": true
+                }
+              },
+              {
+                "name": "dbVersion",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Database Version",
+                "defaultValue": "14",
+                "toolTip": "Select the database version",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "PostgreSQL 14",
+                      "value": "14"
+                    },
+                    {
+                      "label": "PostgreSQL 13",
+                      "value": "13"
+                    },
+                    {
+                      "label": "PostgreSQL 12",
+                      "value": "12"
+                    }
+                  ],
+                  "required": true
+                }
+              },
+              {
+                "name": "dbAdminUsername",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Database Admin Username",
+                "placeholder": "yawladmin",
+                "defaultValue": "yawladmin",
+                "toolTip": "Administrator username for database (3-16 characters)",
+                "constraints": {
+                  "required": true,
+                  "validations": [
+                    {
+                      "regex": "^[a-zA-Z0-9_]{3,16}$",
+                      "message": "Username must be 3-16 characters, alphanumeric and underscore"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "dbAdminPassword",
+                "type": "Microsoft.Common.PasswordBox",
+                "label": "Database Admin Password",
+                "toolTip": "Password for database administrator (min 8 characters)",
+                "constraints": {
+                  "required": true,
+                  "validations": [
+                    {
+                      "regex": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+                      "message": "Password must be at least 8 characters with uppercase, lowercase, number, and special character"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "storageGB",
+                "type": "Microsoft.Common.Slider",
+                "label": "Storage Size (GB)",
+                "subLabel": "GB",
+                "min": 20,
+                "max": 1000,
+                "step": 10,
+                "defaultValue": 100,
+                "toolTip": "Storage size for the database"
+              },
+              {
+                "name": "backupRetention",
+                "type": "Microsoft.Common.Slider",
+                "label": "Backup Retention (Days)",
+                "subLabel": "Days",
+                "min": 7,
+                "max": 35,
+                "step": 1,
+                "defaultValue": 30,
+                "toolTip": "Number of days to retain database backups"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "networkSettings",
+        "label": "Network Settings",
+        "elements": [
+          {
+            "name": "networkSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Network Configuration",
+            "elements": [
+              {
+                "name": "vnetName",
+                "type": "Microsoft.Network.VirtualNetworkCombo",
+                "label": "Virtual Network",
+                "toolTip": "Create a new virtual network or select existing",
+                "defaultValue": {
+                  "name": "yawl-vnet",
+                  "addressPrefixSize": "/16"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/24"
+                },
+                "options": {
+                  "hideExisting": false
+                },
+                "subnets": {
+                  "subnet1": {
+                    "label": "App Subnet",
+                    "defaultValue": {
+                      "name": "yawl-app-subnet",
+                      "addressPrefixSize": "/24"
+                    },
+                    "constraints": {
+                      "minAddressPrefixSize": "/26",
+                      "minAddressCount": 8,
+                      "requireContiguousAddresses": true
+                    }
+                  },
+                  "subnet2": {
+                    "label": "Database Subnet",
+                    "defaultValue": {
+                      "name": "yawl-db-subnet",
+                      "addressPrefixSize": "/25"
+                    },
+                    "constraints": {
+                      "minAddressPrefixSize": "/26",
+                      "minAddressCount": 4,
+                      "requireContiguousAddresses": true
+                    }
+                  }
+                }
+              },
+              {
+                "name": "domainName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Domain Name",
+                "placeholder": "yawl.example.com",
+                "toolTip": "FQDN for YAWL application",
+                "constraints": {
+                  "required": true,
+                  "validations": [
+                    {
+                      "regex": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$",
+                      "message": "Must be a valid domain name"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "enableSSL",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable SSL/TLS",
+                "defaultValue": true,
+                "toolTip": "Enable HTTPS for secure communication"
+              },
+              {
+                "name": "certificateType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "SSL Certificate Type",
+                "visible": "[steps('networkSettings').networkSection.enableSSL]",
+                "defaultValue": "Azure Managed",
+                "toolTip": "Select SSL certificate source",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Azure Managed Certificate",
+                      "value": "Azure Managed"
+                    },
+                    {
+                      "label": "Bring Your Own Certificate",
+                      "value": "BYOC"
+                    },
+                    {
+                      "label": "Let's Encrypt",
+                      "value": "LetsEncrypt"
+                    }
+                  ],
+                  "required": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "securitySettings",
+        "label": "Security Settings",
+        "elements": [
+          {
+            "name": "securitySection",
+            "type": "Microsoft.Common.Section",
+            "label": "Security Configuration",
+            "elements": [
+              {
+                "name": "enableAuth",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure AD Authentication",
+                "defaultValue": true,
+                "toolTip": "Integrate with Azure Active Directory for authentication"
+              },
+              {
+                "name": "enableVNetIsolation",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable VNet Isolation",
+                "defaultValue": true,
+                "toolTip": "Restrict traffic to virtual network only"
+              },
+              {
+                "name": "enableEncryption",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Data Encryption at Rest",
+                "defaultValue": true,
+                "toolTip": "Enable encryption for data at rest using Azure Key Vault"
+              },
+              {
+                "name": "enableFirewall",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure Firewall",
+                "defaultValue": false,
+                "toolTip": "Deploy Azure Firewall for network protection"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tagsSettings",
+        "label": "Tags",
+        "elements": [
+          {
+            "name": "resourceTags",
+            "type": "Microsoft.Common.TagsByResource",
+            "resources": [
+              "Microsoft.Compute/virtualMachines",
+              "Microsoft.DBforPostgreSQL/servers",
+              "Microsoft.Network/virtualNetworks",
+              "Microsoft.Network/loadBalancers"
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "projectName": "[basics('projectName')]",
+      "resourceGroupId": "[basics('resourceGroupId')]",
+      "yawlVersion": "[steps('appSettings').appSection.yawlVersion]",
+      "vmSize": "[steps('appSettings').appSection.vmSize]",
+      "vmCount": "[steps('appSettings').appSection.vmCount]",
+      "enableMonitoring": "[steps('appSettings').appSection.enableMonitoring]",
+      "dbType": "[steps('databaseSettings').databaseSection.dbType]",
+      "dbVersion": "[steps('databaseSettings').databaseSection.dbVersion]",
+      "dbAdminUsername": "[steps('databaseSettings').databaseSection.dbAdminUsername]",
+      "dbAdminPassword": "[steps('databaseSettings').databaseSection.dbAdminPassword]",
+      "storageGB": "[steps('databaseSettings').databaseSection.storageGB]",
+      "backupRetention": "[steps('databaseSettings').databaseSection.backupRetention]",
+      "vnetId": "[steps('networkSettings').networkSection.vnetName.id]",
+      "appSubnetId": "[steps('networkSettings').networkSection.vnetName.subnets.subnet1.id]",
+      "dbSubnetId": "[steps('networkSettings').networkSection.vnetName.subnets.subnet2.id]",
+      "domainName": "[steps('networkSettings').networkSection.domainName]",
+      "enableSSL": "[steps('networkSettings').networkSection.enableSSL]",
+      "certificateType": "[steps('networkSettings').networkSection.certificateType]",
+      "enableAuth": "[steps('securitySettings').securitySection.enableAuth]",
+      "enableVNetIsolation": "[steps('securitySettings').securitySection.enableVNetIsolation]",
+      "enableEncryption": "[steps('securitySettings').securitySection.enableEncryption]",
+      "enableFirewall": "[steps('securitySettings').securitySection.enableFirewall]",
+      "resourceTags": "[steps('tagsSettings').resourceTags]",
+      "location": "[location()]"
+    }
+  }
+}

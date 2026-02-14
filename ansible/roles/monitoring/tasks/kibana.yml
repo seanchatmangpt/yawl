@@ -1,0 +1,63 @@
+---
+# Kibana Installation and Configuration
+
+- name: Install Kibana
+  apt:
+    name: "kibana={{ elasticsearch_version }}"
+    state: present
+
+- name: Configure Kibana kibana.yml
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: kibana
+    mode: '0660'
+    backup: yes
+  notify: restart kibana
+
+- name: Enable and start Kibana
+  systemd:
+    name: kibana
+    enabled: yes
+    state: started
+
+- name: Wait for Kibana to be ready
+  uri:
+    url: "http://localhost:{{ kibana_port }}/api/status"
+    method: GET
+    status_code: 200
+  register: kibana_ready
+  retries: 15
+  delay: 5
+
+- name: Configure Kibana index patterns
+  uri:
+    url: "http://localhost:{{ kibana_port }}/api/saved_objects/index-pattern/logstash-*"
+    method: POST
+    body_format: json
+    headers:
+      kbn-xsrf: "kibana"
+    body:
+      attributes:
+        title: "logstash-*"
+        timeFieldName: "@timestamp"
+  ignore_errors: yes
+
+- name: Create Kibana dashboard for YAWL logs
+  template:
+    src: kibana-dashboard-yawl.json.j2
+    dest: /tmp/kibana-dashboard-yawl.json
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Import Kibana dashboard
+  uri:
+    url: "http://localhost:{{ kibana_port }}/api/saved_objects/dashboard"
+    method: POST
+    body_format: json
+    headers:
+      kbn-xsrf: "kibana"
+    body: "{{ lookup('file', '/tmp/kibana-dashboard-yawl.json') }}"
+  ignore_errors: yes

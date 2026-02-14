@@ -1,0 +1,48 @@
+---
+# Docker Default Variables
+
+docker_version: 24.0.0
+docker_edition: ce
+docker_storage_driver: overlay2
+docker_log_driver: json-file
+docker_log_max_size: 100m
+docker_log_max_file: "10"
+
+# Docker Network
+docker_network_name: yawl-network
+docker_network_driver: bridge
+docker_network_subnet: 172.18.0.0/16
+docker_network_gateway: 172.18.0.1
+
+# YAWL Application Defaults
+yawl_version: latest
+yawl_war_file: yawl.war
+yawl_context: /yawl
+yawl_home: /opt/yawl
+yawl_data_dir: /data/yawl
+yawl_logs_dir: /var/log/yawl
+yawl_config_dir: /etc/yawl
+yawl_http_port: 8080
+yawl_https_port: 8443
+
+# Cache Configuration
+yawl_cache_enabled: true
+yawl_cache_backend: redis
+yawl_redis_port: 6379
+yawl_redis_db: 0
+yawl_cache_ttl: 3600
+
+# Monitoring
+yawl_monitoring_enabled: true
+yawl_metrics_port: 9090
+yawl_health_check_enabled: true
+yawl_health_check_path: /resourceService/
+yawl_health_check_interval: 30
+yawl_health_check_timeout: 10
+yawl_health_check_retries: 3
+
+# Clustering
+yawl_clustering_enabled: true
+yawl_cluster_name: yawl-cluster
+yawl_session_affinity: true
+yawl_session_replication: true

@@ -1,0 +1,178 @@
+image: node:20
+
+pipelines:
+  default:
+    - step:
+        name: Build & Test
+        caches:
+          - node
+        script:
+          - npm ci
+          - npm run build --if-present
+          - npm run lint --if-present
+          - npm test --if-present
+
+  branches:
+    main:
+      - step:
+          name: Build
+          caches:
+            - node
+            - docker
+          services:
+            - docker
+          script:
+            - npm ci
+            - npm run build --if-present
+            - export IMAGE_TAG="${BITBUCKET_COMMIT}"
+            - docker build -t $IMAGE_TAG -t latest .
+          artifacts:
+            - dist/**
+            - build/**
+
+      - step:
+          name: Test
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run lint --if-present
+            - npm test --if-present -- --coverage
+            - npm run test:integration --if-present
+            - npm audit --audit-level=moderate || true
+          artifacts:
+            - coverage/**
+
+      - step:
+          name: Deploy to AWS
+          deployment: aws-production
+          services:
+            - docker
+          script:
+            - pipe: atlassian/aws-ecs-deploy:2.2.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: us-east-1
+                CLUSTER_NAME: $AWS_ECS_CLUSTER
+                SERVICE_NAME: $AWS_ECS_SERVICE
+                FORCE_NEW_DEPLOYMENT: "true"
+
+            - |
+              aws elasticbeanstalk create-app-version \
+                --application-name ${AWS_EB_APP} \
+                --version-label ${BITBUCKET_COMMIT} \
+                --source-bundle S3Bucket=${AWS_S3_BUCKET},S3Key=${BITBUCKET_COMMIT}.zip \
+                --region us-east-1
+
+            - |
+              aws elasticbeanstalk update-environment \
+                --environment-name ${AWS_EB_ENV} \
+                --version-label ${BITBUCKET_COMMIT} \
+                --region us-east-1
+
+      - step:
+          name: Deploy to GCP
+          deployment: gcp-production
+          services:
+            - docker
+          script:
+            - echo ${GCP_SA_KEY} | base64 -d > gcp-key.json
+            - gcloud auth activate-service-account --key-file gcp-key.json
+            - gcloud config set project ${GCP_PROJECT_ID}
+            - gcloud auth configure-docker
+
+            - |
+              docker tag ${BITBUCKET_REPO_SLUG}:${BITBUCKET_COMMIT} \
+                gcr.io/${GCP_PROJECT_ID}/app:${BITBUCKET_COMMIT}
+
+            - docker push gcr.io/${GCP_PROJECT_ID}/app:${BITBUCKET_COMMIT}
+
+            - |
+              gcloud run deploy ${GCP_SERVICE_NAME} \
+                --image gcr.io/${GCP_PROJECT_ID}/app:${BITBUCKET_COMMIT} \
+                --region us-central1 \
+                --platform managed \
+                --allow-unauthenticated
+
+            - |
+              gcloud container clusters get-credentials ${GCP_GKE_CLUSTER} \
+                --region us-central1
+
+            - |
+              kubectl set image deployment/${GCP_DEPLOYMENT_NAME} \
+                app=gcr.io/${GCP_PROJECT_ID}/app:${BITBUCKET_COMMIT}
+
+      - step:
+          name: Deploy to Azure
+          deployment: azure-production
+          services:
+            - docker
+          script:
+            - |
+              az login --service-principal \
+                -u ${AZURE_CLIENT_ID} \
+                -p ${AZURE_CLIENT_SECRET} \
+                --tenant ${AZURE_TENANT_ID}
+
+            - az container registry login --name ${AZURE_REGISTRY}
+
+            - |
+              az acr build \
+                --registry ${AZURE_REGISTRY} \
+                --image app:${BITBUCKET_COMMIT} .
+
+            - |
+              az webapp deployment source config-zip \
+                --resource-group ${AZURE_RESOURCE_GROUP} \
+                --name ${AZURE_APP_NAME} \
+                --src ./dist.zip
+
+            - |
+              az aks get-credentials \
+                --resource-group ${AZURE_RESOURCE_GROUP} \
+                --name ${AZURE_AKS_CLUSTER}
+
+            - |
+              kubectl set image deployment/${AZURE_DEPLOYMENT_NAME} \
+                app=${AZURE_REGISTRY}.azurecr.io/app:${BITBUCKET_COMMIT}
+
+      - step:
+          name: Deploy to DigitalOcean
+          deployment: digitalocean-production
+          script:
+            - npm install -g doctl
+            - doctl auth init --access-token ${DIGITALOCEAN_TOKEN}
+            - doctl apps create-deployment --app-id ${DIGITALOCEAN_APP_ID}
+
+    develop:
+      - step:
+          name: Build & Test
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run build --if-present
+            - npm run lint --if-present
+            - npm test --if-present -- --coverage
+            - npm run test:integration --if-present
+          artifacts:
+            - coverage/**
+
+  pull-requests:
+    '**':
+      - step:
+          name: Build & Test PR
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run build --if-present
+            - npm run lint --if-present
+            - npm test --if-present -- --coverage
+          artifacts:
+            - coverage/**
+
+definitions:
+  caches:
+    docker: /var/lib/docker

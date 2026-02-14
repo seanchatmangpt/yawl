@@ -1,0 +1,11 @@
+gcp_project_id  = "your-project-id"
+gcp_region      = "us-central1"
+gke_node_count  = 3
+gke_min_nodes   = 3
+gke_max_nodes   = 10
+gke_machine_type = "n2-standard-4"
+cloudsql_tier   = "db-custom-2-7680"
+cloudsql_disk_size = 100
+redis_memory_gb = 5
+alert_email     = "alerts@example.com"
+environment     = "production"

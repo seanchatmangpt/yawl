@@ -1,0 +1,87 @@
+---
+# Global variables for all YAWL nodes
+
+# Deployment settings
+deployment_user: yawl
+deployment_group: yawl
+deployment_uid: 1001
+deployment_gid: 1001
+deployment_home: /home/yawl
+
+# System settings
+timezone: UTC
+ntp_server: 0.ubuntu.pool.ntp.org
+kernel_swappiness: 10
+max_open_files: 65536
+
+# Firewall settings
+firewall_enabled: true
+firewall_packages:
+  - ufw
+
+# SSH settings
+ssh_port: 22
+ssh_timeout: 300
+enable_password_authentication: false
+
+# Package repositories
+ubuntu_repos_enabled: true
+security_updates_auto_install: true
+
+# Logging
+log_level: INFO
+log_dir: /var/log/yawl
+log_retention_days: 30
+
+# Backup settings
+backup_enabled: true
+backup_dir: /backups/yawl
+backup_retention_days: 30
+
+# SSL/TLS settings
+ssl_enabled: true
+ssl_cert_dir: /etc/yawl/ssl
+ssl_key_dir: /etc/yawl/ssl
+
+# Network settings
+dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+# Monitoring and metrics
+monitoring_enabled: true
+metrics_retention_hours: 720  # 30 days
+alerts_enabled: true
+
+# Performance tuning
+enable_performance_tuning: true
+vm_max_map_count: 262144
+net_core_somaxconn: 65536
+net_ipv4_tcp_max_syn_backlog: 65536
+
+# Docker settings (for container deployments)
+docker_storage_driver: overlay2
+docker_log_max_size: 100m
+docker_log_max_file: 10
+docker_network_cidr: 172.17.0.0/16
+
+# Application versions
+yawl_version: latest
+postgres_version: 14
+redis_version: 7
+tomcat_version: 9.0.68
+java_version: 11
+
+# Database connection pooling
+db_connection_pool_size: 20
+db_connection_max_lifetime: 900
+db_connection_idle_timeout: 300
+
+# Cache settings
+redis_maxmemory: 512mb
+redis_maxmemory_policy: allkeys-lru
+
+# Service restart policies
+service_restart_on_failure: true
+service_restart_delay: 10
+service_restart_attempts: 3

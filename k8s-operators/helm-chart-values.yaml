@@ -1,0 +1,267 @@
+# YAWL Operator Helm Chart Values
+# This file contains the default values for the YAWL Operator Helm chart
+
+# Operator Configuration
+operator:
+  # Number of operator replicas
+  replicaCount: 1
+
+  # Operator image settings
+  image:
+    repository: yawlfoundation/yawl-operator
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+
+  # Operator resource settings
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+
+  # Operator security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    fsGroup: 65532
+
+  # Operator logging
+  logging:
+    level: info
+    format: json
+
+  # Operator service
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # Operator metrics
+  metrics:
+    enabled: true
+    port: 8443
+
+  # Leader election configuration
+  leaderElection:
+    enabled: true
+
+  # Webhook settings
+  webhook:
+    enabled: true
+    port: 9443
+    certDir: /tmp/k8s-webhook-server/serving-certs
+
+# Webhook Configuration
+webhooks:
+  # Mutating webhook for defaults
+  mutating:
+    enabled: true
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["yawl.io"]
+        apiVersions: ["v1beta1"]
+        resources: ["yawlclusters"]
+        scope: "Namespaced"
+
+  # Validating webhook for constraints
+  validating:
+    enabled: true
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["yawl.io"]
+        apiVersions: ["v1beta1"]
+        resources: ["yawlclusters"]
+        scope: "Namespaced"
+
+# RBAC Configuration
+rbac:
+  enabled: true
+
+# ServiceAccount Configuration
+serviceAccount:
+  create: true
+  name: yawl-operator
+  annotations: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Pod Priority
+priorityClassName: system-cluster-critical
+
+# Affinity and Node Selection
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - yawl-operator
+          topologyKey: kubernetes.io/hostname
+
+nodeSelector: {}
+tolerations: []
+
+# Namespace for operator installation
+namespace: yawl-operator-system
+
+# CRD Management
+crd:
+  create: true
+  # Keep CRD on chart deletion
+  keep: true
+
+# Default values for created YawlCluster instances
+defaultYawlCluster:
+  # Default cluster configuration
+  spec:
+    size: 3
+    version: "5.2"
+
+    image:
+      repository: yawlfoundation/yawl
+      tag: "5.2"
+      pullPolicy: IfNotPresent
+
+    database:
+      type: postgresql
+      port: 5432
+      sslEnabled: true
+      connectionPoolSize: 20
+
+    persistence:
+      enabled: true
+      storageClass: standard
+      size: 10Gi
+      logsPersistence: true
+      logsSize: 5Gi
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 2Gi
+
+    jvm:
+      heapSize: 1024m
+      initialHeapSize: 512m
+      gcType: G1GC
+      gcPauseTarget: 200
+
+    networking:
+      service:
+        type: ClusterIP
+        port: 8080
+        targetPort: 8080
+      ingress:
+        enabled: false
+      networkPolicy:
+        enabled: true
+
+    security:
+      rbac:
+        enabled: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        allowPrivilegeEscalation: false
+
+    highAvailability:
+      enabled: true
+      podAntiAffinity: preferred
+
+    monitoring:
+      prometheus:
+        enabled: false
+        port: 9090
+        interval: "30s"
+      logging:
+        enabled: true
+        level: INFO
+        format: json
+
+    scaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilization: 70
+      targetMemoryUtilization: 80
+
+# Monitoring Configuration
+monitoring:
+  # ServiceMonitor for Prometheus integration
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+
+  # PrometheusRule for alerting
+  prometheusRule:
+    enabled: false
+    additionalLabels: {}
+    rules:
+      - alert: YawlOperatorHighErrorRate
+        expr: rate(yawl_operator_errors_total[5m]) > 0.1
+        for: 5m
+        annotations:
+          summary: "High error rate in YAWL operator"
+      - alert: YawlClusterNotReady
+        expr: yawl_cluster_ready_replicas < yawl_cluster_desired_replicas
+        for: 10m
+        annotations:
+          summary: "YAWL cluster replicas not ready"
+
+# Ingress configuration for operator
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: yawl-operator.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Environment variables for operator pod
+env:
+  - name: OPERATOR_LOG_LEVEL
+    value: info
+  - name: RECONCILE_PERIOD
+    value: "30s"
+  - name: MAX_CONCURRENT_RECONCILES
+    value: "1"
+
+# Extra arguments for operator
+args: []
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Labels to add to all resources
+labels:
+  app: yawl-operator
+  version: "1.0.0"
+
+# Annotations to add to all resources
+annotations: {}
+
+# Post-installation hooks
+postInstall:
+  enabled: false
+  # Create sample YawlCluster resource
+  sampleCluster:
+    enabled: false
+    name: sample-yawl-cluster
+    namespace: default
