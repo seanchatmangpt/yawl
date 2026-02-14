@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class ZaiFunctionService {
 
-    private static final String ZHIPU_AI_MODEL_GLM_4_6 = "glm-4.6";
+    private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
 
     private final ZaiHttpClient httpClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
