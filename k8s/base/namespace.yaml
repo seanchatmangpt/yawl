@@ -10,3 +10,14 @@ metadata:
   annotations:
     scheduler.alpha.kubernetes.io/defaultTolerations: "[]"
     scheduler.alpha.kubernetes.io/tolerationsWhitelist: "[]"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-service-account
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: shared-service-account
+    app.kubernetes.io/version: "5.2"
+automountServiceAccountToken: false

@@ -27,7 +27,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
     spec:
-      serviceAccountName: yawl-service-account
+      serviceAccountName: yawl-monitor
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

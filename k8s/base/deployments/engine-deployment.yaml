@@ -28,7 +28,7 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/engine/metrics"
     spec:
-      serviceAccountName: yawl-service-account
+      serviceAccountName: yawl-engine
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
