@@ -5,6 +5,8 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -19,7 +21,7 @@ import java.util.*;
  */
 public class ZaiFunctionService {
 
-    private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
+    private static final String ZHIPU_AI_MODEL_GLM_4_7_FLASH = "GLM-4.7-Flash";
 
     private final ZaiHttpClient httpClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
@@ -43,6 +45,18 @@ public class ZaiFunctionService {
     public ZaiFunctionService() {
         this(
             getRequiredEnv("ZAI_API_KEY"),
+            getRequiredEnv("YAWL_ENGINE_URL"),
+            getRequiredEnv("YAWL_USERNAME"),
+            getRequiredEnv("YAWL_PASSWORD")
+        );
+    }
+
+    /**
+     * Initialize with Z.AI API key; reads YAWL connection from environment variables
+     */
+    public ZaiFunctionService(String zaiApiKey) {
+        this(
+            zaiApiKey,
             getRequiredEnv("YAWL_ENGINE_URL"),
             getRequiredEnv("YAWL_USERNAME"),
             getRequiredEnv("YAWL_PASSWORD")
@@ -144,7 +158,7 @@ public class ZaiFunctionService {
      * Process a natural language request with function calling
      */
     public String processWithFunctions(String userMessage) {
-        return processWithFunctions(userMessage, ZHIPU_AI_MODEL_GLM_4_6);
+        return processWithFunctions(userMessage, ZHIPU_AI_MODEL_GLM_4_7_FLASH);
     }
 
     /**
@@ -278,7 +292,7 @@ public class ZaiFunctionService {
         YSpecificationID specID = parseSpecificationID(workflowId);
         String caseData = inputData != null ? wrapDataInXML(inputData) : null;
 
-        String caseId = interfaceBClient.launchCase(specID, caseData, sessionHandle);
+        String caseId = interfaceBClient.launchCase(specID, caseData, null, sessionHandle);
 
         if (caseId == null || caseId.contains("failure") || caseId.contains("error")) {
             return "{\"error\": \"Failed to start workflow: " + caseId + "\"}";
@@ -335,7 +349,7 @@ public class ZaiFunctionService {
         }
 
         String workItemID = targetItem.getID();
-        String dataToSend = outputData != null ? wrapDataInXML(outputData) : targetItem.getDataList();
+        String dataToSend = outputData != null ? wrapDataInXML(outputData) : targetItem.getDataListString();
 
         String checkoutResult = interfaceBClient.checkOutWorkItem(workItemID, sessionHandle);
         if (checkoutResult == null || checkoutResult.contains("failure") || checkoutResult.contains("error")) {
@@ -354,33 +368,25 @@ public class ZaiFunctionService {
     private String listWorkflows() throws IOException {
         ensureConnection();
 
-        String sessionA = interfaceAClient.connect(yawlUsername, yawlPassword);
-        if (sessionA == null || sessionA.contains("failure") || sessionA.contains("error")) {
-            throw new RuntimeException("Failed to connect to Interface A: " + sessionA);
+        List<SpecificationData> specs = interfaceBClient.getSpecificationList(sessionHandle);
+
+        if (specs == null || specs.isEmpty()) {
+            return "{\"workflows\": []}";
         }
 
-        try {
-            String specsXML = interfaceAClient.getLoadedSpecificationData(sessionA);
-
-            if (specsXML == null || specsXML.contains("failure") || specsXML.contains("error")) {
-                return "{\"error\": \"Failed to retrieve specifications: " + specsXML + "\"}";
-            }
-
-            List<String> workflowNames = extractSpecificationNames(specsXML);
-
-            StringBuilder json = new StringBuilder("{\"workflows\": [");
-            boolean first = true;
-            for (String name : workflowNames) {
-                if (!first) json.append(",");
-                json.append("\"").append(name).append("\"");
-                first = false;
-            }
-            json.append("]}");
-
-            return json.toString();
-        } finally {
-            interfaceAClient.disconnect(sessionA);
+        StringBuilder json = new StringBuilder("{\"workflows\": [");
+        boolean first = true;
+        for (SpecificationData spec : specs) {
+            if (!first) json.append(",");
+            json.append("{\"id\": \"").append(spec.getID().getIdentifier())
+                .append("\", \"name\": \"").append(spec.getName())
+                .append("\", \"version\": \"").append(spec.getID().getVersionAsString())
+                .append("\"}");
+            first = false;
         }
+        json.append("]}");
+
+        return json.toString();
     }
 
     private YSpecificationID parseSpecificationID(String workflowId) {
@@ -401,30 +407,6 @@ public class ZaiFunctionService {
             return data;
         }
         return "<data>" + data + "</data>";
-    }
-
-    private List<String> extractSpecificationNames(String specsXML) {
-        List<String> names = new ArrayList<>();
-
-        int pos = 0;
-        while (true) {
-            int specStart = specsXML.indexOf("<specIdentifier>", pos);
-            if (specStart == -1) break;
-
-            int specEnd = specsXML.indexOf("</specIdentifier>", specStart);
-            if (specEnd == -1) break;
-
-            String specContent = specsXML.substring(specStart + 16, specEnd);
-            names.add(specContent.trim());
-
-            pos = specEnd;
-        }
-
-        if (names.isEmpty()) {
-            names.add("No specifications loaded");
-        }
-
-        return names;
     }
 
     public boolean isInitialized() {
