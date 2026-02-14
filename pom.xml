@@ -33,35 +33,88 @@
             <version>1.5.0</version>
         </dependency>
 
-        <!-- A2A Java SDK dependencies -->
-        <!-- Note: Using placeholder coordinates as the actual A2A Java SDK may not be published to Maven Central yet -->
-        <!-- You may need to build and install it locally or use JitPack -->
+        <!-- A2A Java SDK dependencies (2026) -->
+        <!-- Official A2A Java SDK - https://github.com/a2aproject/a2a-java -->
+        <!-- To use: Uncomment and build the SDK locally or use JitPack -->
         <!--
         <dependency>
-            <groupId>org.a2aproject</groupId>
-            <artifactId>a2a-java-client</artifactId>
-            <version>0.1.0</version>
+            <groupId>io.a2a</groupId>
+            <artifactId>a2a-java-sdk</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.a2aproject</groupId>
-            <artifactId>a2a-java-server</artifactId>
-            <version>0.1.0</version>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.25.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.60.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
         </dependency>
         -->
 
-        <!-- MCP Java SDK dependencies -->
-        <!-- Note: Using placeholder coordinates as the actual MCP Java SDK may not be published yet -->
-        <!-- You may need to build and install it locally or use JitPack -->
+        <!-- Alternative: a2ajava (Spring Boot integration) -->
+        <!-- https://github.com/vishalmysore/a2ajava -->
+        <!--
+        <dependency>
+            <groupId>com.github.vishalmysore</groupId>
+            <artifactId>a2ajava</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        -->
+
+        <!-- MCP Java SDK dependencies (2026) -->
+        <!-- Official MCP Java SDK - https://github.com/modelcontextprotocol/java-sdk -->
+        <!-- To use: Uncomment and build the SDK locally or use JitPack -->
         <!--
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp</artifactId>
-            <version>0.1.0</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-core</artifactId>
-            <version>0.1.0</version>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+        -->
+
+        <!-- Spring AI MCP Integration (Optional) -->
+        <!--
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-mcp-client-spring-boot-starter</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        -->
+
+        <!-- Resilience4j (Circuit Breaker, Retry) -->
+        <!--
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>2.2.0</version>
         </dependency>
         -->
 
