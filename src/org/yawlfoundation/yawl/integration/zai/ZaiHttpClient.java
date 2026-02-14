@@ -173,7 +173,7 @@ public class ZaiHttpClient {
         try {
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(mapOf("role", "user", "content", "ping"));
-            String response = createChatCompletion("glm-5", messages, 0.1, 10);
+            String response = createChatCompletion("GLM-4.7-Flash", messages, 0.1, 10);
             return response != null && !response.isEmpty();
         } catch (Exception e) {
             System.err.println("Connection test failed: " + e.getMessage());
