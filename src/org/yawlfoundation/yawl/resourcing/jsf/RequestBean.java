@@ -82,7 +82,6 @@ public class RequestBean extends AbstractRequestBean {
         super.init();
         // Perform application initialization that must complete
         // *before* managed components are initialized
-        // TODO - add your own initialiation code here
 
         // <editor-fold defaultstate="collapsed" desc="Creator-managed Component Initialization">
         // Initialize automatically managed components
@@ -96,7 +95,6 @@ public class RequestBean extends AbstractRequestBean {
         // </editor-fold>
         // Perform application initialization that must complete
         // *after* managed components are initialized
-        // TODO - add your own initialization code here
 
     }
 

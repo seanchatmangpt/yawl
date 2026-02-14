@@ -227,7 +227,6 @@ public class FrmExceptionChoice extends DesignInternalFrame {
 		    }// </editor-fold>
 
 		    private void exceptionComboBoxActionPerformed(java.awt.event.ActionEvent evt) {
-		        // TODO add your handling code here:
 		    }
 
 		    private void selectButtonActionPerformed(java.awt.event.ActionEvent evt) {

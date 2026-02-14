@@ -12,11 +12,44 @@ Java-based BPM/Workflow engine with formal foundations. Version 5.2.
 
 # 🚨 HYPER-ADVANCED CODING STANDARDS - ZERO TOLERANCE ENFORCEMENT
 
-## 🎯 PRIME DIRECTIVE: HONEST CODE ONLY
+## 🎯 PRIME DIRECTIVE: IMPLEMENT REAL, WORKING FEATURES
 
 **Every line of code must do EXACTLY what it claims to do. No exceptions. No workarounds.**
 
 This codebase operates under **Fortune 5 production standards** with **strict Toyota Production System (Jidoka)** and **Chicago TDD principles**.
+
+### 📋 IMPLEMENTATION HIERARCHY (Preference Order):
+
+1. **✅ IMPLEMENT THE REAL FEATURE** (95% of cases)
+   - Connect to actual services (YAWL Engine, databases, APIs)
+   - Use real dependencies (InterfaceB_EnvironmentBasedClient, HttpClient, etc.)
+   - Handle errors properly with real exception handling
+   - **This is the DEFAULT** - Always try this first!
+
+2. **⚠️ THROW WITH IMPLEMENTATION GUIDE** (5% of cases - rare)
+   - ONLY when dependencies are genuinely missing/unavailable
+   - Must include detailed implementation roadmap
+   - Must reference specific files and line numbers
+   - Example: External config file doesn't exist yet
+
+3. **❌ NEVER ACCEPTABLE** (0% of cases)
+   - TODO comments ("will implement later")
+   - Mock/stub implementations that return fake data
+   - Placeholder constants that pretend to be real
+   - Silent failures or fallbacks to fake behavior
+
+**Example of Fortune 5 Implementation:**
+```java
+// ✅ CORRECT: Real YAWL Engine integration
+private String launchWorkflow(String specId, String caseData) throws IOException {
+    InterfaceB_EnvironmentBasedClient client =
+        new InterfaceB_EnvironmentBasedClient("http://localhost:8080/yawl/ib");
+    String session = client.connect(username, password);
+    YSpecificationID spec = new YSpecificationID(specId, "0.1", "0.1");
+    String caseId = client.launchCase(spec, caseData, session);
+    return caseId; // Real case ID from engine!
+}
+```
 
 ---
 
@@ -55,19 +88,38 @@ This codebase operates under **Fortune 5 production standards** with **strict To
 // Basic implementation
 ```
 
-**✅ REQUIRED:**
+**✅ REQUIRED - IMPLEMENT REAL FEATURES:**
 ```java
-// ✅ CORRECT: Either implement it NOW or throw
+// ✅ BEST: Implement the REAL feature NOW with real dependencies
 private void validateInput(String data) {
+    try {
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        Schema schema = factory.newSchema(new File("src/main/resources/schema.xsd"));
+        Validator validator = schema.newValidator();
+        validator.validate(new StreamSource(new StringReader(data)));
+    } catch (SAXException | IOException e) {
+        throw new ValidationException("Input validation failed: " + e.getMessage(), e);
+    }
+}
+
+// ✅ ACCEPTABLE ONLY if dependencies are truly unavailable:
+// Throw UnsupportedOperationException with detailed implementation guide
+private void validateInputAlt(String data) {
     throw new UnsupportedOperationException(
-        "Input validation requires:\n" +
-        "  1. Schema definition in src/main/resources/schema.xsd\n" +
-        "  2. Validator implementation using javax.xml.validation\n" +
-        "  3. Error message mapping from ValidationException\n" +
-        "See VALIDATION_GUIDE.md for implementation steps."
+        "Input validation requires external schema file that doesn't exist yet.\n" +
+        "To implement:\n" +
+        "  1. Create schema definition in src/main/resources/schema.xsd\n" +
+        "  2. Use javax.xml.validation.SchemaFactory\n" +
+        "  3. Catch SAXException for validation errors\n" +
+        "See VALIDATION_GUIDE.md for schema format."
     );
 }
 ```
+
+**CRITICAL: Fortune 5 = IMPLEMENT REAL FEATURES**
+- **DEFAULT**: Implement the real feature with real integrations
+- **ONLY IF BLOCKED**: Throw UnsupportedOperationException with implementation roadmap
+- **NEVER**: Write TODO comments, mock/stub implementations, or fake data
 
 ---
 
@@ -177,10 +229,18 @@ public void save(Data data) { }
 public void initialize() { }
 public void cleanup() { }
 
-// ❌ FORBIDDEN: Placeholder data structures
+// ❌ FORBIDDEN: Placeholder/fake data structures
 private static final String DEFAULT_VALUE = "placeholder";
 private static final User SAMPLE_USER = new User("test", "test@example.com");
 private static final List<String> DUMMY_DATA = Arrays.asList("a", "b", "c");
+private static final String MOCK_API_KEY = "test_key_123";
+private static final String FAKE_ENDPOINT = "http://example.com/fake";
+
+// ✅ ALLOWED: Real service configuration constants
+private static final String ZHIPU_AI_MODEL_GLM_4_6 = "glm-4.6";  // Real AI model ID
+private static final String YAWL_INTERFACE_B_PATH = "/ib";  // Real YAWL endpoint
+private static final int DEFAULT_TIMEOUT_SECONDS = 30;  // Real configuration value
+private static final String XML_SCHEMA_NAMESPACE = XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 // ❌ FORBIDDEN: Logging instead of throwing
 public void validateSchema(String xml) {
