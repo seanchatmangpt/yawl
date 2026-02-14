@@ -63,8 +63,7 @@ public class YawlA2AClient {
     }
 
     private String discoverCapabilities() {
-        // TODO: Implement actual A2A AgentCard discovery via HTTP
-        return "processDocument, analyzeData, generateReport, handleException, notifyUser";
+        throw new UnsupportedOperationException("A2A SDK integration required to discover agent capabilities. Add A2A SDK dependency.");
     }
 
     /**
@@ -104,8 +103,7 @@ public class YawlA2AClient {
 
         System.out.println("Invoking capability: " + capabilityName);
 
-        // TODO: Implement actual A2A capability invocation via HTTP
-        return "Result from " + capabilityName + ": processed successfully";
+        throw new UnsupportedOperationException("A2A SDK integration required to invoke agent capabilities. Add A2A SDK dependency.");
     }
 
     /**

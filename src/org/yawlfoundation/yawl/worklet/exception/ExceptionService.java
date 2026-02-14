@@ -1194,7 +1194,8 @@ public class ExceptionService {
                                     wir.getDataListString()); break ;
             case ItemTimeout :
                 if (wir != null) handleTimeout(wir); break ;
-            case ItemResourceUnavailable : break;   // todo
+            case ItemResourceUnavailable :
+                throw new UnsupportedOperationException("ItemResourceUnavailable exception handling not implemented");
             case ItemConstraintViolation :
                 if (wir != null) handleConstraintViolationException(wir,
                     wir.getDataListString()); break;
@@ -1212,9 +1213,8 @@ public class ExceptionService {
     }
 
 
-    /** stub method called from RdrConditionFunctions class */
     public String getStatus(String taskID) {
-        return null;
+        throw new UnsupportedOperationException("Task status retrieval not implemented");
     }
 
 

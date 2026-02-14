@@ -50,27 +50,13 @@ public class YawlMcpServer {
     public void registerWorkflowTools() {
         System.out.println("Registering YAWL workflow tools with MCP...");
 
-        // TODO: When MCP SDK is available, implement:
-        // mcpServer.registerTool(ToolDefinition.builder()
-        //     .name("startWorkflow")
-        //     .description("Start a new YAWL workflow instance")
-        //     .parameter("workflowId", "string", "ID of the workflow to start")
-        //     .parameter("inputData", "object", "Initial data for the workflow")
-        //     .handler(this::handleStartWorkflow)
-        //     .build());
-        //
-        // mcpServer.registerTool(ToolDefinition.builder()
-        //     .name("getWorkflowStatus")
-        //     .description("Get the status of a running workflow")
-        //     .parameter("caseId", "string", "ID of the workflow case")
-        //     .handler(this::handleGetStatus)
-        //     .build());
-
-        System.out.println("Workflow tools registered:");
-        System.out.println("  - startWorkflow: Start a new workflow instance");
-        System.out.println("  - getWorkflowStatus: Get workflow status");
-        System.out.println("  - listWorkflows: List available workflows");
-        System.out.println("  - executeTask: Execute a workflow task");
+        throw new UnsupportedOperationException(
+                "MCP SDK integration required. Add MCP SDK dependency and implement:\n" +
+                "  - startWorkflow tool handler\n" +
+                "  - getWorkflowStatus tool handler\n" +
+                "  - listWorkflows tool handler\n" +
+                "  - executeTask tool handler"
+        );
     }
 
     /**
@@ -81,18 +67,12 @@ public class YawlMcpServer {
     public void registerWorkflowResources() {
         System.out.println("Registering YAWL resources with MCP...");
 
-        // TODO: When MCP SDK is available, implement:
-        // mcpServer.registerResource(ResourceDefinition.builder()
-        //     .uri("yawl://workflows")
-        //     .name("Available Workflows")
-        //     .description("List of all workflow specifications")
-        //     .handler(this::handleListWorkflows)
-        //     .build());
-
-        System.out.println("Resources registered:");
-        System.out.println("  - yawl://workflows: Available workflow specs");
-        System.out.println("  - yawl://cases: Running workflow cases");
-        System.out.println("  - yawl://tasks: Available tasks");
+        throw new UnsupportedOperationException(
+                "MCP SDK integration required. Add MCP SDK dependency and implement:\n" +
+                "  - yawl://workflows resource handler\n" +
+                "  - yawl://cases resource handler\n" +
+                "  - yawl://tasks resource handler"
+        );
     }
 
     /**
@@ -106,16 +86,12 @@ public class YawlMcpServer {
 
         System.out.println("Starting YAWL MCP Server on port " + port + "...");
 
-        // TODO: When MCP SDK is available, implement:
-        // McpServer server = McpServer.builder()
-        //     .name("YAWL Workflow Server")
-        //     .version("5.2")
-        //     .build();
-        // server.start(port);
-
-        running = true;
-        System.out.println("YAWL MCP Server started successfully");
-        System.out.println("AI models can now interact with YAWL workflows via MCP");
+        throw new UnsupportedOperationException(
+                "MCP SDK integration required. Add MCP SDK dependency and implement:\n" +
+                "  - McpServer initialization\n" +
+                "  - Tool and resource handlers\n" +
+                "  - Server lifecycle management"
+        );
     }
 
     /**

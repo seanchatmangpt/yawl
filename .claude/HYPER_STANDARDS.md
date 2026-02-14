@@ -1,16 +1,8 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
----
-
-# YAWL - Yet Another Workflow Language
-
-Java-based BPM/Workflow engine with formal foundations. Version 5.2.
-
----
-
 # 🚨 HYPER-ADVANCED CODING STANDARDS - ZERO TOLERANCE ENFORCEMENT
+
+**CRITICAL: This replaces the original MANDATORY CODING STANDARDS section in CLAUDE.md**
+
+---
 
 ## 🎯 PRIME DIRECTIVE: HONEST CODE ONLY
 
@@ -53,6 +45,11 @@ This codebase operates under **Fortune 5 production standards** with **strict To
 // For demo purposes only
 // Simplified version
 // Basic implementation
+```
+
+**DETECTION REGEX:**
+```regex
+//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|NOTE:.*implement|REVIEW:.*implement|TEMPORARY|@incomplete|@unimplemented|@stub|@mock|@fake|not\s+implemented\s+yet|coming\s+soon|placeholder|for\s+demo|simplified\s+version|basic\s+implementation)
 ```
 
 **✅ REQUIRED:**
@@ -105,6 +102,13 @@ public class MockService implements Service { }
 public class FakeRepository extends Repository { }
 public class TestAdapter implements Adapter { }
 public class StubHandler { }
+```
+
+**DETECTION REGEX:**
+```regex
+(mock|stub|fake|test|demo|sample|temp)[A-Z][a-zA-Z]*\s*[=(]
+(Mock|Stub|Fake|Test|Demo|Sample|Temp)[A-Za-z]*\s+(class|interface|extends|implements)
+(is|use|enable)(Mock|Test|Fake|Demo|Stub)(Mode|Data|ing)
 ```
 
 **✅ REQUIRED:**
@@ -182,10 +186,29 @@ private static final String DEFAULT_VALUE = "placeholder";
 private static final User SAMPLE_USER = new User("test", "test@example.com");
 private static final List<String> DUMMY_DATA = Arrays.asList("a", "b", "c");
 
+// ❌ FORBIDDEN: Early returns that skip logic
+public void process(Data data) {
+    if (true) return;  // Skip processing
+    // Real logic never runs
+}
+
 // ❌ FORBIDDEN: Logging instead of throwing
 public void validateSchema(String xml) {
     log.warn("Schema validation not implemented");  // Silent failure!
 }
+```
+
+**DETECTION REGEX:**
+```regex
+return\s+"";
+return\s+0;
+return\s+null;.*//\s*(stub|placeholder|todo|not\s+implemented)
+return\s+(Collections\.empty|new\s+(HashMap|ArrayList)\(\));\s*$
+return\s+true;\s*//\s*(always|stub|placeholder)
+public\s+void\s+\w+\([^)]*\)\s*\{\s*\}
+(DEFAULT|SAMPLE|DUMMY|PLACEHOLDER|TEST)_[A-Z_]+\s*=
+if\s*\(true\)\s*return;
+log\.(warn|error)\(".*not\s+implemented.*"\);
 ```
 
 **✅ REQUIRED:**
@@ -206,6 +229,12 @@ public Optional<User> findUser(String id) {
     // null means "not found", Optional makes this explicit
     User user = repository.findById(id);
     return Optional.ofNullable(user);
+}
+
+// ✅ CORRECT: Meaningful empty returns
+public List<Item> getActiveItems() {
+    // Empty list is a valid business state: "no active items"
+    return repository.findByStatus(Status.ACTIVE);
 }
 
 // ✅ CORRECT: Boolean with validation logic
@@ -253,6 +282,26 @@ public Response query(String sql) {
         return mockResponse();  // Fake success!
     }
 }
+
+// ❌ FORBIDDEN: Try-catch-continue with fake data
+try {
+    realImplementation();
+} catch (Exception e) {
+    // Swallow error, continue with fake behavior
+}
+
+// ❌ FORBIDDEN: Optional with fake default
+public String getConfig(String key) {
+    return configMap.getOrDefault(key, "default_value");  // Is this real?
+}
+```
+
+**DETECTION REGEX:**
+```regex
+catch\s*\([^)]+\)\s*\{[^}]*(return\s+(new|mock|fake|test|"[^"]*"|null)|log\.(warn|error))
+\?\s*[^:]+:\s*"(test|mock|fake|default|sample)
+if\s*\([^)]*!=\s*null\)[^}]*else[^}]*(mock|fake|test|return\s+new)
+\.getOrDefault\([^,]+,\s*"[^"]*"\)
 ```
 
 **✅ REQUIRED:**
@@ -276,6 +325,27 @@ public String getApiKey() {
         );
     }
     return key;
+}
+
+// ✅ CORRECT: Require dependency, no conditionals
+public Response query(String sql) {
+    if (database == null) {
+        throw new IllegalStateException(
+            "Database not initialized. Call initialize() first."
+        );
+    }
+    return database.execute(sql);
+}
+
+// ✅ CORRECT: No default for business config
+public String getConfig(String key) {
+    String value = configMap.get(key);
+    if (value == null) {
+        throw new ConfigurationException(
+            "Required config key '" + key + "' not found in application.properties"
+        );
+    }
+    return value;
 }
 ```
 
@@ -305,11 +375,40 @@ public boolean saveToDatabase(Data data) {
 public List<String> validate(String xml) {
     return new ArrayList<>();  // LIES! No validation happened!
 }
+
+// ❌ FORBIDDEN: Status tracking without actual work
+public class WorkflowEngine {
+    private boolean running = false;
+
+    public void start() {
+        running = true;  // LIES! Engine not actually running!
+    }
+
+    public boolean isRunning() {
+        return running;  // Reports "running" but does nothing!
+    }
+}
+
+// ❌ FORBIDDEN: Event firing without side effects
+public void processPayment(Payment payment) {
+    eventBus.publish(new PaymentProcessedEvent(payment));
+    // LIES! Payment not actually processed!
+}
 ```
+
+**SEMANTIC DETECTION (AI must verify):**
+- **Method name analysis**: Does `startWorkflow()` actually start a workflow?
+- **Return value analysis**: Does `save()` returning `true` mean data was persisted?
+- **Side effect verification**: Does `process()` actually change system state?
+- **Documentation validation**: Does behavior match Javadoc claims?
 
 **✅ REQUIRED:**
 ```java
 // ✅ CORRECT: Honest about current state
+/**
+ * Starts the workflow engine.
+ * @throws UnsupportedOperationException - not yet implemented
+ */
 public void startWorkflow(String specId) {
     throw new UnsupportedOperationException(
         "Workflow engine requires:\n" +
@@ -320,19 +419,53 @@ public void startWorkflow(String specId) {
     );
 }
 
+// ✅ CORRECT: Honest failure reporting
+public boolean saveToDatabase(Data data) {
+    if (database == null) {
+        throw new IllegalStateException("Database not connected");
+    }
+
+    try {
+        int rowsAffected = database.insert(data);
+        return rowsAffected > 0;  // Actually saved!
+    } catch (SQLException e) {
+        throw new RuntimeException("Database save failed", e);
+    }
+}
+
 // ✅ CORRECT: Real validation logic
 public List<String> validate(String xml) {
     List<String> errors = new ArrayList<>();
+
     try {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         Schema schema = factory.newSchema(new File("schema/YAWL_Schema4.0.xsd"));
+
         Validator validator = schema.newValidator();
-        // ... actual validation logic
-        return errors;  // Real validation results!
+        final List<SAXParseException> exceptions = new ArrayList<>();
+
+        validator.setErrorHandler(new ErrorHandler() {
+            public void error(SAXParseException e) {
+                exceptions.add(e);
+            }
+            public void fatalError(SAXParseException e) {
+                exceptions.add(e);
+            }
+            public void warning(SAXParseException e) {
+                exceptions.add(e);
+            }
+        });
+
+        validator.validate(new StreamSource(new StringReader(xml)));
+
+        for (SAXParseException e : exceptions) {
+            errors.add("Line " + e.getLineNumber() + ": " + e.getMessage());
+        }
     } catch (Exception e) {
         errors.add("Validation failed: " + e.getMessage());
-        return errors;
     }
+
+    return errors;  // Real validation results!
 }
 ```
 
@@ -415,41 +548,156 @@ Shall I proceed with the fixes?
 
 ---
 
-## 🔍 AUTOMATED VALIDATION
+## 🔍 VALIDATION AUTOMATION
 
-**Post-write validation hook active:** `.claude/hooks/hyper-validate.sh`
+**Post-write validation hook** (runs after every Write/Edit):
 
-Checks for 14 violation patterns after every Write/Edit:
-- TODO-like markers (TODO, FIXME, XXX, HACK, LATER, etc.)
-- Mock/stub method names
-- Mock class names
-- Mock mode flags
-- Empty string returns
-- NULL returns with stub comments
-- No-op method bodies
-- Placeholder constants
-- Silent fallback patterns
-- Conditional mock behavior
-- Suspicious getOrDefault() calls
-- Early returns that skip logic
-- Log.warn() instead of throw
-- Mock framework imports in src/
+```bash
+#!/bin/bash
+# .claude/hooks/hyper-validate.sh
 
-**Violations = BLOCKED** (exit code 2, feedback shown to AI)
+FILE=$(cat | jq -r '.tool_input.file_path // empty')
 
-See `.claude/settings.json` for hook configuration.
+[[ ! "$FILE" =~ \.java$ ]] && exit 0  # Only Java files
+
+VIOLATIONS=()
+
+# Check 1: TODO-like markers
+if grep -nE '//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder|not\s+implemented\s+yet)' "$FILE"; then
+    VIOLATIONS+=("TODO-like markers found")
+fi
+
+# Check 2: Mock patterns
+if grep -nE '(mock|stub|fake|test|demo|sample|temp)[A-Z][a-zA-Z]*\s*[=(]' "$FILE"; then
+    VIOLATIONS+=("Mock/stub patterns in names")
+fi
+
+# Check 3: Empty returns
+if grep -nE 'return\s+"";|return\s+0;|return\s+null;.*//.*stub' "$FILE"; then
+    VIOLATIONS+=("Stub-like empty returns")
+fi
+
+# Check 4: No-op methods
+if grep -nE 'public\s+void\s+\w+\([^)]*\)\s*\{\s*\}' "$FILE"; then
+    VIOLATIONS+=("Empty method bodies (stubs)")
+fi
+
+# Check 5: Mock mode flags
+if grep -nE '(is|use|enable)(Mock|Test|Fake)(Mode|Data|ing)\s*=' "$FILE"; then
+    VIOLATIONS+=("Mock mode flags detected")
+fi
+
+# Check 6: Silent fallbacks
+if grep -nE 'catch\s*\([^)]+\)\s*\{[^}]*(return\s+(new|")|log\.(warn|error))' "$FILE"; then
+    VIOLATIONS+=("Catch-and-return-fake pattern")
+fi
+
+if [ ${#VIOLATIONS[@]} -gt 0 ]; then
+    echo "❌ STANDARDS VIOLATION in $FILE:" >&2
+    printf '   - %s\n' "${VIOLATIONS[@]}" >&2
+    echo "" >&2
+    echo "See CLAUDE.md MANDATORY CODING STANDARDS" >&2
+    exit 2  # Block and notify Claude
+fi
+
+exit 0
+```
+
+Wire into `.claude/settings.json`:
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hyper-validate.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ---
 
-## ✅ SUMMARY: The Five Commandments
+## 📊 COMPLIANCE SCORECARD
 
-1. **NO DEFERRED WORK** - No TODO/FIXME/XXX/HACK or any disguised variants
-2. **NO MOCKS** - No mock/stub/fake/test/demo/sample behavior
-3. **NO STUBS** - No empty returns, no-op methods, or placeholder data
-4. **NO FALLBACKS** - No silent degradation to fake behavior on errors
-5. **NO LIES** - Code behavior must match its name, docs, and promises
+**Every code file must achieve 100% compliance:**
 
-**Violation of ANY commandment = IMMEDIATE REJECTION**
+| Standard | Violation | Penalty |
+|----------|-----------|---------|
+| NO DEFERRED WORK | TODO/FIXME/XXX/HACK found | ❌ REJECT |
+| NO MOCKS | mock/stub/fake in names | ❌ REJECT |
+| NO STUBS | Empty/placeholder returns | ❌ REJECT |
+| NO FALLBACKS | Try-catch-return-fake | ❌ REJECT |
+| NO LIES | Behavior ≠ documentation | ❌ REJECT |
+
+**Score < 100% = CODE REJECTED**
+
+---
+
+## 🎓 EDGE CASE GUIDANCE
+
+### When You Legitimately Can't Implement:
+
+**✅ CORRECT approach:**
+```java
+public void complexFeature() {
+    throw new UnsupportedOperationException(
+        "This feature requires:\n" +
+        "  1. [Dependency A] - install with: mvn install:dependency\n" +
+        "  2. [Dependency B] - configure in: application.properties\n" +
+        "  3. Implementation time: ~2 hours\n" +
+        "\n" +
+        "Implementation steps:\n" +
+        "  - Create XYZ class in package abc\n" +
+        "  - Inject via constructor\n" +
+        "  - Call method.doWork()\n" +
+        "\n" +
+        "See similar implementation in: ExistingClass.java:123"
+    );
+}
+```
+
+### When Empty Return Is Semantically Valid:
+
+**✅ CORRECT (business meaning, not stub):**
+```java
+// Empty list = "no results" is a valid business state
+public List<User> findActiveUsers() {
+    return repository.findByStatus(Status.ACTIVE);  // May be empty!
+}
+
+// Null = "not found" with Optional makes intent clear
+public Optional<Config> findConfig(String key) {
+    Config config = repository.findByKey(key);
+    return Optional.ofNullable(config);  // Null means "not found"
+}
+```
+
+### When to Use Null vs Exception:
+
+```java
+// ✅ CORRECT: Null has semantic meaning (not found)
+public User findUser(String id) {
+    return userRepository.findById(id);  // null = not found
+}
+
+// ❌ FORBIDDEN: Null means "not implemented"
+public User getCurrentUser() {
+    return null;  // WHAT DOES THIS MEAN?
+}
+
+// ✅ CORRECT: Exception for unimplemented
+public User getCurrentUser() {
+    throw new UnsupportedOperationException("Session management not implemented");
+}
+```
 
 ---
 
@@ -479,6 +727,18 @@ See `.claude/settings.json` for hook configuration.
 
 ---
 
+## ✅ SUMMARY: The Five Commandments
+
+1. **NO DEFERRED WORK** - No TODO/FIXME/XXX/HACK or any disguised variants
+2. **NO MOCKS** - No mock/stub/fake/test/demo/sample behavior
+3. **NO STUBS** - No empty returns, no-op methods, or placeholder data
+4. **NO FALLBACKS** - No silent degradation to fake behavior on errors
+5. **NO LIES** - Code behavior must match its name, docs, and promises
+
+**Violation of ANY commandment = IMMEDIATE REJECTION**
+
+---
+
 **AI Assistants: By writing code in this repository, you affirm:**
 - ✅ I have scanned my code for all forbidden patterns
 - ✅ I have verified method behavior matches documentation
@@ -488,184 +748,8 @@ See `.claude/settings.json` for hook configuration.
 
 **This is not negotiable. This is Fortune 5 production code.**
 
-*See `.claude/HYPER_STANDARDS.md` for comprehensive examples and edge cases.*
-
 ---
 
-## Environment Requirements
-
-**This project runs in Docker/DevContainer environments.**
-- Use docker-compose for full YAWL stack
-- DevContainer setup available in `.devcontainer/`
-
-## Build Commands
-
-```bash
-# Build all WARs (default target)
-ant -f build/build.xml buildWebApps
-
-# Full build (all release material)
-ant -f build/build.xml buildAll
-
-# Compile only
-ant -f build/build.xml compile
-
-# Build standalone JAR
-ant -f build/build.xml build_Standalone
-
-# Clean build artifacts
-ant -f build/build.xml clean
-
-# Generate Javadoc
-ant -f build/build.xml javadoc
-
-# Run unit tests
-ant -f build/build.xml unitTest
-```
-
-## Docker/DevContainer Setup
-
-### Option 1: VS Code DevContainer (Recommended)
-```bash
-# Open in VS Code with DevContainer
-# VSCode will prompt to "Reopen in Container"
-# This automatically sets up Java 21 and Ant
-
-# Then use the build script:
-./.claude/build.sh all
-```
-
-See `.devcontainer/devcontainer.json` for configuration.
-
-### Option 2: Docker Compose (Full Stack)
-```bash
-# Start YAWL dev environment with PostgreSQL
-docker-compose up -d
-
-# Enter the development container
-docker-compose exec yawl-dev bash
-
-# Inside container, use build script:
-./.claude/build.sh all
-```
-
-This includes:
-- YAWL development environment (Java 21, Ant)
-- PostgreSQL database (pre-configured)
-- Tomcat ready for deployment
-- Port forwarding (8080, 8081)
-
-## Test Commands
-
-```bash
-# Run all test suites (JUnit)
-java -cp classes:build/3rdParty/lib/* junit.textui.TestRunner org.yawlfoundation.yawl.TestAllYAWLSuites
-
-# Run unit tests via Ant
-ant unitTest
-```
-
-Test suites: Elements, State, Engine, Exceptions, Logging, Schema, Unmarshaller, Util, Worklist, Authentication.
-
-## Database Configuration
-
-Edit `build/build.properties`:
-- `database.type`: postgres, mysql, derby, h2, hypersonic, oracle
-- `database.path`, `database.user`, `database.password`
-
-Build target auto-configures Hibernate based on database type.
-
-## Architecture
-
-### Core Packages
-
-| Package | Purpose |
-|---------|---------|
-| `org.yawlfoundation.yawl.engine` | Core workflow engine (YEngine.java) |
-| `org.yawlfoundation.yawl.stateless` | Stateless engine variant (YStatelessEngine.java) |
-| `org.yawlfoundation.yawl.elements` | YAWL net elements (tasks, conditions, flows) |
-| `org.yawlfoundation.yawl.resourcing` | Human/non-human resource management |
-| `org.yawlfoundation.yawl.worklet` | Dynamic workflow via Worklets |
-| `org.yawlfoundation.yawl.unmarshal` | XML specification parsing |
-| `org.yawlfoundation.yawl.integration.a2a` | Agent-to-Agent protocol integration |
-| `org.yawlfoundation.yawl.integration.mcp` | Model Context Protocol integration |
-
-### Services (built as WARs)
-
-- **engine** - Core YAWL engine
-- **resourceService** - Resource allocation and work queues
-- **workletService** - Dynamic process adaptation
-- **monitorService** - Process monitoring
-- **schedulingService** - Calendar-based scheduling
-- **costService** - Cost tracking
-- **balancer** - Load balancing across engine instances
-
-### Key Classes
-
-- `YEngine.java` - Main engine implementing Interface A (design) and Interface B (client)
-- `YStatelessEngine.java` - Lightweight engine without persistence
-- `YNetRunner.java` - Executes workflow net instances
-- `YWorkItem.java` - Unit of work in the engine
-- `YSpecification.java` - Parsed workflow specification
-
-### Interfaces
-
-- **Interface A** - Design-time operations (upload specs, manage services)
-- **Interface B** - Client/runtime operations (launch cases, complete work items)
-- **Interface E** - Event notifications
-- **Interface X** - Extended operations
-
-## XML Schemas
-
-YAWL specifications are XML documents validated against XSD schemas in `schema/`:
-- `YAWL_Schema4.0.xsd` - Latest schema version
-- Historical schemas (Beta3 through 3.0) for backward compatibility
-
-## Dependencies
-
-Third-party libraries in `build/3rdParty/lib/`:
-- JDOM2 (XML processing)
-- Hibernate 5 (persistence)
-- Log4J 2 (logging)
-- Jackson (JSON)
-- Various web/JSF libraries
-
-## File Conventions
-
-- Source: `src/org/yawlfoundation/yawl/`
-- Tests: `test/org/yawlfoundation/yawl/`
-- Schemas: `schema/`
-- Example specs: `exampleSpecs/`, `test/*.ywl`
-- Build config: `build/build.properties`
-
-## Build Output
-
-All build artifacts are located in `output/`:
-- `yawl-lib-5.2.jar` - Core YAWL library (3.0 MB)
-- `YawlControlPanel-5.2.jar` - Control Panel executable (423 KB)
-
-Compiled classes: `classes/`
-
-## MCP and A2A Integration
-
-The project includes integration with MCP (Model Context Protocol) and A2A (Agent-to-Agent):
-
-- `src/org/yawlfoundation/yawl/integration/a2a/` - A2A server and client
-- `src/org/yawlfoundation/yawl/integration/mcp/` - MCP server and client
-- `run-a2a-server.sh` - Start A2A server
-- `run-mcp-server.sh` - Start MCP server
-
-See `INTEGRATION_GUIDE.md` and `INTEGRATION_README.md` for details.
-
-## Integration with Claude Code
-
-This project is configured to work with Claude Code in Docker environments:
-- Builds with Ant (no special IDE required)
-- Tests runnable with `ant unitTest`
-- Clean build artifacts tracked in `.gitignore`
-- Build wrapper script `./.claude/build.sh` for easy access
-
----
-
-**Last Updated:** February 14, 2026
-**Project Version:** 5.2
+*Last updated: 2026-02-14*
+*Enforcement level: MAXIMUM*
+*Compliance required: 100%*

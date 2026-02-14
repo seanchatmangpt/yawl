@@ -29,6 +29,7 @@ public class SelfPlayTest {
             System.err.println("Set ZAI_API_KEY and run again");
             System.exit(1);
         }
+        System.out.println("Z.AI Service initialized successfully\n");
 
         testZaiConnection();
         testBasicChat();
