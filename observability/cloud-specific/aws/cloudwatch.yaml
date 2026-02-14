@@ -1,0 +1,317 @@
+# AWS CloudWatch Configuration for YAWL Workflow Engine
+# Integrates CloudWatch Metrics, Logs, and X-Ray with YAWL observability
+
+aws:
+  region: us-east-1
+  account_id: ${AWS_ACCOUNT_ID}
+
+# CloudWatch Metrics Configuration
+metrics:
+  enabled: true
+  namespace: YAWL/Workflow
+
+  # Custom Metrics
+  custom_metrics:
+    - name: CaseStarted
+      description: Count of workflow cases started
+      unit: Count
+      dimensions:
+        - name: CaseType
+        - name: SpecificationId
+      resolution: Standard
+
+    - name: CaseCompleted
+      description: Count of workflow cases completed successfully
+      unit: Count
+      dimensions:
+        - name: CaseType
+        - name: SpecificationId
+      resolution: Standard
+
+    - name: CaseFailed
+      description: Count of workflow cases that failed
+      unit: Count
+      dimensions:
+        - name: CaseType
+        - name: ErrorType
+      resolution: Standard
+
+    - name: CaseExecutionTime
+      description: Time taken to execute a workflow case
+      unit: Milliseconds
+      dimensions:
+        - name: CaseType
+      resolution: High
+
+    - name: WorkItemQueueDepth
+      description: Current depth of work item queue
+      unit: Count
+      dimensions:
+        - name: QueueName
+      resolution: Standard
+
+    - name: ResourceAllocated
+      description: Number of allocated resources
+      unit: Count
+      dimensions:
+        - name: PoolName
+        - name: ResourceType
+      resolution: Standard
+
+    - name: ResourceCapacity
+      description: Total resource pool capacity
+      unit: Count
+      dimensions:
+        - name: PoolName
+      resolution: Standard
+
+# CloudWatch Alarms
+alarms:
+  - name: YAWLHighCaseFailureRate
+    description: Alert when case failure rate exceeds 5%
+    metric: CaseFailed
+    namespace: YAWL/Workflow
+    statistic: Sum
+    period: 300
+    evaluation_periods: 2
+    threshold: 0.05
+    comparison_operator: GreaterThanThreshold
+    treat_missing_data: notBreaching
+    alarm_actions:
+      - ${SNS_TOPIC_ARN_CRITICAL}
+    ok_actions:
+      - ${SNS_TOPIC_ARN_INFO}
+
+  - name: YAWLHighCaseLatency
+    description: Alert when P95 case execution latency exceeds 30s
+    metric: CaseExecutionTime
+    namespace: YAWL/Workflow
+    statistic: p95
+    period: 60
+    evaluation_periods: 5
+    threshold: 30000
+    comparison_operator: GreaterThanThreshold
+    alarm_actions:
+      - ${SNS_TOPIC_ARN_WARNING}
+
+  - name: YAWLWorkItemQueueBacklog
+    description: Alert when work item queue depth exceeds 1000
+    metric: WorkItemQueueDepth
+    namespace: YAWL/Workflow
+    statistic: Maximum
+    period: 60
+    evaluation_periods: 5
+    threshold: 1000
+    comparison_operator: GreaterThanThreshold
+    alarm_actions:
+      - ${SNS_TOPIC_ARN_WARNING}
+
+  - name: YAWLResourcePoolExhausted
+    description: Alert when resource allocation exceeds 90%
+    expression: "ResourceAllocated / ResourceCapacity"
+    namespace: YAWL/Workflow
+    period: 60
+    evaluation_periods: 3
+    threshold: 0.9
+    comparison_operator: GreaterThanThreshold
+    alarm_actions:
+      - ${SNS_TOPIC_ARN_CRITICAL}
+
+# CloudWatch Logs Configuration
+logs:
+  enabled: true
+  log_groups:
+    - name: /yawl/engine
+      retention_days: 30
+      tags:
+        Service: yawl-engine
+        Environment: production
+
+    - name: /yawl/resource-service
+      retention_days: 30
+      tags:
+        Service: yawl-resource-service
+
+    - name: /yawl/worklet-service
+      retention_days: 30
+
+    - name: /yawl/monitor-service
+      retention_days: 30
+
+  # Metric Filters
+  metric_filters:
+    - name: YAWLCaseErrors
+      log_group: /yawl/engine
+      filter_pattern: "[...\"case\"...\"failed\"...]"
+      metric_transformation:
+        name: CaseErrorCount
+        namespace: YAWL/Workflow
+        value: "1"
+        default_value: 0
+
+    - name: YAWLTaskTimeouts
+      log_group: /yawl/engine
+      filter_pattern: "[...\"task\"...\"timeout\"...]"
+      metric_transformation:
+        name: TaskTimeoutCount
+        namespace: YAWL/Workflow
+        value: "1"
+
+    - name: YAWLJavaExceptions
+      log_group: /yawl/engine
+      filter_pattern: "[...\"Exception\"...]"
+      metric_transformation:
+        name: JavaExceptionCount
+        namespace: YAWL/Workflow
+        value: "1"
+        dimensions:
+          ExceptionClass: "$exception_class"
+
+  # Subscription Filters for real-time processing
+  subscription_filters:
+    - name: ForwardToLambda
+      log_group: /yawl/engine
+      destination_arn: ${LAMBDA_FUNCTION_ARN}
+      filter_pattern: "[level=ERROR || level=WARN]"
+
+# CloudWatch Dashboards
+dashboards:
+  - name: YAWL-Overview
+    widgets:
+      - type: metric
+        title: Active Cases
+        metrics:
+          - namespace: YAWL/Workflow
+            metric_name: CaseStarted
+            stat: SampleCount
+        period: 300
+
+      - type: metric
+        title: Case Success Rate
+        metrics:
+          - expression: "m1/m2"
+            label: Success Rate
+            id: e1
+        metrics:
+          - namespace: YAWL/Workflow
+            metric_name: CaseCompleted
+            stat: Sum
+            id: m1
+            visible: false
+          - namespace: YAWL/Workflow
+            metric_name: CaseStarted
+            stat: Sum
+            id: m2
+            visible: false
+
+      - type: metric
+        title: P95 Latency
+        metrics:
+          - namespace: YAWL/Workflow
+            metric_name: CaseExecutionTime
+            stat: p95
+        period: 60
+
+      - type: log
+        title: Recent Errors
+        log_group: /yawl/engine
+        view: table
+        query: |
+          fields @timestamp, @message
+          | filter level = "ERROR"
+          | sort @timestamp desc
+          | limit 20
+
+# AWS X-Ray Configuration
+xray:
+  enabled: true
+  sampling_rules:
+    - rule_name: YAWL-Default
+      description: Default sampling rule for YAWL services
+      priority: 1000
+      fixed_rate: 0.1
+      reservoir_size: 100
+      service_name: yawl-*
+      service_type: "*"
+      host: "*"
+      http_method: "*"
+      url_path: "*"
+      resource_arn: "*"
+
+    - rule_name: YAWL-Critical-Operations
+      description: Higher sampling for critical YAWL operations
+      priority: 100
+      fixed_rate: 0.5
+      reservoir_size: 200
+      service_name: yawl-engine
+      http_method: "*"
+      url_path: "/api/case/*"
+
+    - rule_name: YAWL-Health-Exclusion
+      description: Exclude health checks from tracing
+      priority: 1
+      fixed_rate: 0
+      reservoir_size: 0
+      url_path: "/health"
+
+  # Trace annotations
+  annotations:
+    - key: case_id
+      description: YAWL case identifier
+    - key: task_id
+      description: YAWL task identifier
+    - key: specification_id
+      description: YAWL specification identifier
+
+# CloudWatch Synthetics (Canary)
+synthetics:
+  - name: yawl-engine-health
+    description: Canary to check YAWL Engine health
+    schedule:
+      expression: rate(1 minute)
+      duration_in_seconds: 300
+    code:
+      handler: index.handler
+      runtime_version: syn-nodejs-puppeteer-5.1
+    artifact_s3_location: ${S3_BUCKET}/synthetics/
+    runtime_config:
+      timeout_seconds: 60
+      memory_mb: 1024
+    test:
+      endpoint: https://yawl-engine.example.com/health
+      expected_status: 200
+
+# IAM Roles and Policies
+iam:
+  roles:
+    - name: YAWLMonitoringRole
+      description: Role for YAWL monitoring components
+      assume_role_policy:
+        Service:
+          - ec2.amazonaws.com
+          - ecs-tasks.amazonaws.com
+          - lambda.amazonaws.com
+      policies:
+        - cloudwatch:PutMetricData
+        - cloudwatch:PutMetricData
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+
+  policies:
+    - name: YAWLCloudWatchPolicy
+      description: Policy for YAWL CloudWatch access
+      document:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+              - cloudwatch:GetMetricData
+              - cloudwatch:ListMetrics
+            Resource: "*"
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: "YAWL/Workflow"

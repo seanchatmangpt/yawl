@@ -1,0 +1,105 @@
+# Composite Action - Deploy Helm Chart
+# YAWL Workflow Engine CI/CD
+#
+# Usage:
+#   - uses: ./.github/actions/deploy-helm
+#     with:
+#       release_name: yawl
+#       namespace: production
+#       values_file: helm/yawl/values.yaml
+
+name: 'Deploy Helm Chart'
+description: 'Deploys YAWL using Helm'
+
+inputs:
+  release_name:
+    description: 'Helm release name'
+    required: false
+    default: 'yawl'
+  namespace:
+    description: 'Kubernetes namespace'
+    required: true
+  chart_path:
+    description: 'Path to Helm chart'
+    required: false
+    default: './helm/yawl'
+  values_file:
+    description: 'Values file path'
+    required: true
+  image_repository:
+    description: 'Container image repository'
+    required: true
+  image_tag:
+    description: 'Container image tag'
+    required: true
+  environment:
+    description: 'Deployment environment'
+    required: true
+  timeout:
+    description: 'Deployment timeout (e.g., 10m)'
+    required: false
+    default: '10m'
+  dry_run:
+    description: 'Dry run mode'
+    required: false
+    default: 'false'
+  extra_set_args:
+    description: 'Extra --set arguments'
+    required: false
+    default: ''
+
+outputs:
+  revision:
+    description: 'Deployed revision'
+    value: ${{ steps.deploy.outputs.revision }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: '3.14.0'
+
+    - name: Create namespace
+      shell: bash
+      run: |
+        kubectl create namespace ${{ inputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Helm deployment
+      id: deploy
+      shell: bash
+      run: |
+        DRY_RUN_FLAG=""
+        if [ "${{ inputs.dry_run }}" == "true" ]; then
+          DRY_RUN_FLAG="--dry-run --debug"
+        fi
+
+        helm upgrade --install ${{ inputs.release_name }} ${{ inputs.chart_path }} \
+          --namespace ${{ inputs.namespace }} \
+          --set image.repository=${{ inputs.image_repository }} \
+          --set image.tag=${{ inputs.image_tag }} \
+          --set environment=${{ inputs.environment }} \
+          --values ${{ inputs.values_file }} \
+          --wait \
+          --timeout ${{ inputs.timeout }} \
+          --history-max 10 \
+          ${{ inputs.extra_set_args }} \
+          $DRY_RUN_FLAG
+
+        # Get revision
+        REVISION=$(helm history ${{ inputs.release_name }} --namespace ${{ inputs.namespace }} -o json | jq -r '.[-1].revision')
+        echo "revision=$REVISION" >> $GITHUB_OUTPUT
+
+    - name: Verify deployment
+      if: ${{ inputs.dry_run != 'true' }}
+      shell: bash
+      run: |
+        echo "=== Deployment Status ==="
+        helm status ${{ inputs.release_name }} --namespace ${{ inputs.namespace }}
+
+        echo "=== Pods ==="
+        kubectl get pods -n ${{ inputs.namespace }} -l app.kubernetes.io/name=${{ inputs.release_name }}
+
+        echo "=== Services ==="
+        kubectl get services -n ${{ inputs.namespace }}

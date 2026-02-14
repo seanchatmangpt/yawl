@@ -1,0 +1,301 @@
+# Jaeger Helm Chart Values for YAWL Workflow Engine
+# Compatible with jaegertracing/jaeger-operator chart
+
+# Jaeger deployment strategy
+# Options: allInOne, production (collector + query separate)
+deployment:
+  strategy: production
+
+# All-in-one configuration (for development)
+allInOne:
+  enabled: false
+  image: jaegertracing/all-in-one
+  tag: 1.53.0
+  pullPolicy: IfNotPresent
+
+# Collector configuration
+collector:
+  enabled: true
+  replicas: 3
+  image: jaegertracing/jaeger-collector
+  tag: 1.53.0
+  pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    annotations: {}
+
+  ports:
+    otlp:
+      grpc:
+        enabled: true
+        port: 4317
+        targetPort: 4317
+      http:
+        enabled: true
+        port: 4318
+        targetPort: 4318
+    zipkin:
+      enabled: true
+      port: 9411
+      targetPort: 9411
+    jaeger:
+      thriftHttp:
+        enabled: true
+        port: 14268
+        targetPort: 14268
+      thriftCompact:
+        enabled: true
+        port: 6831
+        targetPort: 6831
+      thriftBinary:
+        enabled: true
+        port: 6832
+        targetPort: 6832
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Scheduling
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+# Query (UI) configuration
+query:
+  enabled: true
+  replicas: 2
+  image: jaegertracing/jaeger-query
+  tag: 1.53.0
+  pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 16686
+    targetPort: 16686
+    annotations: {}
+
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    hosts:
+      - host: jaeger.yawl.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: jaeger-tls
+        hosts:
+          - jaeger.yawl.example.com
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Base path for UI
+  basePath: /
+
+  # UI configuration
+  ui:
+    config:
+      dependencies:
+        menuEnabled: true
+      menu:
+        - label: "YAWL Workflows"
+          items:
+            - label: "Case Execution"
+              url: "/search?service=yawl-engine&operation=ExecuteCase"
+            - label: "Task Processing"
+              url: "/search?service=yawl-engine&operation=ProcessTask"
+            - label: "Resource Allocation"
+              url: "/search?service=yawl-resource-service"
+      tracking:
+        gaID: ""
+
+# Agent configuration (DaemonSet)
+agent:
+  enabled: true
+  image: jaegertracing/jaeger-agent
+  tag: 1.53.0
+  pullPolicy: IfNotPresent
+
+  # DaemonSet for host network
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+
+  ports:
+    config:
+      port: 5778
+      targetPort: 5778
+    compact:
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    binary:
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+    sampling:
+      port: 5778
+      targetPort: 5778
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Storage configuration
+storage:
+  # Options: memory, badger, cassandra, elasticsearch, kafka
+  type: elasticsearch
+
+  elasticsearch:
+    # Elasticsearch configuration
+    host: elasticsearch
+    port: 9200
+    user: jaeger
+    password: ${ES_PASSWORD}
+    indexPrefix: yawl-jaeger
+
+    # Index configuration
+    indices:
+      spans:
+        indexPrefix: yawl-spans
+        shards: 5
+        replicas: 1
+      services:
+        indexPrefix: yawl-services
+        shards: 3
+        replicas: 1
+
+    # Rollover configuration
+    esRollover:
+      enabled: true
+      conditions: '{"max_age": "1d", "max_docs": 1000000}'
+      readTTL: 168h  # 7 days
+
+  cassandra:
+    host: cassandra
+    port: 9042
+    keyspace: yawl_jaeger
+    user: jaeger
+    password: ${CASSANDRA_PASSWORD}
+    consistency: LOCAL_QUORUM
+    replicationFactor: 3
+
+  badger:
+    enabled: false
+    ephemeral: true
+    persistence:
+      enabled: false
+
+  kafka:
+    enabled: false
+    brokers:
+      - kafka-1:9092
+      - kafka-2:9092
+      - kafka-3:9092
+    topic: yawl-spans
+    encoding: protobuf
+
+# Sampling configuration
+sampling:
+  # Sampling strategies
+  strategies:
+    # Default sampling rate (0-1)
+    defaultSamplingRate: 0.1
+
+    # Per-service sampling rates
+    serviceSamplingRates:
+      yawl-engine: 0.2
+      yawl-resource-service: 0.1
+      yawl-worklet-service: 0.1
+      yawl-monitor-service: 0.05
+
+    # Adaptive sampling
+    adaptive:
+      enabled: true
+      samplingServer: http://collector:14268
+      initialSamplingProbability: 0.1
+
+# Metrics configuration
+metrics:
+  backend: prometheus
+
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      labels:
+        release: prometheus
+
+# Logging configuration
+logging:
+  level: info
+  format: json
+
+# Service account
+serviceAccount:
+  create: true
+  name: jaeger
+
+# RBAC
+rbac:
+  create: true
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Extra configuration for YAWL-specific trace attributes
+extraConfig:
+  # Trace attribute mapping
+  attributes:
+    # YAWL-specific attributes to index
+    yawl.case_id: case_id
+    yawl.task_id: task_id
+    yawl.work_item_id: work_item_id
+    yawl.specification_id: specification_id
+    yawl.resource_id: resource_id
+    yawl.process_state: process_state
+
+  # Span processing
+  spanProcessor:
+    # Custom tags to add to all spans
+    tags:
+      environment: production
+      service_version: "5.2"
+
+    # Attribute limits
+    attributeCountLimit: 128
+    attributeValueLengthLimit: 4096
+
+# HotROD demo application (disabled for production)
+hotrod:
+  enabled: false

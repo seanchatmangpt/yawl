@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-engine
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-engine
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-resource-service
+    app.kubernetes.io/component: resource-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-resource-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-worklet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-worklet-service
+    app.kubernetes.io/component: worklet-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-worklet-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-monitor-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-monitor-service
+    app.kubernetes.io/component: monitor-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-monitor-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-cost-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-cost-service
+    app.kubernetes.io/component: cost-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-cost-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-scheduling-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-scheduling-service
+    app.kubernetes.io/component: scheduling-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-scheduling-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mail-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mail-service
+    app.kubernetes.io/component: mail-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-mail-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-digital-signature
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-digital-signature
+    app.kubernetes.io/component: digital-signature
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-digital-signature
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-document-store
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-document-store
+    app.kubernetes.io/component: document-store
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-document-store
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-proclet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-proclet-service
+    app.kubernetes.io/component: proclet-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-proclet-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-balancer
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-balancer
+    app.kubernetes.io/component: balancer
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-balancer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

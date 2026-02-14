@@ -1,0 +1,105 @@
+{{- if .Values.services.workletService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.name" . }}-worklet-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worklet-service
+spec:
+  replicas: {{ .Values.services.workletService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-worklet-service
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-worklet-service
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: worklet-service
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: worklet-service
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.services.workletService.image.repository | default "yawl/worklet-service" }}:{{ .Values.services.workletService.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.services.workletService.image.pullPolicy | default .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.workletService.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: "worklet-service"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if .Values.cloudsqlProxy.enabled }}
+            - name: DATABASE_HOST
+              value: "{{ include "yawl.fullname" . }}-cloudsql-proxy"
+            {{- else if .Values.awsRdsProxy.enabled }}
+            - name: DATABASE_HOST
+              value: {{ .Values.awsRdsProxy.endpoint | quote }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yawl.databaseSecretName" . }}
+          {{- with .Values.services.workletService.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.services.workletService.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.services.workletService.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.services.workletService.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/yawl
+            {{- with .Values.services.workletService.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.services.workletService.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClassName }}
+{{- end }}

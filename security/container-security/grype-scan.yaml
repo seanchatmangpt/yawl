@@ -1,0 +1,162 @@
+# Grype Security Scanner Configuration
+# https://github.com/anchore/grype
+# Part of Anchore's container security suite
+
+# Grype configuration for YAWL containers
+#
+# Usage:
+#   grype <image> --config grype-scan.yaml
+#   grype dir:. --config grype-scan.yaml
+#   grype sbom:sbom.json --config grype-scan.yaml
+
+# Output configuration
+output:
+  # Output format: table, json, cyclonedx-json, sarif, template
+  format: table
+
+  # Template file for custom output
+  template: .grype/template.tmpl
+
+# Logging configuration
+log:
+  # Log level: trace, debug, info, warn, error, fatal, panic
+  level: info
+
+  # Show spinner during scanning
+  show-spinner: true
+
+  # Quiet mode (suppress non-essential output)
+  quiet: false
+
+# Vulnerability matching configuration
+vulnerability:
+  # Database configuration
+  db:
+    # Update vulnerability database before scanning
+    auto-update: true
+
+    # Database cache directory
+    cache-dir: ~/.cache/grype/db
+
+    # Validate database certificate
+    validate-age: true
+
+    # Maximum database age
+    max-age: 120h
+
+  # Match configuration
+  match:
+    # Include all vulnerability severities
+    severity:
+      - critical
+      - high
+      - medium
+      - low
+      - negligible
+      - unknown
+
+    # Ignore vulnerabilities that are not fixed
+    ignore-not-fixed: false
+
+    # Match platform-specific vulnerabilities
+    by-cpe: true
+
+# Exclusion configuration
+exclusions:
+  # Exclude paths from scanning
+  paths:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/target/**"
+    - "**/build/**"
+
+  # Exclude file patterns
+  globs:
+    - "*.test.*"
+    - "*_test.*"
+    - "*.spec.*"
+
+# Ignore rules for specific vulnerabilities
+ignore:
+  # Ignore by vulnerability ID
+  - vulnerability: CVE-2023-XXXXX
+    reason: "Not applicable to our use case - not using affected feature"
+
+  # Ignore by package
+  - package:
+      name: log4j-core
+      version: "2.17.0"
+    reason: "Version is patched for Log4Shell vulnerability"
+
+  # Ignore by severity
+  - vulnerability:
+      severity: low
+    reason: "Low severity findings reviewed and accepted"
+
+# Regulatory compliance checking
+compliance:
+  # Enable compliance checks
+  enable: true
+
+  # Compliance frameworks to check against
+  frameworks:
+    - nist-800-53
+    - cis-docker-benchmark
+    - pci-dss
+
+# Registry configuration
+registry:
+  # Insecure skip TLS verification (use only in development)
+  insecure-skip-tls-verify: false
+
+  # Insecure use HTTP (use only in development)
+  insecure-use-http: false
+
+  # Registry authentication
+  auth:
+    - authority: registry.internal.example.com
+      username: "${REGISTRY_USER}"
+      password: "${REGISTRY_PASSWORD}"
+
+# Attestation configuration (SBOM verification)
+attestation:
+  # Verify SBOM attestations
+  verify: true
+
+  # Public key for verification
+  public-key: .grype/cosign.pub
+
+# External sources configuration
+external:
+  # Enable external vulnerability sources
+  enable: true
+
+  # Custom vulnerability data
+  sources:
+    - name: "custom-vuln-db"
+      url: "https://vuln-db.internal.example.com/grype-db"
+      headers:
+        Authorization: "Bearer ${VULN_DB_TOKEN}"
+
+# Check configuration
+check:
+  # Fail on findings
+  fail-on: high
+
+  # Exit code on failure
+  exit-code: 1
+
+# SBOM configuration
+sbom:
+  # Input SBOM format (when scanning SBOM files)
+  input-format: spdx-json
+
+  # Generate SBOM if not provided
+  generate: true
+
+  # SBOM output configuration
+  output:
+    format: cyclonedx-json
+    file: sbom.cdx.json

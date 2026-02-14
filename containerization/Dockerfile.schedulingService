@@ -1,0 +1,125 @@
+# =============================================================================
+# YAWL Scheduling Service Dockerfile
+# =============================================================================
+# Calendar-based scheduling and time management
+# =============================================================================
+
+ARG JAVA_VERSION=17
+
+# Build stage
+FROM eclipse-temurin:${JAVA_VERSION}-jdk-alpine AS builder
+
+ARG YAWL_VERSION=5.2
+
+LABEL org.opencontainers.image.title="YAWL Scheduling Service Builder"
+
+RUN apk add --no-cache ant bash curl shadow
+
+RUN groupadd -r yawl && useradd -r -g yawl -d /yawl yawl
+
+WORKDIR /build
+
+# Copy source files (layered for caching)
+COPY build/3rdParty/ ./build/3rdParty/
+COPY build/build.xml ./build/
+COPY build/build.properties ./build/
+COPY build/properties/ ./build/properties/
+COPY build/schedulingService/ ./build/schedulingService/
+
+COPY schema/ ./schema/
+COPY src/ ./src/
+
+# Build scheduling service WAR
+RUN cd build && ant war_schedulingService
+
+# =============================================================================
+# Runtime stage
+# =============================================================================
+FROM eclipse-temurin:${JAVA_VERSION}-jre-alpine AS runtime
+
+ARG JAVA_VERSION=17
+ARG YAWL_VERSION=5.2
+ARG TOMCAT_VERSION=9.0.89
+
+LABEL org.opencontainers.image.title="YAWL Scheduling Service"
+LABEL org.opencontainers.image.description="YAWL Scheduling Service - Calendar & Time Management"
+LABEL org.opencontainers.image.version="${YAWL_VERSION}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.service="scheduling-service"
+
+# Install runtime dependencies
+RUN apk add --no-cache curl bash shadow tzdata ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN groupadd -r yawl && \
+    useradd -r -g yawl -d /yawl -s /sbin/nologin yawl && \
+    mkdir -p /yawl /opt/tomcat /data/scheduling && \
+    chown -R yawl:yawl /yawl /opt/tomcat /data
+
+# Download and configure Tomcat
+RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" \
+    | tar -xzf - -C /opt/tomcat --strip-components=1 && \
+    rm -rf /opt/tomcat/webapps/* /opt/tomcat/webapps.dist && \
+    sed -i 's/<Connector port="8080"/<Connector port="8080" URIEncoding="UTF-8"/' \
+    /opt/tomcat/conf/server.xml && \
+    chown -R yawl:yawl /opt/tomcat
+
+# Copy built WAR from builder
+COPY --from=builder --chown=yawl:yawl /build/output/wars/schedulingService.war /opt/tomcat/webapps/ROOT.war
+
+# Copy shared libraries
+COPY --from=builder --chown=yawl:yawl /build/build/3rdParty/lib/*.jar /opt/tomcat/lib/
+
+# Copy scheduling resources and SQL
+COPY --from=builder --chown=yawl:yawl /build/build/schedulingService/resources/ /yawl/resources/
+COPY --from=builder --chown=yawl:yawl /build/build/schedulingService/sql/ /yawl/sql/
+
+# Environment configuration
+ENV CATALINA_HOME=/opt/tomcat \
+    JAVA_OPTS="-Xms256m -Xmx512m -Djava.awt.headless=true -Dfile.encoding=UTF-8" \
+    TZ=UTC \
+    YAWL_VERSION=${YAWL_VERSION} \
+    DB_TYPE=postgres \
+    DB_HOST=postgres \
+    DB_PORT=5432 \
+    DB_NAME=yawl \
+    DB_USER=postgres \
+    DB_PASSWORD=yawl \
+    ENGINE_URL=http://engine:8080/ib \
+    RESOURCE_SERVICE_URL=http://resource-service:8080/ib \
+    LOG_LEVEL=DEBUG
+
+# Create configuration script
+RUN mkdir -p /yawl/scripts && \
+    echo '#!/bin/bash' > /yawl/scripts/configure.sh && \
+    echo 'set -e' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo '# Configure database connection' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s/database.type=.*/database.type=${DB_TYPE}/" /opt/tomcat/webapps/ROOT/WEB-INF/classes/hibernate.properties 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s|database.path=.*|database.path=${DB_HOST}:${DB_PORT}/${DB_NAME}|g" /opt/tomcat/webapps/ROOT/WEB-INF/classes/hibernate.properties 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s/database.user=.*/database.user=${DB_USER}/" /opt/tomcat/webapps/ROOT/WEB-INF/classes/hibernate.properties 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s/database.password=.*/database.password=${DB_PASSWORD}/" /opt/tomcat/webapps/ROOT/WEB-INF/classes/hibernate.properties 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo '# Configure service URLs' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s|http://localhost:8080/yawl|${ENGINE_URL}|g" /opt/tomcat/webapps/ROOT/WEB-INF/web.xml 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo 'sed -i "s|http://localhost:8080/resourceService|${RESOURCE_SERVICE_URL}|g" /opt/tomcat/webapps/ROOT/WEB-INF/web.xml 2>/dev/null || true' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo 'exec "$@"' >> /yawl/scripts/configure.sh && \
+    chmod +x /yawl/scripts/configure.sh && \
+    chown yawl:yawl /yawl/scripts/configure.sh
+
+# Expose ports
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+# Switch to non-root user
+USER yawl
+
+WORKDIR /yawl
+
+ENTRYPOINT ["/yawl/scripts/configure.sh"]
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

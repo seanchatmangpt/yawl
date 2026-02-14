@@ -1,0 +1,17 @@
+apiVersion: v2
+name: postgresql
+description: PostgreSQL database subchart for YAWL
+type: application
+version: 15.5.0
+appVersion: "16.2"
+maintainers:
+  - name: YAWL Foundation
+    email: support@yawlfoundation.org
+home: https://www.postgresql.org/
+sources:
+  - https://github.com/postgres/postgres
+keywords:
+  - postgresql
+  - postgres
+  - database
+  - sql

@@ -1,0 +1,218 @@
+# IBM Cloud IAM for YAWL Multi-Cloud Deployment
+# Access policies for IBM Cloud Kubernetes Service (IKS) and Red Hat OpenShift
+
+---
+# IAM Access Group: YAWL Engine Services
+Name: yawl-engine-services
+Description: Access group for YAWL engine service accounts
+
+# IAM Access Group: YAWL Resource Services
+Name: yawl-resource-services
+Description: Access group for YAWL resource service accounts
+
+# IAM Access Group: YAWL Administrators
+Name: yawl-administrators
+Description: Access group for YAWL administrators
+
+# IAM Access Group: YAWL Viewers
+Name: yawl-viewers
+Description: Read-only access group for YAWL
+
+---
+# Access Policy: YAWL Engine Services
+# Grants access to required IBM Cloud services
+Service: container-kubernetes
+ResourceGroup: yawl-production
+Roles:
+  - Viewer  # Minimal cluster viewing
+Resources:
+  - cluster-name: yawl-cluster
+
+---
+# Service ID: YAWL Engine
+ibmcloud iam service-id-create yawl-engine --description "Service ID for YAWL workflow engine"
+
+# Service ID: YAWL Resource Service
+ibmcloud iam service-id-create yawl-resource --description "Service ID for YAWL resource service"
+
+---
+# API Key for Service ID (created securely)
+# Store in IBM Cloud Secrets Manager
+ibmcloud iam service-api-key-create yawl-engine-key yawl-engine --description "API key for YAWL engine"
+
+---
+# Policy Assignment: Secrets Manager Access
+Service: secrets-manager
+ResourceGroup: yawl-production
+Roles:
+  - SecretReader
+Resources:
+  - secrets-manager-instance: yawl-secrets-manager
+
+# Command:
+ibmcloud iam service-policy-create yawl-engine \
+  --roles SecretReader \
+  --service-name secrets-manager \
+  --service-instance {secrets_manager_instance_id}
+
+---
+# Policy Assignment: Cloud Object Storage Access
+Service: cloud-object-storage
+ResourceGroup: yawl-production
+Roles:
+  - ObjectReader
+  - ObjectWriter
+Resources:
+  - bucket-name: yawl-specifications
+
+# Command:
+ibmcloud iam service-policy-create yawl-engine \
+  --roles "Object Reader, Object Writer" \
+  --service-name cloud-object-storage \
+  --bucket yawl-specifications
+
+---
+# Policy Assignment: Databases for PostgreSQL
+Service: databases-for-postgresql
+ResourceGroup: yawl-database
+Roles:
+  - Operator  # Connection access
+Resources:
+  - database-instance: yawl-postgresql
+
+# Command:
+ibmcloud iam service-policy-create yawl-engine \
+  --roles Operator \
+  --service-name databases-for-postgresql \
+  --service-instance {postgresql_instance_id}
+
+---
+# Policy Assignment: Event Streams (Kafka)
+Service: messagehub
+ResourceGroup: yawl-production
+Roles:
+  - Manager
+Resources:
+  - kafka-instance: yawl-kafka
+
+# Command:
+ibmcloud iam service-policy-create yawl-engine \
+  --roles Manager \
+  --service-name messagehub \
+  --service-instance {kafka_instance_id}
+
+---
+# Policy Assignment: Log Analysis (LogDNA)
+Service: logdna
+ResourceGroup: yawl-production
+Roles:
+  - Manager
+Resources:
+  - logdna-instance: yawl-logging
+
+---
+# Policy Assignment: Monitoring (Sysdig)
+Service: sysdig-monitor
+ResourceGroup: yawl-production
+Roles:
+  - Writer
+Resources:
+  - sysdig-instance: yawl-monitoring
+
+---
+# IBM Cloud Secrets Manager Configuration
+# Secret Groups for YAWL
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-secret-config
+  namespace: yawl
+data:
+  SECRETS_MANAGER_INSTANCE: "yawl-secrets-manager"
+  SECRETS_MANAGER_REGION: "us-south"
+  DB_SECRET_NAME: "yawl-database-credentials"
+  LDAP_SECRET_NAME: "yawl-ldap-credentials"
+  ENCRYPTION_KEY_NAME: "yawl-encryption-key"
+---
+# Trusted Profile for IKS/ROKS Workload Identity
+# Enables pods to authenticate to IBM Cloud services
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  annotations:
+    # Link to IBM Cloud Trusted Profile
+    iks.ibm.com/trusted-profile-id: "{trusted_profile_id}"
+---
+# Trusted Profile Definition (IBM Cloud Console / CLI)
+# Create trusted profile that maps to Kubernetes service account
+ibmcloud iam trusted-profile-create yawl-engine-profile \
+  --description "Trusted profile for YAWL engine service account" \
+  --cr-type iks \
+  --cluster {cluster_id} \
+  --namespace yawl \
+  --service-account yawl-engine
+
+---
+# Key Protect (HSM-backed encryption)
+# Policy for accessing encryption keys
+ibmcloud iam service-policy-create yawl-engine \
+  --roles Reader \
+  --service-name kms \
+  --service-instance {key_protect_instance_id}
+
+---
+# VPC Security Group for YAWL
+# Network isolation for YAWL components
+resource_group: yawl-production
+vpc: yawl-vpc
+
+# Security Group: yawl-engine-sg
+Rules:
+  Ingress:
+    - name: allow-load-balancer
+      direction: inbound
+      protocol: tcp
+      port_min: 8080
+      port_max: 8080
+      source: {load_balancer_security_group_id}
+
+  Egress:
+    - name: allow-database
+      direction: outbound
+      protocol: tcp
+      port_min: 5432
+      port_max: 5432
+      destination: {database_security_group_id}
+
+    - name: allow-ibm-services
+      direction: outbound
+      protocol: tcp
+      port_min: 443
+      port_max: 443
+      destination: 0.0.0.0/0
+
+---
+# Network ACL for additional security
+# Control traffic between subnets
+resource_group: yawl-production
+vpc: yawl-vpc
+
+# Network ACL: yawl-nacl
+Rules:
+  Inbound:
+    - name: allow-https
+      action: allow
+      direction: inbound
+      protocol: tcp
+      source: 10.0.0.0/8
+      port_min: 443
+      port_max: 443
+
+  Outbound:
+    - name: allow-all
+      action: allow
+      direction: outbound
+      protocol: all
+      destination: 0.0.0.0/0

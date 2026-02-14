@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-redis-master
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: master
+spec:
+  replicas: {{ .Values.master.count }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: master
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: master
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-redis" .Release.Name) }}
+      {{- if .Values.master.podSecurityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.master.podSecurityContext.fsGroup }}
+      {{- end }}
+      containers:
+        - name: redis
+          image: redis:{{ .Chart.AppVersion }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.master.containerSecurityContext.enabled }}
+          securityContext:
+            runAsUser: {{ .Values.master.containerSecurityContext.runAsUser }}
+            runAsNonRoot: {{ .Values.master.containerSecurityContext.runAsNonRoot }}
+          {{- end }}
+          command:
+            - redis-server
+            - /etc/redis/redis.conf
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          env:
+            {{- if .Values.auth.enabled }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redis-auth
+                  key: password
+            {{- end }}
+          {{- if .Values.master.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                {{- if .Values.auth.enabled }}
+                - -a
+                - $(REDIS_PASSWORD)
+                {{- end }}
+                - ping
+            initialDelaySeconds: {{ .Values.master.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.master.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.master.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                {{- if .Values.auth.enabled }}
+                - -a
+                - $(REDIS_PASSWORD)
+                {{- end }}
+                - ping
+            initialDelaySeconds: {{ .Values.master.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.master.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.master.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/redis
+            {{- if .Values.master.persistence.enabled }}
+            - name: data
+              mountPath: /data
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-redis-config
+        {{- if .Values.master.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-redis-data
+        {{- end }}

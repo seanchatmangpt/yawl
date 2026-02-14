@@ -1,0 +1,271 @@
+# RBAC Configuration for YAWL Multi-Cloud Deployment
+# Implements least-privilege access control
+
+---
+# Service Accounts
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: engine
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: resource-service
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-worklet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: worklet-service
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-monitor
+  namespace: yawl-monitoring
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: monitoring
+automountServiceAccountToken: false
+---
+# YAWL Engine Role (namespace-scoped)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  # ConfigMap access for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["yawl-engine-config", "yawl-specifications"]
+  # Secret access for database credentials
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["yawl-db-credentials", "yawl-encryption-key"]
+  # Pod read for status checks
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Service discovery
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  # Events for auditing
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+# YAWL Resource Service Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["yawl-ldap-credentials", "yawl-encryption-key"]
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+# YAWL Engine Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: yawl-engine
+subjects:
+  - kind: ServiceAccount
+    name: yawl-engine
+    namespace: yawl
+---
+# YAWL Resource Service Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: yawl-resource-service
+subjects:
+  - kind: ServiceAccount
+    name: yawl-resource-service
+    namespace: yawl
+---
+# Cluster Role for cross-namespace discovery (minimal)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-discovery
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  # Service discovery across namespaces
+  - apiGroups: [""]
+    resources: ["services", "endpoints", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Read nodes for scheduling decisions
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+# Cluster Role Binding for discovery
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-engine-discovery
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-discovery
+subjects:
+  - kind: ServiceAccount
+    name: yawl-engine
+    namespace: yawl
+---
+# Cluster Role for monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-monitor
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  # Read metrics
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+  # Read all resources for monitoring
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - services
+      - endpoints
+      - configmaps
+      - secrets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: ["get", "list", "watch"]
+---
+# Cluster Role Binding for monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-monitor
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-monitor
+subjects:
+  - kind: ServiceAccount
+    name: yawl-monitor
+    namespace: yawl-monitoring
+---
+# Admin Role for YAWL operators
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yawl-admin
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  # Full access to YAWL namespace resources
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+---
+# Read-only Role for auditors
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yawl-viewer
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  # Read-only access
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  # Cannot read secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: []
+---
+# Role for external secrets operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "update", "patch", "delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]

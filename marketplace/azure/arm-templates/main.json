@@ -1,0 +1,612 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "YAWL Workflow Engine - Azure Marketplace Main Deployment Template",
+    "version": "5.2.0"
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for resource deployment"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "production",
+      "allowedValues": [
+        "development",
+        "staging",
+        "production"
+      ],
+      "metadata": {
+        "description": "Deployment environment"
+      }
+    },
+    "aksClusterName": {
+      "type": "string",
+      "defaultValue": "yawl-aks",
+      "metadata": {
+        "description": "Name of the AKS cluster"
+      }
+    },
+    "aksNodeCount": {
+      "type": "int",
+      "defaultValue": 3,
+      "minValue": 2,
+      "maxValue": 100,
+      "metadata": {
+        "description": "Number of nodes in the AKS cluster"
+      }
+    },
+    "aksNodeSize": {
+      "type": "string",
+      "defaultValue": "Standard_D4s_v3",
+      "allowedValues": [
+        "Standard_D2s_v3",
+        "Standard_D4s_v3",
+        "Standard_D8s_v3",
+        "Standard_D16s_v3",
+        "Standard_E4s_v3",
+        "Standard_E8s_v3"
+      ],
+      "metadata": {
+        "description": "VM size for AKS nodes"
+      }
+    },
+    "aksMaxPods": {
+      "type": "int",
+      "defaultValue": 50,
+      "metadata": {
+        "description": "Maximum pods per node"
+      }
+    },
+    "postgresqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the PostgreSQL server"
+      }
+    },
+    "postgresqlAdminLogin": {
+      "type": "string",
+      "defaultValue": "yawladmin",
+      "metadata": {
+        "description": "PostgreSQL administrator username"
+      }
+    },
+    "postgresqlAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL administrator password"
+      }
+    },
+    "postgresqlSkuName": {
+      "type": "string",
+      "defaultValue": "Standard_D4s_v3",
+      "allowedValues": [
+        "Standard_D2s_v3",
+        "Standard_D4s_v3",
+        "Standard_D8s_v3",
+        "Standard_D16s_v3"
+      ],
+      "metadata": {
+        "description": "PostgreSQL SKU name"
+      }
+    },
+    "postgresqlStorageSizeGB": {
+      "type": "int",
+      "defaultValue": 100,
+      "minValue": 32,
+      "maxValue": 16384,
+      "metadata": {
+        "description": "PostgreSQL storage size in GB"
+      }
+    },
+    "postgresqlVersion": {
+      "type": "string",
+      "defaultValue": "15",
+      "allowedValues": [
+        "14",
+        "15",
+        "16"
+      ],
+      "metadata": {
+        "description": "PostgreSQL version"
+      }
+    },
+    "postgresqlHighAvailability": {
+      "type": "string",
+      "defaultValue": "ZoneRedundant",
+      "allowedValues": [
+        "Disabled",
+        "SameZone",
+        "ZoneRedundant"
+      ],
+      "metadata": {
+        "description": "PostgreSQL high availability mode"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the storage account"
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_RAGRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage account type"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Key Vault"
+      }
+    },
+    "acrName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Container Registry"
+      }
+    },
+    "acrSku": {
+      "type": "string",
+      "defaultValue": "Premium",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "Container Registry SKU"
+      }
+    },
+    "adminEmail": {
+      "type": "string",
+      "metadata": {
+        "description": "Administrator email address"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Custom domain name (optional)"
+      }
+    },
+    "enablePrivateCluster": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable private AKS cluster"
+      }
+    },
+    "enableAzureMonitor": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Azure Monitor for containers"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "VNet address prefix"
+      }
+    },
+    "aksSubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.64.0/18",
+      "metadata": {
+        "description": "AKS subnet prefix"
+      }
+    },
+    "privateEndpointSubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.128.0/24",
+      "metadata": {
+        "description": "Private endpoints subnet prefix"
+      }
+    },
+    "appGatewaySubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.192.0/24",
+      "metadata": {
+        "description": "Application Gateway subnet prefix"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Application": "YAWL",
+        "Environment": "production",
+        "ManagedBy": "AzureMarketplace"
+      },
+      "metadata": {
+        "description": "Resource tags"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "[concat(parameters('aksClusterName'), '-vnet')]",
+    "aksSubnetName": "aks-subnet",
+    "privateEndpointSubnetName": "private-endpoints-subnet",
+    "appGatewaySubnetName": "appgw-subnet",
+    "lawWorkspaceName": "[concat(parameters('aksClusterName'), '-logs')]",
+    "appInsightsName": "[concat(parameters('aksClusterName'), '-insights')]",
+    "userAssignedIdentityName": "[concat(parameters('aksClusterName'), '-identity')]",
+    "storageContainerNames": [
+      "specifications",
+      "logs",
+      "exports",
+      "worklets"
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "networkDeployment",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-04-01",
+              "name": "[variables('vnetName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[variables('aksSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('aksSubnetPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                  },
+                  {
+                    "name": "[variables('privateEndpointSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('privateEndpointSubnetPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                  },
+                  {
+                    "name": "[variables('appGatewaySubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('appGatewaySubnetPrefix')]"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            },
+            "aksSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('aksSubnetName'))]"
+            },
+            "privateEndpointSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('privateEndpointSubnetName'))]"
+            },
+            "appGatewaySubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('appGatewaySubnetName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "aksDeployment",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'networkDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identityDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(deployment().properties.templateLink.uri, 'aks.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "aksClusterName": {
+            "value": "[parameters('aksClusterName')]"
+          },
+          "aksNodeCount": {
+            "value": "[parameters('aksNodeCount')]"
+          },
+          "aksNodeSize": {
+            "value": "[parameters('aksNodeSize')]"
+          },
+          "aksMaxPods": {
+            "value": "[parameters('aksMaxPods')]"
+          },
+          "enablePrivateCluster": {
+            "value": "[parameters('enablePrivateCluster')]"
+          },
+          "enableAzureMonitor": {
+            "value": "[parameters('enableAzureMonitor')]"
+          },
+          "subnetId": {
+            "value": "[reference('networkDeployment').outputs.aksSubnetId.value]"
+          },
+          "userAssignedIdentityId": {
+            "value": "[reference('identityDeployment').outputs.userAssignedIdentityId.value]"
+          },
+          "lawWorkspaceId": {
+            "value": "[reference('monitoringDeployment').outputs.workspaceId.value]"
+          },
+          "acrId": {
+            "value": "[reference('storageDeployment').outputs.acrId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "postgresqlDeployment",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'networkDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(deployment().properties.templateLink.uri, 'postgresql.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "postgresqlServerName": {
+            "value": "[parameters('postgresqlServerName')]"
+          },
+          "postgresqlAdminLogin": {
+            "value": "[parameters('postgresqlAdminLogin')]"
+          },
+          "postgresqlAdminPassword": {
+            "value": "[parameters('postgresqlAdminPassword')]"
+          },
+          "postgresqlSkuName": {
+            "value": "[parameters('postgresqlSkuName')]"
+          },
+          "postgresqlStorageSizeGB": {
+            "value": "[parameters('postgresqlStorageSizeGB')]"
+          },
+          "postgresqlVersion": {
+            "value": "[parameters('postgresqlVersion')]"
+          },
+          "postgresqlHighAvailability": {
+            "value": "[parameters('postgresqlHighAvailability')]"
+          },
+          "subnetId": {
+            "value": "[reference('networkDeployment').outputs.privateEndpointSubnetId.value]"
+          },
+          "keyVaultId": {
+            "value": "[reference('storageDeployment').outputs.keyVaultId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "storageDeployment",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'networkDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identityDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(deployment().properties.templateLink.uri, 'storage.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "storageAccountType": {
+            "value": "[parameters('storageAccountType')]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "acrName": {
+            "value": "[parameters('acrName')]"
+          },
+          "acrSku": {
+            "value": "[parameters('acrSku')]"
+          },
+          "subnetId": {
+            "value": "[reference('networkDeployment').outputs.privateEndpointSubnetId.value]"
+          },
+          "userAssignedIdentityPrincipalId": {
+            "value": "[reference('identityDeployment').outputs.userAssignedIdentityPrincipalId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "identityDeployment",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[variables('userAssignedIdentityName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "userAssignedIdentityId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]"
+            },
+            "userAssignedIdentityPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')), '2023-01-31').principalId]"
+            },
+            "userAssignedIdentityClientId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')), '2023-01-31').clientId]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "monitoringDeployment",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[variables('lawWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 90,
+                "features": {
+                  "enableLogAccessUsingOnlyResourcePermissions": true
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[variables('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawWorkspaceName'))]"
+              }
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawWorkspaceName'))]"
+            },
+            "workspaceCustomerId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('lawWorkspaceName')), '2022-10-01').customerId]"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "aksClusterId": {
+      "type": "string",
+      "value": "[reference('aksDeployment').outputs.clusterId.value]"
+    },
+    "aksClusterName": {
+      "type": "string",
+      "value": "[parameters('aksClusterName')]"
+    },
+    "postgresqlServerName": {
+      "type": "string",
+      "value": "[parameters('postgresqlServerName')]"
+    },
+    "postgresqlServerFqdn": {
+      "type": "string",
+      "value": "[reference('postgresqlDeployment').outputs.serverFqdn.value]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[parameters('keyVaultName')]"
+    },
+    "acrName": {
+      "type": "string",
+      "value": "[parameters('acrName')]"
+    },
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[reference('storageDeployment').outputs.acrLoginServer.value]"
+    },
+    "lawWorkspaceId": {
+      "type": "string",
+      "value": "[reference('monitoringDeployment').outputs.workspaceId.value]"
+    },
+    "userAssignedIdentityClientId": {
+      "type": "string",
+      "value": "[reference('identityDeployment').outputs.userAssignedIdentityClientId.value]"
+    }
+  }
+}

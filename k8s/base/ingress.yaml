@@ -1,0 +1,108 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yawl-ingress
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - yawl.example.com
+      secretName: yawl-tls-secret
+  rules:
+    - host: yawl.example.com
+      http:
+        paths:
+          - path: /engine
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-engine
+                port:
+                  number: 8080
+          - path: /resourceService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-resource-service
+                port:
+                  number: 8080
+          - path: /workletService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-worklet-service
+                port:
+                  number: 8080
+          - path: /monitorService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-monitor-service
+                port:
+                  number: 8080
+          - path: /costService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-cost-service
+                port:
+                  number: 8080
+          - path: /schedulingService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-scheduling-service
+                port:
+                  number: 8080
+          - path: /mailService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-mail-service
+                port:
+                  number: 8080
+          - path: /digitalSignature
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-digital-signature
+                port:
+                  number: 8080
+          - path: /documentStore
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-document-store
+                port:
+                  number: 8080
+          - path: /procletService
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-proclet-service
+                port:
+                  number: 8080
+          - path: /balancer
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-balancer
+                port:
+                  number: 8080

@@ -1,0 +1,341 @@
+# YAWL Helm Chart - Microsoft Azure Values
+# Override values for deploying YAWL on Azure AKS
+
+# -----------------------------------------------------------------------------
+# Cloud Provider
+# -----------------------------------------------------------------------------
+cloudProvider: azure
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  storageClass: managed-csi  # Azure Disk CSI default
+  labels:
+    cloud-provider: azure
+    environment: production
+
+# -----------------------------------------------------------------------------
+# Image Configuration - Use ACR
+# -----------------------------------------------------------------------------
+image:
+  registry: youracr.azurecr.io
+  repository: yawl
+
+# -----------------------------------------------------------------------------
+# Database Configuration - Azure Database for PostgreSQL
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: false  # Use Azure Database instead
+
+externalDatabase:
+  host: "yawl-db.postgres.database.azure.com"
+  port: 5432
+  database: yawl
+  user: postgres_admin
+  password: ""
+  existingSecret: yawl-db-credentials
+  existingSecretPasswordKey: password
+
+# Azure Database Configuration
+azureDatabase:
+  enabled: true
+  serverName: yawl-db
+  resourceGroup: yawl-production-rg
+  skuName: GP_Gen5_2
+  tier: GeneralPurpose
+  family: Gen5
+  capacity: 2
+  storageSizeGB: 128
+  backupRetentionDays: 14
+  geoRedundantBackup: true
+  sslEnforcement: true
+  minimalTlsVersion: TLS1_2
+
+# -----------------------------------------------------------------------------
+# Redis Configuration - Azure Cache for Redis
+# -----------------------------------------------------------------------------
+redis:
+  enabled: false  # Use Azure Cache instead
+
+externalRedis:
+  host: "yawl-redis.redis.cache.windows.net"
+  port: 6379
+  password: ""
+  existingSecret: yawl-redis-credentials
+  existingSecretPasswordKey: password
+
+# Azure Redis Configuration
+azureRedis:
+  enabled: true
+  sku: Premium
+  capacity: 2
+  enableNonSslPort: false
+  minimumTlsVersion: "1.2"
+  cluster: true
+  shardCount: 2
+
+# -----------------------------------------------------------------------------
+# Storage Configuration - Azure Blob Storage
+# -----------------------------------------------------------------------------
+storage:
+  documentStore:
+    enabled: true
+    type: azure-blob
+    accountName: yawlstorage
+    containerName: documents
+  backup:
+    enabled: true
+    accountName: yawlbackups
+    containerName: backups
+
+# Azure Storage Configuration
+azureStorage:
+  accountType: Standard_GRS
+  accessTier: Hot
+  enableHttpsTrafficOnly: true
+  minTlsVersion: TLS1_2
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration - Azure Application Gateway
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: azure-application-gateway
+  annotations:
+    kubernetes.io/ingress.class: azure-application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/connection-draining: "true"
+    appgw.ingress.kubernetes.io/connection-draining-timeout: "60"
+    appgw.ingress.kubernetes.io/health-probe-path: "/engine/health"
+    appgw.ingress.kubernetes.io/health-probe-interval: "10"
+    appgw.ingress.kubernetes.io/health-probe-timeout: "5"
+    appgw.ingress.kubernetes.io/health-probe-unhealthy-threshold: "3"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    appgw.ingress.kubernetes.io/appgw-trusted-root-certificate: "yawl-root-cert"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: yawl.your-domain.com
+      paths: []
+  tls:
+    - secretName: yawl-tls-secret
+      hosts:
+        - yawl.your-domain.com
+
+# Application Gateway Configuration
+applicationGateway:
+  enabled: true
+  name: yawl-appgw
+  skuName: WAF_v2
+  skuTier: WAF_v2
+  capacity: 2
+  wafEnabled: true
+  wafMode: Prevention
+  wafRuleSetType: OWASP
+  wafRuleSetVersion: "3.2"
+
+# -----------------------------------------------------------------------------
+# Service Configuration with AKS-specific settings
+# -----------------------------------------------------------------------------
+services:
+  engine:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+      annotations:
+        service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 65
+    nodeSelector:
+      agentpool: yawlcore
+
+  resourceService:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      maxReplicas: 10
+
+  workletService:
+    replicaCount: 2
+    service:
+      type: ClusterIP
+
+  monitorService:
+    service:
+      type: ClusterIP
+
+  costService:
+    service:
+      type: ClusterIP
+
+  schedulingService:
+    service:
+      type: ClusterIP
+
+  balancer:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+    autoscaling:
+      maxReplicas: 8
+
+# -----------------------------------------------------------------------------
+# Service Account with Azure AD Workload Identity
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations:
+    azure.workload.identity/client-id: "your-client-id"
+    azure.workload.identity/tenant-id: "your-tenant-id"
+  labels:
+    azure.workload.identity/use: "true"
+
+# -----------------------------------------------------------------------------
+# Network Policy with Azure-specific rules
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - namespaceSelector:
+            matchLabels:
+              app: appgw-ingress
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # Azure Database
+        - protocol: TCP
+          port: 6379  # Azure Cache
+    # Allow access to Azure APIs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # Azure Virtual Network internal
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+
+# -----------------------------------------------------------------------------
+# Node Selector for AKS
+# -----------------------------------------------------------------------------
+nodeSelector:
+  agentpool: yawldefault
+
+# -----------------------------------------------------------------------------
+# Topology Spread for Azure Availability Zones
+# -----------------------------------------------------------------------------
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# AKS-specific resources
+# -----------------------------------------------------------------------------
+extraDeploy:
+  # Azure Identity binding for workload identity
+  - apiVersion: "aadpodidentity.k8s.io/v1"
+    kind: AzureIdentity
+    metadata:
+      name: yawl-identity
+    spec:
+      type: 0
+      resourceID: /subscriptions/your-subscription-id/resourcegroups/yawl-production-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/yawl-identity
+      clientID: your-client-id
+
+  - apiVersion: "aadpodidentity.k8s.io/v1"
+    kind: AzureIdentityBinding
+    metadata:
+      name: yawl-identity-binding
+    spec:
+      azureIdentity: yawl-identity
+      selector: yawl
+
+# -----------------------------------------------------------------------------
+# AKS Cluster Settings
+# -----------------------------------------------------------------------------
+aks:
+  clusterName: yawl-production
+  resourceGroup: yawl-production-rg
+  location: eastus
+  availabilityZones:
+    - "1"
+    - "2"
+    - "3"
+  nodeResourceGroup: MC_yawl-production-rg_yawl-production_eastus
+
+# -----------------------------------------------------------------------------
+# Azure Key Vault Integration
+# -----------------------------------------------------------------------------
+keyVault:
+  enabled: true
+  vaultName: yawl-kv
+  resourceGroup: yawl-production-rg
+  secretsProvider:
+    enabled: true
+    keyvaultName: yawl-kv
+    tenantId: your-tenant-id
+
+# -----------------------------------------------------------------------------
+# Azure Monitor Integration
+# -----------------------------------------------------------------------------
+azureMonitor:
+  enabled: true
+  logAnalyticsWorkspaceId: your-workspace-id
+  logRetentionDays: 30
+  metrics:
+    enabled: true
+    namespace: YAWL/Production
+
+# -----------------------------------------------------------------------------
+# Azure Private Link (for private connectivity)
+# -----------------------------------------------------------------------------
+privateLink:
+  enabled: false
+  privateEndpointName: yawl-pe
+  privateDnsZone: privatelink.postgres.database.azure.com

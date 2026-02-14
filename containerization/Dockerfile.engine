@@ -1,0 +1,108 @@
+# =============================================================================
+# YAWL Engine Service Dockerfile
+# =============================================================================
+# Core workflow engine implementing Interface A (design) and Interface B (client)
+# =============================================================================
+
+# Build stage - use Debian-based image which has ant
+FROM eclipse-temurin:17-jdk AS builder
+
+ARG YAWL_VERSION=5.2
+
+# Install build dependencies (Debian-based)
+RUN apt-get update && apt-get install -y ant curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy source files (layered for caching)
+COPY build/3rdParty/ ./build/3rdParty/
+COPY build/build.xml ./build/
+COPY build/build.properties ./build/
+COPY build/properties/ ./build/properties/
+COPY build/engine/ ./build/engine/
+
+COPY schema/ ./schema/
+COPY src/ ./src/
+COPY exampleSpecs/ ./exampleSpecs/
+COPY graphics/ ./graphics/
+
+# Copy antTask for custom Ant tasks
+COPY antTask/ ./antTask/
+
+# Copy checksums for build verification
+COPY checksums/ ./checksums/
+
+# Build YAWL (compile first, then build WARs)
+RUN cd build && ant compile && ant build_engine.war
+
+# =============================================================================
+# Runtime stage
+# =============================================================================
+FROM eclipse-temurin:17-jre AS runtime
+
+ARG YAWL_VERSION=5.2
+ARG TOMCAT_VERSION=9.0.89
+
+LABEL org.opencontainers.image.title="YAWL Engine"
+LABEL org.opencontainers.image.description="YAWL Workflow Engine - Core Service"
+LABEL org.opencontainers.image.version="${YAWL_VERSION}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r yawl && \
+    useradd -r -g yawl -d /yawl -s /sbin/nologin yawl && \
+    mkdir -p /yawl /opt/tomcat /data/engine && \
+    chown -R yawl:yawl /yawl /opt/tomcat /data
+
+# Download and configure Tomcat
+RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" \
+    | tar -xzf - -C /opt/tomcat --strip-components=1 && \
+    rm -rf /opt/tomcat/webapps/* /opt/tomcat/webapps.dist && \
+    sed -i 's/<Connector port="8080"/<Connector port="8080" URIEncoding="UTF-8"/' \
+    /opt/tomcat/conf/server.xml && \
+    chown -R yawl:yawl /opt/tomcat
+
+# Copy built WAR from builder
+COPY --from=builder --chown=yawl:yawl /build/output/yawl.war /opt/tomcat/webapps/ROOT.war
+
+# Copy shared libraries (excluding servlet-api which conflicts with Tomcat's)
+COPY --from=builder --chown=yawl:yawl /build/build/3rdParty/lib/*.jar /tmp/libs/
+RUN cd /opt/tomcat/lib && \
+    for jar in /tmp/libs/*.jar; do \
+      [ "$(basename $jar)" != "servlet-api.jar" ] && cp "$jar" .; \
+    done && \
+    rm -rf /tmp/libs
+
+# Environment configuration
+ENV CATALINA_HOME=/opt/tomcat \
+    JAVA_OPTS="-Xms512m -Xmx2048m -Djava.awt.headless=true -Dfile.encoding=UTF-8" \
+    TZ=UTC \
+    YAWL_VERSION=${YAWL_VERSION} \
+    DB_TYPE=postgres \
+    DB_HOST=postgres \
+    DB_PORT=5432 \
+    DB_NAME=yawl \
+    DB_USER=yawl \
+    DB_PASSWORD=yawl \
+    ENABLE_PERSISTENCE=true \
+    ENABLE_LOGGING=true \
+    LOG_LEVEL=WARN \
+    RESOURCE_SERVICE_URL=http://resource-service:8080/ib
+
+# Expose ports
+EXPOSE 8080 8000
+
+# Health check - Interface B endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+# Switch to non-root user
+USER yawl
+
+WORKDIR /yawl
+
+# Start Tomcat
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

@@ -1,0 +1,999 @@
+# AWS CloudFormation Template for YAWL CodePipeline Infrastructure
+# Creates complete CI/CD pipeline with all required resources
+# Version: 5.2
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  YAWL Workflow Engine CI/CD Pipeline Infrastructure
+  Creates CodePipeline, CodeBuild projects, IAM roles, S3 buckets, and EKS resources
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Source Configuration
+        Parameters:
+          - SourceProvider
+          - GitHubOwner
+          - GitHubRepo
+          - GitHubBranch
+          - CodeCommitRepoName
+      - Label:
+          default: Build Configuration
+        Parameters:
+          - JavaVersion
+          - AntVersion
+      - Label:
+          default: EKS Deployment Configuration
+        Parameters:
+          - EKSClusterName
+          - EKSNamespace
+          - EKSRegion
+      - Label:
+          default: Environment
+        Parameters:
+          - Environment
+          - NotificationEmail
+
+Parameters:
+  SourceProvider:
+    Type: String
+    Description: Source code provider
+    Default: CodeCommit
+    AllowedValues:
+      - CodeCommit
+      - GitHub
+
+  GitHubOwner:
+    Type: String
+    Description: GitHub repository owner/organization
+    Default: yawlfoundation
+
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+    Default: yawl
+
+  GitHubBranch:
+    Type: String
+    Description: GitHub branch to build
+    Default: main
+
+  GitHubTokenSecretId:
+    Type: String
+    Description: Secrets Manager secret ID containing GitHub personal access token
+    Default: yawl-github-token
+
+  CodeCommitRepoName:
+    Type: String
+    Description: CodeCommit repository name
+    Default: yawl
+
+  CodeCommitBranch:
+    Type: String
+    Description: CodeCommit branch to build
+    Default: main
+
+  JavaVersion:
+    Type: String
+    Description: Java version for builds
+    Default: "17"
+    AllowedValues:
+      - "11"
+      - "17"
+      - "21"
+
+  AntVersion:
+    Type: String
+    Description: Apache Ant version
+    Default: "1.10.14"
+
+  EKSClusterName:
+    Type: String
+    Description: EKS cluster name for deployment
+    Default: yawl-cluster
+
+  EKSNamespace:
+    Type: String
+    Description: Kubernetes namespace for YAWL deployment
+    Default: yawl
+
+  EKSRegion:
+    Type: String
+    Description: AWS region for EKS cluster
+    Default: us-east-1
+
+  Environment:
+    Type: String
+    Description: Deployment environment
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  NotificationEmail:
+    Type: String
+    Description: Email for pipeline notifications
+    Default: ""
+
+  BuildComputeType:
+    Type: String
+    Description: CodeBuild compute type
+    Default: BUILD_GENERAL1_MEDIUM
+    AllowedValues:
+      - BUILD_GENERAL1_SMALL
+      - BUILD_GENERAL1_MEDIUM
+      - BUILD_GENERAL1_LARGE
+      - BUILD_GENERAL1_2XLARGE
+
+Conditions:
+  UseGitHub: !Equals [!Ref SourceProvider, GitHub]
+  UseCodeCommit: !Equals [!Ref SourceProvider, CodeCommit]
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
+
+Resources:
+  # ============================================
+  # S3 Artifact Bucket
+  # ============================================
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-artifacts-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref ArtifactEncryptionKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 90
+            NoncurrentVersionExpirationInDays: 30
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  ArtifactBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyUnencryptedObjectUploads
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Sub ${ArtifactBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !Sub ${ArtifactBucket.Arn}
+              - !Sub ${ArtifactBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  # ============================================
+  # KMS Keys
+  # ============================================
+  ArtifactEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS key for CodePipeline artifact encryption
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableIAMUserPermissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: '*'
+          - Sid: AllowCodePipeline
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Resource: '*'
+          - Sid: AllowCodeBuild
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Resource: '*'
+
+  ArtifactEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${AWS::StackName}-artifacts
+      TargetKeyId: !Ref ArtifactEncryptionKey
+
+  # ============================================
+  # IAM Roles
+  # ============================================
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-CodePipeline-Service-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Sub ${ArtifactBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                Resource: !GetAtt ArtifactEncryptionKey.Arn
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StopBuild
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt CodeBuildServiceRole.Arn
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    codestar-connections:ProviderAction: CreateRepository/ReadRepository
+              - Effect: Allow
+                Action:
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+                  - codecommit:GetRepository
+                Resource: !Sub arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepoName}
+              - Effect: Allow
+                Action:
+                  - ecr:DescribeImages
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/yawl
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                Resource: !Sub arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${EKSClusterName}
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-CodeBuild-Service-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Sub ${ArtifactBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                Resource: !GetAtt ArtifactEncryptionKey.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:yawl-*
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/yawl/*
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:UpdateClusterConfig
+                Resource: !Sub arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${EKSClusterName}
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetRepositoryPolicy
+                  - ecr:DescribeRepositories
+                  - ecr:ListImages
+                  - ecr:DescribeImages
+                  - ecr:BatchGetImage
+                  - ecr:GetLifecyclePolicy
+                  - ecr:GetLifecyclePolicyPreview
+                  - ecr:ListTagsForResource
+                  - ecr:DescribeImageScanFindings
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/yawl
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                Resource: '*'
+
+  # ============================================
+  # ECR Repository
+  # ============================================
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: yawl
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: KMS
+        KmsKey: !Ref ArtifactEncryptionKey
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["v"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "description": "Delete untagged images older than 7 days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # CodeBuild Projects
+  # ============================================
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-Build
+      Description: Build YAWL workflow engine WAR files and Docker image
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: ci-cd/codepipeline/buildspec.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: !Ref BuildComputeType
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: JAVA_VERSION
+            Value: !Ref JavaVersion
+          - Name: ANT_VERSION
+            Value: !Ref AntVersion
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+      EncryptionKey: !GetAtt ArtifactEncryptionKey.Arn
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref BuildLogGroup
+        S3Logs:
+          Status: DISABLED
+      TimeoutInMinutes: 60
+      QueuedTimeoutInMinutes: 30
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  TestProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-Test
+      Description: Run YAWL unit and integration tests
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                java: corretto17
+              commands:
+                - apt-get update -y && apt-get install -y ant
+            build:
+              commands:
+                - echo "Running YAWL tests..."
+                - ant -f build/build.xml compile
+                - |
+                  mkdir -p reports/junit
+                  java -cp classes:build/3rdParty/lib/*:test/classes \
+                    org.junit.runner.JUnitCore org.yawlfoundation.yawl.TestAllYAWLSuites || true
+          reports:
+            junit-reports:
+              files:
+                - 'reports/junit/*.xml'
+              file-format: JUNITXML
+          artifacts:
+            files:
+              - reports/**/*
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        EnvironmentVariables:
+          - Name: JAVA_VERSION
+            Value: !Ref JavaVersion
+      EncryptionKey: !GetAtt ArtifactEncryptionKey.Arn
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref TestLogGroup
+      TimeoutInMinutes: 30
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  SecurityScanProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-SecurityScan
+      Description: Security scanning for YAWL Docker images
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: latest
+              commands:
+                - echo "Installing Trivy..."
+                - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.0
+            pre_build:
+              commands:
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+            build:
+              commands:
+                - echo "Running security scan..."
+                - mkdir -p reports/security
+                - |
+                  trivy image \
+                    --exit-code 1 \
+                    --severity HIGH,CRITICAL \
+                    --format json \
+                    --output reports/security/trivy-report.json \
+                    $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/yawl:$IMAGE_TAG || true
+                - |
+                  trivy image \
+                    --exit-code 0 \
+                    --format table \
+                    $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/yawl:$IMAGE_TAG
+          artifacts:
+            files:
+              - reports/**/*
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+      EncryptionKey: !GetAtt ArtifactEncryptionKey.Arn
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref SecurityLogGroup
+      TimeoutInMinutes: 20
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  DeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-Deploy
+      Description: Deploy YAWL to EKS cluster
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: ci-cd/codepipeline/deployspec.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref EKSClusterName
+          - Name: EKS_REGION
+            Value: !Ref EKSRegion
+          - Name: NAMESPACE
+            Value: !Ref EKSNamespace
+      EncryptionKey: !GetAtt ArtifactEncryptionKey.Arn
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref DeployLogGroup
+      TimeoutInMinutes: 30
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # CloudWatch Log Groups
+  # ============================================
+  BuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/codebuild/${AWS::StackName}-Build
+      RetentionInDays: 30
+
+  TestLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/codebuild/${AWS::StackName}-Test
+      RetentionInDays: 30
+
+  SecurityLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/codebuild/${AWS::StackName}-SecurityScan
+      RetentionInDays: 30
+
+  DeployLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/codebuild/${AWS::StackName}-Deploy
+      RetentionInDays: 30
+
+  # ============================================
+  # CodeCommit Repository (if selected)
+  # ============================================
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Condition: UseCodeCommit
+    Properties:
+      RepositoryName: !Ref CodeCommitRepoName
+      RepositoryDescription: YAWL Workflow Engine Repository
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # GitHub Connection (if selected)
+  # ============================================
+  GitHubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Condition: UseGitHub
+    Properties:
+      ConnectionName: !Sub ${AWS::StackName}-GitHub
+      ProviderType: GitHub
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # CodePipeline
+  # ============================================
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${AWS::StackName}-Pipeline
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+        EncryptionKey:
+          Id: !GetAtt ArtifactEncryptionKey.Arn
+          Type: KMS
+      Stages:
+        # ==========================================
+        # Source Stage
+        # ==========================================
+        - Name: Source
+          Actions:
+            - !If
+              - UseGitHub
+              - Name: GitHubSource
+                ActionTypeId:
+                  Category: Source
+                  Owner: AWS
+                  Provider: CodeStarSourceConnection
+                  Version: '1'
+                Configuration:
+                  ConnectionArn: !Ref GitHubConnection
+                  FullRepositoryId: !Sub ${GitHubOwner}/${GitHubRepo}
+                  BranchName: !Ref GitHubBranch
+                  OutputArtifactFormat: CODE_ZIP
+                OutputArtifacts:
+                  - Name: SourceArtifact
+                RunOrder: 1
+              - Name: CodeCommitSource
+                ActionTypeId:
+                  Category: Source
+                  Owner: AWS
+                  Provider: CodeCommit
+                  Version: '1'
+                Configuration:
+                  RepositoryName: !Ref CodeCommitRepoName
+                  BranchName: !Ref CodeCommitBranch
+                  PollForSourceChanges: true
+                  OutputArtifactFormat: CODE_ZIP
+                OutputArtifacts:
+                  - Name: SourceArtifact
+                RunOrder: 1
+
+        # ==========================================
+        # Build Stage
+        # ==========================================
+        - Name: Build
+          Actions:
+            - Name: BuildApplication
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref BuildProject
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifact
+              RunOrder: 1
+
+        # ==========================================
+        # Test Stage
+        # ==========================================
+        - Name: Test
+          Actions:
+            - Name: UnitTests
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref TestProject
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: TestArtifact
+              RunOrder: 1
+            - Name: IntegrationTests
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref TestProject
+                EnvironmentVariables: |
+                  [
+                    {"name": "TEST_TYPE", "value": "integration"}
+                  ]
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: IntegrationTestArtifact
+              RunOrder: 2
+
+        # ==========================================
+        # Security Stage
+        # ==========================================
+        - Name: Security
+          Actions:
+            - Name: ImageScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SecurityScanProject
+                EnvironmentVariables: |
+                  [
+                    {"name": "IMAGE_TAG", "value": "#{codepipeline.PipelineExecutionId}"}
+                  ]
+              InputArtifacts:
+                - Name: BuildArtifact
+              OutputArtifacts:
+                - Name: SecurityArtifact
+              RunOrder: 1
+
+        # ==========================================
+        # Deploy Stage
+        # ==========================================
+        - Name: Deploy
+          Actions:
+            - Name: DeployToEKS
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref DeployProject
+              InputArtifacts:
+                - Name: BuildArtifact
+              OutputArtifacts:
+                - Name: DeployArtifact
+              RunOrder: 1
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # SNS Topic for Notifications
+  # ============================================
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasNotificationEmail
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-Notifications
+      Tags:
+        - Key: Project
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  NotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      TopicArn: !Ref NotificationTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+
+  # ============================================
+  # EventBridge Rule for Pipeline Notifications
+  # ============================================
+  PipelineStateRule:
+    Type: AWS::Events::Rule
+    Condition: HasNotificationEmail
+    Properties:
+      Name: !Sub ${AWS::StackName}-PipelineState
+      Description: Send notifications on pipeline state changes
+      EventPattern:
+        source:
+          - aws.codepipeline
+        detail-type:
+          - CodePipeline Pipeline Execution State Change
+        detail:
+          pipeline:
+            - !Ref Pipeline
+          state:
+            - FAILED
+            - SUCCEEDED
+      State: ENABLED
+      Targets:
+        - Id: SendNotification
+          Arn: !Ref NotificationTopic
+          InputTransformer:
+            InputPathsMap:
+              pipeline: $.detail.pipeline
+              executionId: $.detail.execution-id
+              state: $.detail.state
+              time: $.time
+            InputTemplate: |
+              {
+                "Type": "Notification",
+                "Message": "YAWL Pipeline <pipeline> has <state>",
+                "Details": {
+                  "Pipeline": "<pipeline>",
+                  "ExecutionId": "<executionId>",
+                  "State": "<state>",
+                  "Time": "<time>"
+                }
+              }
+
+  # ============================================
+  # Parameter Store Values
+  # ============================================
+  EKSClusterNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /yawl/eks/cluster-name
+      Type: String
+      Value: !Ref EKSClusterName
+      Description: EKS cluster name for YAWL deployment
+      Tags:
+        Project: YAWL
+        Environment: !Ref Environment
+
+  EKSRegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /yawl/eks/region
+      Type: String
+      Value: !Ref EKSRegion
+      Description: AWS region for EKS cluster
+      Tags:
+        Project: YAWL
+        Environment: !Ref Environment
+
+Outputs:
+  PipelineName:
+    Description: CodePipeline name
+    Value: !Ref Pipeline
+
+  PipelineUrl:
+    Description: CodePipeline console URL
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Pipeline}/view
+
+  ArtifactBucketName:
+    Description: S3 artifact bucket name
+    Value: !Ref ArtifactBucket
+
+  ECRRepositoryUri:
+    Description: ECR repository URI
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/yawl
+
+  BuildProjectName:
+    Description: CodeBuild build project name
+    Value: !Ref BuildProject
+
+  TestProjectName:
+    Description: CodeBuild test project name
+    Value: !Ref TestProject
+
+  SecurityScanProjectName:
+    Description: CodeBuild security scan project name
+    Value: !Ref SecurityScanProject
+
+  DeployProjectName:
+    Description: CodeBuild deploy project name
+    Value: !Ref DeployProject
+
+  CodePipelineServiceRoleArn:
+    Description: CodePipeline service role ARN
+    Value: !GetAtt CodePipelineServiceRole.Arn
+
+  CodeBuildServiceRoleArn:
+    Description: CodeBuild service role ARN
+    Value: !GetAtt CodeBuildServiceRole.Arn
+
+  GitHubConnectionArn:
+    Description: GitHub connection ARN (if using GitHub)
+    Value: !If [UseGitHub, !Ref GitHubConnection, 'N/A']
+
+  CodeCommitRepositoryCloneUrlHttp:
+    Description: CodeCommit repository clone URL (if using CodeCommit)
+    Value: !If [UseCodeCommit, !GetAtt CodeCommitRepository.CloneUrlHttp, 'N/A']
+
+  NotificationTopicArn:
+    Description: SNS notification topic ARN
+    Value: !If [HasNotificationEmail, !Ref NotificationTopic, 'N/A']

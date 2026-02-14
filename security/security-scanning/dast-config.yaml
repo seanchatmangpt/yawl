@@ -1,0 +1,401 @@
+# DAST (Dynamic Application Security Testing) Configuration
+# For YAWL Engine and Services
+
+# OWASP ZAP Configuration
+zap:
+  # Target applications
+  targets:
+    - name: yawl-engine
+      url: https://yawl-engine.example.com
+      context:
+        name: yawl-auth
+        includePattern: https://yawl-engine.example.com/.*
+        excludePattern: https://yawl-engine.example.com/logout
+
+    - name: yawl-resource-service
+      url: https://yawl-resource.example.com
+
+  # Authentication
+  authentication:
+    type: form-based
+    loginUrl: https://yawl-engine.example.com/yawl/login
+    loginRequestData: "username={%username%}&password={%password%}"
+    credentials:
+      username: "${ZAP_USERNAME}"
+      password: "${ZAP_PASSWORD}"
+
+  # Scan configuration
+  scan:
+    # Spider configuration
+    spider:
+      maxDuration: 30  # minutes
+      maxDepth: 10
+      maxChildren: 100
+      threadCount: 5
+      parseComments: true
+      parseGit: false
+      parseRobots: true
+      parseSitemap: true
+
+    # Active scan configuration
+    activeScan:
+      maxDuration: 120  # minutes
+      maxRuleDuration: 10  # minutes
+      delayInMs: 0
+      threadCount: 5
+      scanHeaders: true
+
+    # Ajax spider (for SPA)
+    ajaxSpider:
+      enabled: true
+      maxDuration: 60  # minutes
+      browser: chrome-headless
+
+  # Policy configuration
+  policies:
+    # Security scan policies
+    - name: api-security
+      rules:
+        - id: 10058
+          strength: medium
+        - id: 10010
+          strength: high
+
+    - name: authentication
+      rules:
+        - id: 10023
+          strength: high
+        - id: 10024
+          strength: high
+
+  # Context configuration
+  context:
+    # Include in context
+    include:
+      - "https://yawl-engine.example.com/.*"
+
+    # Exclude from context
+    exclude:
+      - "https://yawl-engine.example.com/logout"
+      - "https://yawl-engine.example.com/static/.*"
+
+  # Alert configuration
+  alerts:
+    # Fail on severity
+    failOnSeverity:
+      - High
+      - Critical
+
+    # Alert thresholds
+    threshold: medium
+
+  # Report configuration
+  reports:
+    - type: json
+      fileName: zap-report.json
+    - type: html
+      fileName: zap-report.html
+    - type: sarif
+      fileName: zap-report.sarif
+
+# Burp Suite Configuration
+burp:
+  # Target scope
+  scope:
+    include:
+      - https://yawl-engine.example.com
+      - https://yawl-resource.example.com
+    exclude:
+      - https://yawl-engine.example.com/logout
+
+  # Authentication
+  authentication:
+    type: session-handling
+    loginUrl: https://yawl-engine.example.com/yawl/login
+    macros:
+      - name: login-macro
+        steps:
+          - url: https://yawl-engine.example.com/yawl/login
+            method: POST
+            body: "username=${BURP_USER}&password=${BURP_PASS}"
+
+  # Scan configuration
+  scan:
+    # Audit items
+    auditItems:
+      - all  # Run all audit checks
+
+    # Audit configuration
+    audit:
+      followRedirects: true
+      submitForms: true
+      crawlLinks: true
+      maxCrawlDepth: 10
+
+    # Payloads
+    payloads:
+      - sqli
+      - xss
+      - traversal
+      - ssrf
+      - xxe
+      - ldap
+
+  # Extensions
+  extensions:
+    - name: retired.js
+    - name: param-miner
+    - name: logger++
+
+# Nuclei Configuration
+nuclei:
+  # Templates
+  templates:
+    - cves/
+    - vulnerabilities/
+    - misconfiguration/
+    - exposures/
+    - custom/
+
+  # Severity
+  severity:
+    - critical
+    - high
+    - medium
+    - low
+
+  # Tags to include
+  tags:
+    - java
+    - workflow
+    - api
+
+  # Tags to exclude
+  excludeTags:
+    - dos
+    - fuzz
+
+  # Rate limiting
+  rateLimit:
+    maxRequests: 150
+    duration: 1s
+
+  # Retries
+  retries: 3
+
+  # Timeout
+  timeout: 10s
+
+  # Bulkhead
+  bulkhead: 25
+
+  # Headless mode
+  headless: true
+
+  # Report formats
+  reports:
+    - json
+    - sarif
+    - html
+
+# Nmap NSE Scripts
+nmap:
+  # Target ports
+  ports:
+    - 80
+    - 443
+    - 8080
+    - 8443
+
+  # Scripts
+  scripts:
+    - http-auth
+    - http-enum
+    - http-headers
+    - http-methods
+    - http-security-headers
+    - ssl-cert
+    - ssl-enum-ciphers
+    - ssl-known-key
+    - ssl-poodle
+    - ssl-heartbleed
+
+  # Timing
+  timing: 4  # Aggressive timing
+
+  # Script arguments
+  scriptArgs:
+    http-security-headers.allow-potentially-unsafe: false
+
+# SSL/TLS Scanning
+sslscan:
+  # Target
+  target: yawl-engine.example.com
+  port: 443
+
+  # Checks
+  checks:
+    - certificate-validity
+    - certificate-chain
+    - cipher-suites
+    - protocols
+    - vulnerabilities:
+        - heartbleed
+        - poodle
+        - drown
+        - freak
+        - logjam
+        - beast
+        - sweet32
+        - crime
+        - breach
+
+  # Minimum requirements
+  requirements:
+    minProtocol: TLS1.2
+    preferredProtocol: TLS1.3
+    minKeySize: 2048
+
+# API Security Testing
+apiSecurity:
+  # OpenAPI specification
+  openapi:
+    spec: /docs/api/openapi.yaml
+    server: https://yawl-engine.example.com
+
+  # Authentication
+  auth:
+    type: bearer
+    token: "${API_TOKEN}"
+
+  # Test configuration
+  tests:
+    # Fuzzing
+    fuzzing:
+      enabled: true
+      iterations: 1000
+
+    # Injection tests
+    injection:
+      - sqli
+      - xss
+      - command
+      - ldap
+      - xpath
+      - xml
+
+    # Authorization tests
+    authorization:
+      - bypass-roles
+      - idor
+      - privilege-escalation
+
+    # Rate limiting
+    rateLimiting:
+      enabled: true
+      threshold: 100
+      duration: 1m
+
+# SQL Injection Testing (sqlmap)
+sqlmap:
+  # Target
+  target: https://yawl-engine.example.com/yawl/api/*
+
+  # Authentication
+  auth:
+    type: bearer
+    token: "${API_TOKEN}"
+
+  # Test options
+  options:
+    level: 5
+    risk: 1  # Conservative to avoid damage
+    threads: 5
+    timeout: 30
+
+  # Techniques
+  techniques:
+    - boolean-based
+    - time-based
+    - error-based
+    - union-based
+
+  # Database type
+  dbms: postgresql
+
+# XSS Testing
+xssTesting:
+  # Payloads
+  payloads:
+    - "<script>alert('XSS')</script>"
+    - "<img src=x onerror=alert('XSS')>"
+    - "'\"><script>alert('XSS')</script>"
+    - "javascript:alert('XSS')"
+    - "<svg onload=alert('XSS')>"
+    - "${xss.payloads.owasp}"
+
+  # Contexts to test
+  contexts:
+    - html-body
+    - html-attribute
+    - javascript
+    - url-parameter
+    - css
+
+  # Bypass techniques
+  bypass:
+    - encoding
+    - case-variation
+    - null-byte
+
+# Scan Schedule
+schedule:
+  # Weekly comprehensive scan
+  weekly:
+    day: Saturday
+    time: "02:00"
+    timezone: UTC
+    tools:
+      - zap
+      - nuclei
+
+  # Monthly full audit
+  monthly:
+    day: 1
+    time: "03:00"
+    timezone: UTC
+    tools:
+      - zap
+      - burp
+      - nuclei
+      - sqlmap
+
+  # Pre-production scan
+  preProduction:
+    trigger: deployment
+    tools:
+      - zap
+      - nuclei
+
+# Alert Configuration
+alerts:
+  # Notification channels
+  channels:
+    - type: slack
+      webhook: "${SLACK_WEBHOOK}"
+      severity: [critical, high]
+
+    - type: email
+      recipients:
+        - security@example.com
+      severity: [critical, high, medium]
+
+    - type: jira
+      project: SEC
+      issueType: Bug
+      severity: [critical, high]
+
+  # Deduplication
+  deduplication:
+    enabled: true
+    window: 7d

@@ -1,0 +1,155 @@
+# SLO (Service Level Objective) Definitions for YAWL Workflow Engine
+# Based on SRE best practices and Google's SLO framework
+
+metadata:
+  version: "1.0"
+  service: "yawl-workflow-engine"
+  team: "platform-sre"
+  contact: "sre@example.com"
+
+service_level_objectives:
+  # SLO 1: Case Execution Availability
+  - name: "case-execution-availability"
+    description: "Percentage of workflow cases that complete successfully without errors"
+    service: "yawl-engine"
+    target: 0.999
+    period:
+      rolling: 30d
+    sli:
+      type: "availability"
+      prometheus_query: |
+        sum(rate(yawl_case_completed_total{slo="true"}[{{.window}}]))
+        /
+        sum(rate(yawl_case_started_total{slo="true"}[{{.window}}]))
+    alerting:
+      burn_rate_alerts:
+        - name: "slo-case-availability-burn-fast"
+          window: 1h
+          severity: critical
+        - name: "slo-case-availability-burn-slow"
+          window: 24h
+          severity: warning
+    labels:
+      category: "reliability"
+      criticality: "high"
+
+  # SLO 2: Case Execution Latency
+  - name: "case-execution-latency"
+    description: "Percentage of workflow cases completing within acceptable time"
+    service: "yawl-engine"
+    target: 0.95
+    period:
+      rolling: 7d
+    sli:
+      type: "latency"
+      prometheus_query: |
+        sum(rate(yawl_case_execution_duration_seconds_bucket{le="30",slo="true"}[{{.window}}]))
+        /
+        sum(rate(yawl_case_execution_duration_seconds_count{slo="true"}[{{.window}}]))
+    latency_thresholds:
+      - percentile: 50
+        threshold: 5s
+      - percentile: 95
+        threshold: 30s
+      - percentile: 99
+        threshold: 60s
+    labels:
+      category: "performance"
+      criticality: "high"
+
+  # SLO 3: Work Item Throughput
+  - name: "work-item-throughput"
+    description: "Work items processed per minute"
+    service: "yawl-engine"
+    target: 100
+    target_unit: "items/min"
+    period:
+      rolling: 1d
+    sli:
+      type: "throughput"
+      prometheus_query: |
+        sum(rate(yawl_workitem_completed_total{slo="true"}[{{.window}}])) * 60
+    labels:
+      category: "capacity"
+      criticality: "medium"
+
+  # SLO 4: Resource Service Availability
+  - name: "resource-service-availability"
+    description: "Resource service uptime and responsiveness"
+    service: "yawl-resource-service"
+    target: 0.999
+    period:
+      rolling: 30d
+    sli:
+      type: "availability"
+      prometheus_query: |
+        sum(rate(yawl_resource_allocation_total{status="success",slo="true"}[{{.window}}]))
+        /
+        sum(rate(yawl_resource_allocation_total{slo="true"}[{{.window}}]))
+    labels:
+      category: "reliability"
+      criticality: "high"
+
+  # SLO 5: API Response Time
+  - name: "api-response-time"
+    description: "API endpoints respond within acceptable time"
+    service: "yawl-engine"
+    target: 0.99
+    period:
+      rolling: 7d
+    sli:
+      type: "latency"
+      prometheus_query: |
+        sum(rate(http_request_duration_seconds_bucket{le="0.5",slo="true"}[{{.window}}]))
+        /
+        sum(rate(http_request_duration_seconds_count{slo="true"}[{{.window}}]))
+    labels:
+      category: "performance"
+      criticality: "high"
+
+# Error Budget Configuration
+error_budgets:
+  global:
+    period: 30d
+    lookback: 7d
+  budgets:
+    - slo: "case-execution-availability"
+      total_budget: 43.2m  # 0.1% of 30 days
+      remaining_alert_thresholds:
+        - threshold: 0.1
+          action: "freeze_deployments"
+        - threshold: 0.25
+          action: "notify_team"
+
+# Recording Rules for SLO Metrics
+recording_rules:
+  - name: "slo:budget_remaining:ratio"
+    query: |
+      1 - (
+        (1 - (sum(rate(yawl_case_completed_total[30d])) / sum(rate(yawl_case_started_total[30d]))))
+        /
+        (1 - 0.999)
+      )
+
+  - name: "slo:burn_rate:ratio"
+    query: |
+      (
+        1 - (sum(rate(yawl_case_completed_total[1h])) / sum(rate(yawl_case_started_total[1h])))
+      )
+      /
+      (1 - 0.999)
+
+# SLO Reporting Configuration
+reporting:
+  schedule: "weekly"
+  metrics:
+    - slo_compliance_percentage
+    - error_budget_remaining
+    - error_budget_consumed
+    - alert_count_by_slo
+  recipients:
+    - "sre-team@example.com"
+    - "engineering-leadership@example.com"
+  dashboards:
+    - name: "SLO Overview"
+      url: "https://grafana.yawl.example.com/d/slo-overview"

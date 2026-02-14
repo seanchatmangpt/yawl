@@ -1,0 +1,384 @@
+# YAWL Helm Chart - IBM Cloud Values
+# Override values for deploying YAWL on IBM Cloud Kubernetes Service (IKS) or Red Hat OpenShift on IBM Cloud (ROKS)
+
+# -----------------------------------------------------------------------------
+# Cloud Provider
+# -----------------------------------------------------------------------------
+cloudProvider: ibm
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  storageClass: ibmc-block-gold  # IBM Block Storage default
+  labels:
+    cloud-provider: ibm
+    environment: production
+
+# -----------------------------------------------------------------------------
+# Image Configuration - Use IBM Container Registry
+# -----------------------------------------------------------------------------
+image:
+  registry: icr.io
+  repository: yawl/yawl
+
+# -----------------------------------------------------------------------------
+# Database Configuration - IBM Cloud Databases for PostgreSQL
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: false  # Use IBM Cloud Databases instead
+
+externalDatabase:
+  # IBM Cloud Databases for PostgreSQL endpoint
+  host: "your-deployment.databases.appdomain.cloud"
+  port: 32251
+  database: ibmclouddb
+  user: admin
+  password: ""
+  existingSecret: yawl-db-credentials
+  existingSecretPasswordKey: password
+
+# IBM Cloud Databases Configuration
+ibmDatabase:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:databases-for-postgresql:us-south:a/your-account:your-instance::"
+  serviceInstanceName: yawl-db
+  plan: standard
+  location: us-south
+  resourceGroupId: "your-resource-group-id"
+  # Database members and allocation
+  members:
+    memoryAllocationMb: 4096
+    diskAllocationMb: 102400
+    cpuAllocationCount: 6
+  # Auto-scaling
+  autoScaling:
+    disk:
+      capacityEnabled: true
+      capacity: 40000
+      ioEnabled: false
+    memory:
+      ioEnabled: true
+    cpu:
+      enabled: true
+      maxCPUCount: 12
+
+# -----------------------------------------------------------------------------
+# Redis Configuration - IBM Cloud Databases for Redis
+# -----------------------------------------------------------------------------
+redis:
+  enabled: false  # Use IBM Cloud Databases instead
+
+externalRedis:
+  host: "your-redis.databases.appdomain.cloud"
+  port: 32137
+  password: ""
+  existingSecret: yawl-redis-credentials
+  existingSecretPasswordKey: password
+
+# IBM Cloud Redis Configuration
+ibmRedis:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:databases-for-redis:us-south:a/your-account:your-instance::"
+  serviceInstanceName: yawl-redis
+  plan: standard
+  location: us-south
+  # Cache members
+  members:
+    memoryAllocationMb: 2048
+    cpuAllocationCount: 4
+
+# -----------------------------------------------------------------------------
+# Storage Configuration - IBM Cloud Object Storage
+# -----------------------------------------------------------------------------
+storage:
+  documentStore:
+    enabled: true
+    type: ibm-cos
+    endpoint: "s3.us-south.cloud-object-storage.appdomain.cloud"
+    bucket: yawl-documents
+    location: us-south
+  backup:
+    enabled: true
+    endpoint: "s3.us-south.cloud-object-storage.appdomain.cloud"
+    bucket: yawl-backups
+    location: us-south
+
+# IBM Cloud Object Storage Configuration
+cos:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:cloud-object-storage:global:a/your-account:your-instance::"
+  serviceInstanceName: yawl-cos
+  plan: standard
+  location: global
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration - IBM Cloud Application Load Balancer (ALB)
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: public-iks-alb
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-services: "yawl-engine"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # IBM Cloud specific
+    ingress.bluemix.net/redirect-to-https: "true"
+    ingress.bluemix.net/client-max-body-size: "50m"
+  hosts:
+    - host: yawl.your-domain.com
+      paths: []
+  tls:
+    - secretName: yawl-tls-secret
+      hosts:
+        - yawl.your-domain.com
+
+# IBM Cloud ALB Configuration
+alb:
+  enabled: true
+  type: public
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+
+# -----------------------------------------------------------------------------
+# Service Configuration with IKS/ROKS-specific settings
+# -----------------------------------------------------------------------------
+services:
+  engine:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+      annotations:
+        service.kubernetes.io/ibm-load-balancer-cloud-provider-enable-features: "proxy-protocol"
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 65
+    nodeSelector:
+      node.kubernetes.io/instance-type: bx2.4x16
+
+  resourceService:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      maxReplicas: 10
+
+  workletService:
+    replicaCount: 2
+    service:
+      type: ClusterIP
+
+  monitorService:
+    service:
+      type: ClusterIP
+
+  costService:
+    service:
+      type: ClusterIP
+
+  schedulingService:
+    service:
+      type: ClusterIP
+
+  balancer:
+    replicaCount: 3
+    service:
+      type: ClusterIP
+    autoscaling:
+      maxReplicas: 8
+
+# -----------------------------------------------------------------------------
+# Service Account with IBM Cloud IAM
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations:
+    iam.cloud.ibm.com/service-id: "ServiceId-xxxxx"
+    iam.cloud.ibm.com/api-key: ""
+  labels:
+    app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# Network Policy with IBM Cloud-specific rules
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ibm-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # IBM Cloud Databases PostgreSQL
+        - protocol: TCP
+          port: 6379  # IBM Cloud Databases Redis
+        - protocol: TCP
+          port: 32251  # IBM Cloud Databases PostgreSQL custom port
+        - protocol: TCP
+          port: 32137  # IBM Cloud Databases Redis custom port
+    # Allow access to IBM Cloud APIs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # IBM Cloud private network
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+
+# -----------------------------------------------------------------------------
+# Node Selector for IKS/ROKS
+# -----------------------------------------------------------------------------
+nodeSelector:
+  node.kubernetes.io/instance-type: bx2.2x8
+
+# -----------------------------------------------------------------------------
+# Topology Spread for IBM Cloud Zones
+# -----------------------------------------------------------------------------
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# IKS/ROKS-specific resources
+# -----------------------------------------------------------------------------
+extraDeploy: []
+
+# -----------------------------------------------------------------------------
+# IKS/ROKS Cluster Settings
+# -----------------------------------------------------------------------------
+iks:
+  clusterName: yawl-production
+  clusterId: "your-cluster-id"
+  region: us-south
+  resourceGroupId: "your-resource-group-id"
+  zones:
+    - us-south-1
+    - us-south-2
+    - us-south-3
+  # Worker pool configuration
+  workerPool:
+    name: yawl-workers
+    flavor: bx2.4x16
+    minSize: 3
+    maxSize: 12
+
+# OpenShift specific (if using ROKS)
+openshift:
+  enabled: false
+  route:
+    enabled: false
+    host: yawl.your-domain.com
+    tls:
+      enabled: true
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+# -----------------------------------------------------------------------------
+# IBM Cloud Secrets Manager
+# -----------------------------------------------------------------------------
+secretsManager:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:secrets-manager:us-south:a/your-account:your-instance::"
+  region: us-south
+  endpoint: "https://your-instance.private.us-south.secrets-manager.appdomain.cloud"
+
+# -----------------------------------------------------------------------------
+# IBM Cloud Logging and Monitoring (LogDNA + Sysdig)
+# -----------------------------------------------------------------------------
+observability:
+  logging:
+    enabled: true
+    instanceId: "crn:v1:bluemix:public:logdna:us-south:a/your-account:your-instance::"
+    ingestionKey: ""
+  monitoring:
+    enabled: true
+    instanceId: "crn:v1:bluemix:public:sysdig-monitor:us-south:a/your-account:your-instance::"
+    accessKey: ""
+
+# -----------------------------------------------------------------------------
+# IBM Cloud Key Protect (Encryption)
+# -----------------------------------------------------------------------------
+keyProtect:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:kms:us-south:a/your-account:your-instance::"
+  rootKeyId: "your-root-key-id"
+
+# -----------------------------------------------------------------------------
+# IBM Cloud Internet Services (CIS / WAF)
+# -----------------------------------------------------------------------------
+cis:
+  enabled: true
+  instanceId: "crn:v1:bluemix:public:internet-svcs:global:a/your-account:your-instance::"
+  domain: your-domain.com
+  waf:
+    enabled: true
+    mode: "on"
+
+# -----------------------------------------------------------------------------
+# VPC Configuration (for VPC-based IKS clusters)
+# -----------------------------------------------------------------------------
+vpc:
+  enabled: true
+  vpcId: "rxxx-xxxx-xxxx-xxxx-xxxxxxxx"
+  subnetIds:
+    - "xxxx-xxxx-xxxx-xxxx-xxxxxxxx"
+  securityGroupId: "rxxx-xxxx-xxxx-xxxx-xxxxxxxx"

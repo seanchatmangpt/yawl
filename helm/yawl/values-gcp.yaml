@@ -1,0 +1,290 @@
+# YAWL Helm Chart - Google Cloud Platform (GCP) Values
+# Override values for deploying YAWL on GCP GKE
+
+# -----------------------------------------------------------------------------
+# Cloud Provider
+# -----------------------------------------------------------------------------
+cloudProvider: gcp
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  storageClass: standard-rwo  # GCE PD default
+  labels:
+    cloud-provider: gcp
+    environment: production
+
+# -----------------------------------------------------------------------------
+# Image Configuration - Use GCR
+# -----------------------------------------------------------------------------
+image:
+  registry: gcr.io
+  repository: your-project/yawl
+
+# -----------------------------------------------------------------------------
+# Database Configuration - CloudSQL
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: false  # Use CloudSQL instead
+
+externalDatabase:
+  host: "127.0.0.1"  # Connect via CloudSQL Proxy
+  port: 5432
+  database: yawl
+  user: postgres
+  password: ""
+  existingSecret: yawl-db-credentials
+  existingSecretPasswordKey: password
+
+# CloudSQL Proxy Configuration
+cloudsqlProxy:
+  enabled: true
+  # Format: project:region:instance
+  instanceConnectionName: "your-project:us-central1:yawl-db"
+  # Service account JSON (base64 encoded in secret)
+  serviceAccount: ""
+  serviceAccountJson: ""
+  proxyPort: 5432
+  image:
+    repository: gcr.io/cloudsql-docker/gce-proxy
+    tag: "1.33.8"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# -----------------------------------------------------------------------------
+# Redis Configuration - Memorystore
+# -----------------------------------------------------------------------------
+redis:
+  enabled: false  # Use Memorystore instead
+
+externalRedis:
+  host: "10.0.0.10"  # Memorystore internal IP
+  port: 6379
+  password: ""
+  existingSecret: yawl-redis-credentials
+  existingSecretPasswordKey: password
+
+# -----------------------------------------------------------------------------
+# Storage Configuration - GCS
+# -----------------------------------------------------------------------------
+storage:
+  documentStore:
+    enabled: true
+    type: gcs
+    bucket: "your-project-yawl-documents"
+  backup:
+    enabled: true
+    bucket: "your-project-yawl-backups"
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration - GKE Ingress
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: gce
+  annotations:
+    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.global-static-ip-name: "yawl-ingress-ip"
+    networking.gke.io/managed-certificates: "yawl-certificate"
+    networking.gke.io/v1beta1.FrontendConfig: "yawl-frontend-config"
+  hosts:
+    - host: yawl.your-domain.com
+      paths: []
+  tls:
+    - secretName: yawl-tls-secret
+      hosts:
+        - yawl.your-domain.com
+
+# -----------------------------------------------------------------------------
+# Service Configuration with GKE-specific settings
+# -----------------------------------------------------------------------------
+services:
+  engine:
+    replicaCount: 3
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+        cloud.google.com/backend-config: '{"default": "yawl-backend-config"}'
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 65
+    nodeSelector:
+      cloud.google.com/gke-nodepool: yawl-core
+
+  resourceService:
+    replicaCount: 3
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      maxReplicas: 10
+
+  workletService:
+    replicaCount: 2
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+
+  monitorService:
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+
+  costService:
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+
+  schedulingService:
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+
+  balancer:
+    replicaCount: 3
+    service:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+    autoscaling:
+      maxReplicas: 8
+
+# -----------------------------------------------------------------------------
+# Workload Identity (recommended over service account keys)
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: yawl-sa@your-project.iam.gserviceaccount.com
+
+# -----------------------------------------------------------------------------
+# Network Policy with GCP-specific rules
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # CloudSQL Proxy
+        - protocol: TCP
+          port: 6379  # Memorystore
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Internal GCP network
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # Allow access to GCP APIs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+
+# -----------------------------------------------------------------------------
+# Node Selector for GKE
+# -----------------------------------------------------------------------------
+nodeSelector:
+  cloud.google.com/gke-nodepool: yawl-default
+
+# -----------------------------------------------------------------------------
+# Topology Spread for GKE zones
+# -----------------------------------------------------------------------------
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# GKE-specific resources
+# -----------------------------------------------------------------------------
+# BackendConfig for health checks
+extraDeploy:
+  - apiVersion: cloud.google.com/v1
+    kind: BackendConfig
+    metadata:
+      name: yawl-backend-config
+    spec:
+      healthCheck:
+        checkIntervalSec: 10
+        timeoutSec: 5
+        healthyThreshold: 2
+        unhealthyThreshold: 3
+        type: HTTP
+        requestPath: /engine/health
+        port: 8080
+      connectionDraining:
+        drainingTimeoutSec: 60
+      timeoutSec: 300
+
+  - apiVersion: networking.gke.io/v1beta1
+    kind: FrontendConfig
+    metadata:
+      name: yawl-frontend-config
+    spec:
+      redirectToHttps:
+        enabled: true
+      sslPolicy: yawl-ssl-policy
+
+# -----------------------------------------------------------------------------
+# GKE Regional Cluster Settings
+# -----------------------------------------------------------------------------
+regional:
+  enabled: true
+  zones:
+    - us-central1-a
+    - us-central1-b
+    - us-central1-c
+
+# -----------------------------------------------------------------------------
+# Cloud Armor (WAF)
+# -----------------------------------------------------------------------------
+cloudArmor:
+  enabled: true
+  policyName: yawl-security-policy

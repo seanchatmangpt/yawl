@@ -1,0 +1,108 @@
+{{- if .Values.cloudsqlProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.fullname" . }}-cloudsql-proxy
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cloudsql-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-cloudsql-proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-cloudsql-proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: yawl
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: cloudsql-proxy
+          image: {{ .Values.cloudsqlProxy.image.repository }}:{{ .Values.cloudsqlProxy.image.tag }}
+          imagePullPolicy: {{ .Values.cloudsqlProxy.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - "--structured-logs"
+            - "--port={{ .Values.cloudsqlProxy.proxyPort }}"
+            - "{{ .Values.cloudsqlProxy.instanceConnectionName }}"
+          {{- if .Values.cloudsqlProxy.serviceAccountJson }}
+            - "--credentials-file=/secrets/service-account.json"
+          {{- end }}
+          ports:
+            - name: postgres
+              containerPort: {{ .Values.cloudsqlProxy.proxyPort }}
+              protocol: TCP
+          {{- if .Values.cloudsqlProxy.serviceAccountJson }}
+          volumeMounts:
+            - name: service-account
+              mountPath: /secrets
+              readOnly: true
+          {{- end }}
+          resources:
+            {{- toYaml .Values.cloudsqlProxy.resources | nindent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.cloudsqlProxy.proxyPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.cloudsqlProxy.proxyPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      {{- if .Values.cloudsqlProxy.serviceAccountJson }}
+      volumes:
+        - name: service-account
+          secret:
+            secretName: {{ include "yawl.fullname" . }}-cloudsql-sa
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "yawl.fullname" . }}-cloudsql-proxy
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cloudsql-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "yawl.name" . }}-cloudsql-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: postgres
+      port: {{ .Values.cloudsqlProxy.proxyPort }}
+      targetPort: {{ .Values.cloudsqlProxy.proxyPort }}
+      protocol: TCP
+---
+{{- if .Values.cloudsqlProxy.serviceAccountJson }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "yawl.fullname" . }}-cloudsql-sa
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cloudsql-sa
+type: Opaque
+data:
+  service-account.json: {{ .Values.cloudsqlProxy.serviceAccountJson | b64enc }}
+{{- end }}
+{{- end }}

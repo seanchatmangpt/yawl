@@ -1,0 +1,264 @@
+# AWS IAM Policies for YAWL Multi-Cloud Deployment
+# Least-privilege policies for YAWL services
+
+# Trust Policy for EKS Pod Identity
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YAWL IAM Roles and Policies for EKS'
+
+---
+# Trust Policy (IRSA - IAM Roles for Service Accounts)
+TrustPolicy:
+  Version: '2012-10-17'
+  Statement:
+    - Effect: Allow
+      Principal:
+        Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProvider}'
+      Action: 'sts:AssumeRoleWithWebIdentity'
+      Condition:
+        StringEquals:
+          !Sub '${OIDCProvider}:aud': 'sts.amazonaws.com'
+        StringLike:
+          !Sub '${OIDCProvider}:sub': 'system:serviceaccount:yawl:*'
+
+---
+# YAWL Engine Role
+YawlEngineRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: yawl-engine
+    Description: Service role for YAWL workflow engine
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProvider}'
+          Action: 'sts:AssumeRoleWithWebIdentity'
+          Condition:
+            StringEquals:
+              !Sub '${OIDCProvider}:aud': 'sts.amazonaws.com'
+            StringLike:
+              !Sub '${OIDCProvider}:sub': 'system:serviceaccount:yawl:yawl-engine'
+    ManagedPolicyArns:
+      - !Ref YawlEnginePolicy
+    Tags:
+      - Key: Application
+        Value: YAWL
+      - Key: Component
+        Value: Engine
+      - Key: Security
+        Value: Restricted
+
+---
+# YAWL Engine Policy
+YawlEnginePolicy:
+  Type: AWS::IAM::ManagedPolicy
+  Properties:
+    Description: Policy for YAWL Engine service
+    PolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        # Secrets Manager access
+        - Sid: SecretsAccess
+          Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+            - secretsmanager:DescribeSecret
+          Resource:
+            - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:yawl/*'
+
+        # S3 access for specifications
+        - Sid: S3Access
+          Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - !Sub 'arn:aws:s3:::${SpecificationsBucket}'
+            - !Sub 'arn:aws:s3:::${SpecificationsBucket}/*'
+
+        # RDS connectivity (via IAM authentication)
+        - Sid: RDSIAMAuth
+          Effect: Allow
+          Action:
+            - rds-db:connect
+          Resource:
+            - !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${DBClusterIdentifier}/yawl'
+
+        # SQS for messaging
+        - Sid: SQSAccess
+          Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !Sub 'arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:yawl-*'
+
+        # SNS for notifications
+        - Sid: SNSAccess
+          Effect: Allow
+          Action:
+            - sns:Publish
+          Resource:
+            - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:yawl-*'
+
+        # CloudWatch for logging
+        - Sid: CloudWatchLogs
+          Effect: Allow
+          Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+          Resource:
+            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/yawl/*:*'
+
+        # CloudWatch Metrics
+        - Sid: CloudWatchMetrics
+          Effect: Allow
+          Action:
+            - cloudwatch:PutMetricData
+          Resource: '*'
+          Condition:
+            StringEquals:
+              cloudwatch:namespace: YAWL/Engine
+
+        # X-Ray tracing
+        - Sid: XRayAccess
+          Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+            - xray:GetSamplingRules
+            - xray:GetSamplingTargets
+            - xray:GetSamplingStatisticSummaries
+          Resource: '*'
+
+---
+# YAWL Resource Service Role
+YawlResourceRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: yawl-resource-service
+    Description: Service role for YAWL resource service
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProvider}'
+          Action: 'sts:AssumeRoleWithWebIdentity'
+          Condition:
+            StringEquals:
+              !Sub '${OIDCProvider}:aud': 'sts.amazonaws.com'
+            StringLike:
+              !Sub '${OIDCProvider}:sub': 'system:serviceaccount:yawl:yawl-resource-service'
+
+---
+# YAWL Resource Service Policy
+YawlResourcePolicy:
+  Type: AWS::IAM::ManagedPolicy
+  Properties:
+    Description: Policy for YAWL Resource service
+    PolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        # Secrets Manager for LDAP credentials
+        - Sid: SecretsAccess
+          Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:yawl/ldap-*'
+
+        # S3 for configuration
+        - Sid: S3Access
+          Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:ListBucket
+          Resource:
+            - !Sub 'arn:aws:s3:::${ConfigBucket}'
+            - !Sub 'arn:aws:s3:::${ConfigBucket}/*'
+
+        # CloudWatch Logs
+        - Sid: CloudWatchLogs
+          Effect: Allow
+          Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/yawl/*:*'
+
+---
+# YAWL Monitoring Role (Read-only)
+YawlMonitoringRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: yawl-monitoring
+    Description: Read-only role for monitoring YAWL
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProvider}'
+          Action: 'sts:AssumeRoleWithWebIdentity'
+          Condition:
+            StringEquals:
+              !Sub '${OIDCProvider}:aud': 'sts.amazonaws.com'
+            StringLike:
+              !Sub '${OIDCProvider}:sub': 'system:serviceaccount:yawl-monitoring:*'
+
+---
+# YAWL Monitoring Policy
+YawlMonitoringPolicy:
+  Type: AWS::IAM::ManagedPolicy
+  Properties:
+    Description: Read-only monitoring policy for YAWL
+    PolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        # CloudWatch read access
+        - Sid: CloudWatchRead
+          Effect: Allow
+          Action:
+            - cloudwatch:Describe*
+            - cloudwatch:Get*
+            - cloudwatch:List*
+            - logs:Describe*
+            - logs:Get*
+            - logs:FilterLogEvents
+          Resource: '*'
+
+        # X-Ray read access
+        - Sid: XRayRead
+          Effect: Allow
+          Action:
+            - xray:Get*
+            - xray:BatchGetTraces
+            - xray:GetTraceSummaries
+          Resource: '*'
+
+        # EKS read access for monitoring
+        - Sid: EKSRead
+          Effect: Allow
+          Action:
+            - eks:DescribeCluster
+            - eks:ListClusters
+            - eks:AccessKubernetesApi
+          Resource:
+            - !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/yawl-*'
+
+---
+# Service Account Role Association (EKS IRSA)
+ServiceAccountRoleMapping:
+  Type: Custom::ServiceAccountRoleMapping
+  Properties:
+    ServiceToken: !GetAtt RoleMappingFunction.Arn
+    RoleArn: !GetAtt YawlEngineRole.Arn
+    ServiceAccount: yawl-engine
+    Namespace: yawl

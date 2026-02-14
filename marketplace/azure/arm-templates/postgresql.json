@@ -1,0 +1,346 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "YAWL Workflow Engine - Azure Database for PostgreSQL Flexible Server Template",
+    "version": "5.2.0"
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for resource deployment"
+      }
+    },
+    "postgresqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the PostgreSQL server"
+      }
+    },
+    "postgresqlAdminLogin": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL administrator username"
+      }
+    },
+    "postgresqlAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL administrator password"
+      }
+    },
+    "postgresqlSkuName": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL SKU name"
+      }
+    },
+    "postgresqlStorageSizeGB": {
+      "type": "int",
+      "metadata": {
+        "description": "PostgreSQL storage size in GB"
+      }
+    },
+    "postgresqlVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL version"
+      }
+    },
+    "postgresqlHighAvailability": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL high availability mode"
+      }
+    },
+    "subnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Subnet ID for private endpoint"
+      }
+    },
+    "keyVaultId": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault resource ID"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "metadata": {
+        "description": "Resource tags"
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "yawl",
+      "metadata": {
+        "description": "Name of the database"
+      }
+    },
+    "backupRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 7,
+      "maxValue": 35,
+      "metadata": {
+        "description": "Backup retention in days"
+      }
+    },
+    "geoRedundantBackup": {
+      "type": "string",
+      "defaultValue": "Enabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ],
+      "metadata": {
+        "description": "Enable geo-redundant backup"
+      }
+    },
+    "delegatedSubnetResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Delegated subnet resource ID for VNet integration"
+      }
+    },
+    "privateDnsZoneArmResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Private DNS zone resource ID"
+      }
+    }
+  },
+  "variables": {
+    "postgresqlServerId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]",
+    "privateEndpointName": "[concat(parameters('postgresqlServerName'), '-pe')]",
+    "privateDnsZoneName": "privatelink.postgres.database.azure.com",
+    "privateDnsZoneGroupName": "default",
+    "secretNameConnection": "DatabaseConnectionString",
+    "secretNamePassword": "DatabasePassword"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[parameters('postgresqlServerName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('postgresqlSkuName')]",
+        "tier": "GeneralPurpose"
+      },
+      "properties": {
+        "version": "[parameters('postgresqlVersion')]",
+        "administratorLogin": "[parameters('postgresqlAdminLogin')]",
+        "administratorLoginPassword": "[parameters('postgresqlAdminPassword')]",
+        "storage": {
+          "storageSizeGB": "[parameters('postgresqlStorageSizeGB')]",
+          "autoGrow": "Enabled",
+          "tier": "GeneralPurpose"
+        },
+        "backup": {
+          "backupRetentionDays": "[parameters('backupRetentionDays')]",
+          "geoRedundantBackup": "[parameters('geoRedundantBackup')]"
+        },
+        "highAvailability": {
+          "mode": "[parameters('postgresqlHighAvailability')]"
+        },
+        "network": {
+          "publicNetworkAccess": "Disabled",
+          "delegatedSubnetResourceId": "[if(not(empty(parameters('delegatedSubnetResourceId'))), parameters('delegatedSubnetResourceId'), json('null'))]",
+          "privateDnsZoneArmResourceId": "[if(not(empty(parameters('privateDnsZoneArmResourceId'))), parameters('privateDnsZoneArmResourceId'), json('null'))]"
+        },
+        "authConfig": {
+          "activeDirectoryAuth": "Enabled",
+          "passwordAuth": "Enabled"
+        },
+        "dataEncryption": {
+          "type": "SystemManaged"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[concat(parameters('postgresqlServerName'), '/', parameters('databaseName'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "charset": "utf8",
+        "collation": "en_US.utf8"
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[concat(parameters('postgresqlServerName'), '/AllowAzureServices')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[concat(parameters('postgresqlServerName'), '/ssl_enforcement')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "value": "on",
+        "source": "user-override"
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[concat(parameters('postgresqlServerName'), '/ssl_min_protocol_version')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "value": "TLSv1.2",
+        "source": "user-override"
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('privateEndpointName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "subnet": {
+          "id": "[parameters('subnetId')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "[concat(variables('privateEndpointName'), '-connection')]",
+            "properties": {
+              "privateLinkServiceId": "[variables('postgresqlServerId')]",
+              "groupIds": [
+                "postgresqlServer"
+              ],
+              "privateLinkServiceConnectionState": {
+                "status": "Approved",
+                "description": "Auto-approved",
+                "actionsRequired": "None"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('privateDnsZoneName')]",
+      "location": "global",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[concat(variables('privateDnsZoneName'), '/', parameters('postgresqlServerName'), '-vnetlink')]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[split(parameters('subnetId'), '/subnets')[0]]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[concat(variables('privateEndpointName'), '/', variables('privateDnsZoneGroupName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+      ],
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "postgresql-dns-config",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-02-01",
+      "name": "[concat(split(parameters('keyVaultId'), '/')[8], '/', variables('secretNameConnection'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+      ],
+      "properties": {
+        "value": "[concat('jdbc:postgresql://', reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName')), '2023-03-01-preview').fullyQualifiedDomainName, ':5432/', parameters('databaseName'), '?sslmode=require')]",
+        "contentType": "application/x-jdbc-connection-string",
+        "attributes": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-02-01",
+      "name": "[concat(split(parameters('keyVaultId'), '/')[8], '/', variables('secretNamePassword'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "value": "[parameters('postgresqlAdminPassword')]",
+        "contentType": "password",
+        "attributes": {
+          "enabled": true
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "serverId": {
+      "type": "string",
+      "value": "[variables('postgresqlServerId')]"
+    },
+    "serverName": {
+      "type": "string",
+      "value": "[parameters('postgresqlServerName')]"
+    },
+    "serverFqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName')), '2023-03-01-preview').fullyQualifiedDomainName]"
+    },
+    "databaseName": {
+      "type": "string",
+      "value": "[parameters('databaseName')]"
+    },
+    "privateEndpointId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]"
+    },
+    "connectionStringSecretId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.KeyVault/vaults/secrets', split(parameters('keyVaultId'), '/')[8], variables('secretNameConnection'))]"
+    }
+  }
+}

@@ -1,0 +1,403 @@
+# Prometheus Alerting Rules for YAWL Workflow Engine
+# Groups: YAWL Engine, JVM, Database, Infrastructure
+
+groups:
+  # YAWL Engine Workflow Alerts
+  - name: yawl_engine.rules
+    interval: 30s
+    rules:
+      # Case execution alerts
+      - alert: YAWLCaseExecutionHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_case_execution_duration_seconds_bucket[5m])) by (le, case_type)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+          category: performance
+        annotations:
+          summary: "High case execution latency detected"
+          description: "Case type {{ $labels.case_type }} has 95th percentile latency of {{ $value | humanizeDuration }}. Expected < 30s."
+          runbook_url: "https://runbooks.example.com/yawl/high-latency"
+
+      - alert: YAWLCaseExecutionCriticalLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(yawl_case_execution_duration_seconds_bucket[5m])) by (le, case_type)
+          ) > 60
+        for: 3m
+        labels:
+          severity: critical
+          service: yawl-engine
+          category: performance
+        annotations:
+          summary: "Critical case execution latency"
+          description: "Case type {{ $labels.case_type }} has 99th percentile latency of {{ $value | humanizeDuration }}. Immediate attention required."
+          runbook_url: "https://runbooks.example.com/yawl/critical-latency"
+
+      # Work item alerts
+      - alert: YAWLWorkItemQueueDepthHigh
+        expr: yawl_workitem_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+          category: capacity
+        annotations:
+          summary: "High work item queue depth"
+          description: "Work item queue has {{ $value }} items pending. May indicate processing bottleneck."
+          runbook_url: "https://runbooks.example.com/yawl/queue-depth"
+
+      - alert: YAWLWorkItemQueueDepthCritical
+        expr: yawl_workitem_queue_depth > 5000
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl-engine
+          category: capacity
+        annotations:
+          summary: "Critical work item queue depth"
+          description: "Work item queue has {{ $value }} items pending. System may become unresponsive."
+          runbook_url: "https://runbooks.example.com/yawl/queue-critical"
+
+      # Case failure rate
+      - alert: YAWLCaseFailureRateHigh
+        expr: |
+          sum(rate(yawl_case_failed_total[5m])) by (case_type)
+          /
+          sum(rate(yawl_case_started_total[5m])) by (case_type)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+          category: reliability
+        annotations:
+          summary: "High case failure rate"
+          description: "Case type {{ $labels.case_type }} has failure rate of {{ $value | humanizePercentage }}. Expected < 5%."
+          runbook_url: "https://runbooks.example.com/yawl/failure-rate"
+
+      - alert: YAWLCaseFailureRateCritical
+        expr: |
+          sum(rate(yawl_case_failed_total[5m])) by (case_type)
+          /
+          sum(rate(yawl_case_started_total[5m])) by (case_type)
+          > 0.15
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl-engine
+          category: reliability
+        annotations:
+          summary: "Critical case failure rate"
+          description: "Case type {{ $labels.case_type }} has failure rate of {{ $value | humanizePercentage }}. Immediate investigation required."
+          runbook_url: "https://runbooks.example.com/yawl/failure-critical"
+
+      # Task timeout alerts
+      - alert: YAWLTaskTimeoutsIncreasing
+        expr: |
+          increase(yawl_task_timeout_total[15m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+          category: reliability
+        annotations:
+          summary: "Increasing task timeouts"
+          description: "{{ $value }} tasks have timed out in the last 15 minutes for task {{ $labels.task_name }}."
+          runbook_url: "https://runbooks.example.com/yawl/task-timeout"
+
+      # Worklet alerts
+      - alert: YAWLWorkletServiceDown
+        expr: up{job="yawl-worklet-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl-worklet-service
+          category: availability
+        annotations:
+          summary: "Worklet service is down"
+          description: "Worklet service at {{ $labels.instance }} is not responding."
+          runbook_url: "https://runbooks.example.com/yawl/service-down"
+
+  # Resource Service Alerts
+  - name: yawl_resource.rules
+    interval: 30s
+    rules:
+      - alert: YAWLResourceServiceDown
+        expr: up{job="yawl-resource-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl-resource-service
+          category: availability
+        annotations:
+          summary: "Resource service is down"
+          description: "Resource service at {{ $labels.instance }} is not responding."
+          runbook_url: "https://runbooks.example.com/yawl/service-down"
+
+      - alert: YAWLResourceAllocationHigh
+        expr: |
+          yawl_resource_allocated / yawl_resource_capacity > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: yawl-resource-service
+          category: capacity
+        annotations:
+          summary: "High resource allocation"
+          description: "Resource pool {{ $labels.pool_name }} is at {{ $value | humanizePercentage }} capacity."
+          runbook_url: "https://runbooks.example.com/yawl/resource-capacity"
+
+      - alert: YAWLResourceAllocationCritical
+        expr: |
+          yawl_resource_allocated / yawl_resource_capacity > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          service: yawl-resource-service
+          category: capacity
+        annotations:
+          summary: "Critical resource allocation"
+          description: "Resource pool {{ $labels.pool_name }} is at {{ $value | humanizePercentage }} capacity. Work items may queue."
+          runbook_url: "https://runbooks.example.com/yawl/resource-critical"
+
+      - alert: YAWLResourceQueueWaitTimeHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_resource_queue_wait_seconds_bucket[5m])) by (le)
+          ) > 300
+        for: 10m
+        labels:
+          severity: warning
+          service: yawl-resource-service
+          category: performance
+        annotations:
+          summary: "High resource queue wait time"
+          description: "95th percentile wait time is {{ $value | humanizeDuration }}. Expected < 5 minutes."
+          runbook_url: "https://runbooks.example.com/yawl/queue-wait"
+
+  # JVM Health Alerts
+  - name: jvm.rules
+    interval: 30s
+    rules:
+      - alert: JVMHeapUsageHigh
+        expr: |
+          jvm_heap_used_bytes / jvm_heap_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          category: memory
+        annotations:
+          summary: "High JVM heap usage"
+          description: "Service {{ $labels.service }} has heap usage at {{ $value | humanizePercentage }}."
+          runbook_url: "https://runbooks.example.com/jvm/heap-usage"
+
+      - alert: JVMHeapUsageCritical
+        expr: |
+          jvm_heap_used_bytes / jvm_heap_max_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          category: memory
+        annotations:
+          summary: "Critical JVM heap usage"
+          description: "Service {{ $labels.service }} has heap usage at {{ $value | humanizePercentage }}. May experience OOM."
+          runbook_url: "https://runbooks.example.com/jvm/heap-critical"
+
+      - alert: JVMGCPauseTimeHigh
+        expr: |
+          rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High GC pause time"
+          description: "Service {{ $labels.service }} has average GC pause of {{ $value | humanizeDuration }}."
+          runbook_url: "https://runbooks.example.com/jvm/gc-pause"
+
+      - alert: JVMGCFrequentFullGC
+        expr: |
+          increase(jvm_gc_seconds_count{gc="PS MarkSweep"}[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Frequent Full GC detected"
+          description: "Service {{ $labels.service }} has experienced {{ $value }} Full GC cycles in the last hour."
+          runbook_url: "https://runbooks.example.com/jvm/full-gc"
+
+      - alert: JVMThreadCountHigh
+        expr: jvm_threads_current > 500
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High thread count"
+          description: "Service {{ $labels.service }} has {{ $value }} threads. May indicate thread leak."
+          runbook_url: "https://runbooks.example.com/jvm/threads"
+
+      - alert: JVMDeadlockedThreads
+        expr: jvm_threads_deadlocked > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Deadlocked threads detected"
+          description: "Service {{ $labels.service }} has {{ $value }} deadlocked threads. Restart may be required."
+          runbook_url: "https://runbooks.example.com/jvm/deadlock"
+
+  # Database Alerts
+  - name: database.rules
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          hikaricp_connections_active / hikaricp_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Connection pool {{ $labels.pool }} is at {{ $value | humanizePercentage }} utilization."
+          runbook_url: "https://runbooks.example.com/db/connection-pool"
+
+      - alert: DatabaseConnectionPoolExhaustedCritical
+        expr: |
+          hikaricp_connections_active / hikaricp_connections_max > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection pool critically exhausted"
+          description: "Connection pool {{ $labels.pool }} is at {{ $value | humanizePercentage }} utilization. Requests may fail."
+          runbook_url: "https://runbooks.example.com/db/connection-critical"
+
+      - alert: DatabaseQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(hibernate_query_duration_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High database query latency"
+          description: "95th percentile query latency is {{ $value | humanizeDuration }}. Expected < 1s."
+          runbook_url: "https://runbooks.example.com/db/query-latency"
+
+      - alert: PostgresReplicationLag
+        expr: pg_replication_lag_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL replication lag detected"
+          description: "Replication lag is {{ $value | humanizeDuration }}. May cause stale reads."
+          runbook_url: "https://runbooks.example.com/db/replication-lag"
+
+  # Infrastructure Alerts
+  - name: infrastructure.rules
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(process_cpu_seconds_total[5m])) * 100) < 20
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "Instance {{ $labels.instance }} has CPU usage above 80%."
+          runbook_url: "https://runbooks.example.com/infra/cpu-usage"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Instance {{ $labels.instance }} has memory usage at {{ $value }}%."
+          runbook_url: "https://runbooks.example.com/infra/memory-usage"
+
+      - alert: DiskSpaceLow
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value }}% full."
+          runbook_url: "https://runbooks.example.com/infra/disk-space"
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Critical disk space"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value }}% full. Immediate action required."
+          runbook_url: "https://runbooks.example.com/infra/disk-critical"
+
+      - alert: ServiceRestartingFrequently
+        expr: |
+          increase(process_start_time_seconds[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: availability
+        annotations:
+          summary: "Service restarting frequently"
+          description: "Service {{ $labels.service }} has restarted {{ $value }} times in the last hour."
+          runbook_url: "https://runbooks.example.com/infra/restarts"
+
+  # SLO-based Alerts
+  - name: slo.rules
+    interval: 30s
+    rules:
+      - alert: ErrorBudgetBurnRate
+        expr: |
+          (
+            sum(rate(yawl_case_failed_total[1h]))
+            /
+            sum(rate(yawl_case_started_total[1h]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          category: slo
+        annotations:
+          summary: "Error budget burn rate high"
+          description: "Error rate over 1h is {{ $value | humanizePercentage }}. Error budget being consumed faster than expected."
+          runbook_url: "https://runbooks.example.com/slo/error-budget"
+
+      - alert: ErrorBudgetExhausted
+        expr: |
+          yawl_error_budget_remaining < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "Error budget nearly exhausted"
+          description: "Only {{ $value | humanizePercentage }} of error budget remaining for this SLO period."
+          runbook_url: "https://runbooks.example.com/slo/budget-exhausted"

@@ -1,0 +1,144 @@
+# Hadolint - Dockerfile Linting Configuration
+# https://github.com/hadolint/hadolint
+#
+# Usage:
+#   hadolint --config hadolint.yaml Dockerfile
+#   hadolint - < Dockerfile
+
+# Rule configuration
+# Each rule can be configured with:
+#   - ignored: completely ignore this rule
+#   - severity: change the severity level (error, warning, info, style)
+
+rules:
+  # DL rules (Dockerfile related)
+
+  # Use official base images
+  DL3006:
+    severity: error
+    # Always tag the version of an image explicitly
+
+  # Pin package versions in apt-get
+  DL3008:
+    severity: warning
+    # Pin versions in apt-get install
+
+  # Pin package versions in apk add
+  DL3018:
+    severity: warning
+    # Pin versions in apk add
+
+  # Avoid additional packages in apk add
+  DL3019:
+    severity: info
+    # Use the --no-cache switch
+
+  # Use COPY instead of ADD for files and folders
+  DL3020:
+    severity: error
+
+  # COPY with --chown
+  DL3024:
+    severity: error
+    # The COPY --chown flag is not supported
+
+  # Avoid apt-get install -y without no-install-recommends
+  DL3015:
+    severity: warning
+
+  # Pin package versions in yum install
+  DL3033:
+    severity: warning
+
+  # Prefer COPY over ADD
+  DL3036:
+    severity: error
+    # Do not use ADD unless absolutely necessary
+
+  # Use WORKDIR instead of cd
+  DL3000:
+    severity: warning
+    # Use WORKDIR to switch directories
+
+  # Do not use sudo
+  DL3004:
+    severity: error
+    # Do not use sudo as it leaks secrets
+
+  # Shell check (SC rules)
+
+  # Quote variables
+  SC2086:
+    severity: error
+    # Double quote to prevent globbing and word splitting
+
+  # Use -n instead of ! -z
+  SC2236:
+    severity: style
+
+  # Always use read -r
+  SC2162:
+    severity: warning
+
+  # Use [[ ]] instead of [ ]
+  SC2164:
+    severity: style
+    # Use cd ... || exit
+
+  # Use -f flag with rm
+  SC2115:
+    severity: warning
+    # Use rm -f to avoid errors on missing files
+
+# Ignored rules
+ignored:
+  # - DL3000  # Uncomment to ignore specific rules
+  # - DL3008
+
+# Trusted registries
+trustedRegistries:
+  - docker.io
+  - gcr.io
+  - quay.io
+  - registry.internal.example.com
+
+# Label schemas (enforce specific labels)
+label-schemas:
+  org.opencontainers.image.source:
+    severity: info
+    required: true
+  org.opencontainers.image.vendor:
+    severity: info
+    required: true
+  org.opencontainers.image.version:
+    severity: info
+    required: true
+  org.opencontainers.image.title:
+    severity: info
+    required: false
+  org.opencontainers.image.description:
+    severity: info
+    required: false
+  security-hardened:
+    severity: info
+    required: true
+    valueRegex: "true"
+
+# File ignore patterns
+ignore:
+  - "**/test/Dockerfile*"
+  - "**/tests/Dockerfile*"
+  - "**/examples/Dockerfile*"
+
+# Output format
+format: sarif
+
+# Strict mode (treat warnings as errors)
+strict: false
+
+# Disable inline ignores
+no-inline-ignore: false
+
+# Global severity override
+# Overrides all rule severities
+# severity: error

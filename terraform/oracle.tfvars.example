@@ -1,0 +1,107 @@
+#------------------------------------------------------------------------------
+# YAWL Oracle Cloud Environment Variables Example
+# Version: 1.0.0
+#
+# Example .tfvars file for Oracle Cloud deployment
+# Copy to terraform.tfvars and customize
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# General Configuration
+#------------------------------------------------------------------------------
+
+project_name     = "yawl"
+environment      = "dev"
+cloud_provider   = "oracle"
+
+common_tags = {
+  Team        = "platform"
+  CostCenter  = "development"
+  Owner       = "platform-team"
+}
+
+#------------------------------------------------------------------------------
+# Oracle Cloud-Specific Configuration (REQUIRED)
+#------------------------------------------------------------------------------
+
+oci_tenancy_id     = ""  # Your OCI tenancy OCID - REQUIRED
+oci_compartment_id = ""  # Your compartment OCID - REQUIRED
+oci_region         = "us-phoenix-1"
+
+#------------------------------------------------------------------------------
+# Networking Configuration
+#------------------------------------------------------------------------------
+
+vpc_cidr = "10.0.0.0/16"
+
+subnet_cidrs = {
+  private = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  data    = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+}
+
+enable_nat_gateway  = true
+enable_vpn_gateway  = false
+allowed_cidr_blocks = ["0.0.0.0/0"]
+
+#------------------------------------------------------------------------------
+# OKE Configuration
+#------------------------------------------------------------------------------
+
+kubernetes_version    = "v1.28.3"
+oke_node_shape        = "VM.Standard.E4.Flex"
+oke_node_ocpus        = 4
+oke_node_memory_gb    = 16
+node_count_min        = 3
+node_count_max        = 10
+node_disk_size_gb     = 100
+enable_node_auto_scaling = true
+
+node_pool_labels = {
+  environment = "dev"
+  workload    = "general"
+}
+
+#------------------------------------------------------------------------------
+# Autonomous Database Configuration
+#------------------------------------------------------------------------------
+
+database_version              = "19c"
+database_instance_class       = "2"  # CPU core count
+database_storage_gb           = 1024  # Storage in GB (1 TB minimum)
+database_multi_az             = true
+database_backup_retention_days = 30
+database_deletion_protection  = true
+database_encryption           = true
+database_username             = "ADMIN"
+
+#------------------------------------------------------------------------------
+# Object Storage Configuration
+#------------------------------------------------------------------------------
+
+storage_bucket_names   = ["data", "logs", "backups"]
+storage_versioning     = true
+storage_lifecycle_days = 90
+storage_archive_days   = 365
+
+#------------------------------------------------------------------------------
+# Monitoring Configuration
+#------------------------------------------------------------------------------
+
+enable_monitoring  = true
+enable_logging     = true
+enable_alerting    = true
+log_retention_days = 30
+metric_retention_days = 30
+
+alert_email_recipients = ["alerts@yourcompany.com"]
+alert_slack_webhook    = ""
+
+#------------------------------------------------------------------------------
+# Security Configuration
+#------------------------------------------------------------------------------
+
+enable_waf              = true
+enable_ddos_protection  = true
+enable_private_endpoint = true
+kms_key_id              = ""  # Add Vault key for encryption

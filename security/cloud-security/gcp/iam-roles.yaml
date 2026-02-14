@@ -1,0 +1,192 @@
+# GCP IAM Roles for YAWL Multi-Cloud Deployment
+# Custom roles following least-privilege principle
+
+# Custom Role: YAWL Engine Service
+title: "YAWL Engine Service"
+description: "Minimal permissions for YAWL workflow engine"
+stage: "GA"
+includedPermissions:
+  # Secret access
+  - secretmanager.versions.access
+  - secretmanager.versions.list
+  # Cloud SQL (if using Cloud SQL)
+  - cloudsql.instances.connect
+  - cloudsql.instances.get
+  # Pub/Sub (for event messaging)
+  - pubsub.subscriptions.consume
+  - pubsub.subscriptions.create
+  - pubsub.topics.publish
+  - pubsub.topics.attachSubscription
+  # Cloud Storage (for specification files)
+  - storage.objects.get
+  - storage.objects.list
+  - storage.objects.create
+  - storage.objects.delete
+  # Cloud Monitoring
+  - monitoring.metricDescriptors.create
+  - monitoring.metricDescriptors.get
+  - monitoring.timeSeries.create
+  # Cloud Logging
+  - logging.logEntries.create
+  - logging.logEntries.list
+---
+# Custom Role: YAWL Resource Service
+title: "YAWL Resource Service"
+description: "Permissions for YAWL resource management"
+stage: "GA"
+includedPermissions:
+  # Secret access
+  - secretmanager.versions.access
+  # Cloud Identity
+  - cloudidentity.groups.get
+  - cloudidentity.groups.list
+  - cloudidentity.groups.memberships.get
+  - cloudidentity.groups.memberships.list
+  # IAM
+  - iam.serviceAccounts.get
+  - iam.serviceAccounts.list
+  # Cloud Storage
+  - storage.objects.get
+  - storage.objects.list
+---
+# Custom Role: YAWL Monitoring
+title: "YAWL Monitoring"
+description: "Read-only monitoring permissions"
+stage: "GA"
+includedPermissions:
+  # Monitoring
+  - monitoring.metricDescriptors.list
+  - monitoring.metricDescriptors.get
+  - monitoring.timeSeries.list
+  - monitoring.dashboards.get
+  - monitoring.dashboards.list
+  # Logging
+  - logging.logEntries.list
+  - logging.logs.list
+  # Cloud Trace
+  - cloudtrace.traces.get
+  - cloudtrace.traces.list
+  # Compute
+  - compute.instances.get
+  - compute.instances.list
+  # Container
+  - container.clusters.get
+  - container.clusters.list
+  - container.pods.get
+  - container.pods.list
+---
+# Service Account for YAWL Engine
+resource "google_service_account" "yawl_engine" {
+  account_id   = "yawl-engine"
+  display_name = "YAWL Engine Service Account"
+  description  = "Service account for YAWL workflow engine"
+  project      = var.project_id
+}
+---
+# Service Account for YAWL Resource Service
+resource "google_service_account" "yawl_resource" {
+  account_id   = "yawl-resource"
+  display_name = "YAWL Resource Service Account"
+  description  = "Service account for YAWL resource management"
+  project      = var.project_id
+}
+---
+# IAM Policy Binding: Engine to Custom Role
+resource "google_project_iam_member" "yawl_engine_custom" {
+  project = var.project_id
+  role    = "projects/${var.project_id}/roles/yawlEngineService"
+  member  = "serviceAccount:${google_service_account.yawl_engine.email}"
+}
+---
+# IAM Policy Binding: Engine to Secret Accessor
+resource "google_project_iam_member" "yawl_engine_secrets" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.yawl_engine.email}"
+}
+---
+# IAM Policy Binding: Resource Service
+resource "google_project_iam_member" "yawl_resource_custom" {
+  project = var.project_id
+  role    = "projects/${var.project_id}/roles/yawlResourceService"
+  member  = "serviceAccount:${google_service_account.yawl_resource.email}"
+}
+---
+# Workload Identity (for GKE)
+resource "google_service_account_iam_member" "yawl_engine_workload_identity" {
+  service_account_id = google_service_account.yawl_engine.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[yawl/yawl-engine]"
+}
+---
+# Organization Policy Constraints
+# Enforce security best practices at organization level
+resource "google_org_policy_policy" "require_shielded_vm" {
+  name   = "projects/${var.project_id}/policies/compute.requireShieldedVm"
+  parent = "projects/${var.project_id}"
+
+  spec {
+    rules {
+      enforce = "TRUE"
+    }
+  }
+}
+---
+resource "google_org_policy_policy" "vm_external_ip" {
+  name   = "projects/${var.project_id}/policies/compute.vmExternalIpAccess"
+  parent = "projects/${var.project_id}"
+
+  spec {
+    rules {
+      deny {
+        all = "TRUE"
+      }
+    }
+  }
+}
+---
+resource "google_org_policy_policy" "require_os_login" {
+  name   = "projects/${var.project_id}/policies/compute.requireOsLogin"
+  parent = "projects/${var.project_id}"
+
+  spec {
+    rules {
+      enforce = "TRUE"
+    }
+  }
+}
+---
+# VPC Service Controls (for sensitive data)
+resource "google_access_context_manager_service_perimeter" "yawl_perimeter" {
+  parent         = "accessPolicies/${var.access_policy_name}"
+  name           = "accessPolicies/${var.access_policy_name}/servicePerimeters/yawl_perimeter"
+  title          = "YAWL Security Perimeter"
+  perimeter_type = "PERIMETER_TYPE_REGULAR"
+
+  spec {
+    restricted_services = [
+      "secretmanager.googleapis.com",
+      "cloudsql.googleapis.com"
+    ]
+    resources = [
+      "projects/${var.project_number}"
+    ]
+    ingress_policies {
+      ingress_from {
+        identity_type = "ANY_IDENTITY"
+        sources {
+          access_level = "*"
+        }
+      }
+      ingress_to {
+        resources = ["*"]
+        operations {
+          service_name = "*"
+          method_selectors {
+            method = "*"
+          }
+        }
+      }
+    }
+  }
+}

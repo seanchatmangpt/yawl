@@ -1,0 +1,329 @@
+# Kyverno Policies for YAWL
+# Kubernetes-native policy management with mutation and validation
+
+---
+# Require non-root containers
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-non-root
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: kyverno-policies
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: check-runAsNonRoot
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Running as root is not allowed. Set runAsNonRoot to true."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+    - name: check-runAsUser
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Containers must run as non-root user (UID >= 10001)"
+        pattern:
+          spec:
+            securityContext:
+              runAsUser: ">=10001"
+---
+# Auto-add security contexts to pods
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-auto-security-context
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  rules:
+    - name: add-pod-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      mutate:
+        patchStrategicMerge:
+          spec:
+            securityContext:
+              +(runAsNonRoot): true
+              +(runAsUser): 10001
+              +(runAsGroup): 10001
+              +(fsGroup): 10001
+              +(seccompProfile):
+                type: RuntimeDefault
+    - name: add-container-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - name: "{{ element.name }}"
+                    securityContext:
+                      +(allowPrivilegeEscalation): false
+                      +(readOnlyRootFilesystem): true
+                      +(capabilities):
+                        drop:
+                          - ALL
+---
+# Require resource limits
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-resource-limits
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: validate-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "CPU and memory resource requests and limits are required"
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+---
+# Block latest image tag
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-block-latest-tag
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: block-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Using the 'latest' image tag is not allowed"
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+---
+# Auto-add labels
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-auto-labels
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  rules:
+    - name: add-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - Service
+                - ConfigMap
+              namespaces:
+                - yawl
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              +(app.kubernetes.io/managed-by): kyverno
+              +(app.kubernetes.io/part-of): yawl
+---
+# Require image pull policy Always for production
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-image-pull-policy
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: require-always-pull
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "imagePullPolicy must be set to 'Always' or 'IfNotPresent'"
+        pattern:
+          spec:
+            containers:
+              - imagePullPolicy: "Always | IfNotPresent"
+---
+# Restrict host paths
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-restrict-host-paths
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-host-paths
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Host path volumes are not allowed"
+        pattern:
+          spec:
+            =(volumes):
+              - X(hostPath): "null"
+---
+# Require app labels
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-app-labels
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-for-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+              namespaces:
+                - yawl
+      validate:
+        message: "The label 'app.kubernetes.io/name' is required"
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+---
+# Restrict capabilities
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-restrict-capabilities
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: require-drop-all
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Containers must drop ALL capabilities"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - ALL
+---
+# Disallow privilege escalation
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-disallow-privilege-escalation
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: deny-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - yawl
+      validate:
+        message: "Privilege escalation is not allowed"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+---
+# Encrypt secrets at rest (for cloud providers)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-encrypt-secrets
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  rules:
+    - name: add-encryption-annotation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Secret
+              namespaces:
+                - yawl
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              +(yawl.io/encrypted): "true"

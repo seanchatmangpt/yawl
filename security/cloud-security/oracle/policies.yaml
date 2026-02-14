@@ -1,0 +1,153 @@
+# Oracle Cloud Infrastructure IAM Policies for YAWL
+# Least-privilege policies for OKE deployment
+
+# Compartment Structure
+# /root
+#   /yawl-production
+#     /yawl-compute
+#     /yawl-database
+#     /yawl-networking
+
+---
+# Dynamic Group: YAWL Engine Pods
+# Matches all pods in the YAWL namespace
+Name: yawl-engine-pods
+Description: Dynamic group for YAWL engine pods
+Rule:
+  - resource.type = 'ocipod'
+  - resource.compartment.id = '{compartment_ocid}'
+  - all.resource.kubernetes.namespace = 'yawl'
+
+---
+# Dynamic Group: YAWL Resource Service Pods
+Name: yawl-resource-pods
+Description: Dynamic group for YAWL resource service pods
+Rule:
+  - resource.type = 'ocipod'
+  - resource.compartment.id = '{compartment_ocid}'
+  - all.resource.kubernetes.namespace = 'yawl'
+  - all.resource.kubernetes.serviceaccount = 'yawl-resource-service'
+
+---
+# Policy: YAWL Engine Access
+# Grants permissions to the YAWL engine dynamic group
+Name: yawl-engine-policy
+Description: Policy granting permissions to YAWL engine service
+Statements:
+  # Vault Secret access
+  - Allow dynamic-group yawl-engine-pods to read secret-family in compartment yawl-production
+  - Allow dynamic-group yawl-engine-pods to use vaults in compartment yawl-production
+  - Allow dynamic-group yawl-engine-pods to use keys in compartment yawl-production where target.key.name = 'yawl-encryption-key'
+
+  # Object Storage access
+  - Allow dynamic-group yawl-engine-pods to read buckets in compartment yawl-production
+  - Allow dynamic-group yawl-engine-pods to manage objects in compartment yawl-production where target.bucket.name = 'yawl-specifications'
+
+  # Database access (Autonomous Database)
+  - Allow dynamic-group yawl-engine-pods to use autonomous-database-family in compartment yawl-database
+  - Allow dynamic-group yawl-engine-pods to read autonomous-database-wallet in compartment yawl-database
+
+  # OCI Streaming (Kafka-compatible)
+  - Allow dynamic-group yawl-engine-pods to use stream-family in compartment yawl-production
+
+  # Monitoring
+  - Allow dynamic-group yawl-engine-pods to use metrics in compartment yawl-production
+  - Allow dynamic-group yawl-engine-pods to read log-groups in compartment yawl-production
+  - Allow dynamic-group yawl-engine-pods to use log-content in compartment yawl-production
+
+---
+# Policy: YAWL Resource Service Access
+Name: yawl-resource-policy
+Description: Policy granting permissions to YAWL resource service
+Statements:
+  # Vault Secret access
+  - Allow dynamic-group yawl-resource-pods to read secret-family in compartment yawl-production
+  - Allow dynamic-group yawl-resource-pods to use vaults in compartment yawl-production
+
+  # Object Storage (read-only)
+  - Allow dynamic-group yawl-resource-pods to read buckets in compartment yawl-production
+  - Allow dynamic-group yawl-resource-pods to read objects in compartment yawl-production
+
+  # Identity Domain access (for user lookups)
+  - Allow dynamic-group yawl-resource-pods to read users in compartment yawl-production
+  - Allow dynamic-group yawl-resource-pods to read groups in compartment yawl-production
+
+---
+# Policy: YAWL Monitoring
+Name: yawl-monitoring-policy
+Description: Read-only monitoring access
+Statements:
+  # Monitoring read access
+  - Allow dynamic-group yawl-monitoring-pods to read metrics in compartment yawl-production
+  - Allow dynamic-group yawl-monitoring-pods to read log-groups in compartment yawl-production
+  - Allow dynamic-group yawl-monitoring-pods to read log-content in compartment yawl-production
+
+  # Container Engine read access
+  - Allow dynamic-group yawl-monitoring-pods to read cluster-family in compartment yawl-production
+
+---
+# Network Security Groups
+# OKE cluster network security
+
+# NSG for YAWL Engine
+Resource: oci_core_network_security_group
+Name: yawl-engine-nsg
+Compartment: yawl-production
+VCN: yawl-vcn
+Rules:
+  # Allow inbound from load balancer
+  - Direction: INGRESS
+    Protocol: TCP
+    Source: {load_balancer_nsg_id}
+    DestinationPort: 8080
+    Description: "Allow traffic from load balancer"
+
+  # Allow outbound to database
+  - Direction: EGRESS
+    Protocol: TCP
+    Destination: {database_nsg_id}
+    DestinationPort: 1521
+    Description: "Allow connections to Autonomous Database"
+
+  # Allow outbound to Vault
+  - Direction: EGRESS
+    Protocol: TCP
+    Destination: 0.0.0.0/0
+    DestinationPort: 443
+    Description: "Allow HTTPS to OCI services"
+
+---
+# Service Account Token Volume Projection (OKE)
+# Kubernetes manifest for workload identity
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  annotations:
+    oci.oraclecloud.com/compartment-id: "{compartment_ocid}"
+    oci.oraclecloud.com/tenancy-id: "{tenancy_ocid}"
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: yawl-engine
+  namespace: yawl
+spec:
+  serviceAccountName: yawl-engine
+  containers:
+    - name: engine
+      image: yawl/engine:5.2
+      volumeMounts:
+        - name: oci-token
+          mountPath: /var/run/secrets/oci
+          readOnly: true
+  volumes:
+    - name: oci-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 3600
+              audience: "oci"

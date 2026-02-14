@@ -1,0 +1,108 @@
+#------------------------------------------------------------------------------
+# YAWL IBM Cloud Environment Variables Example
+# Version: 1.0.0
+#
+# Example .tfvars file for IBM Cloud deployment
+# Copy to terraform.tfvars and customize
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# General Configuration
+#------------------------------------------------------------------------------
+
+project_name     = "yawl"
+environment      = "dev"
+cloud_provider   = "ibm"
+
+common_tags = {
+  Team        = "platform"
+  CostCenter  = "development"
+  Owner       = "platform-team"
+}
+
+#------------------------------------------------------------------------------
+# IBM Cloud-Specific Configuration (REQUIRED)
+#------------------------------------------------------------------------------
+
+ibm_api_key       = ""  # Your IBM Cloud API key - REQUIRED
+ibm_region        = "us-south"
+ibm_resource_group = "default"
+
+#------------------------------------------------------------------------------
+# Networking Configuration
+#------------------------------------------------------------------------------
+
+vpc_cidr = "10.0.0.0/16"
+
+subnet_cidrs = {
+  private = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  data    = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+}
+
+enable_nat_gateway  = true
+enable_vpn_gateway  = false
+allowed_cidr_blocks = ["0.0.0.0/0"]
+
+#------------------------------------------------------------------------------
+# IKS Configuration
+#------------------------------------------------------------------------------
+
+kubernetes_version    = "1.28"
+iks_flavor            = "bx2.4x16"
+iks_hardware          = "shared"  # Use "dedicated" for production
+node_count_min        = 3
+node_count_max        = 10
+node_disk_size_gb     = 100
+enable_node_auto_scaling = true
+
+node_pool_labels = {
+  environment = "dev"
+  workload    = "general"
+}
+
+node_pool_taints = []
+
+#------------------------------------------------------------------------------
+# IBM Cloud Database Configuration
+#------------------------------------------------------------------------------
+
+database_version              = "15"
+database_instance_class       = "standard"
+database_storage_gb           = 100
+database_multi_az             = true
+database_backup_retention_days = 30
+database_deletion_protection  = true
+database_encryption           = true
+database_username             = "yawl_admin"
+
+#------------------------------------------------------------------------------
+# Cloud Object Storage Configuration
+#------------------------------------------------------------------------------
+
+storage_bucket_names   = ["data", "logs", "backups"]
+storage_versioning     = true
+storage_lifecycle_days = 90
+storage_archive_days   = 365
+
+#------------------------------------------------------------------------------
+# Monitoring Configuration
+#------------------------------------------------------------------------------
+
+enable_monitoring  = true
+enable_logging     = true
+enable_alerting    = true
+log_retention_days = 30
+metric_retention_days = 30
+
+alert_email_recipients = ["alerts@yourcompany.com"]
+alert_slack_webhook    = ""
+
+#------------------------------------------------------------------------------
+# Security Configuration
+#------------------------------------------------------------------------------
+
+enable_waf              = true
+enable_ddos_protection  = true
+enable_private_endpoint = true
+kms_key_id              = ""  # Add Key Protect key for encryption

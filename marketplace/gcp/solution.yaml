@@ -1,0 +1,335 @@
+# YAWL Workflow Engine - GCP Marketplace Solution Definition
+# Version: 5.2.0
+# Publisher: YAWL Foundation
+
+x-google-marketplace:
+  schemaVersion: v2
+
+  applicationApiVersion: v1
+
+  publishedVersion: "5.2.0"
+
+  images:
+    "":
+      properties:
+        image.repository:
+          type: REPO_WITH_DOCKERFILE
+          default: $REGISTRY/yawl
+        image.tag:
+          type: TAG
+          default: "5.2.0"
+
+  clusterConstraints:
+    resources:
+      - type: cpu
+        minimum: 4
+      - type: memory
+        minimum: 16Gi
+    nodePool:
+      - numberOfNodes: 3
+
+  deployer:
+    dockerImage:
+      properties:
+        deployerImage:
+          type: FULL
+          default: $REGISTRY/yawl/deployer:$TAG
+
+  requirements:
+    cpu: 2
+    memory: 4Gi
+    services:
+      - type: sqladmin.googleapis.com
+      - type: servicenetworking.googleapis.com
+      - type: container.googleapis.com
+      - type: compute.googleapis.com
+      - type: storage.googleapis.com
+      - type: secretmanager.googleapis.com
+
+application:
+  name: yawl-workflow-engine
+  description: |
+    YAWL (Yet Another Workflow Language) is a BPM/Workflow engine with
+    formal foundations based on Petri Nets. It supports 36+ workflow
+    control-flow patterns, human and non-human resource management,
+    and dynamic process adaptation through Worklets.
+
+    Key Features:
+    - 36+ workflow control-flow patterns
+    - Petri Net formal foundation
+    - Human/non-human resource allocation
+    - Dynamic workflow adaptation (Worklets)
+    - Process monitoring and scheduling
+    - REST API interfaces (A, B, E, X)
+
+  version: "5.2.0"
+
+  components:
+    - name: yawl-engine
+      description: Core YAWL workflow engine
+      deployment:
+        helm:
+          chart: yawl-engine
+          version: "5.2.0"
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 30
+
+    - name: yawl-resource-service
+      description: Resource allocation and work queue service
+      deployment:
+        helm:
+          chart: yawl-resource-service
+          version: "5.2.0"
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10
+
+    - name: yawl-worklet-service
+      description: Dynamic process adaptation service
+      deployment:
+        helm:
+          chart: yawl-worklet-service
+          version: "5.2.0"
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10
+
+  # Instance configuration
+  instances:
+    - name: yawl-engine
+      reference: yawl-engine
+      parameter:
+        type: INSTANCE_TYPE
+        default: e2-standard-4
+
+  # Database configuration
+  databases:
+    - name: yawl-database
+      type: CLOUDSQL_POSTGRES
+      version: "15"
+      properties:
+        tier:
+          type: enum
+          enum:
+            - db-custom-2-8192
+            - db-custom-4-16384
+            - db-custom-8-32768
+          default: db-custom-4-16384
+          description: Cloud SQL instance tier
+        diskSize:
+          type: integer
+          default: 100
+          minimum: 20
+          maximum: 30720
+          description: Disk size in GB
+        highAvailability:
+          type: boolean
+          default: true
+          description: Enable regional high availability
+        backupRetention:
+          type: integer
+          default: 30
+          minimum: 1
+          maximum: 365
+          description: Backup retention days
+
+  # Storage configuration
+  storage:
+    - name: yawl-data
+      type: GCS
+      properties:
+        location:
+          type: enum
+          enum:
+            - US
+            - EU
+            - ASIA
+          default: US
+          description: Storage location
+        storageClass:
+          type: enum
+          enum:
+            - STANDARD
+            - NEARLINE
+            - COLDLINE
+          default: STANDARD
+          description: Storage class
+
+  # Network configuration
+  networking:
+    - name: yawl-network
+      type: VPC
+      properties:
+        privateCluster:
+          type: boolean
+          default: true
+          description: Enable private GKE cluster
+        authorizedNetworks:
+          type: array
+          items:
+            type: string
+          default: []
+          description: CIDR blocks for authorized networks
+
+  # Metrics and monitoring
+  metrics:
+    - name: yawl_cases_total
+      type: counter
+      description: Total number of workflow cases
+    - name: yawl_workitems_active
+      type: gauge
+      description: Number of active work items
+    - name: yawl_tasks_duration_seconds
+      type: histogram
+      description: Task execution duration
+    - name: yawl_engine_health
+      type: gauge
+      description: Engine health status (1=healthy, 0=unhealthy)
+
+  # Logs
+  logs:
+    - name: yawl-engine
+      filter: resource.labels.container_name="yawl-engine"
+    - name: yawl-resource-service
+      filter: resource.labels.container_name="yawl-resource-service"
+    - name: yawl-worklet-service
+      filter: resource.labels.container_name="yawl-worklet-service"
+
+  # Alerts (optional)
+  alerts:
+    - name: yawl-engine-down
+      condition: yawl_engine_health == 0
+      duration: 5m
+      notification:
+        email:
+          enabled: true
+    - name: yawl-high-latency
+      condition: yawl_tasks_duration_seconds > 30
+      duration: 10m
+      notification:
+        email:
+          enabled: true
+
+  # Support
+  support:
+    url: https://yawlfoundation.org/support
+    email: support@yawlfoundation.org
+
+  # Documentation
+  documentation:
+    - name: Getting Started
+      url: https://yawlfoundation.org/docs/getting-started
+    - name: API Reference
+      url: https://yawlfoundation.org/docs/api
+    - name: Administration Guide
+      url: https://yawlfoundation.org/docs/admin
+
+  # License
+  license:
+    name: LGPL-3.0
+    url: https://www.gnu.org/licenses/lgpl-3.0.txt
+
+# User-facing parameters
+parameters:
+  - name: project_name
+    type: string
+    default: yawl
+    description: Project name prefix for resources
+    validation:
+      pattern: "^[a-z][a-z0-9-]{0,28}[a-z0-9]$"
+
+  - name: environment
+    type: enum
+    enum:
+      - dev
+      - staging
+      - prod
+    default: prod
+    description: Deployment environment
+
+  - name: region
+    type: enum
+    enum:
+      - us-central1
+      - us-east1
+      - us-west1
+      - europe-west1
+      - asia-east1
+      - asia-southeast1
+    default: us-central1
+    description: GCP region for deployment
+
+  - name: node_count_min
+    type: integer
+    default: 3
+    minimum: 1
+    maximum: 100
+    description: Minimum number of GKE nodes
+
+  - name: node_count_max
+    type: integer
+    default: 10
+    minimum: 1
+    maximum: 100
+    description: Maximum number of GKE nodes (for autoscaling)
+
+  - name: node_machine_type
+    type: enum
+    enum:
+      - e2-standard-2
+      - e2-standard-4
+      - e2-standard-8
+      - n2-standard-4
+      - n2-standard-8
+      - n2-standard-16
+    default: e2-standard-4
+    description: GKE node machine type
+
+  - name: enable_autoscaling
+    type: boolean
+    default: true
+    description: Enable GKE cluster autoscaling
+
+  - name: database_tier
+    type: enum
+    enum:
+      - db-custom-2-8192
+      - db-custom-4-16384
+      - db-custom-8-32768
+      - db-highmem-4
+      - db-highmem-8
+    default: db-custom-4-16384
+    description: Cloud SQL instance tier
+
+  - name: database_storage_gb
+    type: integer
+    default: 100
+    minimum: 10
+    maximum: 30720
+    description: Cloud SQL storage size in GB
+
+  - name: enable_private_cluster
+    type: boolean
+    default: true
+    description: Enable private GKE cluster
+
+  - name: enable_monitoring
+    type: boolean
+    default: true
+    description: Enable Cloud Monitoring integration

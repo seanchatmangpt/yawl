@@ -1,0 +1,118 @@
+# =============================================================================
+# YAWL Load Balancer Dockerfile
+# =============================================================================
+# Load balancing across multiple YAWL engine instances
+# =============================================================================
+
+ARG JAVA_VERSION=17
+
+# Build stage
+FROM eclipse-temurin:${JAVA_VERSION}-jdk-alpine AS builder
+
+ARG YAWL_VERSION=5.2
+
+LABEL org.opencontainers.image.title="YAWL Balancer Builder"
+
+RUN apk add --no-cache ant bash curl shadow
+
+RUN groupadd -r yawl && useradd -r -g yawl -d /yawl yawl
+
+WORKDIR /build
+
+# Copy source files (layered for caching)
+COPY build/3rdParty/ ./build/3rdParty/
+COPY build/build.xml ./build/
+COPY build/build.properties ./build/
+COPY build/balancer/ ./build/balancer/
+
+COPY src/ ./src/
+
+# Build balancer WAR
+RUN cd build && ant war_balancer
+
+# =============================================================================
+# Runtime stage
+# =============================================================================
+FROM eclipse-temurin:${JAVA_VERSION}-jre-alpine AS runtime
+
+ARG JAVA_VERSION=17
+ARG YAWL_VERSION=5.2
+ARG TOMCAT_VERSION=9.0.89
+
+LABEL org.opencontainers.image.title="YAWL Load Balancer"
+LABEL org.opencontainers.image.description="YAWL Load Balancer - Multi-Engine Distribution"
+LABEL org.opencontainers.image.version="${YAWL_VERSION}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.service="balancer"
+
+# Install runtime dependencies
+RUN apk add --no-cache curl bash shadow tzdata ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN groupadd -r yawl && \
+    useradd -r -g yawl -d /yawl -s /sbin/nologin yawl && \
+    mkdir -p /yawl /opt/tomcat /data/balancer && \
+    chown -R yawl:yawl /yawl /opt/tomcat /data
+
+# Download and configure Tomcat
+RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" \
+    | tar -xzf - -C /opt/tomcat --strip-components=1 && \
+    rm -rf /opt/tomcat/webapps/* /opt/tomcat/webapps.dist && \
+    sed -i 's/<Connector port="8080"/<Connector port="8080" URIEncoding="UTF-8"/' \
+    /opt/tomcat/conf/server.xml && \
+    chown -R yawl:yawl /opt/tomcat
+
+# Copy built WAR from builder
+COPY --from=builder --chown=yawl:yawl /build/output/wars/balancer.war /opt/tomcat/webapps/ROOT.war
+
+# Copy shared libraries
+COPY --from=builder --chown=yawl:yawl /build/build/3rdParty/lib/*.jar /opt/tomcat/lib/
+
+# Copy balancer properties
+COPY --from=builder --chown=yawl:yawl /build/build/balancer/balancer.properties /yawl/config/
+
+# Environment configuration
+ENV CATALINA_HOME=/opt/tomcat \
+    JAVA_OPTS="-Xms128m -Xmx256m -Djava.awt.headless=true -Dfile.encoding=UTF-8" \
+    TZ=UTC \
+    YAWL_VERSION=${YAWL_VERSION} \
+    ENGINE_ENDPOINTS="http://engine-1:8080/ib,http://engine-2:8080/ib" \
+    BALANCE_STRATEGY=round-robin \
+    HEALTH_CHECK_INTERVAL=30 \
+    LOG_LEVEL=WARN
+
+# Create configuration script
+RUN mkdir -p /yawl/scripts && \
+    echo '#!/bin/bash' > /yawl/scripts/configure.sh && \
+    echo 'set -e' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo '# Configure balancer properties' >> /yawl/scripts/configure.sh && \
+    echo 'if [ -n "$ENGINE_ENDPOINTS" ]; then' >> /yawl/scripts/configure.sh && \
+    echo '  IFS="," read -ra ENDPOINTS <<< "$ENGINE_ENDPOINTS"' >> /yawl/scripts/configure.sh && \
+    echo '  for i in "${!ENDPOINTS[@]}"; do' >> /yawl/scripts/configure.sh && \
+    echo '    echo "engine.$i.url=${ENDPOINTS[$i]}" >> /yawl/config/balancer.properties' >> /yawl/scripts/configure.sh && \
+    echo '  done' >> /yawl/scripts/configure.sh && \
+    echo 'fi' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo 'echo "balance.strategy=${BALANCE_STRATEGY}" >> /yawl/config/balancer.properties' >> /yawl/scripts/configure.sh && \
+    echo 'echo "health.check.interval=${HEALTH_CHECK_INTERVAL}" >> /yawl/config/balancer.properties' >> /yawl/scripts/configure.sh && \
+    echo '' >> /yawl/scripts/configure.sh && \
+    echo 'exec "$@"' >> /yawl/scripts/configure.sh && \
+    chmod +x /yawl/scripts/configure.sh && \
+    chown yawl:yawl /yawl/scripts/configure.sh
+
+# Expose ports
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+# Switch to non-root user
+USER yawl
+
+WORKDIR /yawl
+
+ENTRYPOINT ["/yawl/scripts/configure.sh"]
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

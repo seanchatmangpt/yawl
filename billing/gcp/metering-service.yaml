@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gcp-metering-service
+  namespace: yawl-billing
+  labels:
+    app: gcp-metering
+    component: billing
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gcp-metering
+  template:
+    metadata:
+      labels:
+        app: gcp-metering
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: gcp-metering-sa
+      containers:
+        - name: metering-service
+          image: gcr.io/yawl-project/gcp-metering:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/service-account.json
+            - name: PARTICIPANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: gcp-marketplace-credentials
+                  key: participant-id
+            - name: METERING_ENDPOINT
+              value: "https://cloudcommerceproducer.googleapis.com"
+            - name: USAGE_BATCH_SIZE
+              value: "100"
+            - name: USAGE_FLUSH_INTERVAL_MS
+              value: "60000"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/secrets/google
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-marketplace-credentials
+            items:
+              - key: service-account.json
+                path: service-account.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gcp-metering-service
+  namespace: yawl-billing
+spec:
+  selector:
+    app: gcp-metering
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gcp-metering-sa
+  namespace: yawl-billing
+  annotations:
+    iam.gke.io/gcp-service-account: yawl-metering@yawl-project.iam.gserviceaccount.com

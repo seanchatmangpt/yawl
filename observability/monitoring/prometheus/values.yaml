@@ -1,0 +1,215 @@
+# Prometheus Helm Chart Values for YAWL Workflow Engine
+# Compatible with prometheus/prometheus chart
+
+# Global settings
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      scheme: http
+      timeout: 10s
+
+# Rule files
+rule_files:
+  - /etc/prometheus/rules/*.yaml
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+    scheme: http
+
+  # YAWL Engine metrics
+  - job_name: 'yawl-engine'
+    static_configs:
+      - targets:
+          - 'yawl-engine:8080'
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'yawl-engine'
+
+  # YAWL Resource Service
+  - job_name: 'yawl-resource-service'
+    static_configs:
+      - targets:
+          - 'resource-service:8080'
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'resource-service'
+
+  # YAWL Worklet Service
+  - job_name: 'yawl-worklet-service'
+    static_configs:
+      - targets:
+          - 'worklet-service:8080'
+    metrics_path: /metrics
+
+  # YAWL Monitor Service
+  - job_name: 'yawl-monitor-service'
+    static_configs:
+      - targets:
+          - 'monitor-service:8080'
+    metrics_path: /metrics
+
+  # PostgreSQL/MySQL database metrics (via postgres_exporter/mysqld_exporter)
+  - job_name: 'database'
+    static_configs:
+      - targets:
+          - 'postgres-exporter:9187'
+          - 'mysqld-exporter:9104'
+
+  # JVM metrics via JMX Exporter
+  - job_name: 'jvm'
+    static_configs:
+      - targets:
+          - 'yawl-engine:9999'
+          - 'resource-service:9999'
+          - 'worklet-service:9999'
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+):\d+'
+        target_label: service
+        replacement: '${1}'
+
+  # Kubernetes service discovery (when deployed in K8s)
+  - job_name: 'kubernetes-apiservers'
+    kubernetes_sd_configs:
+      - role: endpoints
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+# Remote write configuration (for long-term storage)
+remote_write:
+  - url: http://cortex:9009/api/v1/push
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 200
+      capacity: 2500
+
+# Remote read configuration
+remote_read:
+  - url: http://cortex:9009/api/v1/read
+    read_recent: true
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention:
+      time: 15d
+      size: 50GB
+    wal:
+      compression: true
+
+# Resource limits (Kubernetes)
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: standard
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9090
+  targetPort: 9090
+
+# Service Account
+serviceAccount:
+  create: true
+  name: prometheus
+
+# Security context
+securityContext:
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+
+# Extra volumes for rules and config
+extraVolumes:
+  - name: prometheus-rules
+    configMap:
+      name: prometheus-rules
+
+extraVolumeMounts:
+  - name: prometheus-rules
+    mountPath: /etc/prometheus/rules
+    readOnly: true

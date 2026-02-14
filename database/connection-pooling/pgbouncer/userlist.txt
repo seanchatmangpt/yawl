@@ -1,0 +1,14 @@
+# PgBouncer User List
+# Format: "username" "password"
+# Password can be in plain text, md5 hash, or SCRAM-SHA-256
+
+# Admin user for PgBouncer management
+"pgbouncer_admin" "md5_generated_hash_here"
+
+# Monitoring user (read-only access to pgbouncer stats)
+"pgbouncer_monitor" "md5_generated_hash_here"
+
+# YAWL application users
+"yawl" "md5_generated_hash_here"
+"yawl_readonly" "md5_generated_hash_here"
+"yawl_batch" "md5_generated_hash_here"

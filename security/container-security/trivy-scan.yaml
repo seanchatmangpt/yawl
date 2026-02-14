@@ -1,0 +1,143 @@
+# Trivy Security Scanner Configuration
+# https://aquasecurity.github.io/trivy/
+
+# Scan configuration for YAWL containers
+scan:
+  # Scanner types to run
+  scanners:
+    - vuln      # Vulnerability scanning
+    - misconfig # IaC misconfiguration scanning
+    - secret    # Secret detection
+    - sbom      # Software Bill of Materials
+
+  # Skip files/directories
+  skip-files:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+
+  # Skip directories
+  skip-dirs:
+    - tests
+    - docs
+    - examples
+
+# Vulnerability scanning configuration
+vulnerability:
+  # Security checking level
+  type:
+    - os      # OS package vulnerabilities
+    - library # Application dependency vulnerabilities
+
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: false
+
+  # Show all vulnerabilities including low severity
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+    - LOW
+
+  # Vulnerability databases
+  db:
+    # Update vulnerability database
+    update: true
+    # Skip database update (use cached)
+    skip-update: false
+
+  # Ignore file for specific vulnerabilities
+  ignore-file: .trivyignore
+
+# Misconfiguration scanning (IaC)
+misconfiguration:
+  # Configuration scanning
+  include-non-failures: false
+
+  # Policy bundles to use
+  policy:
+    # Use built-in policies
+    bundle-embedded: true
+
+  # Cloud Formation, Terraform, Kubernetes, Dockerfile scanning
+  scanners:
+    - dockerfile
+    - kubernetes
+    - terraform
+
+# Secret scanning configuration
+secret:
+  # Enable secret scanning
+  enable: true
+
+  # Custom patterns to detect
+  patterns:
+    - name: "AWS Access Key"
+      regex: "AKIA[0-9A-Z]{16}"
+      severity: "CRITICAL"
+    - name: "AWS Secret Key"
+      regex: "(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+=]{40}['\"]"
+      severity: "CRITICAL"
+    - name: "Private Key"
+      regex: "-----BEGIN (?:RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----"
+      severity: "CRITICAL"
+    - name: "Generic API Key"
+      regex: "(?i)(api_key|apikey|api-secret|api_secret)['\"]?\\s*[:=]\\s*['\"]?[a-zA-Z0-9_\\-]{20,}"
+      severity: "HIGH"
+    - name: "Database Connection String"
+      regex: "(?i)(jdbc|mongodb|postgres|mysql|redis)://[^\\s]+:[^\\s]+@"
+      severity: "HIGH"
+    - name: "JWT Token"
+      regex: "eyJ[a-zA-Z0-9_-]*\\.eyJ[a-zA-Z0-9_-]*\\.[a-zA-Z0-9_-]*"
+      severity: "MEDIUM"
+
+# Output configuration
+format:
+  # Output formats: table, json, sarif, template
+  type: table
+
+  # Template for custom output
+  template: "@.trivy/template.tmpl"
+
+# Report configuration
+report:
+  # Exit code on findings
+  exit-code: 1
+
+  # Ignore policy violations below this severity
+  severity: HIGH
+
+# Registry configuration
+registry:
+  # Mirror configuration
+  mirrors:
+    docker.io: registry.internal.example.com/docker
+
+  # Authentication
+  auths:
+    - registry: registry.internal.example.com
+      username: "${REGISTRY_USER}"
+      password: "${REGISTRY_PASSWORD}"
+
+# Cache configuration
+cache:
+  # Enable caching
+  enable: true
+
+  # Cache directory
+  dir: /tmp/trivy-cache
+
+  # Cache TTL
+  ttl: 24h
+
+# SBOM configuration
+sbom:
+  # Generate SBOM
+  enable: true
+
+  # SBOM formats: spdx, spdx-json, cyclonedx, cyclonedx-json
+  format: spdx-json
+
+  # Output file
+  output: sbom.spdx.json

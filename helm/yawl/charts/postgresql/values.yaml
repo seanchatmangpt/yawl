@@ -1,0 +1,110 @@
+# PostgreSQL Subchart Values
+# This is a simplified wrapper that can be replaced with the Bitnami PostgreSQL chart
+
+architecture: standalone
+
+auth:
+  postgresPassword: "yawl"
+  password: "yawl"
+  database: "yawl"
+  replicationPassword: ""
+
+primary:
+  name: primary
+  configuration: |
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+    shared_buffers = 256MB
+    effective_cache_size = 768MB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 2621kB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    log_timezone = 'UTC'
+    datestyle = 'iso, mdy'
+    timezone = 'UTC'
+    lc_messages = 'C'
+
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+
+  service:
+    type: ClusterIP
+    port: 5432
+    nodePort: ""
+    annotations: {}
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+readReplicas:
+  replicaCount: 0
+  name: replica
+
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+volumePermissions:
+  enabled: false
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+
+networkPolicy:
+  enabled: true
+  allowExternal: false
+
+serviceAccount:
+  create: true
+  name: ""

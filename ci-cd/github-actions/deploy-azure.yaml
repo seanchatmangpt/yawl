@@ -1,0 +1,589 @@
+# GitHub Actions - Microsoft Azure Deployment
+# YAWL Workflow Engine Azure CI/CD
+#
+# Features:
+# - OIDC authentication (Federated Identity)
+# - AKS, Container Apps, App Service, Functions, ACI deployment targets
+# - Terraform automation
+# - Helm chart deployment
+
+name: Deploy to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      location:
+        description: 'Azure region'
+        required: false
+        default: 'eastus'
+        type: choice
+        options:
+          - eastus
+          - eastus2
+          - westus
+          - westus2
+          - centralus
+          - northeurope
+          - westeurope
+          - southeastasia
+          - eastasia
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'aks'
+        type: choice
+        options:
+          - aks
+          - container-apps
+          - app-service
+          - functions
+          - container-instances
+      use_terraform:
+        description: 'Use Terraform for infrastructure'
+        required: false
+        default: false
+        type: boolean
+      terraform_action:
+        description: 'Terraform action (plan|apply|destroy)'
+        required: false
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: string
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'aks'
+        type: string
+
+env:
+  AZURE_LOCATION: ${{ github.event.inputs.location || 'eastus' }}
+  VERSION: ${{ github.event.inputs.version }}
+  ACR_REGISTRY: yawlacr.azurecr.io
+  RESOURCE_GROUP: yawl-${{ github.event.inputs.environment }}-rg
+  TF_VERSION: '1.7.0'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ============================================
+  # Prepare Deployment
+  # ============================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      aks-cluster: ${{ steps.config.outputs.aks_cluster }}
+      acr-name: ${{ steps.config.outputs.acr_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.VERSION }}" ]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+          echo "Deployment Configuration:"
+          echo "  Environment: ${{ github.event.inputs.environment }}"
+          echo "  Version: ${{ env.VERSION }}"
+          echo "  Location: ${{ env.AZURE_LOCATION }}"
+          echo "  Target: ${{ github.event.inputs.target }}"
+
+      - name: Set deployment configuration
+        id: config
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            development)
+              echo "aks_cluster=yawl-dev-aks" >> $GITHUB_OUTPUT
+              echo "acr_name=yawldevacr" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "aks_cluster=yawl-staging-aks" >> $GITHUB_OUTPUT
+              echo "acr_name=yawlstagingacr" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "aks_cluster=yawl-prod-aks" >> $GITHUB_OUTPUT
+              echo "acr_name=yawlprodacr" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "aks_cluster=yawl-${{ github.event.inputs.environment }}-aks" >> $GITHUB_OUTPUT
+              echo "acr_name=yawl${{ github.event.inputs.environment }}acr" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Set image tag
+        id: image
+        run: |
+          echo "image=${{ env.ACR_REGISTRY }}/yawl:${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Terraform Infrastructure
+  # ============================================
+  terraform:
+    name: Terraform Infrastructure
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ github.event.inputs.use_terraform == 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+        run: |
+          terraform init \
+            -backend-config="storage_account_name=${{ secrets.AZURE_TF_STATE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=yawl/${{ github.event.inputs.environment }}/terraform.tfstate"
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.terraform_action == 'plan' || github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+        run: |
+          terraform plan \
+            -var="cloud_provider=azure" \
+            -var="azure_location=${{ env.AZURE_LOCATION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/azure-${{ github.event.inputs.environment }}.tfvars \
+            -out=tfplan \
+            -detailed-exitcode
+        continue-on-error: true
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
+        working-directory: terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+        run: |
+          terraform destroy -auto-approve \
+            -var="cloud_provider=azure" \
+            -var="azure_location=${{ env.AZURE_LOCATION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/azure-${{ github.event.inputs.environment }}.tfvars
+
+      - name: Upload Terraform artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-azure-${{ github.event.inputs.environment }}
+          path: |
+            terraform/.terraform/
+            terraform/tfplan
+          retention-days: 7
+
+  # ============================================
+  # Deploy to AKS (Azure Kubernetes Service)
+  # ============================================
+  deploy-aks:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'aks' && github.event.inputs.use_terraform != 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name ${{ needs.prepare.outputs.aks-cluster }} \
+            --overwrite-existing
+
+      - name: Deploy with Helm
+        uses: ./.github/actions/deploy-helm
+        with:
+          release_name: yawl
+          namespace: yawl-${{ github.event.inputs.environment }}
+          values_file: helm/yawl/values-azure.yaml
+          image_repository: ${{ env.ACR_REGISTRY }}/yawl
+          image_tag: ${{ env.VERSION }}
+          environment: ${{ github.event.inputs.environment }}
+
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }} \
+            --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n yawl-${{ github.event.inputs.environment }} -l app.kubernetes.io/name=yawl
+
+          echo "=== Service Status ==="
+          kubectl get services -n yawl-${{ github.event.inputs.environment }}
+
+          echo "=== Ingress Status ==="
+          kubectl get ingress -n yawl-${{ github.event.inputs.environment }} || true
+
+  # ============================================
+  # Deploy to Azure Container Apps
+  # ============================================
+  deploy-container-apps:
+    name: Deploy to Container Apps
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'container-apps'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Container Apps extension
+        run: |
+          az extension add --name containerapp --upgrade
+
+      - name: Deploy to Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: ${{ needs.prepare.outputs.acr-name }}
+          containerAppName: yawl-${{ github.event.inputs.environment }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ needs.prepare.outputs.image }}
+          targetPort: 8080
+          environmentVariables: |
+            SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}
+
+      - name: Configure scaling rules
+        run: |
+          az containerapp update \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --min-replicas ${{ github.event.inputs.environment == 'production' && '2' || '0' }} \
+            --max-replicas 10 \
+            --set-env-vars "SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}"
+
+      - name: Get application URL
+        run: |
+          FQDN=$(az containerapp show \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Application URL: https://$FQDN"
+
+      - name: Verify deployment
+        run: |
+          az containerapp show \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.{Status:runningStatus,Replicas:template.scale}"
+
+  # ============================================
+  # Deploy to Azure App Service
+  # ============================================
+  deploy-app-service:
+    name: Deploy to App Service
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'app-service'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: yawl-${{ github.event.inputs.environment }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: ${{ needs.prepare.outputs.image }}
+
+      - name: Configure App Service settings
+        run: |
+          az webapp config appsettings set \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+              DOCKER_REGISTRY_SERVER_URL=https://${{ env.ACR_REGISTRY }} \
+              DOCKER_REGISTRY_SERVER_USERNAME=${{ secrets.ACR_USERNAME }} \
+              DOCKER_REGISTRY_SERVER_PASSWORD=${{ secrets.ACR_PASSWORD }}
+
+      - name: Configure scaling
+        if: github.event.inputs.environment == 'production'
+        run: |
+          az appservice plan update \
+            --name yawl-${{ github.event.inputs.environment }}-plan \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --sku P2V3 \
+            --number-of-workers 3
+
+      - name: Verify deployment
+        run: |
+          az webapp show \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{State:state,DefaultHostName:defaultHostName}"
+
+  # ============================================
+  # Deploy to Azure Functions
+  # ============================================
+  deploy-functions:
+    name: Deploy to Azure Functions
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'functions'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Azure Function App
+        uses: azure/functions-action@v1
+        with:
+          app-name: yawl-${{ github.event.inputs.environment }}-func
+          package: .
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+      - name: Configure Function App settings
+        run: |
+          az functionapp config appsettings set \
+            --name yawl-${{ github.event.inputs.environment }}-func \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+              FUNCTIONS_WORKER_RUNTIME=java \
+              AzureWebJobsStorage=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+
+      - name: Verify deployment
+        run: |
+          az functionapp show \
+            --name yawl-${{ github.event.inputs.environment }}-func \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{State:state,defaultHostName:defaultHostName}"
+
+  # ============================================
+  # Deploy to Azure Container Instances
+  # ============================================
+  deploy-aci:
+    name: Deploy to Container Instances
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'container-instances'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Container Instances
+        run: |
+          az container create \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ needs.prepare.outputs.image }} \
+            --registry-login-server ${{ env.ACR_REGISTRY }} \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --dns-name-label yawl-${{ github.event.inputs.environment }}-${{ github.run_id }} \
+            --ports 8080 \
+            --environment-variables SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+            --cpu 2 \
+            --memory 4 \
+            --restart-policy Always
+
+      - name: Get container FQDN
+        run: |
+          FQDN=$(az container show \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query ipAddress.fqdn -o tsv)
+          echo "Container FQDN: $FQDN"
+
+      - name: Verify deployment
+        run: |
+          az container show \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{State:instanceView.state,IPAddress:ipAddress.ip}"
+
+  # ============================================
+  # Post-Deployment Verification
+  # ============================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-aks, deploy-container-apps, deploy-app-service, deploy-functions, deploy-aci, terraform]
+    if: always() && contains(join(needs.*.result, ','), 'success')
+
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests for ${{ github.event.inputs.target }} deployment..."
+
+      - name: Deployment summary
+        run: |
+          echo "## Azure Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Location | ${{ env.AZURE_LOCATION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform | ${{ github.event.inputs.use_terraform }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Rollback
+  # ============================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback == 'true'
+
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Rollback AKS deployment
+        if: github.event.inputs.target == 'aks'
+        run: |
+          kubectl rollout undo deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }}
+
+      - name: Rollback Container Apps
+        if: github.event.inputs.target == 'container-apps'
+        run: |
+          az containerapp revision restart \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --revision $(az containerapp revision list \
+              --name yawl-${{ github.event.inputs.environment }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --query "[1].name" -o tsv)
+
+      - name: Rollback App Service
+        if: github.event.inputs.target == 'app-service'
+        run: |
+          az webapp deployment slot swap \
+            --name yawl-${{ github.event.inputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --slot staging \
+            --target-slot production

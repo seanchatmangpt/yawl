@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-worklet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-worklet-service
+    app.kubernetes.io/component: worklet-service
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-worklet-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-worklet-service
+        app.kubernetes.io/component: worklet-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: yawl-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: worklet-service
+          image: yawl/worklet-service:5.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: JAVA_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: JAVA_OPTS
+            - name: ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: ENGINE_URL
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-credentials
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-credentials
+                  key: DATABASE_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: yawl-config
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /workletService/health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /workletService/ready
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: yawl-data
+              mountPath: /opt/yawl/data
+      volumes:
+        - name: yawl-data
+          emptyDir: {}

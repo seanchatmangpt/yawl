@@ -1,0 +1,475 @@
+# Dependency Scanning Configuration for YAWL
+# Comprehensive software composition analysis (SCA)
+
+# OWASP Dependency Check Configuration
+dependencyCheck:
+  # General settings
+  settings:
+    # Analysis level
+    analysisLevel: FULL
+
+    # Fail on CVSS threshold
+    failOnCVSS: 7.0
+
+    # Enable experimental analyzers
+    experimental:
+      enabled: true
+
+  # NVD API configuration
+  nvd:
+    apiKey: "${NVD_API_KEY}"
+    delay: 3500  # milliseconds between requests
+    maxRetry: 10
+
+  # Analyzers
+  analyzers:
+    # Archive analyzer
+    archive:
+      enabled: true
+
+    # Assembly (.NET)
+    assembly:
+      enabled: true
+
+    # Autoconf
+    autoconf:
+      enabled: true
+
+    # Bundle audit (Ruby)
+    bundleAudit:
+      enabled: true
+      path: /usr/local/bin/bundle-audit
+
+    # CMake
+    cmake:
+      enabled: true
+
+    # CocoaPods
+    cocoapods:
+      enabled: true
+
+    # Composer (PHP)
+    composer:
+      enabled: true
+
+    # Go modules
+    golang:
+      enabled: true
+      goPath: /usr/local/go
+
+    # Java / Maven
+    java:
+      enabled: true
+      main:
+        war: true
+        jar: true
+        ear: true
+        aar: true
+
+    # Node.js
+    nodeJs:
+      enabled: true
+      packageJson: true
+      packageLock: true
+      yarnLock: true
+      shrinkwrap: true
+
+    # NuGet
+    nuget:
+      enabled: true
+
+    # pip (Python)
+    pip:
+      enabled: true
+      requirements: true
+      setupPy: true
+
+    # Retire.js
+    retireJs:
+      enabled: true
+      filterNonVulnerable: true
+
+    # Ruby gems
+    ruby:
+      enabled: true
+      gemspec: true
+
+    # Swift
+    swift:
+      enabled: true
+      packageManager: true
+
+  # Scan paths
+  scan:
+    - src/
+    - lib/
+    - build/3rdParty/
+
+  # Exclusions
+  excludes:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/generated/**"
+
+  # Output formats
+  formats:
+    - JSON
+    - HTML
+    - JUNIT
+    - SARIF
+    - CSV
+
+# Snyk Configuration
+snyk:
+  # Organization
+  org: yawl-foundation
+
+  # Project settings
+  projects:
+    - name: yawl-engine
+      path: .
+      type: maven
+
+  # Monitor settings
+  monitor:
+    enabled: true
+    frequency: daily
+
+  # Severity threshold
+  severityThreshold: medium
+
+  # Fail on issues
+  failOnIssues: true
+
+  # IaC scanning
+  iac:
+    enabled: true
+    severityThreshold: high
+
+  # Code scanning
+  code:
+    enabled: true
+    severityThreshold: high
+
+  # Container scanning
+  container:
+    enabled: true
+    baseImage: eclipse-temurin:21-jre-alpine
+
+# Grype Configuration
+grype:
+  # Output format
+  output: table
+
+  # Severity threshold
+  failOn: high
+
+  # Registry configuration
+  registry:
+    insecure: false
+
+  # Ignore rules
+  ignore:
+    - vulnerability: CVE-2023-XXXX
+      reason: "Not applicable to our use case"
+
+  # External sources
+  external:
+    - name: "custom-vuln-db"
+      url: "https://vuln-db.internal.example.com/grype"
+
+# Trivy Configuration
+trivy:
+  # Scan types
+  scanners:
+    - vuln
+    - misconfig
+    - secret
+
+  # Vulnerability scanning
+  vulnerability:
+    type:
+      - os
+      - library
+
+    severity:
+      - CRITICAL
+      - HIGH
+      - MEDIUM
+
+    ignoreUnfixed: false
+
+  # Secret scanning
+  secret:
+    enabled: true
+    config: trivy-secret.yaml
+
+  # Misconfiguration scanning
+  misconfig:
+    enabled: true
+    scanners:
+      - dockerfile
+      - kubernetes
+      - terraform
+
+  # Output format
+  format: table
+
+  # Exit code
+  exitCode: 1
+
+# Renovate Bot Configuration
+renovate:
+  # Base configuration
+  extends:
+    - config:base
+    - config:semverAllMonthly
+
+  # Labels
+  labels:
+    - dependencies
+    - security
+
+  # Automerge configuration
+  automerge:
+    enabled: true
+    type: pr
+
+  # Schedule
+  schedule:
+    - "before 5am on Monday"
+
+  # Vulnerability alerts
+  vulnerabilityAlerts:
+    enabled: true
+
+  # Package rules
+  packageRules:
+    # Group all non-major updates
+    - matchUpdateTypes:
+        - minor
+        - patch
+      groupName: "non-major dependencies"
+      groupSlug: "all-minor-patch"
+
+    # High priority security updates
+    - matchPackagePatterns:
+        - "*"
+      matchCurrentVersion: ">= 1.0.0"
+      labels:
+        - security
+      prPriority: 10
+
+    # Java dependencies
+    - matchManagers:
+        - maven
+      registryUrls:
+        - https://repo.maven.apache.org/maven2
+
+    # Node.js dependencies
+    - matchManagers:
+        - npm
+      registryUrls:
+        - https://registry.npmjs.org
+
+# Dependabot Configuration
+dependabot:
+  # Version updates
+  versionUpdates:
+    - package-ecosystem: "maven"
+      directory: "/"
+      schedule:
+        interval: "weekly"
+        day: "monday"
+      open-pull-requests-limit: 10
+      reviewers:
+        - "security-team"
+      labels:
+        - "dependencies"
+        - "java"
+
+    - package-ecosystem: "npm"
+      directory: "/"
+      schedule:
+        interval: "weekly"
+      open-pull-requests-limit: 10
+      labels:
+        - "dependencies"
+        - "javascript"
+
+    - package-ecosystem: "docker"
+      directory: "/"
+      schedule:
+        interval: "weekly"
+      labels:
+        - "dependencies"
+        - "docker"
+
+    - package-ecosystem: "github-actions"
+      directory: "/"
+      schedule:
+        interval: "weekly"
+      labels:
+        - "dependencies"
+        - "github-actions"
+
+  # Security updates
+  securityUpdates:
+    enabled: true
+
+# Maven Enforcer Plugin Rules
+mavenEnforcer:
+  rules:
+    # Ban vulnerable dependencies
+    - banDependency:
+        excludes:
+          - groupId: log4j
+            artifactId: log4j
+            versions: "[,1.2.17]"
+          - groupId: org.apache.logging.log4j
+            artifactId: log4j-core
+            versions: "[,2.17.0)"
+
+    # Require Java version
+    - requireJavaVersion:
+        version: "[21,22)"
+
+    # Require Maven version
+    - requireMavenVersion:
+        version: "[3.8.0,)"
+
+    # Dependency convergence
+    - dependencyConvergence: {}
+
+    # Ban duplicate classes
+    - banDuplicateClasses:
+        ignoreClasses:
+          - "javax.*"
+        scopes:
+          - compile
+          - runtime
+
+# Gradle Dependency Analysis (if using Gradle)
+gradle:
+  # Dependency constraints
+  constraints:
+    - plugin: com.github.ben-manes.versions
+      version: 0.47.0
+
+  # Vulnerability scanning
+  scanning:
+    - plugin: org.owasp.dependencycheck
+      version: 8.2.1
+      failBuildOnCVSS: 7.0
+
+# SBOM Generation
+sbom:
+  # Formats
+  formats:
+    - spdx-json
+    - cyclonedx-json
+
+  # Output
+  output:
+    - sbom.spdx.json
+    - sbom.cdx.json
+
+  # Include
+  include:
+    - direct
+    - transitive
+
+  # Metadata
+  metadata:
+    supplier: "YAWL Foundation"
+    authors: "YAWL Security Team"
+    component:
+      name: "YAWL Engine"
+      version: "5.2"
+      type: "application"
+
+# License Scanning
+licenseScanning:
+  # Allowed licenses
+  allowed:
+    - Apache-2.0
+    - MIT
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - CDDL-1.0
+    - EPL-1.0
+    - EPL-2.0
+    - GPL-2.0-with-classpath-exception
+    - LGPL-2.1
+    - ISC
+    - MPL-2.0
+
+  # Forbidden licenses
+  forbidden:
+    - GPL-3.0
+    - AGPL-3.0
+    - SSPL-1.0
+
+  # Review required
+  reviewRequired:
+    - LGPL-3.0
+    - MPL-1.1
+
+# Scan Schedule
+schedule:
+  # Continuous (on every build)
+  continuous:
+    tools:
+      - dependencyCheck
+      - trivy
+
+  # Daily
+  daily:
+    time: "03:00"
+    tools:
+      - snyk
+      - grype
+
+  # Weekly comprehensive
+  weekly:
+    day: Sunday
+    time: "04:00"
+    tools:
+      - dependencyCheck
+      - snyk
+      - trivy
+      - grype
+
+# Alerting
+alerting:
+  # Channels
+  channels:
+    - type: slack
+      webhook: "${SLACK_SECURITY_WEBHOOK}"
+      severity: [critical, high]
+
+    - type: email
+      recipients:
+        - security@example.com
+      severity: [critical, high, medium]
+
+  # Deduplication
+  deduplication:
+    enabled: true
+    window: 24h
+
+# Reporting
+reporting:
+  # Dashboard
+  dashboard:
+    enabled: true
+    url: https://security-dashboard.example.com
+
+  # Metrics
+  metrics:
+    - totalDependencies
+    - vulnerableDependencies
+    - criticalVulnerabilities
+    - highVulnerabilities
+    - meanTimeToRemediation
+    - licenseViolations

@@ -1,0 +1,159 @@
+# Azure RBAC for YAWL Multi-Cloud Deployment
+# Custom role definitions and assignments for AKS
+
+# Custom Role Definition: YAWL Engine
+{
+  "Name": "YAWL Engine Service",
+  "Description": "Minimal permissions for YAWL workflow engine on Azure",
+  "Actions": [
+    "Microsoft.KeyVault/vaults/secrets/readSecret/action",
+    "Microsoft.KeyVault/vaults/secrets/read/action",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
+    "Microsoft.DBforPostgreSQL/flexibleServers/read",
+    "Microsoft.DBforPostgreSQL/flexibleServers/connect/action",
+    "Microsoft.ServiceBus/namespaces/queues/send/action",
+    "Microsoft.ServiceBus/namespaces/queues/receive/action",
+    "Microsoft.EventGrid/topics/publish/action",
+    "Microsoft.Insights/metrics/write",
+    "Microsoft.Insights/dataCollectionRules/logs/write",
+    "Microsoft.OperationalInsights/workspaces/sharedKeys/action"
+  ],
+  "NotActions": [],
+  "DataActions": [
+    "Microsoft.KeyVault/vaults/secrets/readSecret/action",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
+    "Microsoft.ServiceBus/namespaces/messages/send/action",
+    "Microsoft.ServiceBus/namespaces/messages/receive/action"
+  ],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscription-id}/resourceGroups/yawl-{environment}"
+  ]
+}
+
+# Custom Role Definition: YAWL Resource Service
+{
+  "Name": "YAWL Resource Service",
+  "Description": "Permissions for YAWL resource management",
+  "Actions": [
+    "Microsoft.KeyVault/vaults/secrets/readSecret/action",
+    "Microsoft.KeyVault/vaults/secrets/read/action",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
+    "Microsoft.Graph/users/read",
+    "Microsoft.Graph/groups/read",
+    "Microsoft.Graph/groupMembers/read"
+  ],
+  "NotActions": [],
+  "DataActions": [
+    "Microsoft.KeyVault/vaults/secrets/readSecret/action",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+  ],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscription-id}/resourceGroups/yawl-{environment}"
+  ]
+}
+
+# Custom Role Definition: YAWL Monitoring
+{
+  "Name": "YAWL Monitoring",
+  "Description": "Read-only monitoring permissions for YAWL",
+  "Actions": [
+    "Microsoft.Insights/metrics/read",
+    "Microsoft.Insights/metricDefinitions/read",
+    "Microsoft.Insights/diagnosticSettings/read",
+    "Microsoft.OperationalInsights/workspaces/read",
+    "Microsoft.OperationalInsights/workspaces/query/read",
+    "Microsoft.ContainerService/managedClusters/read",
+    "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
+    "Microsoft.DBforPostgreSQL/flexibleServers/read"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscription-id}"
+  ]
+}
+
+---
+# Azure CLI Commands for Role Assignment
+# Run these commands to assign roles to managed identities
+
+# Create Managed Identity for YAWL Engine
+az identity create \
+  --name yawl-engine-identity \
+  --resource-group yawl-${ENVIRONMENT} \
+  --location ${LOCATION}
+
+# Create Managed Identity for YAWL Resource Service
+az identity create \
+  --name yawl-resource-identity \
+  --resource-group yawl-${ENVIRONMENT} \
+  --location ${LOCATION}
+
+# Assign YAWL Engine Role
+role_definition=$(az role definition list --name "YAWL Engine Service" --query [].id -o tsv)
+principal_id=$(az identity show --name yawl-engine-identity --resource-group yawl-${ENVIRONMENT} --query principalId -o tsv)
+
+az role assignment create \
+  --role "${role_definition}" \
+  --assignee "${principal_id}" \
+  --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/yawl-${ENVIRONMENT}"
+
+# Assign Key Vault Secrets User (built-in role for secret access)
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee "${principal_id}" \
+  --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/yawl-${ENVIRONMENT}/providers/Microsoft.KeyVault/vaults/yawl-kv"
+
+# Assign Storage Blob Data Contributor
+az role assignment create \
+  --role "Storage Blob Data Contributor" \
+  --assignee "${principal_id}" \
+  --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/yawl-${ENVIRONMENT}/providers/Microsoft.Storage/storageAccounts/yawlspecs${ENVIRONMENT}"
+
+# Configure AKS to use Managed Identity
+az aks update \
+  --name yawl-cluster \
+  --resource-group yawl-${ENVIRONMENT} \
+  --enable-managed-identity
+
+# Assign identity to pod (using Azure AD Workload Identity)
+az aks pod-identity add \
+  --cluster-name yawl-cluster \
+  --resource-group yawl-${ENVIRONMENT} \
+  --namespace yawl \
+  --name yawl-engine-identity \
+  --identity-resource-id "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/yawl-${ENVIRONMENT}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/yawl-engine-identity"
+
+---
+# Kubernetes Service Account Annotation (for Azure AD Workload Identity)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/client-id: "${CLIENT_ID}"
+    azure.workload.identity/tenant-id: "${TENANT_ID}"
+---
+# Kubernetes Service Account for Resource Service
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/client-id: "${RESOURCE_CLIENT_ID}"
+    azure.workload.identity/tenant-id: "${TENANT_ID}"

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: primary
+spec:
+  serviceName: {{ .Release.Name }}-postgresql-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: primary
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: primary
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-postgresql" .Release.Name) }}
+      {{- if .Values.primary.podSecurityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.primary.podSecurityContext.fsGroup }}
+      {{- end }}
+      containers:
+        - name: postgresql
+          image: postgres:{{ .Chart.AppVersion }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.primary.containerSecurityContext.enabled }}
+          securityContext:
+            runAsUser: {{ .Values.primary.containerSecurityContext.runAsUser }}
+            runAsNonRoot: {{ .Values.primary.containerSecurityContext.runAsNonRoot }}
+          {{- end }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-auth
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: {{ .Values.auth.database }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          {{- if .Values.primary.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: {{ .Values.primary.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.primary.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.primary.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.primary.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.primary.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: {{ .Values.primary.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.primary.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.primary.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.primary.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.primary.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /etc/postgresql
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-postgresql-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        {{- with .Values.primary.persistence.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .Values.primary.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.primary.persistence.storageClass }}
+        storageClassName: {{ .Values.primary.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.primary.persistence.size | quote }}

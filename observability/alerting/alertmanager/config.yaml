@@ -1,0 +1,206 @@
+# Alertmanager Configuration for YAWL Workflow Engine
+# Handles alert routing, grouping, inhibition, and notification
+
+global:
+  # SMTP configuration for email notifications
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alertmanager@yawl.example.com'
+  smtp_auth_username: 'alertmanager@yawl.example.com'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # Slack configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # PagerDuty configuration
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # Default resolve timeout
+  resolve_timeout: 5m
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # Suppress task-level alerts when case-level alert is firing
+  - source_matchers:
+      - alertname = "YAWLCaseFailureRateCritical"
+    target_matchers:
+      - category = "task"
+    equal: ['case_type']
+
+  # Suppress all alerts when infrastructure is critical
+  - source_matchers:
+      - severity = "critical"
+      - category = "infrastructure"
+    target_matchers:
+      - severity = "warning"
+    equal: ['instance']
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'yawl-team-email'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'service', 'severity']
+
+  # Wait time before sending initial notification
+  group_wait: 30s
+
+  # Wait time before sending updated notification
+  group_interval: 5m
+
+  # Wait time before resending notification
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification
+    - matchers:
+        - severity = "critical"
+      receiver: 'yawl-pagerduty'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+      continue: true
+
+    # Critical alerts - also send to Slack
+    - matchers:
+        - severity = "critical"
+      receiver: 'yawl-slack-critical'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+
+    # YAWL Engine alerts
+    - matchers:
+        - service = "yawl-engine"
+      receiver: 'yawl-engine-team'
+      group_by: ['alertname', 'case_type']
+      routes:
+        - matchers:
+            - alertname =~ "YAWLCase.*"
+          receiver: 'yawl-case-alerts'
+        - matchers:
+            - category = "performance"
+          receiver: 'yawl-performance-team'
+
+    # Resource Service alerts
+    - matchers:
+        - service = "yawl-resource-service"
+      receiver: 'yawl-resource-team'
+
+    # Database alerts
+    - matchers:
+        - category = "database"
+      receiver: 'yawl-dba-team'
+      routes:
+        - matchers:
+            - severity = "critical"
+          receiver: 'yawl-dba-pagerduty'
+
+    # SLO alerts - high priority
+    - matchers:
+        - category = "slo"
+      receiver: 'yawl-slo-alerts'
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 30m
+
+# Receivers - notification destinations
+receivers:
+  # Default email receiver
+  - name: 'yawl-team-email'
+    email_configs:
+      - to: 'yawl-team@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[YAWL Alert] {{ .GroupLabels.alertname }}'
+
+  # PagerDuty for critical alerts
+  - name: 'yawl-pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        class: deployment
+        component: yawl-engine
+
+  # Slack - critical alerts channel
+  - name: 'yawl-slack-critical'
+    slack_configs:
+      - channel: '#yawl-critical'
+        send_resolved: true
+        title: ':rotating_light: CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          *Service:* {{ .CommonLabels.service }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+  # YAWL Engine team
+  - name: 'yawl-engine-team'
+    email_configs:
+      - to: 'yawl-engine@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#yawl-engine-alerts'
+        send_resolved: true
+
+  # YAWL Case alerts
+  - name: 'yawl-case-alerts'
+    email_configs:
+      - to: 'yawl-cases@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#yawl-case-alerts'
+        send_resolved: true
+        title: ':workflow: Case Alert: {{ .GroupLabels.alertname }}'
+
+  # YAWL Resource team
+  - name: 'yawl-resource-team'
+    email_configs:
+      - to: 'yawl-resources@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#yawl-resource-alerts'
+        send_resolved: true
+
+  # Performance team
+  - name: 'yawl-performance-team'
+    email_configs:
+      - to: 'yawl-performance@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#yawl-performance'
+        send_resolved: true
+
+  # DBA team
+  - name: 'yawl-dba-team'
+    email_configs:
+      - to: 'dba@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#dba-alerts'
+        send_resolved: true
+
+  # DBA PagerDuty
+  - name: 'yawl-dba-pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_DBA_KEY}'
+        severity: critical
+
+  # SLO alerts
+  - name: 'yawl-slo-alerts'
+    email_configs:
+      - to: 'sre@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#slo-alerts'
+        send_resolved: true
+        title: ':target: SLO Alert'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SLO_KEY}'
+        severity: warning

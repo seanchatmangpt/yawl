@@ -1,0 +1,298 @@
+# GCP Marketplace Pricing Model Configuration
+# Defines pricing tiers, metering dimensions, and billing rules
+
+apiVersion: billing.yawl.org/v1
+kind: PricingModel
+metadata:
+  name: yawl-standard-pricing
+  marketplace: gcp
+  version: "1.0.0"
+spec:
+  # Product identification
+  product:
+    id: "yawlfoundation-yawl-workflow-engine"
+    name: "YAWL Workflow Engine"
+    description: "Enterprise workflow automation with Petri Net patterns"
+    category: "developer-tools"
+    provider:
+      name: "YAWL Foundation"
+      url: "https://yawlfoundation.org"
+
+  # Pricing plans
+  plans:
+    # Free tier for testing and development
+    - id: "free-tier"
+      name: "Free Tier"
+      description: "For development and testing"
+      billingPeriod: "MONTHLY"
+      basePrice: 0.00
+      currency: "USD"
+      features:
+        - name: "workflow_executions"
+          limit: 1000
+          unit: "executions/month"
+        - name: "compute_units"
+          limit: 10000
+          unit: "units/month"
+        - name: "concurrent_workflows"
+          limit: 5
+          unit: "workflows"
+        - name: "team_members"
+          limit: 3
+          unit: "users"
+      meteringDimensions: []
+
+    # Standard subscription plan
+    - id: "standard"
+      name: "Standard"
+      description: "For growing teams"
+      billingPeriod: "MONTHLY"
+      basePrice: 99.00
+      currency: "USD"
+      features:
+        - name: "workflow_executions"
+          limit: 50000
+          unit: "executions/month"
+        - name: "compute_units"
+          limit: 500000
+          unit: "units/month"
+        - name: "concurrent_workflows"
+          limit: 50
+          unit: "workflows"
+        - name: "team_members"
+          limit: 25
+          unit: "users"
+        - name: "history_retention"
+          limit: 30
+          unit: "days"
+      meteringDimensions:
+        - name: "workflow_executions"
+          displayName: "Workflow Executions"
+          description: "Number of workflow instances executed"
+          unit: "executions"
+          aggregation: "COUNT"
+          pricing:
+            - startRange: 0
+              endRange: 50000
+              pricePerUnit: 0.00
+            - startRange: 50001
+              endRange: 100000
+              pricePerUnit: 0.002
+            - startRange: 100001
+              endRange: null
+              pricePerUnit: 0.001
+
+        - name: "compute_units"
+          displayName: "Compute Units"
+          description: "Computational resources consumed"
+          unit: "units"
+          aggregation: "SUM"
+          pricing:
+            - startRange: 0
+              endRange: 500000
+              pricePerUnit: 0.00
+            - startRange: 500001
+              endRange: 1000000
+              pricePerUnit: 0.0001
+            - startRange: 1000001
+              endRange: null
+              pricePerUnit: 0.00005
+
+    # Professional plan
+    - id: "professional"
+      name: "Professional"
+      description: "For enterprise teams"
+      billingPeriod: "MONTHLY"
+      basePrice: 499.00
+      currency: "USD"
+      features:
+        - name: "workflow_executions"
+          limit: 500000
+          unit: "executions/month"
+        - name: "compute_units"
+          limit: 5000000
+          unit: "units/month"
+        - name: "concurrent_workflows"
+          limit: 200
+          unit: "workflows"
+        - name: "team_members"
+          limit: 100
+          unit: "users"
+        - name: "history_retention"
+          limit: 90
+          unit: "days"
+      meteringDimensions:
+        - name: "workflow_executions"
+          displayName: "Workflow Executions"
+          description: "Number of workflow instances executed"
+          unit: "executions"
+          aggregation: "COUNT"
+          pricing:
+            - startRange: 0
+              endRange: 500000
+              pricePerUnit: 0.00
+            - startRange: 500001
+              endRange: 1000000
+              pricePerUnit: 0.0015
+            - startRange: 1000001
+              endRange: null
+              pricePerUnit: 0.001
+
+        - name: "compute_units"
+          displayName: "Compute Units"
+          description: "Computational resources consumed"
+          unit: "units"
+          aggregation: "SUM"
+          pricing:
+            - startRange: 0
+              endRange: 5000000
+              pricePerUnit: 0.00
+            - startRange: 5000001
+              endRange: 10000000
+              pricePerUnit: 0.00008
+            - startRange: 10000001
+              endRange: null
+              pricePerUnit: 0.00004
+
+    # Enterprise plan with custom pricing
+    - id: "enterprise"
+      name: "Enterprise"
+      description: "For large organizations"
+      billingPeriod: "YEARLY"
+      basePrice: null  # Custom pricing
+      currency: "USD"
+      features:
+        - name: "workflow_executions"
+          limit: null  # Unlimited
+          unit: "executions/month"
+        - name: "compute_units"
+          limit: null  # Unlimited
+          unit: "units/month"
+        - name: "concurrent_workflows"
+          limit: null  # Unlimited
+          unit: "workflows"
+        - name: "team_members"
+          limit: null  # Unlimited
+          unit: "users"
+        - name: "history_retention"
+          limit: 365
+          unit: "days"
+        - name: "sla"
+          limit: 99.99
+          unit: "uptime_percent"
+        - name: "support"
+          limit: 24
+          unit: "hour_response"
+      customPricing: true
+      contactSales: true
+
+  # Metering configuration
+  metering:
+    # How often usage is reported to GCP
+    reportInterval: "60s"
+    # Maximum batch size before forced report
+    batchSize: 100
+    # Grace period for usage reporting
+    gracePeriod: "300s"
+    # Metrics to track
+    metrics:
+      - name: "yawlfoundation-yawl.googleapis.com/workflow_executions"
+        displayName: "Workflow Executions"
+        kind: "DELTA"
+        valueType: "INT64"
+        unit: "1"
+        labels:
+          - key: "workflow_name"
+          - key: "status"
+          - key: "region"
+
+      - name: "yawlfoundation-yawl.googleapis.com/compute_units"
+        displayName: "Compute Units"
+        kind: "CUMULATIVE"
+        valueType: "DOUBLE"
+        unit: "1"
+        labels:
+          - key: "workflow_name"
+          - key: "task_type"
+
+      - name: "yawlfoundation-yawl.googleapis.com/active_workflows"
+        displayName: "Active Workflows"
+        kind: "GAUGE"
+        valueType: "INT64"
+        unit: "1"
+        labels:
+          - key: "region"
+
+  # Entitlement configuration
+  entitlements:
+    # Trial period
+    trial:
+      enabled: true
+      durationDays: 14
+      features:
+        - "standard"
+      requiresPaymentMethod: false
+
+    # Renewal settings
+    renewal:
+      autoRenew: true
+      gracePeriodDays: 7
+      reminderDays: 14
+
+    # Suspension policy
+    suspension:
+      enabled: true
+      afterDays: 7
+      notificationDays: 3
+
+  # Discounts and promotions
+  discounts:
+    - id: "annual-discount"
+      name: "Annual Subscription Discount"
+      type: "percentage"
+      value: 20
+      condition:
+        billingPeriod: "YEARLY"
+
+    - id: "startup-program"
+      name: "Startup Program"
+      type: "percentage"
+      value: 50
+      duration: 12
+      durationUnit: "months"
+      condition:
+        maxEmployees: 50
+        requiresApplication: true
+
+    - id: "nonprofit"
+      name: "Non-Profit Discount"
+      type: "percentage"
+      value: 30
+      condition:
+        requiresVerification: true
+
+  # Currency support
+  currencies:
+    supported:
+      - USD
+      - EUR
+      - GBP
+      - JPY
+      - AUD
+      - CAD
+    default: USD
+    exchangeRateSource: "ECB"
+    updateFrequency: "daily"
+
+  # Tax configuration
+  tax:
+    mode: "marketplace_managed"
+    regions:
+      - code: "US"
+        type: "sales_tax"
+      - code: "EU"
+        type: "vat"
+      - code: "AU"
+        type: "gst"
+      - code: "CA"
+        type: "gst_hst"

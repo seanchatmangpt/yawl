@@ -1,0 +1,302 @@
+# YAWL Test Template
+# Runs unit tests, integration tests, and code quality checks
+
+parameters:
+  - name: appName
+    type: string
+    default: 'yawl'
+  - name: javaVersion
+    type: string
+    default: '11'
+
+jobs:
+  - job: UnitTests
+    displayName: 'Run Unit Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 60
+    steps:
+      - checkout: self
+
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+
+      - task: Ant@1
+        displayName: 'Initialize Test Environment'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'init compile'
+          antVersion: '1.10.14'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+
+      # Run JUnit unit tests
+      - task: Ant@1
+        displayName: 'Run Unit Tests'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'test-unit'
+          antVersion: '1.10.14'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dtest.output.dir=$(Build.SourcesDirectory)/test-results'
+        continueOnError: true
+
+      # If no test-unit target exists, run tests directly
+      - script: |
+          echo "Running JUnit tests directly..."
+          java -cp "classes:build/3rdParty/lib/*:test" \
+            org.junit.runner.JUnitCore \
+            org.yawlfoundation.yawl.TestAllYAWLSuites
+        displayName: 'Run JUnit Tests (Fallback)'
+        condition: failed()
+
+      # Publish test results
+      - task: PublishTestResults@2
+        displayName: 'Publish Unit Test Results'
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/TEST-*.xml'
+          searchFolder: '$(Build.SourcesDirectory)/test-results'
+          testRunTitle: 'Unit Tests - $(Build.BuildId)'
+          mergeTestResults: true
+          failTaskOnFailedTests: true
+
+      # Generate coverage report
+      - task: Ant@1
+        displayName: 'Generate Coverage Report'
+        condition: eq(variables['generateCoverage'], 'true')
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'coverage-report'
+          antVersion: '1.10.14'
+
+      # Publish coverage results
+      - task: PublishCodeCoverageResults@2
+        displayName: 'Publish Code Coverage'
+        condition: eq(variables['generateCoverage'], 'true')
+        inputs:
+          summaryFileLocation: '$(Build.SourcesDirectory)/reports/coverage/jacoco.xml'
+          pathToSources: '$(Build.SourcesDirectory)/src'
+          coverageTool: 'JaCoCo'
+
+  - job: IntegrationTests
+    displayName: 'Run Integration Tests'
+    dependsOn: UnitTests
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 90
+    services:
+      postgres:
+        image: postgres:14
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: yawl
+          POSTGRES_PASSWORD: yawl
+          POSTGRES_DB: yawl_test
+    steps:
+      - checkout: self
+
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+
+      # Wait for database to be ready
+      - script: |
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U yawl; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "PostgreSQL failed to start"
+          exit 1
+        displayName: 'Wait for PostgreSQL'
+
+      # Setup test database schema
+      - script: |
+          echo "Creating test database schema..."
+          PGPASSWORD=yawl psql -h localhost -U yawl -d yawl_test -f $(Build.SourcesDirectory)/database/schema.sql || true
+        displayName: 'Setup Database Schema'
+
+      # Create test configuration
+      - script: |
+          cat > $(Build.SourcesDirectory)/build/build-test.properties << EOF
+          database.type=postgres
+          database.path=//localhost:5432/yawl_test
+          database.user=yawl
+          database.password=yawl
+          yawl.logging.level=DEBUG
+          hibernate.logging.level=ERROR
+          root.logging.level=ERROR
+          EOF
+        displayName: 'Create Test Configuration'
+
+      - task: Ant@1
+        displayName: 'Build for Integration Tests'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'init compile'
+          antVersion: '1.10.14'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dbuild.properties.file=build/build-test.properties'
+
+      - task: Ant@1
+        displayName: 'Run Integration Tests'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'test-integration'
+          antVersion: '1.10.14'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dtest.env=ci -Dtest.output.dir=$(Build.SourcesDirectory)/integration-test-results'
+        continueOnError: true
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: yawl_test
+          DB_USER: yawl
+          DB_PASSWORD: yawl
+
+      - task: PublishTestResults@2
+        displayName: 'Publish Integration Test Results'
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/TEST-*.xml'
+          searchFolder: '$(Build.SourcesDirectory)/integration-test-results'
+          testRunTitle: 'Integration Tests - $(Build.BuildId)'
+          mergeTestResults: true
+          failTaskOnFailedTests: true
+
+  - job: CodeQuality
+    displayName: 'Code Quality Checks'
+    dependsOn: UnitTests
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+
+      # Checkstyle for code style
+      - task: Ant@1
+        displayName: 'Run Checkstyle'
+        condition: eq(variables['runCheckstyle'], 'true')
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'checkstyle'
+          antVersion: '1.10.14'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Checkstyle Results'
+        condition: eq(variables['runCheckstyle'], 'true')
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/reports/checkstyle'
+          ArtifactName: 'checkstyle-report'
+          publishLocation: 'Container'
+
+      # PMD for code quality
+      - task: Ant@1
+        displayName: 'Run PMD'
+        condition: eq(variables['runPMD'], 'true')
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'pmd'
+          antVersion: '1.10.14'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish PMD Results'
+        condition: eq(variables['runPMD'], 'true')
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/reports/pmd'
+          ArtifactName: 'pmd-report'
+          publishLocation: 'Container'
+
+      # FindBugs for bug detection
+      - task: Ant@1
+        displayName: 'Run FindBugs'
+        condition: eq(variables['runFindBugs'], 'true')
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'findbugs'
+          antVersion: '1.10.14'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish FindBugs Results'
+        condition: eq(variables['runFindBugs'], 'true')
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/reports/findbugs'
+          ArtifactName: 'findbugs-report'
+          publishLocation: 'Container'
+
+  - job: EngineTests
+    displayName: 'Engine-Specific Tests'
+    dependsOn: UnitTests
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      matrix:
+        elements:
+          testSuite: 'Elements'
+        state:
+          testSuite: 'State'
+        engine:
+          testSuite: 'Engine'
+        exceptions:
+          testSuite: 'Exceptions'
+        logging:
+          testSuite: 'Logging'
+        schema:
+          testSuite: 'Schema'
+        unmarshaller:
+          testSuite: 'Unmarshaller'
+        util:
+          testSuite: 'Util'
+        worklist:
+          testSuite: 'Worklist'
+        authentication:
+          testSuite: 'Authentication'
+    steps:
+      - checkout: self
+
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+
+      - task: Ant@1
+        displayName: 'Compile for Tests'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'init compile'
+          antVersion: '1.10.14'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+
+      - script: |
+          echo "Running ${{ parameters.testSuite }} test suite..."
+          java -cp "classes:build/3rdParty/lib/*:test" \
+            junit.textui.TestRunner \
+            org.yawlfoundation.yawl.${{ parameters.testSuite }}TestSuite
+        displayName: 'Run ${{ parameters.testSuite }} Tests'
+
+      - task: PublishTestResults@2
+        displayName: 'Publish Test Results'
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/TEST-*.xml'
+          testRunTitle: '${{ parameters.testSuite }} Tests - $(Build.BuildId)'

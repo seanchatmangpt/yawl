@@ -1,0 +1,371 @@
+# YAWL Workflow Engine - GCP Marketplace Pricing
+# Version: 5.2.0
+# Publisher: YAWL Foundation
+
+# Pricing model configuration for Google Cloud Marketplace
+
+pricing:
+  model: subscription
+
+  currency: USD
+
+  # Billing period options
+  billing_periods:
+    - monthly
+    - yearly
+
+  # Pricing plans
+  plans:
+    # Free tier for evaluation and testing
+    - name: free-trial
+      displayName: Free Trial
+      description: |
+        30-day free trial for evaluation.
+        Includes all features with limited capacity.
+      billingPeriod: monthly
+      prices:
+        monthly: 0.00
+      features:
+        - name: max_cases
+          value: 100
+          description: Maximum concurrent workflow cases
+        - name: max_users
+          value: 5
+          description: Maximum users
+        - name: retention_days
+          value: 7
+          description: Data retention period
+        - name: support
+          value: community
+          description: Community support only
+      limits:
+        cpu: 2
+        memory: 4Gi
+        storage: 50Gi
+        database_connections: 20
+      trial:
+        enabled: true
+        duration_days: 30
+
+    # Standard production tier
+    - name: standard
+      displayName: Standard
+      description: |
+        Production-ready deployment for small to medium workloads.
+        Includes standard support and monitoring.
+      billingPeriod: monthly
+      prices:
+        monthly: 499.00
+        yearly: 4990.00  # ~17% discount
+      features:
+        - name: max_cases
+          value: 1000
+          description: Maximum concurrent workflow cases
+        - name: max_users
+          value: 25
+          description: Maximum users
+        - name: retention_days
+          value: 30
+          description: Data retention period
+        - name: support
+          value: standard
+          description: Standard support (24-hour response)
+      limits:
+        cpu: 8
+        memory: 32Gi
+        storage: 500Gi
+        database_connections: 100
+      sla:
+        availability: 99.5
+        response_time_hours: 24
+
+    # Professional tier
+    - name: professional
+      displayName: Professional
+      description: |
+        High-performance deployment for enterprise workloads.
+        Includes premium support, advanced monitoring, and HA.
+      billingPeriod: monthly
+      prices:
+        monthly: 1499.00
+        yearly: 14990.00  # ~17% discount
+      features:
+        - name: max_cases
+          value: 10000
+          description: Maximum concurrent workflow cases
+        - name: max_users
+          value: 100
+          description: Maximum users
+        - name: retention_days
+          value: 90
+          description: Data retention period
+        - name: support
+          value: premium
+          description: Premium support (4-hour response)
+        - name: ha
+          value: true
+          description: High availability deployment
+        - name: backup
+          value: true
+          description: Automated backups with 30-day retention
+      limits:
+        cpu: 32
+        memory: 128Gi
+        storage: 2000Gi
+        database_connections: 500
+      sla:
+        availability: 99.9
+        response_time_hours: 4
+
+    # Enterprise tier
+    - name: enterprise
+      displayName: Enterprise
+      description: |
+        Enterprise-grade deployment with unlimited capacity.
+        Includes dedicated support, custom SLA, and compliance.
+      billingPeriod: monthly
+      prices:
+        monthly: contact  # Contact sales
+      features:
+        - name: max_cases
+          value: unlimited
+          description: Unlimited concurrent workflow cases
+        - name: max_users
+          value: unlimited
+          description: Unlimited users
+        - name: retention_days
+          value: 365
+          description: Data retention period
+        - name: support
+          value: enterprise
+          description: Enterprise support (1-hour response)
+        - name: ha
+          value: true
+          description: Multi-region high availability
+        - name: backup
+          value: true
+          description: Cross-region backups with 1-year retention
+        - name: compliance
+          value: SOC2, HIPAA, GDPR
+          description: Compliance certifications
+        - name: sso
+          value: true
+          description: SAML SSO integration
+      limits:
+        cpu: unlimited
+        memory: unlimited
+        storage: unlimited
+        database_connections: unlimited
+      sla:
+        availability: 99.99
+        response_time_hours: 1
+
+  # Add-ons (consumption-based)
+  addons:
+    - name: additional_storage
+      displayName: Additional Storage
+      description: Additional block storage per GB/month
+      unit: GB
+      price: 0.10
+      unitPrice: monthly
+
+    - name: additional_compute
+      displayName: Additional Compute
+      description: Additional vCPU per hour
+      unit: vCPU-hour
+      price: 0.05
+      unitPrice: hourly
+
+    - name: premium_support_hours
+      displayName: Premium Support Hours
+      description: Dedicated support engineer hours
+      unit: hour
+      price: 250.00
+      unitPrice: hourly
+
+    - name: custom_integration
+      displayName: Custom Integration
+      description: Custom integration development
+      unit: hour
+      price: 200.00
+      unitPrice: hourly
+
+  # Volume discounts
+  volume_discounts:
+    - name: startup
+      min_spend: 0
+      max_spend: 5000
+      discount_percent: 0
+
+    - name: growth
+      min_spend: 5000
+      max_spend: 25000
+      discount_percent: 10
+
+    - name: scale
+      min_spend: 25000
+      max_spend: 100000
+      discount_percent: 20
+
+    - name: enterprise
+      min_spend: 100000
+      max_spend: null
+      discount_percent: 30
+
+  # Commitment discounts
+  commitment_discounts:
+    - name: annual
+      commitment_period: yearly
+      discount_percent: 17
+
+    - name: two_year
+      commitment_period: 2-years
+      discount_percent: 25
+
+    - name: three_year
+      commitment_period: 3-years
+      discount_percent: 35
+
+  # Region multipliers
+  region_multipliers:
+    - region: us-central1
+      multiplier: 1.0
+    - region: us-east1
+      multiplier: 1.0
+    - region: us-west1
+      multiplier: 1.0
+    - region: europe-west1
+      multiplier: 1.1
+    - region: europe-west2
+      multiplier: 1.1
+    - region: asia-east1
+      multiplier: 1.15
+    - region: asia-southeast1
+      multiplier: 1.15
+    - region: australia-southeast1
+      multiplier: 1.2
+
+  # Infrastructure costs (passed through to customer)
+  infrastructure:
+    gke:
+      description: Google Kubernetes Engine cluster
+      billing: consumption
+    cloud_sql:
+      description: Cloud SQL PostgreSQL instance
+      billing: consumption
+    cloud_storage:
+      description: Cloud Storage buckets
+      billing: consumption
+    networking:
+      description: VPC, load balancers, and networking
+      billing: consumption
+
+  # Feature comparison matrix
+  feature_matrix:
+    features:
+      - name: Concurrent Cases
+        free-trial: 100
+        standard: 1,000
+        professional: 10,000
+        enterprise: Unlimited
+
+      - name: Users
+        free-trial: 5
+        standard: 25
+        professional: 100
+        enterprise: Unlimited
+
+      - name: Data Retention
+        free-trial: 7 days
+        standard: 30 days
+        professional: 90 days
+        enterprise: 1 year
+
+      - name: High Availability
+        free-trial: "No"
+        standard: "No"
+        professional: "Yes"
+        enterprise: Multi-region
+
+      - name: Automated Backups
+        free-trial: "No"
+        standard: "Yes"
+        professional: "Yes"
+        enterprise: Cross-region
+
+      - name: Monitoring
+        free-trial: Basic
+        standard: Standard
+        professional: Advanced
+        enterprise: Premium
+
+      - name: Support Level
+        free-trial: Community
+        standard: 24-hour
+        professional: 4-hour
+        enterprise: 1-hour
+
+      - name: SLA
+        free-trial: "None"
+        standard: "99.5%"
+        professional: "99.9%"
+        enterprise: "99.99%"
+
+      - name: SSO/SAML
+        free-trial: "No"
+        standard: "No"
+        professional: "Yes"
+        enterprise: "Yes"
+
+      - name: Custom Branding
+        free-trial: "No"
+        standard: "No"
+        professional: "No"
+        enterprise: "Yes"
+
+      - name: Compliance
+        free-trial: "None"
+        standard: "None"
+        professional: SOC2
+        enterprise: SOC2, HIPAA, GDPR
+
+  # Tax and regulatory
+  tax:
+    categories:
+      - software
+      - saas
+    exemptions:
+      - educational
+      - nonprofit
+      - government
+
+# Marketplace metadata
+metadata:
+  publisher:
+    name: YAWL Foundation
+    website: https://yawlfoundation.org
+    contact: marketplace@yawlfoundation.org
+
+  product:
+    name: YAWL Workflow Engine
+    category: Developer Tools
+    subcategory: Workflow & BPM
+    tags:
+      - workflow
+      - bpm
+      - petri-net
+      - business-process
+      - automation
+      - java
+      - kubernetes
+
+  release:
+    version: 5.2.0
+    date: 2024-01-15
+    release_notes_url: https://yawlfoundation.org/releases/5.2.0
+
+  legal:
+    license: LGPL-3.0
+    eula_url: https://yawlfoundation.org/eula
+    privacy_url: https://yawlfoundation.org/privacy
+    tos_url: https://yawlfoundation.org/terms

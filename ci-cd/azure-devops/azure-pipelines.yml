@@ -1,0 +1,460 @@
+# YAWL Azure DevOps Pipeline
+# Build, test, and deploy YAWL workflow engine to Azure Kubernetes Service
+# Version: 5.2
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - release/*
+  paths:
+    exclude:
+      - README.md
+      - docs/
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+resources:
+  repositories:
+    - repository: self
+      type: git
+      ref: $(Build.SourceBranch)
+
+# Variable groups - configure these in Azure DevOps Library
+# - yawl-build-variables: Contains build-specific variables
+# - yawl-deploy-variables: Contains deployment configuration
+# - yawl-dev-variables: Development environment variables
+# - yawl-qa-variables: QA environment variables
+# - yawl-prod-variables: Production environment variables
+variables:
+  - group: yawl-build-variables
+  - group: yawl-deploy-variables
+  - name: appName
+    value: 'yawl'
+  - name: appVersion
+    value: '5.2'
+  - name: dockerRegistry
+    value: '$(acrName).azurecr.io'
+  - name: antVersion
+    value: '1.10.14'
+  - name: javaVersion
+    value: '11'
+  - name: buildNumber
+    value: '$(Build.BuildId)'
+  - name: imageTag
+    value: '$(appVersion)-$(buildNumber)'
+  - name: vmImageName
+    value: 'ubuntu-latest'
+
+stages:
+  # ============================================
+  # Build Stage - Uses Template
+  # ============================================
+  - stage: Build
+    displayName: 'Build Stage'
+    jobs:
+      - template: templates/build.yml
+        parameters:
+          appName: $(appName)
+          appVersion: $(appVersion)
+          antVersion: $(antVersion)
+          javaVersion: $(javaVersion)
+
+  # ============================================
+  # Test Stage - Uses Template
+  # ============================================
+  - stage: Test
+    displayName: 'Test Stage'
+    dependsOn: Build
+    jobs:
+      - template: templates/test.yml
+        parameters:
+          appName: $(appName)
+          javaVersion: $(javaVersion)
+
+  # ============================================
+  # Security Scan Stage
+  # ============================================
+  - stage: SecurityScan
+    displayName: 'Security Scanning'
+    dependsOn: Build
+    jobs:
+      - job: SecurityScan
+        displayName: 'Run Security Scans'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: UseJavaVersion@1
+            inputs:
+              versionSpec: '$(javaVersion)'
+              architecture: 'x64'
+
+          # Dependency vulnerability scan
+          - task: dependency-check-build-task@6
+            displayName: 'Dependency Vulnerability Scan'
+            inputs:
+              projectName: 'YAWL Workflow Engine'
+              scanPath: '$(Build.SourcesDirectory)/build/3rdParty/lib'
+              format: 'ALL'
+              reportsDirectory: '$(Build.ArtifactStagingDirectory)/security-reports'
+              failOnCVSS: 7
+
+          # OWASP ZAP scan
+          - task: OwaspZapScan@2
+            displayName: 'OWASP ZAP Security Scan'
+            condition: eq(variables['enableZapScan'], 'true')
+            inputs:
+              zapEndpoint: '$(zapEndpoint)'
+              zapApiKey: '$(zapApiKey)'
+              targetUrl: 'http://localhost:8080/yawl'
+              reportType: 'html'
+
+          # SonarQube/SonarCloud analysis
+          - task: SonarCloudPrepare@2
+            displayName: 'Prepare SonarCloud Analysis'
+            condition: ne(variables['sonarCloudToken'], '')
+            inputs:
+              SonarCloud: 'SonarCloud'
+              organization: '$(sonarOrganization)'
+              scannerMode: 'CLI'
+              configMode: 'manual'
+              cliConfig: |
+                sonar.projectKey=$(sonarProjectKey)
+                sonar.projectName=YAWL
+                sonar.projectVersion=$(appVersion)
+                sonar.sources=src
+                sonar.tests=test
+                sonar.java.binaries=classes
+                sonar.coverage.jacoco.xmlReportPaths=reports/coverage/jacoco.xml
+
+          - task: SonarCloudAnalyze@2
+            displayName: 'Run SonarCloud Analysis'
+            condition: ne(variables['sonarCloudToken'], '')
+
+          - task: SonarCloudPublish@2
+            displayName: 'Publish SonarCloud Results'
+            condition: ne(variables['sonarCloudToken'], '')
+            inputs:
+              pollingTimeoutSec: '300'
+
+          # Publish security reports
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Security Reports'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/security-reports'
+              ArtifactName: 'security-reports'
+              publishLocation: 'Container'
+
+  # ============================================
+  # Docker Build & Push Stage
+  # ============================================
+  - stage: DockerBuild
+    displayName: 'Docker Build & Push'
+    dependsOn:
+      - Test
+      - SecurityScan
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - job: BuildAndPush
+        displayName: 'Build and Push Docker Images'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+
+          # Download build artifacts containing WAR files
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download WAR Artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'specific'
+              artifactName: 'war-files'
+              downloadPath: '$(Build.SourcesDirectory)/artifacts'
+
+          # Set up Docker registry authentication
+          - task: Docker@2
+            displayName: 'Login to ACR'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              command: 'login'
+
+          # Build and push engine image
+          - task: Docker@2
+            displayName: 'Build YAWL Engine Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/engine'
+              command: 'build'
+              Dockerfile: '$(Build.SourcesDirectory)/ci-cd/docker/Dockerfile.engine'
+              buildContext: '$(Build.SourcesDirectory)'
+              tags: |
+                $(imageTag)
+                latest
+              arguments: '--build-arg APP_VERSION=$(appVersion)'
+
+          - task: Docker@2
+            displayName: 'Push YAWL Engine Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/engine'
+              command: 'push'
+              tags: |
+                $(imageTag)
+                latest
+
+          # Build and push resource service image
+          - task: Docker@2
+            displayName: 'Build Resource Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/resource-service'
+              command: 'build'
+              Dockerfile: '$(Build.SourcesDirectory)/ci-cd/docker/Dockerfile.resource-service'
+              buildContext: '$(Build.SourcesDirectory)'
+              tags: |
+                $(imageTag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Push Resource Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/resource-service'
+              command: 'push'
+              tags: |
+                $(imageTag)
+                latest
+
+          # Build and push worklet service image
+          - task: Docker@2
+            displayName: 'Build Worklet Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/worklet-service'
+              command: 'build'
+              Dockerfile: '$(Build.SourcesDirectory)/ci-cd/docker/Dockerfile.worklet-service'
+              buildContext: '$(Build.SourcesDirectory)'
+              tags: |
+                $(imageTag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Push Worklet Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/worklet-service'
+              command: 'push'
+              tags: |
+                $(imageTag)
+                latest
+
+          # Build and push monitor service image
+          - task: Docker@2
+            displayName: 'Build Monitor Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/monitor-service'
+              command: 'build'
+              Dockerfile: '$(Build.SourcesDirectory)/ci-cd/docker/Dockerfile.monitor-service'
+              buildContext: '$(Build.SourcesDirectory)'
+              tags: |
+                $(imageTag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Push Monitor Service Image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'yawl/monitor-service'
+              command: 'push'
+              tags: |
+                $(imageTag)
+                latest
+
+          # Scan images for vulnerabilities with Trivy
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 \
+                $(dockerRegistry)/yawl/engine:$(imageTag)
+            displayName: 'Scan Engine Image with Trivy'
+            continueOnError: true
+
+  # ============================================
+  # Deploy to Development - Uses Template
+  # ============================================
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: DockerBuild
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    variables:
+      - group: yawl-dev-variables
+    jobs:
+      - deployment: DeployDev
+        displayName: 'Deploy to Dev AKS'
+        environment: 'yawl-dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: templates/deploy.yml
+                  parameters:
+                    environment: 'dev'
+                    namespace: 'yawl-dev'
+                    imageTag: '$(imageTag)'
+                    replicas: 2
+
+  # ============================================
+  # Deploy to QA - Uses Template
+  # ============================================
+  - stage: DeployQA
+    displayName: 'Deploy to QA'
+    dependsOn: DockerBuild
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      - group: yawl-qa-variables
+    jobs:
+      - deployment: DeployQA
+        displayName: 'Deploy to QA AKS'
+        environment: 'yawl-qa'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: templates/deploy.yml
+                  parameters:
+                    environment: 'qa'
+                    namespace: 'yawl-qa'
+                    imageTag: '$(imageTag)'
+                    replicas: 3
+
+  # ============================================
+  # Deploy to Production - Uses Template with Canary
+  # ============================================
+  - stage: DeployProd
+    displayName: 'Deploy to Production'
+    dependsOn: DeployQA
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    variables:
+      - group: yawl-prod-variables
+    jobs:
+      - deployment: DeployProd
+        displayName: 'Deploy to Production AKS'
+        environment: 'yawl-prod'
+        strategy:
+          canary:
+            increments: [25, 50, 100]
+            preDeploy:
+              steps:
+                - script: |
+                    echo "Running pre-deployment validation for production..."
+                    # Add pre-deployment checks here
+            deploy:
+              steps:
+                - template: templates/deploy.yml
+                  parameters:
+                    environment: 'prod'
+                    namespace: 'yawl-prod'
+                    imageTag: '$(imageTag)'
+                    replicas: 5
+            postRouteTraffic:
+              steps:
+                - script: |
+                    echo "Running post-deployment smoke tests..."
+                    # Add smoke test commands here
+            on:
+              failure:
+                steps:
+                  - script: |
+                      echo "Deployment failed, initiating rollback..."
+                      helm rollback yawl --namespace=yawl-prod
+              success:
+                steps:
+                  - script: echo "Production deployment successful!"
+
+  # ============================================
+  # Post-Deployment Tests
+  # ============================================
+  - stage: PostDeployTests
+    displayName: 'Post-Deployment Tests'
+    dependsOn: DeployProd
+    condition: succeeded()
+    jobs:
+      - job: IntegrationTests
+        displayName: 'Run Integration Tests'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: UseJavaVersion@1
+            inputs:
+              versionSpec: '$(javaVersion)'
+              architecture: 'x64'
+
+          - script: |
+              echo "Running integration tests against production..."
+              java -cp "classes:build/3rdParty/lib/*:test" \
+                org.junit.runner.JUnitCore \
+                org.yawlfoundation.yawl.IntegrationTestSuite
+            displayName: 'Run Integration Tests'
+            env:
+              TEST_ENV: prod
+              TEST_URL: $(prodUrl)
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Integration Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/TEST-*.xml'
+              testRunTitle: 'Integration Tests - Production'
+
+  # ============================================
+  # Notification Stage
+  # ============================================
+  - stage: Notify
+    displayName: 'Send Notifications'
+    dependsOn:
+      - Build
+      - Test
+      - SecurityScan
+      - DockerBuild
+      - DeployDev
+      - DeployQA
+      - DeployProd
+    condition: always()
+    jobs:
+      - job: Notify
+        displayName: 'Send Notifications'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: SlackNotification@1
+            displayName: 'Send Slack notification'
+            condition: ne(variables['slackApiToken'], '')
+            inputs:
+              SlackApiToken: $(slackApiToken)
+              Channel: '#deployments'
+              Message: |
+                Pipeline: $(Build.DefinitionName)
+                Status: $(Agent.JobStatus)
+                Branch: $(Build.SourceBranch)
+                Commit: $(Build.SourceVersionMessage)
+                Image Tag: $(imageTag)
+                Link: $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - task: MspremBuildReleaseTask@1
+            displayName: 'Send Teams notification'
+            condition: ne(variables['teamsWebhookUrl'], '')
+            inputs:
+              WebhookUrl: $(teamsWebhookUrl)
+              Title: 'YAWL Deployment - $(Agent.JobStatus)'
+              Message: |
+                Branch: $(Build.SourceBranch)
+                Image Tag: $(imageTag)
+                Build: $(Build.BuildNumber)

@@ -1,0 +1,339 @@
+# YAWL Workflow Engine - AWS Marketplace Pricing Configuration
+# Version: 1.0
+# Last Updated: February 2025
+
+---
+pricing:
+  model: contracts_with_consumption  # Options: contracts, subscriptions, contracts_with_consumption, free
+
+  # Currency configuration
+  currency: USD
+  price_currency: USD
+
+  # Free trial configuration
+  free_trial:
+    enabled: true
+    duration_days: 14
+    description: "14-day free trial with Professional Tier features"
+    requires_credit_card: false  # AWS Marketplace handles this
+
+  # Contract-based pricing tiers (upfront annual payment)
+  contract_tiers:
+    - id: basic_tier
+      name: "Basic Tier"
+      description: |
+        Perfect for small teams getting started with workflow automation.
+        Includes core YAWL features with email support.
+
+      annual_price: 3588.00  # $299/month billed annually
+      monthly_price: 349.00  # $349/month if billed monthly
+
+      limits:
+        workflow_executions: 1000
+        active_users: 5
+        data_processed_gb: 10
+        api_calls: 50000
+        worklet_invocations: 500
+
+      features:
+        - "1,000 workflow executions/month"
+        - "5 active users"
+        - "10 GB data processing"
+        - "50,000 API calls"
+        - "Email support"
+        - "Standard SLA (99.5%)"
+
+      recommended_for: "Small teams, POC projects"
+
+    - id: professional_tier
+      name: "Professional Tier"
+      description: |
+        Ideal for growing organizations with moderate workflow needs.
+        Includes advanced features and priority support.
+
+      annual_price: 11988.00  # $999/month billed annually
+      monthly_price: 1149.00  # $1,149/month if billed monthly
+
+      limits:
+        workflow_executions: 10000
+        active_users: 25
+        data_processed_gb: 100
+        api_calls: 500000
+        worklet_invocations: 5000
+
+      features:
+        - "10,000 workflow executions/month"
+        - "25 active users"
+        - "100 GB data processing"
+        - "500,000 API calls"
+        - "5,000 worklet invocations"
+        - "Priority email & chat support"
+        - "Enhanced SLA (99.9%)"
+        - "Audit logging"
+        - "Custom branding"
+
+      recommended_for: "Growing teams, production workloads"
+      popular: true
+
+    - id: enterprise_tier
+      name: "Enterprise Tier"
+      description: |
+        Designed for large organizations with high-volume workflow requirements.
+        Includes premium support and advanced security features.
+
+      annual_price: 35988.00  # $2,999/month billed annually
+      monthly_price: 3449.00  # $3,449/month if billed monthly
+
+      limits:
+        workflow_executions: 100000
+        active_users: 100
+        data_processed_gb: 1000
+        api_calls: 5000000
+        worklet_invocations: 50000
+
+      features:
+        - "100,000 workflow executions/month"
+        - "100 active users"
+        - "1 TB data processing"
+        - "5,000,000 API calls"
+        - "50,000 worklet invocations"
+        - "24/7 phone, chat & email support"
+        - "Premium SLA (99.95%)"
+        - "SSO/SAML integration"
+        - "Advanced analytics"
+        - "API rate limiting customization"
+        - "Dedicated account manager"
+
+      recommended_for: "Large organizations, critical workflows"
+
+    - id: unlimited_tier
+      name: "Unlimited Tier"
+      description: |
+        For organizations requiring unlimited scale with dedicated infrastructure.
+        Includes all features with premium enterprise support.
+
+      annual_price: 119988.00  # $9,999/month billed annually
+      monthly_price: 11499.00  # $11,499/month if billed monthly
+
+      limits:
+        workflow_executions: -1  # Unlimited
+        active_users: -1  # Unlimited
+        data_processed_gb: -1  # Unlimited
+        api_calls: -1  # Unlimited
+        worklet_invocations: -1  # Unlimited
+
+      features:
+        - "Unlimited workflow executions"
+        - "Unlimited active users"
+        - "Unlimited data processing"
+        - "Unlimited API calls"
+        - "Unlimited worklet invocations"
+        - "24/7 dedicated support team"
+        - "Maximum SLA (99.99%)"
+        - "Dedicated infrastructure"
+        - "Custom integrations"
+        - "On-premise deployment option"
+        - "Quarterly business reviews"
+        - "Custom SLA negotiations"
+
+      recommended_for: "Enterprise-scale, mission-critical deployments"
+      contact_sales: true
+
+  # Usage-based metering (for overage beyond contract limits)
+  metering:
+    frequency: hourly  # AWS Marketplace requirement
+
+    dimensions:
+      - key: workflow_executions
+        name: "Workflow Executions"
+        description: "Number of workflow instances executed beyond included allocation"
+        unit: "Executions"
+        rate: 0.05
+        aggregation: sum
+        display_order: 1
+
+      - key: active_users
+        name: "Additional Active Users"
+        description: "Concurrent active users beyond included allocation"
+        unit: "Users/Month"
+        rate: 10.00
+        aggregation: max
+        display_order: 2
+
+      - key: data_processed_gb
+        name: "Additional Data Processed"
+        description: "Total data processed through workflows in GB beyond included allocation"
+        unit: "GB"
+        rate: 0.50
+        aggregation: sum
+        display_order: 3
+
+      - key: api_calls
+        name: "Additional API Calls"
+        description: "API requests to YAWL interfaces beyond included allocation"
+        unit: "1000 Calls"
+        rate: 1.00
+        aggregation: sum
+        display_order: 4
+
+      - key: worklet_invocations
+        name: "Additional Worklet Invocations"
+        description: "Dynamic worklet rule executions beyond included allocation"
+        unit: "Invocations"
+        rate: 0.10
+        aggregation: sum
+        display_order: 5
+
+  # Overage pricing example calculations
+  overage_examples:
+    - tier: professional_tier
+      scenario: "150% of workflow executions"
+      calculation:
+        included: 10000
+        actual: 15000
+        overage: 5000
+        overage_cost: 250.00  # 5000 * $0.05
+        total_monthly: 1249.00  # $999 + $250
+
+    - tier: enterprise_tier
+      scenario: "Additional 50 users"
+      calculation:
+        included: 100
+        actual: 150
+        overage: 50
+        overage_cost: 500.00  # 50 * $10
+        total_monthly: 3499.00  # $2999 + $500
+
+  # Regional pricing adjustments
+  regional_pricing:
+    # Americas
+    us-east-1:
+      name: "US East (N. Virginia)"
+      multiplier: 1.00
+      currency: USD
+
+    us-west-2:
+      name: "US West (Oregon)"
+      multiplier: 1.00
+      currency: USD
+
+    # Europe
+    eu-west-1:
+      name: "Europe (Ireland)"
+      multiplier: 1.10
+      currency: USD
+
+    eu-central-1:
+      name: "Europe (Frankfurt)"
+      multiplier: 1.10
+      currency: USD
+
+    # Asia Pacific
+    ap-southeast-1:
+      name: "Asia Pacific (Singapore)"
+      multiplier: 1.05
+      currency: USD
+
+    ap-northeast-1:
+      name: "Asia Pacific (Tokyo)"
+      multiplier: 1.05
+      currency: USD
+
+    ap-southeast-2:
+      name: "Asia Pacific (Sydney)"
+      multiplier: 1.10
+      currency: USD
+
+  # Private offer configuration
+  private_offers:
+    enabled: true
+    min_discount_percent: 10
+    max_discount_percent: 30
+    custom_terms_available: true
+
+  # BYOL (Bring Your Own License) configuration
+  byol:
+    enabled: true
+    description: "For customers with existing YAWL licenses"
+    price: 0.00
+    requirements:
+      - "Valid YAWL license certificate"
+      - "License transfer approval"
+      - "Annual verification"
+
+  # Bundle pricing (optional add-ons)
+  bundles:
+    - id: support_premium
+      name: "Premium Support Add-on"
+      monthly_price: 499.00
+      features:
+        - "4-hour response time"
+        - "Dedicated support engineer"
+        - "Quarterly architecture reviews"
+
+    - id: security_compliance
+      name: "Security & Compliance Add-on"
+      monthly_price: 299.00
+      features:
+        - "HIPAA compliance module"
+        - "PCI DSS compliance module"
+        - "Enhanced audit logging"
+        - "Custom security policies"
+
+    - id: advanced_analytics
+      name: "Advanced Analytics Add-on"
+      monthly_price: 199.00
+      features:
+        - "Custom dashboards"
+        - "Advanced reporting"
+        - "Predictive analytics"
+        - "Historical data retention (2 years)"
+
+  # Discount tiers for volume
+  volume_discounts:
+    - min_contracts: 2
+      discount_percent: 5
+      description: "5% off for 2+ contracts"
+
+    - min_contracts: 5
+      discount_percent: 10
+      description: "10% off for 5+ contracts"
+
+    - min_contracts: 10
+      discount_percent: 15
+      description: "15% off for 10+ contracts"
+
+    - min_contracts: 25
+      discount_percent: 20
+      description: "Contact sales for 25+ contracts"
+
+  # Contract terms available
+  contract_terms:
+    - duration: 12
+      unit: months
+      discount_percent: 17  # ~2 months free vs monthly
+      description: "Annual contract (17% savings)"
+
+    - duration: 24
+      unit: months
+      discount_percent: 25
+      description: "2-year contract (25% savings)"
+
+    - duration: 36
+      unit: months
+      discount_percent: 33
+      description: "3-year contract (33% savings)"
+
+# Revenue share configuration (internal)
+revenue_share:
+  aws_percentage: 15  # AWS takes 15% of transaction
+  seller_percentage: 85
+
+# Metering configuration (internal)
+metering_config:
+  batch_size: 100  # Max records per BatchMeterUsage call
+  retry_attempts: 3
+  retry_delay_seconds: 60
+  timeout_seconds: 30
+  queue_visibility_timeout: 300
+  dead_letter_queue_enabled: true

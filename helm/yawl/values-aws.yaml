@@ -1,0 +1,332 @@
+# YAWL Helm Chart - Amazon Web Services (AWS) Values
+# Override values for deploying YAWL on AWS EKS
+
+# -----------------------------------------------------------------------------
+# Cloud Provider
+# -----------------------------------------------------------------------------
+cloudProvider: aws
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  storageClass: gp3  # EBS GP3 default
+  labels:
+    cloud-provider: aws
+    environment: production
+
+# -----------------------------------------------------------------------------
+# Image Configuration - Use ECR
+# -----------------------------------------------------------------------------
+image:
+  registry: 123456789012.dkr.ecr.us-east-1.amazonaws.com
+  repository: yawl
+
+# -----------------------------------------------------------------------------
+# Database Configuration - RDS
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: false  # Use RDS instead
+
+externalDatabase:
+  # Use RDS Proxy endpoint for connection pooling
+  host: "yawl-db-proxy.proxy-abcdefgh.us-east-1.rds.amazonaws.com"
+  port: 5432
+  database: yawl
+  user: postgres
+  password: ""
+  existingSecret: yawl-db-credentials
+  existingSecretPasswordKey: password
+
+# AWS RDS Proxy Configuration
+awsRdsProxy:
+  enabled: true
+  endpoint: "yawl-db-proxy.proxy-abcdefgh.us-east-1.rds.amazonaws.com"
+  port: 5432
+  # IAM authentication
+  iamAuth:
+    enabled: true
+    region: us-east-1
+
+# Direct RDS connection (without proxy)
+awsRds:
+  enabled: false
+  endpoint: "yawl-db.abcdefgh.us-east-1.rds.amazonaws.com"
+  port: 5432
+  multiAz: true
+
+# -----------------------------------------------------------------------------
+# Redis Configuration - ElastiCache
+# -----------------------------------------------------------------------------
+redis:
+  enabled: false  # Use ElastiCache instead
+
+externalRedis:
+  host: "yawl-redis.abcdefgh.clustercfg.use1.cache.amazonaws.com"
+  port: 6379
+  password: ""
+  existingSecret: yawl-redis-credentials
+  existingSecretPasswordKey: password
+
+# ElastiCache Configuration
+elasticache:
+  enabled: true
+  clusterMode: true
+  nodeGroupCount: 2
+  replicasPerNodeGroup: 1
+  engineVersion: "7.0"
+  instanceType: cache.r6g.large
+
+# -----------------------------------------------------------------------------
+# Storage Configuration - S3
+# -----------------------------------------------------------------------------
+storage:
+  documentStore:
+    enabled: true
+    type: s3
+    bucket: "your-account-yawl-documents-us-east-1"
+    region: us-east-1
+  backup:
+    enabled: true
+    bucket: "your-account-yawl-backups-us-east-1"
+    region: us-east-1
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration - AWS Load Balancer Controller
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /engine/health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:123456789012:certificate/abcdefgh"
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/waf-acl-id: "abcdefgh-1234-5678-9012-ijklmnopqrst"
+    alb.ingress.kubernetes.io/tags: |
+      Environment=production,Application=yawl
+  hosts:
+    - host: yawl.your-domain.com
+      paths: []
+  tls:
+    - secretName: yawl-tls-secret
+      hosts:
+        - yawl.your-domain.com
+
+# -----------------------------------------------------------------------------
+# Service Configuration with EKS-specific settings
+# -----------------------------------------------------------------------------
+services:
+  engine:
+    replicaCount: 3
+    service:
+      type: NodePort
+      annotations:
+        alb.ingress.kubernetes.io/target-group-attributes: "deregistration_delay.timeout_seconds=60"
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 65
+      metrics:
+        - type: External
+          external:
+            metric:
+              name: dynamodb_consumed_capacity
+              selector:
+                matchLabels:
+                  table: yawl-tasks
+            target:
+              type: AverageValue
+              value: "80"
+    nodeSelector:
+      workload: yawl-core
+
+  resourceService:
+    replicaCount: 3
+    service:
+      type: NodePort
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      maxReplicas: 10
+
+  workletService:
+    replicaCount: 2
+    service:
+      type: NodePort
+
+  monitorService:
+    service:
+      type: NodePort
+
+  costService:
+    service:
+      type: NodePort
+
+  schedulingService:
+    service:
+      type: NodePort
+
+  balancer:
+    replicaCount: 3
+    service:
+      type: NodePort
+    autoscaling:
+      maxReplicas: 8
+
+# -----------------------------------------------------------------------------
+# Service Account with IRSA (IAM Roles for Service Accounts)
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/yawl-service-role"
+  labels:
+    app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# Network Policy with AWS-specific rules
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: aws-load-balancer-controller
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # RDS Proxy
+        - protocol: TCP
+          port: 6379  # ElastiCache
+    # Allow access to AWS APIs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # VPC internal communication
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+
+# -----------------------------------------------------------------------------
+# Node Selector for EKS
+# -----------------------------------------------------------------------------
+nodeSelector:
+  workload: yawl-default
+
+# -----------------------------------------------------------------------------
+# Topology Spread for AWS Availability Zones
+# -----------------------------------------------------------------------------
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: yawl
+
+# -----------------------------------------------------------------------------
+# AWS-specific resources
+# -----------------------------------------------------------------------------
+extraDeploy:
+  # IngressClass for ALB
+  - apiVersion: networking.k8s.io/v1
+    kind: IngressClass
+    metadata:
+      name: alb
+      annotations:
+        ingressclass.kubernetes.io/is-default-class: "true"
+    spec:
+      controller: ingress.k8s.aws/alb
+
+# -----------------------------------------------------------------------------
+# EKS Cluster Settings
+# -----------------------------------------------------------------------------
+eks:
+  clusterName: yawl-production
+  region: us-east-1
+  availabilityZones:
+    - us-east-1a
+    - us-east-1b
+    - us-east-1c
+
+# -----------------------------------------------------------------------------
+# AWS WAF
+# -----------------------------------------------------------------------------
+waf:
+  enabled: true
+  webAclArn: "arn:aws:wafv2:us-east-1:123456789012:global/webacl/yawl-waf/abcdefgh"
+
+# -----------------------------------------------------------------------------
+# AWS Secrets Manager
+# -----------------------------------------------------------------------------
+secretsManager:
+  enabled: true
+  # Use AWS Secrets Manager instead of Kubernetes secrets
+  database:
+    secretName: aws:yawl/database:json
+  redis:
+    secretName: aws:yawl/redis:json
+
+# -----------------------------------------------------------------------------
+# CloudWatch Integration
+# -----------------------------------------------------------------------------
+cloudWatch:
+  enabled: true
+  logGroupName: /aws/eks/yawl-production/yawl
+  logRetentionDays: 30
+  metrics:
+    enabled: true
+    namespace: YAWL/Production
+
+# -----------------------------------------------------------------------------
+# KMS Encryption
+# -----------------------------------------------------------------------------
+kms:
+  enabled: true
+  keyArn: "arn:aws:kms:us-east-1:123456789012:key/abcdefgh-1234-5678-9012-ijklmnopqrst"

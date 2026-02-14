@@ -1,0 +1,219 @@
+# Pod Security Standards (PSS) for YAWL
+# Implements Kubernetes Pod Security Standards at the Enforce level
+# https://kubernetes.io/docs/concepts/security/pod-security-standards/
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl
+  labels:
+    # Enforce Restricted profile (most secure)
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: security
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-monitoring
+  labels:
+    # Enforce Baseline profile for monitoring
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: monitoring
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: yawl-restricted
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: security
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfiles: "runtime/default,runtime/local,yawl-profile"
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+    apparmor.security.beta.kubernetes.io/allowedProfiles: "runtime/default"
+    apparmor.security.beta.kubernetes.io/defaultProfileName: "runtime/default"
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - projected
+    - secret
+    - csi
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: MustRunAsNonRoot
+  runAsGroup:
+    rule: MustRunAs
+    ranges:
+      - min: 10001
+        max: 10100
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+      - min: 10001
+        max: 10100
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+      - min: 10001
+        max: 10100
+  readOnlyRootFilesystem: true
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: yawl-baseline
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: security
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - KILL
+    - MKNOD
+    - SYS_CHROOT
+  volumes:
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - projected
+    - secret
+    - csi
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  readOnlyRootFilesystem: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-psp-restricted
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames: ["yawl-restricted"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-psp-baseline
+  labels:
+    app.kubernetes.io/name: yawl
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames: ["yawl-baseline"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yawl-psp-restricted
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-psp-restricted
+subjects:
+  - kind: ServiceAccount
+    name: yawl-engine
+    namespace: yawl
+  - kind: ServiceAccount
+    name: yawl-resource-service
+    namespace: yawl
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yawl-psp-baseline
+  namespace: yawl-monitoring
+  labels:
+    app.kubernetes.io/name: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-psp-baseline
+subjects:
+  - kind: ServiceAccount
+    name: yawl-monitor
+    namespace: yawl-monitoring
+---
+# Security Context Constraints for OpenShift compatibility
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: yawl-restricted
+  labels:
+    app.kubernetes.io/name: yawl
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - min: 10001
+      max: 10100
+priority: null
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - KILL
+  - MKNOD
+  - SETUID
+  - SETGID
+runAsUser:
+  type: MustRunAsRange
+  uidRangeMin: 10001
+  uidRangeMax: 10100
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: MustRunAs
+  ranges:
+    - min: 10001
+      max: 10100
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+  - csi

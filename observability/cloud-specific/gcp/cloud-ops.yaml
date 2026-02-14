@@ -1,0 +1,195 @@
+# Google Cloud Operations Suite Configuration for YAWL Workflow Engine
+# Integrates Cloud Monitoring, Logging, and Trace with YAWL observability
+
+project:
+  id: ${GCP_PROJECT_ID}
+  name: yawl-workflow-production
+  region: us-central1
+
+# Cloud Monitoring Configuration
+monitoring:
+  enabled: true
+
+  # Custom Metrics
+  custom_metrics:
+    - name: "yawl/case/started"
+      description: "Count of workflow cases started"
+      metric_kind: CUMULATIVE
+      value_type: INT64
+      unit: "1"
+      labels:
+        - key: case_type
+        - key: specification_id
+
+    - name: "yawl/case/completed"
+      description: "Count of workflow cases completed successfully"
+      metric_kind: CUMULATIVE
+      value_type: INT64
+      unit: "1"
+      labels:
+        - key: case_type
+        - key: specification_id
+
+    - name: "yawl/case/failed"
+      description: "Count of workflow cases that failed"
+      metric_kind: CUMULATIVE
+      value_type: INT64
+      unit: "1"
+      labels:
+        - key: case_type
+        - key: error_type
+
+    - name: "yawl/case/execution_time"
+      description: "Time taken to execute a workflow case"
+      metric_kind: DELTA
+      value_type: DISTRIBUTION
+      unit: "s"
+      bucket_options:
+        exponential:
+          scale: 0.1
+          growth_factor: 2.0
+          num_finite_buckets: 20
+      labels:
+        - key: case_type
+
+    - name: "yawl/workitem/queue_depth"
+      description: "Current depth of work item queue"
+      metric_kind: GAUGE
+      value_type: INT64
+      unit: "1"
+      labels:
+        - key: queue_name
+
+    - name: "yawl/resource/allocated"
+      description: "Number of allocated resources"
+      metric_kind: GAUGE
+      value_type: INT64
+      unit: "1"
+      labels:
+        - key: pool_name
+        - key: resource_type
+
+  # Alert Policies
+  alert_policies:
+    - name: "YAWL High Case Failure Rate"
+      display_name: "YAWL - High Case Failure Rate"
+      documentation:
+        content: |
+          ## Alert: High Case Failure Rate
+          The case failure rate has exceeded the threshold.
+          **Runbook:** https://runbooks.example.com/yawl/high-failure-rate
+        mime_type: "text/markdown"
+      conditions:
+        - display_name: "Failure rate > 5%"
+          condition_threshold:
+            filter: 'metric.type="custom.googleapis.com/yawl/case/failed"'
+            aggregation:
+              alignment_period: "300s"
+              per_series_aligner: ALIGN_RATE
+            comparison: COMPARISON_GT
+            threshold_value: 0.05
+            duration: "300s"
+      notification_channels:
+        - ${GCP_NOTIFICATION_CHANNEL_EMAIL}
+
+    - name: "YAWL High Latency"
+      display_name: "YAWL - High Case Execution Latency"
+      conditions:
+        - display_name: "P95 latency > 30s"
+          condition_threshold:
+            filter: 'metric.type="custom.googleapis.com/yawl/case/execution_time"'
+            aggregation:
+              alignment_period: "60s"
+              per_series_aligner: ALIGN_PERCENTILE_95
+            comparison: COMPARISON_GT
+            threshold_value: 30
+            duration: "300s"
+
+  # Uptime Checks
+  uptime_checks:
+    - name: "yawl-engine-health"
+      display_name: "YAWL Engine Health Check"
+      monitored_resource:
+        type: "uptime_url"
+        labels:
+          project_id: ${GCP_PROJECT_ID}
+          host: "yawl-engine.example.com"
+      http_check:
+        request_method: GET
+        path: "/health"
+        port: 8080
+        use_ssl: true
+      period: "60s"
+      timeout: "10s"
+
+# Cloud Logging Configuration
+logging:
+  enabled: true
+
+  # Log Sinks
+  sinks:
+    - name: "yawl-errors-to-bigquery"
+      description: "Export YAWL error logs to BigQuery for analysis"
+      destination: "bigquery.googleapis.com/projects/${GCP_PROJECT_ID}/datasets/yawl_logs"
+      filter: |
+        resource.type="gce_instance"
+        severity >= ERROR
+        jsonPayload.service =~ "yawl.*"
+
+  # Log-Based Metrics
+  log_metrics:
+    - name: "yawl_case_errors"
+      description: "Count of YAWL case execution errors"
+      filter: |
+        resource.type="gce_instance"
+        severity >= ERROR
+        jsonPayload.message =~ ".*case.*failed.*"
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        unit: "1"
+        labels:
+          - key: case_type
+            extractor: 'REGEX_EXTRACT(jsonPayload.message, "case_type=([^\\s]+)")'
+
+    - name: "yawl_java_exceptions"
+      description: "Count of Java exceptions in YAWL services"
+      filter: |
+        jsonPayload.exception IS NOT NULL
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        labels:
+          - key: exception_class
+          - key: service
+
+# Cloud Trace Configuration
+tracing:
+  enabled: true
+  sampling:
+    default_rate: 0.1
+    service_rates:
+      yawl-engine: 0.2
+      yawl-resource-service: 0.1
+    error_sampling_rate: 1.0
+
+# Error Reporting Configuration
+error_reporting:
+  enabled: true
+  notifications:
+    enabled: true
+    channels:
+      - type: "email"
+        recipients:
+          - "sre@example.com"
+
+# Service Account Configuration
+service_accounts:
+  - name: "yawl-monitoring-sa"
+    display_name: "YAWL Monitoring Service Account"
+    roles:
+      - "roles/monitoring.metricWriter"
+      - "roles/monitoring.viewer"
+      - "roles/logging.logWriter"
+      - "roles/cloudtrace.agent"
+      - "roles/errorreporting.writer"
