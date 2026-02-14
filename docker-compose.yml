@@ -2,30 +2,54 @@ version: '3.8'
 
 services:
   # =============================================================================
+  # Development Environment
+  # =============================================================================
+  yawl-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: yawl-dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      - JAVA_HOME=/usr/local/openjdk-21
+      - ANT_HOME=/opt/ant
+      - PATH=/opt/ant/bin:/usr/local/openjdk-21/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    ports:
+      - "8080:8080"  # YAWL Engine
+      - "8081:8081"  # Tomcat
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    networks:
+      - yawl-network
+
+  # =============================================================================
   # Database - PostgreSQL
   # =============================================================================
   postgres:
     image: postgres:15-alpine
     container_name: yawl-postgres
     environment:
-      POSTGRES_DB: yawl
       POSTGRES_USER: yawl
       POSTGRES_PASSWORD: yawl123
+      POSTGRES_DB: yawl
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/migrations:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "5432:5432"
+    networks:
+      - yawl-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U yawl"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - yawl-network
 
   # =============================================================================
-  # YAWL Engine - Core workflow engine
+  # YAWL Engine - Core workflow engine (production)
   # =============================================================================
   engine:
     platform: linux/amd64
@@ -56,9 +80,11 @@ services:
       start_period: 120s
     networks:
       - yawl-network
+    profiles:
+      - production
 
   # =============================================================================
-  # YAWL Resource Service - Resource allocation
+  # YAWL Resource Service - Resource allocation (production)
   # =============================================================================
   resource-service:
     platform: linux/amd64
@@ -84,9 +110,11 @@ services:
       - "8081:8080"
     networks:
       - yawl-network
+    profiles:
+      - production
 
   # =============================================================================
-  # YAWL Worklet Service - Dynamic workflow adaptation
+  # YAWL Worklet Service - Dynamic workflow adaptation (production)
   # =============================================================================
   worklet-service:
     platform: linux/amd64
@@ -112,9 +140,11 @@ services:
       - "8082:8080"
     networks:
       - yawl-network
+    profiles:
+      - production
 
   # =============================================================================
-  # YAWL Monitor Service - Process monitoring
+  # YAWL Monitor Service - Process monitoring (production)
   # =============================================================================
   monitor-service:
     platform: linux/amd64
@@ -140,6 +170,8 @@ services:
       - "8083:8080"
     networks:
       - yawl-network
+    profiles:
+      - production
 
 networks:
   yawl-network:

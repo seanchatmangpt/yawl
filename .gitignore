@@ -2,5 +2,8 @@
 classes/
 output/
 temp/
+build/logs/
+exampleSpecs/xml/*.xsd
+src/org/yawlfoundation/yawl/unmarshal/*.xsd
 
 !/src/org/yawlfoundation/yawl/balancer/output/
