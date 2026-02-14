@@ -17,7 +17,7 @@ import java.util.*;
  */
 public class ZaiHttpClient {
 
-    private static final String ZAI_API_BASE = "https://api.zukijourney.com/v1";
+    private static final String ZAI_API_BASE = "https://api.z.ai/api/paas/v4";
     private static final String CHAT_ENDPOINT = "/chat/completions";
 
     private final String apiKey;
