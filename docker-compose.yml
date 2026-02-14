@@ -13,12 +13,12 @@ services:
     volumes:
       - .:/workspace
     environment:
-      - JAVA_HOME=/usr/local/openjdk-21
-      - ANT_HOME=/opt/ant
-      - PATH=/opt/ant/bin:/usr/local/openjdk-21/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - JAVA_HOME=/opt/java/openjdk
+      - ANT_HOME=/usr/share/ant
+      - PATH=/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     ports:
-      - "8080:8080"  # YAWL Engine
-      - "8081:8081"  # Tomcat
+      - "9080:8080"  # YAWL Engine (mapped to 9080 to avoid conflicts)
+      - "9081:8081"  # Tomcat
     stdin_open: true
     tty: true
     command: /bin/bash
