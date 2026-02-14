@@ -8,6 +8,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Java-based BPM/Workflow engine with formal foundations. Version 5.2.
 
+---
+
+# ⚠️ MANDATORY CODING STANDARDS - FORTUNE 5 PRODUCTION QUALITY
+
+## ZERO TOLERANCE POLICY
+
+This codebase operates under **strict Toyota Production System and Chicago TDD principles**:
+
+### ❌ ABSOLUTELY FORBIDDEN - HARD CRASH REQUIRED:
+
+1. **NO MOCKS** - Never create mock implementations or fake behavior
+   - ❌ FORBIDDEN: `if (sdk == null) return mockResponse();`
+   - ✅ REQUIRED: `if (sdk == null) throw new IllegalStateException("SDK required");`
+
+2. **NO STUBS** - Never return placeholder values or empty implementations
+   - ❌ FORBIDDEN: `public String getData() { return ""; } // TODO`
+   - ✅ REQUIRED: `public String getData() { throw new UnsupportedOperationException("Not implemented"); }`
+
+3. **NO TODOs** - Never leave TODO/FIXME/XXX/HACK comments
+   - ❌ FORBIDDEN: `// TODO: implement this later`
+   - ✅ REQUIRED: Either implement it NOW or throw exception with clear message
+
+4. **NO FALLBACKS** - Never silently degrade to fake behavior
+   - ❌ FORBIDDEN: `try { realImpl(); } catch (Exception e) { return mockData(); }`
+   - ✅ REQUIRED: `try { realImpl(); } catch (Exception e) { throw new RuntimeException("Real implementation failed", e); }`
+
+5. **NO LIES** - Code must honestly represent its capabilities
+   - ❌ FORBIDDEN: Returning success when nothing happened
+   - ✅ REQUIRED: Fail fast with clear error messages
+
+### ✅ REQUIRED PRACTICES:
+
+**FAIL FAST** - If dependencies are missing, crash immediately:
+```java
+public Service() {
+    String apiKey = System.getenv("API_KEY");
+    if (apiKey == null) {
+        throw new IllegalStateException("API_KEY environment variable is required");
+    }
+}
+```
+
+**EXPLICIT EXCEPTIONS** - Unimplemented features must throw with clear messages:
+```java
+private String fetchData() {
+    throw new UnsupportedOperationException(
+        "Real API integration required. Add SDK dependency and implement:\n" +
+        "  - API client initialization\n" +
+        "  - Authentication handling\n" +
+        "  - Error recovery"
+    );
+}
+```
+
+**HONEST BEHAVIOR** - Code behavior must match documentation exactly:
+- If method says it "starts workflow", it must actually start a workflow
+- If method says it "validates data", it must actually validate data
+- Never pretend to do something you're not doing
+
+### 🚨 ENFORCEMENT:
+
+**AI Assistants MUST:**
+1. **REFUSE** to write mocks, stubs, or TODOs
+2. **STOP** immediately if asked to create placeholder code
+3. **RESPOND**: "I cannot create mock/stub code. This codebase requires real implementations only. Should I implement the real version or throw an exception?"
+
+**Code Review Checklist:**
+- [ ] No "mock" or "stub" in method names or comments
+- [ ] No "TODO", "FIXME", "XXX", "HACK" comments
+- [ ] No empty returns (`return "";`, `return null;` without purpose)
+- [ ] All unimplemented methods throw `UnsupportedOperationException`
+- [ ] All missing dependencies cause `IllegalStateException` at startup
+
+**Tests MUST:**
+- Run against REAL systems only
+- Require REAL dependencies (fail if missing)
+- Never pass by returning fake data
+
+### 📋 RATIONALE:
+
+**Why This Matters:**
+- **Fortune 5 Production**: We deploy to critical business systems
+- **AI Confusion**: Mock code confuses future AI assistants about what's real
+- **Hidden Bugs**: Silent failures hide problems until production
+- **Wasted Time**: Debugging fake behavior wastes engineering hours
+- **Trust**: Stakeholders need honest system status
+
+**Toyota Production System (Jidoka)**: Stop the line when problems occur
+**Chicago TDD**: Test real integrations, not mocks
+
+---
+
 ## Environment Requirements
 
 **This project runs in Docker/DevContainer environments.**
