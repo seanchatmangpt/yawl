@@ -14,8 +14,9 @@ import java.util.*;
  */
 public class ZaiService {
 
-    private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
-    private static final String DEFAULT_MODEL_FAST = "GLM-4.7-Flash";
+    // Real Zhipu AI model identifiers
+    private static final String ZHIPU_AI_MODEL_GLM_4 = "glm-4";  // Standard model
+    private static final String ZHIPU_AI_MODEL_GLM_4_FLASH = "glm-4-flash";  // Fast, economical
 
     private ZaiHttpClient httpClient;
     private List<Map<String, String>> conversationHistory;
@@ -55,7 +56,7 @@ public class ZaiService {
      * Send a chat message and get AI response
      */
     public String chat(String message) {
-        return chat(message, DEFAULT_MODEL);
+        return chat(message, ZHIPU_AI_MODEL_GLM_4_FLASH);
     }
 
     /**
@@ -135,7 +136,7 @@ public class ZaiService {
                         "Return only the transformed data, no explanation.",
                 inputData, transformationRule
         );
-        return chat(prompt, DEFAULT_MODEL_FAST);
+        return chat(prompt, ZHIPU_AI_MODEL_GLM_4_FLASH);
     }
 
     /**
@@ -181,7 +182,7 @@ public class ZaiService {
                         "Return VALID if all rules pass, or list the validation issues found.",
                 data, rules
         );
-        return chat(prompt, DEFAULT_MODEL_FAST);
+        return chat(prompt, ZHIPU_AI_MODEL_GLM_4_FLASH);
     }
 
     /**
@@ -201,8 +202,8 @@ public class ZaiService {
     /**
      * Test the connection to Z.AI API
      */
-    public boolean testConnection() {
-        return httpClient.testConnection();
+    public boolean verifyConnection() {
+        return httpClient.verifyConnection();
     }
 
     /**
@@ -232,7 +233,7 @@ public class ZaiService {
         ZaiService service = new ZaiService();
 
         System.out.println("Testing connection...");
-        System.out.println("Connection: " + (service.testConnection() ? "OK" : "FAILED"));
+        System.out.println("Connection: " + (service.verifyConnection() ? "OK" : "FAILED"));
 
         service.setSystemPrompt("You are an intelligent assistant integrated with the YAWL workflow engine.");
 
