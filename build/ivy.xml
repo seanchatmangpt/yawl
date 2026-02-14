@@ -11,5 +11,8 @@
         <!-- MCP Java SDK dependencies -->
         <dependency org="io.modelcontextprotocol.sdk" name="mcp" rev="0.1.0" conf="default"/>
         <dependency org="io.modelcontextprotocol.sdk" name="mcp-core" rev="0.1.0" conf="default"/>
+
+        <!-- Z.AI SDK for intelligent MCP/A2A integration -->
+        <dependency org="ai.z.openapi" name="zai-sdk" rev="0.3.0" conf="default"/>
     </dependencies>
 </ivy-module>
