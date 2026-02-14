@@ -1,0 +1,277 @@
+apiVersion: marketplace.cnprog.com/v1
+kind: MarketplaceProduct
+metadata:
+  name: event-horizon-cloud
+  namespace: marketplace
+spec:
+  displayName: Event Horizon Cloud — Enterprise Workflow Coordination
+
+  productDescription: |
+    Event Horizon Cloud is a managed enterprise coordination platform built on YAWL
+    (Yet Another Workflow Language), the only workflow system with complete pattern
+    coverage of all 43 workflow paradigms. It enables organizations to coordinate
+    complex work across distributed systems with provable determinism, safety, and
+    compliance.
+
+    ## Core Value Proposition
+    Most systems can generate output. Event Horizon Cloud makes finishing work reliable.
+
+    • Pattern-Complete: All 43 YAWL workflow patterns (concurrency, cancellation, merges)
+    • Cloud-Native: Stateless execution, horizontal scaling, multi-region deployment
+    • Agent-Ready: MCP tool interfaces + A2A agent discovery + task lifecycle
+    • Deterministic: Cryptographic receipts, replay verification, audit trails
+    • Safe: Blue/green promotion, canary deployments, rollback verification
+
+  version: "1.0.0"
+  releaseVersion: "1.0.0-ga"
+
+  supportInfo:
+    emailSupport: support@eventhorizoncloud.io
+    website: https://eventhorizoncloud.io
+    documentation: https://docs.eventhorizoncloud.io
+    serviceLevel: Enterprise (99.99% SLA)
+
+  publisher:
+    name: ChatmanGPT
+    displayName: ChatmanGPT
+    website: https://chatmangpt.com
+
+  skuProperties:
+    - name: Workflow
+      description: YAWL Coordination Engine (all 43 patterns)
+      tier: [starter, professional, enterprise]
+    - name: Runtime
+      description: Managed Tomcat 9 execution layer
+      tier: [starter, professional, enterprise]
+    - name: Data
+      description: Managed PostgreSQL persistence + receipts
+      tier: [starter, professional, enterprise]
+    - name: Gateway
+      description: MCP server + schema validation + rate limiting
+      tier: [professional, enterprise]
+    - name: Mesh
+      description: A2A discovery + agent coordination
+      tier: [professional, enterprise]
+    - name: Receipts
+      description: Ledger + replay verification + audit export
+      tier: [professional, enterprise]
+    - name: Tokens
+      description: Worker pool (consumption-based: WorkToken usage)
+      tier: [professional, enterprise]
+    - name: Connectors
+      description: GitHub, Slack, Jira integrations
+      tier: [professional, enterprise]
+
+  pricingPlans:
+    - name: Starter
+      description: Development and light production use
+      monthlyPrice: 299
+      features:
+        - "YAWL Workflow Engine (all 43 patterns)"
+        - "1 Tomcat Runtime instance"
+        - "PostgreSQL 14 (10GB)"
+        - "Redis caching (2GB)"
+        - "Basic monitoring (Prometheus)"
+        - "Cloud SQL daily backups (7-day retention)"
+        - "2 replicas, manual scaling"
+        - "Regional deployment (single region)"
+        - "Community support"
+      limits:
+        processes_per_month: 1000
+        case_instances: 10000
+        receipts_storage_gb: 10
+        users: 5
+        deployments_per_day: 5
+
+    - name: Professional
+      description: Production workloads with modern interfaces
+      monthlyPrice: 999
+      features:
+        - "YAWL Workflow Engine (all 43 patterns)"
+        - "3 Tomcat Runtime instances (auto-scaling 3-10)"
+        - "PostgreSQL 14 (100GB, HA regional)"
+        - "Redis cluster (5GB, HA)"
+        - "Advanced monitoring (Prometheus + Grafana)"
+        - "Cloud SQL continuous backups (30-day retention)"
+        - "MCP Gateway (100 req/sec)"
+        - "A2A Discovery + Mesh"
+        - "Receipt ledger + replay verification"
+        - "GitHub + Slack connectors"
+        - "Email support (2h response)"
+        - "Multi-region deployment"
+        - "Blue/green deployments"
+      limits:
+        processes_per_month: 100000
+        case_instances: 1000000
+        receipts_storage_gb: 500
+        users: 50
+        deployments_per_day: 50
+        mcp_requests_per_second: 100
+        worker_tokens_per_month: 100000
+
+    - name: Enterprise
+      description: Mission-critical deployments with guaranteed SLA
+      monthlyPrice: 2999
+      features:
+        - "YAWL Workflow Engine (all 43 patterns)"
+        - "5+ Tomcat Runtime instances (auto-scaling 5-20)"
+        - "PostgreSQL 14 (1TB, Multi-region HA)"
+        - "Redis cluster (25GB, Multi-region HA)"
+        - "ELK stack logging + alerting"
+        - "Cloud SQL point-in-time recovery (90-day retention)"
+        - "MCP Gateway (1000 req/sec, priority)"
+        - "A2A Discovery + Mesh (high throughput)"
+        - "Receipt ledger + replay verification + audit export"
+        - "All connectors (GitHub, Slack, Jira, ServiceNow, custom)"
+        - "24/7 phone support (15min response)"
+        - "Dedicated account manager"
+        - "Multi-region deployment (3+ regions)"
+        - "Canary deployments + automated rollback"
+        - "Guaranteed 99.99% SLA"
+        - "Custom security controls"
+      limits:
+        processes_per_month: unlimited
+        case_instances: unlimited
+        receipts_storage_gb: unlimited
+        users: unlimited
+        deployments_per_day: unlimited
+        mcp_requests_per_second: 1000
+        worker_tokens_per_month: 1000000
+
+  components:
+    - name: Event Horizon Workflow
+      description: YAWL Engine (43 workflow patterns)
+      type: service
+      tier: all
+
+    - name: Event Horizon Runtime
+      description: Managed Tomcat 9 execution layer
+      type: service
+      tier: all
+
+    - name: Event Horizon Data
+      description: PostgreSQL + receipts ledger
+      type: service
+      tier: all
+
+    - name: Event Horizon Gateway
+      description: MCP server + schema validation
+      type: service
+      tier: [professional, enterprise]
+
+    - name: Event Horizon Mesh
+      description: A2A discovery + agent coordination
+      type: service
+      tier: [professional, enterprise]
+
+    - name: Event Horizon Receipts
+      description: Deterministic ledger + replay + audit
+      type: service
+      tier: [professional, enterprise]
+
+    - name: Event Horizon Tokens
+      description: Stateless worker pool
+      type: addon
+      tier: [professional, enterprise]
+      pricingModel: consumption
+      unit: WorkToken
+      unitPrice: 0.0001
+
+    - name: GitHub Connector
+      description: PR/issue integration
+      type: connector
+      tier: [professional, enterprise]
+
+    - name: Slack Connector
+      description: Notifications + approvals
+      type: connector
+      tier: [professional, enterprise]
+
+    - name: Jira Connector
+      description: Jira issue + ticket routing
+      type: connector
+      tier: [professional, enterprise]
+
+    - name: ServiceNow Connector
+      description: ServiceNow integration
+      type: connector
+      tier: enterprise
+
+  deploymentModel:
+    type: kubernetes
+    managedService: true
+    regions:
+      - us-central1
+      - us-east1
+      - europe-west1
+      - asia-southeast1
+    multiRegionAvailable: true
+
+  slaTerms:
+    starter:
+      uptime: "99.5%"
+      responseTime: "4 business hours"
+      supportHours: "Business hours (UTC)"
+    professional:
+      uptime: "99.9%"
+      responseTime: "2 hours"
+      supportHours: "24/5 (Mon-Fri)"
+    enterprise:
+      uptime: "99.99%"
+      responseTime: "15 minutes"
+      supportHours: "24/7"
+
+  onboardingFlow:
+    - step: 1
+      title: "Project Selection"
+      description: "Choose your GCP project"
+    - step: 2
+      title: "Plan Selection"
+      description: "Select Starter, Professional, or Enterprise"
+    - step: 3
+      title: "Configuration"
+      description: "Configure regions, scaling, integrations"
+    - step: 4
+      title: "Verification"
+      description: "Review and confirm deployment"
+    - step: 5
+      title: "Deployment"
+      description: "Event Horizon Cloud is deployed to your project"
+    - step: 6
+      title: "Access"
+      description: "Access YAWL console and APIs"
+
+  apiEndpoints:
+    workflow:
+      baseUrl: "https://workflow.{region}.eventhorizoncloud.io/api/v1"
+      authentication: "Bearer token (OAuth 2.0)"
+    gateway:
+      baseUrl: "https://gateway.{region}.eventhorizoncloud.io/mcp"
+      protocol: "MCP/JSON-RPC"
+    mesh:
+      baseUrl: "wss://mesh.{region}.eventhorizoncloud.io/a2a"
+      protocol: "WebSocket + Agent Protocol"
+    receipts:
+      baseUrl: "https://receipts.{region}.eventhorizoncloud.io/ledger"
+      authentication: "Bearer token"
+
+  compliance:
+    certifications:
+      - name: "SOC 2 Type II"
+        status: "certified"
+      - name: "ISO 27001"
+        status: "certified"
+      - name: "GDPR"
+        status: "compliant"
+      - name: "HIPAA"
+        status: "available (enterprise)"
+    auditLogging: true
+    encryptionAtRest: true
+    encryptionInTransit: true
+    customerManagedKeys: true
+
+  trials:
+    available: true
+    duration: "14 days"
+    plan: "Professional"
+    autoConvertTo: "Starter"
