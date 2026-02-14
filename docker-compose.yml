@@ -48,7 +48,29 @@ services:
       retries: 5
 
   # =============================================================================
-  # YAWL Engine - Core workflow engine (production)
+  # Redis - Session cache and work queue coordination
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: yawl-redis
+    command: redis-server --requirepass yawl-redis --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "yawl-redis", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - production
+      - full
+
+  # =============================================================================
+  # YAWL Engine - Core workflow engine
   # =============================================================================
   engine:
     platform: linux/amd64
@@ -66,9 +88,12 @@ services:
       - DB_NAME=yawl
       - DB_USER=yawl
       - DB_PASSWORD=yawl123
-      - JAVA_OPTS=-Xms512m -Xmx1024m -Djava.awt.headless=true
+      - JAVA_OPTS=-Xms512m -Xmx1024m -Djava.awt.headless=true -XX:+UseG1GC
       - RESOURCE_SERVICE_URL=http://resource-service:8080/ib
       - WORKLET_SERVICE_URL=http://worklet-service:8080/ib
+      - MONITOR_SERVICE_URL=http://monitor-service:8080/ib
+      - COST_SERVICE_URL=http://cost-service:8080/ib
+      - SCHEDULING_SERVICE_URL=http://scheduling-service:8080/ib
     ports:
       - "8888:8080"
     healthcheck:
@@ -81,9 +106,10 @@ services:
       - yawl-network
     profiles:
       - production
+      - full
 
   # =============================================================================
-  # YAWL Resource Service - Resource allocation (production)
+  # YAWL Resource Service - Human/non-human resource allocation
   # =============================================================================
   resource-service:
     platform: linux/amd64
@@ -103,17 +129,24 @@ services:
       - DB_NAME=yawl
       - DB_USER=yawl
       - DB_PASSWORD=yawl123
-      - JAVA_OPTS=-Xms256m -Xmx512m
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
       - ENGINE_URL=http://engine:8080/ib
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     networks:
       - yawl-network
     profiles:
       - production
+      - full
 
   # =============================================================================
-  # YAWL Worklet Service - Dynamic workflow adaptation (production)
+  # YAWL Worklet Service - Dynamic workflow adaptation via Worklets
   # =============================================================================
   worklet-service:
     platform: linux/amd64
@@ -133,17 +166,24 @@ services:
       - DB_NAME=yawl
       - DB_USER=yawl
       - DB_PASSWORD=yawl123
-      - JAVA_OPTS=-Xms256m -Xmx512m
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
       - ENGINE_URL=http://engine:8080/ib
     ports:
       - "8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     networks:
       - yawl-network
     profiles:
       - production
+      - full
 
   # =============================================================================
-  # YAWL Monitor Service - Process monitoring (production)
+  # YAWL Monitor Service - Process instance monitoring
   # =============================================================================
   monitor-service:
     platform: linux/amd64
@@ -163,14 +203,199 @@ services:
       - DB_NAME=yawl
       - DB_USER=yawl
       - DB_PASSWORD=yawl123
-      - JAVA_OPTS=-Xms128m -Xmx256m
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
       - ENGINE_URL=http://engine:8080/ib
     ports:
       - "8083:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     networks:
       - yawl-network
     profiles:
       - production
+      - full
+
+  # =============================================================================
+  # YAWL Cost Service - Process cost tracking and analytics
+  # =============================================================================
+  cost-service:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.costService
+    container_name: yawl-cost-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8084:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - yawl-network
+    profiles:
+      - full
+
+  # =============================================================================
+  # YAWL Scheduling Service - Calendar-based scheduling
+  # =============================================================================
+  scheduling-service:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.schedulingService
+    container_name: yawl-scheduling-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8085:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - yawl-network
+    profiles:
+      - full
+
+  # =============================================================================
+  # YAWL Balancer - Load balancing across engine instances
+  # =============================================================================
+  balancer:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.balancer
+    container_name: yawl-balancer
+    depends_on:
+      engine:
+        condition: service_started
+    environment:
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8086:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - yawl-network
+    profiles:
+      - full
+
+  # =============================================================================
+  # Observability - Prometheus (metrics collection)
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: yawl-prometheus
+    volumes:
+      - ./observability/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerting:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - yawl-network
+    profiles:
+      - observability
+
+  # =============================================================================
+  # Observability - Grafana (dashboards and visualization)
+  # =============================================================================
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: yawl-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=yawl-grafana
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./observability/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - yawl-network
+    profiles:
+      - observability
+
+  # =============================================================================
+  # Observability - Loki (log aggregation)
+  # =============================================================================
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: yawl-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./observability/logging/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - yawl-network
+    profiles:
+      - observability
+
+  # =============================================================================
+  # Observability - Jaeger (distributed tracing)
+  # =============================================================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: yawl-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    networks:
+      - yawl-network
+    profiles:
+      - observability
 
 networks:
   yawl-network:
@@ -178,3 +403,7 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

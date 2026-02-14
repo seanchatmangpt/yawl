@@ -688,6 +688,28 @@ terminationGracePeriodSeconds: 30
 initContainers: []
 
 # -----------------------------------------------------------------------------
+# Database Backup CronJob
+# -----------------------------------------------------------------------------
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  suspend: false
+  retentionDays: 30
+  storageSize: 50Gi
+  image: postgres:15-alpine
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  activeDeadlineSeconds: 3600
+
+# -----------------------------------------------------------------------------
+# Prometheus ServiceMonitor
+# -----------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# -----------------------------------------------------------------------------
 # Extra Resources
 # -----------------------------------------------------------------------------
 extraDeploy: []

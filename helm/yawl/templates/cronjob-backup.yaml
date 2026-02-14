@@ -1,0 +1,98 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "yawl.fullname" . }}-db-backup
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit | default 7 }}
+  failedJobsHistoryLimit: {{ .Values.backup.failedJobsHistoryLimit | default 3 }}
+  suspend: {{ .Values.backup.suspend | default false }}
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: {{ .Values.backup.activeDeadlineSeconds | default 3600 }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "yawl.name" . }}-db-backup
+            app.kubernetes.io/component: backup
+            app.kubernetes.io/part-of: yawl
+        spec:
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: {{ .Values.backup.image | default "postgres:15-alpine" }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/yawl_${TIMESTAMP}.sql.gz"
+                  echo "Starting YAWL database backup: ${BACKUP_FILE}"
+                  pg_dump \
+                    -h "{{ include "yawl.databaseHost" . }}" \
+                    -p {{ include "yawl.databasePort" . }} \
+                    -U "${DATABASE_USER}" \
+                    -d "{{ include "yawl.databaseName" . }}" \
+                    --no-owner \
+                    --no-privileges \
+                    --format=custom \
+                    | gzip > "${BACKUP_FILE}"
+                  BACKUP_SIZE=$(stat -c%s "${BACKUP_FILE}" 2>/dev/null || echo "unknown")
+                  echo "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
+                  find /backups -name "yawl_*.sql.gz" -mtime +{{ .Values.backup.retentionDays | default 30 }} -delete
+                  echo "Pruned backups older than {{ .Values.backup.retentionDays | default 30 }} days"
+              env:
+                - name: DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "yawl.databaseSecretName" . }}
+                      key: DATABASE_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "yawl.databaseSecretName" . }}
+                      key: DATABASE_PASSWORD
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: {{ include "yawl.fullname" . }}-db-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "yawl.fullname" . }}-db-backups
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if include "yawl.storageClass" . }}
+  storageClassName: {{ include "yawl.storageClass" . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backup.storageSize | default "50Gi" }}
+{{- end }}

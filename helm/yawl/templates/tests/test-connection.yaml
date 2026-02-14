@@ -1,0 +1,118 @@
+{{- if .Values.services.engine.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "yawl.fullname" . }}-test-connection"
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  containers:
+    - name: engine-health
+      image: curlimages/curl:8.6.0
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Testing YAWL Engine connectivity..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            "http://{{ include "yawl.name" . }}-engine:{{ .Values.services.engine.service.port }}/")
+          echo "Engine HTTP response: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 500 ]; then
+            echo "Engine is responding"
+          else
+            echo "Engine returned unexpected status: ${HTTP_CODE}"
+            exit 1
+          fi
+
+          {{- if .Values.services.resourceService.enabled }}
+          echo "Testing Resource Service connectivity..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            "http://{{ include "yawl.name" . }}-resource-service:{{ .Values.services.resourceService.service.port }}/")
+          echo "Resource Service HTTP response: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 500 ]; then
+            echo "Resource Service is responding"
+          else
+            echo "Resource Service returned unexpected status: ${HTTP_CODE}"
+            exit 1
+          fi
+          {{- end }}
+
+          {{- if .Values.services.workletService.enabled }}
+          echo "Testing Worklet Service connectivity..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            "http://{{ include "yawl.name" . }}-worklet-service:{{ .Values.services.workletService.service.port }}/")
+          echo "Worklet Service HTTP response: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 500 ]; then
+            echo "Worklet Service is responding"
+          else
+            echo "Worklet Service returned unexpected status: ${HTTP_CODE}"
+            exit 1
+          fi
+          {{- end }}
+
+          echo "All YAWL service connectivity tests passed"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+    - name: db-connectivity
+      image: postgres:15-alpine
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Testing PostgreSQL connectivity..."
+          pg_isready \
+            -h "{{ include "yawl.databaseHost" . }}" \
+            -p {{ include "yawl.databasePort" . }} \
+            -U "${DATABASE_USER}" \
+            -d "{{ include "yawl.databaseName" . }}" \
+            --timeout=30
+          echo "PostgreSQL connectivity test passed"
+      env:
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "yawl.databaseSecretName" . }}
+              key: DATABASE_USER
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        runAsNonRoot: true
+        runAsUser: 1000
+  restartPolicy: Never
+{{- end }}

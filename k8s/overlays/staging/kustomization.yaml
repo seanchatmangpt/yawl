@@ -1,0 +1,80 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl-staging
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+
+resources:
+  - ../../base
+
+patches:
+  # Scale engine to 2 replicas, services to 1
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  - target:
+      kind: Deployment
+      name: yawl-resource-service
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  - target:
+      kind: Deployment
+      name: yawl-worklet-service
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  - target:
+      kind: Deployment
+      name: yawl-monitor-service
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Moderate resource allocation for staging
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # Run backup daily at 3 AM in staging
+  - target:
+      kind: CronJob
+      name: yawl-db-backup
+    patch: |
+      - op: replace
+        path: /spec/schedule
+        value: "0 3 * * *"
+      - op: replace
+        path: /spec/successfulJobsHistoryLimit
+        value: 3
+
+configMapGenerator:
+  - name: yawl-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=INFO
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC -Djava.awt.headless=true

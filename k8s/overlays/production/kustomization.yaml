@@ -1,0 +1,128 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl
+
+commonLabels:
+  environment: production
+
+resources:
+  - ../../base
+
+patches:
+  # Production replicas: engine scaled for HA, services appropriately sized
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/strategy
+        value:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 0
+
+  - target:
+      kind: Deployment
+      name: yawl-resource-service
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  - target:
+      kind: Deployment
+      name: yawl-worklet-service
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  - target:
+      kind: Deployment
+      name: yawl-balancer
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # Production resource allocation
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+
+  - target:
+      kind: Deployment
+      name: yawl-resource-service
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  - target:
+      kind: Deployment
+      name: yawl-worklet-service
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # Production pod anti-affinity for HA - spread engine across nodes
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: engine
+                topologyKey: kubernetes.io/hostname
+
+  # Production backup: every 6 hours, keep 30 days
+  - target:
+      kind: CronJob
+      name: yawl-db-backup
+    patch: |
+      - op: replace
+        path: /spec/schedule
+        value: "0 */6 * * *"
+      - op: replace
+        path: /spec/successfulJobsHistoryLimit
+        value: 14
+
+configMapGenerator:
+  - name: yawl-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=WARN
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Djava.awt.headless=true -Dfile.encoding=UTF-8

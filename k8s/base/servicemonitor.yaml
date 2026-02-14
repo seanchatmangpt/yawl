@@ -1,0 +1,160 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-engine
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-engine
+  endpoints:
+    - port: http
+      path: /engine/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-resource-service
+    app.kubernetes.io/component: resource-service
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-resource-service
+  endpoints:
+    - port: http
+      path: /resourceService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-worklet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-worklet-service
+    app.kubernetes.io/component: worklet-service
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-worklet-service
+  endpoints:
+    - port: http
+      path: /workletService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-monitor-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-monitor-service
+    app.kubernetes.io/component: monitor-service
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-monitor-service
+  endpoints:
+    - port: http
+      path: /monitorService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-cost-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-cost-service
+    app.kubernetes.io/component: cost-service
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-cost-service
+  endpoints:
+    - port: http
+      path: /costService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-scheduling-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-scheduling-service
+    app.kubernetes.io/component: scheduling-service
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-scheduling-service
+  endpoints:
+    - port: http
+      path: /schedulingService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yawl-balancer
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-balancer
+    app.kubernetes.io/component: balancer
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - yawl
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-balancer
+  endpoints:
+    - port: http
+      path: /balancer/metrics
+      interval: 30s
+      scrapeTimeout: 10s

@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-default-deny-all
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-allow-dns
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-engine-policy
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow traffic from YAWL services (resource, worklet, monitor, cost, scheduling, balancer)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow outbound to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow outbound to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow outbound to YAWL services
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-services-policy
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: yawl
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow inter-service traffic within YAWL namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow outbound to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow outbound to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow inter-service traffic
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-database-policy
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+  policyTypes:
+    - Ingress
+  ingress:
+    # Only YAWL services and backup jobs can reach the database
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: backup
+      ports:
+        - protocol: TCP
+          port: 5432

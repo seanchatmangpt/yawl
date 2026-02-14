@@ -1,0 +1,118 @@
+
+==========================================================================
+  YAWL Workflow Engine {{ .Chart.AppVersion }} deployed via Helm
+==========================================================================
+
+  Release:   {{ .Release.Name }}
+  Namespace: {{ include "yawl.namespace" . }}
+  Chart:     {{ include "yawl.chart" . }}
+
+--------------------------------------------------------------------------
+  SERVICES DEPLOYED
+--------------------------------------------------------------------------
+
+{{- if .Values.services.engine.enabled }}
+  Engine:             {{ include "yawl.name" . }}-engine:{{ .Values.services.engine.service.port }}
+{{- end }}
+{{- if .Values.services.resourceService.enabled }}
+  Resource Service:   {{ include "yawl.name" . }}-resource-service:{{ .Values.services.resourceService.service.port }}
+{{- end }}
+{{- if .Values.services.workletService.enabled }}
+  Worklet Service:    {{ include "yawl.name" . }}-worklet-service:{{ .Values.services.workletService.service.port }}
+{{- end }}
+{{- if .Values.services.monitorService.enabled }}
+  Monitor Service:    {{ include "yawl.name" . }}-monitor-service:{{ .Values.services.monitorService.service.port }}
+{{- end }}
+{{- if .Values.services.costService.enabled }}
+  Cost Service:       {{ include "yawl.name" . }}-cost-service:{{ .Values.services.costService.service.port }}
+{{- end }}
+{{- if .Values.services.schedulingService.enabled }}
+  Scheduling Service: {{ include "yawl.name" . }}-scheduling-service:{{ .Values.services.schedulingService.service.port }}
+{{- end }}
+{{- if .Values.services.balancer.enabled }}
+  Balancer:           {{ include "yawl.name" . }}-balancer:{{ .Values.services.balancer.service.port }}
+{{- end }}
+
+--------------------------------------------------------------------------
+  DATABASE
+--------------------------------------------------------------------------
+
+{{- if .Values.postgresql.enabled }}
+  PostgreSQL (bundled): {{ include "yawl.databaseHost" . }}:{{ include "yawl.databasePort" . }}/{{ include "yawl.databaseName" . }}
+{{- else }}
+  PostgreSQL (external): {{ .Values.externalDatabase.host }}:{{ .Values.externalDatabase.port }}/{{ .Values.externalDatabase.database }}
+{{- end }}
+
+{{- if .Values.redis.enabled }}
+  Redis (bundled):      {{ include "yawl.redisHost" . }}:{{ include "yawl.redisPort" . }}
+{{- end }}
+
+{{- if .Values.cloudsqlProxy.enabled }}
+  CloudSQL Proxy:       {{ .Values.cloudsqlProxy.instanceConnectionName }}
+{{- end }}
+{{- if .Values.awsRdsProxy.enabled }}
+  RDS Proxy:            {{ .Values.awsRdsProxy.endpoint }}:{{ .Values.awsRdsProxy.port }}
+{{- end }}
+
+--------------------------------------------------------------------------
+  ACCESS
+--------------------------------------------------------------------------
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+  External URL: https://{{ .host }}
+{{- end }}
+
+  Service endpoints:
+{{- range .Values.ingress.hosts }}
+{{- range .paths }}
+    https://{{ $.Values.ingress.hosts | first | (index . "host") }}{{ .path }}
+{{- end }}
+{{- end }}
+{{- else }}
+  Port-forward the engine to access locally:
+
+    kubectl port-forward -n {{ include "yawl.namespace" . }} \
+      svc/{{ include "yawl.name" . }}-engine 8080:{{ .Values.services.engine.service.port }}
+
+  Then open: http://localhost:8080/engine
+{{- end }}
+
+--------------------------------------------------------------------------
+  VERIFICATION COMMANDS
+--------------------------------------------------------------------------
+
+  # Check pod status
+  kubectl get pods -n {{ include "yawl.namespace" . }} -l app.kubernetes.io/part-of=yawl
+
+  # Check service endpoints
+  kubectl get endpoints -n {{ include "yawl.namespace" . }}
+
+  # View engine logs
+  kubectl logs -n {{ include "yawl.namespace" . }} -l app.kubernetes.io/component=engine -f
+
+  # Run Helm tests
+  helm test {{ .Release.Name }} -n {{ include "yawl.namespace" . }}
+
+  # Check HPA status
+  kubectl get hpa -n {{ include "yawl.namespace" . }}
+
+{{- if eq .Values.cloudProvider "gcp" }}
+
+--------------------------------------------------------------------------
+  GCP-SPECIFIC
+--------------------------------------------------------------------------
+  CloudSQL Proxy sidecar is {{ if .Values.cloudsqlProxy.enabled }}enabled{{ else }}disabled{{ end }}
+  Workload Identity is configured via service account annotations
+{{- end }}
+
+{{- if eq .Values.cloudProvider "aws" }}
+
+--------------------------------------------------------------------------
+  AWS-SPECIFIC
+--------------------------------------------------------------------------
+  RDS Proxy is {{ if .Values.awsRdsProxy.enabled }}enabled{{ else }}disabled{{ end }}
+  IAM roles configured via IRSA annotations on service account
+{{- end }}
+
+==========================================================================

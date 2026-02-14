@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl
+
+commonLabels:
+  app.kubernetes.io/part-of: yawl
+  app.kubernetes.io/version: "5.2"
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - services.yaml
+  - ingress.yaml
+  - servicemonitor.yaml
+  - podsecuritystandard.yaml
+  - cronjob-db-backup.yaml
+  - deployments/engine-deployment.yaml
+  - deployments/resource-service-deployment.yaml
+  - deployments/worklet-service-deployment.yaml
+  - deployments/monitor-service-deployment.yaml
+  - deployments/cost-service-deployment.yaml
+  - deployments/scheduling-service-deployment.yaml
+  - deployments/balancer-deployment.yaml
+  - deployments/mail-service-deployment.yaml
+  - deployments/digital-signature-deployment.yaml
+  - deployments/document-store-deployment.yaml
+  - deployments/proclet-service-deployment.yaml

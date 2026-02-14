@@ -1,0 +1,80 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl-dev
+
+namePrefix: dev-
+
+commonLabels:
+  environment: development
+
+resources:
+  - ../../base
+
+patches:
+  # Scale down all deployments to 1 replica for development
+  - target:
+      kind: Deployment
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Reduce resource requests/limits for development
+  - target:
+      kind: Deployment
+      name: yawl-engine
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  - target:
+      kind: Deployment
+      name: yawl-resource-service
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+
+  - target:
+      kind: Deployment
+      name: yawl-worklet-service
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+
+  # Disable backup CronJob in development
+  - target:
+      kind: CronJob
+      name: yawl-db-backup
+    patch: |
+      - op: replace
+        path: /spec/suspend
+        value: true
+
+configMapGenerator:
+  - name: yawl-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=DEBUG
+      - JAVA_OPTS=-Xms128m -Xmx256m -Djava.awt.headless=true

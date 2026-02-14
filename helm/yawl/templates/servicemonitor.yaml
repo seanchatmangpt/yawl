@@ -1,0 +1,95 @@
+{{- if and .Values.services.engine.enabled (or (eq .Values.cloudProvider "gcp") (eq .Values.cloudProvider "aws") (eq .Values.cloudProvider "azure") (eq .Values.cloudProvider "") ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yawl.fullname" . }}-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: engine
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "yawl.namespace" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+  endpoints:
+    - port: http
+      path: /engine/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}
+---
+{{- if and .Values.services.resourceService.enabled (or (eq .Values.cloudProvider "gcp") (eq .Values.cloudProvider "aws") (eq .Values.cloudProvider "azure") (eq .Values.cloudProvider "") ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yawl.fullname" . }}-resource-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: resource-service
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "yawl.namespace" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-resource-service
+  endpoints:
+    - port: http
+      path: /resourceService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}
+---
+{{- if and .Values.services.workletService.enabled (or (eq .Values.cloudProvider "gcp") (eq .Values.cloudProvider "aws") (eq .Values.cloudProvider "azure") (eq .Values.cloudProvider "") ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yawl.fullname" . }}-worklet-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worklet-service
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "yawl.namespace" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-worklet-service
+  endpoints:
+    - port: http
+      path: /workletService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}
+---
+{{- if and .Values.services.monitorService.enabled (or (eq .Values.cloudProvider "gcp") (eq .Values.cloudProvider "aws") (eq .Values.cloudProvider "azure") (eq .Values.cloudProvider "") ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yawl.fullname" . }}-monitor-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitor-service
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "yawl.namespace" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-monitor-service
+  endpoints:
+    - port: http
+      path: /monitorService/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}
