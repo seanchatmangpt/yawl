@@ -1,6 +1,13 @@
 # YAWL (Yet Another Workflow Language) - Claude Development Guide
 
-This document provides instructions for building, running, and testing the YAWL project in Claude Code environments.
+This document provides instructions for building, running, and testing the YAWL project.
+
+## ⚠️ Environment Requirements
+
+**This project runs ONLY in Docker/DevContainer environments.**
+- Claude Code Web is NOT supported
+- Use local Claude Code with Docker dev containers
+- Use docker-compose for full YAWL stack
 
 ## Project Overview
 
@@ -10,22 +17,67 @@ YAWL is a BPM/Workflow system with a powerful modelling language that handles co
 **Build System:** Apache Ant
 **Java Version:** OpenJDK 21.0.10
 **Default Database:** PostgreSQL (configurable)
+**Execution Context:** Docker/DevContainer only
+
+## Docker/DevContainer Setup
+
+### Option 1: VS Code DevContainer (Recommended)
+```bash
+# Open in VS Code with DevContainer
+# VSCode will prompt to "Reopen in Container"
+# This automatically sets up Java 21 and Ant
+
+# Then use the build script:
+./.claude/build.sh all
+```
+
+See `.devcontainer/devcontainer.json` for configuration.
+
+### Option 2: Docker Compose (Full Stack)
+```bash
+# Start YAWL dev environment with PostgreSQL
+docker-compose up -d
+
+# Enter the development container
+docker-compose exec yawl-dev bash
+
+# Inside container, use build script:
+./.claude/build.sh all
+```
+
+This includes:
+- YAWL development environment (Java 21, Ant)
+- PostgreSQL database (pre-configured)
+- Tomcat ready for deployment
+- Port forwarding (8080, 8081)
+
+### Option 3: Manual Docker
+```bash
+docker build -f Dockerfile.dev -t yawl-dev .
+docker run -it -v $(pwd):/workspace yawl-dev bash
+```
+
+### Using the Build Script
+Inside any Docker/DevContainer environment:
+```bash
+./.claude/build.sh all          # Full cycle
+./.claude/build.sh test         # Run tests only
+./.claude/build.sh compile      # Compile only
+./.claude/build.sh help         # Show all commands
+```
 
 ## Quick Start
 
-### Build the Project
+### Build the Project (in Docker/DevContainer)
 ```bash
-# Compile all source files
-ant compile
+# Using wrapper script
+./.claude/build.sh all
 
-# Run unit tests
-ant unitTest
-
-# Build the Control Panel executable JAR
-ant build_controlPanel.jar
-
-# Full cycle: clean, compile, test, and build
-ant clean compile unitTest build_controlPanel.jar
+# Or using Ant directly
+ant compile          # Compile all source files
+ant unitTest         # Run unit tests
+ant build_controlPanel.jar  # Build the Control Panel executable JAR
+ant clean compile unitTest build_controlPanel.jar  # Full cycle
 ```
 
 ### Run the Project
@@ -195,12 +247,13 @@ java -jar output/YawlControlPanel-5.2.jar &
 
 ## Integration with Claude Code
 
-This project is configured to work seamlessly with Claude Code:
+This project is configured to work with Claude Code in Docker environments only:
 - ✅ Builds with Ant (no special IDE required)
 - ✅ Tests runnable with `ant unitTest`
 - ✅ Clean build artifacts tracked in `.gitignore`
-- ✅ SessionStart hook ready for automated builds
-- ✅ Commit hooks for quality checks
+- ✅ Build wrapper script `./.claude/build.sh` for easy access
+- ✅ Manual hook invocation in docker-compose/devcontainer
+- ❌ Claude Code Web is NOT supported (Docker only)
 
 ---
 

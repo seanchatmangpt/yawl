@@ -1,18 +1,12 @@
 {
-  "hooks": {
-    "session-start": {
-      "command": "bash .claude/session-start-hook.sh",
-      "description": "Build and test YAWL project when session starts",
-      "enabled": true
-    }
-  },
   "project": {
     "name": "YAWL (Yet Another Workflow Language)",
     "version": "5.2",
     "description": "BPM/Workflow system with powerful modelling language",
     "buildSystem": "Ant",
     "mainLanguage": "Java",
-    "javaVersion": "11+"
+    "javaVersion": "11+",
+    "environment": "Docker/DevContainer Only"
   },
   "ide": {
     "type": "Ant",
@@ -28,5 +22,10 @@
     "testDir": "test",
     "buildDir": "classes",
     "outputDir": "output"
+  },
+  "notes": {
+    "environment": "This project runs only in Docker/DevContainer",
+    "hooks": "No automatic hooks - use .claude/build.sh manually",
+    "webSessions": "Claude Code Web is not supported for this project"
   }
 }

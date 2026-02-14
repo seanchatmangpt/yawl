@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  yawl-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: yawl-dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      - JAVA_HOME=/usr/local/openjdk-21
+      - ANT_HOME=/opt/ant
+      - PATH=/opt/ant/bin:/usr/local/openjdk-21/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    ports:
+      - "8080:8080"  # YAWL Engine
+      - "8081:8081"  # Tomcat
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    networks:
+      - yawl-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: yawl-postgres
+    environment:
+      POSTGRES_USER: yawl
+      POSTGRES_PASSWORD: yawl
+      POSTGRES_DB: yawl
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yawl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  yawl-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,28 @@
+FROM openjdk:21-slim
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+    ant \
+    git \
+    wget \
+    curl \
+    vim \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV JAVA_HOME=/usr/local/openjdk-21
+ENV ANT_HOME=/usr/share/ant
+ENV PATH=$ANT_HOME/bin:$PATH
+
+# Verify installations
+RUN java -version && ant -version
+
+# Create workspace
+WORKDIR /workspace
+
+# Copy project
+COPY . .
+
+# Build on startup (optional - can be run manually)
+CMD ["/bin/bash"]
