@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.citi.qut.edu.au/yawl ../../schema/YAWL_Schema4.0.xsd"
+                  xmlns="http://www.citi.qut.edu.au/yawl">
+    <specification uri="KubernetesDeployment.xml">
+        <name>Kubernetes Deployment Pipeline</name>
+        <documentation>Models the YAWL Kubernetes deployment pipeline for multi-cloud
+environments. Validates manifests and Helm charts, selects the target cloud provider,
+deploys via Helm with cloud-specific values, runs health checks on all services
+in parallel, and verifies the deployment or triggers rollback on failure.</documentation>
+        <metaData/>
+        <rootNet id="k8s_deployment_pipeline">
+            <localVariable name="target_namespace">
+                <type>xs:string</type>
+                <initialValue>yawl</initialValue>
+            </localVariable>
+            <localVariable name="cloud_provider">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="helm_release_name">
+                <type>xs:string</type>
+                <initialValue>yawl</initialValue>
+            </localVariable>
+            <localVariable name="image_registry">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="image_tag">
+                <type>xs:string</type>
+                <initialValue>5.2</initialValue>
+            </localVariable>
+            <localVariable name="manifest_valid">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="helm_lint_passed">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="deploy_result">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="engine_healthy">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="resource_healthy">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="worklet_healthy">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="all_healthy">
+                <type>xs:boolean</type>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_deployment">
+                    <flowsInto>
+                        <nextElementRef id="validate_manifests"/>
+                    </flowsInto>
+                </inputCondition>
+
+                <!-- Step 1: Validate K8s manifests and Helm chart in parallel -->
+                <task id="validate_manifests">
+                    <name>Validate K8s Manifests</name>
+                    <flowsInto>
+                        <nextElementRef id="lint_helm_chart"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="validate_rbac"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/is_valid"/>
+                            <mapsTo>manifest_valid</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="validate_manifests"/>
+                </task>
+
+                <task id="validate_rbac">
+                    <name>Validate RBAC and Network Policies</name>
+                    <flowsInto>
+                        <nextElementRef id="select_cloud_provider"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="validate_rbac"/>
+                </task>
+
+                <task id="lint_helm_chart">
+                    <name>Lint Helm Chart</name>
+                    <flowsInto>
+                        <nextElementRef id="select_cloud_provider"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/helm_release_name"/>
+                            <mapsTo>release_name</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/lint_passed"/>
+                            <mapsTo>helm_lint_passed</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="lint_helm_chart"/>
+                </task>
+
+                <!-- Step 2: Select cloud provider (AND join, XOR split for cloud choice) -->
+                <task id="select_cloud_provider">
+                    <name>Select Cloud Provider</name>
+                    <flowsInto>
+                        <nextElementRef id="deploy_helm_release"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/cloud_provider"/>
+                            <mapsTo>cloud_provider</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/image_registry"/>
+                            <mapsTo>image_registry</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="select_cloud_provider"/>
+                </task>
+
+                <!-- Step 3: Deploy via Helm -->
+                <task id="deploy_helm_release">
+                    <name>Deploy Helm Release</name>
+                    <flowsInto>
+                        <nextElementRef id="check_engine_health"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="check_resource_health"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="check_worklet_health"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/helm_release_name"/>
+                            <mapsTo>release_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/cloud_provider"/>
+                            <mapsTo>cloud_provider</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/image_registry"/>
+                            <mapsTo>image_registry</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/image_tag"/>
+                            <mapsTo>image_tag</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/deploy_result"/>
+                            <mapsTo>deploy_result</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="deploy_helm_release"/>
+                </task>
+
+                <!-- Step 4a-4c: Health checks in parallel (AND split from deploy) -->
+                <task id="check_engine_health">
+                    <name>Check Engine Health</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_deployment"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/is_healthy"/>
+                            <mapsTo>engine_healthy</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="check_service_health"/>
+                </task>
+
+                <task id="check_resource_health">
+                    <name>Check Resource Service Health</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_deployment"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/is_healthy"/>
+                            <mapsTo>resource_healthy</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="check_service_health"/>
+                </task>
+
+                <task id="check_worklet_health">
+                    <name>Check Worklet Service Health</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_deployment"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/is_healthy"/>
+                            <mapsTo>worklet_healthy</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="check_service_health"/>
+                </task>
+
+                <!-- Step 5: Verify or rollback (AND join, XOR split) -->
+                <task id="verify_deployment">
+                    <name>Verify Deployment Status</name>
+                    <flowsInto>
+                        <nextElementRef id="end_deployment"/>
+                        <predicate>/data/all_healthy = 'true'</predicate>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="rollback"/>
+                        <predicate>/data/all_healthy = 'false'</predicate>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="xor"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/engine_healthy"/>
+                            <mapsTo>engine_healthy</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/resource_healthy"/>
+                            <mapsTo>resource_healthy</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/worklet_healthy"/>
+                            <mapsTo>worklet_healthy</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/all_healthy"/>
+                            <mapsTo>all_healthy</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="verify_deployment"/>
+                </task>
+
+                <!-- Step 6: Rollback on failure -->
+                <task id="rollback">
+                    <name>Rollback Helm Release</name>
+                    <flowsInto>
+                        <nextElementRef id="end_deployment"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/helm_release_name"/>
+                            <mapsTo>release_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/target_namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="rollback"/>
+                </task>
+
+                <outputCondition id="end_deployment"/>
+            </processControlElements>
+        </rootNet>
+
+        <!-- Decompositions -->
+        <decomposition id="validate_manifests" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/is_valid"/>
+            <outputParam name="is_valid">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="validate_rbac" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="lint_helm_chart" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="release_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/lint_passed"/>
+            <outputParam name="lint_passed">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="select_cloud_provider" xsi:type="WebServiceGatewayFactsType">
+            <outputExpression query="/data/cloud_provider"/>
+            <outputExpression query="/data/image_registry"/>
+            <outputParam name="cloud_provider">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+            <outputParam name="image_registry">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="deploy_helm_release" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="release_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="cloud_provider">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="image_registry">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="image_tag">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/deploy_result"/>
+            <outputParam name="deploy_result">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="check_service_health" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/is_healthy"/>
+            <outputParam name="is_healthy">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="verify_deployment" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="engine_healthy">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="resource_healthy">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="worklet_healthy">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/all_healthy"/>
+            <outputParam name="all_healthy">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="rollback" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="release_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+    </specification>
+</specificationSet>

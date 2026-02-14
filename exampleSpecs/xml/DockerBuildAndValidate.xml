@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.citi.qut.edu.au/yawl ../../schema/YAWL_Schema4.0.xsd"
+                  xmlns="http://www.citi.qut.edu.au/yawl">
+    <specification uri="DockerBuildAndValidate.xml">
+        <name>Docker Build and Validate Pipeline</name>
+        <documentation>Models the YAWL Docker container build and validation pipeline.
+Compiles source with Ant, validates Docker Compose configuration, builds service
+images in parallel (engine, resourceService, workletService, monitorService),
+runs security scans, then starts the full stack with docker-compose for
+integration testing.</documentation>
+        <metaData/>
+        <rootNet id="docker_build_pipeline">
+            <localVariable name="git_branch">
+                <type>xs:string</type>
+                <initialValue>main</initialValue>
+            </localVariable>
+            <localVariable name="build_version">
+                <type>xs:string</type>
+                <initialValue>5.2</initialValue>
+            </localVariable>
+            <localVariable name="ant_compile_result">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="compose_valid">
+                <type>xs:boolean</type>
+            </localVariable>
+            <localVariable name="engine_image_tag">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="resource_image_tag">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="worklet_image_tag">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="monitor_image_tag">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="security_scan_result">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="integration_test_result">
+                <type>xs:string</type>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_pipeline">
+                    <flowsInto>
+                        <nextElementRef id="compile_source"/>
+                    </flowsInto>
+                </inputCondition>
+
+                <!-- Step 1: Compile YAWL source with Ant -->
+                <task id="compile_source">
+                    <name>Compile YAWL Source</name>
+                    <flowsInto>
+                        <nextElementRef id="validate_compose"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/build_version"/>
+                            <mapsTo>build_version</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/compile_result"/>
+                            <mapsTo>ant_compile_result</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="compile_source"/>
+                </task>
+
+                <!-- Step 2: Validate Docker Compose config -->
+                <task id="validate_compose">
+                    <name>Validate Docker Compose</name>
+                    <flowsInto>
+                        <nextElementRef id="build_engine_image"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="build_resource_image"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="build_worklet_image"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="build_monitor_image"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/is_valid"/>
+                            <mapsTo>compose_valid</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="validate_compose"/>
+                </task>
+
+                <!-- Step 3a-3d: Build service images in parallel (AND split) -->
+                <task id="build_engine_image">
+                    <name>Build Engine Image</name>
+                    <flowsInto>
+                        <nextElementRef id="run_security_scan"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/build_version"/>
+                            <mapsTo>build_version</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/image_tag"/>
+                            <mapsTo>engine_image_tag</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="build_docker_image"/>
+                </task>
+
+                <task id="build_resource_image">
+                    <name>Build Resource Service Image</name>
+                    <flowsInto>
+                        <nextElementRef id="run_security_scan"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/build_version"/>
+                            <mapsTo>build_version</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/image_tag"/>
+                            <mapsTo>resource_image_tag</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="build_docker_image"/>
+                </task>
+
+                <task id="build_worklet_image">
+                    <name>Build Worklet Service Image</name>
+                    <flowsInto>
+                        <nextElementRef id="run_security_scan"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/build_version"/>
+                            <mapsTo>build_version</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/image_tag"/>
+                            <mapsTo>worklet_image_tag</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="build_docker_image"/>
+                </task>
+
+                <task id="build_monitor_image">
+                    <name>Build Monitor Service Image</name>
+                    <flowsInto>
+                        <nextElementRef id="run_security_scan"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/build_version"/>
+                            <mapsTo>build_version</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/image_tag"/>
+                            <mapsTo>monitor_image_tag</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="build_docker_image"/>
+                </task>
+
+                <!-- Step 4: Security scan (AND join - waits for all 4 images) -->
+                <task id="run_security_scan">
+                    <name>Run Container Security Scan</name>
+                    <flowsInto>
+                        <nextElementRef id="start_compose_stack"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/engine_image_tag"/>
+                            <mapsTo>image_tag</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/scan_result"/>
+                            <mapsTo>security_scan_result</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="run_security_scan"/>
+                </task>
+
+                <!-- Step 5: Start full stack for integration testing -->
+                <task id="start_compose_stack">
+                    <name>Start Docker Compose Stack</name>
+                    <flowsInto>
+                        <nextElementRef id="run_integration_tests"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <decomposesTo id="start_compose_stack"/>
+                </task>
+
+                <!-- Step 6: Run integration tests -->
+                <task id="run_integration_tests">
+                    <name>Run Integration Tests</name>
+                    <flowsInto>
+                        <nextElementRef id="end_pipeline"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/test_result"/>
+                            <mapsTo>integration_test_result</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="run_integration_tests"/>
+                </task>
+
+                <outputCondition id="end_pipeline"/>
+            </processControlElements>
+        </rootNet>
+
+        <!-- Decompositions -->
+        <decomposition id="compile_source" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="build_version">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/compile_result"/>
+            <outputParam name="compile_result">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="validate_compose" xsi:type="WebServiceGatewayFactsType">
+            <outputExpression query="/data/is_valid"/>
+            <outputParam name="is_valid">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="build_docker_image" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="build_version">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/image_tag"/>
+            <outputParam name="image_tag">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="run_security_scan" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="image_tag">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/scan_result"/>
+            <outputParam name="scan_result">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="start_compose_stack" xsi:type="WebServiceGatewayFactsType"/>
+
+        <decomposition id="run_integration_tests" xsi:type="WebServiceGatewayFactsType">
+            <outputExpression query="/data/test_result"/>
+            <outputParam name="test_result">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+    </specification>
+</specificationSet>
