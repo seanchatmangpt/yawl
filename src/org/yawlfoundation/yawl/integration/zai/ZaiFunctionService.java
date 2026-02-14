@@ -1,5 +1,10 @@
 package org.yawlfoundation.yawl.integration.zai;
 
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -7,7 +12,7 @@ import java.util.*;
  * Z.AI Function Calling Service for YAWL
  *
  * Enables AI models to call YAWL workflow operations through function calling.
- * Direct HTTP client - no external SDK dependencies.
+ * Integrates with YAWL Engine via InterfaceA and InterfaceB clients.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -18,41 +23,89 @@ public class ZaiFunctionService {
 
     private final ZaiHttpClient httpClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final InterfaceA_EnvironmentBasedClient interfaceAClient;
+    private final String yawlUsername;
+    private final String yawlPassword;
+    private String sessionHandle;
     private boolean initialized;
 
     /**
      * Interface for YAWL function handlers
      */
     public interface YawlFunctionHandler {
-        String execute(Map<String, Object> arguments);
+        String execute(Map<String, Object> arguments) throws IOException;
     }
 
     /**
-     * Initialize with API key from environment variable
+     * Initialize with environment variables
      */
     public ZaiFunctionService() {
-        this(getApiKeyFromEnv());
+        this(
+            getRequiredEnv("ZAI_API_KEY"),
+            getRequiredEnv("YAWL_ENGINE_URL"),
+            getRequiredEnv("YAWL_USERNAME"),
+            getRequiredEnv("YAWL_PASSWORD")
+        );
     }
 
     /**
-     * Initialize with explicit API key
+     * Initialize with explicit configuration
      */
-    public ZaiFunctionService(String apiKey) {
-        if (apiKey == null || apiKey.isEmpty()) {
+    public ZaiFunctionService(String zaiApiKey, String yawlEngineUrl, String username, String password) {
+        if (zaiApiKey == null || zaiApiKey.isEmpty()) {
             throw new IllegalArgumentException("ZAI_API_KEY is required");
         }
-        this.httpClient = new ZaiHttpClient(apiKey);
+        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
+            throw new IllegalArgumentException("YAWL_ENGINE_URL is required (e.g., http://localhost:8080/yawl)");
+        }
+        if (username == null || username.isEmpty()) {
+            throw new IllegalArgumentException("YAWL_USERNAME is required");
+        }
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("YAWL_PASSWORD is required");
+        }
+
+        this.httpClient = new ZaiHttpClient(zaiApiKey);
+        this.yawlUsername = username;
+        this.yawlPassword = password;
+
+        String interfaceAUrl = yawlEngineUrl + "/ia";
+        String interfaceBUrl = yawlEngineUrl + "/ib";
+
+        this.interfaceAClient = new InterfaceA_EnvironmentBasedClient(interfaceAUrl);
+        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(interfaceBUrl);
         this.functionHandlers = new HashMap<>();
+
+        connectToYawlEngine();
         registerDefaultFunctions();
         this.initialized = true;
     }
 
-    private static String getApiKeyFromEnv() {
-        String key = System.getenv("ZAI_API_KEY");
-        if (key == null || key.isEmpty()) {
-            throw new IllegalArgumentException("ZAI_API_KEY environment variable not set");
+    private static String getRequiredEnv(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException(name + " environment variable not set");
         }
-        return key;
+        return value;
+    }
+
+    private void connectToYawlEngine() {
+        try {
+            this.sessionHandle = interfaceBClient.connect(yawlUsername, yawlPassword);
+            if (sessionHandle == null || sessionHandle.contains("failure") || sessionHandle.contains("error")) {
+                throw new RuntimeException("Failed to connect to YAWL engine: " + sessionHandle);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to connect to YAWL engine at " +
+                interfaceBClient.getBackEndURI() + ": " + e.getMessage(), e);
+        }
+    }
+
+    private void ensureConnection() {
+        if (sessionHandle == null) {
+            connectToYawlEngine();
+        }
     }
 
     /**
@@ -61,23 +114,23 @@ public class ZaiFunctionService {
     private void registerDefaultFunctions() {
         registerFunction("start_workflow", args -> {
             String workflowId = (String) args.get("workflow_id");
-            String inputData = args.get("input_data") != null ? args.get("input_data").toString() : "{}";
-            return executeStartWorkflow(workflowId, inputData);
+            String inputData = args.get("input_data") != null ? args.get("input_data").toString() : null;
+            return startWorkflow(workflowId, inputData);
         });
 
         registerFunction("get_workflow_status", args -> {
             String caseId = (String) args.get("case_id");
-            return executeGetStatus(caseId);
+            return getWorkflowStatus(caseId);
         });
 
         registerFunction("complete_task", args -> {
             String caseId = (String) args.get("case_id");
             String taskId = (String) args.get("task_id");
-            String outputData = args.get("output_data") != null ? args.get("output_data").toString() : "{}";
-            return executeCompleteTask(caseId, taskId, outputData);
+            String outputData = args.get("output_data") != null ? args.get("output_data").toString() : null;
+            return completeTask(caseId, taskId, outputData);
         });
 
-        registerFunction("list_workflows", args -> executeListWorkflows());
+        registerFunction("list_workflows", args -> listWorkflows());
     }
 
     /**
@@ -91,7 +144,7 @@ public class ZaiFunctionService {
      * Process a natural language request with function calling
      */
     public String processWithFunctions(String userMessage) {
-        return processWithFunctions(userMessage, DEFAULT_MODEL);
+        return processWithFunctions(userMessage, ZHIPU_AI_MODEL_GLM_4_6);
     }
 
     /**
@@ -102,7 +155,6 @@ public class ZaiFunctionService {
             throw new IllegalStateException("Service not initialized");
         }
 
-        // First, ask AI which function to call
         String functionPrompt = buildFunctionSelectionPrompt(userMessage);
 
         List<Map<String, String>> messages = new ArrayList<>();
@@ -113,7 +165,6 @@ public class ZaiFunctionService {
             String response = httpClient.createChatCompletion(model, messages);
             String content = httpClient.extractContent(response);
 
-            // Parse function call from response
             FunctionCall functionCall = parseFunctionCall(content);
 
             if (functionCall != null) {
@@ -121,7 +172,6 @@ public class ZaiFunctionService {
                 String result = executeFunction(functionCall.name, argsJson);
                 return formatResult(functionCall.name, result);
             } else {
-                // No function detected, return direct response
                 return content;
             }
         } catch (IOException e) {
@@ -163,13 +213,11 @@ public class ZaiFunctionService {
 
         String funcName = content.substring(funcStart, funcEnd).trim();
 
-        // Find arguments
         int argsIdx = upperContent.indexOf("ARGUMENTS:");
         String argsJson = "{}";
         if (argsIdx != -1) {
             int argsStart = argsIdx + "ARGUMENTS:".length();
             String argsPart = content.substring(argsStart).trim();
-            // Extract JSON object
             int braceStart = argsPart.indexOf("{");
             int braceEnd = argsPart.lastIndexOf("}");
             if (braceStart != -1 && braceEnd != -1 && braceEnd > braceStart) {
@@ -191,7 +239,6 @@ public class ZaiFunctionService {
             return result;
         }
 
-        // Simple JSON parsing
         String[] pairs = json.split(",");
         for (String pair : pairs) {
             String[] kv = pair.split(":", 2);
@@ -225,26 +272,159 @@ public class ZaiFunctionService {
         }
     }
 
-    // Default function implementations (connect to actual YAWL engine)
+    private String startWorkflow(String workflowId, String inputData) throws IOException {
+        ensureConnection();
 
-    private String executeStartWorkflow(String workflowId, String inputData) {
-        // TODO: Connect to actual YAWL engine via HTTP
-        return "{\"status\": \"started\", \"workflow_id\": \"" + workflowId + "\", \"case_id\": \"case-" + System.currentTimeMillis() + "\"}";
+        YSpecificationID specID = parseSpecificationID(workflowId);
+        String caseData = inputData != null ? wrapDataInXML(inputData) : null;
+
+        String caseId = interfaceBClient.launchCase(specID, caseData, sessionHandle);
+
+        if (caseId == null || caseId.contains("failure") || caseId.contains("error")) {
+            return "{\"error\": \"Failed to start workflow: " + caseId + "\"}";
+        }
+
+        return "{\"status\": \"started\", \"workflow_id\": \"" + workflowId +
+               "\", \"case_id\": \"" + caseId + "\"}";
     }
 
-    private String executeGetStatus(String caseId) {
-        // TODO: Connect to actual YAWL engine via HTTP
-        return "{\"case_id\": \"" + caseId + "\", \"status\": \"running\", \"current_tasks\": [\"task1\", \"task2\"]}";
+    private String getWorkflowStatus(String caseId) throws IOException {
+        ensureConnection();
+
+        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+
+        if (workItems == null) {
+            return "{\"error\": \"Case not found: " + caseId + "\"}";
+        }
+
+        StringBuilder tasksJson = new StringBuilder("[");
+        boolean first = true;
+        for (WorkItemRecord item : workItems) {
+            if (!first) tasksJson.append(",");
+            tasksJson.append("{\"task_id\": \"").append(item.getTaskID())
+                    .append("\", \"status\": \"").append(item.getStatus())
+                    .append("\", \"enabled_time\": \"").append(item.getEnablementTimeMs())
+                    .append("\"}");
+            first = false;
+        }
+        tasksJson.append("]");
+
+        return "{\"case_id\": \"" + caseId +
+               "\", \"status\": \"running\", \"current_tasks\": " + tasksJson + "}";
     }
 
-    private String executeCompleteTask(String caseId, String taskId, String outputData) {
-        // TODO: Connect to actual YAWL engine via HTTP
-        return "{\"status\": \"completed\", \"case_id\": \"" + caseId + "\", \"task_id\": \"" + taskId + "\"}";
+    private String completeTask(String caseId, String taskId, String outputData) throws IOException {
+        ensureConnection();
+
+        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+
+        if (workItems == null || workItems.isEmpty()) {
+            return "{\"error\": \"No work items found for case: " + caseId + "\"}";
+        }
+
+        WorkItemRecord targetItem = null;
+        for (WorkItemRecord item : workItems) {
+            if (item.getTaskID().equals(taskId)) {
+                targetItem = item;
+                break;
+            }
+        }
+
+        if (targetItem == null) {
+            return "{\"error\": \"Task not found: " + taskId + " in case: " + caseId + "\"}";
+        }
+
+        String workItemID = targetItem.getID();
+        String dataToSend = outputData != null ? wrapDataInXML(outputData) : targetItem.getDataList();
+
+        String checkoutResult = interfaceBClient.checkOutWorkItem(workItemID, sessionHandle);
+        if (checkoutResult == null || checkoutResult.contains("failure") || checkoutResult.contains("error")) {
+            return "{\"error\": \"Failed to checkout work item: " + checkoutResult + "\"}";
+        }
+
+        String checkinResult = interfaceBClient.checkInWorkItem(workItemID, dataToSend, sessionHandle);
+        if (checkinResult == null || !checkinResult.contains("success")) {
+            return "{\"error\": \"Failed to complete task: " + checkinResult + "\"}";
+        }
+
+        return "{\"status\": \"completed\", \"case_id\": \"" + caseId +
+               "\", \"task_id\": \"" + taskId + "\"}";
     }
 
-    private String executeListWorkflows() {
-        // TODO: Connect to actual YAWL engine via HTTP
-        return "{\"workflows\": [\"OrderProcessing\", \"InvoiceApproval\", \"DocumentReview\", \"CustomerOnboarding\", \"IncidentManagement\"]}";
+    private String listWorkflows() throws IOException {
+        ensureConnection();
+
+        String sessionA = interfaceAClient.connect(yawlUsername, yawlPassword);
+        if (sessionA == null || sessionA.contains("failure") || sessionA.contains("error")) {
+            throw new RuntimeException("Failed to connect to Interface A: " + sessionA);
+        }
+
+        try {
+            String specsXML = interfaceAClient.getLoadedSpecificationData(sessionA);
+
+            if (specsXML == null || specsXML.contains("failure") || specsXML.contains("error")) {
+                return "{\"error\": \"Failed to retrieve specifications: " + specsXML + "\"}";
+            }
+
+            List<String> workflowNames = extractSpecificationNames(specsXML);
+
+            StringBuilder json = new StringBuilder("{\"workflows\": [");
+            boolean first = true;
+            for (String name : workflowNames) {
+                if (!first) json.append(",");
+                json.append("\"").append(name).append("\"");
+                first = false;
+            }
+            json.append("]}");
+
+            return json.toString();
+        } finally {
+            interfaceAClient.disconnect(sessionA);
+        }
+    }
+
+    private YSpecificationID parseSpecificationID(String workflowId) {
+        String[] parts = workflowId.split(":");
+        if (parts.length == 3) {
+            return new YSpecificationID(parts[0], parts[1], parts[2]);
+        } else if (parts.length == 1) {
+            return new YSpecificationID(parts[0], "0.1", "0.1");
+        } else {
+            throw new IllegalArgumentException(
+                "Invalid workflow ID format. Use 'identifier:version:uri' or just 'identifier'"
+            );
+        }
+    }
+
+    private String wrapDataInXML(String data) {
+        if (data.trim().startsWith("<")) {
+            return data;
+        }
+        return "<data>" + data + "</data>";
+    }
+
+    private List<String> extractSpecificationNames(String specsXML) {
+        List<String> names = new ArrayList<>();
+
+        int pos = 0;
+        while (true) {
+            int specStart = specsXML.indexOf("<specIdentifier>", pos);
+            if (specStart == -1) break;
+
+            int specEnd = specsXML.indexOf("</specIdentifier>", specStart);
+            if (specEnd == -1) break;
+
+            String specContent = specsXML.substring(specStart + 16, specEnd);
+            names.add(specContent.trim());
+
+            pos = specEnd;
+        }
+
+        if (names.isEmpty()) {
+            names.add("No specifications loaded");
+        }
+
+        return names;
     }
 
     public boolean isInitialized() {
@@ -253,6 +433,17 @@ public class ZaiFunctionService {
 
     public Set<String> getRegisteredFunctions() {
         return functionHandlers.keySet();
+    }
+
+    public void disconnect() {
+        try {
+            if (sessionHandle != null) {
+                interfaceBClient.disconnect(sessionHandle);
+                sessionHandle = null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to disconnect from YAWL engine", e);
+        }
     }
 
     private String mapToJson(Map<String, Object> map) {
@@ -297,16 +488,18 @@ public class ZaiFunctionService {
 
         System.out.println("Registered functions: " + service.getRegisteredFunctions());
 
-        System.out.println("\n=== Testing Start Workflow ===");
-        String result = service.processWithFunctions("Start an OrderProcessing workflow with customer 'Acme Corp'");
+        System.out.println("\n=== Testing List Workflows ===");
+        String result = service.processWithFunctions("What workflows are available?");
         System.out.println(result);
 
-        System.out.println("\n=== Testing List Workflows ===");
-        result = service.processWithFunctions("What workflows are available?");
+        System.out.println("\n=== Testing Start Workflow ===");
+        result = service.processWithFunctions("Start an OrderProcessing workflow with customer 'Acme Corp'");
         System.out.println(result);
 
         System.out.println("\n=== Testing Get Status ===");
         result = service.processWithFunctions("Check status of case case-12345");
         System.out.println(result);
+
+        service.disconnect();
     }
 }
