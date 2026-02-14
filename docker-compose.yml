@@ -16,6 +16,7 @@ services:
       - JAVA_HOME=/opt/java/openjdk
       - ANT_HOME=/usr/share/ant
       - PATH=/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
     ports:
       - "9080:8080"  # YAWL Engine (mapped to 9080 to avoid conflicts)
       - "9081:8081"  # Tomcat
