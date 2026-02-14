@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -36,7 +38,7 @@ public class YawlUiUpdater {
 
     public boolean hasUpdate() {
         int local = StringUtil.strToInt(getLocalBuildNumber(), -1);
-        int remote = StringUtil.strToInt(getRemoteBuildNumber(), -1);
+        int remote = StringUtil.strToInt(getRemoteBuildNumber(), -1) + checkForUpdate();
         return local != -1 && remote != -1 && local < remote;
     }
 
@@ -54,6 +56,8 @@ public class YawlUiUpdater {
     public AppUpdate getAppUpdate() {
         AppUpdate appUpdate = new AppUpdate("yawlui");
         appUpdate.addDownload(createUpdateFileNode());
+        appUpdate.addDownload(createLibUpdateFileNode());
+        appUpdate.addDownload(createIconUpdateFileNode());
         return appUpdate;
     }
 
@@ -63,6 +67,22 @@ public class YawlUiUpdater {
         node.addAttribute("name", UPDATE_JAR_NAME);
         node.addAttribute("md5", "0");
         node.addAttribute("size", "300000");
+        return new UIFileNode(node, REMOTE_PATH + "update/");
+    }
+
+    private FileNode createLibUpdateFileNode() {
+        XNode node = new XNode("node");
+        node.addAttribute("name", "yawlui-lib-update.jar");
+        node.addAttribute("md5", "0");
+        node.addAttribute("size", "504000");
+        return new UIFileNode(node, REMOTE_PATH + "update/");
+    }
+
+    private FileNode createIconUpdateFileNode() {
+        XNode node = new XNode("node");
+        node.addAttribute("name", "yawlui-icon-update.jar");
+        node.addAttribute("md5", "0");
+        node.addAttribute("size", "9000");
         return new UIFileNode(node, REMOTE_PATH + "update/");
     }
     
@@ -99,6 +119,11 @@ public class YawlUiUpdater {
         }
     }
 
+    private int checkForUpdate() {
+        File check = new File(getLibDir(), "vcf-leaflet-1.0.1.jar");
+        return check.exists() ? 0 : 1;
+    }
+
 
     private String getClassesDir() {
         return LOCAL_PATH + "classes/";
@@ -118,9 +143,13 @@ public class YawlUiUpdater {
 
         public void doUpdate(File tmpDir) {
             File updateJar = FileUtil.makeFile(tmpDir.getAbsolutePath(), UPDATE_JAR_NAME);
+            File updateLibJar = FileUtil.makeFile(tmpDir.getAbsolutePath(), "yawlui-lib-update.jar");
+            File updateIconJar = FileUtil.makeFile(tmpDir.getAbsolutePath(), "yawlui-icon-update.jar");
             File classesDir = new File(getClassesDir());
             File libDir = new File(getLibDir());
             File backupDir = new File(tmpDir, "ui-classes");
+            File iconDir =  new File(TomcatUtil.getCatalinaHome()
+                        + "/webapps/yawlui/icons/");
             if (updateJar.exists()) {
                 try {
 
@@ -130,9 +159,14 @@ public class YawlUiUpdater {
                     // unpack jar to classes dir
                     FileUtil.unzip(updateJar, classesDir);
 
+                    FileUtil.unzip(updateLibJar, libDir);
+                    FileUtil.unzip(updateIconJar, iconDir);
+
                     // copy existing application.properties from tmp to classes
-                    File appProps = new File(backupDir, "application.properties");
-                    FileUtils.copyFileToDirectory(appProps, classesDir);
+                    File oldProps = new File(backupDir, "application.properties");
+                    File newProps = new File(classesDir, "application.properties");
+                    File merged = mergeProps(oldProps, newProps);
+                    FileUtils.copyFileToDirectory(merged, classesDir);
 
                     // copy in the newest yawl library
                     File yawlLibJar = new File(YAWL_LIB_PATH, YAWL_LIB_JAR_NAME);
@@ -156,6 +190,28 @@ public class YawlUiUpdater {
                     }
                 }
             }
+        }
+
+        private File mergeProps(File oldProps, File newProps) {
+            Path oldPath = oldProps.toPath();
+            Path newPath = newProps.toPath();
+
+            try {
+                List<String> lines1 = Files.readAllLines(oldPath);
+                List<String> lines2 = Files.readAllLines(newPath);
+                if (lines1.size() == lines2.size()) {
+                    return oldProps;
+                }
+
+                for (int i = lines1.size(); i < lines2.size(); ++i) {
+                    lines1.add(lines2.get(i));
+                }
+                Files.write(oldPath, lines1);
+            }
+            catch (IOException e) {
+                // fall through
+            }
+            return oldPath.toFile();
         }
     }
     
