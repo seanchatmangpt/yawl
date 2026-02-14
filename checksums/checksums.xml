@@ -2,7 +2,7 @@
 <!-- This file is used for auto-updating. PLEASE DO NOT MODIFY OR DELETE -->
 <checksums>
   <version>5.2</version>
-  <timestamp>2026-02-14 17.25.29</timestamp>
+  <timestamp>2026-02-14 17.45.52</timestamp>
   <lib hash="da87dccffb4b0cf93a222776e8c99399">
     <file name="OpenForecast-0.5.0.jar" md5="859a28caad00cfaf3d254bbc587d647e" size="55550" timestamp="2026-02-14T06:50:06" path="A"/>
     <file name="activation.jar" md5="c264c7a20fe37c9dc702ab8b0cf54f58" size="56290" timestamp="2026-02-14T06:50:06" path="A"/>
@@ -872,11 +872,11 @@
     </orderfulfillment>
   </webapps>
   <yawllib>
-    <file name="yawl-lib-5.2.jar" md5="9b2e5b692d3e10d5ded5d7540715395a" size="3060966" timestamp="2026-02-14T17:25:27" path="AM"/>
+    <file name="yawl-lib-5.2.jar" md5="9792263ad45be0d6a60cdce5784dc946" size="3060966" timestamp="2026-02-14T17:45:50" path="AM"/>
   </yawllib>
   <controlpanel>
-    <build>459</build>
-    <file name="YawlControlPanel-5.2.jar" md5="b93677faf78e2fb2da4bc7b074f2aaae" size="432825" timestamp="2026-02-14T17:25:29" path="AM"/>
+    <build>460</build>
+    <file name="YawlControlPanel-5.2.jar" md5="5ea9654033fae596d44d5af3ca24a6a3" size="432825" timestamp="2026-02-14T17:45:52" path="AM"/>
   </controlpanel>
   <paths>
     <path id="host">https://raw.githubusercontent.com/</path>
