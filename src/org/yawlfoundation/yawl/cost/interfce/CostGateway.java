@@ -171,8 +171,7 @@ public class CostGateway extends HttpServlet {
      *         message.
      */
     private String getFunctionList(YSpecificationID specID, String taskID) {
-        // TODO
-        return "";
+        throw new UnsupportedOperationException("Cost function list retrieval not implemented");
     }
 
 
@@ -186,8 +185,7 @@ public class CostGateway extends HttpServlet {
      * @return an XML list of the costs requested, or an appropriate failure message.
      */
     private String getFixedCosts(YSpecificationID specID, String taskID) {
-        // TODO
-        return "";
+        throw new UnsupportedOperationException("Fixed costs retrieval not implemented");
     }
 
 

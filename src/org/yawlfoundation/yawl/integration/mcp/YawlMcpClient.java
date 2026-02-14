@@ -134,9 +134,7 @@ public class YawlMcpClient {
         System.out.println("Calling MCP tool: " + toolName);
         System.out.println("Parameters: " + parameters);
 
-        // TODO: When MCP SDK is available, implement actual tool calling
-
-        return "Mock result from MCP tool: " + toolName;
+        throw new UnsupportedOperationException("MCP SDK integration required. Add MCP SDK dependency to implement tool calling.");
     }
 
     /**
@@ -182,9 +180,7 @@ public class YawlMcpClient {
 
         System.out.println("Fetching MCP resource: " + resourceUri);
 
-        // TODO: When MCP SDK is available, implement actual resource fetching
-
-        return "Mock resource content from: " + resourceUri;
+        throw new UnsupportedOperationException("MCP SDK integration required. Add MCP SDK dependency to implement resource fetching.");
     }
 
     /**

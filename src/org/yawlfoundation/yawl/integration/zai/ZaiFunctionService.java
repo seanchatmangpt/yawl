@@ -8,7 +8,7 @@ import java.util.*;
  * Enables AI models to call YAWL workflow operations through function calling.
  * Maps YAWL operations to callable functions that the AI can invoke.
  *
- * Mock Mode: When Z.AI SDK is not available, provides simulated function execution for testing.
+ * IMPORTANT: Z.AI SDK must be available. Fails fast if SDK is not present.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -29,11 +29,10 @@ public class ZaiFunctionService {
 
     public ZaiFunctionService() {
         String apiKey = System.getenv("ZAI_API_KEY");
-        if (apiKey != null && !apiKey.isEmpty()) {
-            init(apiKey);
-        } else {
-            initMock();
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new IllegalStateException("ZAI_API_KEY environment variable is required");
         }
+        init(apiKey);
     }
 
     public ZaiFunctionService(String apiKey) {
@@ -43,7 +42,6 @@ public class ZaiFunctionService {
     private void init(String apiKey) {
         this.functionHandlers = new HashMap<>();
 
-        // Try to load Z.AI SDK dynamically
         try {
             Class<?> clientClass = Class.forName("ai.z.openapi.ZaiClient");
             sdkAvailable = true;
@@ -58,21 +56,12 @@ public class ZaiFunctionService {
             this.initialized = true;
             System.out.println("Z.AI Function Service initialized with SDK");
         } catch (ClassNotFoundException e) {
-            System.out.println("Z.AI SDK not found - Function Service running in mock mode");
-            initMock();
+            throw new IllegalStateException("Z.AI SDK not found in classpath. Add ai.z.openapi dependency.", e);
         } catch (Exception e) {
-            System.out.println("Z.AI SDK initialization failed: " + e.getMessage() + " - running in mock mode");
-            initMock();
+            throw new IllegalStateException("Z.AI SDK initialization failed: " + e.getMessage(), e);
         }
     }
 
-    private void initMock() {
-        this.functionHandlers = new HashMap<>();
-        this.sdkAvailable = false;
-        registerDefaultFunctions();
-        this.initialized = true;
-        System.out.println("Z.AI Function Service running in mock mode");
-    }
 
     /**
      * Register default YAWL workflow functions
@@ -127,14 +116,10 @@ public class ZaiFunctionService {
      */
     public String processWithFunctions(String userMessage, String model) {
         if (!initialized) {
-            return "Error: Z.AI Function Service not initialized";
+            throw new IllegalStateException("Z.AI Function Service not initialized");
         }
 
-        if (sdkAvailable && client != null) {
-            return processWithSDK(userMessage, model);
-        } else {
-            return processMock(userMessage, model);
-        }
+        return processWithSDK(userMessage, model);
     }
 
     /**
@@ -237,61 +222,6 @@ public class ZaiFunctionService {
         return results.toString();
     }
 
-    /**
-     * Mock processing for testing without SDK
-     */
-    private String processMock(String userMessage, String model) {
-        StringBuilder results = new StringBuilder();
-        results.append("[MOCK FUNCTION PROCESSING - model: ").append(model).append("]\n\n");
-
-        String lower = userMessage.toLowerCase();
-
-        // Simulate function detection and execution
-        if (lower.contains("start") && (lower.contains("workflow") || lower.contains("process"))) {
-            String workflowId = extractMockWorkflowId(userMessage);
-            results.append("Function: start_workflow\n");
-            results.append("Result: ").append(executeStartWorkflow(workflowId, "{}")).append("\n\n");
-            results.append("Summary: Successfully started workflow '").append(workflowId).append("' in mock mode.");
-        } else if (lower.contains("status") || lower.contains("check")) {
-            String caseId = extractMockCaseId(userMessage);
-            results.append("Function: get_workflow_status\n");
-            results.append("Result: ").append(executeGetStatus(caseId)).append("\n\n");
-            results.append("Summary: Retrieved status for case '").append(caseId).append("'.");
-        } else if (lower.contains("complete") || lower.contains("finish")) {
-            results.append("Function: complete_task\n");
-            results.append("Result: ").append(executeCompleteTask("case-mock", "task-mock", "{}")).append("\n\n");
-            results.append("Summary: Task completed successfully in mock mode.");
-        } else if (lower.contains("list") || lower.contains("available") || lower.contains("what workflows")) {
-            results.append("Function: list_workflows\n");
-            results.append("Result: ").append(executeListWorkflows()).append("\n\n");
-            results.append("Summary: Retrieved list of available workflows.");
-        } else {
-            results.append("No matching function detected for request.\n");
-            results.append("Available functions: ").append(String.join(", ", functionHandlers.keySet())).append("\n");
-        }
-
-        return results.toString();
-    }
-
-    private String extractMockWorkflowId(String message) {
-        String[] words = message.split("\\s+");
-        for (String word : words) {
-            if (word.matches(".*[A-Z].*") || word.matches("OrderProcessing|InvoiceApproval|DocumentReview")) {
-                return word.replaceAll("[^a-zA-Z]", "");
-            }
-        }
-        return "GenericWorkflow";
-    }
-
-    private String extractMockCaseId(String message) {
-        if (message.contains("case-")) {
-            int start = message.indexOf("case-");
-            int end = start + 15;
-            if (end > message.length()) end = message.length();
-            return message.substring(start, end).split("\\s")[0];
-        }
-        return "case-mock-" + System.currentTimeMillis() % 10000;
-    }
 
     /**
      * Execute a registered function
@@ -337,26 +267,28 @@ public class ZaiFunctionService {
         return result;
     }
 
-    // Default function implementations (to be connected to actual YAWL engine)
-
     private String executeStartWorkflow(String workflowId, String inputData) {
-        // TODO: Connect to actual YAWL engine
-        return "{\"status\": \"started\", \"workflow_id\": \"" + workflowId + "\", \"case_id\": \"case-" + System.currentTimeMillis() + "\"}";
+        throw new UnsupportedOperationException(
+                "YAWL engine integration required. Connect to YEngine via Interface B to start workflows."
+        );
     }
 
     private String executeGetStatus(String caseId) {
-        // TODO: Connect to actual YAWL engine
-        return "{\"case_id\": \"" + caseId + "\", \"status\": \"running\", \"current_tasks\": [\"task1\", \"task2\"]}";
+        throw new UnsupportedOperationException(
+                "YAWL engine integration required. Connect to YEngine via Interface B to get workflow status."
+        );
     }
 
     private String executeCompleteTask(String caseId, String taskId, String outputData) {
-        // TODO: Connect to actual YAWL engine
-        return "{\"status\": \"completed\", \"case_id\": \"" + caseId + "\", \"task_id\": \"" + taskId + "\"}";
+        throw new UnsupportedOperationException(
+                "YAWL engine integration required. Connect to YEngine via Interface B to complete tasks."
+        );
     }
 
     private String executeListWorkflows() {
-        // TODO: Connect to actual YAWL engine
-        return "{\"workflows\": [\"OrderProcessing\", \"InvoiceApproval\", \"DocumentReview\", \"CustomerOnboarding\", \"IncidentManagement\"]}";
+        throw new UnsupportedOperationException(
+                "YAWL engine integration required. Connect to YEngine via Interface A to list workflows."
+        );
     }
 
     public boolean isInitialized() {

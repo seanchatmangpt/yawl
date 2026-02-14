@@ -75,7 +75,6 @@ public class YawlA2AClient {
             );
         }
 
-        // Discover agent capabilities (mock for now)
         this.agentCapabilities = discoverCapabilities();
 
         connected = true;
@@ -103,8 +102,7 @@ public class YawlA2AClient {
      * Discover available capabilities from the agent
      */
     private String discoverCapabilities() {
-        // TODO: When A2A SDK is available, fetch actual AgentCard
-        return "processDocument, analyzeData, generateReport, handleException, notifyUser";
+        throw new UnsupportedOperationException("A2A SDK integration required to discover agent capabilities. Add A2A SDK dependency.");
     }
 
     /**
@@ -156,9 +154,7 @@ public class YawlA2AClient {
 
         System.out.println("Invoking capability: " + capabilityName);
 
-        // TODO: When A2A SDK is available, implement actual capability invocation
-
-        return "Mock result from " + capabilityName + ": processed successfully";
+        throw new UnsupportedOperationException("A2A SDK integration required to invoke agent capabilities. Add A2A SDK dependency.");
     }
 
     /**

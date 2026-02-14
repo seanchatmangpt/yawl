@@ -43,8 +43,14 @@ public class SelfPlayTest {
     }
 
     public SelfPlayTest() {
-        this.zaiService = new ZaiService();
-        this.functionService = new ZaiFunctionService();
+        try {
+            this.zaiService = new ZaiService();
+            this.functionService = new ZaiFunctionService();
+        } catch (IllegalStateException e) {
+            System.err.println("FATAL: " + e.getMessage());
+            System.err.println("Set ZAI_API_KEY environment variable to run tests.");
+            System.exit(1);
+        }
     }
 
     public void runAllTests() {
@@ -52,11 +58,12 @@ public class SelfPlayTest {
         System.out.println("YAWL MCP/A2A/Z.AI Self-Play Test Suite");
         System.out.println("========================================\n");
 
-        // Check Z.AI initialization
+        // Verify Z.AI is initialized (required for all tests)
         if (!zaiService.isInitialized()) {
-            System.out.println("Z.AI not initialized - running in mock mode");
-            System.out.println("Set ZAI_API_KEY environment variable for full tests\n");
+            System.err.println("FATAL: Z.AI Service not initialized");
+            System.exit(1);
         }
+        System.out.println("Z.AI Service initialized successfully\n");
 
         // Run test scenarios
         runTest("Basic Z.AI Chat", this::testBasicChat);
@@ -202,8 +209,8 @@ public class SelfPlayTest {
         log("Testing Z.AI function calling for YAWL operations...");
 
         if (!functionService.isInitialized()) {
-            log("Z.AI not initialized - skipping function calling test");
-            return true; // Pass in mock mode
+            logError("Z.AI Function Service not initialized");
+            return false;
         }
 
         // Test workflow-related function calling

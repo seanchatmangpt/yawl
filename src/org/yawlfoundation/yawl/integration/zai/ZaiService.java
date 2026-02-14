@@ -15,7 +15,7 @@ import java.util.*;
  * - Streaming responses for real-time processing
  * - Multi-turn conversations for complex workflows
  *
- * Mock Mode: When Z.AI SDK is not available, provides simulated responses for testing.
+ * IMPORTANT: Z.AI SDK must be available. Fails fast if SDK is not present.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -38,9 +38,7 @@ public class ZaiService {
     public ZaiService() {
         String apiKey = System.getenv("ZAI_API_KEY");
         if (apiKey == null || apiKey.isEmpty()) {
-            System.out.println("ZAI_API_KEY not set - running in mock mode");
-            initMock();
-            return;
+            throw new IllegalStateException("ZAI_API_KEY environment variable is required");
         }
         init(apiKey);
     }
@@ -57,7 +55,6 @@ public class ZaiService {
         this.apiKey = apiKey;
         this.conversationHistory = new ArrayList<>();
 
-        // Try to load Z.AI SDK dynamically
         try {
             Class<?> clientClass = Class.forName("ai.z.openapi.ZaiClient");
             sdkAvailable = true;
@@ -71,20 +68,12 @@ public class ZaiService {
             this.initialized = true;
             System.out.println("Z.AI Service initialized with SDK");
         } catch (ClassNotFoundException e) {
-            System.out.println("Z.AI SDK not found - running in mock mode");
-            initMock();
+            throw new IllegalStateException("Z.AI SDK not found in classpath. Add ai.z.openapi dependency.", e);
         } catch (Exception e) {
-            System.out.println("Z.AI SDK initialization failed: " + e.getMessage() + " - running in mock mode");
-            initMock();
+            throw new IllegalStateException("Z.AI SDK initialization failed: " + e.getMessage(), e);
         }
     }
 
-    private void initMock() {
-        this.conversationHistory = new ArrayList<>();
-        this.sdkAvailable = false;
-        this.initialized = true; // Mock is always "initialized"
-        System.out.println("Z.AI Service running in mock mode");
-    }
 
     /**
      * Set system prompt for AI context
@@ -111,17 +100,13 @@ public class ZaiService {
      */
     public String chat(String message, String model) {
         if (!initialized) {
-            return "Error: Z.AI Service not initialized";
+            throw new IllegalStateException("Z.AI Service not initialized");
         }
 
         // Update conversation history
         conversationHistory.add(mapOf("role", "user", "content", message));
 
-        if (sdkAvailable && client != null) {
-            return chatWithSDK(message, model);
-        } else {
-            return chatMock(message, model);
-        }
+        return chatWithSDK(message, model);
     }
 
     /**
@@ -192,71 +177,6 @@ public class ZaiService {
         }
     }
 
-    /**
-     * Mock chat for testing without SDK
-     */
-    private String chatMock(String message, String model) {
-        String lower = message.toLowerCase();
-
-        // Simulate intelligent responses based on context
-        if (lower.contains("workflow") && lower.contains("decision")) {
-            String response = "Based on the workflow context, I recommend proceeding with the standard approval path. " +
-                    "The data indicates normal processing conditions are met.";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        if (lower.contains("transform") || lower.contains("convert")) {
-            String response = "{\n  \"transformed\": true,\n  \"data\": \"" + message.substring(0, Math.min(50, message.length())) + "...\",\n  \"format\": \"json\"\n}";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        if (lower.contains("analyze") || lower.contains("analysis")) {
-            String response = "[MOCK ANALYSIS]\n" +
-                    "Key findings:\n" +
-                    "1. Process efficiency: Optimal\n" +
-                    "2. Resource utilization: 78%\n" +
-                    "3. Bottleneck detected: Task approval step\n" +
-                    "Recommendation: Add parallel processing for independent tasks";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        if (lower.contains("mcp") || lower.contains("tool")) {
-            String response = "Recommended MCP tool: analyzeDocument\n" +
-                    "Parameters: {\"source\": \"auto-detected\", \"depth\": \"standard\"}\n" +
-                    "Confidence: 92%";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        if (lower.contains("a2a") || lower.contains("agent")) {
-            String response = "A2A Agent Recommendation:\n" +
-                    "Primary agent: ProcessAgent\n" +
-                    "Fallback agent: ExceptionHandlerAgent\n" +
-                    "Coordination pattern: Sequential with checkpoint";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        if (lower.contains("exception") || lower.contains("error")) {
-            String response = "Exception Analysis:\n" +
-                    "Type: TimeoutException\n" +
-                    "Root cause: External service unresponsive\n" +
-                    "Recovery action: Retry with exponential backoff (max 3 attempts)\n" +
-                    "Alternative: Route to backup agent if available";
-            conversationHistory.add(mapOf("role", "assistant", "content", response));
-            return response;
-        }
-
-        // Default mock response
-        String response = "[MOCK RESPONSE - model: " + model + "]\n" +
-                "I understand your request about: \"" + message.substring(0, Math.min(60, message.length())) + "...\"\n" +
-                "How can I assist you further with your YAWL workflow?";
-        conversationHistory.add(mapOf("role", "assistant", "content", response));
-        return response;
-    }
 
     /**
      * Analyze workflow context and suggest next action
@@ -390,8 +310,8 @@ public class ZaiService {
     }
 
     /**
-     * Check if real SDK is available (vs mock mode)
-     * @return true if SDK is available
+     * Check if SDK is available
+     * @return true if SDK is available (always true if initialized)
      */
     public boolean isSdkAvailable() {
         return sdkAvailable;
