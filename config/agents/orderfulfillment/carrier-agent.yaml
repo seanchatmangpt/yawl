@@ -1,0 +1,73 @@
+# Carrier Agent Configuration
+# Domain: OrderFulfillment - Carrier capability
+# Reasoning: ZAI-based eligibility and decision making
+
+agent:
+  name: "Carrier Agent"
+  capability:
+    domain: "Carrier"
+    description: "shipping arrangements, carrier selection, delivery scheduling, shipment tracking"
+
+  discovery:
+    strategy: "polling"
+    interval_ms: 3000
+
+  reasoning:
+    eligibility_engine: "zai"
+    decision_engine: "zai"
+
+    eligibility_prompt: |
+      You are an eligibility analyzer for a Carrier Agent in a YAWL workflow system.
+
+      Given a workitem with:
+      - Task Name: {taskName}
+      - Task Description: {taskDescription}
+      - Input Data: {inputData}
+
+      Determine if this Carrier Agent should handle this task.
+      The Carrier Agent handles: shipping, carrier selection, delivery scheduling, shipment tracking.
+
+      Respond with ONLY a JSON object:
+      {
+        "eligible": true/false,
+        "confidence": 0.0-1.0,
+        "reason": "brief explanation"
+      }
+
+    decision_prompt: |
+      You are the Carrier Agent making shipping decisions for YAWL workflow tasks.
+
+      Task: {taskName}
+      Description: {taskDescription}
+      Input Data: {inputData}
+
+      Based on the input data, make shipping decisions.
+      Select appropriate carrier, calculate delivery dates, assign tracking numbers.
+
+      Respond with ONLY a JSON object containing the output data fields:
+      {
+        "CarrierName": "FedEx/UPS/DHL/...",
+        "TrackingNumber": "...",
+        "EstimatedDeliveryDate": "YYYY-MM-DD",
+        "ShippingCost": "...",
+        "ShipmentStatus": "Scheduled/InTransit/...",
+        "...": "other relevant fields"
+      }
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8092
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD:-YAWL}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3

@@ -1,0 +1,59 @@
+# Payment Agent Configuration
+# Domain: OrderFulfillment - Payment capability
+# Reasoning: Static mapping for eligibility, ZAI for decision making
+
+agent:
+  name: "Payment Agent"
+  capability:
+    domain: "Payment"
+    description: "payment processing, invoice generation, payment verification, refund handling"
+
+  discovery:
+    strategy: "polling"
+    interval_ms: 3000
+
+  reasoning:
+    eligibility_engine: "static"
+    decision_engine: "zai"
+
+    # Static mapping file for eligibility
+    mapping_file: "config/agents/mappings/orderfulfillment-static.json"
+
+    decision_prompt: |
+      You are the Payment Agent processing financial transactions for YAWL workflow tasks.
+
+      Task: {taskName}
+      Description: {taskDescription}
+      Input Data: {inputData}
+
+      Based on the input data, process the payment transaction.
+      Generate invoices, process payments, handle refunds, verify payment status.
+
+      Respond with ONLY a JSON object containing the output data fields:
+      {
+        "InvoiceID": "...",
+        "PaymentStatus": "Completed/Pending/Failed/Refunded",
+        "TransactionID": "...",
+        "Amount": "...",
+        "PaymentDate": "YYYY-MM-DD",
+        "PaymentMethod": "Credit/Debit/Wire/...",
+        "...": "other relevant fields"
+      }
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8093
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD:-YAWL}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3

@@ -1,0 +1,35 @@
+{
+  "description": "Static task-to-agent mappings for Notification domain",
+  "version": "1.0",
+  "taskMappings": {
+    "Send_Email_Notification": "Email",
+    "Send_Email": "Email",
+    "Email_Confirmation": "Email",
+    "Email_Customer": "Email",
+    "Notify_By_Email": "Email",
+    "Send_Email_Alert": "Email",
+
+    "Send_SMS_Notification": "SMS",
+    "Send_SMS": "SMS",
+    "SMS_Alert": "SMS",
+    "Text_Customer": "SMS",
+    "Notify_By_SMS": "SMS",
+    "Send_Verification_Code": "SMS",
+
+    "Send_Alert": "Alert",
+    "Critical_Alert": "Alert",
+    "System_Alert": "Alert",
+    "Warning_Alert": "Alert",
+    "Escalate_Alert": "Alert",
+    "Emergency_Notification": "Alert"
+  },
+
+  "defaultAgent": "Email",
+
+  "comments": [
+    "This file provides explicit task name to agent domain mappings",
+    "Used by agents with eligibility_engine: static",
+    "Task names are case-sensitive and should match YAWL specification exactly",
+    "If a task is not found in mappings, defaultAgent is used"
+  ]
+}

@@ -30,7 +30,10 @@ import java.util.regex.Pattern;
  *
  * @author YAWL Foundation
  * @version 5.2
+ * @deprecated Use {@link org.yawlfoundation.yawl.integration.autonomous.launcher.GenericWorkflowLauncher} instead.
+ *             This class is specific to orderfulfillment and will be removed in a future version.
  */
+@Deprecated
 public final class OrderfulfillmentLauncher {
 
     private static final String SPEC_IDENTIFIER = "UID_ae0b797c-2ac8-4d5e-9421-ece89d8043d0";

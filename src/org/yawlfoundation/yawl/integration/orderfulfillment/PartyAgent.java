@@ -40,7 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author YAWL Foundation
  * @version 5.2
+ * @deprecated Use {@link org.yawlfoundation.yawl.integration.autonomous.GenericPartyAgent} instead.
+ *             This class is specific to orderfulfillment and will be removed in a future version.
  */
+@Deprecated
 public final class PartyAgent {
 
     private static final String VERSION = "5.2.0";

@@ -1,0 +1,49 @@
+{
+  "description": "Static task-to-agent mappings for OrderFulfillment domain",
+  "version": "1.0",
+  "taskMappings": {
+    "Approve_Purchase_Order": "Ordering",
+    "Validate_Order": "Ordering",
+    "Create_Order": "Ordering",
+    "Process_Requisition": "Ordering",
+    "Review_Order": "Ordering",
+    "Submit_Order": "Ordering",
+
+    "Select_Carrier": "Carrier",
+    "Schedule_Delivery": "Carrier",
+    "Arrange_Shipping": "Carrier",
+    "Track_Shipment": "Carrier",
+    "Update_Shipping_Status": "Carrier",
+    "Assign_Carrier": "Carrier",
+
+    "Process_Payment": "Payment",
+    "Generate_Invoice": "Payment",
+    "Verify_Payment": "Payment",
+    "Handle_Refund": "Payment",
+    "Process_Transaction": "Payment",
+    "Collect_Payment": "Payment",
+    "Issue_Invoice": "Payment",
+
+    "Calculate_Freight": "Freight",
+    "Estimate_Shipping_Cost": "Freight",
+    "Handle_Customs": "Freight",
+    "Plan_Logistics": "Freight",
+    "Compute_Freight_Charges": "Freight",
+
+    "Confirm_Delivery": "Delivered",
+    "Record_Delivery": "Delivered",
+    "Update_Delivery_Status": "Delivered",
+    "Verify_Delivery": "Delivered",
+    "Acknowledge_Receipt": "Delivered",
+    "Mark_Delivered": "Delivered"
+  },
+
+  "defaultAgent": "Ordering",
+
+  "comments": [
+    "This file provides explicit task name to agent domain mappings",
+    "Used by agents with eligibility_engine: static",
+    "Task names are case-sensitive and should match YAWL specification exactly",
+    "If a task is not found in mappings, defaultAgent is used"
+  ]
+}

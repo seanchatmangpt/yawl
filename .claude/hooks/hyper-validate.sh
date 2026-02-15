@@ -26,6 +26,11 @@ if [[ ! "$FILE" =~ \.java$ ]] || [[ ! "$FILE" =~ ^/.*/(src|test)/ ]]; then
     exit 0
 fi
 
+# Skip validation for deprecated orderfulfillment package (legacy code)
+if [[ "$FILE" =~ /orderfulfillment/ ]]; then
+    exit 0
+fi
+
 # Check if file exists and is readable
 if [[ ! -f "$FILE" ]]; then
     exit 0

@@ -25,7 +25,10 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
  *
  * @author YAWL Foundation
  * @version 5.2
+ * @deprecated Use {@link org.yawlfoundation.yawl.integration.autonomous.reasoners.ZaiDecisionReasoner} instead.
+ *             This class is specific to orderfulfillment and will be removed in a future version.
  */
+@Deprecated
 public final class DecisionWorkflow {
 
     private final ZaiService zaiService;

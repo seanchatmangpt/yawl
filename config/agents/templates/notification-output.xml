@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Notification Output Template -->
+<!-- Variables available: ${variableName} from input data -->
+<data>
+    <NotificationID>${NotificationID:-N/A}</NotificationID>
+    <NotificationType>${NotificationType:-Email}</NotificationType>
+    <Recipient>${Recipient:-N/A}</Recipient>
+    <RecipientEmail>${RecipientEmail:-}</RecipientEmail>
+    <RecipientPhone>${RecipientPhone:-}</RecipientPhone>
+    <Subject>${Subject:-Notification}</Subject>
+    <Message>${Message:-Your notification message}</Message>
+    <SentDate>${SentDate:-2026-02-15}</SentDate>
+    <SentTime>${SentTime:-00:00:00}</SentTime>
+    <Status>${Status:-Sent}</Status>
+    <DeliveryStatus>${DeliveryStatus:-Delivered}</DeliveryStatus>
+    <Priority>${Priority:-Normal}</Priority>
+    <Template>${Template:-Default}</Template>
+    <Attachments>${Attachments:-}</Attachments>
+    <RetryCount>${RetryCount:-0}</RetryCount>
+    <ErrorMessage>${ErrorMessage:-}</ErrorMessage>
+    <Notes>${Notes:-Notification processed successfully}</Notes>
+</data>

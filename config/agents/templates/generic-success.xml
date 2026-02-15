@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generic Success Output Template -->
+<!-- Variables available: ${variableName} from input data -->
+<data>
+    <TaskID>${TaskID:-N/A}</TaskID>
+    <TaskName>${TaskName:-Unknown}</TaskName>
+    <Status>${Status:-Completed}</Status>
+    <CompletionDate>${CompletionDate:-2026-02-15}</CompletionDate>
+    <CompletionTime>${CompletionTime:-00:00:00}</CompletionTime>
+    <ProcessedBy>${ProcessedBy:-Agent}</ProcessedBy>
+    <AgentDomain>${AgentDomain:-Generic}</AgentDomain>
+    <Result>${Result:-Success}</Result>
+    <ResultCode>${ResultCode:-200}</ResultCode>
+    <ResultMessage>${ResultMessage:-Task completed successfully}</ResultMessage>
+    <Duration>${Duration:-0}</Duration>
+    <DurationUnit>${DurationUnit:-seconds}</DurationUnit>
+    <InputSummary>${InputSummary:-}</InputSummary>
+    <OutputSummary>${OutputSummary:-Task processed}</OutputSummary>
+    <Warnings>${Warnings:-}</Warnings>
+    <Errors>${Errors:-}</Errors>
+    <Notes>${Notes:-}</Notes>
+</data>
