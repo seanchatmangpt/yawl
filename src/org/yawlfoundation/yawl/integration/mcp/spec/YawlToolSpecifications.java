@@ -28,8 +28,7 @@ import java.util.Map;
 public final class YawlToolSpecifications {
 
     private YawlToolSpecifications() {
-        throw new UnsupportedOperationException(
-            "YawlToolSpecifications is a static factory class and cannot be instantiated.");
+        // static factory class
     }
 
     /**

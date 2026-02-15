@@ -1455,12 +1455,12 @@ public class XMLUtils implements Constants
 			public boolean getCertifiedText() {	return false; }
 			public Reader getCharacterStream() { return null; }
 			public String getEncoding()	{ return null; }
-			public void setBaseURI(String baseURI) { throw new UnsupportedOperationException("Read-only LSInput"); }
-			public void setByteStream(InputStream byteStream) { throw new UnsupportedOperationException("Read-only LSInput"); }
-			public void setCertifiedText(boolean certifiedText) { throw new UnsupportedOperationException("Read-only LSInput"); }
-			public void setCharacterStream(Reader characterStream) { throw new UnsupportedOperationException("Read-only LSInput"); }
-			public void setEncoding(String encoding) { throw new UnsupportedOperationException("Read-only LSInput"); }
-			public void setStringData(String stringData) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setBaseURI(String baseURI) { /* read-only */ }
+			public void setByteStream(InputStream byteStream) { /* read-only */ }
+			public void setCertifiedText(boolean certifiedText) { /* read-only */ }
+			public void setCharacterStream(Reader characterStream) { /* read-only */ }
+			public void setEncoding(String encoding) { /* read-only */ }
+			public void setStringData(String stringData) { /* read-only */ }
 		}
 
 	}

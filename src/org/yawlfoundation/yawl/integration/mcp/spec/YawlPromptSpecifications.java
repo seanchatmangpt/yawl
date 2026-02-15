@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 public final class YawlPromptSpecifications {
 
     private YawlPromptSpecifications() {
-        throw new UnsupportedOperationException("Utility class");
+        // static-only utility class
     }
 
     /**

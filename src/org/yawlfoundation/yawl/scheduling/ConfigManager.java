@@ -255,10 +255,10 @@ public class ConfigManager implements Constants {
 
     /**
      * Gets the localised value (a string message in the current language) for a key.
-     * If the value contains placeholders, replaces each of them recursively with
+     * If the value contains substitution tokens, replaces each of them recursively with
      * its own localised value for matching subkey specified, where possible.
      * @param key the key to get the value for
-     * @param subKeys the set of keys to use as values for corresponding placeholders
+     * @param subKeys the set of keys to use as values for corresponding substitution tokens
      * in the original value
      * @return the fully populated value matching the key passed, or the key itself if
      * there is some problem getting any of the values
@@ -303,10 +303,10 @@ public class ConfigManager implements Constants {
 
     /**
      * Gets the localised value (a string message in the current language) for a key.
-     * If the value contains placeholders, replaces each of them recursively with
+     * If the value contains substitution tokens, replaces each of them recursively with
      * its own localised value for matching keys specified, where possible.
      * @param valueAndArgsAsJSON a JSON string containing the key to get the value for
-     * and the set of keys to use as values for corresponding placeholders in the
+     * and the set of keys to use as values for corresponding substitution tokens in the
      * original value (as an array)
      * @return the fully populated value matching the key passed, or the key itself if
      * there is some problem getting any of the values

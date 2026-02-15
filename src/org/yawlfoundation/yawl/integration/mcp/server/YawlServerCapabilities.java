@@ -21,7 +21,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 public final class YawlServerCapabilities {
 
     private YawlServerCapabilities() {
-        throw new UnsupportedOperationException("Utility class");
+        // static-only utility class
     }
 
     /**
