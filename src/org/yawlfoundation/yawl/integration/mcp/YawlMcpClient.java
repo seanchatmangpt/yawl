@@ -27,7 +27,8 @@ public class YawlMcpClient {
     public YawlMcpClient(String serverUrl, String zaiApiKey) {
         this.serverUrl = serverUrl;
         this.zaiService = new ZaiService(zaiApiKey);
-        this.functionService = new ZaiFunctionService(zaiApiKey);
+        // Use no-arg constructor - ZaiFunctionService will read from environment
+        this.functionService = new ZaiFunctionService();
     }
 
     public void connect() {

@@ -47,7 +47,7 @@ public class SelfPlayTest {
     static void testZaiConnection() {
         runTest("Z.AI Connection", () -> {
             ZaiService service = new ZaiService();
-            boolean connected = service.testConnection();
+            boolean connected = service.verifyConnection();
             if (!connected) {
                 throw new AssertionError("Failed to connect to Z.AI API");
             }

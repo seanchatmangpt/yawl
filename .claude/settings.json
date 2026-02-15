@@ -24,11 +24,23 @@
     "outputDir": "output"
   },
   "notes": {
-    "environment": "This project runs only in Docker/DevContainer",
+    "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
     "hooks": "Hyper-validation enabled: PostToolUse validates all Write/Edit operations",
-    "webSessions": "Claude Code Web is not supported for this project"
+    "webSessions": "Supported via SessionStart hook (Ant install + H2 database)"
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "timeout": 120,
+            "statusMessage": "Setting up YAWL for Claude Code Web..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

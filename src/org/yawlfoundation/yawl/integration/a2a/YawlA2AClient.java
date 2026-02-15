@@ -29,7 +29,8 @@ public class YawlA2AClient {
     public YawlA2AClient(String agentUrl, String zaiApiKey) {
         this.agentUrl = agentUrl;
         this.zaiService = new ZaiService(zaiApiKey);
-        this.functionService = new ZaiFunctionService(zaiApiKey);
+        // Use no-arg constructor - ZaiFunctionService will read from environment
+        this.functionService = new ZaiFunctionService();
         System.out.println("Initializing YAWL A2A Client with Z.AI for agent at: " + agentUrl);
     }
 

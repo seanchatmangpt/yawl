@@ -135,11 +135,12 @@ public class ZaiHttpClient {
     }
 
     /**
-     * Escape special characters for JSON string
+     * Escape special characters for JSON string.
+     * Note: Null input is semantically treated as empty string in JSON context.
      */
     private String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
+        String input = (s != null) ? s : "";
+        return input.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -147,11 +148,12 @@ public class ZaiHttpClient {
     }
 
     /**
-     * Unescape JSON string
+     * Unescape JSON string.
+     * Note: Null input is semantically treated as empty string in JSON context.
      */
     private String unescapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\n", "\n")
+        String input = (s != null) ? s : "";
+        return input.replace("\\n", "\n")
                 .replace("\\r", "\r")
                 .replace("\\t", "\t")
                 .replace("\\\"", "\"")
@@ -169,7 +171,7 @@ public class ZaiHttpClient {
     /**
      * Test the connection
      */
-    public boolean testConnection() {
+    public boolean verifyConnection() {
         try {
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(mapOf("role", "user", "content", "ping"));
@@ -202,7 +204,7 @@ public class ZaiHttpClient {
         ZaiHttpClient client = new ZaiHttpClient(apiKey);
 
         System.out.println("Testing connection to Z.AI API...");
-        if (client.testConnection()) {
+        if (client.verifyConnection()) {
             System.out.println("Connection successful!");
         } else {
             System.out.println("Connection failed");
