@@ -1,32 +1,37 @@
 package org.yawlfoundation.yawl.integration.mcp.server;
 
-import io.modelcontextprotocol.spec.ServerCapabilities;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * YAWL MCP Server Capabilities Configuration.
  *
  * Provides factory methods for creating server capabilities configurations
- * that declare what features the YAWL MCP server supports.
+ * that declare what features the YAWL MCP server supports to connected clients.
  *
- * Capabilities include:
- * - Tools: Executable functions exposed to AI models
- * - Resources: Read-only data accessible via URIs
- * - Prompts: Pre-defined prompt templates
- * - Logging: Structured log notifications
- * - Completions: Autocomplete support for prompts/resources
+ * MCP capabilities in SDK 0.17.2:
+ * - Tools: Executable functions exposed to AI models (with listChanged notifications)
+ * - Resources: Read-only data accessible via URIs (with subscribe and listChanged)
+ * - Prompts: Pre-defined prompt templates (with listChanged notifications)
+ * - Logging: Structured log notifications sent to clients
+ * - Completions: Autocomplete support for prompt and resource references
  *
  * @author YAWL Foundation
  * @version 5.2
  */
-public class YawlServerCapabilities {
+public final class YawlServerCapabilities {
+
+    private YawlServerCapabilities() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     /**
-     * Full capabilities configuration with all features enabled.
+     * Full capabilities configuration with all MCP features enabled.
+     * This is the default configuration for the YAWL MCP server.
      *
      * @return ServerCapabilities with all features enabled
      */
-    public static ServerCapabilities full() {
-        return ServerCapabilities.builder()
+    public static McpSchema.ServerCapabilities full() {
+        return McpSchema.ServerCapabilities.builder()
                 .resources(false, true)   // subscribe=false, listChanged=true
                 .tools(true)              // listChanged=true
                 .prompts(true)            // listChanged=true
@@ -40,31 +45,9 @@ public class YawlServerCapabilities {
      *
      * @return ServerCapabilities with only tools enabled
      */
-    public static ServerCapabilities minimal() {
-        return ServerCapabilities.builder()
+    public static McpSchema.ServerCapabilities minimal() {
+        return McpSchema.ServerCapabilities.builder()
                 .tools(true)
-                .build();
-    }
-
-    /**
-     * Tools-only capabilities for AI model execution.
-     *
-     * @return ServerCapabilities with only tools
-     */
-    public static ServerCapabilities toolsOnly() {
-        return ServerCapabilities.builder()
-                .tools(true)
-                .build();
-    }
-
-    /**
-     * Resources-only capabilities for data access.
-     *
-     * @return ServerCapabilities with only resources
-     */
-    public static ServerCapabilities resourcesOnly() {
-        return ServerCapabilities.builder()
-                .resources(false, true)
                 .build();
     }
 
@@ -73,23 +56,10 @@ public class YawlServerCapabilities {
      *
      * @return ServerCapabilities with tools and resources
      */
-    public static ServerCapabilities toolsAndResources() {
-        return ServerCapabilities.builder()
+    public static McpSchema.ServerCapabilities toolsAndResources() {
+        return McpSchema.ServerCapabilities.builder()
                 .resources(false, true)
                 .tools(true)
-                .logging()
-                .build();
-    }
-
-    /**
-     * Tools and prompts capabilities for guided AI interactions.
-     *
-     * @return ServerCapabilities with tools and prompts
-     */
-    public static ServerCapabilities toolsAndPrompts() {
-        return ServerCapabilities.builder()
-                .tools(true)
-                .prompts(true)
                 .logging()
                 .build();
     }
@@ -99,24 +69,11 @@ public class YawlServerCapabilities {
      *
      * @return ServerCapabilities for read-only access
      */
-    public static ServerCapabilities readOnly() {
-        return ServerCapabilities.builder()
+    public static McpSchema.ServerCapabilities readOnly() {
+        return McpSchema.ServerCapabilities.builder()
                 .resources(false, true)
                 .prompts(true)
                 .completions()
-                .build();
-    }
-
-    /**
-     * Streaming capabilities with SSE support.
-     *
-     * @return ServerCapabilities with resources subscription
-     */
-    public static ServerCapabilities streaming() {
-        return ServerCapabilities.builder()
-                .resources(true, true)     // subscribe=true for streaming updates
-                .tools(true)
-                .logging()
                 .build();
     }
 }

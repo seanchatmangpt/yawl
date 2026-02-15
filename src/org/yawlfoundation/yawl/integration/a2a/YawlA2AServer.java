@@ -604,17 +604,23 @@ public class YawlA2AServer {
     public static void main(String[] args) {
         String engineUrl = System.getenv("YAWL_ENGINE_URL");
         if (engineUrl == null || engineUrl.isEmpty()) {
-            engineUrl = "http://localhost:8080/yawl";
+            throw new IllegalStateException(
+                "YAWL_ENGINE_URL environment variable is required.\n" +
+                "Set it with: export YAWL_ENGINE_URL=http://localhost:8080/yawl");
         }
 
         String username = System.getenv("YAWL_USERNAME");
         if (username == null || username.isEmpty()) {
-            username = "admin";
+            throw new IllegalStateException(
+                "YAWL_USERNAME environment variable is required.\n" +
+                "Set it with: export YAWL_USERNAME=admin");
         }
 
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
-            password = "YAWL";
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable is required.\n" +
+                "Set it with: export YAWL_PASSWORD=YAWL");
         }
 
         int port = 8081;
