@@ -30,7 +30,7 @@ import javax.faces.FacesException;
  */
 
 public class pfRSSHeader extends AbstractFragmentBean {
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

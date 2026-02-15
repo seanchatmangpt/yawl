@@ -202,11 +202,9 @@ public class TreeCollapseDemo extends JApplet {
                     try {
 						collapser.collapse(vv.getGraphLayout(), inGraph, root);
 					} catch (InstantiationException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+						throw new RuntimeException("Graph collapse operation failed", e1);
 					} catch (IllegalAccessException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+						throw new RuntimeException("Graph collapse operation failed", e1);
 					}
 
                     vv.getPickedVertexState().clear();

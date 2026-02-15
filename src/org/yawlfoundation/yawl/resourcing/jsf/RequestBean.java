@@ -32,7 +32,7 @@ import javax.faces.FacesException;
  */
 public class RequestBean extends AbstractRequestBean {
     // <editor-fold defaultstate="collapsed" desc="Creator-managed Component Definition">
-    private int __placeholder;
+    private int __jsfReserved;
     
     /**
      * <p>Automatically managed component initialization.  <strong>WARNING:</strong>

@@ -21,7 +21,10 @@ package org.yawlfoundation.yawl.cost.interfce;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.cost.CostService;
+import org.yawlfoundation.yawl.cost.data.CostDriver;
+import org.yawlfoundation.yawl.cost.data.CostModel;
 import org.yawlfoundation.yawl.cost.data.CostModelCache;
+import org.yawlfoundation.yawl.cost.data.DriverFacet;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.util.Sessions;
 import org.yawlfoundation.yawl.util.XNode;
@@ -171,7 +174,21 @@ public class CostGateway extends HttpServlet {
      *         message.
      */
     private String getFunctionList(YSpecificationID specID, String taskID) {
-        throw new UnsupportedOperationException("Cost function list retrieval not implemented");
+        CostModelCache cache = _service.getModelCache(specID);
+        if (cache == null) {
+            return failMessage("No cost models for specification");
+        }
+        XNode root = new XNode("functions");
+        for (CostModel model : cache.getModels()) {
+            XNode modelNode = model.toXNode();
+            XNode functionsNode = modelNode.getChild("functions");
+            if (functionsNode != null) {
+                for (XNode function : functionsNode.getChildren()) {
+                    root.addChild(function);
+                }
+            }
+        }
+        return root.toString();
     }
 
 
@@ -185,7 +202,31 @@ public class CostGateway extends HttpServlet {
      * @return an XML list of the costs requested, or an appropriate failure message.
      */
     private String getFixedCosts(YSpecificationID specID, String taskID) {
-        throw new UnsupportedOperationException("Fixed costs retrieval not implemented");
+        CostModelCache cache = _service.getModelCache(specID);
+        if (cache == null) {
+            return failMessage("No cost models for specification");
+        }
+        XNode root = new XNode("fixedcosts");
+        for (CostModel model : cache.getModels()) {
+            for (CostDriver driver : model.getDrivers()) {
+                if (driver.getUnitCost() == null ||
+                        !"fixed".equals(driver.getUnitCost().getUnit())) {
+                    continue;
+                }
+                if (taskID != null) {
+                    boolean matchesTask = false;
+                    for (DriverFacet facet : driver.getFacets()) {
+                        if (taskID.equals(facet.getName())) {
+                            matchesTask = true;
+                            break;
+                        }
+                    }
+                    if (!matchesTask) continue;
+                }
+                root.addChild(driver.toXNode());
+            }
+        }
+        return root.toString();
     }
 
 

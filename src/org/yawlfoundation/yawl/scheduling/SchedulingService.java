@@ -103,8 +103,8 @@ public class SchedulingService extends Service {
             if (taskType.equals(XML_UTILISATION) || taskType.equals(XML_RESCHEDULING)) {
                 handleUtilisationTask(mapping, elem, false);
             } else {
-                throw new SchedulingException("Handling of data type '" +
-                        taskType + "' is not implemented");
+                throw new SchedulingException("Unsupported data type: '" +
+                        taskType + "'. Only Utilisation and Rescheduling types are supported");
             }
         }
     }
@@ -279,8 +279,8 @@ public class SchedulingService extends Service {
     /**
      * adds new activities from YAWL model specification to document in right
      * order, e.g. if another worklet with new activities was started update
-     * times of all activities beginning at last activity which has a time
-     * TODO@tbe: returns false also, if order of activities was changed
+     * times of all activities beginning at last activity which has a time.
+     * Note: currently also returns false if order of activities was changed.
      *
      * @param doc
      * @return true, if new activity was added
@@ -795,11 +795,14 @@ public class SchedulingService extends Service {
     }
 
     /**
-     * TODO@tbe: was wenn RUP gerade angezeigt/konfiguriert wird?
+     * Optimizes and saves a RUP to the database. Note: does not currently
+     * check for concurrent display or configuration of the same RUP.
      *
-     * @param rup
-     * @param errorMsg
-     * @throws Exception
+     * @param rup the resource utilisation plan document
+     * @param savedBy identifier of the process saving the RUP
+     * @param errorMsg optional error message context
+     * @param resourceChange whether this is triggered by a resource change
+     * @throws Exception if the save operation fails
      */
     public Set<String> optimizeAndSaveRup(Document rup, String savedBy, String errorMsg, boolean resourceChange)
             throws Exception {
@@ -899,8 +902,9 @@ public class SchedulingService extends Service {
     }
 
     /**
-     * Register the MessageReceiveServlet with the Resource Service TODO@tbe:
-     * better to use our own IP and figure out the port number
+     * Register the MessageReceiveServlet with the Resource Service.
+     * Currently uses the configured URI from properties rather than
+     * dynamically determining the local IP and port number.
      */
     public void registerMessageReceiveServlet() {
         Thread thread = new Thread(new Runnable() {

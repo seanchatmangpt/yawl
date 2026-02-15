@@ -782,7 +782,7 @@ public class FormGenerator implements Constants {
                 buffer.append("</tr><tr>");
             }
 
-            // get resource type TODO@tbe: radiobox aus request auswerten
+            // get resource type from child element prefix (PA- for human, NH- for non-human)
             for (Element childField : list) {
                 String childName = childField.getName();
 
@@ -992,7 +992,7 @@ public class FormGenerator implements Constants {
             onclick += (disabled ? "" : showCalendar);
 
             tag3.append("</input>");
-        } else if (cssClass.equals(CSS_DURATIONINPUT)) { // TODO@tbe: not only minutes, use jquery.slider
+        } else if (cssClass.equals(CSS_DURATIONINPUT)) { // duration rendered as minutes text input
             tag1.append("<input type=\"text\" value=\"" + Utils.stringXMLDuration2stringMinutes(value) + "\"");
             tag3.append("</input>");
         } else {
@@ -1082,7 +1082,7 @@ public class FormGenerator implements Constants {
         if (listElementName.equals(XML_RESERVATION)) {
             disabledButton = isRequestTypeEOU(activity) || isRequestTypeSOU(activity);
         } else if (listElementName.equals(XML_UTILISATIONREL)) {
-            disabledButton = true; // TODO@tbe: erstmal nur von einer Relation pro Aktivit�t ausgehen
+            disabledButton = true; // only one utilisation relation per activity is currently supported
         }
 
         StringBuffer buffer = new StringBuffer();
@@ -1235,7 +1235,7 @@ public class FormGenerator implements Constants {
     }
 
     /**
-     * TODO@tbe: can we generate this templates from XSD?
+     * Templates are currently hardcoded; could potentially be generated from XSD.
      *
      * @param elementName
      * @return

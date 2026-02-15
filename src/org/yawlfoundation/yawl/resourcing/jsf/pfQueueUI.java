@@ -27,7 +27,7 @@ import javax.faces.event.ValueChangeEvent;
 
 public class pfQueueUI extends AbstractFragmentBean {
     // <editor-fold defaultstate="collapsed" desc="Creator-managed Component Definition">
-    private int __placeholder;
+    private int __jsfReserved;
     
     private void _init() throws Exception {
     }

@@ -62,7 +62,7 @@ import java.util.Map;
 public class DynFormFactory extends AbstractSessionBean implements DynamicForm {
 
     // required JSF member and method
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

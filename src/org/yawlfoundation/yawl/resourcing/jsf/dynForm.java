@@ -50,7 +50,7 @@ public class dynForm extends AbstractPageBean {
 
     /****** JSF Required Members and Methods ***************************************/
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

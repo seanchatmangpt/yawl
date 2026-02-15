@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.zai;
 
 import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
@@ -359,29 +360,21 @@ public class ZaiFunctionService {
     private String listWorkflows() throws IOException {
         ensureConnection();
 
-        String sessionA = interfaceAClient.connect(yawlUsername, yawlPassword);
-        if (sessionA == null || sessionA.contains("failure") || sessionA.contains("error")) {
-            throw new RuntimeException("Failed to connect to Interface A: " + sessionA);
-        }
+        List<SpecificationData> specs = interfaceBClient.getSpecificationList(sessionHandle);
 
-        try {
-            // TODO: Implement workflow listing via InterfaceA when method is available
-            // For now, return empty list as this requires engine integration
-            List<String> workflowNames = new ArrayList<>();
-
-            StringBuilder json = new StringBuilder("{\"workflows\": [");
-            boolean first = true;
-            for (String name : workflowNames) {
+        StringBuilder json = new StringBuilder("{\"workflows\": [");
+        boolean first = true;
+        if (specs != null) {
+            for (SpecificationData spec : specs) {
                 if (!first) json.append(",");
+                String name = spec.getName() != null ? spec.getName() : spec.getSpecURI();
                 json.append("\"").append(name).append("\"");
                 first = false;
             }
-            json.append("]}");
-
-            return json.toString();
-        } finally {
-            interfaceAClient.disconnect(sessionA);
         }
+        json.append("]}");
+
+        return json.toString();
     }
 
     private YSpecificationID parseSpecificationID(String workflowId) {

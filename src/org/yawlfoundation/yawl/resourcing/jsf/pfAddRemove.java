@@ -38,7 +38,7 @@ import javax.faces.FacesException;
 
 
 public class pfAddRemove extends AbstractFragmentBean {
-    private int __placeholder;
+    private int __jsfReserved;
     
     private void _init() throws Exception { }
 

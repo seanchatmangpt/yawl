@@ -48,7 +48,7 @@ public class ApplicationBean extends AbstractApplicationBean {
 
     // REQUIRED AND/OR IMPLEMENTED ABSTRACT PAGE BEAN METHODS //
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

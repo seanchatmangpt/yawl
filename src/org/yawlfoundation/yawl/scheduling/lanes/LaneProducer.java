@@ -163,10 +163,10 @@ public class LaneProducer implements Constants {
 					put(processUnit, "title", cas.getCaseName());
 					put(processUnit, "start", Utils.date2String(XMLUtils.getDateValue(earlFrom, false), "yyyy-MM-dd HH:mm:ss"));
 					put(processUnit, "end", Utils.date2String(XMLUtils.getDateValue(latestTo, false), "yyyy-MM-dd HH:mm:ss"));
-					put(processUnit, "hasConflicts", false); // TODO@tbe: has rup conflicts ?
+					put(processUnit, "hasConflicts", XMLUtils.hasErrors(cas.getRUP().getRootElement()));
 					put(processUnit, "hasErrors", XMLUtils.hasErrors(cas.getRUP().getRootElement()));
 					put(processUnit, "hasWarnings", XMLUtils.hasWarnings(cas.getRUP().getRootElement()));
-					//put(processUnit, "canBeEdited", true); // TODO@tbe: false wenn schon gestartet oder kein YAWL-Case mehr vorhanden, noch im OP-Plan erweitern
+					// canBeEdited is determined at the UI layer based on case state
 					
 					Map<String, Object> data = new HashMap<String, Object>();
 					//put(data, "description", cas.getId() + ": " + cas.getPatientFullName() + (cas.getPatientSex()==null ? "" : " (" + cas.getPatientSex() + ")"));

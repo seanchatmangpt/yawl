@@ -227,11 +227,12 @@ public abstract class Service extends InterfaceBWebsideController implements Con
   }
   
 	/**
-	 * TODO@tbe: validate payload before to avoid that work item failed if payload is invalid
-	 * 
-	 * @param mapping
-	 * @param payload
-	 * @throws YAWLException
+	 * Checks in a work item with optional payload. Note: payload is not
+	 * pre-validated; invalid payloads will cause the work item to fail.
+	 *
+	 * @param mapping the mapping for the work item to check in
+	 * @param payload the data payload (may be null)
+	 * @throws YAWLException if the check-in fails
 	 */
 	public void checkInWorkItem(Mapping mapping, String payload) throws YAWLException {
 		try {

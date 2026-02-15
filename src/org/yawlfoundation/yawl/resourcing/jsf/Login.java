@@ -43,7 +43,7 @@ public class Login extends AbstractPageBean {
 
     // REQUIRED AND/OR IMPLEMENTED ABSTRACT PAGE BEAN METHODS //
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception {}
 

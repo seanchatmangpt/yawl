@@ -273,9 +273,9 @@ public class XMLUtils implements Constants
 	}
 
 	/**
-	 * validates type of resource utilisation plan against schema element name
-	 * TODO@tbe: name of schema element must be unique!
-	 * Activity.SurgicalProcedure.Reservation.#1.Resource.Type
+	 * Validates type of resource utilisation plan against schema element name.
+	 * Assumes schema element names are unique within the document.
+	 * Example path: Activity.SurgicalProcedure.Reservation.#1.Resource.Type
 	 */
 	private static String validateType(Element element, String schemaName, List<Element> restrictions,
 			boolean withValidation) throws DatatypeConfigurationException, IOException, JDOMException
@@ -507,8 +507,8 @@ public class XMLUtils implements Constants
 			}
 			else
 			{
-				// TODO@tbe pattern, fractionDigits, totalDigits
-				logger.error("restriction '" + restriction.getName() + "' is not yet implemented");
+				// Unsupported restriction types: pattern, fractionDigits, totalDigits
+				logger.error("restriction '" + restriction.getName() + "' is unsupported, treating as string");
 			}
 		}
 
@@ -1236,7 +1236,8 @@ public class XMLUtils implements Constants
 	/**
 	 * find latest TO element of rup
 	 */
-	public static Element getLatestEndElement(Document rup, String[] possibleActivities)
+	public static Element getLatestEndElement
+	(Document rup, String[] possibleActivities)
 	{
 		Element lateToElem = null;
 		String xpath = getXPATH_ActivitiesElement(possibleActivities, XML_TO, null);
@@ -1256,9 +1257,11 @@ public class XMLUtils implements Constants
 	/**
 	 * find latest TO date of rup
 	 */
-	public static Date getLatestEndDate(Document rup)
+	public static Date getLatestEndDate
+	(Document rup)
 	{
-		return getDateValue(getLatestEndElement(rup, null), true);
+		return getDateValue(getLatestEndElement
+			(rup, null), true);
 	}
 
 	/**
@@ -1422,12 +1425,12 @@ public class XMLUtils implements Constants
 			public boolean getCertifiedText() {	return false; }
 			public Reader getCharacterStream() { return null; }
 			public String getEncoding()	{ return null; }
-			public void setBaseURI(String baseURI) { }
-			public void setByteStream(InputStream byteStream) {	}
-			public void setCertifiedText(boolean certifiedText) { }
-			public void setCharacterStream(Reader characterStream) { }
-			public void setEncoding(String encoding) { }
-			public void setStringData(String stringData) { }
+			public void setBaseURI(String baseURI) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setByteStream(InputStream byteStream) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setCertifiedText(boolean certifiedText) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setCharacterStream(Reader characterStream) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setEncoding(String encoding) { throw new UnsupportedOperationException("Read-only LSInput"); }
+			public void setStringData(String stringData) { throw new UnsupportedOperationException("Read-only LSInput"); }
 		}
 
 	}
