@@ -390,6 +390,27 @@
     <property name="kiota-serialization-multipart" value="microsoft-kiota-serialization-multipart-1.8.10.jar"/>
     <property name="kiota-serialization-text" value="microsoft-kiota-serialization-text-1.8.10.jar"/>
 
+    <!-- MCP (Model Context Protocol) SDK -->
+    <property name="mcp" value="mcp-0.17.2.jar"/>
+    <property name="mcp-core" value="mcp-core-0.17.2.jar"/>
+    <property name="mcp-json" value="mcp-json-0.17.2.jar"/>
+    <property name="mcp-json-jackson2" value="mcp-json-jackson2-0.17.2.jar"/>
+    <property name="reactor-core" value="reactor-core-3.7.0.jar"/>
+    <property name="reactive-streams" value="reactive-streams-1.0.4.jar"/>
+    <property name="json-schema-validator" value="json-schema-validator-2.0.0.jar"/>
+
+    <!-- A2A (Agent-to-Agent) SDK -->
+    <property name="a2a-spec" value="a2a-java-sdk-spec-1.0.0.Alpha2.jar"/>
+    <property name="a2a-common" value="a2a-java-sdk-common-1.0.0.Alpha2.jar"/>
+    <property name="a2a-server" value="a2a-java-sdk-server-common-1.0.0.Alpha2.jar"/>
+    <property name="a2a-jsonrpc-common" value="a2a-java-sdk-jsonrpc-common-1.0.0.Alpha2.jar"/>
+    <property name="a2a-transport-rest" value="a2a-java-sdk-transport-rest-1.0.0.Alpha2.jar"/>
+    <property name="a2a-transport-jsonrpc" value="a2a-java-sdk-transport-jsonrpc-1.0.0.Alpha2.jar"/>
+    <property name="a2a-http-client" value="a2a-java-sdk-http-client-1.0.0.Alpha2.jar"/>
+    <property name="a2a-client" value="a2a-java-sdk-client-1.0.0.Alpha2.jar"/>
+    <property name="a2a-client-transport-spi" value="a2a-java-sdk-client-transport-spi-1.0.0.Alpha2.jar"/>
+    <property name="a2a-client-transport-rest" value="a2a-java-sdk-client-transport-rest-1.0.0.Alpha2.jar"/>
+    <property name="a2a-client-transport-jsonrpc" value="a2a-java-sdk-client-transport-jsonrpc-1.0.0.Alpha2.jar"/>
 
     <!--
         Filters and properties for per-database-type operations, using
@@ -610,6 +631,33 @@
         <pathelement location="${lib.dir}/${log4j-api}"/>
         <pathelement location="${lib.dir}/${log4j-core}"/>
         <pathelement location="${lib.dir}/${log4j-bridge}"/>
+
+        <!-- Jackson JSON -->
+        <pathelement location="${lib.dir}/${jackson-annotations}"/>
+        <pathelement location="${lib.dir}/${jackson-core}"/>
+        <pathelement location="${lib.dir}/${jackson-databind}"/>
+
+        <!-- MCP SDK -->
+        <pathelement location="${lib.dir}/${mcp}"/>
+        <pathelement location="${lib.dir}/${mcp-core}"/>
+        <pathelement location="${lib.dir}/${mcp-json}"/>
+        <pathelement location="${lib.dir}/${mcp-json-jackson2}"/>
+        <pathelement location="${lib.dir}/${reactor-core}"/>
+        <pathelement location="${lib.dir}/${reactive-streams}"/>
+        <pathelement location="${lib.dir}/${json-schema-validator}"/>
+
+        <!-- A2A SDK -->
+        <pathelement location="${lib.dir}/${a2a-spec}"/>
+        <pathelement location="${lib.dir}/${a2a-common}"/>
+        <pathelement location="${lib.dir}/${a2a-server}"/>
+        <pathelement location="${lib.dir}/${a2a-jsonrpc-common}"/>
+        <pathelement location="${lib.dir}/${a2a-transport-rest}"/>
+        <pathelement location="${lib.dir}/${a2a-transport-jsonrpc}"/>
+        <pathelement location="${lib.dir}/${a2a-http-client}"/>
+        <pathelement location="${lib.dir}/${a2a-client}"/>
+        <pathelement location="${lib.dir}/${a2a-client-transport-spi}"/>
+        <pathelement location="${lib.dir}/${a2a-client-transport-rest}"/>
+        <pathelement location="${lib.dir}/${a2a-client-transport-jsonrpc}"/>
 
         <!-- Include all elements that Tomcat exposes to applications -->
         <pathelement location="${CATALINA_HOME}/lib"/>

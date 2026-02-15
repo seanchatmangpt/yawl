@@ -1,610 +1,656 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import io.a2a.A2A;
+import io.a2a.server.ServerCallContext;
+import io.a2a.server.agentexecution.AgentExecutor;
+import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.events.InMemoryQueueManager;
+import io.a2a.server.events.MainEventBus;
+import io.a2a.server.events.MainEventBusProcessor;
+import io.a2a.server.requesthandlers.DefaultRequestHandler;
+import io.a2a.server.tasks.AgentEmitter;
+import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
+import io.a2a.server.tasks.InMemoryTaskStore;
+import io.a2a.spec.*;
+import io.a2a.transport.rest.handler.RestHandler;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+
+import io.a2a.server.auth.User;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * A2A Server Integration for YAWL
+ * Agent-to-Agent (A2A) Server for YAWL using the official A2A Java SDK.
  *
- * Exposes YAWL workflow capabilities through the A2A protocol.
- * Implements a real HTTP server with:
- * - AgentCard endpoint at /.well-known/agent.json
- * - JSON-RPC 2.0 endpoint at /a2a
- * - Skill execution via YawlAgentExecutor
+ * Exposes YAWL workflow engine capabilities as an A2A agent over HTTP REST transport.
+ * Other A2A agents can discover YAWL's capabilities via the AgentCard and invoke
+ * workflow operations by sending messages.
+ *
+ * Skills exposed:
+ *   - launch_workflow: Launch a workflow case from a specification
+ *   - query_workflows: List loaded specifications and running cases
+ *   - manage_workitems: Get and complete work items
+ *   - cancel_workflow: Cancel a running workflow case
+ *
+ * The server starts on a configurable port (default 8081) and exposes:
+ *   - GET  /.well-known/agent.json  - Agent card discovery
+ *   - POST /                        - Message send (A2A REST protocol)
+ *   - GET  /tasks/{id}              - Get task status
+ *   - POST /tasks/{id}/cancel       - Cancel a task
  *
  * @author YAWL Foundation
  * @version 5.2
- * @see <a href="https://a2a-protocol.org">A2A Protocol Specification</a>
  */
 public class YawlA2AServer {
 
-    private static final String AGENT_CARD_PATH = "/.well-known/agent.json";
-    private static final String A2A_ENDPOINT = "/a2a";
-    private static final String HEALTH_PATH = "/health";
-    private static final String CONTENT_TYPE_JSON = "application/json";
-    private static final int DEFAULT_PORT = 8082;
+    private static final String SERVER_VERSION = "5.2.0";
 
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final String yawlUsername;
+    private final String yawlPassword;
     private final int port;
-    private final String serverUrl;
-    private final YawlAgentExecutor executor;
     private HttpServer httpServer;
-    private volatile boolean running = false;
     private ExecutorService executorService;
+    private String sessionHandle;
 
     /**
-     * Create A2A server with environment configuration
+     * Construct a YAWL A2A Server.
      *
-     * Uses environment variables:
-     * - YAWL_ENGINE_URL: YAWL engine URL
-     * - YAWL_USERNAME: YAWL username
-     * - YAWL_PASSWORD: YAWL password
-     * - A2A_SERVER_PORT: Server port (default 8082)
+     * @param yawlEngineUrl base URL of YAWL engine (e.g. http://localhost:8080/yawl)
+     * @param username YAWL admin username
+     * @param password YAWL admin password
+     * @param port port to run the A2A server on
      */
-    public YawlA2AServer() {
-        this.port = getPortFromEnvironment();
-        this.serverUrl = getServerUrlFromEnvironment();
-        this.executor = YawlAgentExecutor.fromEnvironment(serverUrl);
-        System.out.println("Initializing YAWL A2A Server on port " + port);
-    }
-
-    /**
-     * Create A2A server with custom port
-     *
-     * @param port the port to listen on
-     */
-    public YawlA2AServer(int port) {
-        this.port = port;
-        this.serverUrl = "http://localhost:" + port;
-        this.executor = YawlAgentExecutor.fromEnvironment(serverUrl);
-        System.out.println("Initializing YAWL A2A Server on port " + port);
-    }
-
-    /**
-     * Create A2A server with full configuration
-     *
-     * @param port the port to listen on
-     * @param engineAdapter the YAWL engine adapter
-     */
-    public YawlA2AServer(int port, YawlEngineAdapter engineAdapter) {
-        this.port = port;
-        this.serverUrl = "http://localhost:" + port;
-        this.executor = new YawlAgentExecutor(engineAdapter, serverUrl);
-        System.out.println("Initializing YAWL A2A Server on port " + port);
-    }
-
-    /**
-     * Start the A2A server
-     *
-     * @throws A2AException if server cannot be started
-     */
-    public void start() throws A2AException {
-        if (running) {
-            System.out.println("Server already running");
-            return;
+    public YawlA2AServer(String yawlEngineUrl, String username, String password,
+            int port) {
+        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
+            throw new IllegalArgumentException(
+                "YAWL engine URL is required (e.g. http://localhost:8080/yawl)");
+        }
+        if (username == null || username.isEmpty()) {
+            throw new IllegalArgumentException("YAWL username is required");
+        }
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("YAWL password is required");
+        }
+        if (port < 1 || port > 65535) {
+            throw new IllegalArgumentException("Port must be between 1 and 65535");
         }
 
-        System.out.println("Starting YAWL A2A Server on port " + port + "...");
-
-        try {
-            // Connect to YAWL engine first
-            executor.connect();
-            System.out.println("Connected to YAWL engine");
-
-            // Create HTTP server
-            httpServer = HttpServer.create(new InetSocketAddress(port), 0);
-            executorService = Executors.newFixedThreadPool(10);
-            httpServer.setExecutor(executorService);
-
-            // Register handlers
-            httpServer.createContext(AGENT_CARD_PATH, new AgentCardHandler());
-            httpServer.createContext(A2A_ENDPOINT, new A2AEndpointHandler());
-            httpServer.createContext(HEALTH_PATH, new HealthHandler());
-
-            // Start server
-            httpServer.start();
-            running = true;
-
-            System.out.println("YAWL A2A Server started successfully");
-            System.out.println("  Agent Card: " + serverUrl + AGENT_CARD_PATH);
-            System.out.println("  A2A Endpoint: " + serverUrl + A2A_ENDPOINT);
-            System.out.println("  Health Check: " + serverUrl + HEALTH_PATH);
-
-        } catch (java.net.BindException e) {
-            throw new A2AException(
-                A2AException.ErrorCode.SERVER_ERROR,
-                "Port " + port + " is already in use",
-                "Choose a different port or stop the process using port " + port,
-                e
-            );
-        } catch (IOException e) {
-            throw new A2AException(
-                A2AException.ErrorCode.SERVER_ERROR,
-                "Failed to start HTTP server: " + e.getMessage(),
-                "Check network configuration and port availability",
-                e
-            );
-        } catch (A2AException e) {
-            throw new A2AException(
-                A2AException.ErrorCode.CONNECTION_FAILED,
-                "Failed to connect to YAWL engine: " + e.getMessage(),
-                "Ensure YAWL engine is running and environment variables are set:\n" +
-                "  YAWL_ENGINE_URL=http://localhost:8080/yawl\n" +
-                "  YAWL_USERNAME=admin\n" +
-                "  YAWL_PASSWORD=YAWL",
-                e
-            );
-        }
+        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(
+            yawlEngineUrl + "/ib");
+        this.yawlUsername = username;
+        this.yawlPassword = password;
+        this.port = port;
     }
 
     /**
-     * Stop the A2A server
+     * Build and start the A2A server on the configured port.
+     *
+     * @throws IOException if the HTTP server cannot bind to the port
+     */
+    public void start() throws IOException {
+        AgentCard agentCard = buildAgentCard();
+        executorService = Executors.newFixedThreadPool(4);
+
+        InMemoryTaskStore taskStore = new InMemoryTaskStore();
+        MainEventBus mainEventBus = new MainEventBus();
+        InMemoryQueueManager queueManager = new InMemoryQueueManager(
+            taskStore, mainEventBus);
+        InMemoryPushNotificationConfigStore pushStore =
+            new InMemoryPushNotificationConfigStore();
+        MainEventBusProcessor busProcessor = new MainEventBusProcessor(
+            mainEventBus, taskStore, null, queueManager);
+        busProcessor.ensureStarted();
+
+        YawlAgentExecutor agentExecutor = new YawlAgentExecutor();
+        DefaultRequestHandler requestHandler = DefaultRequestHandler.create(
+            agentExecutor, taskStore, queueManager, pushStore,
+            busProcessor, executorService, executorService);
+
+        RestHandler restHandler = new RestHandler(
+            agentCard, requestHandler, executorService);
+
+        httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+        httpServer.setExecutor(executorService);
+
+        httpServer.createContext("/.well-known/agent.json", exchange -> {
+            handleRestCall(exchange, () -> restHandler.getAgentCard());
+        });
+
+        httpServer.createContext("/", exchange -> {
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            User anonymousUser = new User() {
+                    @Override public boolean isAuthenticated() { return true; }
+                    @Override public String getUsername() { return "yawl-a2a"; }
+                };
+                ServerCallContext callContext = new ServerCallContext(
+                    anonymousUser, new HashMap<>(), Collections.emptySet());
+
+            if ("POST".equals(method) && "/".equals(path)) {
+                String body = readRequestBody(exchange);
+                handleRestCall(exchange, () ->
+                    restHandler.sendMessage(callContext, null, body));
+            } else if ("GET".equals(method) && path.startsWith("/tasks/")) {
+                String taskId = path.substring("/tasks/".length());
+                if (taskId.endsWith("/cancel")) {
+                    exchange.sendResponseHeaders(405, -1);
+                } else {
+                    handleRestCall(exchange, () ->
+                        restHandler.getTask(callContext, taskId, null, null));
+                }
+            } else if ("POST".equals(method) && path.matches("/tasks/.+/cancel")) {
+                String taskId = path.replace("/tasks/", "").replace("/cancel", "");
+                handleRestCall(exchange, () ->
+                    restHandler.cancelTask(callContext, taskId, null));
+            } else {
+                byte[] resp = "{\"error\":\"Not Found\"}".getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(404, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+            }
+        });
+
+        httpServer.start();
+        System.out.println("YAWL A2A Server v" + SERVER_VERSION
+            + " started on port " + port);
+        System.out.println("Agent card: http://localhost:" + port
+            + "/.well-known/agent.json");
+    }
+
+    /**
+     * Stop the A2A server.
      */
     public void stop() {
-        if (!running) {
-            System.out.println("Server not running");
-            return;
-        }
-
-        System.out.println("Stopping YAWL A2A Server...");
-
-        running = false;
-
         if (httpServer != null) {
-            httpServer.stop(0);
+            httpServer.stop(2);
             httpServer = null;
         }
-
         if (executorService != null) {
             executorService.shutdown();
             executorService = null;
         }
-
-        executor.disconnect();
-
+        disconnectFromEngine();
         System.out.println("YAWL A2A Server stopped");
     }
 
     /**
-     * Check if server is running
-     *
-     * @return true if running
+     * Check if the server is running.
      */
     public boolean isRunning() {
-        return running;
+        return httpServer != null;
     }
 
-    /**
-     * Get the server port
-     *
-     * @return the port number
-     */
-    public int getPort() {
-        return port;
+    // =========================================================================
+    // Agent Card definition
+    // =========================================================================
+
+    private AgentCard buildAgentCard() {
+        return AgentCard.builder()
+            .name("YAWL Workflow Engine")
+            .description("YAWL (Yet Another Workflow Language) BPM engine agent. "
+                + "Manages workflow specifications, cases, and work items. "
+                + "Supports launching workflows, querying status, managing tasks, "
+                + "and orchestrating complex business processes.")
+            .version(SERVER_VERSION)
+            .provider(new AgentProvider("YAWL Foundation", "https://yawlfoundation.github.io"))
+            .capabilities(AgentCapabilities.builder()
+                .streaming(false)
+                .pushNotifications(false)
+                .build())
+            .defaultInputModes(List.of("text"))
+            .defaultOutputModes(List.of("text"))
+            .skills(List.of(
+                AgentSkill.builder()
+                    .id("launch_workflow")
+                    .name("Launch Workflow")
+                    .description("Launch a new workflow case from a loaded specification. "
+                        + "Provide the specification identifier and optional case data.")
+                    .tags(List.of("workflow", "bpm", "launch", "case"))
+                    .examples(List.of(
+                        "Launch the OrderProcessing workflow",
+                        "Start a new case of specification 'InvoiceApproval' with order data"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("query_workflows")
+                    .name("Query Workflows")
+                    .description("List available workflow specifications, running cases, "
+                        + "and their current status.")
+                    .tags(List.of("workflow", "query", "list", "status"))
+                    .examples(List.of(
+                        "List all loaded workflow specifications",
+                        "Show running cases and their status"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("manage_workitems")
+                    .name("Manage Work Items")
+                    .description("Get, check out, and complete work items in running "
+                        + "workflow cases.")
+                    .tags(List.of("workflow", "workitem", "task", "complete"))
+                    .examples(List.of(
+                        "Show work items for case 42",
+                        "Complete work item 42:ReviewOrder with approved status"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("cancel_workflow")
+                    .name("Cancel Workflow")
+                    .description("Cancel a running workflow case by its case ID.")
+                    .tags(List.of("workflow", "cancel", "case"))
+                    .examples(List.of(
+                        "Cancel case 42",
+                        "Stop the running workflow case with ID 15"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
+                    .build()
+            ))
+            .build();
     }
 
-    /**
-     * Get the server URL
-     *
-     * @return the server URL
-     */
-    public String getServerUrl() {
-        return serverUrl;
-    }
+    // =========================================================================
+    // Agent Executor - handles A2A message processing with YAWL engine
+    // =========================================================================
 
-    /**
-     * Get the agent card
-     *
-     * @return the agent card
-     */
-    public A2ATypes.AgentCard getAgentCard() {
-        return executor.getAgentCard();
-    }
+    private class YawlAgentExecutor implements AgentExecutor {
 
-    /**
-     * Get the executor
-     *
-     * @return the agent executor
-     */
-    public YawlAgentExecutor getExecutor() {
-        return executor;
-    }
-
-    // ==================== HTTP Handlers ====================
-
-    /**
-     * Handler for /.well-known/agent.json endpoint
-     */
-    private class AgentCardHandler implements HttpHandler {
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
+        public void execute(RequestContext context, AgentEmitter emitter)
+                throws A2AError {
+            emitter.startWork();
+
             try {
-                if (!"GET".equals(exchange.getRequestMethod())) {
-                    sendError(exchange, 405, "Method Not Allowed");
-                    return;
-                }
+                Message userMessage = context.getMessage();
+                String userText = extractTextFromMessage(userMessage);
 
-                A2ATypes.AgentCard card = executor.getAgentCard();
-                String response = card.toJson();
+                String response = processWorkflowRequest(userText);
 
-                sendJsonResponse(exchange, 200, response);
-
+                emitter.complete(A2A.toAgentMessage(response));
+            } catch (IOException e) {
+                emitter.fail(A2A.toAgentMessage(
+                    "YAWL engine error: " + e.getMessage()));
             } catch (Exception e) {
-                sendError(exchange, 500, "Internal Server Error: " + e.getMessage());
+                emitter.fail(A2A.toAgentMessage(
+                    "Processing error: " + e.getMessage()));
             }
         }
-    }
 
-    /**
-     * Handler for /a2a JSON-RPC endpoint
-     */
-    private class A2AEndpointHandler implements HttpHandler {
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
+        public void cancel(RequestContext context, AgentEmitter emitter)
+                throws A2AError {
+            String taskId = context.getTaskId();
             try {
-                if (!"POST".equals(exchange.getRequestMethod())) {
-                    sendError(exchange, 405, "Method Not Allowed");
-                    return;
+                ensureEngineConnection();
+                String result = interfaceBClient.cancelCase(taskId, sessionHandle);
+                if (result != null && result.contains("<failure>")) {
+                    emitter.fail(A2A.toAgentMessage(
+                        "Failed to cancel case: " + result));
+                } else {
+                    emitter.cancel(A2A.toAgentMessage(
+                        "Case " + taskId + " cancelled successfully"));
                 }
-
-                // Read request body
-                String requestBody = readRequestBody(exchange);
-
-                // Parse JSON-RPC request
-                A2ATypes.A2ARequest request = parseRequest(requestBody);
-                if (request == null) {
-                    A2ATypes.A2AResponse errorResponse = new A2ATypes.A2AResponse(
-                        A2ATypes.A2AError.parseError(), "unknown"
-                    );
-                    sendJsonResponse(exchange, 200, errorResponse.toJson());
-                    return;
-                }
-
-                // Execute request
-                A2ATypes.A2AResponse response = executor.execute(request);
-
-                // Send response
-                sendJsonResponse(exchange, 200, response.toJson());
-
-            } catch (Exception e) {
-                sendError(exchange, 500, "Internal Server Error: " + e.getMessage());
+            } catch (IOException e) {
+                emitter.fail(A2A.toAgentMessage(
+                    "Failed to cancel: " + e.getMessage()));
             }
         }
-    }
 
-    /**
-     * Handler for /health endpoint
-     */
-    private class HealthHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            try {
-                if (!"GET".equals(exchange.getRequestMethod())) {
-                    sendError(exchange, 405, "Method Not Allowed");
-                    return;
-                }
+        private String processWorkflowRequest(String userText) throws IOException {
+            ensureEngineConnection();
+            String lower = userText.toLowerCase().trim();
 
-                Map<String, Object> health = new HashMap<>();
-                health.put("status", running ? "healthy" : "unhealthy");
-                health.put("server", "YAWL A2A Server");
-                health.put("version", "5.2");
-                health.put("port", port);
-                health.put("yawlConnected", executor.isConnected());
-
-                String response = mapToJson(health);
-                sendJsonResponse(exchange, 200, response);
-
-            } catch (Exception e) {
-                sendError(exchange, 500, "Internal Server Error: " + e.getMessage());
+            if (lower.contains("list") && (lower.contains("spec")
+                    || lower.contains("workflow"))) {
+                return handleListSpecifications();
             }
+
+            if (lower.contains("launch") || lower.contains("start")) {
+                return handleLaunchCase(userText);
+            }
+
+            if (lower.contains("status") || lower.contains("case")) {
+                return handleCaseQuery(userText);
+            }
+
+            if (lower.contains("work item") || lower.contains("workitem")
+                    || lower.contains("task")) {
+                return handleWorkItemQuery(userText);
+            }
+
+            if (lower.contains("cancel") || lower.contains("stop")) {
+                return handleCancelCase(userText);
+            }
+
+            return handleListSpecifications();
         }
-    }
 
-    // ==================== Helper Methods ====================
+        private String handleListSpecifications() throws IOException {
+            List<SpecificationData> specs = interfaceBClient.getSpecificationList(
+                sessionHandle);
+            if (specs == null || specs.isEmpty()) {
+                return "No workflow specifications currently loaded in the YAWL engine.";
+            }
 
-    private String readRequestBody(HttpExchange exchange) throws IOException {
-        try (InputStream is = exchange.getInputStream();
-             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
+            sb.append("Loaded workflow specifications (").append(specs.size())
+                .append("):\n\n");
+            for (SpecificationData spec : specs) {
+                YSpecificationID specId = spec.getID();
+                sb.append("- ").append(specId.getIdentifier())
+                    .append(" v").append(specId.getVersionAsString());
+                if (spec.getName() != null) {
+                    sb.append(" (").append(spec.getName()).append(")");
+                }
+                sb.append("\n  URI: ").append(specId.getUri());
+                sb.append("\n  Status: ").append(spec.getStatus());
+                if (spec.getDocumentation() != null) {
+                    sb.append("\n  Docs: ").append(spec.getDocumentation());
+                }
+                sb.append("\n");
             }
             return sb.toString();
         }
-    }
 
-    private void sendJsonResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", CONTENT_TYPE_JSON);
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.sendResponseHeaders(statusCode, responseBytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(responseBytes);
-        }
-    }
-
-    private void sendError(HttpExchange exchange, int statusCode, String message) throws IOException {
-        String response = "{\"error\":\"" + escapeJson(message) + "\"}";
-        sendJsonResponse(exchange, statusCode, response);
-    }
-
-    private A2ATypes.A2ARequest parseRequest(String json) {
-        if (json == null || json.isEmpty()) {
-            return null;
-        }
-
-        try {
-            String jsonrpc = extractJsonString(json, "jsonrpc");
-            if (!"2.0".equals(jsonrpc)) {
-                return null;
+        private String handleLaunchCase(String userText) throws IOException {
+            String specId = extractIdentifier(userText);
+            if (specId == null) {
+                return "Please specify a workflow identifier to launch. "
+                    + "Use 'list specifications' to see available workflows.";
             }
 
-            String method = extractJsonString(json, "method");
-            String id = extractJsonString(json, "id");
+            YSpecificationID specID = new YSpecificationID(specId, "0.1", specId);
+            String caseId = interfaceBClient.launchCase(
+                specID, null, null, sessionHandle);
 
-            if (method == null) {
-                return null;
+            if (caseId == null || caseId.contains("<failure>")) {
+                return "Failed to launch workflow '" + specId + "': " + caseId;
             }
 
-            Map<String, Object> params = parseParams(json);
-
-            return new A2ATypes.A2ARequest(method, params, id);
-
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Map<String, Object> parseParams(String json) {
-        Map<String, Object> params = new HashMap<>();
-
-        int paramsStart = json.indexOf("\"params\":");
-        if (paramsStart == -1) {
-            return params;
+            return "Workflow launched successfully.\n"
+                + "  Specification: " + specId + "\n"
+                + "  Case ID: " + caseId + "\n"
+                + "  Status: Running\n"
+                + "Use 'status case " + caseId + "' to check progress.";
         }
 
-        int braceStart = json.indexOf("{", paramsStart);
-        if (braceStart == -1) {
-            return params;
-        }
+        private String handleCaseQuery(String userText) throws IOException {
+            String caseId = extractNumber(userText);
+            if (caseId != null) {
+                String state = interfaceBClient.getCaseState(caseId, sessionHandle);
+                List<WorkItemRecord> items = interfaceBClient.getWorkItemsForCase(
+                    caseId, sessionHandle);
 
-        int braceEnd = findMatchingBrace(json, braceStart);
-        if (braceEnd == -1) {
-            return params;
-        }
-
-        String paramsJson = json.substring(braceStart + 1, braceEnd);
-
-        // Simple key-value extraction
-        int pos = 0;
-        while (pos < paramsJson.length()) {
-            int keyStart = paramsJson.indexOf("\"", pos);
-            if (keyStart == -1) break;
-
-            int keyEnd = paramsJson.indexOf("\"", keyStart + 1);
-            if (keyEnd == -1) break;
-
-            String key = paramsJson.substring(keyStart + 1, keyEnd);
-
-            int colonPos = paramsJson.indexOf(":", keyEnd);
-            if (colonPos == -1) break;
-
-            // Find value
-            int valueStart = -1;
-            for (int i = colonPos + 1; i < paramsJson.length(); i++) {
-                char c = paramsJson.charAt(i);
-                if (!Character.isWhitespace(c)) {
-                    valueStart = i;
-                    break;
-                }
-            }
-
-            if (valueStart == -1) break;
-
-            char firstChar = paramsJson.charAt(valueStart);
-            String value;
-
-            if (firstChar == '"') {
-                int valueEnd = paramsJson.indexOf("\"", valueStart + 1);
-                if (valueEnd == -1) break;
-                value = paramsJson.substring(valueStart + 1, valueEnd);
-                pos = valueEnd + 1;
-            } else if (firstChar == '{') {
-                int valueEnd = findMatchingBrace(paramsJson, valueStart);
-                if (valueEnd == -1) break;
-                value = paramsJson.substring(valueStart, valueEnd + 1);
-                pos = valueEnd + 1;
-            } else if (firstChar == '[') {
-                int valueEnd = findMatchingBracket(paramsJson, valueStart);
-                if (valueEnd == -1) break;
-                value = paramsJson.substring(valueStart, valueEnd + 1);
-                pos = valueEnd + 1;
-            } else {
-                // Number or boolean
-                int valueEnd = valueStart;
-                while (valueEnd < paramsJson.length()) {
-                    char c = paramsJson.charAt(valueEnd);
-                    if (c == ',' || c == '}' || Character.isWhitespace(c)) {
-                        break;
+                StringBuilder sb = new StringBuilder();
+                sb.append("Case ").append(caseId).append(":\n");
+                sb.append("  State: ").append(state != null ? state : "unknown")
+                    .append("\n");
+                if (items != null && !items.isEmpty()) {
+                    sb.append("  Work Items (").append(items.size()).append("):\n");
+                    for (WorkItemRecord wir : items) {
+                        sb.append("    - ").append(wir.getID())
+                            .append(" [").append(wir.getStatus()).append("]")
+                            .append(" Task: ").append(wir.getTaskID())
+                            .append("\n");
                     }
-                    valueEnd++;
+                } else {
+                    sb.append("  No active work items.\n");
                 }
-                value = paramsJson.substring(valueStart, valueEnd);
-                pos = valueEnd;
+                return sb.toString();
             }
 
-            params.put(key, unescapeJson(value));
-
-            // Find next comma
-            int commaPos = paramsJson.indexOf(",", pos);
-            if (commaPos == -1) break;
-            pos = commaPos + 1;
+            String allCases = interfaceBClient.getAllRunningCases(sessionHandle);
+            return "Running cases:\n" + (allCases != null ? allCases : "None");
         }
 
-        return params;
-    }
-
-    private int findMatchingBrace(String s, int start) {
-        int depth = 0;
-        boolean inString = false;
-        for (int i = start; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '"' && (i == 0 || s.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            } else if (!inString) {
-                if (c == '{') depth++;
-                else if (c == '}') {
-                    depth--;
-                    if (depth == 0) return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private int findMatchingBracket(String s, int start) {
-        int depth = 0;
-        boolean inString = false;
-        for (int i = start; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '"' && (i == 0 || s.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            } else if (!inString) {
-                if (c == '[') depth++;
-                else if (c == ']') {
-                    depth--;
-                    if (depth == 0) return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private String extractJsonString(String json, String key) {
-        String searchKey = "\"" + key + "\":\"";
-        int start = json.indexOf(searchKey);
-        if (start == -1) {
-            return null;
-        }
-        start += searchKey.length();
-        int end = json.indexOf("\"", start);
-        if (end == -1) {
-            return null;
-        }
-        return unescapeJson(json.substring(start, end));
-    }
-
-    private String mapToJson(Map<String, Object> map) {
-        if (map == null || map.isEmpty()) {
-            return "{}";
-        }
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (!first) sb.append(",");
-            sb.append("\"").append(entry.getKey()).append("\":");
-            Object value = entry.getValue();
-            if (value instanceof String) {
-                sb.append("\"").append(escapeJson((String) value)).append("\"");
-            } else if (value instanceof Number || value instanceof Boolean) {
-                sb.append(value);
+        private String handleWorkItemQuery(String userText) throws IOException {
+            String caseId = extractNumber(userText);
+            List<WorkItemRecord> items;
+            if (caseId != null) {
+                items = interfaceBClient.getWorkItemsForCase(
+                    caseId, sessionHandle);
             } else {
-                sb.append("\"").append(escapeJson(String.valueOf(value))).append("\"");
+                items = interfaceBClient.getCompleteListOfLiveWorkItems(
+                    sessionHandle);
             }
-            first = false;
+
+            if (items == null || items.isEmpty()) {
+                return "No active work items"
+                    + (caseId != null ? " for case " + caseId : "") + ".";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Work Items (").append(items.size()).append("):\n\n");
+            for (WorkItemRecord wir : items) {
+                sb.append("- ID: ").append(wir.getID()).append("\n");
+                sb.append("  Case: ").append(wir.getCaseID()).append("\n");
+                sb.append("  Task: ").append(wir.getTaskID()).append("\n");
+                sb.append("  Status: ").append(wir.getStatus()).append("\n");
+                sb.append("  Spec: ").append(wir.getSpecURI()).append("\n\n");
+            }
+            return sb.toString();
         }
-        sb.append("}");
-        return sb.toString();
+
+        private String handleCancelCase(String userText) throws IOException {
+            String caseId = extractNumber(userText);
+            if (caseId == null) {
+                return "Please specify a case ID to cancel.";
+            }
+
+            String result = interfaceBClient.cancelCase(caseId, sessionHandle);
+            if (result != null && result.contains("<failure>")) {
+                return "Failed to cancel case " + caseId + ": " + result;
+            }
+            return "Case " + caseId + " cancelled successfully.";
+        }
+
+        private String extractTextFromMessage(Message message) {
+            if (message == null || message.parts() == null) {
+                throw new IllegalArgumentException("Message has no content parts");
+            }
+            StringBuilder text = new StringBuilder();
+            for (Part<?> part : message.parts()) {
+                if (part instanceof TextPart) {
+                    text.append(((TextPart) part).text());
+                }
+            }
+            if (text.length() == 0) {
+                throw new IllegalArgumentException(
+                    "Message contains no text parts");
+            }
+            return text.toString();
+        }
+
+        private String extractIdentifier(String text) {
+            String[] parts = text.split("\\s+");
+            for (int i = 0; i < parts.length; i++) {
+                if (("launch".equalsIgnoreCase(parts[i])
+                        || "start".equalsIgnoreCase(parts[i]))
+                        && i + 1 < parts.length) {
+                    String next = parts[i + 1];
+                    if (!"the".equalsIgnoreCase(next) && !"a".equalsIgnoreCase(next)
+                            && !"workflow".equalsIgnoreCase(next)) {
+                        return next;
+                    }
+                    if (i + 2 < parts.length) {
+                        return parts[i + 2];
+                    }
+                }
+            }
+            String[] quoted = text.split("'");
+            if (quoted.length >= 2) {
+                return quoted[1];
+            }
+            return null;
+        }
+
+        private String extractNumber(String text) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\b(\\d+)\\b")
+                .matcher(text);
+            if (m.find()) {
+                return m.group(1);
+            }
+            return null;
+        }
     }
 
-    private String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+    // =========================================================================
+    // HTTP handling helpers
+    // =========================================================================
+
+    @FunctionalInterface
+    private interface RestCallable {
+        RestHandler.HTTPRestResponse call() throws Exception;
     }
 
-    private String unescapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
+    private void handleRestCall(HttpExchange exchange, RestCallable callable)
+            throws IOException {
+        try {
+            RestHandler.HTTPRestResponse response = callable.call();
+            String body = response.getBody();
+            String contentType = response.getContentType();
+            int statusCode = response.getStatusCode();
+
+            byte[] bodyBytes = body != null
+                ? body.getBytes(StandardCharsets.UTF_8) : new byte[0];
+            if (contentType != null) {
+                exchange.getResponseHeaders().set("Content-Type", contentType);
+            }
+            exchange.sendResponseHeaders(statusCode, bodyBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bodyBytes);
+            }
+        } catch (Exception e) {
+            byte[] err = ("{\"error\":\"" + e.getMessage().replace("\"", "'") + "\"}")
+                .getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(500, err.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(err);
+            }
+        }
     }
 
-    private static int getPortFromEnvironment() {
-        String portStr = System.getenv("A2A_SERVER_PORT");
-        if (portStr != null && !portStr.isEmpty()) {
+    private String readRequestBody(HttpExchange exchange) throws IOException {
+        try (InputStream is = exchange.getRequestBody()) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    // =========================================================================
+    // YAWL Engine connection management
+    // =========================================================================
+
+    private void ensureEngineConnection() throws IOException {
+        if (sessionHandle != null) {
+            String check = interfaceBClient.checkConnection(sessionHandle);
+            if (check != null && !check.contains("<failure>")) {
+                return;
+            }
+        }
+        sessionHandle = interfaceBClient.connect(yawlUsername, yawlPassword);
+        if (sessionHandle == null || sessionHandle.contains("<failure>")) {
+            throw new IOException(
+                "Failed to connect to YAWL engine: " + sessionHandle);
+        }
+    }
+
+    private void disconnectFromEngine() {
+        if (sessionHandle != null) {
             try {
-                return Integer.parseInt(portStr);
-            } catch (NumberFormatException e) {
-                // Fall through to default
+                interfaceBClient.disconnect(sessionHandle);
+            } catch (IOException e) {
+                System.err.println(
+                    "Warning: failed to disconnect from YAWL engine: "
+                    + e.getMessage());
             }
+            sessionHandle = null;
         }
-        return DEFAULT_PORT;
-    }
-
-    private static String getServerUrlFromEnvironment() {
-        String url = System.getenv("A2A_SERVER_URL");
-        if (url != null && !url.isEmpty()) {
-            return url;
-        }
-        return "http://localhost:" + getPortFromEnvironment();
     }
 
     /**
-     * Main method for standalone server
+     * Entry point for running the YAWL A2A Server.
+     *
+     * Environment variables:
+     *   YAWL_ENGINE_URL - YAWL engine base URL (default: http://localhost:8080/yawl)
+     *   YAWL_USERNAME   - YAWL admin username (default: admin)
+     *   YAWL_PASSWORD   - YAWL admin password (default: YAWL)
+     *   A2A_PORT        - Port to run on (default: 8081)
      */
     public static void main(String[] args) {
-        int port = DEFAULT_PORT;
-        if (args.length > 0) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                System.err.println("Invalid port number: " + args[0]);
-                System.exit(1);
-            }
+        String engineUrl = System.getenv("YAWL_ENGINE_URL");
+        if (engineUrl == null || engineUrl.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_ENGINE_URL environment variable is required.\n" +
+                "Set it with: export YAWL_ENGINE_URL=http://localhost:8080/yawl");
         }
 
-        System.out.println("YAWL A2A Server");
-        System.out.println("===============");
-        System.out.println();
+        String username = System.getenv("YAWL_USERNAME");
+        if (username == null || username.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_USERNAME environment variable is required.\n" +
+                "Set it with: export YAWL_USERNAME=admin");
+        }
 
-        final YawlA2AServer server = new YawlA2AServer(port);
+        String password = System.getenv("YAWL_PASSWORD");
+        if (password == null || password.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable is required.\n" +
+                "Set it with: export YAWL_PASSWORD=YAWL");
+        }
 
-        // Add shutdown hook
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\nShutting down YAWL A2A Server...");
-            server.stop();
-        }));
+        int port = 8081;
+        String portEnv = System.getenv("A2A_PORT");
+        if (portEnv != null && !portEnv.isEmpty()) {
+            port = Integer.parseInt(portEnv);
+        }
+
+        System.out.println("Starting YAWL A2A Server v" + SERVER_VERSION);
+        System.out.println("Engine URL: " + engineUrl);
+        System.out.println("A2A Port: " + port);
 
         try {
+            YawlA2AServer server = new YawlA2AServer(
+                engineUrl, username, password, port);
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Shutting down YAWL A2A Server...");
+                server.stop();
+            }));
+
             server.start();
 
-            System.out.println("\nYAWL A2A Server is ready to accept agent requests");
             System.out.println("Press Ctrl+C to stop");
-
-            // Keep server running
-            Thread.currentThread().join();
-
-        } catch (A2AException e) {
-            System.err.println("Failed to start server: " + e.getFullReport());
+            Thread.sleep(Long.MAX_VALUE);
+        } catch (IOException e) {
+            System.err.println("Failed to start A2A server: " + e.getMessage());
             System.exit(1);
         } catch (InterruptedException e) {
-            server.stop();
+            Thread.currentThread().interrupt();
         }
     }
 }

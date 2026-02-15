@@ -22,8 +22,8 @@ import java.util.Map;
  */
 public class YawlEngineAdapter {
 
-    private static final int DEFAULT_RECONNECT_ATTEMPTS = 3;
-    private static final long DEFAULT_RECONNECT_DELAY_MS = 1000;
+    private static final int RECONNECT_ATTEMPTS = 3;
+    private static final long RECONNECT_DELAY_MS = 1000;
 
     private final String engineUrl;
     private final String username;
@@ -116,7 +116,7 @@ public class YawlEngineAdapter {
         int attempts = 0;
         IOException lastException = null;
 
-        while (attempts < DEFAULT_RECONNECT_ATTEMPTS) {
+        while (attempts < RECONNECT_ATTEMPTS) {
             attempts++;
             try {
                 sessionHandleB = interfaceBClient.connect(username, password);
@@ -130,9 +130,9 @@ public class YawlEngineAdapter {
 
             } catch (IOException e) {
                 lastException = e;
-                if (attempts < DEFAULT_RECONNECT_ATTEMPTS) {
+                if (attempts < RECONNECT_ATTEMPTS) {
                     try {
-                        Thread.sleep(DEFAULT_RECONNECT_DELAY_MS);
+                        Thread.sleep(RECONNECT_DELAY_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         break;
@@ -417,7 +417,7 @@ public class YawlEngineAdapter {
         checkOutWorkItem(workItemId);
 
         // Check in with data
-        String data = outputData != null ? outputData : targetItem.getDataList();
+        String data = outputData != null ? outputData : targetItem.getDataListString();
         checkInWorkItem(workItemId, data);
 
         Map<String, Object> result = new HashMap<>();
@@ -489,11 +489,22 @@ public class YawlEngineAdapter {
      * @throws A2AException if retrieval fails
      */
     public List<String> getSpecifications() throws A2AException {
-        ensureInterfaceA();
+        ensureConnected();
 
         try {
-            String specsXML = interfaceAClient.getLoadedSpecificationData(sessionHandleA);
-            return extractSpecificationNames(specsXML);
+            List<org.yawlfoundation.yawl.engine.interfce.SpecificationData> specs =
+                interfaceBClient.getSpecificationList(sessionHandleB);
+
+            List<String> names = new ArrayList<>();
+            if (specs != null) {
+                for (org.yawlfoundation.yawl.engine.interfce.SpecificationData spec : specs) {
+                    YSpecificationID specId = spec.getID();
+                    if (specId != null) {
+                        names.add(specId.getIdentifier());
+                    }
+                }
+            }
+            return names;
 
         } catch (IOException e) {
             throw new A2AException(
@@ -559,30 +570,6 @@ public class YawlEngineAdapter {
             return trimmed;
         }
         return "<data>" + trimmed + "</data>";
-    }
-
-    private List<String> extractSpecificationNames(String specsXML) {
-        List<String> names = new ArrayList<>();
-
-        if (specsXML == null || specsXML.isEmpty()) {
-            return names;
-        }
-
-        int pos = 0;
-        while (true) {
-            int specStart = specsXML.indexOf("<specIdentifier>", pos);
-            if (specStart == -1) break;
-
-            int specEnd = specsXML.indexOf("</specIdentifier>", specStart);
-            if (specEnd == -1) break;
-
-            String specContent = specsXML.substring(specStart + 16, specEnd);
-            names.add(specContent.trim());
-
-            pos = specEnd;
-        }
-
-        return names;
     }
 
     /**

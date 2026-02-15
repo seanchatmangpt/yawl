@@ -1,28 +1,28 @@
 package org.yawlfoundation.yawl.integration.mcp.spec;
 
-import io.modelcontextprotocol.spec.CompleteCompletion;
-import io.modelcontextprotocol.spec.CompleteResult;
-import io.modelcontextprotocol.spec.PromptReference;
-import io.modelcontextprotocol.spec.ResourceReference;
-import io.modelcontextprotocol.spec.SyncCompletionSpecification;
+import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpSchema;
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * YAWL Completion Specifications for MCP.
+ * YAWL Completion Specifications for MCP SDK 0.17.2.
  *
- * Provides autocompletion support for prompt arguments and resource URIs.
- * This helps AI models discover available specification names, case IDs, etc.
+ * Static factory class that creates MCP completion specifications for autocompletion
+ * of prompt arguments and resource URIs. Each completion handler queries the real
+ * YAWL engine to provide dynamic suggestions based on current engine state.
  *
  * Completions:
- * - Specification name completion for workflow start prompts
- * - Case ID completion for resource URIs
- * - Work item ID completion for task execution
+ * - workflow_analysis prompt: Suggests specification identifiers from loaded specs
+ * - task_completion_guide prompt: Suggests work item IDs from live work items
+ * - yawl://cases/{caseId} resource: Suggests case IDs from running cases
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -31,174 +31,249 @@ public class YawlCompletionSpecifications {
 
     private static final Logger LOGGER = Logger.getLogger(YawlCompletionSpecifications.class.getName());
 
-    private final InterfaceB_EnvironmentBasedClient client;
-    private final String sessionHandle;
+    private static final int MAX_COMPLETION_RESULTS = 50;
 
-    /**
-     * Creates a new completion specifications provider.
-     *
-     * @param client the YAWL InterfaceB client
-     * @param sessionHandle the YAWL session handle
-     */
-    public YawlCompletionSpecifications(
-            InterfaceB_EnvironmentBasedClient client,
-            String sessionHandle) {
-        this.client = client;
-        this.sessionHandle = sessionHandle;
+    private YawlCompletionSpecifications() {
+        // Static factory class - prevent instantiation
     }
 
     /**
-     * Gets all completion specifications.
+     * Creates all completion specifications backed by real YAWL engine calls.
      *
-     * @return list of all completion specifications
+     * @param client the YAWL InterfaceB client connected to the engine
+     * @param sessionHandle the authenticated YAWL session handle
+     * @return list of sync completion specifications for MCP registration
      */
-    public List<SyncCompletionSpecification> getAllCompletions() {
-        List<SyncCompletionSpecification> completions = new ArrayList<>();
+    public static List<McpServerFeatures.SyncCompletionSpecification> createAll(
+            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+        if (client == null) {
+            throw new IllegalArgumentException(
+                "InterfaceB_EnvironmentBasedClient is required to create YAWL MCP completions");
+        }
+        if (sessionHandle == null || sessionHandle.isEmpty()) {
+            throw new IllegalArgumentException(
+                "A valid YAWL session handle is required to create YAWL MCP completions");
+        }
 
-        completions.add(createSpecNameCompletion());
-        completions.add(createCaseIdCompletion());
-        completions.add(createWorkItemIdCompletion());
-
+        List<McpServerFeatures.SyncCompletionSpecification> completions = new ArrayList<>();
+        completions.add(createWorkflowAnalysisCompletion(client, sessionHandle));
+        completions.add(createTaskCompletionGuideCompletion(client, sessionHandle));
+        completions.add(createCaseResourceCompletion(client, sessionHandle));
         return completions;
     }
 
+    // =========================================================================
+    // Completion: workflow_analysis prompt - spec identifiers
+    // =========================================================================
+
     /**
-     * Creates specification name completion for prompts.
+     * Creates a completion for the workflow_analysis prompt.
+     *
+     * When a user is filling in the specIdentifier argument for the workflow_analysis
+     * prompt, this handler queries the YAWL engine for all loaded specification
+     * identifiers and returns those matching the user's partial input.
      */
-    private SyncCompletionSpecification createSpecNameCompletion() {
-        return new SyncCompletionSpecification(
-                new PromptReference("yawl_start_workflow"),
-                (exchange, request) -> {
-                    try {
-                        String prefix = extractPrefix(request.argument());
-                        var specs = client.getSpecificationList(sessionHandle);
+    private static McpServerFeatures.SyncCompletionSpecification createWorkflowAnalysisCompletion(
+            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
 
-                        List<String> matches = new ArrayList<>();
-                        for (var spec : specs) {
-                            String name = spec.getID();
-                            if (prefix == null || prefix.isEmpty() ||
-                                    name.toLowerCase().startsWith(prefix.toLowerCase())) {
-                                matches.add(name);
+        return new McpServerFeatures.SyncCompletionSpecification(
+            new McpSchema.PromptReference("workflow_analysis"),
+            (exchange, request) -> {
+                try {
+                    String partial = request.argument().value();
+                    List<SpecificationData> specs = client.getSpecificationList(sessionHandle);
+
+                    List<String> matches = new ArrayList<>();
+                    if (specs != null) {
+                        for (SpecificationData spec : specs) {
+                            String identifier = spec.getID().getIdentifier();
+                            if (partial == null || identifier.toLowerCase().startsWith(
+                                    partial.toLowerCase())) {
+                                matches.add(identifier);
                             }
-                            if (matches.size() >= 10) break;
+                            if (matches.size() >= MAX_COMPLETION_RESULTS) {
+                                break;
+                            }
                         }
-
-                        return new CompleteResult(
-                                new CompleteCompletion(matches, matches.size(), false)
-                        );
-                    } catch (IOException e) {
-                        LOGGER.warning("Failed to get specification names: " + e.getMessage());
-                        return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
                     }
+
+                    boolean hasMore = specs != null && matches.size() < specs.size()
+                        && matches.size() >= MAX_COMPLETION_RESULTS;
+
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            matches, matches.size(), hasMore));
+                } catch (IOException e) {
+                    LOGGER.warning("Failed to fetch specifications for completion: " + e.getMessage());
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            List.of(), 0, false));
                 }
+            }
         );
     }
 
-    /**
-     * Creates case ID completion for resource URIs.
-     */
-    private SyncCompletionSpecification createCaseIdCompletion() {
-        return new SyncCompletionSpecification(
-                new ResourceReference("yawl://cases/"),
-                (exchange, request) -> {
-                    try {
-                        String prefix = extractPrefix(request.argument());
-                        String casesXml = client.getAllRunningCases(sessionHandle);
-
-                        // Parse case IDs from XML response
-                        List<String> caseIds = parseCaseIdsFromXml(casesXml);
-
-                        List<String> matches = new ArrayList<>();
-                        for (String caseId : caseIds) {
-                            if (prefix == null || prefix.isEmpty() ||
-                                    caseId.toLowerCase().startsWith(prefix.toLowerCase())) {
-                                matches.add(caseId);
-                            }
-                            if (matches.size() >= 10) break;
-                        }
-
-                        return new CompleteResult(
-                                new CompleteCompletion(matches, matches.size(), false)
-                        );
-                    } catch (IOException e) {
-                        LOGGER.warning("Failed to get case IDs: " + e.getMessage());
-                        return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
-                    }
-                }
-        );
-    }
+    // =========================================================================
+    // Completion: task_completion_guide prompt - work item IDs
+    // =========================================================================
 
     /**
-     * Creates work item ID completion for resource URIs.
+     * Creates a completion for the task_completion_guide prompt.
+     *
+     * When a user is filling in the workItemId argument for the task_completion_guide
+     * prompt, this handler queries the YAWL engine for all live work item IDs and
+     * returns those matching the user's partial input.
      */
-    private SyncCompletionSpecification createWorkItemIdCompletion() {
-        return new SyncCompletionSpecification(
-                new ResourceReference("yawl://workitems/"),
-                (exchange, request) -> {
-                    try {
-                        String prefix = extractPrefix(request.argument());
-                        var items = client.getCompleteListOfLiveWorkItems(sessionHandle);
+    private static McpServerFeatures.SyncCompletionSpecification createTaskCompletionGuideCompletion(
+            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
 
-                        List<String> matches = new ArrayList<>();
-                        for (var item : items) {
-                            String itemId = item.getID();
-                            if (prefix == null || prefix.isEmpty() ||
-                                    itemId.toLowerCase().startsWith(prefix.toLowerCase())) {
+        return new McpServerFeatures.SyncCompletionSpecification(
+            new McpSchema.PromptReference("task_completion_guide"),
+            (exchange, request) -> {
+                try {
+                    String partial = request.argument().value();
+                    List<WorkItemRecord> items = client.getCompleteListOfLiveWorkItems(sessionHandle);
+
+                    List<String> matches = new ArrayList<>();
+                    if (items != null) {
+                        for (WorkItemRecord wir : items) {
+                            String itemId = wir.getID();
+                            if (partial == null || itemId.toLowerCase().startsWith(
+                                    partial.toLowerCase())) {
                                 matches.add(itemId);
                             }
-                            if (matches.size() >= 10) break;
+                            if (matches.size() >= MAX_COMPLETION_RESULTS) {
+                                break;
+                            }
                         }
-
-                        return new CompleteResult(
-                                new CompleteCompletion(matches, matches.size(), false)
-                        );
-                    } catch (IOException e) {
-                        LOGGER.warning("Failed to get work item IDs: " + e.getMessage());
-                        return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
                     }
+
+                    boolean hasMore = items != null && matches.size() < items.size()
+                        && matches.size() >= MAX_COMPLETION_RESULTS;
+
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            matches, matches.size(), hasMore));
+                } catch (IOException e) {
+                    LOGGER.warning("Failed to fetch work items for completion: " + e.getMessage());
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            List.of(), 0, false));
                 }
+            }
         );
     }
 
-    /**
-     * Extracts the prefix string from a completion argument.
-     *
-     * @param arg the completion argument
-     * @return the prefix string or null
-     */
-    private String extractPrefix(Object arg) {
-        if (arg == null) {
-            return null;
-        }
-        if (arg instanceof Map) {
-            Object value = ((Map<?, ?>) arg).get("value");
-            return value != null ? value.toString() : null;
-        }
-        return arg.toString();
-    }
+    // =========================================================================
+    // Completion: yawl://cases/{caseId} resource - case IDs
+    // =========================================================================
 
     /**
-     * Parses case IDs from the XML response.
+     * Creates a completion for the yawl://cases/{caseId} resource template.
      *
-     * @param xml the XML response from getAllRunningCases
-     * @return list of case IDs
+     * When a user is navigating to a case resource, this handler queries the YAWL
+     * engine for all running case IDs and returns those matching the user's partial
+     * input. Case IDs are parsed from the engine's XML response.
      */
-    private List<String> parseCaseIdsFromXml(String xml) {
+    private static McpServerFeatures.SyncCompletionSpecification createCaseResourceCompletion(
+            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+
+        return new McpServerFeatures.SyncCompletionSpecification(
+            new McpSchema.ResourceReference("yawl://cases/{caseId}"),
+            (exchange, request) -> {
+                try {
+                    String partial = request.argument().value();
+                    String casesXml = client.getAllRunningCases(sessionHandle);
+
+                    List<String> caseIds = parseCaseIdsFromXml(casesXml);
+
+                    List<String> matches = new ArrayList<>();
+                    for (String caseId : caseIds) {
+                        if (partial == null || caseId.startsWith(partial)) {
+                            matches.add(caseId);
+                        }
+                        if (matches.size() >= MAX_COMPLETION_RESULTS) {
+                            break;
+                        }
+                    }
+
+                    boolean hasMore = matches.size() < caseIds.size()
+                        && matches.size() >= MAX_COMPLETION_RESULTS;
+
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            matches, matches.size(), hasMore));
+                } catch (IOException e) {
+                    LOGGER.warning("Failed to fetch running cases for completion: " + e.getMessage());
+                    return new McpSchema.CompleteResult(
+                        new McpSchema.CompleteResult.CompleteCompletion(
+                            List.of(), 0, false));
+                }
+            }
+        );
+    }
+
+    // =========================================================================
+    // XML Parsing Helper
+    // =========================================================================
+
+    /**
+     * Parses case IDs from the YAWL engine's XML response for running cases.
+     *
+     * The engine returns case IDs wrapped in {@code <caseID>} elements within the
+     * running cases XML. This method extracts each ID using simple XML tag parsing
+     * to avoid requiring a full XML parser dependency.
+     *
+     * @param xml the XML response from client.getAllRunningCases()
+     * @return list of case ID strings parsed from the XML
+     */
+    private static List<String> parseCaseIdsFromXml(String xml) {
         List<String> caseIds = new ArrayList<>();
-        if (xml == null || xml.isEmpty()) {
+        if (xml == null) {
             return caseIds;
         }
 
-        // Simple XML parsing for case IDs
-        int start = 0;
-        while ((start = xml.indexOf("<id>", start)) != -1) {
-            int end = xml.indexOf("</id>", start);
-            if (end != -1) {
-                String id = xml.substring(start + 4, end);
-                caseIds.add(id);
-                start = end + 5;
-            } else {
+        // Parse <caseID>...</caseID> elements from the engine response
+        String openTag = "<caseID>";
+        String closeTag = "</caseID>";
+        int searchStart = 0;
+        while (true) {
+            int tagStart = xml.indexOf(openTag, searchStart);
+            if (tagStart == -1) {
                 break;
+            }
+            int valueStart = tagStart + openTag.length();
+            int tagEnd = xml.indexOf(closeTag, valueStart);
+            if (tagEnd == -1) {
+                break;
+            }
+            String caseId = xml.substring(valueStart, tagEnd).trim();
+            if (!caseId.isEmpty()) {
+                caseIds.add(caseId);
+            }
+            searchStart = tagEnd + closeTag.length();
+        }
+
+        // Also try <id>...</id> elements as a fallback format
+        if (caseIds.isEmpty()) {
+            String altOpen = "<id>";
+            String altClose = "</id>";
+            searchStart = 0;
+            while (true) {
+                int tagStart = xml.indexOf(altOpen, searchStart);
+                if (tagStart == -1) {
+                    break;
+                }
+                int valueStart = tagStart + altOpen.length();
+                int tagEnd = xml.indexOf(altClose, valueStart);
+                if (tagEnd == -1) {
+                    break;
+                }
+                String caseId = xml.substring(valueStart, tagEnd).trim();
+                if (!caseId.isEmpty()) {
+                    caseIds.add(caseId);
+                }
+                searchStart = tagEnd + altClose.length();
             }
         }
 

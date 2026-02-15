@@ -1,9 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.modelcontextprotocol.server.McpSyncServerExchange;
-import io.modelcontextprotocol.spec.LoggingLevel;
-import io.modelcontextprotocol.spec.LoggingMessageNotification;
+import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.spec.McpSchema;
 
 import java.util.Map;
 import java.util.logging.Logger;
@@ -13,13 +12,10 @@ import java.util.logging.Logger;
  *
  * Provides structured logging with MCP notification support.
  * Log messages can be sent to connected MCP clients for debugging
- * and monitoring purposes.
+ * and monitoring purposes via the MCP logging/message notification.
  *
- * Features:
- * - Structured logging with levels
- * - MCP client notifications
- * - Tool execution logging
- * - Error logging with context
+ * Uses McpSyncServer.loggingNotification() to push log messages
+ * to all connected clients in real time.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -29,7 +25,7 @@ public class McpLoggingHandler {
     private static final Logger LOGGER = Logger.getLogger(McpLoggingHandler.class.getName());
 
     private final ObjectMapper mapper;
-    private LoggingLevel currentLevel = LoggingLevel.INFO;
+    private McpSchema.LoggingLevel currentLevel = McpSchema.LoggingLevel.INFO;
 
     /**
      * Creates a new logging handler with default ObjectMapper.
@@ -53,7 +49,7 @@ public class McpLoggingHandler {
      *
      * @param level the new logging level
      */
-    public void setLevel(LoggingLevel level) {
+    public void setLevel(McpSchema.LoggingLevel level) {
         this.currentLevel = level;
         LOGGER.info("Logging level set to: " + level);
     }
@@ -63,22 +59,22 @@ public class McpLoggingHandler {
      *
      * @return the current logging level
      */
-    public LoggingLevel getLevel() {
+    public McpSchema.LoggingLevel getLevel() {
         return currentLevel;
     }
 
     /**
-     * Sends a log notification to the MCP client.
+     * Sends a log notification to all connected MCP clients via the server.
      *
-     * @param exchange the MCP server exchange
+     * @param server the MCP sync server instance
      * @param level the log level
-     * @param logger the logger name
+     * @param loggerName the logger name
      * @param message the log message
      */
     public void sendLogNotification(
-            McpSyncServerExchange exchange,
-            LoggingLevel level,
-            String logger,
+            McpSyncServer server,
+            McpSchema.LoggingLevel level,
+            String loggerName,
             String message) {
 
         if (!shouldLog(level)) {
@@ -86,16 +82,16 @@ public class McpLoggingHandler {
         }
 
         try {
-            LoggingMessageNotification notification = LoggingMessageNotification.builder()
+            McpSchema.LoggingMessageNotification notification =
+                McpSchema.LoggingMessageNotification.builder()
                     .level(level)
-                    .logger(logger)
+                    .logger(loggerName)
                     .data(message)
                     .build();
 
-            exchange.loggingNotification(notification);
+            server.loggingNotification(notification);
 
-            // Also log locally
-            logLocally(level, logger, message);
+            logLocally(level, loggerName, message);
         } catch (Exception e) {
             LOGGER.warning("Failed to send log notification: " + e.getMessage());
         }
@@ -104,20 +100,20 @@ public class McpLoggingHandler {
     /**
      * Logs tool execution with parameters.
      *
-     * @param exchange the MCP server exchange
+     * @param server the MCP sync server instance
      * @param toolName the tool name
      * @param args the tool arguments
      */
     public void logToolExecution(
-            McpSyncServerExchange exchange,
+            McpSyncServer server,
             String toolName,
             Map<String, Object> args) {
 
         try {
             String argsJson = mapper.writeValueAsString(args);
             sendLogNotification(
-                    exchange,
-                    LoggingLevel.DEBUG,
+                    server,
+                    McpSchema.LoggingLevel.DEBUG,
                     "yawl-mcp.tools",
                     "Executing tool: " + toolName + " with args: " + argsJson
             );
@@ -129,82 +125,69 @@ public class McpLoggingHandler {
     /**
      * Logs tool completion with result.
      *
-     * @param exchange the MCP server exchange
+     * @param server the MCP sync server instance
      * @param toolName the tool name
      * @param success whether the tool succeeded
      * @param durationMs the execution duration in milliseconds
      */
     public void logToolCompletion(
-            McpSyncServerExchange exchange,
+            McpSyncServer server,
             String toolName,
             boolean success,
             long durationMs) {
 
         sendLogNotification(
-                exchange,
-                success ? LoggingLevel.DEBUG : LoggingLevel.WARNING,
+                server,
+                success ? McpSchema.LoggingLevel.DEBUG : McpSchema.LoggingLevel.WARNING,
                 "yawl-mcp.tools",
-                "Tool completed: " + toolName + " (success=" + success + ", duration=" + durationMs + "ms)"
+                "Tool completed: " + toolName
+                    + " (success=" + success + ", duration=" + durationMs + "ms)"
         );
     }
 
     /**
      * Logs an error with context.
      *
-     * @param exchange the MCP server exchange
+     * @param server the MCP sync server instance
      * @param context the error context
      * @param error the error
      */
     public void logError(
-            McpSyncServerExchange exchange,
+            McpSyncServer server,
             String context,
             Throwable error) {
 
         String message = context + ": " + error.getMessage();
-        sendLogNotification(exchange, LoggingLevel.ERROR, "yawl-mcp.errors", message);
-
-        // Log full stack trace locally
+        sendLogNotification(server, McpSchema.LoggingLevel.ERROR, "yawl-mcp.errors", message);
         LOGGER.severe(context + ": " + error.getMessage());
     }
 
     /**
      * Logs an info message.
-     *
-     * @param exchange the MCP server exchange
-     * @param message the message
      */
-    public void info(McpSyncServerExchange exchange, String message) {
-        sendLogNotification(exchange, LoggingLevel.INFO, "yawl-mcp", message);
+    public void info(McpSyncServer server, String message) {
+        sendLogNotification(server, McpSchema.LoggingLevel.INFO, "yawl-mcp", message);
     }
 
     /**
      * Logs a debug message.
-     *
-     * @param exchange the MCP server exchange
-     * @param message the message
      */
-    public void debug(McpSyncServerExchange exchange, String message) {
-        sendLogNotification(exchange, LoggingLevel.DEBUG, "yawl-mcp", message);
+    public void debug(McpSyncServer server, String message) {
+        sendLogNotification(server, McpSchema.LoggingLevel.DEBUG, "yawl-mcp", message);
     }
 
     /**
      * Logs a warning message.
-     *
-     * @param exchange the MCP server exchange
-     * @param message the message
      */
-    public void warning(McpSyncServerExchange exchange, String message) {
-        sendLogNotification(exchange, LoggingLevel.WARNING, "yawl-mcp", message);
+    public void warning(McpSyncServer server, String message) {
+        sendLogNotification(server, McpSchema.LoggingLevel.WARNING, "yawl-mcp", message);
     }
 
     /**
      * Logs an error message.
-     *
-     * @param exchange the MCP server exchange
-     * @param message the message
      */
-    public void error(McpSyncServerExchange exchange, String message) {
-        sendLogNotification(exchange, LoggingLevel.ERROR, "yawl-mcp", message);
+    public void error(McpSyncServer server, String message) {
+        sendLogNotification(server, McpSchema.LoggingLevel.ERROR, "yawl-mcp", message);
     }
 
     /**
@@ -213,27 +196,21 @@ public class McpLoggingHandler {
      * @param level the level to check
      * @return true if the message should be logged
      */
-    private boolean shouldLog(LoggingLevel level) {
-        return level.ordinal() >= currentLevel.ordinal();
+    private boolean shouldLog(McpSchema.LoggingLevel level) {
+        return level.level() >= currentLevel.level();
     }
 
     /**
      * Logs a message locally using java.util.logging.
-     *
-     * @param level the log level
-     * @param logger the logger name
-     * @param message the message
      */
-    private void logLocally(LoggingLevel level, String logger, String message) {
-        String fullMessage = "[" + logger + "] " + message;
+    private void logLocally(McpSchema.LoggingLevel level, String loggerName, String message) {
+        String fullMessage = "[" + loggerName + "] " + message;
 
         switch (level) {
             case DEBUG:
                 LOGGER.fine(fullMessage);
                 break;
             case INFO:
-                LOGGER.info(fullMessage);
-                break;
             case NOTICE:
                 LOGGER.info(fullMessage);
                 break;
@@ -241,19 +218,11 @@ public class McpLoggingHandler {
                 LOGGER.warning(fullMessage);
                 break;
             case ERROR:
-                LOGGER.severe(fullMessage);
-                break;
             case CRITICAL:
-                LOGGER.severe(fullMessage);
-                break;
             case ALERT:
-                LOGGER.severe(fullMessage);
-                break;
             case EMERGENCY:
                 LOGGER.severe(fullMessage);
                 break;
-            default:
-                LOGGER.info(fullMessage);
         }
     }
 }

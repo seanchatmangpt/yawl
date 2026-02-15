@@ -1,512 +1,335 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import okhttp3.*;
-import org.yawlfoundation.yawl.integration.zai.ZaiService;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.client.transport.ServerParameters;
+import io.modelcontextprotocol.client.transport.StdioClientTransport;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.spec.McpSchema;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Model Context Protocol (MCP) Client Integration for YAWL
+ * Model Context Protocol (MCP) Client for YAWL using the official MCP Java SDK.
  *
- * Production-ready MCP client that connects to MCP servers using HTTP transport.
- * Supports both direct tool calls and AI-enhanced operations via Z.AI.
+ * Connects to MCP servers via STDIO or SSE transport to discover and invoke
+ * tools, read resources, and use prompts provided by external MCP servers.
  *
- * Features:
- * - HTTP-based JSON-RPC 2.0 communication
- * - Resource and tool discovery
- * - AI-enhanced tool calls with Z.AI
- * - Proper session management
- *
- * Usage:
- * <pre>
- * YawlMcpClient client = new YawlMcpClient("http://localhost:3000");
- * client.connect();
- *
- * // List tools
- * String[] tools = client.listTools();
- *
- * // Call a tool
- * String result = client.callTool("yawl_list_specs", "{}");
- *
- * // Get a resource
- * String resource = client.getResource("yawl://specifications");
- *
- * client.disconnect();
- * </pre>
+ * Supports two transport modes:
+ *   - STDIO: Launches an MCP server subprocess and communicates via stdin/stdout
+ *   - SSE: Connects to a remote MCP server via HTTP Server-Sent Events
  *
  * @author YAWL Foundation
  * @version 5.2
  */
-public class YawlMcpClient {
+public class YawlMcpClient implements AutoCloseable {
 
-    private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private final String serverUrl;
-    private final OkHttpClient httpClient;
-    private final ZaiService zaiService;
-    private final ZaiFunctionService functionService;
-
-    private boolean connected = false;
-    private int requestId = 0;
-    private String protocolVersion = "2024-11-05";
-    private JsonNode serverCapabilities;
+    private final JacksonMcpJsonMapper jsonMapper;
+    private final ObjectMapper objectMapper;
+    private McpSyncClient mcpClient;
+    private boolean connected;
 
     /**
-     * Creates a new MCP client with the specified server URL.
-     *
-     * @param serverUrl the MCP server URL (e.g., "http://localhost:3000")
+     * Construct a YAWL MCP Client.
      */
-    public YawlMcpClient(String serverUrl) {
-        this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
-        this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .build();
-        this.zaiService = new ZaiService();
-        this.functionService = new ZaiFunctionService();
+    public YawlMcpClient() {
+        this.objectMapper = new ObjectMapper();
+        this.jsonMapper = new JacksonMcpJsonMapper(objectMapper);
+        this.connected = false;
     }
 
     /**
-     * Creates a new MCP client with Z.AI API key for enhanced operations.
+     * Connect to an MCP server via STDIO transport by launching a subprocess.
      *
-     * @param serverUrl the MCP server URL
-     * @param zaiApiKey the Z.AI API key
+     * @param command the command to launch the MCP server process (e.g. "java")
+     * @param args arguments to pass to the command
      */
-    public YawlMcpClient(String serverUrl, String zaiApiKey) {
-        this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
-        this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .build();
-        this.zaiService = new ZaiService(zaiApiKey);
-        this.functionService = new ZaiFunctionService();
-    }
-
-    /**
-     * Connects to the MCP server and performs initialization handshake.
-     *
-     * @throws IOException if connection fails
-     */
-    public void connect() throws IOException {
+    public void connectStdio(String command, String... args) {
         if (connected) {
-            System.out.println("Already connected to MCP server");
-            return;
+            throw new IllegalStateException("Already connected to an MCP server");
         }
 
-        System.out.println("Connecting to MCP server at: " + serverUrl);
+        ServerParameters serverParams = ServerParameters.builder(command)
+            .args(args)
+            .build();
 
-        // Perform MCP initialization handshake
-        ObjectNode initParams = MAPPER.createObjectNode();
-        initParams.put("protocolVersion", protocolVersion);
+        StdioClientTransport transport = new StdioClientTransport(serverParams, jsonMapper);
 
-        ObjectNode clientInfo = MAPPER.createObjectNode();
-        clientInfo.put("name", "yawl-mcp-client");
-        clientInfo.put("version", "5.2");
-        initParams.set("clientInfo", clientInfo);
+        mcpClient = McpClient.sync(transport)
+            .clientInfo(new McpSchema.Implementation("yawl-mcp-client", "5.2.0"))
+            .requestTimeout(Duration.ofSeconds(30))
+            .build();
 
-        ObjectNode capabilities = MAPPER.createObjectNode();
-        initParams.set("capabilities", capabilities);
-
-        JsonNode response = sendRequest("initialize", initParams);
-
-        if (response.has("result")) {
-            JsonNode result = response.get("result");
-            if (result.has("capabilities")) {
-                this.serverCapabilities = result.get("capabilities");
-            }
-            if (result.has("protocolVersion")) {
-                this.protocolVersion = result.get("protocolVersion").asText();
-            }
-        }
-
-        zaiService.setSystemPrompt(
-                "You are an intelligent assistant integrated with YAWL MCP Client. " +
-                        "Help users interact with MCP tools and resources effectively."
-        );
-
+        mcpClient.initialize();
         connected = true;
-        System.out.println("Successfully connected to MCP server");
-        System.out.println("Protocol version: " + protocolVersion);
+        System.err.println("Connected to MCP server via STDIO transport");
     }
 
     /**
-     * Disconnects from the MCP server.
-     */
-    public void disconnect() {
-        if (!connected) {
-            System.out.println("Not connected to MCP server");
-            return;
-        }
-
-        System.out.println("Disconnecting from MCP server...");
-        connected = false;
-        serverCapabilities = null;
-        System.out.println("Disconnected");
-    }
-
-    /**
-     * Sends a JSON-RPC request to the MCP server.
+     * Connect to an MCP server via SSE (Server-Sent Events) HTTP transport.
      *
-     * @param method the RPC method name
-     * @param params the request parameters
-     * @return the response JSON node
-     * @throws IOException if the request fails
+     * @param serverUrl the URL of the MCP server SSE endpoint
      */
-    private JsonNode sendRequest(String method, JsonNode params) throws IOException {
-        ObjectNode request = MAPPER.createObjectNode();
-        request.put("jsonrpc", "2.0");
-        request.put("method", method);
-        request.put("id", ++requestId);
-        if (params != null) {
-            request.set("params", params);
+    public void connectSse(String serverUrl) {
+        if (connected) {
+            throw new IllegalStateException("Already connected to an MCP server");
         }
 
-        String requestBody = MAPPER.writeValueAsString(request);
-
-        Request httpRequest = new Request.Builder()
-                .url(serverUrl + "/mcp")
-                .post(RequestBody.create(requestBody, JSON_MEDIA_TYPE))
+        HttpClientSseClientTransport transport =
+            HttpClientSseClientTransport.builder(serverUrl)
+                .jsonMapper(jsonMapper)
                 .build();
 
-        try (Response response = httpClient.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("HTTP request failed: " + response.code() + " " + response.message());
-            }
+        mcpClient = McpClient.sync(transport)
+            .clientInfo(new McpSchema.Implementation("yawl-mcp-client", "5.2.0"))
+            .requestTimeout(Duration.ofSeconds(30))
+            .build();
 
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
+        mcpClient.initialize();
+        connected = true;
+        System.err.println("Connected to MCP server via SSE at " + serverUrl);
+    }
 
-            String responseText = body.string();
-            JsonNode responseJson = MAPPER.readTree(responseText);
+    /**
+     * List all tools available on the connected MCP server.
+     *
+     * @return list of tool definitions
+     */
+    public List<McpSchema.Tool> listTools() {
+        ensureConnected();
+        McpSchema.ListToolsResult result = mcpClient.listTools();
+        return result.tools();
+    }
 
-            // Check for JSON-RPC error
-            if (responseJson.has("error")) {
-                JsonNode error = responseJson.get("error");
-                String errorMessage = error.has("message") ? error.get("message").asText() : "Unknown error";
-                int errorCode = error.has("code") ? error.get("code").asInt() : -1;
-                throw new IOException("MCP error " + errorCode + ": " + errorMessage);
-            }
+    /**
+     * Call a tool on the connected MCP server.
+     *
+     * @param toolName name of the tool to invoke
+     * @param arguments arguments to pass to the tool as key-value pairs
+     * @return the tool call result
+     */
+    public McpSchema.CallToolResult callTool(String toolName,
+            Map<String, Object> arguments) {
+        ensureConnected();
+        McpSchema.CallToolRequest request = new McpSchema.CallToolRequest(
+            toolName, arguments);
+        return mcpClient.callTool(request);
+    }
 
-            return responseJson;
+    /**
+     * Call a tool using a JSON string of arguments.
+     *
+     * @param toolName name of the tool
+     * @param argumentsJson JSON string of arguments
+     * @return tool result text content
+     */
+    @SuppressWarnings("unchecked")
+    public String callToolJson(String toolName, String argumentsJson) {
+        try {
+            Map<String, Object> args = objectMapper.readValue(argumentsJson, Map.class);
+            McpSchema.CallToolResult result = callTool(toolName, args);
+            return extractTextContent(result);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Failed to call tool '" + toolName + "': " + e.getMessage(), e);
         }
     }
 
     /**
-     * Calls a tool with AI-enhanced parameter handling.
+     * List all resources available on the connected MCP server.
      *
-     * @param naturalLanguageRequest the natural language request
-     * @param context additional context for the request
-     * @return the AI-processed result
+     * @return list of resource definitions
      */
-    public String callToolWithAI(String naturalLanguageRequest, String context) {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("AI-enhanced tool call: " + naturalLanguageRequest);
-
-        String prompt = naturalLanguageRequest;
-        if (context != null && !context.isEmpty()) {
-            prompt += "\n\nContext: " + context;
-        }
-
-        return functionService.processWithFunctions(prompt);
+    public List<McpSchema.Resource> listResources() {
+        ensureConnected();
+        McpSchema.ListResourcesResult result = mcpClient.listResources();
+        return result.resources();
     }
 
     /**
-     * Calls a tool directly on the MCP server.
+     * Read a resource from the connected MCP server.
      *
-     * @param toolName the name of the tool to call
-     * @param parametersJson the parameters as JSON string
-     * @return the tool result as JSON string
-     * @throws IOException if the tool call fails
+     * @param resource the resource to read
+     * @return the resource contents
      */
-    public String callTool(String toolName, String parametersJson) throws IOException {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("Calling MCP tool: " + toolName);
-        System.out.println("Parameters: " + parametersJson);
-
-        ObjectNode params = MAPPER.createObjectNode();
-        params.put("name", toolName);
-
-        JsonNode argsNode = MAPPER.readTree(parametersJson);
-        params.set("arguments", argsNode);
-
-        JsonNode response = sendRequest("tools/call", params);
-
-        if (response.has("result")) {
-            return MAPPER.writeValueAsString(response.get("result"));
-        }
-
-        return "{}";
+    public McpSchema.ReadResourceResult readResource(McpSchema.Resource resource) {
+        ensureConnected();
+        return mcpClient.readResource(resource);
     }
 
     /**
-     * Gets a resource from the MCP server.
+     * Read a resource by URI.
      *
-     * @param resourceUri the URI of the resource (e.g., "yawl://specifications")
-     * @return the resource content as JSON string
-     * @throws IOException if the resource fetch fails
+     * @param uri the resource URI to read
+     * @return the text content of the resource
      */
-    public String getResource(String resourceUri) throws IOException {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("Fetching MCP resource: " + resourceUri);
-
-        ObjectNode params = MAPPER.createObjectNode();
-        params.put("uri", resourceUri);
-
-        JsonNode response = sendRequest("resources/read", params);
-
-        if (response.has("result")) {
-            JsonNode result = response.get("result");
-            if (result.has("contents")) {
-                JsonNode contents = result.get("contents");
-                if (contents.isArray() && contents.size() > 0) {
-                    JsonNode firstContent = contents.get(0);
-                    if (firstContent.has("text")) {
-                        return firstContent.get("text").asText();
-                    }
-                    return MAPPER.writeValueAsString(firstContent);
-                }
-            }
-            return MAPPER.writeValueAsString(result);
-        }
-
-        return "{}";
-    }
-
-    /**
-     * Lists available tools on the MCP server.
-     *
-     * @return array of tool names
-     * @throws IOException if the request fails
-     */
-    public String[] listTools() throws IOException {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("Listing available MCP tools...");
-
-        ObjectNode params = MAPPER.createObjectNode();
-        JsonNode response = sendRequest("tools/list", params);
-
-        List<String> toolNames = new ArrayList<>();
-
-        if (response.has("result")) {
-            JsonNode result = response.get("result");
-            if (result.has("tools")) {
-                JsonNode tools = result.get("tools");
-                if (tools.isArray()) {
-                    for (JsonNode tool : tools) {
-                        if (tool.has("name")) {
-                            toolNames.add(tool.get("name").asText());
-                        }
-                    }
-                }
+    public String readResourceByUri(String uri) {
+        ensureConnected();
+        McpSchema.ReadResourceRequest request = new McpSchema.ReadResourceRequest(uri);
+        McpSchema.ReadResourceResult result = mcpClient.readResource(request);
+        List<McpSchema.ResourceContents> contents = result.contents();
+        if (contents != null && !contents.isEmpty()) {
+            McpSchema.ResourceContents first = contents.get(0);
+            if (first instanceof McpSchema.TextResourceContents) {
+                return ((McpSchema.TextResourceContents) first).text();
             }
         }
-
-        System.out.println("Found " + toolNames.size() + " tools");
-        return toolNames.toArray(new String[0]);
+        throw new RuntimeException("Resource at " + uri + " did not return text content");
     }
 
     /**
-     * Lists available resources on the MCP server.
+     * List all prompts available on the connected MCP server.
      *
-     * @return array of resource URIs
-     * @throws IOException if the request fails
+     * @return list of prompt definitions
      */
-    public String[] listResources() throws IOException {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("Listing available MCP resources...");
-
-        ObjectNode params = MAPPER.createObjectNode();
-        JsonNode response = sendRequest("resources/list", params);
-
-        List<String> resourceUris = new ArrayList<>();
-
-        if (response.has("result")) {
-            JsonNode result = response.get("result");
-            if (result.has("resources")) {
-                JsonNode resources = result.get("resources");
-                if (resources.isArray()) {
-                    for (JsonNode resource : resources) {
-                        if (resource.has("uri")) {
-                            resourceUris.add(resource.get("uri").asText());
-                        }
-                    }
-                }
-            }
-        }
-
-        System.out.println("Found " + resourceUris.size() + " resources");
-        return resourceUris.toArray(new String[0]);
+    public List<McpSchema.Prompt> listPrompts() {
+        ensureConnected();
+        McpSchema.ListPromptsResult result = mcpClient.listPrompts();
+        return result.prompts();
     }
 
     /**
-     * Gets AI analysis of a resource.
+     * Get a prompt from the connected MCP server.
      *
-     * @param resourceUri the resource URI
-     * @param analysisRequest the analysis request
-     * @return the AI analysis result
-     * @throws IOException if resource fetch or AI call fails
+     * @param promptName name of the prompt
+     * @param arguments arguments to pass to the prompt
+     * @return the prompt result with generated messages
      */
-    public String analyzeResourceWithAI(String resourceUri, String analysisRequest) throws IOException {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to MCP server");
-        }
-
-        System.out.println("Analyzing resource with AI: " + resourceUri);
-
-        String resourceContent = getResource(resourceUri);
-
-        String prompt = String.format(
-                "Analyze the following resource content:\n\n" +
-                        "Resource URI: %s\n\n" +
-                        "Content:\n%s\n\n" +
-                        "Analysis Request: %s",
-                resourceUri, resourceContent, analysisRequest
-        );
-
-        return zaiService.chat(prompt);
+    public McpSchema.GetPromptResult getPrompt(String promptName,
+            Map<String, Object> arguments) {
+        ensureConnected();
+        McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
+            promptName, arguments);
+        return mcpClient.getPrompt(request);
     }
 
     /**
-     * Gets intelligent tool recommendation based on task description.
+     * Get server capabilities after initialization.
      *
-     * @param taskDescription the task description
-     * @return the tool recommendation
-     * @throws IOException if tool listing fails
+     * @return the server's capabilities
      */
-    public String getToolRecommendation(String taskDescription) throws IOException {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("Given the following task, recommend the best MCP tool to use:\n\n");
-        prompt.append("Task: ").append(taskDescription).append("\n\n");
-        prompt.append("Available tools:\n");
-        for (String tool : listTools()) {
-            prompt.append("- ").append(tool).append("\n");
-        }
-        prompt.append("\nReturn the tool name and suggested parameters in JSON format.");
-
-        return zaiService.chat(prompt.toString());
+    public McpSchema.ServerCapabilities getServerCapabilities() {
+        ensureConnected();
+        return mcpClient.getServerCapabilities();
     }
 
     /**
-     * Checks if the client is connected to an MCP server.
+     * Get server info after initialization.
      *
-     * @return true if connected
+     * @return the server's implementation info
+     */
+    public McpSchema.Implementation getServerInfo() {
+        ensureConnected();
+        return mcpClient.getServerInfo();
+    }
+
+    /**
+     * Ping the server.
+     */
+    public void ping() {
+        ensureConnected();
+        mcpClient.ping();
+    }
+
+    /**
+     * Check if connected to an MCP server.
      */
     public boolean isConnected() {
         return connected;
     }
 
     /**
-     * Checks if AI enhancement is available.
-     *
-     * @return true if Z.AI is initialized
+     * Disconnect from the MCP server and release resources.
      */
-    public boolean isAIEnabled() {
-        return zaiService.isInitialized();
+    @Override
+    public void close() {
+        if (mcpClient != null) {
+            mcpClient.closeGracefully();
+            mcpClient = null;
+        }
+        connected = false;
+    }
+
+    private void ensureConnected() {
+        if (!connected || mcpClient == null) {
+            throw new IllegalStateException(
+                "Not connected to an MCP server. Call connectStdio() or connectSse() first.");
+        }
+    }
+
+    private String extractTextContent(McpSchema.CallToolResult result) {
+        if (result.content() == null || result.content().isEmpty()) {
+            throw new RuntimeException(
+                "Tool call returned no content. The server response was empty.");
+        }
+        String text = result.content().stream()
+            .filter(c -> c instanceof McpSchema.TextContent)
+            .map(c -> ((McpSchema.TextContent) c).text())
+            .collect(Collectors.joining("\n"));
+        if (text.isEmpty()) {
+            throw new RuntimeException(
+                "Tool call returned no text content. Content types: "
+                + result.content().stream()
+                    .map(c -> c.getClass().getSimpleName())
+                    .collect(Collectors.joining(", ")));
+        }
+        return text;
     }
 
     /**
-     * Gets the server capabilities from the initialization response.
+     * Entry point for testing the MCP client.
      *
-     * @return the server capabilities JSON node, or null if not connected
-     */
-    public JsonNode getServerCapabilities() {
-        return serverCapabilities;
-    }
-
-    /**
-     * Gets the negotiated protocol version.
-     *
-     * @return the protocol version string
-     */
-    public String getProtocolVersion() {
-        return protocolVersion;
-    }
-
-    /**
-     * Main method for testing the MCP client.
-     *
-     * @param args command line arguments (first arg is server URL)
+     * Usage:
+     *   java YawlMcpClient stdio &lt;command&gt; [args...]
+     *   java YawlMcpClient sse &lt;server-url&gt;
      */
     public static void main(String[] args) {
-        String serverUrl = args.length > 0 ? args[0] : "http://localhost:3000";
+        if (args.length < 2) {
+            System.err.println("Usage:");
+            System.err.println("  java YawlMcpClient stdio <command> [args...]");
+            System.err.println("  java YawlMcpClient sse <server-url>");
+            System.exit(1);
+        }
 
-        YawlMcpClient client = new YawlMcpClient(serverUrl);
+        String mode = args[0];
+        YawlMcpClient client = new YawlMcpClient();
 
         try {
-            client.connect();
-
-            System.out.println("\n=== Available Tools ===");
-            String[] tools = client.listTools();
-            for (String tool : tools) {
-                System.out.println("  - " + tool);
-            }
-
-            System.out.println("\n=== Available Resources ===");
-            String[] resources = client.listResources();
-            for (String resource : resources) {
-                System.out.println("  - " + resource);
-            }
-
-            System.out.println("\n=== Testing Tool Call: yawl_list_specs ===");
-            String specsResult = client.callTool("yawl_list_specs", "{}");
-            System.out.println("Result: " + specsResult);
-
-            System.out.println("\n=== Testing Resource: yawl://specifications ===");
-            String specsResource = client.getResource("yawl://specifications");
-            System.out.println("Resource: " + specsResource);
-
-            if (client.isAIEnabled()) {
-                System.out.println("\n=== Testing AI-Enhanced Tool Call ===");
-                String aiResult = client.callToolWithAI(
-                        "List all workflow specifications",
-                        "{}"
-                );
-                System.out.println(aiResult);
-
-                System.out.println("\n=== Testing Tool Recommendation ===");
-                String recommendation = client.getToolRecommendation(
-                        "I need to start a new workflow"
-                );
-                System.out.println(recommendation);
+            if ("stdio".equals(mode)) {
+                String command = args[1];
+                String[] cmdArgs = Arrays.copyOfRange(args, 2, args.length);
+                client.connectStdio(command, cmdArgs);
+            } else if ("sse".equals(mode)) {
+                client.connectSse(args[1]);
             } else {
-                System.out.println("\nAI enhancement not available (set ZHIPU_API_KEY)");
+                System.err.println("Unknown mode: " + mode + ". Use 'stdio' or 'sse'.");
+                System.exit(1);
             }
 
-            client.disconnect();
+            McpSchema.Implementation serverInfo = client.getServerInfo();
+            System.out.println("Connected to: " + serverInfo.name()
+                + " v" + serverInfo.version());
 
-            System.out.println("\n=== All tests completed successfully ===");
+            System.out.println("\nAvailable tools:");
+            for (McpSchema.Tool tool : client.listTools()) {
+                System.out.println("  - " + tool.name() + ": " + tool.description());
+            }
 
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
+            System.out.println("\nAvailable resources:");
+            for (McpSchema.Resource resource : client.listResources()) {
+                System.out.println("  - " + resource.uri() + ": " + resource.description());
+            }
+
+            System.out.println("\nAvailable prompts:");
+            for (McpSchema.Prompt prompt : client.listPrompts()) {
+                System.out.println("  - " + prompt.name() + ": " + prompt.description());
+            }
+        } finally {
+            client.close();
         }
     }
 }

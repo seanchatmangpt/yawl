@@ -1,342 +1,259 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
-import io.modelcontextprotocol.spec.LoggingLevel;
-import io.modelcontextprotocol.spec.SyncToolSpecification;
-import io.modelcontextprotocol.spec.SyncResourceSpecification;
-import org.yawlfoundation.yawl.integration.mcp.config.McpServerConfiguration;
-import org.yawlfoundation.yawl.integration.mcp.server.YawlMcpSyncServer;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.server.McpServer;
+import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
+import io.modelcontextprotocol.spec.McpSchema;
+import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
+import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.logging.Logger;
 
 /**
- * Model Context Protocol (MCP) Server for YAWL.
+ * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK 0.17.2.
  *
- * A production-ready MCP server that exposes YAWL workflow capabilities
- * as AI-consumable tools and resources. This server enables AI models
- * to interact with YAWL workflows through the standard MCP protocol.
+ * Exposes all MCP capabilities backed by real YAWL engine operations over STDIO transport:
  *
- * Features:
- * - 15+ MCP tools for workflow management
- * - 6+ MCP resources for data access
- * - Prompt templates for guided AI interactions
- * - Autocompletion support
- * - Multiple transport modes (STDIO, SSE, HTTP)
+ * Tools (15): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ *   work items, get specification data/XML/schema, get running cases, upload/unload specifications.
  *
- * Usage:
- * <pre>
- * YawlMcpServer server = new YawlMcpServer();
- * server.start();
+ * Resources (3 static):
+ *   - yawl://specifications - All loaded specifications
+ *   - yawl://cases - All running cases
+ *   - yawl://workitems - All live work items
  *
- * // Or with custom configuration:
- * McpServerConfiguration config = McpServerConfiguration.fromEnvironment();
- * YawlMcpServer server = new YawlMcpServer(config);
- * server.start();
- * </pre>
+ * Resource Templates (3 parameterized):
+ *   - yawl://cases/{caseId} - Specific case state and work items
+ *   - yawl://cases/{caseId}/data - Specific case variable data
+ *   - yawl://workitems/{workItemId} - Specific work item details
  *
- * Environment Variables:
- * - YAWL_ENGINE_URL: YAWL engine URL (default: http://localhost:8080/yawl/ib)
- * - YAWL_USERNAME: YAWL username (default: admin)
- * - YAWL_PASSWORD: YAWL password (default: YAWL)
- * - MCP_TRANSPORT: Transport type (STDIO, SSE, STREAMABLE_HTTP, STATELESS_HTTP)
- * - MCP_PORT: Server port (default: 3000)
- * - MCP_ENDPOINT: MCP endpoint path (default: /mcp)
- * - MCP_LOG_LEVEL: Log level (default: INFO)
+ * Prompts (4):
+ *   - workflow_analysis - Analyze a workflow specification
+ *   - task_completion_guide - Guide for completing a work item
+ *   - case_troubleshooting - Diagnose issues with a workflow case
+ *   - workflow_design_review - Review specification for best practices
+ *
+ * Completions (3):
+ *   - workflow_analysis prompt: auto-complete spec identifiers
+ *   - task_completion_guide prompt: auto-complete work item IDs
+ *   - yawl://cases/{caseId} resource: auto-complete case IDs
+ *
+ * Logging: Structured MCP log notifications for tool execution, errors, and server events.
  *
  * @author YAWL Foundation
  * @version 5.2
  */
 public class YawlMcpServer {
 
-    private static final Logger LOGGER = Logger.getLogger(YawlMcpServer.class.getName());
+    private static final String SERVER_NAME = "yawl-mcp-server";
+    private static final String SERVER_VERSION = "5.2.0";
 
-    private final McpServerConfiguration config;
-    private YawlMcpSyncServer syncServer;
-    private boolean running = false;
-
-    /**
-     * Creates a new YAWL MCP server with default configuration.
-     *
-     * Configuration is loaded from environment variables.
-     */
-    public YawlMcpServer() {
-        this(McpServerConfiguration.fromEnvironment());
-    }
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final InterfaceA_EnvironmentBasedClient interfaceAClient;
+    private final String yawlUsername;
+    private final String yawlPassword;
+    private final McpLoggingHandler loggingHandler;
+    private McpSyncServer mcpServer;
+    private String sessionHandle;
 
     /**
-     * Creates a new YAWL MCP server with custom configuration.
+     * Construct a YAWL MCP Server with YAWL engine connection parameters.
      *
-     * @param config the server configuration
+     * @param yawlEngineUrl base URL of YAWL engine (e.g. http://localhost:8080/yawl)
+     * @param username YAWL admin username
+     * @param password YAWL admin password
      */
-    public YawlMcpServer(McpServerConfiguration config) {
-        this.config = config;
-        LOGGER.info("YAWL MCP Server initialized with transport: " + config.getTransportType());
-    }
-
-    /**
-     * Creates a new YAWL MCP server with the specified port.
-     *
-     * @param port the server port
-     */
-    public YawlMcpServer(int port) {
-        this.config = McpServerConfiguration.fromEnvironment()
-                .port(port);
-        LOGGER.info("YAWL MCP Server initialized on port: " + port);
-    }
-
-    /**
-     * Registers all YAWL workflow tools with the MCP server.
-     *
-     * Tools include:
-     * - yawl_launch_case: Start a new workflow
-     * - yawl_get_case_status: Get case status
-     * - yawl_cancel_case: Cancel a workflow
-     * - yawl_get_workitems: List live work items
-     * - yawl_checkout_workitem: Claim a work item
-     * - yawl_checkin_workitem: Complete a work item
-     * - And more...
-     *
-     * @throws IllegalStateException if server is not initialized
-     * @throws IOException if tool registration fails
-     */
-    public void registerWorkflowTools() throws IOException {
-        if (syncServer == null) {
-            throw new IllegalStateException(
-                    "Server not initialized. Call start() first.\n" +
-                    "Example:\n" +
-                    "  YawlMcpServer server = new YawlMcpServer();\n" +
-                    "  server.start();\n" +
-                    "  server.registerWorkflowTools();"
-            );
+    public YawlMcpServer(String yawlEngineUrl, String username, String password) {
+        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
+            throw new IllegalArgumentException(
+                "YAWL engine URL is required (e.g. http://localhost:8080/yawl)");
+        }
+        if (username == null || username.isEmpty()) {
+            throw new IllegalArgumentException("YAWL username is required");
+        }
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("YAWL password is required");
         }
 
-        LOGGER.info("Registering YAWL workflow tools...");
-        syncServer.registerTools();
-        LOGGER.info("YAWL workflow tools registered successfully");
+        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(
+                yawlEngineUrl + "/ib");
+        this.interfaceAClient = new InterfaceA_EnvironmentBasedClient(
+                yawlEngineUrl + "/ia");
+        this.yawlUsername = username;
+        this.yawlPassword = password;
+        this.loggingHandler = new McpLoggingHandler();
     }
 
     /**
-     * Registers all YAWL resources with the MCP server.
+     * Build and start the MCP server using the official SDK with STDIO transport.
      *
-     * Resources include:
-     * - yawl://specifications: All loaded specifications
-     * - yawl://specifications/{id}: Specific specification
-     * - yawl://cases: All running cases
-     * - yawl://cases/{id}: Specific case details
-     * - yawl://workitems: All live work items
-     * - yawl://workitems/{id}: Specific work item details
+     * Connects to the YAWL engine, registers all MCP capabilities (tools, resources,
+     * resource templates, prompts, completions, logging), and starts the server.
+     * This method blocks until the server is shut down.
      *
-     * @throws IllegalStateException if server is not initialized
-     * @throws IOException if resource registration fails
-     */
-    public void registerWorkflowResources() throws IOException {
-        if (syncServer == null) {
-            throw new IllegalStateException(
-                    "Server not initialized. Call start() first.\n" +
-                    "Example:\n" +
-                    "  YawlMcpServer server = new YawlMcpServer();\n" +
-                    "  server.start();\n" +
-                    "  server.registerWorkflowResources();"
-            );
-        }
-
-        LOGGER.info("Registering YAWL resources...");
-        syncServer.registerResources();
-        LOGGER.info("YAWL resources registered successfully");
-    }
-
-    /**
-     * Registers all prompts with the MCP server.
-     *
-     * Prompts include:
-     * - yawl_start_workflow: Guide for starting workflows
-     * - yawl_task_execution: Guide for executing tasks
-     * - yawl_exception_handling: Guide for handling errors
-     * - yawl_status_check: Guide for checking status
-     */
-    public void registerPrompts() {
-        if (syncServer == null) {
-            throw new IllegalStateException("Server not initialized. Call start() first.");
-        }
-
-        LOGGER.info("Registering YAWL prompts...");
-        List<SyncPromptSpecification> prompts = YawlPromptSpecifications.getAllPrompts();
-        for (SyncPromptSpecification prompt : prompts) {
-            syncServer.getServer().addPrompt(prompt);
-        }
-        LOGGER.info("YAWL prompts registered: " + prompts.size());
-    }
-
-    /**
-     * Registers all completions with the MCP server.
-     *
-     * Completions provide autocompletion for:
-     * - Specification names in prompts
-     * - Case IDs in resource URIs
-     * - Work item IDs in resource URIs
-     */
-    public void registerCompletions() {
-        if (syncServer == null) {
-            throw new IllegalStateException("Server not initialized. Call start() first.");
-        }
-
-        LOGGER.info("Registering YAWL completions...");
-        YawlCompletionSpecifications completions = new YawlCompletionSpecifications(
-                syncServer.getYawlClient(),
-                syncServer.getSessionHandle()
-        );
-
-        completions.getAllCompletions().forEach(completion -> {
-            syncServer.getServer().addCompletion(completion);
-        });
-        LOGGER.info("YAWL completions registered");
-    }
-
-    /**
-     * Starts the MCP server.
-     *
-     * This initializes the YAWL connection and prepares the server
-     * for tool and resource registration.
-     *
-     * @throws IOException if server startup fails
+     * @throws IOException if connection to the YAWL engine fails
      */
     public void start() throws IOException {
-        if (running) {
-            LOGGER.warning("YAWL MCP Server already running");
-            return;
-        }
+        connectToEngine();
 
-        LOGGER.info("Starting YAWL MCP Server...");
-        LOGGER.info("YAWL Engine URL: " + config.getYawlEngineUrl());
-        LOGGER.info("Transport Type: " + config.getTransportType());
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(mapper);
+        StdioServerTransportProvider transportProvider =
+            new StdioServerTransportProvider(jsonMapper);
 
-        try {
-            syncServer = config.createServer();
-            syncServer.start();
-            running = true;
-            LOGGER.info("YAWL MCP Server started successfully");
-        } catch (Exception e) {
-            LOGGER.severe("Failed to start YAWL MCP Server: " + e.getMessage());
-            throw new IOException("Failed to start MCP server: " + e.getMessage(), e);
-        }
+        mcpServer = McpServer.sync(transportProvider)
+            .serverInfo(SERVER_NAME, SERVER_VERSION)
+            .capabilities(YawlServerCapabilities.full())
+            .instructions(
+                "YAWL Workflow Engine MCP Server v" + SERVER_VERSION + ". " +
+                "Use the provided tools to launch and manage workflow cases, " +
+                "query and upload specifications, checkout and complete work items. " +
+                "Resources provide read-only access to specifications, cases, and work items. " +
+                "Prompts guide workflow analysis, task completion, troubleshooting, and design review.")
+            .tools(YawlToolSpecifications.createAll(
+                interfaceBClient, interfaceAClient, sessionHandle))
+            .resources(YawlResourceProvider.createAllResources(
+                interfaceBClient, sessionHandle))
+            .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
+                interfaceBClient, sessionHandle))
+            .prompts(YawlPromptSpecifications.createAll(
+                interfaceBClient, () -> sessionHandle))
+            .completions(YawlCompletionSpecifications.createAll(
+                interfaceBClient, sessionHandle))
+            .build();
+
+        loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
+        System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
+        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
+            "4 prompts, 3 completions, logging");
     }
 
     /**
-     * Stops the MCP server.
-     *
-     * This disconnects from the YAWL engine and cleans up resources.
+     * Stop the MCP server gracefully.
      */
     public void stop() {
-        if (!running) {
-            LOGGER.warning("YAWL MCP Server not running");
-            return;
+        if (mcpServer != null) {
+            loggingHandler.info(mcpServer, "YAWL MCP Server shutting down");
+            mcpServer.closeGracefully();
+            mcpServer = null;
         }
-
-        LOGGER.info("Stopping YAWL MCP Server...");
-
-        if (syncServer != null) {
-            syncServer.stop();
-            syncServer = null;
-        }
-
-        running = false;
-        LOGGER.info("YAWL MCP Server stopped");
+        disconnectFromEngine();
     }
 
     /**
-     * Checks if the server is running.
+     * Check if server has been built and is running.
      *
-     * @return true if the server is running
+     * @return true if the MCP server is active
      */
     public boolean isRunning() {
-        return running;
+        return mcpServer != null;
     }
 
     /**
-     * Gets the server configuration.
+     * Get the underlying MCP sync server instance.
+     * Useful for sending log notifications from external code.
      *
-     * @return the configuration
+     * @return the MCP sync server, or null if not started
      */
-    public McpServerConfiguration getConfig() {
-        return config;
+    public McpSyncServer getMcpServer() {
+        return mcpServer;
     }
 
     /**
-     * Gets the underlying sync server.
+     * Get the logging handler for sending structured MCP log notifications.
      *
-     * @return the YawlMcpSyncServer instance or null if not started
+     * @return the logging handler
      */
-    public YawlMcpSyncServer getSyncServer() {
-        return syncServer;
+    public McpLoggingHandler getLoggingHandler() {
+        return loggingHandler;
+    }
+
+    // =========================================================================
+    // YAWL Engine connection management
+    // =========================================================================
+
+    private void connectToEngine() throws IOException {
+        sessionHandle = interfaceBClient.connect(yawlUsername, yawlPassword);
+        if (sessionHandle == null || sessionHandle.contains("<failure>")) {
+            throw new IOException(
+                "Failed to connect to YAWL engine. " +
+                "Verify the engine is running and credentials are correct. " +
+                "Response: " + sessionHandle);
+        }
+        System.err.println("Connected to YAWL engine (session established)");
+    }
+
+    private void disconnectFromEngine() {
+        if (sessionHandle != null) {
+            try {
+                interfaceBClient.disconnect(sessionHandle);
+            } catch (IOException e) {
+                System.err.println(
+                    "Warning: failed to disconnect from YAWL engine: "
+                    + e.getMessage());
+            }
+            sessionHandle = null;
+        }
     }
 
     /**
-     * Main entry point for running the MCP server standalone.
+     * Entry point for running the YAWL MCP Server.
      *
-     * @param args command line arguments (optional port number)
+     * Reads configuration from environment variables:
+     *   YAWL_ENGINE_URL - YAWL engine base URL (required, e.g. http://localhost:8080/yawl)
+     *   YAWL_USERNAME   - YAWL admin username (required)
+     *   YAWL_PASSWORD   - YAWL admin password (required)
      */
     public static void main(String[] args) {
-        McpServerConfiguration config = McpServerConfiguration.fromEnvironment();
-
-        // Override port from command line if provided
-        if (args.length > 0) {
-            try {
-                config.port(Integer.parseInt(args[0]));
-            } catch (NumberFormatException e) {
-                LOGGER.warning("Invalid port number: " + args[0] + ", using default");
-            }
+        String engineUrl = System.getenv("YAWL_ENGINE_URL");
+        if (engineUrl == null || engineUrl.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_ENGINE_URL environment variable is required.\n" +
+                "Set it with: export YAWL_ENGINE_URL=http://localhost:8080/yawl");
         }
 
-        YawlMcpServer server = new YawlMcpServer(config);
+        String username = System.getenv("YAWL_USERNAME");
+        if (username == null || username.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_USERNAME environment variable is required.\n" +
+                "Set it with: export YAWL_USERNAME=admin");
+        }
 
-        // Add shutdown hook for graceful cleanup
+        String password = System.getenv("YAWL_PASSWORD");
+        if (password == null || password.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable is required.\n" +
+                "Set it with: export YAWL_PASSWORD=YAWL");
+        }
+
+        System.err.println("Starting YAWL MCP Server v" + SERVER_VERSION);
+        System.err.println("Engine URL: " + engineUrl);
+        System.err.println("Transport: STDIO (official MCP SDK 0.17.2)");
+
+        YawlMcpServer server = new YawlMcpServer(engineUrl, username, password);
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\nShutting down YAWL MCP Server...");
+            System.err.println("Shutting down YAWL MCP Server...");
             server.stop();
         }));
 
         try {
-            // Start the server
             server.start();
-
-            // Register all capabilities
-            server.registerWorkflowTools();
-            server.registerWorkflowResources();
-            server.registerPrompts();
-            server.registerCompletions();
-
-            System.out.println("\n===========================================");
-            System.out.println("YAWL MCP Server is ready");
-            System.out.println("===========================================");
-            System.out.println("Transport: " + config.getTransportType());
-            System.out.println("Endpoint: " + config.getMcpEndpoint());
-            System.out.println("YAWL Engine: " + config.getYawlEngineUrl());
-            System.out.println("===========================================");
-            System.out.println("AI models can now use YAWL workflows as tools");
-            System.out.println("Press Ctrl+C to stop");
-            System.out.println("===========================================\n");
-
-            // Keep the server running
-            Thread.currentThread().join();
-
         } catch (IOException e) {
-            LOGGER.severe("Failed to start server: " + e.getMessage());
-            System.err.println("Error: " + e.getMessage());
-            System.err.println("\nMake sure YAWL Engine is running at: " + config.getYawlEngineUrl());
-            System.err.println("And credentials are correct (YAWL_USERNAME, YAWL_PASSWORD)");
-            System.exit(1);
-        } catch (InterruptedException e) {
-            server.stop();
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            LOGGER.severe("Server error: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
+            System.err.println("Failed to start YAWL MCP Server: " + e.getMessage());
+            throw new RuntimeException(
+                "YAWL MCP Server startup failed. " +
+                "Ensure the YAWL engine is running at " + engineUrl + " and credentials are valid.",
+                e);
         }
     }
 }
