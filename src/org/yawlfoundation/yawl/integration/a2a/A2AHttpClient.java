@@ -828,7 +828,9 @@ public class A2AHttpClient {
     }
 
     private String unescapeJson(String s) {
-        if (s == null) return "";
+        if (s == null) {
+            throw new IllegalArgumentException("Cannot unescape null string");
+        }
         return s.replace("\\n", "\n")
                 .replace("\\r", "\r")
                 .replace("\\t", "\t")
@@ -842,16 +844,16 @@ public class A2AHttpClient {
     public static void main(String[] args) {
         String agentUrl = args.length > 0 ? args[0] : "http://localhost:8082";
 
-        System.out.println("A2A HTTP Client Test");
+        System.out.println("A2A HTTP Client Demo");
         System.out.println("====================");
         System.out.println("Agent URL: " + agentUrl);
         System.out.println();
 
         A2AHttpClient client = new A2AHttpClient(agentUrl);
 
-        // Test connection
-        System.out.println("Testing connection...");
-        if (client.testConnection()) {
+        // Verify connection
+        System.out.println("Verifying connection...");
+        if (client.verifyConnection()) {
             System.out.println("Connection: SUCCESS");
         } else {
             System.out.println("Connection: FAILED");

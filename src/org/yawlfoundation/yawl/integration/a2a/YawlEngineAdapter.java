@@ -221,7 +221,7 @@ public class YawlEngineAdapter {
         String data = caseData != null ? wrapDataInXML(caseData) : null;
 
         try {
-            String caseId = interfaceBClient.launchCase(ySpecId, data, sessionHandleB);
+            String caseId = interfaceBClient.launchCase(ySpecId, data, null, sessionHandleB);
 
             if (caseId == null || caseId.contains("failure") || caseId.contains("error")) {
                 throw new A2AException(

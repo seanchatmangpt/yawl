@@ -478,8 +478,12 @@ public class YawlA2AClient {
             }
         }
 
-        // Fallback to first skill if no match found
-        return agentCard.getSkills().get(0).getId();
+        throw new A2AException(
+            A2AException.ErrorCode.SKILL_NOT_FOUND,
+            "Could not match any capability from AI response: " + aiResponse.substring(0, Math.min(100, aiResponse.length())),
+            "Available capabilities: " + getCapabilities() + "\n" +
+            "Ensure the AI response mentions one of the available capabilities."
+        );
     }
 
     private String extractParams(String aiResponse, String originalData) {

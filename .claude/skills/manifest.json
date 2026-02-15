@@ -1,0 +1,232 @@
+{
+  "$schema": "https://code.claude.com/schemas/skills-manifest.json",
+  "version": "2.0.0",
+  "namespace": "yawl",
+  "skills": [
+    {
+      "name": "yawl-build",
+      "command": "/yawl-build",
+      "description": "Build YAWL WARs and JARs with Ant build system",
+      "script": ".claude/skills/yawl-build.sh",
+      "agent": "yawl-engineer",
+      "examples": [
+        "/yawl-build compile",
+        "/yawl-build buildWebApps",
+        "/yawl-build buildAll",
+        "/yawl-build clean"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": ["compile", "buildWebApps", "buildAll", "build_Standalone", "clean", "javadoc", "unitTest"],
+            "default": "buildWebApps",
+            "description": "Ant build target"
+          },
+          "verbose": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable verbose output"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-test",
+      "command": "/yawl-test",
+      "description": "Run YAWL JUnit test suites with coverage analysis",
+      "script": ".claude/skills/yawl-test.sh",
+      "agent": "yawl-tester",
+      "examples": [
+        "/yawl-test",
+        "/yawl-test --module=engine",
+        "/yawl-test --coverage"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": ["elements", "engine", "state", "exceptions", "logging", "schema", "unmarshaller", "util", "worklist", "authentication"],
+            "description": "Run tests for specific module"
+          },
+          "coverage": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate coverage report"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-validate",
+      "command": "/yawl-validate",
+      "description": "Validate YAWL specifications against XSD schemas",
+      "script": ".claude/skills/yawl-validate.sh",
+      "agent": "yawl-validator",
+      "examples": [
+        "/yawl-validate spec.xml",
+        "/yawl-validate --all-specs",
+        "/yawl-validate --schema=4.0 spec.ywl"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Specification file to validate"
+          },
+          "all_specs": {
+            "type": "boolean",
+            "default": false,
+            "description": "Validate all specs in exampleSpecs/"
+          },
+          "schema": {
+            "type": "string",
+            "default": "4.0",
+            "description": "Schema version to use"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-deploy",
+      "command": "/yawl-deploy",
+      "description": "Deploy YAWL services to Tomcat or Docker",
+      "script": ".claude/deploy.sh",
+      "agent": "yawl-production-validator",
+      "examples": [
+        "/yawl-deploy",
+        "/yawl-deploy --docker",
+        "/yawl-deploy --service=engine"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "docker": {
+            "type": "boolean",
+            "default": false,
+            "description": "Deploy to Docker container"
+          },
+          "service": {
+            "type": "string",
+            "enum": ["engine", "resourceService", "workletService", "monitorService", "schedulingService", "costService", "balancer"],
+            "description": "Specific service to deploy"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-review",
+      "command": "/yawl-review",
+      "description": "Code review with HYPER_STANDARDS enforcement",
+      "script": ".claude/skills/yawl-review.sh",
+      "agent": "yawl-reviewer",
+      "examples": [
+        "/yawl-review",
+        "/yawl-review src/org/yawlfoundation/yawl/engine/",
+        "/yawl-review --hyper-standards"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to review"
+          },
+          "hyper_standards": {
+            "type": "boolean",
+            "default": true,
+            "description": "Run full HYPER_STANDARDS check"
+          },
+          "security": {
+            "type": "boolean",
+            "default": false,
+            "description": "Focus on security issues"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-integrate",
+      "command": "/yawl-integrate",
+      "description": "Manage MCP/A2A integrations with Z.AI",
+      "script": ".claude/skills/yawl-integrate.sh",
+      "agent": "yawl-integrator",
+      "examples": [
+        "/yawl-integrate --status",
+        "/yawl-integrate --mcp",
+        "/yawl-integrate --a2a"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["status", "mcp", "a2a", "stop"],
+            "default": "status",
+            "description": "Integration action"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-spec",
+      "command": "/yawl-spec",
+      "description": "Create YAWL workflow specifications from templates",
+      "script": ".claude/skills/yawl-spec.sh",
+      "agent": "yawl-architect",
+      "examples": [
+        "/yawl-spec --template=sequence",
+        "/yawl-spec --template=parallel --name=MyWorkflow",
+        "/yawl-spec --validate existing.xml"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "enum": ["sequence", "parallel", "choice", "loop", "milestone", "discriminator"],
+            "description": "Workflow template type"
+          },
+          "name": {
+            "type": "string",
+            "description": "Specification name"
+          },
+          "validate": {
+            "type": "string",
+            "description": "Validate existing specification"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-pattern",
+      "command": "/yawl-pattern",
+      "description": "Implement and verify control-flow patterns",
+      "script": ".claude/skills/yawl-pattern.sh",
+      "agent": "yawl-engineer",
+      "examples": [
+        "/yawl-pattern --list",
+        "/yawl-pattern --implement=WCP1",
+        "/yawl-pattern --verify"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["list", "implement", "verify"],
+            "default": "list",
+            "description": "Pattern action"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Pattern ID (e.g., WCP1, WCP2)"
+          }
+        }
+      }
+    }
+  ]
+}

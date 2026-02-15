@@ -1,0 +1,89 @@
+{
+  "$schema": "https://code.claude.com/schemas/swarm-topology.json",
+  "version": "1.0.0",
+  "description": "YAWL agent coordination topology for Claude Code native",
+  "agents": {
+    "primary": [
+      {
+        "id": "yawl-engineer",
+        "role": "Core engine development",
+        "priority": 1,
+        "capabilities": ["engine", "patterns", "execution"]
+      },
+      {
+        "id": "yawl-validator",
+        "role": "Specification validation",
+        "priority": 2,
+        "capabilities": ["validation", "schemas", "testing"]
+      },
+      {
+        "id": "yawl-architect",
+        "role": "Architecture design",
+        "priority": 2,
+        "capabilities": ["architecture", "design", "interfaces"]
+      },
+      {
+        "id": "yawl-integrator",
+        "role": "MCP/A2A integration",
+        "priority": 2,
+        "capabilities": ["mcp", "a2a", "integration"]
+      }
+    ],
+    "secondary": [
+      {
+        "id": "yawl-reviewer",
+        "role": "Code review",
+        "priority": 3,
+        "capabilities": ["review", "standards", "security"]
+      },
+      {
+        "id": "yawl-tester",
+        "role": "Test generation",
+        "priority": 3,
+        "capabilities": ["testing", "coverage", "fixtures"]
+      },
+      {
+        "id": "yawl-production-validator",
+        "role": "Production readiness",
+        "priority": 4,
+        "capabilities": ["deployment", "validation", "configuration"]
+      },
+      {
+        "id": "yawl-performance-benchmarker",
+        "role": "Performance analysis",
+        "priority": 4,
+        "capabilities": ["performance", "benchmarking", "optimization"]
+      }
+    ]
+  },
+  "routing": {
+    "engine": {
+      "primary": "yawl-engineer",
+      "support": ["yawl-architect", "yawl-tester"]
+    },
+    "validation": {
+      "primary": "yawl-validator",
+      "support": ["yawl-engineer"]
+    },
+    "architecture": {
+      "primary": "yawl-architect",
+      "support": ["yawl-engineer", "yawl-integrator"]
+    },
+    "integration": {
+      "primary": "yawl-integrator",
+      "support": ["yawl-engineer", "yawl-validator"]
+    },
+    "testing": {
+      "primary": "yawl-tester",
+      "support": ["yawl-validator", "yawl-engineer"]
+    },
+    "production": {
+      "primary": "yawl-production-validator",
+      "support": ["yawl-reviewer", "yawl-performance-benchmarker"]
+    },
+    "performance": {
+      "primary": "yawl-performance-benchmarker",
+      "support": ["yawl-engineer", "yawl-reviewer"]
+    }
+  }
+}

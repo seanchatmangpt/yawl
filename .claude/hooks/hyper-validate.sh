@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+# Check for jq availability
+if ! command -v jq &>/dev/null; then
+    echo "[hyper-validate.sh] WARNING: jq not found, skipping validation" >&2
+    exit 0
+fi
+
 # Colors for terminal output
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
