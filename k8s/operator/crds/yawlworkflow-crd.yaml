@@ -1,0 +1,259 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: yawlworkflows.yawl.io
+  labels:
+    app.kubernetes.io/part-of: yawl-operator
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+spec:
+  group: yawl.io
+  names:
+    kind: YAWLWorkflow
+    listKind: YAWLWorkflowList
+    plural: yawlworkflows
+    singular: yawlworkflow
+    shortNames:
+      - yw
+      - yawl
+    categories:
+      - all
+      - yawl
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: YAWLWorkflow is a Kubernetes-native representation of a YAWL workflow specification.
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: Desired state of the YAWL workflow
+              type: object
+              required:
+                - specificationUri
+              properties:
+                specificationUri:
+                  description: URI of the YAWL specification XML file (ConfigMap key or URL)
+                  type: string
+                specificationSource:
+                  description: Where to find the spec XML
+                  type: object
+                  properties:
+                    configMapRef:
+                      description: Reference to a ConfigMap containing the YAWL spec XML
+                      type: object
+                      required:
+                        - name
+                        - key
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                    inline:
+                      description: Inline YAWL specification XML
+                      type: string
+                    gitRepository:
+                      description: Git repository containing the YAWL spec
+                      type: object
+                      required:
+                        - url
+                        - path
+                      properties:
+                        url:
+                          type: string
+                        revision:
+                          type: string
+                          default: main
+                        path:
+                          type: string
+                version:
+                  description: Specification version
+                  type: string
+                  default: "0.1"
+                engineRef:
+                  description: Reference to the YAWL engine to use
+                  type: object
+                  properties:
+                    name:
+                      description: Engine service name
+                      type: string
+                      default: yawl-engine
+                    namespace:
+                      description: Engine namespace (defaults to workflow namespace)
+                      type: string
+                    interfaceBPath:
+                      description: Interface B URL path
+                      type: string
+                      default: /yawl/ib
+                replicas:
+                  description: Number of concurrent case instances to maintain
+                  type: integer
+                  minimum: 0
+                  default: 0
+                autoLaunch:
+                  description: Automatically launch a case when the workflow is created
+                  type: boolean
+                  default: false
+                caseData:
+                  description: Initial case data as XML string
+                  type: string
+                selfHealing:
+                  description: Self-healing configuration via worklets
+                  type: object
+                  properties:
+                    enabled:
+                      description: Enable self-healing via worklet exception service
+                      type: boolean
+                      default: false
+                    watchPodEvents:
+                      description: Watch for pod failure events and trigger worklet exceptions
+                      type: boolean
+                      default: true
+                    maxRetries:
+                      description: Maximum automatic remediation attempts per case
+                      type: integer
+                      default: 3
+                    escalationPolicy:
+                      description: What to do when maxRetries exceeded
+                      type: string
+                      enum:
+                        - suspend
+                        - cancel
+                        - alert
+                      default: alert
+                scaling:
+                  description: Autoscaling configuration for workflow instances
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: false
+                    minCases:
+                      description: Minimum concurrent case instances
+                      type: integer
+                      default: 1
+                    maxCases:
+                      description: Maximum concurrent case instances
+                      type: integer
+                      default: 10
+                    metrics:
+                      description: Metrics to scale on
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - queueDepth
+                              - caseCompletionRate
+                              - workItemBacklog
+                          target:
+                            type: integer
+                taskExecutionMode:
+                  description: How workflow tasks are executed
+                  type: string
+                  enum:
+                    - embedded
+                    - pod-per-task
+                    - knative
+                    - job
+                  default: embedded
+            status:
+              description: Observed state of the YAWL workflow
+              type: object
+              properties:
+                phase:
+                  description: Current workflow phase
+                  type: string
+                  enum:
+                    - Pending
+                    - Uploading
+                    - Ready
+                    - Running
+                    - Suspended
+                    - Completed
+                    - Failed
+                specificationId:
+                  description: Engine-assigned specification ID
+                  type: string
+                activeCases:
+                  description: Number of active case instances
+                  type: integer
+                completedCases:
+                  description: Total completed cases
+                  type: integer
+                failedCases:
+                  description: Total failed cases
+                  type: integer
+                selfHealingEvents:
+                  description: Number of self-healing interventions
+                  type: integer
+                lastTransitionTime:
+                  description: Last time the workflow transitioned phases
+                  type: string
+                  format: date-time
+                conditions:
+                  description: Workflow conditions
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}
+        scale:
+          specReplicasPath: .spec.replicas
+          statusReplicasPath: .status.activeCases
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Active
+          type: integer
+          jsonPath: .status.activeCases
+        - name: Completed
+          type: integer
+          jsonPath: .status.completedCases
+        - name: Mode
+          type: string
+          jsonPath: .spec.taskExecutionMode
+        - name: Self-Healing
+          type: boolean
+          jsonPath: .spec.selfHealing.enabled
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      printColumnOrder:
+        - Phase
+        - Active
+        - Completed
+        - Mode
+        - Self-Healing
+        - Age

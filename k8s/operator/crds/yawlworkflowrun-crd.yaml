@@ -1,0 +1,172 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: yawlworkflowruns.yawl.io
+  labels:
+    app.kubernetes.io/part-of: yawl-operator
+spec:
+  group: yawl.io
+  names:
+    kind: YAWLWorkflowRun
+    listKind: YAWLWorkflowRunList
+    plural: yawlworkflowruns
+    singular: yawlworkflowrun
+    shortNames:
+      - ywr
+      - yawlrun
+    categories:
+      - all
+      - yawl
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: YAWLWorkflowRun represents a single execution (case) of a YAWLWorkflow.
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: Desired state of the workflow run
+              type: object
+              required:
+                - workflowRef
+              properties:
+                workflowRef:
+                  description: Reference to the parent YAWLWorkflow
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                caseData:
+                  description: Input data for this case as XML
+                  type: string
+                timeout:
+                  description: Maximum duration for the case (e.g. "1h", "30m")
+                  type: string
+                priority:
+                  description: Case priority (higher = more important)
+                  type: integer
+                  default: 0
+                clusterAffinity:
+                  description: Preferred cluster for execution (multi-cluster federation)
+                  type: object
+                  properties:
+                    preferredClusters:
+                      type: array
+                      items:
+                        type: string
+                    requiredCluster:
+                      type: string
+            status:
+              description: Observed state of the workflow run
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Launching
+                    - Running
+                    - Completing
+                    - Completed
+                    - Failed
+                    - TimedOut
+                    - Suspended
+                caseId:
+                  description: YAWL engine case ID
+                  type: string
+                startTime:
+                  type: string
+                  format: date-time
+                completionTime:
+                  type: string
+                  format: date-time
+                activeWorkItems:
+                  description: Currently active work items
+                  type: integer
+                completedWorkItems:
+                  description: Total completed work items
+                  type: integer
+                currentTasks:
+                  description: Names of currently executing tasks
+                  type: array
+                  items:
+                    type: string
+                selfHealingInterventions:
+                  description: Self-healing events for this case
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      timestamp:
+                        type: string
+                        format: date-time
+                      trigger:
+                        type: string
+                      action:
+                        type: string
+                      workletSpec:
+                        type: string
+                      result:
+                        type: string
+                        enum:
+                          - Success
+                          - Failed
+                          - Escalated
+                executionCluster:
+                  description: Which cluster is executing this run (federation)
+                  type: string
+                outputData:
+                  description: Case output data as XML
+                  type: string
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Workflow
+          type: string
+          jsonPath: .spec.workflowRef.name
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Case ID
+          type: string
+          jsonPath: .status.caseId
+        - name: Active Items
+          type: integer
+          jsonPath: .status.activeWorkItems
+        - name: Cluster
+          type: string
+          jsonPath: .status.executionCluster
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp

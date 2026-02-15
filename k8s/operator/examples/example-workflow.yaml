@@ -1,0 +1,176 @@
+# =============================================================================
+# Example: Deploy a YAWL workflow as a Kubernetes-native resource
+# =============================================================================
+# This demonstrates the blue ocean innovation: YAWL workflows as CRDs.
+#
+# Usage:
+#   kubectl apply -f example-workflow.yaml
+#   kubectl get yawlworkflows              # List workflows
+#   kubectl get yw                         # Short name
+#   kubectl get yawlworkflowruns           # List running cases
+#   kubectl scale yw/order-fulfillment --replicas=5  # Scale cases
+# =============================================================================
+
+apiVersion: yawl.io/v1alpha1
+kind: YAWLWorkflow
+metadata:
+  name: order-fulfillment
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    workflow-category: business-process
+spec:
+  specificationUri: OrderFulfillment.xml
+  version: "1.0"
+
+  specificationSource:
+    gitRepository:
+      url: https://github.com/yawlfoundation/yawl.git
+      revision: main
+      path: exampleSpecs/xml/orderfulfillment
+
+  engineRef:
+    name: yawl-engine
+    interfaceBPath: /yawl/ib
+
+  autoLaunch: false
+  replicas: 0
+
+  # Self-healing: automatically remediate pod failures
+  selfHealing:
+    enabled: true
+    watchPodEvents: true
+    maxRetries: 3
+    escalationPolicy: alert
+
+  # Event-driven autoscaling of workflow instances
+  scaling:
+    enabled: true
+    minCases: 1
+    maxCases: 100
+    metrics:
+      - type: queueDepth
+        target: 10
+      - type: workItemBacklog
+        target: 50
+
+  # Execute tasks as serverless functions via Knative
+  taskExecutionMode: knative
+
+---
+# Example: Launch a specific case of the workflow
+apiVersion: yawl.io/v1alpha1
+kind: YAWLWorkflowRun
+metadata:
+  name: order-12345
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    order-id: "12345"
+spec:
+  workflowRef:
+    name: order-fulfillment
+  caseData: |
+    <OrderFulfillment>
+      <orderId>12345</orderId>
+      <customerId>CUST-789</customerId>
+      <items>
+        <item>
+          <sku>YAWL-ENGINE-5.2</sku>
+          <quantity>1</quantity>
+        </item>
+      </items>
+    </OrderFulfillment>
+  timeout: "4h"
+  priority: 5
+
+  # Run on the EU cluster for GDPR compliance
+  clusterAffinity:
+    preferredClusters:
+      - aws-eu-west
+    requiredCluster: ""
+
+---
+# Example: Self-healing Docker build workflow
+apiVersion: yawl.io/v1alpha1
+kind: YAWLWorkflow
+metadata:
+  name: docker-build-pipeline
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    workflow-category: ci-cd
+spec:
+  specificationUri: DockerBuildAndValidate.xml
+  version: "1.0"
+
+  specificationSource:
+    gitRepository:
+      url: https://github.com/yawlfoundation/yawl.git
+      revision: main
+      path: exampleSpecs/xml/DockerBuildAndValidate.xml
+
+  selfHealing:
+    enabled: true
+    watchPodEvents: true
+    maxRetries: 2
+    escalationPolicy: suspend
+
+  taskExecutionMode: job
+  autoLaunch: false
+
+---
+# Example: K8s deployment workflow with self-healing
+apiVersion: yawl.io/v1alpha1
+kind: YAWLWorkflow
+metadata:
+  name: k8s-deployment-pipeline
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    workflow-category: ci-cd
+spec:
+  specificationUri: KubernetesDeployment.xml
+  version: "1.0"
+
+  specificationSource:
+    gitRepository:
+      url: https://github.com/yawlfoundation/yawl.git
+      revision: main
+      path: exampleSpecs/xml/KubernetesDeployment.xml
+
+  selfHealing:
+    enabled: true
+    watchPodEvents: true
+    maxRetries: 3
+    escalationPolicy: alert
+
+  taskExecutionMode: embedded
+  autoLaunch: false
+
+---
+# Example: Self-healing remediation workflow (meta-workflow)
+apiVersion: yawl.io/v1alpha1
+kind: YAWLWorkflow
+metadata:
+  name: self-healing-remediation
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+    workflow-category: infrastructure
+spec:
+  specificationUri: SelfHealingRemediation.xml
+  version: "1.0"
+
+  specificationSource:
+    gitRepository:
+      url: https://github.com/yawlfoundation/yawl.git
+      revision: main
+      path: exampleSpecs/xml/SelfHealingRemediation.xml
+
+  # Self-healing workflows don't self-heal themselves (prevents infinite loops)
+  selfHealing:
+    enabled: false
+
+  taskExecutionMode: embedded
+  autoLaunch: false

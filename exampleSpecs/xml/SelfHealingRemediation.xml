@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.citi.qut.edu.au/yawl ../../schema/YAWL_Schema4.0.xsd"
+                  xmlns="http://www.citi.qut.edu.au/yawl">
+    <specification uri="SelfHealingRemediation.xml">
+        <name>Kubernetes Self-Healing Remediation</name>
+        <documentation>A YAWL worklet specification invoked by the self-healing controller
+when a Kubernetes pod failure is detected. This workflow diagnoses the failure,
+selects a remediation strategy (restart, scale, reschedule, or escalate),
+executes the chosen action, verifies recovery, and updates the
+YAWLWorkflowRun status. This is YAWL eating its own dog food: using YAWL
+workflows to heal YAWL workflows.</documentation>
+        <metaData/>
+        <rootNet id="self_healing_remediation">
+            <localVariable name="case_id">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="work_item_id">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="pod_name">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="failure_reason">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="namespace">
+                <type>xs:string</type>
+                <initialValue>yawl</initialValue>
+            </localVariable>
+            <localVariable name="retry_count">
+                <type>xs:integer</type>
+                <initialValue>0</initialValue>
+            </localVariable>
+            <localVariable name="diagnosis">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="remediation_strategy">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="pod_logs">
+                <type>xs:string</type>
+            </localVariable>
+            <localVariable name="recovery_verified">
+                <type>xs:boolean</type>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_healing">
+                    <flowsInto>
+                        <nextElementRef id="collect_diagnostics"/>
+                    </flowsInto>
+                </inputCondition>
+
+                <!-- Step 1: Collect pod logs and K8s events in parallel -->
+                <task id="collect_diagnostics">
+                    <name>Collect Pod Diagnostics</name>
+                    <flowsInto>
+                        <nextElementRef id="collect_k8s_events"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="collect_pod_logs"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/diagnosis"/>
+                            <mapsTo>diagnosis</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="collect_diagnostics"/>
+                </task>
+
+                <task id="collect_k8s_events">
+                    <name>Collect Kubernetes Events</name>
+                    <flowsInto>
+                        <nextElementRef id="select_strategy"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="collect_k8s_events"/>
+                </task>
+
+                <task id="collect_pod_logs">
+                    <name>Collect Pod Logs</name>
+                    <flowsInto>
+                        <nextElementRef id="select_strategy"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/pod_logs"/>
+                            <mapsTo>pod_logs</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="collect_pod_logs"/>
+                </task>
+
+                <!-- Step 2: Select remediation strategy based on diagnosis (AND join, XOR split) -->
+                <task id="select_strategy">
+                    <name>Select Remediation Strategy</name>
+                    <flowsInto>
+                        <nextElementRef id="restart_pod"/>
+                        <predicate>/data/remediation_strategy = 'restart'</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="scale_deployment"/>
+                        <predicate>/data/remediation_strategy = 'scale'</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="reschedule_to_node"/>
+                        <predicate>/data/remediation_strategy = 'reschedule'</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="escalate_to_operator"/>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="xor"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/failure_reason"/>
+                            <mapsTo>failure_reason</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/diagnosis"/>
+                            <mapsTo>diagnosis</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/retry_count"/>
+                            <mapsTo>retry_count</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/remediation_strategy"/>
+                            <mapsTo>remediation_strategy</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="select_strategy"/>
+                </task>
+
+                <!-- Step 3a: Restart pod (OOMKilled, transient failures) -->
+                <task id="restart_pod">
+                    <name>Restart Failed Pod</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_recovery"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="restart_pod"/>
+                </task>
+
+                <!-- Step 3b: Scale deployment (resource pressure) -->
+                <task id="scale_deployment">
+                    <name>Scale Up Deployment</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_recovery"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="scale_deployment"/>
+                </task>
+
+                <!-- Step 3c: Reschedule to different node (node failure) -->
+                <task id="reschedule_to_node">
+                    <name>Reschedule to Healthy Node</name>
+                    <flowsInto>
+                        <nextElementRef id="verify_recovery"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="reschedule_to_node"/>
+                </task>
+
+                <!-- Step 3d: Escalate (exhausted retries) -->
+                <task id="escalate_to_operator">
+                    <name>Escalate to Human Operator</name>
+                    <flowsInto>
+                        <nextElementRef id="end_healing"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/case_id"/>
+                            <mapsTo>case_id</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/pod_logs"/>
+                            <mapsTo>pod_logs</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/diagnosis"/>
+                            <mapsTo>diagnosis</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="escalate_to_operator"/>
+                </task>
+
+                <!-- Step 4: Verify recovery (AND join from restart/scale/reschedule) -->
+                <task id="verify_recovery">
+                    <name>Verify Service Recovery</name>
+                    <flowsInto>
+                        <nextElementRef id="update_workflow_status"/>
+                        <predicate>/data/recovery_verified = 'true'</predicate>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="escalate_to_operator"/>
+                        <predicate>/data/recovery_verified = 'false'</predicate>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="xor"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/pod_name"/>
+                            <mapsTo>pod_name</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/namespace"/>
+                            <mapsTo>namespace</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/recovery_verified"/>
+                            <mapsTo>recovery_verified</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                    <decomposesTo id="verify_recovery"/>
+                </task>
+
+                <!-- Step 5: Update YAWLWorkflowRun CR status -->
+                <task id="update_workflow_status">
+                    <name>Update Workflow Run Status</name>
+                    <flowsInto>
+                        <nextElementRef id="end_healing"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <startingMappings>
+                        <mapping>
+                            <expression query="/data/case_id"/>
+                            <mapsTo>case_id</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/remediation_strategy"/>
+                            <mapsTo>remediation_strategy</mapsTo>
+                        </mapping>
+                        <mapping>
+                            <expression query="/data/recovery_verified"/>
+                            <mapsTo>recovery_verified</mapsTo>
+                        </mapping>
+                    </startingMappings>
+                    <decomposesTo id="update_workflow_status"/>
+                </task>
+
+                <outputCondition id="end_healing"/>
+            </processControlElements>
+        </rootNet>
+
+        <!-- Decompositions -->
+        <decomposition id="collect_diagnostics" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/diagnosis"/>
+            <outputParam name="diagnosis">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="collect_k8s_events" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="collect_pod_logs" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/pod_logs"/>
+            <outputParam name="pod_logs">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="select_strategy" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="failure_reason">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="diagnosis">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="retry_count">
+                <type>xs:integer</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/remediation_strategy"/>
+            <outputParam name="remediation_strategy">
+                <type>xs:string</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="restart_pod" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="scale_deployment" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="reschedule_to_node" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="escalate_to_operator" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="case_id">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="pod_logs">
+                <type>xs:string</type>
+            </inputParam>
+            <inputParam name="diagnosis">
+                <type>xs:string</type>
+            </inputParam>
+        </decomposition>
+
+        <decomposition id="verify_recovery" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="pod_name">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="namespace">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <outputExpression query="/data/recovery_verified"/>
+            <outputParam name="recovery_verified">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </outputParam>
+        </decomposition>
+
+        <decomposition id="update_workflow_status" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="case_id">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="remediation_strategy">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="recovery_verified">
+                <type>xs:boolean</type>
+                <mandatory/>
+            </inputParam>
+        </decomposition>
+    </specification>
+</specificationSet>

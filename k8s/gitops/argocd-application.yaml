@@ -1,0 +1,210 @@
+# =============================================================================
+# ArgoCD Application: YAWL Platform (Infrastructure)
+# =============================================================================
+# GitOps-driven deployment of the YAWL workflow engine and all services.
+# ArgoCD watches the git repository and automatically syncs changes.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yawl-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: yawl
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: yawl
+  source:
+    repoURL: https://github.com/yawlfoundation/yawl.git
+    targetRevision: main
+    path: helm/yawl
+    helm:
+      releaseName: yawl
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: global.namespace
+          value: yawl
+        - name: image.tag
+          value: "5.2"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: yawl
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+---
+# =============================================================================
+# ArgoCD ApplicationSet: YAWL Workflow Specifications (GitOps for Workflows)
+# =============================================================================
+# Watches a git directory for YAWL specification XML files and automatically
+# creates YAWLWorkflow CRs for each one. This is the key blue ocean innovation:
+# workflow-as-code managed via GitOps.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: yawl-workflows
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  generators:
+    # Scan the git repo for YAWL workflow spec directories
+    - git:
+        repoURL: https://github.com/yawlfoundation/yawl.git
+        revision: main
+        directories:
+          - path: "workflows/*"
+        template:
+          metadata:
+            name: 'yawl-workflow-{{path.basename}}'
+          spec:
+            source:
+              repoURL: https://github.com/yawlfoundation/yawl.git
+              targetRevision: main
+              path: '{{path}}'
+            destination:
+              server: https://kubernetes.default.svc
+              namespace: yawl
+  template:
+    metadata:
+      name: 'yawl-workflow-{{path.basename}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: yawl
+        app.kubernetes.io/component: workflow
+    spec:
+      project: yawl
+      source:
+        repoURL: https://github.com/yawlfoundation/yawl.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: yawl
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+---
+# =============================================================================
+# ArgoCD ApplicationSet: Multi-Cloud Deployment
+# =============================================================================
+# Deploys YAWL to multiple cloud clusters using cloud-specific values files.
+# Each cluster gets its own Application with the right cloud values.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: yawl-multi-cloud
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: gcp-production
+            url: https://gke-cluster.example.com
+            valuesFile: values-gcp.yaml
+            cloudProvider: gcp
+          - cluster: aws-production
+            url: https://eks-cluster.example.com
+            valuesFile: values-aws.yaml
+            cloudProvider: aws
+          - cluster: azure-production
+            url: https://aks-cluster.example.com
+            valuesFile: values-azure.yaml
+            cloudProvider: azure
+          - cluster: oracle-production
+            url: https://oke-cluster.example.com
+            valuesFile: values-oracle.yaml
+            cloudProvider: oracle
+          - cluster: ibm-production
+            url: https://iks-cluster.example.com
+            valuesFile: values-ibm.yaml
+            cloudProvider: ibm
+  template:
+    metadata:
+      name: 'yawl-{{cluster}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: yawl
+        cloud-provider: '{{cloudProvider}}'
+    spec:
+      project: yawl
+      source:
+        repoURL: https://github.com/yawlfoundation/yawl.git
+        targetRevision: main
+        path: helm/yawl
+        helm:
+          releaseName: yawl
+          valueFiles:
+            - values.yaml
+            - '{{valuesFile}}'
+          parameters:
+            - name: cloudProvider
+              value: '{{cloudProvider}}'
+      destination:
+        server: '{{url}}'
+        namespace: yawl
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+---
+# =============================================================================
+# ArgoCD Project: YAWL
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: yawl
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: yawl
+spec:
+  description: YAWL Workflow Engine - GitOps managed deployment
+  sourceRepos:
+    - https://github.com/yawlfoundation/yawl.git
+  destinations:
+    - namespace: yawl
+      server: '*'
+    - namespace: yawl-system
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: Namespace
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  orphanedResources:
+    warn: true

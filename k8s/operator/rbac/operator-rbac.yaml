@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-operator
+  namespace: yawl-system
+  labels:
+    app.kubernetes.io/name: yawl-operator
+    app.kubernetes.io/part-of: yawl-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: yawl-operator
+  labels:
+    app.kubernetes.io/name: yawl-operator
+    app.kubernetes.io/part-of: yawl-operator
+rules:
+  # YAWLWorkflow and YAWLWorkflowRun CRD management
+  - apiGroups: ["yawl.io"]
+    resources: ["yawlworkflows", "yawlworkflowruns"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["yawl.io"]
+    resources: ["yawlworkflows/status", "yawlworkflowruns/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["yawl.io"]
+    resources: ["yawlworkflows/scale"]
+    verbs: ["get", "update", "patch"]
+
+  # Pod management for pod-per-task and self-healing
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
+  # Job management for job-based task execution
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+
+  # ConfigMap access for workflow spec storage
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update"]
+
+  # Secret access for engine credentials
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+
+  # Service discovery for engine endpoints
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+  # Event creation for audit trail
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+  # Knative Serving integration (serverless task execution)
+  - apiGroups: ["serving.knative.dev"]
+    resources: ["services", "revisions", "routes"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+
+  # KEDA ScaledObject management (workflow autoscaling)
+  - apiGroups: ["keda.sh"]
+    resources: ["scaledobjects", "triggerauthentications"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+
+  # Namespace access for multi-namespace operation
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+  # Lease for leader election
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: yawl-operator
+  labels:
+    app.kubernetes.io/name: yawl-operator
+    app.kubernetes.io/part-of: yawl-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: yawl-operator
+subjects:
+  - kind: ServiceAccount
+    name: yawl-operator
+    namespace: yawl-system

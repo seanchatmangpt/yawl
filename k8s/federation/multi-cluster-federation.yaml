@@ -1,0 +1,255 @@
+# =============================================================================
+# YAWL Multi-Cluster Workflow Federation
+# =============================================================================
+# Distributes YAWL workflow tasks across multiple Kubernetes clusters based on:
+#   - Data locality (run tasks near the data)
+#   - Cost optimization (use cheapest available cloud)
+#   - Compliance (keep regulated data in specific regions)
+#   - Resilience (survive single-cluster failures)
+#
+# Uses Kubernetes MCS (Multi-Cluster Services) API and Liqo/Admiralty
+# for cross-cluster pod scheduling.
+# =============================================================================
+
+# Federation controller: coordinates workflow distribution across clusters
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-federation-controller
+  namespace: yawl-system
+  labels:
+    app.kubernetes.io/name: yawl-federation
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: yawl-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-federation
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-federation
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/part-of: yawl-operator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: yawl-operator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: federation
+          image: yawl/federation-controller:5.2
+          env:
+            - name: FEDERATION_MODE
+              value: "active-active"
+            - name: CLUSTER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-federation-config
+                  key: CLUSTER_NAME
+            - name: YAWL_ENGINE_URL
+              value: "http://yawl-engine.yawl.svc.cluster.local:8080"
+            - name: JAVA_OPTS
+              value: "-Xms64m -Xmx128m"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: grpc
+              containerPort: 9090
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+          volumeMounts:
+            - name: federation-config
+              mountPath: /config
+              readOnly: true
+            - name: cluster-credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: federation-config
+          configMap:
+            name: yawl-federation-config
+        - name: cluster-credentials
+          secret:
+            secretName: yawl-cluster-credentials
+        - name: tmp
+          emptyDir: {}
+---
+# Federation configuration: cluster registry and routing rules
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-federation-config
+  namespace: yawl-system
+  labels:
+    app.kubernetes.io/name: yawl-federation
+    app.kubernetes.io/part-of: yawl-operator
+data:
+  CLUSTER_NAME: "primary"
+  config.yaml: |
+    federation:
+      mode: active-active
+      syncInterval: 30s
+      heartbeatInterval: 10s
+
+      clusters:
+        - name: gcp-us-central
+          region: us-central1
+          provider: gcp
+          priority: 1
+          capabilities:
+            - compute
+            - gpu
+            - high-memory
+          costTier: standard
+
+        - name: aws-eu-west
+          region: eu-west-1
+          provider: aws
+          priority: 2
+          capabilities:
+            - compute
+            - compliance-gdpr
+          costTier: standard
+
+        - name: azure-asia-east
+          region: eastasia
+          provider: azure
+          priority: 3
+          capabilities:
+            - compute
+            - compliance-apac
+          costTier: economy
+
+        - name: oracle-us-ashburn
+          region: us-ashburn-1
+          provider: oracle
+          priority: 4
+          capabilities:
+            - compute
+            - database
+          costTier: economy
+
+        - name: ibm-us-south
+          region: us-south
+          provider: ibm
+          priority: 5
+          capabilities:
+            - compute
+            - ai
+          costTier: economy
+
+      routingRules:
+        # Route tasks with GDPR data to EU clusters
+        - name: gdpr-compliance
+          condition:
+            taskMetadata:
+              dataClassification: gdpr
+          target:
+            requiredCapability: compliance-gdpr
+            preferredClusters:
+              - aws-eu-west
+
+        # Route GPU-intensive tasks (AI worklets) to GPU clusters
+        - name: gpu-tasks
+          condition:
+            taskMetadata:
+              requiresGpu: "true"
+          target:
+            requiredCapability: gpu
+            preferredClusters:
+              - gcp-us-central
+
+        # Route cost-sensitive batch workflows to economy clusters
+        - name: batch-economy
+          condition:
+            workflowPriority: "< 3"
+            taskType: batch
+          target:
+            preferredCostTier: economy
+
+        # Default: route to lowest-latency cluster
+        - name: default-routing
+          condition: {}
+          target:
+            strategy: lowest-latency
+
+      failover:
+        enabled: true
+        detectionTimeout: 30s
+        maxFailoverAttempts: 3
+        strategy: priority-based
+---
+# Multi-Cluster Service export: make YAWL engine discoverable across clusters
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+---
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: yawl-resource-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+---
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: yawl-worklet-service
+  namespace: yawl
+  labels:
+    app.kubernetes.io/part-of: yawl
+---
+# Cluster credential secret (template - populate per cluster)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yawl-cluster-credentials
+  namespace: yawl-system
+  labels:
+    app.kubernetes.io/name: yawl-federation
+    app.kubernetes.io/part-of: yawl-operator
+type: Opaque
+stringData:
+  # Populate with kubeconfig for each remote cluster
+  # These are injected via cloud-specific secret managers:
+  #   GCP: Workload Identity + GKE Connect
+  #   AWS: IRSA + EKS Connector
+  #   Azure: AAD Pod Identity + AKS
+  clusters.json: |
+    {
+      "clusters": []
+    }

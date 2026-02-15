@@ -1,0 +1,194 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-self-healing-rules
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-self-healing
+    app.kubernetes.io/component: rules
+    app.kubernetes.io/part-of: yawl
+data:
+  # RDR (Ripple-Down Rules) for mapping K8s events to YAWL worklet actions.
+  # The YAWL worklet exception service evaluates these rules to select
+  # the appropriate compensatory workflow when a Kubernetes event is detected.
+  #
+  # Rule format: event-type -> condition -> worklet-action
+  rules.yaml: |
+    version: "1.0"
+    rules:
+      # Pod OOMKilled -> Scale up memory and retry
+      - name: oom-killed-remediation
+        trigger:
+          eventType: KubernetesPodFailure
+          reason: OOMKilled
+        condition:
+          retryCount: "< 3"
+        action:
+          type: worklet
+          workletSpec: OOMRemediationWorklet
+          parameters:
+            memoryIncreaseFactor: "1.5"
+            maxMemoryMi: "4096"
+
+      # Pod CrashLoopBackOff -> Collect logs, suspend, alert
+      - name: crashloop-remediation
+        trigger:
+          eventType: KubernetesPodFailure
+          reason: CrashLoopBackOff
+        condition:
+          restartCount: "> 5"
+        action:
+          type: worklet
+          workletSpec: CrashLoopRemediationWorklet
+          parameters:
+            collectLogs: "true"
+            alertChannel: "pagerduty"
+
+      # Pod ImagePullBackOff -> Check registry, retry with fallback
+      - name: image-pull-remediation
+        trigger:
+          eventType: KubernetesPodFailure
+          reason: ImagePullBackOff
+        condition:
+          retryCount: "< 2"
+        action:
+          type: worklet
+          workletSpec: ImagePullRemediationWorklet
+          parameters:
+            fallbackRegistry: "docker.io"
+
+      # Node NotReady -> Reschedule to different node
+      - name: node-failure-remediation
+        trigger:
+          eventType: KubernetesNodeFailure
+          reason: NodeNotReady
+        action:
+          type: worklet
+          workletSpec: NodeFailureRemediationWorklet
+          parameters:
+            rescheduleStrategy: "spread"
+            excludeFailedNode: "true"
+
+      # PVC Pending -> Expand storage or switch class
+      - name: storage-remediation
+        trigger:
+          eventType: KubernetesStorageFailure
+          reason: ProvisioningFailed
+        action:
+          type: worklet
+          workletSpec: StorageRemediationWorklet
+          parameters:
+            expandFactor: "2.0"
+
+      # Deadline exceeded -> Scale out, redistribute work items
+      - name: deadline-exceeded-remediation
+        trigger:
+          eventType: YAWLDeadlineExceeded
+        condition:
+          casePriority: "> 5"
+        action:
+          type: worklet
+          workletSpec: DeadlineRemediationWorklet
+          parameters:
+            scaleOutReplicas: "2"
+            redistributeWorkItems: "true"
+
+      # Default escalation -> Suspend and alert
+      - name: default-escalation
+        trigger:
+          eventType: "*"
+        condition:
+          retryCount: "> 3"
+        action:
+          type: escalate
+          escalationPolicy: alert
+          parameters:
+            alertChannel: "slack"
+            suspendCase: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-self-healing-controller
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-self-healing
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: yawl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-self-healing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-self-healing
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: yawl-operator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: controller
+          image: yawl/self-healing-controller:5.2
+          env:
+            - name: YAWL_ENGINE_URL
+              value: "http://yawl-engine:8080"
+            - name: YAWL_WORKLET_SERVICE_URL
+              value: "http://yawl-worklet-service:8080"
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: RULES_CONFIG_PATH
+              value: /config/rules.yaml
+            - name: JAVA_OPTS
+              value: "-Xms64m -Xmx128m"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: rules-config
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: rules-config
+          configMap:
+            name: yawl-self-healing-rules
+        - name: tmp
+          emptyDir: {}
