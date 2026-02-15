@@ -29,8 +29,9 @@ This project is **Docker/devcontainer-only**. Do not assume the host has Java, A
 ## What to do in this repo
 
 - **Build:** Run `ant -f build/build.xml compile` (or equivalent) **inside** the devcontainer or `yawl-dev` container.
+- **Unit tests:** Run via `./scripts/run-unit-tests.sh` **inside** the container (ensures build.properties then `ant clean unitTest`).
 - **Tests / ZAI:** Run integration tests and ZAI support **inside** the same container; do not rely on host `java` or `ant`.
-- **Scripts:** Treat `run-integration-tests.sh`, `run-mcp-server.sh`, `run-a2a-server.sh`, etc. as scripts to be executed in the container.
+- **Scripts:** Treat `run-unit-tests.sh`, `run-integration-tests.sh`, `run-mcp-server.sh`, `run-a2a-server.sh`, etc. as scripts to be executed in the container.
 - **Docs/plans:** When describing “how to run” anything, always say “inside the devcontainer” or “inside `docker compose run yawl-dev`”, not “on your machine” or “in the terminal” without specifying the container.
 
 ## References

@@ -778,7 +778,7 @@ public abstract class YTask extends YExternalNetElement {
         }
         i.removeLocation(pmgr, this);
         _caseToDataMap.remove(i);
-        if (_groupedMultiInstanceOutputData != null) {
+        if (_groupedMultiInstanceOutputData != null && pmgr != null) {
             pmgr.deleteObjectFromExternal(_groupedMultiInstanceOutputData);
         }
         if (logger.isDebugEnabled()) {

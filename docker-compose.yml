@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # =============================================================================
   # Development Environment
@@ -18,8 +16,8 @@ services:
       - PATH=/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - ZAI_API_KEY=${ZAI_API_KEY:-}
     ports:
-      - "9080:8080"  # YAWL Engine (mapped to 9080 to avoid conflicts)
-      - "9081:8081"  # Tomcat
+      - "9080:8080" # YAWL Engine (mapped to 9080 to avoid conflicts)
+      - "9081:8081" # Tomcat
     stdin_open: true
     tty: true
     command: /bin/bash

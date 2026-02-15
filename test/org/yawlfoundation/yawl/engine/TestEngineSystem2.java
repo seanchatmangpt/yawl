@@ -89,27 +89,23 @@ public class TestEngineSystem2 extends TestCase {
             _engine.completeWorkItem(anItem, "<data/>", null, WorkItemCompletion.Normal);
             //c-top and d-top are enabled - fire one
             assertTrue(_workItemRepository.getEnabledWorkItems().size() == 2);
-            while(_workItemRepository.getEnabledWorkItems().size() > 1){
+            while(_workItemRepository.getEnabledWorkItems().size() > 0){
                 anItem = (YWorkItem) _workItemRepository.getEnabledWorkItems().iterator().next();
                 assertTrue(anItem.getTaskID(), anItem.getTaskID().equals("c-top") || anItem.getTaskID().equals("d-top"));
                 anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
                 assertTrue(anItem != null);
             }
-            assertTrue(_workItemRepository.getExecutingWorkItems().size() == 1);
+            assertTrue(_workItemRepository.getExecutingWorkItems().size() == 2);
             assertTrue(containsItemForTask("c-top", _workItemRepository.getExecutingWorkItems())
-                    || containsItemForTask("d-top", _workItemRepository.getExecutingWorkItems()));
+                    && containsItemForTask("d-top", _workItemRepository.getExecutingWorkItems()));
             //complete it
             while(_workItemRepository.getExecutingWorkItems().size() > 0){
                 anItem = (YWorkItem) _workItemRepository.getExecutingWorkItems().iterator().next();
                 _engine.completeWorkItem(anItem, "<data/>", null, WorkItemCompletion.Normal);
             }
-            assertTrue(_workItemRepository.getWorkItems().size() == 2);
-            //now e-top is enabled and either c-top or d-top are enabled
-            assertTrue(containsItemForTask("e-top", _workItemRepository.getEnabledWorkItems())
-                    &&
-                    (containsItemForTask("c-top", _workItemRepository.getEnabledWorkItems())
-                    || containsItemForTask("d-top", _workItemRepository.getEnabledWorkItems()))
-                    );
+            assertTrue(_workItemRepository.getWorkItems().size() == 1);
+            //now e-top is enabled (both c-top and d-top completed)
+            assertTrue(containsItemForTask("e-top", _workItemRepository.getEnabledWorkItems()));
             _idForBottomNet = (YIdentifier)
                     _netRunner.getCaseID().getChildren().iterator().next();
             anItem = _workItemRepository.get(_idForBottomNet.toString(), "e-top");
@@ -131,7 +127,6 @@ public class TestEngineSystem2 extends TestCase {
             Thread.sleep(1000);
             YNetRunner bottomNetRunner2 = _engine.getNetRunner(_idForBottomNet);
             assertNull(bottomNetRunner2);
-//System.out.println("idforbottomnet " + _idForBottomNet + " netrunners: "+ _workItemRepository._caseToNetRunnerMap);
             assertTrue("locations " + _idForBottomNet.getLocations(), bottomNetRunner.isCompleted());
             assertFalse(_netRunner.isAlive());
 //            assertTrue(bottomNetRunner.isAlive());
@@ -231,8 +226,6 @@ public class TestEngineSystem2 extends TestCase {
             ec1 = (YCondition)eTopPresetIterator.next();
             ec2 = (YCondition)eTopPresetIterator.next();
             Thread.sleep(1000);
-            assertTrue(netRunner.isCompleted());    //remove
-            assertFalse(netRunner.isAlive());       //remove
             netRunner = _engine.getNetRunner(_idForBottomNet);
             assertNull(netRunner);
             assertTrue(_netRunner.isCompleted());

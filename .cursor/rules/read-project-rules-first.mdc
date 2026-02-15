@@ -1,0 +1,21 @@
+---
+description: Read project rules before assuming environment; respect .cursorrules and CLAUDE.md
+alwaysApply: true
+---
+
+# Read Project Rules First
+
+## Before any build, test, run, or environment assumptions
+
+1. **Read project rules at task start.** Check `.cursorrules` (and `CLAUDE.md` if present) before proposing or executing commands, scripts, or "how to run" instructions.
+2. **Respect environment constraints.** If the project states it is Docker/devcontainer-only (or host-only, or CI-only), do not suggest or document running on the host, "locally", or "in the terminal" without specifying the correct environment (e.g. "inside the devcontainer" or "inside `docker compose run yawl-dev`").
+3. **Never assume the host has runtimes.** When project rules say "all build/test/run inside the container", do not add scripts or plans that assume Java, Ant, Node, etc. on the host unless the rules explicitly allow it.
+
+## Why
+
+- Cursor injects rules into context, but the agent must treat them as authoritative. Ignoring `.cursorrules` leads to wrong environment assumptions (e.g. local vs container).
+- Best practice (Cursor docs): project rules are version-controlled and scoped to the codebase; they define where and how code runs.
+
+## This project
+
+- **YAWL:** Docker/devcontainer-only per `.cursorrules`. All build, test, and run happen **inside** the devcontainer or `yawl-dev`. Never say "run locally" or "on your machine" without "inside the container".

@@ -21,9 +21,28 @@
     <!-- =========INITIAL PROPERTIES, FILTERS, PATHS & FILESETS============ -->
 
     <!--
-        Load properties from properties file and set up filters
+        Load properties from properties file and set up filters.
+        Fail fast if missing so unit-test runs get a clear message.
     -->
+    <fail message="build/build.properties is missing. Run ./scripts/ensure-build-properties.sh or copy build/build.properties.remote to build/build.properties.">
+        <condition>
+            <not><available file="build/build.properties"/></not>
+        </condition>
+    </fail>
     <property file="build/build.properties"/>
+
+    <!--
+        Default logging levels when not in build.properties.
+        Ensures log4j2 filter has valid values for unitTest.
+    -->
+    <property name="hibernate.logging.level" value="ERROR"/>
+    <property name="yawl.logging.level" value="WARN"/>
+    <property name="root.logging.level" value="ERROR"/>
+    <property name="worklet.logging.level" value="WARN"/>
+    <property name="resource.logging.level" value="WARN"/>
+    <property name="scheduling.logging.level" value="WARN"/>
+    <property name="proclet.logging.level" value="WARN"/>
+    <property name="mail.logging.level" value="WARN"/>
     <filter token="HIBERNATE_LOGGING_LEVEL" value="${hibernate.logging.level}"/>
     <filter token="YAWL_LOGGING_LEVEL" value="${yawl.logging.level}"/>
     <filter token="ROOT_LOGGING_LEVEL" value="${root.logging.level}"/>
@@ -708,6 +727,17 @@
         <pathelement location="${lib.dir}/${hibernate-jpa}"/>
         <pathelement location="${lib.dir}/${jandex}"/>
         <pathelement location="${lib.dir}/${mchange}"/>
+        <pathelement location="${lib.dir}/${jboss-logging}"/>
+        <pathelement location="${lib.dir}/${jboss-transaction}"/>
+        <pathelement location="${lib.dir}/${byte-buddy}"/>
+        <pathelement location="${lib.dir}/${classmate}"/>
+        <pathelement location="${lib.dir}/${istack}"/>
+        <pathelement location="${lib.dir}/${javax-activation}"/>
+        <pathelement location="${lib.dir}/${javax-persistence}"/>
+        <pathelement location="${lib.dir}/${jaxb-api}"/>
+        <pathelement location="${lib.dir}/${jaxb-runtime}"/>
+        <pathelement location="${lib.dir}/${c3p0}"/>
+        <pathelement location="${lib.dir}/${slf4j}"/>
     </path>
 
     <path id="cp.apacheCommons">
@@ -834,15 +864,18 @@
 
     <!--
         This custom task writes checksum data for all files in a release build,
-        from where it is used for auto updating
+        from where it is used for auto updating. Defined lazily so unitTest does not load it.
     -->
-    <taskdef name="checkSums"
-             classname="org.yawlfoundation.yawl.util.CheckSumTask">
-        <classpath>
-            <pathelement path="${classes.dir}"/>
-            <pathelement path="antTask"/>
-        </classpath>
-    </taskdef>
+    <target name="define-checkSums" unless="checkSums.defined">
+        <taskdef name="checkSums"
+                 classname="org.yawlfoundation.yawl.util.CheckSumTask">
+            <classpath>
+                <pathelement path="${classes.dir}"/>
+                <pathelement path="antTask"/>
+            </classpath>
+        </taskdef>
+        <property name="checkSums.defined" value="true"/>
+    </target>
 
     <!-- increment build number & date -->
     <target name="updateBuildProperties">
@@ -1152,6 +1185,9 @@
         <copy filtering="true" overwrite="true"
               file="${properties.dir}/log4j2.xml" todir="${classes.dir}"/>
 
+        <!-- Hibernate config (required for YSessionCache/engine init in unit tests) -->
+        <copy file="${properties.dir}/hibernate.cfg.xml" todir="${classes.dir}"/>
+
         <!-- adjust hbm.xml files depending on db chosen -->
         <antcall target="configureHbmXML"/>
     </target>
@@ -1244,7 +1280,7 @@
         Build the engine (yawl webapp) WAR
     -->
 
-    <target name="build_engine.war" depends="compile, build_engine_SharedTomcat">
+    <target name="build_engine.war" depends="compile, build_engine_SharedTomcat, define-checkSums">
         <copy todir="${temp.dir}/${engine.app.name}${webinf.dir}/authentication">
             <fileset dir="${classes.dir}${packageRoot}/authentication"
                      includes="*.class *.hbm.xml"/>
@@ -1349,7 +1385,7 @@
     -->
 
     <target name="build_WS_Invoker.war"
-            depends="compile, build_WS_Invoker_SharedTomcat">
+            depends="compile, build_WS_Invoker_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${wsInvoker.app.name}${webinf.dir}/elements">
             <fileset dir="${classes.dir}${packageRoot}/elements"
@@ -1428,7 +1464,7 @@
     -->
 
     <target name="build_SMS_Invoker.war"
-            depends="compile, build_SMS_Invoker_SharedTomcat">
+            depends="compile, build_SMS_Invoker_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${smsInvoker.app.name}${webinf.dir}/elements">
             <fileset dir="${classes.dir}${packageRoot}/elements"
@@ -1507,7 +1543,7 @@
     -->
 
     <target name="build_workletService.war"
-            depends="compile, build_workletService_SharedTomcat">
+            depends="compile, build_workletService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${worklet.app.name}${webinf.dir}/authentication">
             <fileset dir="${classes.dir}${packageRoot}/authentication"
@@ -1649,7 +1685,7 @@
     -->
 
     <target name="build_resourceService.war"
-            depends="compile, build_resourceService_SharedTomcat">
+            depends="compile, build_resourceService_SharedTomcat, define-checkSums">
 
         <!-- 1. Copy required yawl classes into dir structure -->
         <copy todir="${temp.dir}/${resource.app.name}${webinf.dir}/authentication">
@@ -1820,7 +1856,7 @@
         Build the resource service client JAR
     -->
 
-    <target name="checksumOrderFulfilment">
+    <target name="checksumOrderFulfilment" depends="define-checkSums">
         <copy todir="${temp.dir}/${off.app.name}">
             <fileset dir="${basedir}/exampleSpecs/orderfulfillment/"/>
         </copy>
@@ -1933,7 +1969,7 @@
     -->
 
     <target name="build_monitorService.war"
-            depends="compile, build_monitorService_SharedTomcat">
+            depends="compile, build_monitorService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${monitor.app.name}${webinf.dir}/engine/interfce/interfaceB">
             <fileset dir="${classes.dir}${packageRoot}/engine/interfce/interfaceB"/>
@@ -2173,7 +2209,7 @@
     -->
 
     <target name="build_costService.war"
-            depends="compile, build_costService_SharedTomcat">
+            depends="compile, build_costService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${cost.app.name}${webinf.dir}/authentication">
             <fileset dir="${classes.dir}${packageRoot}/authentication"
@@ -2273,7 +2309,7 @@
     -->
 
     <target name="build_twitterService.war"
-            depends="compile, build_twitterService_SharedTomcat">
+            depends="compile, build_twitterService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${twitter.app.name}${webinf.dir}/elements/data">
             <fileset dir="${classes.dir}${packageRoot}/elements/data"/>
@@ -2378,7 +2414,7 @@
     -->
 
     <target name="build_mailService.war"
-            depends="compile, build_mailService_SharedTomcat">
+            depends="compile, build_mailService_SharedTomcat, define-checkSums">
         <copy todir="${temp.dir}/${mail.app.name}${webinf.dir}/authentication">
             <fileset dir="${classes.dir}${packageRoot}/authentication"
                      includes="YClient.class"/>
@@ -2448,7 +2484,7 @@
      -->
 
     <target name="build_schedulingService.war"
-            depends="compile, build_schedulingService_SharedTomcat">
+            depends="compile, build_schedulingService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${scheduling.app.name}${webinf.dir}/resourcing/resource">
             <fileset dir="${classes.dir}${packageRoot}/resourcing/resource"
@@ -2531,7 +2567,7 @@
    -->
 
     <target name="build_digitalSignature.war"
-            depends="compile, build_digitalSignature_SharedTomcat">
+            depends="compile, build_digitalSignature_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${digitalSignature.app.name}${webinf.dir}/elements">
             <fileset dir="${classes.dir}${packageRoot}/elements"
@@ -2609,7 +2645,7 @@
     -->
 
     <target name="build_mailSender.war"
-            depends="compile, build_mailSender_SharedTomcat">
+            depends="compile, build_mailSender_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${mailSender.app.name}${webinf.dir}/elements">
             <fileset dir="${classes.dir}${packageRoot}/elements"
@@ -2678,7 +2714,7 @@
 
 
     <target name="build_docStore.war"
-            depends="compile, build_docStore_SharedTomcat">
+            depends="compile, build_docStore_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${docStore.app.name}${webinf.dir}/${docStore.app.name}">
             <fileset dir="${classes.dir}${packageRoot}/${docStore.app.name}"/>
@@ -2737,7 +2773,7 @@
 
 
     <target name="build_procletService.war"
-            depends="compile, build_procletEditor.jar, build_procletService_SharedTomcat">
+            depends="compile, build_procletEditor.jar, build_procletService_SharedTomcat, define-checkSums">
 
         <copy todir="${temp.dir}/${proclet.app.name}${webinf.dir}/${proclet.app.name}">
             <fileset dir="${classes.dir}${packageRoot}/${proclet.app.name}"
@@ -2847,7 +2883,7 @@
     </target>
 
 
-    <target name="build_controlPanel.jar" depends="compile">
+    <target name="build_controlPanel.jar" depends="compile, define-checkSums">
         <tstamp/>
         <copy todir="${classes.dir}${packageRoot}/controlpanel/update"
               file="${src.dir}${packageRoot}/controlpanel/update/mandatory.xml"/>
@@ -3211,10 +3247,56 @@
     <!-- ===================== TEST-RELATED TARGETS======================== -->
 
     <!--
+        Ensure H2 is configured for unit tests (in-memory, no DB server).
+    -->
+    <target name="check-h2-for-unitTest">
+        <fail message="Unit tests require H2. Set database.type=h2 in build/build.properties (e.g. copy from build.properties.remote).">
+            <condition>
+                <not><equals arg1="${database.type}" arg2="h2"/></not>
+            </condition>
+        </fail>
+    </target>
+
+    <!--
         Run the unit tests
     -->
 
-    <target name="unitTest" depends="compile-test">
+    <target name="prepare-hibernate-for-unitTest" if="use_h2">
+        <replace file="${classes.dir}/hibernate.properties"
+                 token="hibernate.connection.provider_class org.hibernate.service.jdbc.connections.internal.C3P0ConnectionProvider"
+                 value="hibernate.connection.provider_class org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionProviderImpl"/>
+        <!-- H2 in-memory does not support AUTO_SERVER=TRUE -->
+        <replace file="${classes.dir}/hibernate.properties"
+                 token=";AUTO_SERVER=TRUE"
+                 value=""/>
+    </target>
+
+    <target name="unitTest" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
+        <junit printsummary="withOutAndErr" fork="true"
+               failureproperty="junit.failure" errorproperty="junit.error">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath>
+                <pathelement location="${lib.dir}/${junit}"/>
+                <pathelement path="${java.class.path}"/>
+                <pathelement path="${classes.dir}"/>
+            </classpath>
+            <formatter type="plain"/>
+            <test name="org.yawlfoundation.yawl.TestAllYAWLSuites"/>
+        </junit>
+        <fail if="junit.failure" message="Unit tests had failures."/>
+        <fail if="junit.error" message="Unit tests had errors."/>
+    </target>
+
+    <target name="unitTest-engine-only" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
         <junit printsummary="withOutAndErr" fork="true">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
@@ -3225,13 +3307,36 @@
             <classpath refid="cp.jsf"/>
             <classpath refid="cp.ds"/>
             <classpath refid="cp.mail"/>
+            <classpath refid="cp.scheduling"/>
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
             <formatter type="plain"/>
-            <test name="org.yawlfoundation.yawl.TestAllYAWLSuites"/>
+            <test name="org.yawlfoundation.yawl.engine.EngineTestSuite"/>
+        </junit>
+    </target>
+
+    <target name="unitTest-engine-init-only" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
+        <junit printsummary="withOutAndErr" fork="true">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath>
+                <pathelement location="${lib.dir}/${junit}"/>
+                <pathelement path="${java.class.path}"/>
+                <pathelement path="${classes.dir}"/>
+            </classpath>
+            <formatter type="plain"/>
+            <test name="org.yawlfoundation.yawl.engine.TestYEngineInit"/>
         </junit>
     </target>
 
@@ -3272,10 +3377,62 @@
         Env: YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD.
         Optional: SPEC_PATH, TIMEOUT_SEC, UPLOAD_SPEC (default true).
     -->
+    <!--
+        Export orderfulfillment XES log to file for process mining.
+        Env: YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD.
+        Optional: OUTPUT_PATH (default: orderfulfillment.xes).
+    -->
+    <target name="run-export-xes" depends="compile"
+            description="Export orderfulfillment XES log for PM4Py">
+        <java classname="org.yawlfoundation.yawl.integration.orderfulfillment.XesExportLauncher"
+              fork="true" failonerror="true">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.simplemail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath refid="cp.proclet"/>
+            <classpath refid="cp.balancer"/>
+            <classpath refid="cp.etc"/>
+        </java>
+    </target>
+
     <target name="run-orderfulfillment-launcher" depends="compile"
             description="Launch orderfulfillment case and validate completion">
         <java classname="org.yawlfoundation.yawl.integration.orderfulfillment.OrderfulfillmentLauncher"
               fork="true" failonerror="true">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.simplemail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath refid="cp.proclet"/>
+            <classpath refid="cp.balancer"/>
+            <classpath refid="cp.etc"/>
+        </java>
+    </target>
+
+    <!--
+        Run orderfulfillment permutation suite (concurrent, sequential, rapid scenarios).
+        Env: YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD.
+        Optional: PERMUTATION_CONFIG (default: config/orderfulfillment-permutations.json).
+    -->
+    <target name="run-orderfulfillment-permutations" depends="compile"
+            description="Run scenario permutations to challenge agents">
+        <java classname="org.yawlfoundation.yawl.integration.orderfulfillment.PermutationRunner"
+              fork="true" failonerror="false">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
             <classpath refid="cp.wsif"/>

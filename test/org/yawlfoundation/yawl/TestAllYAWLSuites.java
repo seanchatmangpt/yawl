@@ -7,6 +7,7 @@ import org.yawlfoundation.yawl.engine.EngineTestSuite;
 import org.yawlfoundation.yawl.exceptions.ExceptionTestSuite;
 import org.yawlfoundation.yawl.logging.LoggingTestSuite;
 import org.yawlfoundation.yawl.schema.SchemaTestSuite;
+import org.yawlfoundation.yawl.stateless.StatelessTestSuite;
 import org.yawlfoundation.yawl.unmarshal.UnmarshallerTestSuite;
 import org.yawlfoundation.yawl.util.UtilTestSuite;
 import junit.framework.Test;
@@ -31,6 +32,7 @@ public class TestAllYAWLSuites extends TestSuite{
         TestSuite suite = new TestSuite();
         suite.addTest(ElementsTestSuite.suite());
         suite.addTest(StateTestSuite.suite());
+        suite.addTest(StatelessTestSuite.suite());
         suite.addTest(EngineTestSuite.suite());
         suite.addTest(ExceptionTestSuite.suite());
         suite.addTest(LoggingTestSuite.suite());

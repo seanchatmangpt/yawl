@@ -29,12 +29,18 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 public final class DecisionWorkflow {
 
     private final ZaiService zaiService;
+    private final McpTaskContextSupplier mcpContextSupplier;
 
     public DecisionWorkflow(ZaiService zaiService) {
+        this(zaiService, null);
+    }
+
+    public DecisionWorkflow(ZaiService zaiService, McpTaskContextSupplier mcpContextSupplier) {
         if (zaiService == null) {
             throw new IllegalArgumentException("zaiService is required");
         }
         this.zaiService = zaiService;
+        this.mcpContextSupplier = mcpContextSupplier;
     }
 
     /**
@@ -51,27 +57,12 @@ public final class DecisionWorkflow {
         String decompositionRoot = taskName.replace(' ', '_');
         String inputXml = getInputXml(workItem);
 
-        String prompt = String.format(
-            "Produce valid XML output for this YAWL workflow task (task_completion_guide aligned).\n\n" +
-            "Work Item ID: %s\n" +
-            "Task name: %s\n" +
-            "Decomposition root element (use this as the XML root): %s\n\n" +
-            "Input data:\n%s\n\n" +
-            "Expected output format:\n" +
-            "1. Root element MUST be <%s>\n" +
-            "2. Include required output parameters by task type:\n" +
-            "   - Approval tasks: Approved/Approval/POApproval etc. as boolean true\n" +
-            "   - Document tasks: document structure matching input schema\n" +
-            "   - Create tasks: created entity with valid structure\n" +
-            "3. Data validation: XML must be well-formed; element names match YAWL spec\n" +
-            "4. Return ONLY the XML output, no explanation, no markdown, no code block.\n" +
-            "5. Common issues: avoid extra whitespace; use correct namespaces if specified.",
-            workItem.getID(),
-            taskName,
-            decompositionRoot,
-            inputXml,
-            decompositionRoot);
+        String mcpGuide = null;
+        if (mcpContextSupplier != null) {
+            mcpGuide = mcpContextSupplier.getTaskCompletionGuide(workItem);
+        }
 
+        String prompt = buildPrompt(workItem, taskName, decompositionRoot, inputXml, mcpGuide);
         zaiService.setSystemPrompt(
             "You are a YAWL workflow output generator. Produce valid XML for workflow tasks. " +
             "Return only the XML, no other text. Align with task_completion_guide: expected " +
@@ -83,6 +74,29 @@ public final class DecisionWorkflow {
         } catch (Exception e) {
             throw new RuntimeException("Failed to produce output for " + workItem.getID(), e);
         }
+    }
+
+    private static String buildPrompt(WorkItemRecord workItem, String taskName,
+            String decompositionRoot, String inputXml, String mcpGuide) {
+        StringBuilder sb = new StringBuilder();
+        if (mcpGuide != null && !mcpGuide.isEmpty()) {
+            sb.append("=== MCP Task Completion Guide ===\n").append(mcpGuide).append("\n\n");
+        }
+        sb.append("Produce valid XML output for this YAWL workflow task.\n\n");
+        sb.append("Work Item ID: ").append(workItem.getID()).append("\n");
+        sb.append("Task name: ").append(taskName).append("\n");
+        sb.append("Decomposition root element (use this as the XML root): ").append(decompositionRoot).append("\n\n");
+        sb.append("Input data:\n").append(inputXml).append("\n\n");
+        sb.append("Expected output format:\n");
+        sb.append("1. Root element MUST be <").append(decompositionRoot).append(">\n");
+        sb.append("2. Include required output parameters by task type:\n");
+        sb.append("   - Approval tasks: Approved/Approval/POApproval etc. as boolean true\n");
+        sb.append("   - Document tasks: document structure matching input schema\n");
+        sb.append("   - Create tasks: created entity with valid structure\n");
+        sb.append("3. Data validation: XML must be well-formed; element names match YAWL spec\n");
+        sb.append("4. Return ONLY the XML output, no explanation, no markdown, no code block.\n");
+        sb.append("5. Common issues: avoid extra whitespace; use correct namespaces if specified.");
+        return sb.toString();
     }
 
     private static String getInputXml(WorkItemRecord workItem) {

@@ -1,0 +1,408 @@
+Testsuite: org.yawlfoundation.yawl.engine.EngineTestSuite
+Tests run: 20, Failures: 0, Errors: 19, Skipped: 0, Time elapsed: 0.894 sec
+
+Testcase: testEngineInstanceWithH2 took 0.577 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYEngineInit.testEngineInstanceWithH2(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testIt took 0.004 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testCaseCancel took 0.003 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testCaseCompletion took 0.002 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testMultimergeNets took 0.115 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testMultimergeWorkItems took 0.015 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testStateAlignmentBetween_WorkItemRepository_and_Net took 0.012 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testImproperCompletion took 0.012 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestImproperCompletion.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testImproperCompletion took 0.012 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestOrJoin.testImproperCompletion(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testImproperCompletion2 took 0.01 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestOrJoin.testImproperCompletion2(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testGetTaskWithoutSpecification took 0.025 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestRestServiceMethods.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testGetTask took 0.021 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestRestServiceMethods.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testUseCase1 took 0.009 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestSimpleExecutionUseCases.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testBasicFireAtomic took 0.008 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYNetRunner.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testAddInstance took 0.008 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYNetRunner.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testCreateChild took 0.002 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.<init>(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.engine.TestYWorkItem.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testConstructor took 0.002 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.<init>(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.engine.TestYWorkItem.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testUniqueIDGenerator took 0.035 sec
+Testcase: testGetItem took 0.003 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+
+Testcase: testChildren took 0.003 sec
+	Caused an ERROR
+Failure to instantiate the engine.
+java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+

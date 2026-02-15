@@ -167,7 +167,7 @@ public class YEngine implements InterfaceADesign,
             return getInstance(ENGINE_PERSISTS_BY_DEFAULT);
         }
         catch (Exception e) {
-            throw new RuntimeException("Failure to instantiate the engine.");
+            throw new RuntimeException("Failure to instantiate the engine.", e);
         }
     }
 

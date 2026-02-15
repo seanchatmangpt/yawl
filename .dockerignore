@@ -1,0 +1,6 @@
+classes
+temp
+output
+*.log
+.git
+.gitignore

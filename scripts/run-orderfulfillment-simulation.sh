@@ -10,6 +10,9 @@
 # Usage:
 #   ./scripts/run-orderfulfillment-simulation.sh
 #
+# With process mining after success (PM4Py A2A agent must be running):
+#   RUN_PROCESS_MINING=true ./scripts/run-orderfulfillment-simulation.sh
+#
 # With engine on host:
 #   YAWL_ENGINE_URL=http://localhost:8888/yawl ./scripts/run-orderfulfillment-simulation.sh
 #
@@ -66,6 +69,34 @@ echo "Launching case and waiting for completion..."
 if ant -f build/build.xml run-orderfulfillment-launcher; then
     echo ""
     echo "SUCCESS: Order fulfillment case completed (100% agent automation validated)."
+
+    # Optional: run process mining (export XES, call PM4Py A2A agent)
+    if [ "${RUN_PROCESS_MINING:-false}" = "true" ]; then
+        echo ""
+        echo "Process mining (PM4Py)..."
+        XES_PATH="${PROJECT_DIR}/orderfulfillment.xes"
+        export OUTPUT_PATH="$XES_PATH"
+        if ant -f build/build.xml run-export-xes -q 2>/dev/null; then
+            PM4PY_URL="${PM4PY_AGENT_URL:-http://localhost:9092}"
+            XES_INPUT="$XES_PATH"
+            [ -d /workspace ] 2>/dev/null && XES_INPUT="/workspace/orderfulfillment.xes"
+            if command -v curl &>/dev/null && command -v python3 &>/dev/null; then
+                BODY=$(XES_INPUT="$XES_INPUT" python3 -c '
+import json, os
+payload = {"skill":"performance","xes_input":os.environ.get("XES_INPUT","")}
+msg = {"jsonrpc":"2.0","id":1,"method":"message/send","params":{"message":{"role":"user","parts":[{"kind":"text","text":json.dumps(payload)}]}}}
+print(json.dumps(msg))
+' 2>/dev/null)
+                if [ -n "$BODY" ]; then
+                    RESP=$(curl -sf -X POST "$PM4PY_URL/" -H "Content-Type: application/json" -d "$BODY" 2>/dev/null) || true
+                    [ -n "$RESP" ] && echo "  PM4Py: $(echo "$RESP" | head -c 400)..."
+                fi
+            fi
+        else
+            echo "  (XES export skipped - log gateway may need completed cases)"
+        fi
+    fi
+
     exit 0
 else
     echo ""

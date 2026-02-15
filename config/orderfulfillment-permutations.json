@@ -1,0 +1,57 @@
+{
+  "description": "Order fulfillment scenario permutations to challenge autonomous agents",
+  "permutations": [
+    {
+      "id": "baseline",
+      "name": "Baseline",
+      "description": "Single case, standard timeout. Validates basic agent coordination.",
+      "concurrentCases": 1,
+      "timeoutSec": 600,
+      "challenge": "routing"
+    },
+    {
+      "id": "rapid",
+      "name": "Rapid",
+      "description": "Single case, short timeout. Challenges agent responsiveness.",
+      "concurrentCases": 1,
+      "timeoutSec": 180,
+      "challenge": "latency"
+    },
+    {
+      "id": "concurrent_2",
+      "name": "Concurrent 2",
+      "description": "Two cases launched in parallel. Challenges agent contention and throughput.",
+      "concurrentCases": 2,
+      "timeoutSec": 900,
+      "challenge": "throughput"
+    },
+    {
+      "id": "concurrent_3",
+      "name": "Concurrent 3",
+      "description": "Three cases in parallel. Stress test for multi-case handling.",
+      "concurrentCases": 3,
+      "timeoutSec": 1200,
+      "challenge": "stress"
+    },
+    {
+      "id": "sequential_3",
+      "name": "Sequential 3",
+      "description": "Three cases launched one after another. Challenges sustained throughput.",
+      "concurrentCases": 1,
+      "repeatCount": 3,
+      "pauseBetweenMs": 5000,
+      "timeoutSec": 600,
+      "challenge": "sustained"
+    },
+    {
+      "id": "back_to_back",
+      "name": "Back-to-Back",
+      "description": "Two cases with minimal pause. Challenges agent recovery between cases.",
+      "concurrentCases": 1,
+      "repeatCount": 2,
+      "pauseBetweenMs": 1000,
+      "timeoutSec": 600,
+      "challenge": "recovery"
+    }
+  ]
+}

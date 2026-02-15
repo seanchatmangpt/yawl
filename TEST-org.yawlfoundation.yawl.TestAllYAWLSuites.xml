@@ -1,0 +1,1449 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="45" failures="8" hostname="850ad39615da" name="org.yawlfoundation.yawl.TestAllYAWLSuites" skipped="0" tests="106" time="1.01" timestamp="2026-02-15T20:35:52">
+  <properties>
+    <property name="webinf.dir" value="/WEB-INF/classes/org/yawlfoundation/yawl" />
+    <property name="proclet.app.name" value="procletService" />
+    <property name="java.specification.version" value="21" />
+    <property name="servlet" value="servlet-api.jar" />
+    <property name="istack" value="istack-commons-runtime-4.1.1.jar" />
+    <property name="log4j-api" value="log4j-api-2.18.0.jar" />
+    <property name="postgres8" value="postgresql-42.2.8.jar" />
+    <property name="openforecast" value="OpenForecast-0.5.0.jar" />
+    <property name="sun.arch.data.model" value="64" />
+    <property name="webapp_documentStore.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar h2-1.3.176.jar commons-codec-1.9.jar                      jdom-2.0.5.jar xercesImpl.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar" />
+    <property name="xmlunit" value="xmlunit-1.3.jar" />
+    <property name="webapp_mailService.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar simple-java-mail-5.5.1.jar slf4j-api-1.7.12.jar jakarta.activation-1.2.2.jar                   jakarta.mail-1.6.7.jar emailaddress-rfc2822-2.1.4.jar commons-codec-1.9.jar               xercesImpl.jar commons-lang3-3.6.jar azure-core-1.57.0.jar azure-identity-1.18.1.jar" />
+    <property name="webapp_schedulingService.libs" value="json.jar commons-dbcp-1.3.jar commons-pool-1.5.4.jar jaxen-1.1.6.jar ucp.jar                      xdb.jar xalan.jar xmlparserv2.jar xmlunit-1.3.jar antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar                      h2-1.3.176.jar commons-codec-1.9.jar commons-dbcp-1.3.jar commons-pool-1.5.4.jar xercesImpl.jar" />
+    <property name="java.vendor.url" value="https://adoptium.net/" />
+    <property name="sharedLibs.dir" value="~/apache-tomcat-7.0.64/lib" />
+    <property name="okhttp3" value="okhttp-4.12.0.jar" />
+    <property name="jaxb-api" value="jaxb-api-2.3.1.jar" />
+    <property name="commonsVfs" value="commons-vfs2-2.1.jar" />
+    <property name="kiota-http" value="microsoft-kiota-http-okHttp-1.8.10.jar" />
+    <property name="log4j-core" value="log4j-core-2.18.0.jar" />
+    <property name="sun.boot.library.path" value="/opt/java/openjdk/lib" />
+    <property name="sun.java.command" value="org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner org.yawlfoundation.yawl.TestAllYAWLSuites skipNonTests=false filtertrace=true haltOnError=false haltOnFailure=false formatter=org.apache.tools.ant.taskdefs.optional.junit.OutErrSummaryJUnitResultFormatter showoutput=false outputtoformatters=true logfailedtests=true threadid=0 logtestlistenerevents=false formatter=org.apache.tools.ant.taskdefs.optional.junit.PlainJUnitResultFormatter,/workspace/TEST-org.yawlfoundation.yawl.TestAllYAWLSuites.txt formatter=org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter,/workspace/TEST-org.yawlfoundation.yawl.TestAllYAWLSuites.xml crashfile=/workspace/junitvmwatcher4007132224951948599.properties propsfile=/workspace/junit16943727338387731921.properties" />
+    <property name="output.dir" value="output" />
+    <property name="worklet.app.name" value="workletService" />
+    <property name="jdk.debug" value="release" />
+    <property name="slf4j" value="slf4j-api-1.7.12.jar" />
+    <property name="webapp_yawl.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar common.jar ecore.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar xercesImpl.jar                      h2-1.3.176.jar saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar commons-lang-2.3.jar commons-codec-1.9.jar jaxen-1.1.6.jar                      jakarta.xml.bind-api-3.0.1.jar" />
+    <property name="antlr" value="antlr-2.7.7.jar" />
+    <property name="java.specification.vendor" value="Oracle Corporation" />
+    <property name="emailaddress" value="emailaddress-rfc2822-2.1.4.jar" />
+    <property name="java.version.date" value="2026-01-20" />
+    <property name="java.home" value="/opt/java/openjdk" />
+    <property name="kiota-serialization-form" value="microsoft-kiota-serialization-form-1.8.10.jar" />
+    <property name="app.version" value="5.2" />
+    <property name="log4j-slf4j" value="log4j-slf4j-impl-2.17.1.jar" />
+    <property name="basedir" value="/workspace" />
+    <property name="hibernate-ehcache" value="hibernate-ehcache-5.6.14.Final.jar" />
+    <property name="database.type" value="h2" />
+    <property name="jspecify" value="jspecify-1.0.0.jar" />
+    <property name="yawl.build.date" value="2026-02-14 remote" />
+    <property name="java.specification.name" value="Java Platform API Specification" />
+    <property name="java.vm.specification.vendor" value="Oracle Corporation" />
+    <property name="okio" value="okio-3.9.1.jar" />
+    <property name="ecore" value="ecore.jar" />
+    <property name="res_mail_libs" value="courier-java-3.3.0.jar gson-2.11.0.jar jackson-annotations-2.18.2.jar                     jackson-core-2.18.2.jar jackson-databind-2.18.2.jar jackson-datatype-jdk8-2.18.2.jar jackson-datatype-jsr310-2.18.2.jar                     kotlin-stdlib-2.1.0.jar okhttp-4.12.0.jar okio-3.9.1.jar okio-jvm-3.9.1.jar java-sdk-1.0.1.jar                     microsoft-graph-6.55.0.jar microsoft-graph-core-3.6.5.jar microsoft-kiota-authentication-azure-1.8.10.jar                     microsoft-kiota-http-okHttp-1.8.10.jar microsoft-kiota-serialization-form-1.8.10.jar microsoft-kiota-serialization-json-1.8.10.jar                     microsoft-kiota-serialization-multipart-1.8.10.jar microsoft-kiota-serialization-text-1.8.10.jar                     microsoft-kiota-abstractions-1.8.10.jar okhttp-5.2.1.jar" />
+    <property name="hibernate-commons" value="hibernate-commons-annotations-5.1.2.Final.jar" />
+    <property name="mcp-core" value="mcp-core-0.17.2.jar" />
+    <property name="reactor-core" value="reactor-core-3.7.0.jar" />
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers" />
+    <property name="java.runtime.version" value="21.0.10+7-LTS" />
+    <property name="jsr" value="jsr173_1.0_api.jar" />
+    <property name="concurrent" value="concurrent-1.3.4.jar" />
+    <property name="jackson-core" value="jackson-core-2.18.2.jar" />
+    <property name="saxonapi" value="saxon9-s9api.jar" />
+    <property name="jboss-logging" value="jboss-logging-3.4.3.Final.jar" />
+    <property name="env.PATH" value="/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" />
+    <property name="hibernate-jpa" value="hibernate-jpa-2.1-api-1.0.0.Final.jar" />
+    <property name="off.app.name" value="orderfulfillment" />
+    <property name="azure-identity" value="azure-identity-1.18.1.jar" />
+    <property name="hibernate.logging.level" value="ERROR" />
+    <property name="file.encoding" value="UTF-8" />
+    <property name="jaxrpc" value="jaxrpc.jar" />
+    <property name="hsql" value="hsqldb.jar" />
+    <property name="orderfulfillment" value="orderfulfillment.jar" />
+    <property name="webapp_procletService.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar commons-codec-1.9.jar collections-generic-4.01.jar colt-1.2.0.jar concurrent-1.3.4.jar jung-3d-2.0.jar                       jung-3d-demos-2.0.jar jung-algorithms-2.0.jar jung-api-2.0.jar jung-api-2.0-tests.jar                      jung-graph-impl-2.0.jar jung-io-2.0.jar jung-jai-2.0.jar jung-jai-samples-2.0.jar                      jung-jai-samples-2.0.jar jung-samples-2.0.jar jung-visualization-2.0.jar                       h2-1.3.176.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar xercesImpl.jar" />
+    <property name="java.vendor.version" value="Temurin-21.0.10+7" />
+    <property name="env.HOSTNAME" value="850ad39615da" />
+    <property name="env._" value="/usr/share/ant/bin/ant" />
+    <property name="commonsMath3" value="commons-math3-3.6.1.jar" />
+    <property name="env.SHLVL" value="1" />
+    <property name="twitter.app.name" value="twitterService" />
+    <property name="jakarta-activation" value="jakarta.activation-1.2.2.jar" />
+    <property name="proxy.port" value="" />
+    <property name="java.io.tmpdir" value="/tmp" />
+    <property name="smtp" value="smtp.jar" />
+    <property name="packageRoot" value="/org/yawlfoundation/yawl" />
+    <property name="java.version" value="21.0.10" />
+    <property name="analyzer.dir" value="build/analyzer" />
+    <property name="jackson-databind" value="jackson-databind-2.18.2.jar" />
+    <property name="a2a-http-client" value="a2a-java-sdk-http-client-1.0.0.Alpha2.jar" />
+    <property name="webapp_costService.libs" value="jdom-2.0.5.jar xercesImpl.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar                       h2-1.3.176.jar commons-codec-1.9.jar saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar commons-lang-2.3.jar" />
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification" />
+    <property name="okio-jvm" value="okio-jvm-3.9.1.jar" />
+    <property name="commonsPool" value="commons-pool-1.5.4.jar" />
+    <property name="lib.dir" value="build/3rdParty/lib" />
+    <property name="temp.dir" value="temp" />
+    <property name="jackson-jsr310" value="jackson-datatype-jsr310-2.18.2.jar" />
+    <property name="native.encoding" value="UTF-8" />
+    <property name="webapp_digitalSignature.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar commons-codec-1.9.jar commons-io-2.0.1.jar                      commons-fileupload-1.2.2.jar bcmail-jdk15-139.jar bcprov-jdk15-139.jar xercesImpl.jar" />
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib" />
+    <property name="java.vendor" value="Eclipse Adoptium" />
+    <property name="kiota-serialization-json" value="microsoft-kiota-serialization-json-1.8.10.jar" />
+    <property name="stderr.encoding" value="UTF-8" />
+    <property name="webapps.dir" value="~/apache-tomcat-7.0.64/webapps" />
+    <property name="jaxb-impl" value="jaxb-impl.jar" />
+    <property name="jung-io" value="jung-io-2.0.jar" />
+    <property name="byte-buddy" value="byte-buddy-1.12.23.jar" />
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle" />
+    <property name="webapp_mailSender.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar mail.jar activation.jar                      commons-io-2.0.1.jar commons-fileupload-1.2.2.jar commons-codec-1.9.jar xercesImpl.jar" />
+    <property name="commonsIO" value="commons-io-2.0.1.jar" />
+    <property name="ant.file.type" value="file" />
+    <property name="mchange" value="mchange-commons-java-0.2.3.4.jar" />
+    <property name="env.LANG" value="en_US.UTF-8" />
+    <property name="mailapi" value="mailapi.jar" />
+    <property name="mcp-json" value="mcp-json-0.17.2.jar" />
+    <property name="jaxen" value="jaxen-1.1.6.jar" />
+    <property name="jung-3d-demos" value="jung-3d-demos-2.0.jar" />
+    <property name="mail.logging.level" value="WARN" />
+    <property name="ant.file.YAWL Runtime" value="/workspace/build/build.xml" />
+    <property name="mcp-json-jackson2" value="mcp-json-jackson2-0.17.2.jar" />
+    <property name="kiota-serialization-multipart" value="microsoft-kiota-serialization-multipart-1.8.10.jar" />
+    <property name="java.vm.specification.version" value="21" />
+    <property name="os.name" value="Linux" />
+    <property name="yawl.logging.level" value="WARN" />
+    <property name="mysql" value="mysql-connector-java-5.1.22-bin.jar" />
+    <property name="mail.app.name" value="mailService" />
+    <property name="jsf-cl" value="jsfcl.jar" />
+    <property name="jdom1" value="jdom.jar" />
+    <property name="env.JAVA_VERSION" value="jdk-21.0.10+7" />
+    <property name="resource.app.name" value="resourceService" />
+    <property name="webapp_monitorService.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar appbase.jar jsf-api.jar jsf-impl.jar jsfcl.jar webui.jar                      commons-digester.jar commons-beanutils.jar commons-fileupload-1.2.2.jar                      commons-io-2.0.1.jar commons-logging-1.1.1.jar standard.jar jstl.jar rowset.jar                      dataprovider.jar errorhandler.jar defaulttheme-gray.jar commons-lang-2.3.jar                      commons-logging-1.1.1.jar commons-collections-3.2.1.jar commons-codec-1.9.jar xercesImpl.jar" />
+    <property name="oracle" value="ojdbc6_9.jar" />
+    <property name="a2a-transport-rest" value="a2a-java-sdk-transport-rest-1.0.0.Alpha2.jar" />
+    <property name="test.dir" value="test" />
+    <property name="a2a-client" value="a2a-java-sdk-client-1.0.0.Alpha2.jar" />
+    <property name="user.home" value="/root" />
+    <property name="a2a-client-transport-spi" value="a2a-java-sdk-client-transport-spi-1.0.0.Alpha2.jar" />
+    <property name="use_h2" value="true" />
+    <property name="jdom" value="jdom-2.0.5.jar" />
+    <property name="webapp_yawlWSInvoker.libs" value="wsif.jar axis-1.1RC2.jar commons-discovery.jar commons-logging-1.1.1.jar                      activation.jar jaxrpc.jar saaj.jar wsdl4j-20030807.jar apache_soap-2_3_1.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar xercesImpl.jar                      commons-codec-1.9.jar commons-lang-2.3.jar" />
+    <property name="saxon.libs" value="saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar" />
+    <property name="uploadbean" value="uploadbean.jar" />
+    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-3.0.0.jar" />
+    <property name="javax-persistence" value="javax.persistence-api-2.2.jar" />
+    <property name="activation" value="activation.jar" />
+    <property name="persistence.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar" />
+    <property name="env.ANT_HOME" value="/usr/share/ant" />
+    <property name="webapp_workletService.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar common.jar ecore.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar                      h2-1.3.176.jar saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar commons-lang-2.3.jar xercesImpl.jar                      commons-codec-1.9.jar" />
+    <property name="env.LANGUAGE" value="en_US:en" />
+    <property name="jackson-annotations" value="jackson-annotations-2.18.2.jar" />
+    <property name="saaj" value="saaj.jar" />
+    <property name="wsInvoker.app.name" value="yawlWSInvoker" />
+    <property name="resource.logging.level" value="WARN" />
+    <property name="json-schema-validator" value="json-schema-validator-2.0.0.jar" />
+    <property name="macify" value="macify-1.4.jar" />
+    <property name="commonsLogging" value="commons-logging-1.1.1.jar" />
+    <property name="h2" value="h2-1.3.176.jar" />
+    <property name="ant.file" value="/workspace/build/build.xml" />
+    <property name="xsd.libs" value="common.jar ecore.jar" />
+    <property name="env.ZAI_API_KEY" value="991355abc0b34f38a77b5a4896bb976c.oV4DCMWNHjjpCfOD" />
+    <property name="stdout.encoding" value="UTF-8" />
+    <property name="jandex" value="jandex-2.4.2.Final.jar" />
+    <property name="path.separator" value=":" />
+    <property name="wsif" value="wsif.jar" />
+    <property name="os.version" value="6.10.14-linuxkit" />
+    <property name="cost.app.name" value="costService" />
+    <property name="jsf-impl" value="jsf-impl.jar" />
+    <property name="common" value="common.jar" />
+    <property name="commonsBeanutils" value="commons-beanutils.jar" />
+    <property name="xalan" value="xalan.jar" />
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM" />
+    <property name="json" value="json.jar" />
+    <property name="colt" value="colt-1.2.0.jar" />
+    <property name="jsf-appbase" value="appbase.jar" />
+    <property name="simplemail" value="simple-java-mail-5.5.1.jar" />
+    <property name="a2a-server" value="a2a-java-sdk-server-common-1.0.0.Alpha2.jar" />
+    <property name="yawl.build.number" value="1747" />
+    <property name="junit" value="junit-4.10.jar" />
+    <property name="catalina.home" value="~/apache-tomcat-7.0.64" />
+    <property name="jung-jai" value="jung-jai-2.0.jar" />
+    <property name="os.arch" value="aarch64" />
+    <property name="jsf-webui" value="webui.jar" />
+    <property name="CATALINA_HOME" value="~/apache-tomcat-7.0.64" />
+    <property name="jsf-dataprovider" value="dataprovider.jar" />
+    <property name="jsf.libs" value="appbase.jar jsf-api.jar jsf-impl.jar jsfcl.jar webui.jar                      commons-digester.jar commons-beanutils.jar commons-fileupload-1.2.2.jar                      commons-io-2.0.1.jar commons-logging-1.1.1.jar standard.jar jstl.jar rowset.jar                      dataprovider.jar errorhandler.jar defaulttheme-gray.jar" />
+    <property name="scheduling.app.name" value="schedulingService" />
+    <property name="commonsDiscovery" value="commons-discovery.jar" />
+    <property name="a2a-common" value="a2a-java-sdk-common-1.0.0.Alpha2.jar" />
+    <property name="java.vm.info" value="mixed mode, sharing" />
+    <property name="xdb" value="xdb.jar" />
+    <property name="jung-visualization" value="jung-visualization-2.0.jar" />
+    <property name="guava" value="guava-21.0.jar" />
+    <property name="java.class.version" value="65.0" />
+    <property name="jaxb-xjc" value="jaxb-xjc.jar" />
+    <property name="jung-api" value="jung-api-2.0.jar" />
+    <property name="src.dir" value="src" />
+    <property name="ant.project.default-target" value="buildWebApps" />
+    <property name="jsf-defaulttheme-gray" value="defaulttheme-gray.jar" />
+    <property name="ant.library.dir" value="/usr/share/ant/lib" />
+    <property name="mailsender" value="java-sdk-1.0.1.jar" />
+    <property name="ant.project.name" value="YAWL Runtime" />
+    <property name="sun.jnu.encoding" value="UTF-8" />
+    <property name="classmate" value="classmate-1.5.1.jar" />
+    <property name="xmlparserv" value="xmlparserv2.jar" />
+    <property name="microsoft-graph-core" value="microsoft-graph-core-3.6.5.jar" />
+    <property name="okhttp" value="okhttp-5.2.1.jar" />
+    <property name="microsoft-graph" value="microsoft-graph-6.55.0.jar" />
+    <property name="a2a-jsonrpc-common" value="a2a-java-sdk-jsonrpc-common-1.0.0.Alpha2.jar" />
+    <property name="saxondom" value="saxon9-dom.jar" />
+    <property name="javax-activation" value="javax.activation-api-1.2.0.jar" />
+    <property name="env.JAVA_HOME" value="/opt/java/openjdk" />
+    <property name="webapp_yawlSMSInvoker.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar commons-codec-1.9.jar xercesImpl.jar" />
+    <property name="commonsFileupload" value="commons-fileupload-1.2.2.jar" />
+    <property name="a2a-client-transport-rest" value="a2a-java-sdk-client-transport-rest-1.0.0.Alpha2.jar" />
+    <property name="javadoc.dir" value="output/javadoc" />
+    <property name="file.separator" value="/" />
+    <property name="java.vm.compressedOopsMode" value="32-bit" />
+    <property name="line.separator" value="&#xa;" />
+    <property name="courier" value="courier-java-3.3.0.jar" />
+    <property name="a2a-client-transport-jsonrpc" value="a2a-java-sdk-client-transport-jsonrpc-1.0.0.Alpha2.jar" />
+    <property name="docStore.app.name" value="documentStore" />
+    <property name="jung-graph" value="jung-graph-impl-2.0.jar" />
+    <property name="commonsDbcp" value="commons-dbcp-1.3.jar" />
+    <property name="root.logging.level" value="ERROR" />
+    <property name="worklet.logging.level" value="WARN" />
+    <property name="kiota-authentication-azure" value="microsoft-kiota-authentication-azure-1.8.10.jar" />
+    <property name="jboss-transaction" value="jboss-transaction-api_1.2_spec-1.1.1.Final.jar" />
+    <property name="database.path" value="mem:yawl;DB_CLOSE_DELAY=-1" />
+    <property name="log4j-bridge" value="log4j-1.2-api-2.17.1.jar" />
+    <property name="user.name" value="root" />
+    <property name="commonsCollections" value="commons-collections-3.2.1.jar" />
+    <property name="wsif.libs" value="wsif.jar axis-1.1RC2.jar commons-discovery.jar commons-logging-1.1.1.jar                      activation.jar jaxrpc.jar saaj.jar wsdl4j-20030807.jar" />
+    <property name="jung-api-tests" value="jung-api-2.0-tests.jar" />
+    <property name="a2a-transport-jsonrpc" value="a2a-java-sdk-transport-jsonrpc-1.0.0.Alpha2.jar" />
+    <property name="ehcache" value="ehcache-core-2.4.3.jar" />
+    <property name="tomcat.treatAsDedicated" value="false" />
+    <property name="webapp_resourceService.libs" value="antlr-2.7.7.jar commons-collections-3.2.1.jar byte-buddy-1.12.23.jar classmate-1.5.1.jar ehcache-core-2.4.3.jar                      hibernate-c3p0-5.6.14.Final.jar hibernate-core-5.6.14.Final.jar hibernate-commons-annotations-5.1.2.Final.jar                      hibernate-ehcache-5.6.14.Final.jar hibernate-jpa-2.1-api-1.0.0.Final.jar hibernate.cfg.xml                      istack-commons-runtime-4.1.1.jar jandex-2.4.2.Final.jar jboss-logging-3.4.3.Final.jar jboss-transaction-api_1.2_spec-1.1.1.Final.jar                      javax.activation-api-1.2.0.jar javax.persistence-api-2.2.jar jaxb-api-2.3.1.jar jaxb-runtime-2.3.1.jar                      c3p0-0.9.2.1.jar slf4j-api-1.7.12.jar mchange-commons-java-0.2.3.4.jar common.jar ecore.jar jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar                      h2-1.3.176.jar commons-lang-2.3.jar commons-codec-1.9.jar java-sdk-1.0.1.jar gson-2.11.0.jar                      xercesImpl.jar saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar courier-java-3.3.0.jar gson-2.11.0.jar jackson-annotations-2.18.2.jar                     jackson-core-2.18.2.jar jackson-databind-2.18.2.jar jackson-datatype-jdk8-2.18.2.jar jackson-datatype-jsr310-2.18.2.jar                     kotlin-stdlib-2.1.0.jar okhttp-4.12.0.jar okio-3.9.1.jar okio-jvm-3.9.1.jar java-sdk-1.0.1.jar                     microsoft-graph-6.55.0.jar microsoft-graph-core-3.6.5.jar microsoft-kiota-authentication-azure-1.8.10.jar                     microsoft-kiota-http-okHttp-1.8.10.jar microsoft-kiota-serialization-form-1.8.10.jar microsoft-kiota-serialization-json-1.8.10.jar                     microsoft-kiota-serialization-multipart-1.8.10.jar microsoft-kiota-serialization-text-1.8.10.jar                     microsoft-kiota-abstractions-1.8.10.jar okhttp-5.2.1.jar" />
+    <property name="hibernate-c3p0" value="hibernate-c3p0-5.6.14.Final.jar" />
+    <property name="build.dir" value="build" />
+    <property name="mailSender.app.name" value="mailSender" />
+    <property name="smsInvoker.app.name" value="yawlSMSInvoker" />
+    <property name="jung-samples" value="jung-samples-2.0.jar" />
+    <property name="controlpanel.libs" value="macify-1.4.jar commons-io-2.0.1.jar" />
+    <property name="jakarta-xml" value="jakarta.xml.bind-api-3.0.1.jar" />
+    <property name="ant.home" value="/usr/share/ant" />
+    <property name="ant.version" value="Apache Ant(TM) version 1.10.14 compiled on September 25 2023" />
+    <property name="jaxb.libs" value="jaxb1-impl.jar jaxb-api-2.3.1.jar jaxb-impl.jar jaxb-xjc.jar" />
+    <property name="proxy.host" value="" />
+    <property name="properties.dir" value="build/properties" />
+    <property name="classes.dir" value="classes" />
+    <property name="dbClient" value="h2-1.3.176.jar" />
+    <property name="jung-jai-samples" value="jung-jai-samples-2.0.jar" />
+    <property name="jung-3d" value="jung-3d-2.0.jar" />
+    <property name="env.PWD" value="/workspace" />
+    <property name="mail" value="mail.jar" />
+    <property name="cos" value="cos.jar" />
+    <property name="engine.app.name" value="yawl" />
+    <property name="xerces" value="xercesImpl.jar" />
+    <property name="java.class.path" value="/workspace/classes:/workspace/build/3rdParty/lib/junit-4.10.jar:/workspace/build/3rdParty/lib/xercesImpl.jar:/workspace/build/3rdParty/lib/saxon9.jar:/workspace/build/3rdParty/lib/saxon9-s9api.jar:/workspace/build/3rdParty/lib/saxon9-dom.jar:/workspace/build/3rdParty/lib/saxon9-jdom.jar:/workspace/build/3rdParty/lib/jdom-2.0.5.jar:/workspace/build/3rdParty/lib/servlet-api.jar:/workspace/build/3rdParty/lib/log4j-api-2.18.0.jar:/workspace/build/3rdParty/lib/log4j-core-2.18.0.jar:/workspace/build/3rdParty/lib/log4j-1.2-api-2.17.1.jar:/workspace/build/3rdParty/lib/jackson-annotations-2.18.2.jar:/workspace/build/3rdParty/lib/jackson-core-2.18.2.jar:/workspace/build/3rdParty/lib/jackson-databind-2.18.2.jar:/workspace/build/3rdParty/lib/jspecify-1.0.0.jar:/workspace/build/3rdParty/lib/jakarta.enterprise.cdi-api-3.0.0.jar:/workspace/build/3rdParty/lib/mcp-0.17.2.jar:/workspace/build/3rdParty/lib/mcp-core-0.17.2.jar:/workspace/build/3rdParty/lib/mcp-json-0.17.2.jar:/workspace/build/3rdParty/lib/mcp-json-jackson2-0.17.2.jar:/workspace/build/3rdParty/lib/reactor-core-3.7.0.jar:/workspace/build/3rdParty/lib/reactive-streams-1.0.4.jar:/workspace/build/3rdParty/lib/json-schema-validator-2.0.0.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-spec-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-common-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-server-common-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-jsonrpc-common-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-transport-rest-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-transport-jsonrpc-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-http-client-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-client-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-client-transport-spi-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-client-transport-rest-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/a2a-java-sdk-client-transport-jsonrpc-1.0.0.Alpha2.jar:/workspace/build/3rdParty/lib/wsif.jar:/workspace/build/3rdParty/lib/axis-1.1RC2.jar:/workspace/build/3rdParty/lib/commons-discovery.jar:/workspace/build/3rdParty/lib/commons-logging-1.1.1.jar:/workspace/build/3rdParty/lib/jaxrpc.jar:/workspace/build/3rdParty/lib/saaj.jar:/workspace/build/3rdParty/lib/wsdl4j-20030807.jar:/workspace/build/3rdParty/lib/common.jar:/workspace/build/3rdParty/lib/ecore.jar:/workspace/build/3rdParty/lib/antlr-2.7.7.jar:/workspace/build/3rdParty/lib/commons-collections-3.2.1.jar:/workspace/build/3rdParty/lib/ehcache-core-2.4.3.jar:/workspace/build/3rdParty/lib/hibernate-c3p0-5.6.14.Final.jar:/workspace/build/3rdParty/lib/hibernate-core-5.6.14.Final.jar:/workspace/build/3rdParty/lib/hibernate-commons-annotations-5.1.2.Final.jar:/workspace/build/3rdParty/lib/hibernate-ehcache-5.6.14.Final.jar:/workspace/build/3rdParty/lib/hibernate-jpa-2.1-api-1.0.0.Final.jar:/workspace/build/3rdParty/lib/jandex-2.4.2.Final.jar:/workspace/build/3rdParty/lib/mchange-commons-java-0.2.3.4.jar:/workspace/build/3rdParty/lib/jboss-logging-3.4.3.Final.jar:/workspace/build/3rdParty/lib/jboss-transaction-api_1.2_spec-1.1.1.Final.jar:/workspace/build/3rdParty/lib/byte-buddy-1.12.23.jar:/workspace/build/3rdParty/lib/classmate-1.5.1.jar:/workspace/build/3rdParty/lib/istack-commons-runtime-4.1.1.jar:/workspace/build/3rdParty/lib/javax.activation-api-1.2.0.jar:/workspace/build/3rdParty/lib/javax.persistence-api-2.2.jar:/workspace/build/3rdParty/lib/jaxb-api-2.3.1.jar:/workspace/build/3rdParty/lib/jaxb-runtime-2.3.1.jar:/workspace/build/3rdParty/lib/c3p0-0.9.2.1.jar:/workspace/build/3rdParty/lib/slf4j-api-1.7.12.jar:/workspace/build/3rdParty/lib/commons-beanutils.jar:/workspace/build/3rdParty/lib/commons-codec-1.9.jar:/workspace/build/3rdParty/lib/commons-dbcp-1.3.jar:/workspace/build/3rdParty/lib/commons-digester.jar:/workspace/build/3rdParty/lib/commons-fileupload-1.2.2.jar:/workspace/build/3rdParty/lib/commons-lang-2.3.jar:/workspace/build/3rdParty/lib/commons-io-2.0.1.jar:/workspace/build/3rdParty/lib/commons-pool-1.5.4.jar:/workspace/build/3rdParty/lib/appbase.jar:/workspace/build/3rdParty/lib/jsf-api.jar:/workspace/build/3rdParty/lib/jsfcl.jar:/workspace/build/3rdParty/lib/jsf-impl.jar:/workspace/build/3rdParty/lib/webui.jar:/workspace/build/3rdParty/lib/standard.jar:/workspace/build/3rdParty/lib/jstl.jar:/workspace/build/3rdParty/lib/rowset.jar:/workspace/build/3rdParty/lib/dataprovider.jar:/workspace/build/3rdParty/lib/errorhandler.jar:/workspace/build/3rdParty/lib/defaulttheme-gray.jar:/workspace/build/3rdParty/lib/bcmail-jdk15-139.jar:/workspace/build/3rdParty/lib/bcprov-jdk15-139.jar:/workspace/build/3rdParty/lib/mail.jar:/workspace/build/3rdParty/lib/activation.jar:/workspace/build/3rdParty/lib/courier-java-3.3.0.jar:/workspace/build/3rdParty/lib/gson-2.11.0.jar:/workspace/build/3rdParty/lib/jackson-datatype-jdk8-2.18.2.jar:/workspace/build/3rdParty/lib/jackson-datatype-jsr310-2.18.2.jar:/workspace/build/3rdParty/lib/java-sdk-1.0.1.jar:/workspace/build/3rdParty/lib/kotlin-stdlib-2.1.0.jar:/workspace/build/3rdParty/lib/okhttp-5.2.1.jar:/workspace/build/3rdParty/lib/okhttp-4.12.0.jar:/workspace/build/3rdParty/lib/okio-3.9.1.jar:/workspace/build/3rdParty/lib/okio-jvm-3.9.1.jar:/workspace/build/3rdParty/lib/azure-core-1.57.0.jar:/workspace/build/3rdParty/lib/azure-identity-1.18.1.jar:/workspace/build/3rdParty/lib/microsoft-graph-6.55.0.jar:/workspace/build/3rdParty/lib/microsoft-graph-core-3.6.5.jar:/workspace/build/3rdParty/lib/microsoft-kiota-http-okHttp-1.8.10.jar:/workspace/build/3rdParty/lib/microsoft-kiota-abstractions-1.8.10.jar:/workspace/build/3rdParty/lib/microsoft-kiota-serialization-form-1.8.10.jar:/workspace/build/3rdParty/lib/microsoft-kiota-serialization-json-1.8.10.jar:/workspace/build/3rdParty/lib/microsoft-kiota-serialization-multipart-1.8.10.jar:/workspace/build/3rdParty/lib/microsoft-kiota-serialization-text-1.8.10.jar:/workspace/build/3rdParty/lib/json.jar:/workspace/build/3rdParty/lib/jaxen-1.1.6.jar:/workspace/build/3rdParty/lib/ucp.jar:/workspace/build/3rdParty/lib/h2-1.3.176.jar:/workspace/build/3rdParty/lib/xdb.jar:/workspace/build/3rdParty/lib/xalan.jar:/workspace/build/3rdParty/lib/xmlparserv2.jar:/workspace/build/3rdParty/lib/xmlunit-1.3.jar:/usr/share/ant/lib/ant-launcher.jar:/usr/share/ant/lib/ant-commons-logging.jar:/usr/share/ant/lib/ant-javamail.jar:/usr/share/ant/lib/ant.jar:/usr/share/ant/lib/ant-junit.jar:/usr/share/ant/lib/ant-antlr.jar:/usr/share/ant/lib/ant-apache-bcel.jar:/usr/share/ant/lib/ant-apache-oro.jar:/usr/share/ant/lib/ant-junitlauncher.jar:/usr/share/ant/lib/ant-xz.jar:/usr/share/ant/lib/ant-apache-log4j.jar:/usr/share/ant/lib/ant-jdepend.jar:/usr/share/ant/lib/ant-commons-net.jar:/usr/share/ant/lib/ant-apache-bsf.jar:/usr/share/ant/lib/ant-junit4.jar:/usr/share/ant/lib/ant-swing.jar:/usr/share/ant/lib/ant-testutil.jar:/usr/share/ant/lib/ant-jmf.jar:/usr/share/ant/lib/ant-apache-xalan2.jar:/usr/share/ant/lib/ant-apache-resolver.jar:/usr/share/ant/lib/ant-jsch.jar:/usr/share/ant/lib/ant-apache-regexp.jar:/usr/share/java/ant-launcher-1.10.14.jar" />
+    <property name="env.HOME" value="/root" />
+    <property name="axis" value="axis-1.1RC2.jar" />
+    <property name="java.vm.vendor" value="Eclipse Adoptium" />
+    <property name="wsdl4j" value="wsdl4j-20030807.jar" />
+    <property name="jakarta-mail" value="jakarta.mail-1.6.7.jar" />
+    <property name="commonsLang3" value="commons-lang3-3.6.jar" />
+    <property name="monitor.app.name" value="monitorService" />
+    <property name="protobuf-java" value="protobuf-java-3.25.1.jar" />
+    <property name="derby" value="derbyclient.jar" />
+    <property name="bcmail" value="bcmail-jdk15-139.jar" />
+    <property name="developer.name" value="Michael Adams, Lachlan Aldred, Andrew Hastie,                                            Mike Fowler et al." />
+    <property name="webapp_orderfulfillment.libs" value="activation.jar cos.jar jaxb1-impl.jar jaxb-api-2.3.1.jar jaxb-impl.jar jaxb-xjc.jar jdom.jar jsr173_1.0_api.jar                      orderfulfillment.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar servlet-api.jar uploadbean.jar" />
+    <property name="scheduling.libs" value="json.jar commons-dbcp-1.3.jar commons-pool-1.5.4.jar jaxen-1.1.6.jar ucp.jar                      xdb.jar xalan.jar xmlparserv2.jar xmlunit-1.3.jar" />
+    <property name="simplemail.libs" value="simple-java-mail-5.5.1.jar slf4j-api-1.7.12.jar jakarta.activation-1.2.2.jar                   jakarta.mail-1.6.7.jar emailaddress-rfc2822-2.1.4.jar" />
+    <property name="mcp" value="mcp-0.17.2.jar" />
+    <property name="sun.java.launcher" value="SUN_STANDARD" />
+    <property name="user.country" value="US" />
+    <property name="jsf-standard" value="standard.jar" />
+    <property name="database.user" value="sa" />
+    <property name="log4j.libs" value="log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar" />
+    <property name="ucp" value="ucp.jar" />
+    <property name="sun.cpu.endian" value="little" />
+    <property name="a2a-spec" value="a2a-java-sdk-spec-1.0.0.Alpha2.jar" />
+    <property name="user.language" value="en" />
+    <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar" />
+    <property name="jstl" value="jstl.jar" />
+    <property name="collections-generic" value="collections-generic-4.01.jar" />
+    <property name="jackson-jdk8" value="jackson-datatype-jdk8-2.18.2.jar" />
+    <property name="ant.java.version" value="21" />
+    <property name="enumeratedClasses" value="temp/enumerated3rdPartyClasses" />
+    <property name="database.password" value="" />
+    <property name="apacheSoap" value="apache_soap-2_3_1.jar" />
+    <property name="proclet.libs" value="collections-generic-4.01.jar colt-1.2.0.jar concurrent-1.3.4.jar jung-3d-2.0.jar                       jung-3d-demos-2.0.jar jung-algorithms-2.0.jar jung-api-2.0.jar jung-api-2.0-tests.jar                      jung-graph-impl-2.0.jar jung-io-2.0.jar jung-jai-2.0.jar jung-jai-samples-2.0.jar                      jung-jai-samples-2.0.jar jung-samples-2.0.jar jung-visualization-2.0.jar" />
+    <property name="kiota-abstractions" value="microsoft-kiota-abstractions-1.8.10.jar" />
+    <property name="digitalSignature.app.name" value="digitalSignature" />
+    <property name="proclet.logging.level" value="WARN" />
+    <property name="commonsLang" value="commons-lang-2.3.jar" />
+    <property name="kiota-serialization-text" value="microsoft-kiota-serialization-text-1.8.10.jar" />
+    <property name="jakarta-annotation" value="jakarta.annotation-api-3.0.0.jar" />
+    <property name="test.app.name" value="testService" />
+    <property name="saxonjdom" value="saxon9-jdom.jar" />
+    <property name="webapp_twitterService.libs" value="jdom-2.0.5.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar twitter4j-core-2.1.8.jar commons-codec-1.9.jar xercesImpl.jar" />
+    <property name="scheduling.logging.level" value="WARN" />
+    <property name="webapp_testService.libs" value="jdom-2.0.5.jar xercesImpl.jar log4j-api-2.18.0.jar log4j-core-2.18.0.jar log4j-1.2-api-2.17.1.jar log4j-slf4j-impl-2.17.1.jar twitter4j-core-2.1.8.jar commons-io-2.0.1.jar                      commons-codec-1.9.jar saxon9.jar saxon9-dom.jar saxon9-s9api.jar saxon9-jdom.jar commons-lang-2.3.jar" />
+    <property name="bcprov" value="bcprov-jdk15-139.jar" />
+    <property name="twitter4j" value="twitter4j-core-2.1.8.jar" />
+    <property name="saxon" value="saxon9.jar" />
+    <property name="env.LC_ALL" value="en_US.UTF-8" />
+    <property name="jsf-api" value="jsf-api.jar" />
+    <property name="ant.file.type.YAWL Runtime" value="file" />
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment" />
+    <property name="ant.project.invoked-targets" value="unitTest" />
+    <property name="reactive-streams" value="reactive-streams-1.0.4.jar" />
+    <property name="commonsDigester" value="commons-digester.jar" />
+    <property name="jung-algorithms" value="jung-algorithms-2.0.jar" />
+    <property name="c3p0" value="c3p0-0.9.2.1.jar" />
+    <property name="ant.core.lib" value="/usr/share/ant/lib/ant.jar" />
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues" />
+    <property name="env.JRE_CACERTS_PATH" value="/opt/java/openjdk/lib/security/cacerts" />
+    <property name="user.dir" value="/workspace" />
+    <property name="kotlin" value="kotlin-stdlib-2.1.0.jar" />
+    <property name="jsf-rowset" value="rowset.jar" />
+    <property name="hibernate-core" value="hibernate-core-5.6.14.Final.jar" />
+    <property name="jsf-errorhandler" value="errorhandler.jar" />
+    <property name="schema.dir" value="schema" />
+    <property name="checksums.dir" value="checksums" />
+    <property name="graphics.dir" value="graphics" />
+    <property name="jaxb1" value="jaxb1-impl.jar" />
+    <property name="java.vm.version" value="21.0.10+7-LTS" />
+    <property name="hawkular" value="hawkular.jar" />
+    <property name="commonsCodec" value="commons-codec-1.9.jar" />
+    <property name="gson" value="gson-2.11.0.jar" />
+    <property name="azure-core" value="azure-core-1.57.0.jar" />
+  </properties>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestDataParsing" name="testSchemaCatching" time="0.113" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYAtomicTask" name="testFullAtomicTask" time="0.099" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYAtomicTask" name="testEmptyAtomicTask" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYAtomicTask" name="testFireAtomicTask" time="0.005">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYAtomicTask.testFireAtomicTask(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYCompositeTask" name="testValidCompositeTask" time="0.026" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYCompositeTask" name="testInvalidCompositeTask" time="0.009" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalCondition" name="testConstructor" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalCondition" name="testMovingIdentifiers" time="0.005">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYExternalCondition.testMovingIdentifiers(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalNetElement" name="testFlowStuff" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testValidStuff" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testBadQueries" time="0.002" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testBadQueries2" time="0.002" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testInvalidVerify" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testNeedsPredicateVerify" time="0.002" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testNeedsNoPredicateVerify" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testThrowsAppropriateStateExceptions" time="0.003">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYExternalTask.testThrowsAppropriateStateExceptions(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testToXML" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testToXML2" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testInvalidMIAttributeVerify" time="0.049" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYExternalTask" name="testSelfCancellation" time="0.004">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYExternalTask.testSelfCancellation(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYFlowsInto" name="testToString" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYFlowsInto" name="testXOR_ORSplitNeedsDefaultFlowNotBoth" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYFlowsInto" name="testANDCantBeDefaultFlow" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYFlowsInto" name="testConditionToCondition" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYFlowsInto" name="testInputOutputFlow" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYInputCondition" name="testInvalidInputCondition" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYMultiInstanceAttributes" name="testValidStuff" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYMultiInstanceAttributes" name="testInvalidVerify" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testGoodNetVerify" time="0.028">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testBadNetVerify" time="0.023">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testCloneBasics" time="0.021">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testCloneVerify" time="0.02">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testORJoinEnabled" time="0.018">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNet" name="testDataStructureAgainstWierdSpecification" time="0.019">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.TestYNet.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYNetElement" name="testNothingMuch" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYOutputCondition" name="testInvalidInputCondition" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testGoodNetVerify" time="0.044">
+    <failure message="The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type." type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type.
+	at org.yawlfoundation.yawl.elements.TestYSpecification.testGoodNetVerify(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</failure>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testValidDataTypesInSpecification" time="0.026" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testBadSpecVerify" time="0.041">
+    <failure message="The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:top] is not valid for its data type." type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:top] is not valid for its data type.
+	at org.yawlfoundation.yawl.elements.TestYSpecification.testBadSpecVerify(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</failure>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testSpecWithLoops" time="0.04">
+    <failure message="The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:d] is not valid for its data type." type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: The initial value [&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;] of variable [stubList] in decomposition [YNet:d] is not valid for its data type.
+	at org.yawlfoundation.yawl.elements.TestYSpecification.testSpecWithLoops(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</failure>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testDataStructure" time="0.021" />
+  <testcase classname="org.yawlfoundation.yawl.elements.TestYSpecification" name="testClonedDataStructure" time="0.02" />
+  <testcase classname="junit.framework.TestSuite$1" name="warning" time="0.0">
+    <failure message="Exception in constructor: testEquals (java.lang.RuntimeException: Failure to instantiate the engine.&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)&#xa;&#x9;at junit.framework.TestSuite.createTest(TestSuite.java:65)&#xa;&#x9;at junit.framework.TestSuite.addTestMethod(TestSuite.java:294)&#xa;&#x9;at junit.framework.TestSuite.addTestsFromTestCase(TestSuite.java:150)&#xa;&#x9;at junit.framework.TestSuite.&lt;init&gt;(TestSuite.java:129)&#xa;&#x9;at junit.framework.TestSuite.addTestSuite(TestSuite.java:209)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)&#xa;&#x9;at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)&#xa;&#x9;at java.base/java.lang.reflect.Method.invoke(Method.java:580)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:413)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.launch(JUnitTestRunner.java:1197)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.main(JUnitTestRunner.java:1042)&#xa;Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]&#xa;&#x9;at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)&#xa;&#x9;... 17 more&#xa;)" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: Exception in constructor: testEquals (java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+)
+</failure>
+  </testcase>
+  <testcase classname="junit.framework.TestSuite$1" name="warning" time="0.0">
+    <failure message="Exception in constructor: testCreateChild (java.lang.RuntimeException: Failure to instantiate the engine.&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)&#xa;&#x9;at junit.framework.TestSuite.createTest(TestSuite.java:65)&#xa;&#x9;at junit.framework.TestSuite.addTestMethod(TestSuite.java:294)&#xa;&#x9;at junit.framework.TestSuite.addTestsFromTestCase(TestSuite.java:150)&#xa;&#x9;at junit.framework.TestSuite.&lt;init&gt;(TestSuite.java:129)&#xa;&#x9;at junit.framework.TestSuite.addTestSuite(TestSuite.java:209)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)&#xa;&#x9;at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)&#xa;&#x9;at java.base/java.lang.reflect.Method.invoke(Method.java:580)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:413)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.launch(JUnitTestRunner.java:1197)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.main(JUnitTestRunner.java:1042)&#xa;Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]&#xa;&#x9;at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)&#xa;&#x9;... 17 more&#xa;)" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: Exception in constructor: testCreateChild (java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+)
+</failure>
+  </testcase>
+  <testcase classname="junit.framework.TestSuite$1" name="warning" time="0.0">
+    <failure message="Exception in constructor: testGetChildren (java.lang.RuntimeException: Failure to instantiate the engine.&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)&#xa;&#x9;at junit.framework.TestSuite.createTest(TestSuite.java:65)&#xa;&#x9;at junit.framework.TestSuite.addTestMethod(TestSuite.java:294)&#xa;&#x9;at junit.framework.TestSuite.addTestsFromTestCase(TestSuite.java:150)&#xa;&#x9;at junit.framework.TestSuite.&lt;init&gt;(TestSuite.java:129)&#xa;&#x9;at junit.framework.TestSuite.addTestSuite(TestSuite.java:209)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)&#xa;&#x9;at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)&#xa;&#x9;at java.base/java.lang.reflect.Method.invoke(Method.java:580)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:413)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.launch(JUnitTestRunner.java:1197)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.main(JUnitTestRunner.java:1042)&#xa;Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]&#xa;&#x9;at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)&#xa;&#x9;... 17 more&#xa;)" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: Exception in constructor: testGetChildren (java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+)
+</failure>
+  </testcase>
+  <testcase classname="junit.framework.TestSuite$1" name="warning" time="0.0">
+    <failure message="Exception in constructor: testIsChildOf (java.lang.RuntimeException: Failure to instantiate the engine.&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)&#xa;&#x9;at junit.framework.TestSuite.createTest(TestSuite.java:65)&#xa;&#x9;at junit.framework.TestSuite.addTestMethod(TestSuite.java:294)&#xa;&#x9;at junit.framework.TestSuite.addTestsFromTestCase(TestSuite.java:150)&#xa;&#x9;at junit.framework.TestSuite.&lt;init&gt;(TestSuite.java:129)&#xa;&#x9;at junit.framework.TestSuite.addTestSuite(TestSuite.java:209)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)&#xa;&#x9;at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)&#xa;&#x9;at java.base/java.lang.reflect.Method.invoke(Method.java:580)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:413)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.launch(JUnitTestRunner.java:1197)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.main(JUnitTestRunner.java:1042)&#xa;Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]&#xa;&#x9;at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)&#xa;&#x9;... 17 more&#xa;)" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: Exception in constructor: testIsChildOf (java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+)
+</failure>
+  </testcase>
+  <testcase classname="junit.framework.TestSuite$1" name="warning" time="0.0">
+    <failure message="Exception in constructor: testGetDescendants (java.lang.RuntimeException: Failure to instantiate the engine.&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)&#xa;&#x9;at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)&#xa;&#x9;at junit.framework.TestSuite.createTest(TestSuite.java:65)&#xa;&#x9;at junit.framework.TestSuite.addTestMethod(TestSuite.java:294)&#xa;&#x9;at junit.framework.TestSuite.addTestsFromTestCase(TestSuite.java:150)&#xa;&#x9;at junit.framework.TestSuite.&lt;init&gt;(TestSuite.java:129)&#xa;&#x9;at junit.framework.TestSuite.addTestSuite(TestSuite.java:209)&#xa;&#x9;at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)&#xa;&#x9;at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)&#xa;&#x9;at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)&#xa;&#x9;at java.base/java.lang.reflect.Method.invoke(Method.java:580)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:413)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.launch(JUnitTestRunner.java:1197)&#xa;&#x9;at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.main(JUnitTestRunner.java:1042)&#xa;Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]&#xa;&#x9;at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)&#xa;&#x9;at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)&#xa;&#x9;at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)&#xa;&#x9;at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)&#xa;&#x9;at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)&#xa;&#x9;... 17 more&#xa;)" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: Exception in constructor: testGetDescendants (java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.&lt;init&gt;(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+)
+</failure>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testEquals" time="0.003">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testGreaterThanOrEquals" time="0.003">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testLessThan" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testHashcode" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testDoPowerSetRecursion" time="0.001">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testXorJoinAndSplit" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testAndJoinOrSplit" time="0.001">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYMarking" name="testDeadlock" time="0.001">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYMarking.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.elements.state.TestYSetOfMarkings" name="testContainsEquivalentTo" time="0.002" />
+  <testcase classname="org.yawlfoundation.yawl.stateless.TestStatelessEngine" name="testUnmarshalSpecification" time="0.009">
+    <error message=" The specification file failed to verify against YAWL&apos;s Schema:&#xa;Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.&#xa;" type="org.yawlfoundation.yawl.exceptions.YSyntaxException">org.yawlfoundation.yawl.exceptions.YSyntaxException:  The specification file failed to verify against YAWL&apos;s Schema:
+Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.
+
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:112)
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:77)
+	at org.yawlfoundation.yawl.stateless.YStatelessEngine.unmarshalSpecification(YStatelessEngine.java:238)
+	at org.yawlfoundation.yawl.stateless.TestStatelessEngine.testUnmarshalSpecification(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.stateless.TestStatelessEngine" name="testLaunchCaseWithExplicitCaseID" time="0.006">
+    <error message=" The specification file failed to verify against YAWL&apos;s Schema:&#xa;Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.&#xa;" type="org.yawlfoundation.yawl.exceptions.YSyntaxException">org.yawlfoundation.yawl.exceptions.YSyntaxException:  The specification file failed to verify against YAWL&apos;s Schema:
+Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.
+
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:112)
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:77)
+	at org.yawlfoundation.yawl.stateless.YStatelessEngine.unmarshalSpecification(YStatelessEngine.java:238)
+	at org.yawlfoundation.yawl.stateless.TestStatelessEngine.testLaunchCaseWithExplicitCaseID(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.stateless.TestStatelessEngine" name="testLaunchAndCompleteOneCase" time="0.006">
+    <error message=" The specification file failed to verify against YAWL&apos;s Schema:&#xa;Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.&#xa;" type="org.yawlfoundation.yawl.exceptions.YSyntaxException">org.yawlfoundation.yawl.exceptions.YSyntaxException:  The specification file failed to verify against YAWL&apos;s Schema:
+Error: 19:29: cvc-complex-type.2.4.a: Invalid content was found starting with element &apos;join&apos;. One of &apos;{&quot;http://www.yawlfoundation.org/yawlschema&quot;:name, &quot;http://www.yawlfoundation.org/yawlschema&quot;:documentation, &quot;http://www.yawlfoundation.org/yawlschema&quot;:flowsInto}&apos; is expected.
+
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:112)
+	at org.yawlfoundation.yawl.stateless.unmarshal.YMarshal.unmarshalSpecifications(YMarshal.java:77)
+	at org.yawlfoundation.yawl.stateless.YStatelessEngine.unmarshalSpecification(YStatelessEngine.java:238)
+	at org.yawlfoundation.yawl.stateless.TestStatelessEngine.testLaunchAndCompleteOneCase(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYEngineInit" name="testEngineInstanceWithH2" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYEngineInit.testEngineInstanceWithH2(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestCaseCancellation" name="testIt" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestCaseCancellation" name="testCaseCancel" time="0.001">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestCaseCancellation" name="testCaseCompletion" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestCaseCancellation.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestEngineSystem2" name="testMultimergeNets" time="0.006">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestEngineSystem2" name="testMultimergeWorkItems" time="0.005">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestEngineSystem2" name="testStateAlignmentBetween_WorkItemRepository_and_Net" time="0.007">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestEngineSystem2.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestImproperCompletion" name="testImproperCompletion" time="0.006">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestImproperCompletion.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestOrJoin" name="testImproperCompletion2" time="0.009">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestOrJoin.testImproperCompletion2(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestOrJoin" name="testImproperCompletion" time="0.006">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestOrJoin.testImproperCompletion(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestRestServiceMethods" name="testGetTaskWithoutSpecification" time="0.014">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestRestServiceMethods.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestRestServiceMethods" name="testGetTask" time="0.014">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestRestServiceMethods.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestSimpleExecutionUseCases" name="testUseCase1" time="0.006">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestSimpleExecutionUseCases.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYNetRunner" name="testBasicFireAtomic" time="0.01">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYNetRunner.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYNetRunner" name="testAddInstance" time="0.008">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYNetRunner.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYWorkItem" name="testConstructor" time="0.003">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.engine.TestYWorkItem.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYWorkItem" name="testCreateChild" time="0.003">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.&lt;init&gt;(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.engine.TestYWorkItem.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYWorkItemID" name="testUniqueIDGenerator" time="0.066" />
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYWorkItemRepository" name="testGetItem" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.engine.TestYWorkItemRepository" name="testChildren" time="0.001">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.exceptions.TestYConnectivityException" name="testConstructor" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.exceptions.TestYSyntaxException" name="testConstructor" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.logging.YawlServletTestNextIdNew" name="testNextId" time="0.005">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.logging.YawlServletTestNextIdNew.testNextId(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandler" name="testSimpleValidSchema" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandler" name="testComplexValidSchema" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandler" name="testSimpleInvalidSchema" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandler" name="testComplexInvalidSchema" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandler" name="testMalformedSchema" time="0.002" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testIncorrectXMLSchemaInstance" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testInvlaidSimpleInstance" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testSimpleInstance" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testXMLSchemaInstance" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testXSDAny" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testMalformedXSDAny" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.schema.TestSchemaHandlerValidation" name="testValidationBeforeCompilation" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.unmarshal.TestMetaDataMarshal" name="testToXML" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.unmarshal.TestYMarshalB4" name="testBothEqual" time="0.022" />
+  <testcase classname="org.yawlfoundation.yawl.unmarshal.TestYMarshalB4" name="testLineByLine" time="0.022" />
+  <testcase classname="org.yawlfoundation.yawl.swingWorklist.TestWorklistTableModel" name="testGetColumnClass" time="0.014" />
+  <testcase classname="org.yawlfoundation.yawl.swingWorklist.TestWorklistTableModel" name="testGetColumnName" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.swingWorklist.TestWorklistTableModel" name="testAccessors" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.swingWorklist.TestWorklistTableModel" name="testRemoveRow" time="0.001" />
+  <testcase classname="org.yawlfoundation.yawl.swingWorklist.TestYWorkAvailablePanel" name="testSomething" time="0.0" />
+  <testcase classname="org.yawlfoundation.yawl.authentication.TestConnections" name="testConnect" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.authentication.TestConnections.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.authentication.TestConnections" name="testUnbreakable" time="0.008">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.authentication.TestConnections.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.authentication.TestConnections" name="testRobust" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.authentication.TestConnections.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <testcase classname="org.yawlfoundation.yawl.authentication.TestConnections" name="testRemoveUser" time="0.002">
+    <error message="Failure to instantiate the engine." type="java.lang.RuntimeException">java.lang.RuntimeException: Failure to instantiate the engine.
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:170)
+	at org.yawlfoundation.yawl.authentication.TestConnections.setUp(Unknown Source)
+Caused by: org.hibernate.internal.util.config.ConfigurationException: Could not locate cfg.xml resource [hibernate.cfg.xml]
+	at org.hibernate.boot.cfgxml.internal.ConfigLoader.loadConfigXmlResource(ConfigLoader.java:53)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:254)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.configure(StandardServiceRegistryBuilder.java:243)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:84)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.&lt;init&gt;(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.&lt;init&gt;(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.&lt;init&gt;(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+</error>
+  </testcase>
+  <system-out><![CDATA[org.yawlfoundation.yawl.util.YVerificationMessage@2b22a1cc
+org.yawlfoundation.yawl.util.YVerificationMessage@62573c86
+org.yawlfoundation.yawl.util.YVerificationMessage@2418ba04
+org.yawlfoundation.yawl.util.YVerificationMessage@14229fa7
+org.yawlfoundation.yawl.util.YVerificationMessage@2ab0702e
+org.yawlfoundation.yawl.util.YVerificationMessage@7158daf2
+org.yawlfoundation.yawl.util.YVerificationMessage@10f19647
+org.yawlfoundation.yawl.util.YVerificationMessage@102efc59
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -95,7 +95,22 @@ public final class PartyAgent {
         }
 
         this.eligibilityWorkflow = new EligibilityWorkflow(capability, zaiService);
-        this.decisionWorkflow = new DecisionWorkflow(zaiService);
+        McpTaskContextSupplier mcpSupplier = createMcpSupplier();
+        this.decisionWorkflow = new DecisionWorkflow(zaiService, mcpSupplier);
+    }
+
+    private static McpTaskContextSupplier createMcpSupplier() {
+        if (!"true".equalsIgnoreCase(System.getenv("MCP_ENABLED"))) {
+            return null;
+        }
+        try {
+            McpTaskContextSupplierImpl impl = new McpTaskContextSupplierImpl(null, null);
+            impl.connect();
+            return impl;
+        } catch (Exception e) {
+            System.err.println("MCP task context unavailable: " + e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -169,6 +184,27 @@ public final class PartyAgent {
             }
         });
 
+        httpServer.createContext("/capacity", exchange -> {
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+            boolean available = true;
+            String agentsUrl = System.getenv("AGENT_PEERS");
+            if (agentsUrl != null && !agentsUrl.isEmpty()) {
+                available = CapacityChecker.checkPeersAvailable(agentsUrl);
+            }
+            String json = String.format(
+                "{\"domain\":\"%s\",\"available\":%s,\"capacity\":\"normal\"}",
+                capability.getDomainName(), available);
+            byte[] body = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+
         httpServer.start();
     }
 
@@ -224,25 +260,42 @@ public final class PartyAgent {
                 continue;
             }
 
-            if (!eligibilityWorkflow.isEligible(wir)) {
-                continue;
-            }
-
             String workItemId = wir.getID();
-            try {
-                String checkoutResult = interfaceBClient.checkOutWorkItem(workItemId, sessionHandle);
-                if (checkoutResult == null || checkoutResult.contains("failure")
-                    || checkoutResult.contains("error")) {
-                    continue;
+            try (AgentTracer.AgentSpan span = AgentTracer.span("work_item", capability.getDomainName(), workItemId)) {
+                try (AgentTracer.AgentSpan elSpan = AgentTracer.span("eligibility", capability.getDomainName(), workItemId)) {
+                    if (!eligibilityWorkflow.isEligible(wir)) {
+                        elSpan.setAttribute("eligible", 0);
+                        continue;
+                    }
+                    elSpan.setAttribute("eligible", 1);
                 }
 
-                String outputData = decisionWorkflow.produceOutput(wir);
-                String checkinResult = interfaceBClient.checkInWorkItem(
-                    workItemId, outputData, null, sessionHandle);
+                try (AgentTracer.AgentSpan coSpan = AgentTracer.span("checkout", capability.getDomainName(), workItemId)) {
+                    String checkoutResult = interfaceBClient.checkOutWorkItem(workItemId, sessionHandle);
+                    if (checkoutResult == null || checkoutResult.contains("failure")
+                        || checkoutResult.contains("error")) {
+                        coSpan.setAttribute("success", 0);
+                        continue;
+                    }
+                    coSpan.setAttribute("success", 1);
+                }
 
-                if (checkinResult != null && checkinResult.contains("success")) {
-                    System.out.println("  [" + capability.getDomainName() + "] Completed "
-                        + workItemId + " (" + wir.getTaskName() + ")");
+                String outputData;
+                try (AgentTracer.AgentSpan decSpan = AgentTracer.span("decision", capability.getDomainName(), workItemId)) {
+                    outputData = decisionWorkflow.produceOutput(wir);
+                }
+
+                try (AgentTracer.AgentSpan ciSpan = AgentTracer.span("checkin", capability.getDomainName(), workItemId)) {
+                    String checkinResult = interfaceBClient.checkInWorkItem(
+                        workItemId, outputData, null, sessionHandle);
+
+                    if (checkinResult != null && checkinResult.contains("success")) {
+                        ciSpan.setAttribute("success", 1);
+                        System.out.println("  [" + capability.getDomainName() + "] Completed "
+                            + workItemId + " (" + wir.getTaskName() + ")");
+                    } else {
+                        ciSpan.setAttribute("success", 0);
+                    }
                 }
             } catch (Exception e) {
                 System.err.println("  [" + capability.getDomainName() + "] Failed " + workItemId

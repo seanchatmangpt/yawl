@@ -485,10 +485,16 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
 
         // any value for a string type, or an empty value, is OK
         if (! ("string".equals(getDataTypeName()) || StringUtil.isNullOrEmpty(value))) {
+            String valueToValidate = value;
+            if (_dataTypeName != null && _dataTypeName.endsWith("StubListType")
+                    && value != null && value.matches("(<stub\\s*/>)+")) {
+                valueToValidate = value.replaceAll("<stub\\s*/>", "<stub xmlns=\"http://www.citi.qut.edu.au/stub\"></stub>");
+            }
+
             Element testElem;
 
             // check if well-formed
-            String data = StringUtil.wrap(StringUtil.wrap(value, getPreferredName()), "data");
+            String data = StringUtil.wrap(StringUtil.wrap(valueToValidate, getPreferredName()), "data");
             testElem = JDOMUtil.stringToElement(data);
             if (testElem == null) {
                 handler.error(this,

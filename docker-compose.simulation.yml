@@ -14,8 +14,6 @@
 #     -f docker-compose.simulation.yml up
 # =============================================================================
 
-version: '3.8'
-
 services:
   ordering-agent:
     build:
@@ -124,6 +122,22 @@ services:
     networks:
       - yawl-network
     restart: unless-stopped
+    profiles:
+      - simulation
+
+  pm4py-agent:
+    image: python:3.12-slim
+    working_dir: /app
+    command: bash -c "pip install -q pm4py 'a2a-sdk[http-server]' 'uvicorn[standard]' && python a2a_agent.py"
+    volumes:
+      - ./scripts/pm4py:/app
+      - .:/workspace
+    environment:
+      - PM4PY_A2A_PORT=9092
+    ports:
+      - "9092:9092"
+    networks:
+      - yawl-network
     profiles:
       - simulation
 

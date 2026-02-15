@@ -5,8 +5,12 @@ import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient;
+import org.yawlfoundation.yawl.integration.processmining.EventLogExporter;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -32,6 +36,7 @@ public class ZaiFunctionService {
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
+    private final String yawlEngineUrl;
     private final String yawlUsername;
     private final String yawlPassword;
     private String sessionHandle;
@@ -74,6 +79,7 @@ public class ZaiFunctionService {
         }
 
         this.httpClient = new ZaiHttpClient(zaiApiKey);
+        this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
 
@@ -138,6 +144,37 @@ public class ZaiFunctionService {
         });
 
         registerFunction("list_workflows", args -> listWorkflows());
+
+        registerFunction("process_mining_analyze", args -> {
+            String specId = (String) args.get("spec_identifier");
+            String xesPath = (String) args.get("xes_path");
+            String skill = (String) args.get("skill");
+            if (skill == null || skill.isEmpty()) skill = "performance";
+            if (specId != null && !specId.isEmpty()) {
+                EventLogExporter exporter = null;
+                try {
+                    exporter = new EventLogExporter(yawlEngineUrl, yawlUsername, yawlPassword);
+                    YSpecificationID sid = parseSpecificationID(specId);
+                    Path tmp = Files.createTempFile("yawl-xes-", ".xes");
+                    try {
+                        exporter.exportToFile(sid, false, tmp);
+                        return Pm4PyClient.fromEnvironment().call(skill, tmp.toString());
+                    } finally {
+                        Files.deleteIfExists(tmp);
+                    }
+                } catch (IOException e) {
+                    return "{\"error\":\"XES export failed: " + e.getMessage() + "\"}";
+                } finally {
+                    if (exporter != null) {
+                        try { exporter.close(); } catch (IOException ignored) { }
+                    }
+                }
+            }
+            if (xesPath != null && !xesPath.isEmpty()) {
+                return Pm4PyClient.fromEnvironment().call(skill, xesPath);
+            }
+            return "{\"error\":\"Provide spec_identifier or xes_path\"}";
+        });
     }
 
     /**

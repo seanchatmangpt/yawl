@@ -19,6 +19,7 @@ public class EngineTestSuite extends TestCase{
 
     public static Test suite(){
         TestSuite suite = new TestSuite();
+        suite.addTestSuite(TestYEngineInit.class);
         suite.addTestSuite(TestCaseCancellation.class);
    //     suite.addTestSuite(TestEngineAgainstABeta4Spec.class);
    //     suite.addTestSuite(TestEngineAgainstImproperCompletionOfASubnet.class);

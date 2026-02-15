@@ -54,8 +54,7 @@ public class TestYCompositeTask extends TestCase{
     public void testInvalidCompositeTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _myCompositeTask2.verify(handler);
-        if (handler.hasMessages()) {
-            fail(_myCompositeTask2 + " should have thrown exception but didn't.");
-        }
+        assertTrue("Invalid composite task ct1 should produce verification messages",
+                   handler.hasMessages());
     }
 }

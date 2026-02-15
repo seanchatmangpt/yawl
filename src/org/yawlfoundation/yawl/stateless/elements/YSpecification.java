@@ -239,7 +239,11 @@ public final class YSpecification implements Cloneable, YVerifiable {
     }
 
     public String getID() {
-        return _metaData != null ? _metaData.getUniqueID() : null;
+        if (_metaData != null) {
+            String uid = _metaData.getUniqueID();
+            if (uid != null) return uid;
+        }
+        return _specURI;
     }
 
 

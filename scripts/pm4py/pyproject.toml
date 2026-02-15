@@ -1,0 +1,13 @@
+[project]
+name = "pm4py-mcp-a2a"
+version = "1.0.0"
+description = "PM4Py process mining via MCP and A2A"
+requires-python = ">=3.10"
+dependencies = [
+    "pm4py>=2.7.0",
+    "mcp[cli]>=1.0.0",
+    "a2a-sdk[http-server]>=0.3.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[tool.uv]

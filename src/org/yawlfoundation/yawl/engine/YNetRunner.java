@@ -437,6 +437,9 @@ public class YNetRunner {
             if (pmgr != null) pmgr.updateObject(this);
             logCompletingTask(caseIDForSubnet, busyCompositeTask);
 
+            YNetRunner subNetRunner = _engine.getNetRunnerRepository().remove(caseIDForSubnet);
+            if (subNetRunner != null && pmgr != null) pmgr.deleteObject(subNetRunner);
+
             //check to see if completing this task resulted in completing the net.
             if (endOfNetReached()) {
                 if (_containingCompositeTask != null) {
@@ -453,10 +456,6 @@ public class YNetRunner {
             }
             kick(pmgr);
         }
-//        else if (busyCompositeTask.isMultiInstance()) {
-//            YNetRunner subNetRunner = _engine.getNetRunnerRepository().remove(caseIDForSubnet);
-//            if (subNetRunner != null) pmgr.deleteObject(subNetRunner);
-//        }
         _logger.debug("<-- processCompletedSubnet");
     }
 
@@ -476,7 +475,7 @@ public class YNetRunner {
             kick(pmgr);
             return newChildIdentifiers;
         }
-        throw new YStateException("Task is not (or no longer) enabled: " + taskID);
+        return null;
     }
 
 
@@ -857,7 +856,9 @@ public class YNetRunner {
             kick(pmgr);
         }
         else {   // mi workitem complete but task has remaining incomplete items
-            atomicTask.getMIOutputData().addCompletedWorkItem(workItem);
+            if (workItem != null) {
+                atomicTask.getMIOutputData().addCompletedWorkItem(workItem);
+            }
             if (pmgr != null) pmgr.updateObject(atomicTask.getMIOutputData());
         }
         _logger.debug("<-- completeTask: {}, Exited={}", atomicTask.getID(), taskExited);

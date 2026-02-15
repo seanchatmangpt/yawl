@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="MinimalSpec">
+    <metaData>
+      <title>Minimal Spec</title>
+      <creator>Stateless Test</creator>
+      <description>One atomic task for stateless engine tests.</description>
+      <version>0.1</version>
+    </metaData>
+    <decomposition id="MinimalNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>MinimalNet</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <flowsInto>
+            <nextElementRef id="task1"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="task1">
+          <name>task1</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <outputCondition id="end"/>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

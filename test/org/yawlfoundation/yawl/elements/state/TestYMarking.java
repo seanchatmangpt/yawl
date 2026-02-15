@@ -215,11 +215,12 @@ public class TestYMarking extends TestCase{
 //System.out.println("_xorJoinAndSplit postset " + _xorJoinAndSplit.getPostsetElements());
 //System.out.println("marking locations " + _marking7.getLocations());
         YSetOfMarkings markingSet = _marking7.reachableInOneStep(_xorJoinAndSplit, _orJoin);
+        assertNotNull("reachableInOneStep should return non-null", markingSet);
         for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
             YMarking marking = (YMarking) iterator.next();
             List list = marking.getLocations();
-//System.out.println("list is " + list);
-            assertTrue(list.size() == 3);
+            assertTrue("each marking must have 5 locations (XOR join removes 1, AND split adds 3), got " + list.size() + ": " + list,
+                    list.size() == 5);
             List conditionsList = new Vector();
             for (int i = 0; i < _conditionArr.length; i++) {
                   conditionsList.add(_conditionArr[i]);
