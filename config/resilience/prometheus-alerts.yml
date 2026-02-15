@@ -1,0 +1,329 @@
+# YAWL Resilience4j Prometheus Alerting Rules
+# ============================================
+# Production-ready alerting for resilience patterns
+#
+# Import these rules into your Prometheus configuration:
+#   prometheus.yml:
+#     rule_files:
+#       - /path/to/prometheus-alerts.yml
+
+groups:
+  - name: yawl_resilience_critical
+    interval: 30s
+    rules:
+
+      # Circuit Breaker Alerts
+      # ----------------------
+
+      - alert: YawlCircuitBreakerOpen
+        expr: resilience4j_circuitbreaker_state{application="yawl"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: resilience
+          pattern: circuit_breaker
+        annotations:
+          summary: "YAWL circuit breaker {{ $labels.name }} is OPEN"
+          description: |
+            Circuit breaker {{ $labels.name }} has opened due to high failure rate.
+            This indicates a downstream dependency is unhealthy.
+
+            Current state: OPEN
+            Instance: {{ $labels.instance }}
+
+            Action Required:
+            1. Check downstream service health
+            2. Review circuit breaker metrics
+            3. Consider manual intervention if needed
+
+            Runbook: https://yawl.docs/resilience/runbooks/circuit-breaker-open
+
+      - alert: YawlCircuitBreakerHalfOpen
+        expr: resilience4j_circuitbreaker_state{application="yawl"} == 2
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: circuit_breaker
+        annotations:
+          summary: "YAWL circuit breaker {{ $labels.name }} stuck in HALF_OPEN"
+          description: |
+            Circuit breaker {{ $labels.name }} has been in HALF_OPEN state for 5 minutes.
+            This indicates the service is still experiencing issues.
+
+            Monitor closely and consider manual intervention.
+
+      - alert: YawlHighCircuitBreakerFailureRate
+        expr: resilience4j_circuitbreaker_failure_rate{application="yawl"} > 40
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: circuit_breaker
+        annotations:
+          summary: "High failure rate for {{ $labels.name }}: {{ $value }}%"
+          description: |
+            Circuit breaker {{ $labels.name }} has a failure rate of {{ $value }}%.
+            This is approaching the threshold that will trip the circuit breaker.
+
+            Threshold: 50%
+            Current: {{ $value }}%
+
+            Action: Investigate the root cause before the circuit opens.
+
+      - alert: YawlHighSlowCallRate
+        expr: resilience4j_circuitbreaker_slow_call_rate{application="yawl"} > 40
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: circuit_breaker
+        annotations:
+          summary: "High slow call rate for {{ $labels.name }}: {{ $value }}%"
+          description: |
+            Circuit breaker {{ $labels.name }} has a slow call rate of {{ $value }}%.
+            This indicates performance degradation.
+
+            Threshold: 50%
+            Current: {{ $value }}%
+
+            Action: Check service latency and resource utilization.
+
+      # Retry Alerts
+      # ------------
+
+      - alert: YawlHighRetryFailureRate
+        expr: |
+          rate(resilience4j_retry_calls_total{
+            application="yawl",
+            kind="failed_with_retry"
+          }[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: retry
+        annotations:
+          summary: "High retry failure rate for {{ $labels.name }}"
+          description: |
+            Retry pattern {{ $labels.name }} has a high failure rate after retries.
+            Current rate: {{ $value }} failures/sec
+
+            This indicates a persistent issue that retries cannot resolve.
+
+            Action:
+            1. Check if the underlying service is down
+            2. Review retry configuration
+            3. Consider circuit breaker intervention
+
+      - alert: YawlExcessiveRetries
+        expr: |
+          rate(resilience4j_retry_calls_total{
+            application="yawl",
+            kind=~"successful_with_retry|failed_with_retry"
+          }[5m]) > 1.0
+        for: 10m
+        labels:
+          severity: info
+          component: resilience
+          pattern: retry
+        annotations:
+          summary: "Excessive retries for {{ $labels.name }}"
+          description: |
+            Retry pattern {{ $labels.name }} has {{ $value }} retries/sec.
+            This may indicate transient issues or misconfigurations.
+
+            Monitor for potential overload of downstream services.
+
+      # Rate Limiter Alerts
+      # -------------------
+
+      - alert: YawlRateLimiterSaturated
+        expr: resilience4j_ratelimiter_available_permissions{application="yawl"} == 0
+        for: 2m
+        labels:
+          severity: info
+          component: resilience
+          pattern: rate_limiter
+        annotations:
+          summary: "Rate limiter {{ $labels.name }} saturated"
+          description: |
+            Rate limiter {{ $labels.name }} has no available permissions.
+            Requests are being throttled.
+
+            This may indicate:
+            1. Traffic spike
+            2. Rate limiter misconfiguration
+            3. Downstream service throttling
+
+            Consider increasing rate limits if traffic is legitimate.
+
+      - alert: YawlRateLimiterHighWaitingThreads
+        expr: resilience4j_ratelimiter_waiting_threads{application="yawl"} > 10
+        for: 1m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: rate_limiter
+        annotations:
+          summary: "High waiting threads for rate limiter {{ $labels.name }}"
+          description: |
+            Rate limiter {{ $labels.name }} has {{ $value }} waiting threads.
+            This indicates high contention for rate-limited operations.
+
+            Action: Consider increasing rate limits or timeout duration.
+
+      # Bulkhead Alerts
+      # ---------------
+
+      - alert: YawlBulkheadSaturated
+        expr: resilience4j_bulkhead_available_concurrent_calls{application="yawl"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: bulkhead
+        annotations:
+          summary: "Bulkhead {{ $labels.name }} saturated"
+          description: |
+            Bulkhead {{ $labels.name }} has no available concurrent call slots.
+            All slots are in use.
+
+            Max allowed: {{ ALERTS.bulkhead_available_concurrent_calls.max }}
+            Current available: 0
+
+            Action:
+            1. Check for slow operations blocking the bulkhead
+            2. Consider increasing max concurrent calls
+            3. Investigate if operations are hanging
+
+      - alert: YawlBulkheadHighUtilization
+        expr: |
+          (resilience4j_bulkhead_max_allowed_concurrent_calls{application="yawl"} -
+           resilience4j_bulkhead_available_concurrent_calls{application="yawl"}) /
+          resilience4j_bulkhead_max_allowed_concurrent_calls{application="yawl"} > 0.8
+        for: 5m
+        labels:
+          severity: info
+          component: resilience
+          pattern: bulkhead
+        annotations:
+          summary: "High bulkhead utilization for {{ $labels.name }}"
+          description: |
+            Bulkhead {{ $labels.name }} is at {{ $value | humanizePercentage }} utilization.
+            This is approaching capacity.
+
+            Monitor for potential saturation.
+
+      # Time Limiter Alerts
+      # -------------------
+
+      - alert: YawlHighTimeoutRate
+        expr: |
+          rate(resilience4j_timelimiter_calls_total{
+            application="yawl",
+            kind="timeout"
+          }[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+          pattern: time_limiter
+        annotations:
+          summary: "High timeout rate for {{ $labels.name }}"
+          description: |
+            Time limiter {{ $labels.name }} has {{ $value }} timeouts/sec.
+            Operations are exceeding the configured timeout duration.
+
+            Action:
+            1. Check if operations are legitimately slow
+            2. Consider increasing timeout duration
+            3. Investigate for performance issues
+
+  - name: yawl_resilience_aggregates
+    interval: 1m
+    rules:
+
+      # Aggregate Health Score
+      # ----------------------
+
+      - record: yawl:resilience:health_score
+        expr: |
+          (
+            count(resilience4j_circuitbreaker_state{application="yawl"} == 0) /
+            count(resilience4j_circuitbreaker_state{application="yawl"})
+          ) * 100
+        labels:
+          component: resilience
+
+      - alert: YawlResilienceHealthDegraded
+        expr: yawl:resilience:health_score < 75
+        for: 5m
+        labels:
+          severity: warning
+          component: resilience
+        annotations:
+          summary: "YAWL resilience health degraded: {{ $value }}%"
+          description: |
+            Overall resilience health score is {{ $value }}%.
+            Multiple circuit breakers are open or experiencing issues.
+
+            Action: Review all circuit breaker states and investigate root causes.
+
+      # Traffic Patterns
+      # ----------------
+
+      - record: yawl:resilience:total_calls_rate
+        expr: |
+          sum(rate(resilience4j_circuitbreaker_calls_total{application="yawl"}[5m]))
+        labels:
+          component: resilience
+
+      - record: yawl:resilience:failure_rate
+        expr: |
+          sum(rate(resilience4j_circuitbreaker_calls_total{
+            application="yawl",
+            kind=~"failed|error"
+          }[5m])) /
+          sum(rate(resilience4j_circuitbreaker_calls_total{application="yawl"}[5m])) * 100
+        labels:
+          component: resilience
+
+      - alert: YawlPlatformWideFailureRateHigh
+        expr: yawl:resilience:failure_rate > 20
+        for: 5m
+        labels:
+          severity: critical
+          component: resilience
+        annotations:
+          summary: "Platform-wide failure rate: {{ $value }}%"
+          description: |
+            YAWL platform has a failure rate of {{ $value }}% across all resilience patterns.
+            This indicates a systemic issue.
+
+            Action: Investigate platform health immediately.
+
+      # SLA Compliance
+      # --------------
+
+      - record: yawl:resilience:p95_latency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(resilience4j_circuitbreaker_calls_bucket{application="yawl"}[5m]))
+            by (le)
+          )
+        labels:
+          component: resilience
+
+      - alert: YawlSLAViolation
+        expr: yawl:resilience:p95_latency > 5000
+        for: 10m
+        labels:
+          severity: warning
+          component: resilience
+        annotations:
+          summary: "P95 latency exceeds SLA: {{ $value }}ms"
+          description: |
+            95th percentile latency is {{ $value }}ms, exceeding the 5s SLA.
+
+            Action: Investigate slow operations and consider performance tuning.

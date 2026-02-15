@@ -296,9 +296,26 @@ public class YWorkItemRepository {
             if (workitem != null) {
                 logger.debug("Entry " + sub++ + " Key=" + key);
                 logger.debug(("    WorkitemID        " + workitem.getIDString()));
-            }    
+            }
         }
         logger.debug("*** DUMP OF CASE_2_NETRUNNER_MAP ENDS");
+    }
+
+    /**
+     * Gets the total count of work items in the repository.
+     * Used by health indicators and metrics.
+     * @return the number of work items
+     */
+    public int getWorkItemCount() {
+        return _itemMap != null ? _itemMap.size() : 0;
+    }
+
+    /**
+     * Gets a singleton instance of the work item repository.
+     * @return the singleton instance
+     */
+    public static YWorkItemRepository getInstance() {
+        return YEngine.getInstance().getWorkItemRepository();
     }
 
 }

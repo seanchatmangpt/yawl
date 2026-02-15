@@ -232,3 +232,93 @@ clean:
 run:
 	@chmod +x $(SCRIPTS_DIR)/runner.sh
 	@$(SCRIPTS_DIR)/runner.sh $(ARGS)
+
+# ========================================
+# Resilience4j Operations
+# ========================================
+
+.PHONY: resilience-metrics resilience-health resilience-events resilience-test
+
+# View resilience metrics
+resilience-metrics:
+	@echo "$(CYAN)$(BOLD)Fetching Resilience4j Metrics...$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics | jq '.names[] | select(. | contains("resilience4j"))'
+	@echo ""
+	@echo "$(CYAN)Circuit Breaker States:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.circuitbreaker.state | jq .
+	@echo ""
+	@echo "$(CYAN)Failure Rates:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.circuitbreaker.failure.rate | jq .
+	@echo ""
+	@echo "$(CYAN)Retry Metrics:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.retry.calls | jq .
+
+# View health status
+resilience-health:
+	@echo "$(CYAN)$(BOLD)Fetching Health Status...$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/health | jq .
+
+# View circuit breaker events
+resilience-events:
+	@echo "$(CYAN)$(BOLD)Fetching Circuit Breaker Events...$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/circuitbreakerevents | jq .
+
+# Run resilience tests
+resilience-test:
+	@echo "$(CYAN)$(BOLD)Running Resilience4j Tests...$(NC)"
+	@mvn test -Dtest=ResilienceProviderTest
+
+# Export Prometheus metrics
+resilience-prometheus:
+	@echo "$(CYAN)$(BOLD)Fetching Prometheus Metrics...$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/prometheus | grep resilience4j
+
+# View resilience configuration
+resilience-config:
+	@echo "$(CYAN)$(BOLD)Current Resilience Configuration:$(NC)"
+	@cat config/resilience/resilience4j.yml
+
+# Resilience dashboard (requires jq)
+resilience-dashboard:
+	@echo "$(CYAN)$(BOLD)YAWL Resilience Dashboard$(NC)"
+	@echo "$(YELLOW)=====================================$(NC)"
+	@echo ""
+	@echo "$(BOLD)Circuit Breakers:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.circuitbreaker.state | \
+		jq -r '.measurements[] | "  State: \(.value) (0=CLOSED, 1=OPEN, 2=HALF_OPEN)"'
+	@echo ""
+	@echo "$(BOLD)Retry Statistics:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.retry.calls | \
+		jq -r '.measurements[] | "  Total Calls: \(.value)"'
+	@echo ""
+	@echo "$(BOLD)Rate Limiters:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.ratelimiter.available.permissions | \
+		jq -r '.measurements[] | "  Available Permissions: \(.value)"'
+	@echo ""
+	@echo "$(BOLD)Bulkheads:$(NC)"
+	@curl -s http://localhost:$(ENGINE_PORT)/actuator/metrics/resilience4j.bulkhead.available.concurrent.calls | \
+		jq -r '.measurements[] | "  Available Concurrent Calls: \(.value)"'
+	@echo "$(YELLOW)=====================================$(NC)"
+
+# Help for resilience targets
+resilience-help:
+	@echo "$(CYAN)$(BOLD)YAWL Resilience4j Makefile Targets$(NC)"
+	@echo ""
+	@echo "$(BOLD)Monitoring:$(NC)"
+	@echo "  resilience-metrics      View all resilience metrics"
+	@echo "  resilience-health       View health status"
+	@echo "  resilience-events       View circuit breaker events"
+	@echo "  resilience-prometheus   Export Prometheus metrics"
+	@echo "  resilience-dashboard    Interactive dashboard"
+	@echo ""
+	@echo "$(BOLD)Testing:$(NC)"
+	@echo "  resilience-test         Run resilience test suite"
+	@echo ""
+	@echo "$(BOLD)Configuration:$(NC)"
+	@echo "  resilience-config       View current configuration"
+	@echo ""
+	@echo "$(BOLD)Documentation:$(NC)"
+	@echo "  docs/resilience/README.md                      Platform overview"
+	@echo "  docs/resilience/RESILIENCE_OPERATIONS_GUIDE.md Tuning guide"
+	@echo "  docs/resilience/QUICK_START.md                 5-minute setup"
+	@echo ""

@@ -40,8 +40,10 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.HibernateStatistics;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -460,6 +462,51 @@ public class YPersistenceManager {
     public Object selectScalar(String className, String field, long value)
             throws YPersistenceException {
         return selectScalar(className, field, String.valueOf(value));
+    }
+
+    /**
+     * Gets the Hibernate SessionFactory.
+     * Used by health indicators to check database connectivity.
+     * @return the SessionFactory, or null if not initialized
+     */
+    public SessionFactory getSessionFactory() {
+        return factory;
+    }
+
+    /**
+     * Checks if persistence is enabled and active.
+     * @return true if persistence is enabled
+     */
+    public boolean isPersisting() {
+        return isEnabled();
+    }
+
+    /**
+     * Gets connection pool and Hibernate statistics as a map.
+     * Used by health indicators.
+     * @return map of statistics
+     */
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        if (factory != null && statisticsEnabled) {
+            org.hibernate.stat.Statistics hibernateStats = factory.getStatistics();
+            if (hibernateStats != null) {
+                stats.put("connectCount", hibernateStats.getConnectCount());
+                stats.put("sessionOpenCount", hibernateStats.getSessionOpenCount());
+                stats.put("sessionCloseCount", hibernateStats.getSessionCloseCount());
+                stats.put("transactionCount", hibernateStats.getTransactionCount());
+                stats.put("queryExecutionCount", hibernateStats.getQueryExecutionCount());
+            }
+        }
+        return stats;
+    }
+
+    /**
+     * Gets a singleton instance of the persistence manager.
+     * @return the singleton instance
+     */
+    public static YPersistenceManager getInstance() {
+        return YEngine._pmgr;
     }
 
 }

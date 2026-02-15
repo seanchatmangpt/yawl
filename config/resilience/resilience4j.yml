@@ -1,0 +1,236 @@
+# YAWL Resilience4j Platform Configuration
+# ==========================================
+# Production-grade resilience patterns for YAWL v5.2
+#
+# This configuration provides sensible defaults for:
+# - Circuit Breakers: Prevent cascade failures
+# - Retries: Handle transient errors with exponential backoff
+# - Rate Limiters: Control request rates
+# - Bulkheads: Isolate concurrent operations
+# - Time Limiters: Enforce operation timeouts
+
+resilience4j:
+
+  # ========================================
+  # Circuit Breakers
+  # ========================================
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 100
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 3s
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - java.net.SocketTimeoutException
+        ignoreExceptions:
+          - org.yawlfoundation.yawl.exceptions.YAuthenticationException
+
+    instances:
+      # YAWL Engine Service Circuit Breaker
+      # For InterfaceA and InterfaceB calls
+      engineService:
+        baseConfig: default
+        failureRateThreshold: 60
+        slowCallDurationThreshold: 2s
+        waitDurationInOpenState: 20s
+        slidingWindowSize: 50
+
+      # External Service Circuit Breaker
+      # For HTTP calls to external services
+      externalService:
+        baseConfig: default
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 5s
+        waitDurationInOpenState: 60s
+        slidingWindowSize: 100
+
+      # MCP Integration Circuit Breaker
+      # For Model Context Protocol operations
+      mcpIntegration:
+        baseConfig: default
+        failureRateThreshold: 40
+        slowCallDurationThreshold: 10s
+        waitDurationInOpenState: 30s
+        minimumNumberOfCalls: 5
+
+      # A2A Integration Circuit Breaker
+      # For Agent-to-Agent communication
+      a2aIntegration:
+        baseConfig: default
+        failureRateThreshold: 40
+        slowCallDurationThreshold: 10s
+        waitDurationInOpenState: 30s
+        minimumNumberOfCalls: 5
+
+  # ========================================
+  # Retry Patterns
+  # ========================================
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2.0
+        exponentialMaxWaitDuration: 10s
+        enableRandomizedWait: true
+        randomizationFactor: 0.5
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        ignoreExceptions:
+          - org.yawlfoundation.yawl.exceptions.YAuthenticationException
+
+    instances:
+      # Default retry for all operations
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+
+      # Aggressive retry for critical operations
+      critical:
+        maxAttempts: 5
+        waitDuration: 200ms
+        exponentialBackoffMultiplier: 1.5
+
+      # Conservative retry for expensive operations
+      expensive:
+        maxAttempts: 2
+        waitDuration: 1s
+        exponentialBackoffMultiplier: 3.0
+
+  # ========================================
+  # Rate Limiters
+  # ========================================
+  ratelimiter:
+    configs:
+      default:
+        registerHealthIndicator: true
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms
+
+    instances:
+      # Default rate limiter
+      default:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
+
+      # Multi-agent fan-out rate limiter
+      multiAgentFanout:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 1s
+
+      # External API rate limiter
+      externalApi:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 2s
+
+  # ========================================
+  # Bulkheads
+  # ========================================
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: 25
+        maxWaitDuration: 500ms
+
+    instances:
+      # Default bulkhead for concurrent workflows
+      default:
+        maxConcurrentCalls: 25
+        maxWaitDuration: 500ms
+
+      # High-concurrency bulkhead
+      highConcurrency:
+        maxConcurrentCalls: 100
+        maxWaitDuration: 1s
+
+      # Low-concurrency bulkhead for expensive operations
+      lowConcurrency:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 2s
+
+  # ========================================
+  # Thread Pool Bulkheads (async operations)
+  # ========================================
+  thread-pool-bulkhead:
+    configs:
+      default:
+        maxThreadPoolSize: 10
+        coreThreadPoolSize: 5
+        queueCapacity: 50
+        keepAliveDuration: 20ms
+
+    instances:
+      default:
+        maxThreadPoolSize: 10
+        coreThreadPoolSize: 5
+        queueCapacity: 50
+
+      multiAgentFanout:
+        maxThreadPoolSize: 20
+        coreThreadPoolSize: 10
+        queueCapacity: 100
+
+  # ========================================
+  # Time Limiters
+  # ========================================
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+        cancelRunningFuture: true
+
+    instances:
+      default:
+        timeoutDuration: 5s
+
+      # Short timeout for quick operations
+      quick:
+        timeoutDuration: 2s
+
+      # Long timeout for complex workflows
+      complex:
+        timeoutDuration: 30s
+
+# ========================================
+# Micrometer Metrics
+# ========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,resilience4j
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: yawl
+      version: 5.2
+    distribution:
+      percentiles-histogram:
+        resilience4j.circuitbreaker.calls: true
+        resilience4j.retry.calls: true
+        resilience4j.ratelimiter.calls: true
+        resilience4j.bulkhead.calls: true
