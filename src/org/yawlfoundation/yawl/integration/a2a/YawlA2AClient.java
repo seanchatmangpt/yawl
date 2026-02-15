@@ -382,15 +382,22 @@ public class YawlA2AClient {
      * Get available capabilities
      *
      * @return comma-separated list of skill IDs
+     * @throws IllegalStateException if not connected to an agent
      */
     public String getCapabilities() {
         if (agentCard == null) {
-            return "";
+            throw new IllegalStateException(
+                "Cannot get capabilities: not connected to an agent.\n" +
+                "Call connect() first to establish a connection to the remote agent."
+            );
         }
         try {
             return discoverCapabilities();
         } catch (A2AException e) {
-            return "";
+            throw new RuntimeException(
+                "Failed to discover capabilities: " + e.getMessage(),
+                e
+            );
         }
     }
 
@@ -446,7 +453,17 @@ public class YawlA2AClient {
 
     private String extractCapability(String aiResponse) {
         if (agentCard == null) {
-            return "";
+            throw new IllegalStateException(
+                "Cannot extract capability: not connected to an agent.\n" +
+                "Call connect() first to establish a connection."
+            );
+        }
+
+        if (agentCard.getSkills().isEmpty()) {
+            throw new IllegalStateException(
+                "Cannot extract capability: agent has no skills defined.\n" +
+                "The remote agent's AgentCard contains no capabilities."
+            );
         }
 
         String lower = aiResponse.toLowerCase();
@@ -461,12 +478,8 @@ public class YawlA2AClient {
             }
         }
 
-        // Fallback to first skill if no match
-        if (!agentCard.getSkills().isEmpty()) {
-            return agentCard.getSkills().get(0).getId();
-        }
-
-        return "";
+        // Fallback to first skill if no match found
+        return agentCard.getSkills().get(0).getId();
     }
 
     private String extractParams(String aiResponse, String originalData) {

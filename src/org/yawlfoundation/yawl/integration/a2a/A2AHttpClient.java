@@ -28,9 +28,9 @@ public class A2AHttpClient {
     private static final String AGENT_CARD_PATH = "/.well-known/agent.json";
     private static final String A2A_ENDPOINT = "/a2a";
     private static final String CONTENT_TYPE_JSON = "application/json";
-    private static final int DEFAULT_CONNECT_TIMEOUT = 30000;
-    private static final int DEFAULT_READ_TIMEOUT = 60000;
-    private static final long DEFAULT_POLL_INTERVAL = 1000;
+    private static final int CONNECT_TIMEOUT_MS = 30000;
+    private static final int READ_TIMEOUT_MS = 60000;
+    private static final long TASK_POLL_INTERVAL_MS = 1000;
 
     private final String baseUrl;
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -206,8 +206,7 @@ public class A2AHttpClient {
                 String errorBody = readErrorStream(conn);
                 throw new A2AException(
                     A2AException.ErrorCode.SERVER_ERROR,
-                    "Failed to get task (HTTP " + responseCode + "): " + errorBody,
-                    null
+                    "Failed to get task (HTTP " + responseCode + "): " + errorBody
                 );
             }
 
@@ -395,11 +394,11 @@ public class A2AHttpClient {
     }
 
     /**
-     * Test connection to the agent
+     * Verify connection to the agent by fetching its AgentCard
      *
      * @return true if connection is successful
      */
-    public boolean testConnection() {
+    public boolean verifyConnection() {
         try {
             fetchAgentCard();
             return true;
