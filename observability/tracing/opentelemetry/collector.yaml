@@ -1,0 +1,438 @@
+# OpenTelemetry Collector Configuration for YAWL Workflow Engine
+# Receives telemetry from YAWL services and exports to multiple backends
+
+# Extensions for health check, zpages, and authentication
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+    check_collector_pipeline:
+      enabled: true
+      interval: 5m
+      exporter_failure_threshold: 5
+
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+  pprof:
+    endpoint: 0.0.0.0:1777
+    block_profile_fraction: 0
+    mutex_profile_fraction: 0
+
+  memory_limiter:
+    check_interval: 5s
+    memory_limit_mib: 4096
+    memory_spike_limit_mib: 512
+
+# Receivers - how telemetry gets into the collector
+receivers:
+  # OTLP receiver (primary for YAWL services)
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 64
+        read_buffer_size: 524288
+        write_buffer_size: 524288
+        keepalive:
+          server_parameters:
+            max_connection_idle: 60s
+            max_connection_age: 300s
+            max_connection_age_grace: 5s
+            time: 30s
+            timeout: 10s
+          enforcement_policy:
+            min_time: 30s
+            permit_without_stream: false
+        tls:
+          cert_file: /etc/otelcol/certs/server.crt
+          key_file: /etc/otelcol/certs/server.key
+          client_ca_file: /etc/otelcol/certs/ca.crt
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "https://yawl.example.com"
+            - "https://monitor.yawl.example.com"
+          max_age: 7200
+        tls:
+          cert_file: /etc/otelcol/certs/server.crt
+          key_file: /etc/otelcol/certs/server.key
+
+  # Jaeger receiver (legacy support)
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+      thrift_compact:
+        endpoint: 0.0.0.0:6831
+      thrift_binary:
+        endpoint: 0.0.0.0:6832
+
+  # Zipkin receiver (legacy support)
+  zipkin:
+    endpoint: 0.0.0.0:9411
+
+  # Kafka receiver for async trace ingestion
+  kafka:
+    protocol_version: 3.0
+    brokers:
+      - kafka-1:9092
+      - kafka-2:9092
+      - kafka-3:9092
+    topic: yawl-spans
+    consumer_group: otel-collector
+    initial_offset: earliest
+    autocommit:
+      enable: true
+
+  # Prometheus receiver (self-monitoring)
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
+
+# Processors - transform and process telemetry
+processors:
+  # Memory limiter (must be first)
+  memory_limiter:
+    check_interval: 5s
+    memory_limit_mib: 4096
+    memory_spike_limit_mib: 512
+
+  # Batch processing
+  batch:
+    timeout: 10s
+    send_batch_size: 8192
+    send_batch_max_size: 16384
+    metadata_keys:
+      - service.name
+      - service.instance.id
+
+  # Resource detection
+  resourcedetection:
+    detectors:
+      - env
+      - system
+      - gcp
+      - ecs
+      - ec2
+      - azure
+    timeout: 10s
+    override: false
+
+  # Resource attributes
+  resource:
+    attributes:
+      - key: service.namespace
+        value: yawl-workflows
+        action: insert
+      - key: deployment.environment
+        value: production
+        action: insert
+      - key: service.version
+        value: "5.2"
+        action: insert
+
+  # Attribute processor for YAWL-specific attributes
+  attributes/yawl:
+    actions:
+      # Extract case ID from various sources
+      - key: yawl.case_id
+        from_attribute: case.id
+        action: insert
+      - key: yawl.case_id
+        from_attribute: caseId
+        action: insert
+      - key: yawl.case_id
+        from_attribute: case_id
+        action: upsert
+
+      # Extract task ID
+      - key: yawl.task_id
+        from_attribute: task.id
+        action: insert
+      - key: yawl.task_id
+        from_attribute: taskId
+        action: insert
+      - key: yawl.task_id
+        from_attribute: task_id
+        action: upsert
+
+      # Extract work item ID
+      - key: yawl.work_item_id
+        from_attribute: workItem.id
+        action: insert
+      - key: yawl.work_item_id
+        from_attribute: work_item_id
+        action: upsert
+
+      # Extract specification ID
+      - key: yawl.specification_id
+        from_attribute: specification.id
+        action: insert
+      - key: yawl.specification_id
+        from_attribute: specificationId
+        action: insert
+
+  # Probabilistic sampling
+  probabilistic_sampler:
+    sampling_percentage: 10.0
+    hash_seed: 223
+    source_attribute: "yawl.case_id"
+
+  # Tail-based sampling
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 1000
+    policies:
+      # Always sample errors
+      - name: error-policy
+        type: status_code
+        status_code:
+          status_codes:
+            - ERROR
+      # Always sample slow traces (>5s)
+      - name: latency-policy
+        type: latency
+        latency:
+          threshold_ms: 5000
+      # Probabilistic for everything else
+      - name: probabilistic-policy
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+      # Always sample specific YAWL operations
+      - name: yawl-critical-policy
+        type: string_attribute
+        string_attribute:
+          key: yawl.operation
+          values:
+            - ExecuteCase
+            - CompleteWorkItem
+            - CancelCase
+
+  # Filter spans
+  filter:
+    error_mode: ignore
+    traces:
+      span:
+        # Filter out health check spans
+        - 'attributes["http.route"] == "/health"'
+        - 'attributes["http.route"] == "/metrics"'
+        - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/metrics"'
+
+  # Metrics from spans
+  spanmetrics:
+    metrics_exporter: prometheus
+    dimensions:
+      - name: service.name
+      - name: service.instance.id
+      - name: yawl.case_id
+      - name: yawl.task_id
+      - name: http.method
+      - name: http.status_code
+    dimensions_cache_size: 100000
+
+  # K8s attributes
+  k8sattributes:
+    auth_type: serviceAccount
+    passthrough: false
+    extract:
+      metadata:
+        - k8s.namespace.name
+        - k8s.deployment.name
+        - k8s.pod.name
+        - k8s.pod.uid
+        - k8s.node.name
+      labels:
+        - tag_name: app.label.version
+          key: app.kubernetes.io/version
+        - tag_name: app.label.component
+          key: app.kubernetes.io/component
+
+# Exporters - where telemetry goes
+exporters:
+  # Jaeger exporter
+  jaeger:
+    endpoint: jaeger-collector:14250
+    tls:
+      insecure: true
+    timeout: 30s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+  # OTLP exporter to Tempo
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    compression: gzip
+    timeout: 30s
+    retry_on_failure:
+      enabled: true
+
+  # OTLP exporter to Grafana Cloud
+  otlp/grafana:
+    endpoint: otlp-prod-us-central.grafana.net:4317
+    tls:
+      insecure: false
+    headers:
+      authorization: Basic ${GRAFANA_CREDENTIALS}
+    compression: gzip
+
+  # Elasticsearch exporter
+  elasticsearch:
+    endpoints:
+      - http://elasticsearch:9200
+    index: "yawl-spans-%{yyyy.MM.dd}"
+    user: elastic
+    password: ${ES_PASSWORD}
+    mapping:
+      mode: bodymap
+    retry:
+      enabled: true
+      max_retries: 3
+      initial_interval: 10s
+
+  # Prometheus exporter (local metrics endpoint)
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otelcol
+    send_timestamps: true
+    metric_expiration: 5m
+
+  # Prometheus Remote Write
+  prometheusremotewrite:
+    endpoint: http://cortex:9009/api/v1/push
+    headers:
+      X-Scope-OrgID: yawl-workflows
+    tls:
+      insecure: true
+
+  # Kafka exporter
+  kafka:
+    protocol_version: 3.0
+    brokers:
+      - kafka-1:9092
+      - kafka-2:9092
+      - kafka-3:9092
+    topic: yawl-processed-spans
+    encoding: otlp_proto
+
+  # Logging exporter (for debugging)
+  logging:
+    loglevel: info
+    sampling_initial: 10
+    sampling_thereafter: 100
+
+  # Google Cloud exporter
+  googlecloud:
+    project: ${GCP_PROJECT_ID}
+    trace:
+      endpoint: tracing.googleapis.com:443
+    metric:
+      endpoint: monitoring.googleapis.com:443
+
+  # AWS X-Ray exporter
+  awsxray:
+    region: us-east-1
+
+  # Azure Monitor exporter
+  azuremonitor:
+    connection_string: ${AZURE_CONNECTION_STRING}
+
+# Service pipelines - connect receivers to exporters through processors
+service:
+  extensions:
+    - health_check
+    - zpages
+    - pprof
+    - memory_limiter
+
+  pipelines:
+    # Traces pipeline
+    traces:
+      receivers:
+        - otlp
+        - jaeger
+        - zipkin
+        - kafka
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - resource
+        - attributes/yawl
+        - k8sattributes
+        - filter
+        - tail_sampling
+        - batch
+      exporters:
+        - jaeger
+        - otlp/tempo
+        - elasticsearch
+        - prometheus
+
+    # Traces to cloud (separate pipeline for production)
+    traces/cloud:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - attributes/yawl
+        - probabilistic_sampler
+        - batch
+      exporters:
+        - otlp/grafana
+        - googlecloud
+
+    # Metrics pipeline
+    metrics:
+      receivers:
+        - otlp
+        - prometheus
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - resource
+        - batch
+      exporters:
+        - prometheus
+        - prometheusremotewrite
+
+    # Logs pipeline
+    logs:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - attributes/yawl
+        - batch
+      exporters:
+        - elasticsearch
+        - logging
+
+  telemetry:
+    logs:
+      level: info
+      development: false
+      encoding: json
+      output_paths:
+        - stdout
+      error_output_paths:
+        - stderr
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888

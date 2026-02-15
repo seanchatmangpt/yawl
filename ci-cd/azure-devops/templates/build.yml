@@ -1,0 +1,221 @@
+# YAWL Build Template
+# Compiles YAWL services and packages WAR files using Ant
+
+parameters:
+  - name: appName
+    type: string
+    default: 'yawl'
+  - name: appVersion
+    type: string
+    default: '5.2'
+  - name: antVersion
+    type: string
+    default: '1.10.14'
+  - name: javaVersion
+    type: string
+    default: '11'
+
+jobs:
+  - job: Build
+    displayName: 'Build YAWL Services'
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 60
+    variables:
+      antHome: '$(Agent.ToolsDirectory)/ant-${{ parameters.antVersion }}'
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      # Install Java JDK
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+          jdkArchitectureOption: 'x64'
+          jdkSourceOption: 'PreInstalled'
+
+      # Install Apache Ant
+      - task: Ant@1
+        displayName: 'Install Apache Ant ${{ parameters.antVersion }}'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: '-version'
+          antVersion: '${{ parameters.antVersion }}'
+          antBuildFile: 'build/build.xml'
+
+      # Cache Ant dependencies
+      - task: Cache@2
+        displayName: 'Cache Ant Dependencies'
+        inputs:
+          key: 'ant | build/build.xml | build/build.properties'
+          restoreKeys: |
+            ant | build/build.xml
+            ant
+          path: '$(Build.SourcesDirectory)/build/3rdParty/lib'
+
+      # Validate build configuration
+      - script: |
+          echo "Validating build configuration..."
+          if [ ! -f "build/build.xml" ]; then
+            echo "Error: build.xml not found"
+            exit 1
+          fi
+          if [ ! -f "build/build.properties" ]; then
+            echo "Error: build.properties not found"
+            exit 1
+          fi
+          echo "Build configuration validated successfully"
+        displayName: 'Validate Build Configuration'
+
+      # Initialize build (download dependencies if needed)
+      - task: Ant@1
+        displayName: 'Initialize Build'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'init'
+          antVersion: '${{ parameters.antVersion }}'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+
+      # Compile source code
+      - task: Ant@1
+        displayName: 'Compile Source Code'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'compile'
+          antVersion: '${{ parameters.antVersion }}'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dbuild.number=$(Build.BuildId)'
+
+      # Build all web applications (WAR files)
+      - task: Ant@1
+        displayName: 'Build WAR Files'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'buildWebApps'
+          antVersion: '${{ parameters.antVersion }}'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dbuild.number=$(Build.BuildId) -Dapp.version=${{ parameters.appVersion }}'
+
+      # Generate Javadoc documentation
+      - task: Ant@1
+        displayName: 'Generate Javadoc'
+        condition: eq(variables['generateJavadoc'], 'true')
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'javadoc'
+          antVersion: '${{ parameters.antVersion }}'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+
+      # List built artifacts
+      - script: |
+          echo "Listing built WAR files..."
+          find output -name "*.war" -type f -exec ls -lh {} \;
+          echo ""
+          echo "Build artifacts directory structure:"
+          ls -la output/
+        displayName: 'List Build Artifacts'
+
+      # Calculate checksums for built artifacts
+      - script: |
+          mkdir -p checksums
+          for warfile in output/*.war; do
+            if [ -f "$warfile" ]; then
+              filename=$(basename "$warfile")
+              sha256sum "$warfile" > "checksums/${filename}.sha256"
+              md5sum "$warfile" > "checksums/${filename}.md5"
+              echo "Generated checksums for $filename"
+            fi
+          done
+          echo ""
+          echo "Checksums:"
+          cat checksums/*
+        displayName: 'Generate Artifact Checksums'
+
+      # Publish WAR files as build artifacts
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish WAR Artifacts'
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/output'
+          ArtifactName: 'war-files'
+          publishLocation: 'Container'
+
+      # Publish checksums
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Checksums'
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/checksums'
+          ArtifactName: 'checksums'
+          publishLocation: 'Container'
+
+      # Publish Javadoc (if generated)
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Javadoc'
+        condition: eq(variables['generateJavadoc'], 'true')
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/output/javadoc'
+          ArtifactName: 'javadoc'
+          publishLocation: 'Container'
+
+      # Create build info file
+      - script: |
+          cat > build-info.json << EOF
+          {
+            "appName": "${{ parameters.appName }}",
+            "appVersion": "${{ parameters.appVersion }}",
+            "buildNumber": "$(Build.BuildId)",
+            "buildReason": "$(Build.Reason)",
+            "sourceBranch": "$(Build.SourceBranch)",
+            "sourceVersion": "$(Build.SourceVersion)",
+            "sourceVersionMessage": "$(Build.SourceVersionMessage)",
+            "buildDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "agentName": "$(Agent.Name)",
+            "agentOS": "$(Agent.OS)"
+          }
+          EOF
+          cat build-info.json
+        displayName: 'Create Build Info'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Build Info'
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)'
+          ArtifactName: 'build-info'
+          publishLocation: 'Container'
+
+  - job: BuildStandalone
+    displayName: 'Build Standalone JAR'
+    dependsOn: Build
+    condition: eq(variables['buildStandalone'], 'true')
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+
+      - task: UseJavaVersion@1
+        displayName: 'Setup Java ${{ parameters.javaVersion }}'
+        inputs:
+          versionSpec: '${{ parameters.javaVersion }}'
+          architecture: 'x64'
+
+      - task: Ant@1
+        displayName: 'Build Standalone JAR'
+        inputs:
+          buildFile: 'build/build.xml'
+          targets: 'build_Standalone'
+          antVersion: '${{ parameters.antVersion }}'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '${{ parameters.javaVersion }}'
+          options: '-Dbuild.number=$(Build.BuildId)'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Standalone JAR'
+        inputs:
+          PathtoPublish: '$(Build.SourcesDirectory)/output'
+          ArtifactName: 'standalone-jar'
+          publishLocation: 'Container'

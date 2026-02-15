@@ -1,0 +1,310 @@
+# OPA Gatekeeper Policies for YAWL
+# Implements admission control for security requirements
+
+---
+# Constraint Template: Require Pod Security Standards
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirepodsecuritystandards
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: opa-policies
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequirePodSecurityStandards
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            parameters:
+              type: object
+              properties:
+                exemptNamespaces:
+                  type: array
+                  items:
+                    type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirepodsecuritystandards
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not input.parameters.exemptNamespaces[_] == input.review.namespace
+
+          # Check for privileged containers
+          container := input.review.object.spec.containers[_]
+          container.securityContext.privileged == true
+          msg := sprintf("Container %v is privileged, which is not allowed", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not input.parameters.exemptNamespaces[_] == input.review.namespace
+
+          # Check for allowPrivilegeEscalation
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.allowPrivilegeEscalation == false
+          msg := sprintf("Container %v must set allowPrivilegeEscalation to false", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not input.parameters.exemptNamespaces[_] == input.review.namespace
+
+          # Check for runAsNonRoot
+          not input.review.object.spec.securityContext.runAsNonRoot == true
+          msg := "Pod must set runAsNonRoot to true"
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not input.parameters.exemptNamespaces[_] == input.review.namespace
+
+          # Check for readOnlyRootFilesystem
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem == true
+          msg := sprintf("Container %v must set readOnlyRootFilesystem to true", [container.name])
+        }
+---
+# Constraint: Enforce Pod Security Standards in YAWL namespace
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequirePodSecurityStandards
+metadata:
+  name: yawl-pod-security
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces:
+      - yawl
+      - yawl-monitoring
+  parameters:
+    exemptNamespaces:
+      - kube-system
+---
+# Constraint Template: Require Resource Limits
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequireresourcelimits
+  labels:
+    app.kubernetes.io/name: yawl
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireResourceLimits
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirelimits
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := sprintf("Container %v does not have memory limits set", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf("Container %v does not have CPU limits set", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.memory
+          msg := sprintf("Container %v does not have memory requests set", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.cpu
+          msg := sprintf("Container %v does not have CPU requests set", [container.name])
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireResourceLimits
+metadata:
+  name: yawl-resource-limits
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces:
+      - yawl
+---
+# Constraint Template: Require Labels
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirelabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            parameters:
+              type: object
+              properties:
+                labels:
+                  type: array
+                  items:
+                    type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirelabels
+
+        violation[{"msg": msg}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("Missing required labels: %v", [missing])
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireLabels
+metadata:
+  name: yawl-required-labels
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod", "Service", "ConfigMap", "Secret"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces:
+      - yawl
+  parameters:
+    labels:
+      - app.kubernetes.io/name
+      - app.kubernetes.io/component
+      - app.kubernetes.io/version
+---
+# Constraint Template: Block Latest Image Tag
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sblocklatesttag
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sBlockLatestTag
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sblocklatesttag
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf("Container %v uses the 'latest' tag which is not allowed", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          container := input.review.object.spec.containers[_]
+          not contains(container.image, ":")
+          msg := sprintf("Container %v must specify an image tag", [container.name])
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sBlockLatestTag
+metadata:
+  name: yawl-block-latest-tag
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces:
+      - yawl
+---
+# Constraint Template: Require Non-Root User
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirenonroot
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireNonRoot
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirenonroot
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+
+          # Check pod-level security context
+          not input.review.object.spec.securityContext.runAsNonRoot == true
+
+          # Check container-level security context
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.runAsNonRoot == true
+          not container.securityContext.runAsUser < 10000
+
+          msg := sprintf("Containers must run as non-root user (UID >= 10000)")
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireNonRoot
+metadata:
+  name: yawl-require-non-root
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces:
+      - yawl
+---
+# Constraint Template: Require Network Policy
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirenetworkpolicy
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireNetworkPolicy
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirenetworkpolicy
+
+        # This is a warning-only policy that checks if deployments have corresponding network policies
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          not network_policy_exists
+          msg := sprintf("Deployment %v does not have a corresponding NetworkPolicy", [input.review.object.metadata.name])
+        }
+
+        network_policy_exists {
+          # This would need to be implemented with data inventory
+          # For now, just warn
+          false
+        }

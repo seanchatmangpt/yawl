@@ -1,0 +1,105 @@
+{{- if .Values.services.monitorService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.name" . }}-monitor-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitor-service
+spec:
+  replicas: {{ .Values.services.monitorService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-monitor-service
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-monitor-service
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: monitor-service
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: monitor-service
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.services.monitorService.image.repository | default "yawl/monitor-service" }}:{{ .Values.services.monitorService.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.services.monitorService.image.pullPolicy | default .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.monitorService.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: "monitor-service"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if .Values.cloudsqlProxy.enabled }}
+            - name: DATABASE_HOST
+              value: "{{ include "yawl.fullname" . }}-cloudsql-proxy"
+            {{- else if .Values.awsRdsProxy.enabled }}
+            - name: DATABASE_HOST
+              value: {{ .Values.awsRdsProxy.endpoint | quote }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yawl.databaseSecretName" . }}
+          {{- with .Values.services.monitorService.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.services.monitorService.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.services.monitorService.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.services.monitorService.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/yawl
+            {{- with .Values.services.monitorService.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.services.monitorService.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClassName }}
+{{- end }}

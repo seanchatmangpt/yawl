@@ -1,0 +1,502 @@
+# GitHub Actions - IBM Cloud Deployment
+# YAWL Workflow Engine IBM Cloud CI/CD
+
+name: Deploy to IBM Cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      region:
+        description: 'IBM Cloud region'
+        required: false
+        default: 'us-south'
+        type: choice
+        options:
+          - us-south
+          - us-east
+          - eu-gb
+          - eu-de
+          - jp-tok
+          - au-syd
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'iks'
+        type: choice
+        options:
+          - iks
+          - openshift
+          - codeengine
+          - vpc
+
+env:
+  IBM_REGION: ${{ github.event.inputs.region || 'us-south' }}
+  VERSION: ${{ github.event.inputs.version }}
+  IBM_RESOURCE_GROUP: yawl-${{ github.event.inputs.environment }}-rg
+  IBM_REGISTRY: icr.io
+
+jobs:
+  # ============================================
+  # Prepare Deployment
+  # ============================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      cluster-name: ${{ steps.config.outputs.cluster_name }}
+      namespace: ${{ steps.config.outputs.namespace }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.VERSION }}" ]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+          echo "Deployment Configuration:"
+          echo "  Environment: ${{ github.event.inputs.environment }}"
+          echo "  Version: ${{ env.VERSION }}"
+          echo "  Region: ${{ env.IBM_REGION }}"
+          echo "  Target: ${{ github.event.inputs.target }}"
+
+      - name: Set deployment configuration
+        id: config
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            development)
+              echo "cluster_name=yawl-dev-cluster" >> $GITHUB_OUTPUT
+              echo "namespace=yawl-dev" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "cluster_name=yawl-staging-cluster" >> $GITHUB_OUTPUT
+              echo "namespace=yawl-staging" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "cluster_name=yawl-prod-cluster" >> $GITHUB_OUTPUT
+              echo "namespace=yawl-prod" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Set image tag
+        id: image
+        run: |
+          echo "image=${{ env.IBM_REGISTRY }}/yawl/yawl:${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Authenticate to IBM Cloud
+  # ============================================
+  ibm-login:
+    name: IBM Cloud Login
+    runs-on: ubuntu-latest
+    needs: prepare
+
+    steps:
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud --version
+          ibmcloud config --check-version=false
+
+      - name: Install required plugins
+        run: |
+          ibmcloud plugin install container-service -f
+          ibmcloud plugin install container-registry -f
+          ibmcloud plugin install kubernetes-service -f
+
+      - name: Authenticate to IBM Cloud
+        run: |
+          ibmcloud login \
+            --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" \
+            -r ${{ env.IBM_REGION }} \
+            -g ${{ env.IBM_RESOURCE_GROUP }}
+
+      - name: Verify login
+        run: |
+          ibmcloud target
+          ibmcloud account show
+
+  # ============================================
+  # Deploy to IKS (IBM Kubernetes Service)
+  # ============================================
+  deploy-iks:
+    name: Deploy to IKS
+    runs-on: ubuntu-latest
+    needs: [prepare, ibm-login]
+    if: github.event.inputs.target == 'iks'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud --version
+          ibmcloud config --check-version=false
+          ibmcloud plugin install container-service -f
+          ibmcloud plugin install container-registry -f
+
+      - name: Authenticate to IBM Cloud
+        run: |
+          ibmcloud login \
+            --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" \
+            -r ${{ env.IBM_REGION }} \
+            -g ${{ env.IBM_RESOURCE_GROUP }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install helm
+        uses: azure/setup-helm@v3
+
+      - name: Get cluster config
+        run: |
+          ibmcloud ks cluster config \
+            --cluster ${{ needs.prepare.outputs.cluster-name }} \
+            --export
+
+      - name: Login to IBM Container Registry
+        run: |
+          ibmcloud cr login
+
+      - name: Create namespace
+        run: |
+          kubectl create namespace ${{ needs.prepare.outputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create image pull secret
+        run: |
+          kubectl create secret docker-registry ibm-registry-secret \
+            --docker-server=${{ env.IBM_REGISTRY }} \
+            --docker-username=iamapikey \
+            --docker-password=${{ secrets.IBM_CLOUD_API_KEY }} \
+            --namespace=${{ needs.prepare.outputs.namespace }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create Secrets from IBM Secrets Manager
+        run: |
+          kubectl create secret generic yawl-secrets \
+            --from-literal=db-password=${{ secrets.IBM_DB_PASSWORD }} \
+            --namespace=${{ needs.prepare.outputs.namespace }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy application with Helm
+        run: |
+          helm upgrade --install yawl ./helm/yawl \
+            --namespace ${{ needs.prepare.outputs.namespace }} \
+            --set image.repository=$(echo ${{ needs.prepare.outputs.image }} | cut -d: -f1) \
+            --set image.tag=${{ env.VERSION }} \
+            --set image.pullSecret=ibm-registry-secret \
+            --set environment=${{ github.event.inputs.environment }} \
+            --set ibm.region=${{ env.IBM_REGION }} \
+            --set ibm.resourceGroup=${{ env.IBM_RESOURCE_GROUP }} \
+            --values helm/yawl/values-ibm.yaml \
+            --wait \
+            --timeout 15m
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/yawl \
+            --namespace=${{ needs.prepare.outputs.namespace }} \
+            --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n ${{ needs.prepare.outputs.namespace }} -l app.kubernetes.io/name=yawl
+
+          echo "=== Service Status ==="
+          kubectl get services -n ${{ needs.prepare.outputs.namespace }}
+
+          echo "=== IBM Ingress Status ==="
+          kubectl get ingress -n ${{ needs.prepare.outputs.namespace }} || true
+
+  # ============================================
+  # Deploy to OpenShift
+  # ============================================
+  deploy-openshift:
+    name: Deploy to OpenShift
+    runs-on: ubuntu-latest
+    needs: [prepare, ibm-login]
+    if: github.event.inputs.target == 'openshift'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud --version
+          ibmcloud config --check-version=false
+          ibmcloud plugin install oc -f
+          ibmcloud plugin install container-registry -f
+
+      - name: Authenticate to IBM Cloud
+        run: |
+          ibmcloud login \
+            --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" \
+            -r ${{ env.IBM_REGION }} \
+            -g ${{ env.IBM_RESOURCE_GROUP }}
+
+      - name: Install OpenShift CLI
+        run: |
+          ibmcloud oc install
+
+      - name: Get OpenShift cluster config
+        run: |
+          ibmcloud oc cluster config \
+            --cluster ${{ needs.prepare.outputs.cluster-name }} \
+            --export
+
+      - name: Login to OpenShift
+        run: |
+          oc login \
+            --token=$(ibmcloud oc cluster config --cluster ${{ needs.prepare.outputs.cluster-name }} --output json | jq -r '.accessToken') \
+            --server=$(ibmcloud oc cluster get --cluster ${{ needs.prepare.outputs.cluster-name }} --output json | jq -r '.masterURL')
+
+      - name: Create Project
+        run: |
+          oc new-project ${{ needs.prepare.outputs.namespace }} || oc project ${{ needs.prepare.outputs.namespace }}
+
+      - name: Create Secrets
+        run: |
+          oc create secret generic yawl-secrets \
+            --from-literal=db-password=${{ secrets.IBM_DB_PASSWORD }} \
+            --namespace=${{ needs.prepare.outputs.namespace }} \
+            --dry-run=client -o yaml | oc apply -f -
+
+      - name: Deploy application
+        run: |
+          oc new-app ${{ needs.prepare.outputs.image }} \
+            --name=yawl \
+            --env=SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}
+
+          oc expose svc/yawl --port=8080
+
+      - name: Set up Horizontal Pod Autoscaler
+        run: |
+          oc autoscale dc yawl \
+            --min=${{ github.event.inputs.environment == 'production' && '3' || '1' }} \
+            --max=10 \
+            --cpu-percent=70
+
+      - name: Wait for rollout
+        run: |
+          oc rollout status dc/yawl --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          oc get pods -n ${{ needs.prepare.outputs.namespace }} -l app=yawl
+
+          echo "=== Service Status ==="
+          oc get svc -n ${{ needs.prepare.outputs.namespace }}
+
+          echo "=== Route Status ==="
+          oc get route -n ${{ needs.prepare.outputs.namespace }}
+
+  # ============================================
+  # Deploy to Code Engine
+  # ============================================
+  deploy-codeengine:
+    name: Deploy to Code Engine
+    runs-on: ubuntu-latest
+    needs: [prepare, ibm-login]
+    if: github.event.inputs.target == 'codeengine'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud --version
+          ibmcloud config --check-version=false
+          ibmcloud plugin install code-engine -f
+          ibmcloud plugin install container-registry -f
+
+      - name: Authenticate to IBM Cloud
+        run: |
+          ibmcloud login \
+            --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" \
+            -r ${{ env.IBM_REGION }} \
+            -g ${{ env.IBM_RESOURCE_GROUP }}
+
+      - name: Login to Container Registry
+        run: |
+          ibmcloud cr login
+
+      - name: Create Code Engine project
+        run: |
+          ibmcloud ce project create \
+            --name yawl-${{ github.event.inputs.environment }} || true
+
+      - name: Select project
+        run: |
+          ibmcloud ce project select \
+            --name yawl-${{ github.event.inputs.environment }}
+
+      - name: Create registry secret
+        run: |
+          ibmcloud ce registry create \
+            --name ibm-registry \
+            --server ${{ env.IBM_REGISTRY }} \
+            --email noreply@ibm.com
+
+      - name: Deploy application
+        run: |
+          ibmcloud ce application create \
+            --name yawl \
+            --image ${{ needs.prepare.outputs.image }} \
+            --cpu 2 \
+            --memory 4G \
+            --min=${{ github.event.inputs.environment == 'production' && '2' || '0' }} \
+            --max 10 \
+            --env SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+            --port 8080 \
+            --registry-secret ibm-registry
+
+      - name: Get application URL
+        run: |
+          ibmcloud ce application get --name yawl
+
+      - name: Verify deployment
+        run: |
+          ibmcloud ce application list
+
+  # ============================================
+  # Deploy to VPC
+  # ============================================
+  deploy-vpc:
+    name: Deploy to VPC
+    runs-on: ubuntu-latest
+    needs: [prepare, ibm-login]
+    if: github.event.inputs.target == 'vpc'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud --version
+          ibmcloud config --check-version=false
+          ibmcloud plugin install vpc-infrastructure -f
+          ibmcloud plugin install container-registry -f
+
+      - name: Authenticate to IBM Cloud
+        run: |
+          ibmcloud login \
+            --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" \
+            -r ${{ env.IBM_REGION }} \
+            -g ${{ env.IBM_RESOURCE_GROUP }}
+
+      - name: Get VPC Instance
+        id: vpc
+        run: |
+          INSTANCE_ID=$(ibmcloud is instances \
+            --output json | jq -r '.[] | select(.name=="yawl-${{ github.event.inputs.environment }}") | .id')
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy via cloud-init
+        run: |
+          # Create cloud-init script
+          cat > cloud-init.yaml << EOF
+          #cloud-config
+          runcmd:
+            - docker pull ${{ needs.prepare.outputs.image }}
+            - docker stop yawl || true
+            - docker rm yawl || true
+            - docker run -d --name yawl -p 8080:8080 \
+                -e SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+                ${{ needs.prepare.outputs.image }}
+          EOF
+
+          # Create new instance with updated configuration
+          ibmcloud is instance-create \
+            yawl-${{ github.event.inputs.environment }}-new \
+            ${{ secrets.IBM_VPC_ID }} \
+            ${{ env.IBM_REGION }}-1 \
+            bx2-4x16 \
+            ${{ secrets.IBM_SUBNET_ID }} \
+            --image ${{ secrets.IBM_IMAGE_ID }} \
+            --user-data @cloud-init.yaml \
+            --security-group ${{ secrets.IBM_SECURITY_GROUP_ID }} || true
+
+      - name: Verify deployment
+        run: |
+          ibmcloud is instances --output json | jq '.[] | select(.name | startswith("yawl-${{ github.event.inputs.environment }}"))'
+
+  # ============================================
+  # Post-Deployment Verification
+  # ============================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-iks, deploy-openshift, deploy-codeengine, deploy-vpc]
+    if: always() && contains(join(needs.*.result, ','), 'success')
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## IBM Cloud Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.IBM_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Rollback
+  # ============================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback == 'true'
+
+    steps:
+      - name: Install IBM Cloud CLI
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+          ibmcloud login --apikey "${{ secrets.IBM_CLOUD_API_KEY }}" -r ${{ env.IBM_REGION }}
+
+      - name: Rollback IKS deployment
+        if: github.event.inputs.target == 'iks'
+        run: |
+          kubectl rollout undo deployment/yawl \
+            --namespace=${{ needs.prepare.outputs.namespace }}
+
+      - name: Rollback OpenShift deployment
+        if: github.event.inputs.target == 'openshift'
+        run: |
+          oc rollout undo dc/yawl \
+            --namespace=${{ needs.prepare.outputs.namespace }}
+
+      - name: Rollback Code Engine
+        if: github.event.inputs.target == 'codeengine'
+        run: |
+          ibmcloud ce application update \
+            --name yawl \
+            --image ${{ env.IBM_REGISTRY }}/yawl/yawl:${{ github.event.inputs.previous_version }}

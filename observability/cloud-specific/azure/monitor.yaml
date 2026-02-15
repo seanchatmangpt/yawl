@@ -1,0 +1,304 @@
+# Azure Monitor Configuration for YAWL Workflow Engine
+# Integrates Application Insights, Log Analytics, and Azure Monitor
+
+azure:
+  subscription_id: ${AZURE_SUBSCRIPTION_ID}
+  resource_group: yawl-workflow-rg
+  location: eastus
+
+# Application Insights Configuration
+application_insights:
+  enabled: true
+  name: yawl-workflow-ai
+  application_type: java
+  retention_days: 90
+  daily_cap_gb: 100
+
+  # Custom Metrics
+  custom_metrics:
+    - name: CaseStarted
+      description: Count of workflow cases started
+      type: Measurement
+      dimensions:
+        - case_type
+        - specification_id
+
+    - name: CaseCompleted
+      description: Count of workflow cases completed
+      type: Measurement
+      dimensions:
+        - case_type
+
+    - name: CaseFailed
+      description: Count of workflow cases that failed
+      type: Measurement
+      dimensions:
+        - case_type
+        - error_type
+
+    - name: CaseExecutionTime
+      description: Time taken to execute a workflow case
+      type: Measurement
+      unit: milliseconds
+      dimensions:
+        - case_type
+
+    - name: WorkItemQueueDepth
+      description: Current depth of work item queue
+      type: Measurement
+      dimensions:
+        - queue_name
+
+  # Availability Tests
+  availability_tests:
+    - name: yawl-engine-health
+      description: Health check for YAWL Engine
+      url: https://yawl-engine.example.com/health
+      frequency: 60
+      timeout: 30
+      locations:
+        - eastus
+        - westus2
+        - westeurope
+      expected_status: 200
+
+    - name: yawl-api-availability
+      description: API availability test
+      url: https://yawl-engine.example.com/api/status
+      frequency: 300
+      timeout: 60
+      locations:
+        - eastus
+
+  # Smart Detection Rules
+  smart_detection:
+    - name: Failure Anomalies
+      enabled: true
+      severity: Severe3
+      
+    - name: Memory Leak Detection
+      enabled: true
+      
+    - name: Security Exceptions
+      enabled: true
+
+# Log Analytics Workspace
+log_analytics:
+  enabled: true
+  name: yawl-workflow-logs
+  sku: PerGB2018
+  retention_days: 90
+  daily_cap_gb: 50
+
+  # Custom Log Tables
+  custom_logs:
+    - name: YAWLCaseLogs_CL
+      description: YAWL case execution logs
+      time_generated_field: TimeGenerated
+      
+    - name: YAWLTaskLogs_CL
+      description: YAWL task processing logs
+      
+    - name: YAWLResourceLogs_CL
+      description: YAWL resource allocation logs
+
+  # Data Collection Rules
+  data_collection_rules:
+    - name: yawl-java-logs
+      description: Collect Java application logs
+      data_sources:
+        - type: log_file
+          paths:
+            - /var/log/yawl/*.log
+          format: json
+      destinations:
+        - log_analytics
+
+# Azure Monitor Alerts
+alerts:
+  # Action Groups
+  action_groups:
+    - name: YAWL-SRE-Team
+      short_name: YAWLSRE
+      email_receivers:
+        - email_address: sre@example.com
+          name: SRE Team
+      sms_receivers:
+        - country_code: "1"
+          phone_number: "5551234567"
+          name: On-Call
+      webhook_receivers:
+        - name: Slack
+          service_uri: ${SLACK_WEBHOOK_URL}
+      azure_app_push_receivers:
+        - email_address: oncall@example.com
+          name: Mobile App
+
+    - name: YAWL-Critical
+      short_name: YAWLCRT
+      email_receivers:
+        - email_address: critical@example.com
+          name: Critical Team
+
+  # Alert Rules
+  rules:
+    - name: YAWL-High-Case-Failure-Rate
+      description: Alert when case failure rate exceeds 5%
+      severity: 2
+      enabled: true
+      scopes:
+        - ${APPLICATION_INSIGHTS_ID}
+      criteria:
+        metric_namespace: ApplicationInsights
+        metric_name: customMetrics/CaseFailed
+        aggregation: Total
+        operator: GreaterThan
+        threshold: 5
+        window_size: PT5M
+      actions:
+        - action_group: YAWL-Critical
+
+    - name: YAWL-High-Latency
+      description: Alert when P95 latency exceeds 30 seconds
+      severity: 3
+      enabled: true
+      scopes:
+        - ${APPLICATION_INSIGHTS_ID}
+      criteria:
+        metric_namespace: ApplicationInsights
+        metric_name: customMetrics/CaseExecutionTime
+        aggregation: Percentile
+        operator: GreaterThan
+        threshold: 30000
+        window_size: PT5M
+      actions:
+        - action_group: YAWL-SRE-Team
+
+    - name: YAWL-Work-Item-Queue-Backlog
+      description: Alert when work item queue depth exceeds 1000
+      severity: 3
+      enabled: true
+      scopes:
+        - ${APPLICATION_INSIGHTS_ID}
+      criteria:
+        metric_namespace: ApplicationInsights
+        metric_name: customMetrics/WorkItemQueueDepth
+        aggregation: Maximum
+        operator: GreaterThan
+        threshold: 1000
+        window_size: PT5M
+      actions:
+        - action_group: YAWL-SRE-Team
+
+    - name: YAWL-Memory-High
+      description: Alert when JVM memory usage exceeds 85%
+      severity: 3
+      enabled: true
+      scopes:
+        - ${VMSS_ID}
+      criteria:
+        metric_namespace: Microsoft.Compute/virtualMachineScaleSets
+        metric_name: Memory Available
+        aggregation: Average
+        operator: LessThan
+        threshold: 15
+        window_size: PT5M
+      actions:
+        - action_group: YAWL-SRE-Team
+
+# Azure Dashboards
+dashboards:
+  - name: YAWL-Operations
+    lenses:
+      - order: 0
+        parts:
+          - type: "ApplicationInsights/Metrics"
+            position:
+              x: 0
+              y: 0
+              colSpan: 4
+              rowSpan: 2
+            settings:
+              title: "Active Cases"
+              metrics:
+                - resourceId: ${APPLICATION_INSIGHTS_ID}
+                  metric: customMetrics/CaseStarted
+                  aggregation: Sum
+
+          - type: "ApplicationInsights/Metrics"
+            position:
+              x: 4
+              y: 0
+              colSpan: 4
+              rowSpan: 2
+            settings:
+              title: "Success Rate"
+              metrics:
+                - resourceId: ${APPLICATION_INSIGHTS_ID}
+                  metric: availabilityResults/availabilityPercentage
+                  aggregation: Avg
+
+          - type: "ApplicationInsights/Metrics"
+            position:
+              x: 8
+              y: 0
+              colSpan: 4
+              rowSpan: 2
+            settings:
+              title: "P95 Latency"
+              metrics:
+                - resourceId: ${APPLICATION_INSIGHTS_ID}
+                  metric: customMetrics/CaseExecutionTime
+                  aggregation: Percentile
+                  percentile: 95
+
+# Workbooks
+workbooks:
+  - name: YAWL-Case-Analysis
+    description: Deep dive analysis of YAWL case execution
+    type: workbook
+    serialized_data: |
+      {
+        "version": "Notebook/1.0",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## YAWL Case Analysis\n\nAnalyze case execution patterns and failures."
+            },
+            "name": "Header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "YAWLCaseLogs_CL | summarize count() by CaseType_s | render piechart",
+              "size": 0,
+              "timeContext": {
+                "durationMs": 86400000
+              }
+            },
+            "name": "Case Distribution"
+          }
+        ]
+      }
+
+# Azure Monitor Workspaces
+monitor_workspaces:
+  - name: yawl-monitoring
+    location: eastus
+    tags:
+      Environment: production
+      Service: YAWL
+
+# Managed Identity
+managed_identity:
+  type: UserAssigned
+  name: yawl-monitoring-identity
+  roles:
+    - role: Monitoring Metrics Publisher
+      scope: ${RESOURCE_GROUP_ID}
+    - role: Log Analytics Contributor
+      scope: ${LOG_ANALYTICS_ID}
+    - role: Application Insights Component Contributor
+      scope: ${APPLICATION_INSIGHTS_ID}

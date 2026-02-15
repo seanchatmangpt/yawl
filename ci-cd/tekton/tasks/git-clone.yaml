@@ -1,0 +1,419 @@
+# Tekton Tasks for YAWL Pipeline
+
+---
+# Git Clone Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Clone a Git repository
+  params:
+    - name: url
+      type: string
+      description: Git repository URL
+    - name: revision
+      type: string
+      description: Git revision to checkout
+      default: main
+    - name: deleteExisting
+      type: string
+      description: Delete existing content
+      default: 'true'
+  results:
+    - name: commit-sha
+      description: The commit SHA
+    - name: commit-timestamp
+      description: The commit timestamp
+  workspaces:
+    - name: output
+      description: The git repo will be cloned onto this workspace
+  steps:
+    - name: clone
+      image: alpine/git:v2.36.0
+      script: |
+        #!/bin/sh
+        set -e
+
+        if [ "$(params.deleteExisting)" = "true" ]; then
+          rm -rf $(workspaces.output.path)/*
+        fi
+
+        cd $(workspaces.output.path)
+
+        git clone --single-branch --branch $(params.revision) $(params.url) .
+
+        COMMIT_SHA=$(git rev-parse HEAD)
+        COMMIT_TIMESTAMP=$(git log -1 --format=%cI)
+
+        echo -n "$COMMIT_SHA" > $(results.commit-sha.path)
+        echo -n "$COMMIT_TIMESTAMP" > $(results.commit-timestamp.path)
+
+        echo "Cloned repository at commit $COMMIT_SHA"
+
+---
+# YAWL Build Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: yawl-build
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Build YAWL application with Ant
+  params:
+    - name: java-version
+      type: string
+      default: '17'
+    - name: context-path
+      type: string
+      default: '.'
+  workspaces:
+    - name: source
+  steps:
+    - name: build
+      image: eclipse-temurin:$(params.java-version)-jdk
+      workingDir: $(workspaces.source.path)/$(params.context-path)
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "Building YAWL application..."
+
+        # Install Ant
+        apt-get update && apt-get install -y ant
+
+        ant -version
+        java -version
+
+        # Compile
+        ant -f build/build.xml compile
+
+        # Build WAR files
+        ant -f build/build.xml buildWebApps
+
+        # Build standalone JAR
+        ant -f build/build.xml build_Standalone
+
+        echo "Build completed successfully"
+
+        # List artifacts
+        find build -name "*.war" -o -name "*.jar" | head -20
+
+---
+# YAWL Test Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: yawl-test
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Run YAWL tests
+  params:
+    - name: java-version
+      type: string
+      default: '17'
+  workspaces:
+    - name: source
+  results:
+    - name: test-result
+      description: Test result (pass/fail)
+  steps:
+    - name: test
+      image: eclipse-temurin:$(params.java-version)-jdk
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/bash
+        set +e
+
+        echo "Running YAWL tests..."
+
+        # Install Ant
+        apt-get update && apt-get install -y ant
+
+        mkdir -p reports/junit
+
+        # Run tests
+        java -cp classes:build/3rdParty/lib/*:test/classes \
+          org.junit.runner.JUnitCore org.yawlfoundation.yawl.TestAllYAWLSuites
+
+        TEST_RESULT=$?
+
+        if [ $TEST_RESULT -eq 0 ]; then
+          echo -n "pass" > $(results.test-result.path)
+          echo "All tests passed"
+        else
+          echo -n "fail" > $(results.test-result.path)
+          echo "Some tests failed"
+        fi
+
+        exit $TEST_RESULT
+
+---
+# Trivy Security Scanner Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: trivy-scanner
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Scan with Trivy for vulnerabilities
+  params:
+    - name: scan-type
+      type: string
+      description: Type of scan (fs, image)
+      default: fs
+    - name: image-uri
+      type: string
+      description: Image URI for image scan
+      default: ''
+    - name: severity
+      type: string
+      description: Severity levels to report
+      default: 'HIGH,CRITICAL'
+  workspaces:
+    - name: source
+      optional: true
+  steps:
+    - name: scan
+      image: aquasec/trivy:latest
+      script: |
+        #!/bin/sh
+        set -e
+
+        echo "Running Trivy security scan..."
+
+        if [ "$(params.scan-type)" = "fs" ]; then
+          trivy fs --severity $(params.severity) --exit-code 0 $(workspaces.source.path)
+        elif [ "$(params.scan-type)" = "image" ]; then
+          trivy image --severity $(params.severity) --exit-code 0 $(params.image-uri)
+        fi
+
+        echo "Security scan completed"
+
+---
+# Kaniko Build Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kaniko
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Build and push container image with Kaniko
+  params:
+    - name: IMAGE
+      type: string
+      description: Full image name including registry
+    - name: DOCKERFILE
+      type: string
+      description: Path to Dockerfile
+      default: ./Dockerfile
+    - name: CONTEXT
+      type: string
+      description: Build context
+      default: .
+    - name: BUILD_EXTRA_ARGS
+      type: string
+      description: Extra build arguments
+      default: ''
+  workspaces:
+    - name: source
+    - name: dockerconfig
+      optional: true
+  results:
+    - name: image-digest
+      description: Digest of the built image
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v1.12.0
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: DOCKER_CONFIG
+          value: $(workspaces.dockerconfig.path)
+      script: |
+        #!/bin/sh
+        set -e
+
+        echo "Building and pushing image: $(params.IMAGE)"
+
+        EXTRA_ARGS=""
+        if [ -n "$(params.BUILD_EXTRA_ARGS)" ]; then
+          EXTRA_ARGS="$(params.BUILD_EXTRA_ARGS)"
+        fi
+
+        /kaniko/executor \
+          --dockerfile=$(params.DOCKERFILE) \
+          --context=$(params.CONTEXT) \
+          --destination=$(params.IMAGE) \
+          $EXTRA_ARGS \
+          --digest-file=$(results.image-digest.path) \
+          --single-snapshot \
+          --use-new-run
+
+        echo "Image built and pushed successfully"
+        echo "Digest: $(cat $(results.image-digest.path))"
+
+---
+# Kubernetes Deploy Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kubernetes-deploy
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Deploy to Kubernetes
+  params:
+    - name: manifest-dir
+      type: string
+      description: Directory containing Kubernetes manifests
+    - name: namespace
+      type: string
+      description: Target namespace
+    - name: image
+      type: string
+      description: Image to deploy
+  workspaces:
+    - name: source
+    - name: kubeconfig
+  steps:
+    - name: deploy
+      image: bitnami/kubectl:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/bash
+        set -e
+
+        export KUBECONFIG=$(workspaces.kubeconfig.path)/config
+
+        echo "Deploying to namespace: $(params.namespace)"
+
+        # Create namespace if not exists
+        kubectl create namespace $(params.namespace) --dry-run=client -o yaml | kubectl apply -f -
+
+        # Substitute image in manifests and apply
+        for manifest in $(params.manifest-dir)/*.yaml; do
+          echo "Applying: $manifest"
+          envsubst < "$manifest" | kubectl apply -n $(params.namespace) -f -
+        done
+
+        echo "Deployment completed"
+
+      env:
+        - name: IMAGE
+          value: $(params.image)
+
+---
+# Kubectl Wait Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kubectl-wait
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Wait for Kubernetes resource condition
+  params:
+    - name: namespace
+      type: string
+      description: Target namespace
+    - name: resource-type
+      type: string
+      description: Resource type (deployment, pod, etc.)
+    - name: resource-name
+      type: string
+      description: Resource name
+    - name: condition
+      type: string
+      description: Condition to wait for
+    - name: timeout
+      type: string
+      default: '300s'
+  workspaces:
+    - name: kubeconfig
+  steps:
+    - name: wait
+      image: bitnami/kubectl:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        export KUBECONFIG=$(workspaces.kubeconfig.path)/config
+
+        echo "Waiting for $(params.resource-type)/$(params.resource-name) to be $(params.condition)..."
+
+        kubectl wait \
+          --namespace=$(params.namespace) \
+          --for=condition=$(params.condition) \
+          --timeout=$(params.timeout) \
+          $(params.resource-type)/$(params.resource-name)
+
+        echo "Resource is ready"
+
+---
+# Slack Notification Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: slack-notify
+  namespace: yawl-ci
+  labels:
+    app: yawl
+spec:
+  description: Send notification to Slack
+  params:
+    - name: webhook-url-secret
+      type: string
+      description: Secret containing Slack webhook URL
+      default: slack-webhook
+    - name: message
+      type: string
+      description: Message to send
+    - name: status
+      type: string
+      description: Build status
+      default: success
+  steps:
+    - name: notify
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+
+        STATUS_COLOR="good"
+        if [ "$(params.status)" != "success" ]; then
+          STATUS_COLOR="danger"
+        fi
+
+        cat <<EOF > payload.json
+        {
+          "attachments": [
+            {
+              "color": "$STATUS_COLOR",
+              "title": "YAWL Pipeline Notification",
+              "text": "$(params.message)",
+              "fields": [
+                {
+                  "title": "Status",
+                  "value": "$(params.status)",
+                  "short": true
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+
+        echo "Sending Slack notification..."
+        # curl -X POST -H 'Content-type: application/json' --data @payload.json $WEBHOOK_URL

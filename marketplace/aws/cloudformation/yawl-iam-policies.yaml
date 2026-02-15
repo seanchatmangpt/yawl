@@ -1,0 +1,482 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YAWL Workflow Engine - IAM Roles and Policies for AWS Marketplace Integration'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'General Configuration'
+        Parameters:
+          - ProjectName
+          - Environment
+      - Label:
+          default: 'AWS Marketplace Configuration'
+        Parameters:
+          - ProductCode
+          - MarketplaceSNSAccount
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: 'yawl'
+    Description: 'Project name for resource naming'
+
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues:
+      - 'development'
+      - 'staging'
+      - 'production'
+    Description: 'Deployment environment'
+
+  ProductCode:
+    Type: String
+    Description: 'AWS Marketplace Product Code'
+    MinLength: 1
+    MaxLength: 64
+
+  MarketplaceSNSAccount:
+    Type: String
+    Default: 'aws-marketplace'
+    Description: 'AWS account hosting Marketplace SNS topics'
+
+Resources:
+  # ============================================
+  # IAM Roles
+  # ============================================
+
+  # Role for YAWL Application Service
+  YAWLApplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-application-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/${EKSClusterOIDCProvider}'
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                !Sub '${EKSClusterOIDCProvider}:sub': 'system:serviceaccount:yawl:yawl-app'
+      Description: 'IAM role for YAWL application service'
+      MaxSessionDuration: 3600
+      Tags:
+        - Key: Application
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Role for AWS Marketplace Integration
+  MarketplaceIntegrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-marketplace-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Description: 'IAM role for AWS Marketplace integration functions'
+      MaxSessionDuration: 3600
+      Tags:
+        - Key: Application
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Role for Metering Lambda Function
+  MeteringLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-metering-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Description: 'IAM role for metering Lambda function'
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Application
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Role for Entitlement Lambda Function
+  EntitlementLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-entitlement-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Description: 'IAM role for entitlement Lambda function'
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Application
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Role for CloudWatch Alarms and Notifications
+  CloudWatchNotificationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-cloudwatch-notification-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudwatch.amazonaws.com
+                - sns.amazonaws.com
+            Action: sts:AssumeRole
+      Description: 'IAM role for CloudWatch notifications'
+      MaxSessionDuration: 3600
+      Tags:
+        - Key: Application
+          Value: YAWL
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================
+  # IAM Policies
+  # ============================================
+
+  # Policy for AWS Marketplace Metering Service
+  MarketplaceMeteringPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-metering-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowMeteringService
+            Effect: Allow
+            Action:
+              - aws-marketplace:BatchMeterUsage
+              - aws-marketplace:MeterUsage
+              - aws-marketplace:ResolveCustomer
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws-marketplace:ProductCode: !Ref ProductCode
+      Roles:
+        - !Ref MeteringLambdaRole
+        - !Ref MarketplaceIntegrationRole
+
+  # Policy for AWS Marketplace Entitlement Service
+  MarketplaceEntitlementPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-entitlement-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowEntitlementService
+            Effect: Allow
+            Action:
+              - aws-marketplace:GetEntitlements
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws-marketplace:ProductCode: !Ref ProductCode
+      Roles:
+        - !Ref EntitlementLambdaRole
+        - !Ref MarketplaceIntegrationRole
+
+  # Policy for DynamoDB Access (Customer and Metering Records)
+  DynamoDBAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-dynamodb-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowDynamoDBAccess
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
+            Resource:
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-subscribers'
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-metering-records'
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-metering-records/index/*'
+      Roles:
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+        - !Ref MarketplaceIntegrationRole
+
+  # Policy for SNS Access (Marketplace Notifications)
+  SNSAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-sns-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSNSSubscribe
+            Effect: Allow
+            Action:
+              - sns:ConfirmSubscription
+              - sns:Receive
+              - sns:Unsubscribe
+            Resource:
+              - !Sub 'arn:aws:sns:us-east-1:*:aws-mp-subscription-notification-${ProductCode}'
+              - !Sub 'arn:aws:sns:us-east-1:*:aws-mp-entitlement-notification-${ProductCode}'
+          - Sid: AllowSNSPublish
+            Effect: Allow
+            Action:
+              - sns:Publish
+            Resource:
+              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${ProjectName}-*'
+      Roles:
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+        - !Ref MarketplaceIntegrationRole
+
+  # Policy for SQS Access
+  SQSAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-sqs-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSQSAccess
+            Effect: Allow
+            Action:
+              - sqs:DeleteMessage
+              - sqs:DeleteMessageBatch
+              - sqs:GetQueueAttributes
+              - sqs:ReceiveMessage
+              - sqs:SendMessage
+              - sqs:SendMessageBatch
+            Resource:
+              - !Sub 'arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ProjectName}-*'
+      Roles:
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+
+  # Policy for Secrets Manager Access
+  SecretsManagerAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-secrets-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSecretsAccess
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource:
+              - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${ProjectName}/*'
+      Roles:
+        - !Ref YAWLApplicationRole
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+
+  # Policy for S3 Access
+  S3AccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-s3-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowS3Access
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketVersioning
+              - s3:GetBucketEncryption
+            Resource:
+              - !Sub 'arn:aws:s3:::${ProjectName}-${Environment}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${ProjectName}-${Environment}-${AWS::AccountId}/*'
+      Roles:
+        - !Ref YAWLApplicationRole
+
+  # Policy for RDS Access (via IAM Authentication)
+  RDSIAMAuthPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-rds-iam-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowRDSIAMAuth
+            Effect: Allow
+            Action:
+              - rds-db:connect
+            Resource:
+              - !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${ProjectName}-*/yawl_app'
+      Roles:
+        - !Ref YAWLApplicationRole
+
+  # Policy for CloudWatch Logs and Metrics
+  CloudWatchPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-cloudwatch-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudWatchLogs
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+            Resource:
+              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*'
+              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*:*'
+          - Sid: AllowCloudWatchMetrics
+            Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+              - cloudwatch:GetMetricData
+              - cloudwatch:ListMetrics
+            Resource: '*'
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: 'YAWL/Marketplace'
+      Roles:
+        - !Ref YAWLApplicationRole
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+
+  # Policy for KMS Access
+  KMSAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-kms-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowKMSAccess
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey
+              - kms:GenerateDataKeyWithoutPlaintext
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+      Roles:
+        - !Ref YAWLApplicationRole
+        - !Ref MeteringLambdaRole
+        - !Ref EntitlementLambdaRole
+
+  # Policy for SES (Email Notifications)
+  SESAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-${Environment}-ses-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSESSendEmail
+            Effect: Allow
+            Action:
+              - ses:SendEmail
+              - ses:SendRawEmail
+            Resource: '*'
+            Condition:
+              StringEquals:
+                ses:FromAddress: !Sub 'noreply@${ProjectName}.yawlfoundation.org'
+      Roles:
+        - !Ref MarketplaceIntegrationRole
+
+  # ============================================
+  # Instance Profile
+  # ============================================
+
+  YAWLApplicationInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub '${ProjectName}-${Environment}-application-profile'
+      Roles:
+        - !Ref YAWLApplicationRole
+
+Outputs:
+  YAWLApplicationRoleArn:
+    Description: 'YAWL Application Role ARN'
+    Value: !GetAtt YAWLApplicationRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ApplicationRoleArn'
+
+  MarketplaceIntegrationRoleArn:
+    Description: 'Marketplace Integration Role ARN'
+    Value: !GetAtt MarketplaceIntegrationRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MarketplaceRoleArn'
+
+  MeteringLambdaRoleArn:
+    Description: 'Metering Lambda Role ARN'
+    Value: !GetAtt MeteringLambdaRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MeteringLambdaRoleArn'
+
+  EntitlementLambdaRoleArn:
+    Description: 'Entitlement Lambda Role ARN'
+    Value: !GetAtt EntitlementLambdaRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-EntitlementLambdaRoleArn'
+
+  YAWLApplicationInstanceProfileArn:
+    Description: 'YAWL Application Instance Profile ARN'
+    Value: !GetAtt YAWLApplicationInstanceProfile.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceProfileArn'
+
+  ProductCode:
+    Description: 'AWS Marketplace Product Code'
+    Value: !Ref ProductCode
+    Export:
+      Name: !Sub '${AWS::StackName}-ProductCode'
+
+  # OIDC Provider reference (placeholder for EKS integration)
+  EKSClusterOIDCProvider:
+    Description: 'EKS Cluster OIDC Provider URL (to be replaced with actual cluster OIDC)'
+    Value: 'oidc.eks.region.amazonaws.com/id/EXAMPLE'
+    Export:
+      Name: !Sub '${AWS::StackName}-EKSOIDCProvider'

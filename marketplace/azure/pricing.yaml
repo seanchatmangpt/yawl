@@ -1,0 +1,481 @@
+# YAWL Workflow Engine - Azure Marketplace Pricing Configuration
+# Version: 1.0
+# Last Updated: February 2025
+
+---
+pricing:
+  model: metered  # Options: flat_rate, metered, per_user
+  currency: USD
+
+  # Free trial configuration
+  free_trial:
+    enabled: true
+    duration_days: 30
+    description: "30-day free trial with Professional Tier features"
+    requires_credit_card: false  # Azure Marketplace handles this
+
+  # Plan definitions for Azure Marketplace
+  plans:
+    - id: basic
+      name: "Basic Tier"
+      description: |
+        Perfect for small teams getting started with workflow automation.
+        Includes core YAWL features with email support.
+
+      billing_type: metered
+      base_price:
+        monthly: 299.00
+        yearly: 2990.00  # ~17% discount
+
+      limits:
+        workflow_executions: 1000
+        active_users: 5
+        data_processed_gb: 10
+        api_calls: 50000
+        worklet_invocations: 500
+
+      features:
+        - "1,000 workflow executions/month"
+        - "5 active users"
+        - "10 GB data processing"
+        - "50,000 API calls"
+        - "Email support"
+        - "Standard SLA (99.5%)"
+        - "Single AKS node pool"
+
+      azure_resources:
+        aks_node_count: 2
+        aks_node_size: "Standard_D4s_v3"
+        postgres_sku: "Standard_D2s_v3"
+        postgres_storage_gb: 50
+        storage_gb: 100
+
+      recommended_for: "Small teams, POC projects, Development environments"
+
+    - id: professional
+      name: "Professional Tier"
+      description: |
+        Ideal for growing organizations with moderate workflow needs.
+        Includes advanced features and priority support.
+
+      billing_type: metered
+      base_price:
+        monthly: 999.00
+        yearly: 9990.00  # ~17% discount
+
+      limits:
+        workflow_executions: 10000
+        active_users: 25
+        data_processed_gb: 100
+        api_calls: 500000
+        worklet_invocations: 5000
+
+      features:
+        - "10,000 workflow executions/month"
+        - "25 active users"
+        - "100 GB data processing"
+        - "500,000 API calls"
+        - "5,000 worklet invocations"
+        - "Priority email & chat support"
+        - "Enhanced SLA (99.9%)"
+        - "Audit logging"
+        - "Custom branding"
+        - "Azure AD integration"
+        - "Multi-zone deployment"
+
+      azure_resources:
+        aks_node_count: 3
+        aks_node_size: "Standard_D4s_v3"
+        postgres_sku: "Standard_D4s_v3"
+        postgres_storage_gb: 100
+        storage_gb: 500
+
+      recommended_for: "Growing teams, production workloads"
+      popular: true
+
+    - id: enterprise
+      name: "Enterprise Tier"
+      description: |
+        Designed for large organizations with high-volume workflow requirements.
+        Includes premium support and advanced security features.
+
+      billing_type: metered
+      base_price:
+        monthly: 2999.00
+        yearly: 29990.00  # ~17% discount
+
+      limits:
+        workflow_executions: 100000
+        active_users: 100
+        data_processed_gb: 1000
+        api_calls: 5000000
+        worklet_invocations: 50000
+
+      features:
+        - "100,000 workflow executions/month"
+        - "100 active users"
+        - "1 TB data processing"
+        - "5,000,000 API calls"
+        - "50,000 worklet invocations"
+        - "24/7 phone, chat & email support"
+        - "Premium SLA (99.95%)"
+        - "SSO/SAML integration (Azure AD Premium)"
+        - "Advanced analytics"
+        - "API rate limiting customization"
+        - "Dedicated account manager"
+        - "Private AKS cluster"
+        - "Azure Private Link"
+        - "WAF enabled"
+        - "Geo-redundant backup"
+
+      azure_resources:
+        aks_node_count: 5
+        aks_node_size: "Standard_D8s_v3"
+        postgres_sku: "Standard_D8s_v3"
+        postgres_storage_gb: 500
+        storage_gb: 1000
+
+      recommended_for: "Large organizations, critical workflows"
+
+    - id: unlimited
+      name: "Unlimited Tier"
+      description: |
+        For organizations requiring unlimited scale with dedicated infrastructure.
+        Includes all features with premium enterprise support.
+
+      billing_type: metered
+      base_price:
+        monthly: 9999.00
+        yearly: 99990.00  # ~17% discount
+
+      limits:
+        workflow_executions: -1  # Unlimited
+        active_users: -1  # Unlimited
+        data_processed_gb: -1  # Unlimited
+        api_calls: -1  # Unlimited
+        worklet_invocations: -1  # Unlimited
+
+      features:
+        - "Unlimited workflow executions"
+        - "Unlimited active users"
+        - "Unlimited data processing"
+        - "Unlimited API calls"
+        - "Unlimited worklet invocations"
+        - "24/7 dedicated support team"
+        - "Maximum SLA (99.99%)"
+        - "Dedicated AKS cluster"
+        - "Azure Dedicated Host option"
+        - "Custom integrations"
+        - "On-premise deployment option"
+        - "Quarterly business reviews"
+        - "Custom SLA negotiations"
+        - "Private endpoints for all services"
+        - "Cross-region replication"
+
+      azure_resources:
+        aks_node_count: 10
+        aks_node_size: "Standard_D16s_v3"
+        postgres_sku: "Standard_D16s_v3"
+        postgres_storage_gb: 1000
+        storage_gb: 5000
+
+      recommended_for: "Enterprise-scale, mission-critical deployments"
+      contact_sales: true
+
+  # Usage-based metering dimensions
+  metering:
+    frequency: hourly
+
+    dimensions:
+      - key: workflow_executions
+        name: "Workflow Executions"
+        description: "Number of workflow instances executed beyond included allocation"
+        unit: "Executions"
+        rate: 0.05
+        aggregation: sum
+        display_order: 1
+        azure_meter_id: "workflow_executions_meter"
+
+      - key: active_users
+        name: "Additional Active Users"
+        description: "Concurrent active users beyond included allocation"
+        unit: "Users/Month"
+        rate: 10.00
+        aggregation: max
+        display_order: 2
+        azure_meter_id: "active_users_meter"
+
+      - key: data_processed_gb
+        name: "Additional Data Processed"
+        description: "Total data processed through workflows in GB beyond included allocation"
+        unit: "GB"
+        rate: 0.50
+        aggregation: sum
+        display_order: 3
+        azure_meter_id: "data_processed_meter"
+
+      - key: api_calls
+        name: "Additional API Calls"
+        description: "API requests to YAWL interfaces beyond included allocation"
+        unit: "1000 Calls"
+        rate: 1.00
+        aggregation: sum
+        display_order: 4
+        azure_meter_id: "api_calls_meter"
+
+      - key: worklet_invocations
+        name: "Additional Worklet Invocations"
+        description: "Dynamic worklet rule executions beyond included allocation"
+        unit: "Invocations"
+        rate: 0.10
+        aggregation: sum
+        display_order: 5
+        azure_meter_id: "worklet_invocations_meter"
+
+  # Overage pricing examples
+  overage_examples:
+    - tier: professional
+      scenario: "150% of workflow executions"
+      calculation:
+        included: 10000
+        actual: 15000
+        overage: 5000
+        overage_cost: 250.00  # 5000 * $0.05
+        total_monthly: 1249.00  # $999 + $250
+
+    - tier: enterprise
+      scenario: "Additional 50 users"
+      calculation:
+        included: 100
+        actual: 150
+        overage: 50
+        overage_cost: 500.00  # 50 * $10
+        total_monthly: 3499.00  # $2999 + $500
+
+  # Regional pricing adjustments
+  regional_pricing:
+    # Americas
+    eastus:
+      name: "East US"
+      multiplier: 1.00
+      currency: USD
+    westus2:
+      name: "West US 2"
+      multiplier: 1.00
+      currency: USD
+    centralus:
+      name: "Central US"
+      multiplier: 1.00
+      currency: USD
+
+    # Europe
+    westeurope:
+      name: "West Europe"
+      multiplier: 1.10
+      currency: USD
+    northeurope:
+      name: "North Europe"
+      multiplier: 1.10
+      currency: USD
+    francecentral:
+      name: "France Central"
+      multiplier: 1.10
+      currency: USD
+    germanywestcentral:
+      name: "Germany West Central"
+      multiplier: 1.10
+      currency: USD
+
+    # Asia Pacific
+    eastasia:
+      name: "East Asia"
+      multiplier: 1.05
+      currency: USD
+    southeastasia:
+      name: "Southeast Asia"
+      multiplier: 1.05
+      currency: USD
+    japaneast:
+      name: "Japan East"
+      multiplier: 1.05
+      currency: USD
+    australiaeast:
+      name: "Australia East"
+      multiplier: 1.15
+      currency: USD
+
+  # Private offer configuration
+  private_offers:
+    enabled: true
+    min_discount_percent: 10
+    max_discount_percent: 30
+    custom_terms_available: true
+
+  # BYOL (Bring Your Own License) configuration
+  byol:
+    enabled: true
+    description: "For customers with existing YAWL licenses"
+    price: 0.00
+    requirements:
+      - "Valid YAWL license certificate"
+      - "License transfer approval"
+      - "Annual verification"
+
+  # Bundle pricing (optional add-ons)
+  bundles:
+    - id: support_premium
+      name: "Premium Support Add-on"
+      monthly_price: 499.00
+      features:
+        - "4-hour response time"
+        - "Dedicated support engineer"
+        - "Quarterly architecture reviews"
+        - "Priority bug fixes"
+
+    - id: security_compliance
+      name: "Security & Compliance Add-on"
+      monthly_price: 299.00
+      features:
+        - "HIPAA compliance module"
+        - "PCI DSS compliance module"
+        - "Enhanced audit logging"
+        - "Custom security policies"
+        - "Microsoft Defender integration"
+
+    - id: advanced_analytics
+      name: "Advanced Analytics Add-on"
+      monthly_price: 199.00
+      features:
+        - "Custom dashboards"
+        - "Advanced reporting"
+        - "Predictive analytics"
+        - "Historical data retention (2 years)"
+        - "Power BI integration"
+
+    - id: disaster_recovery
+      name: "Disaster Recovery Add-on"
+      monthly_price: 399.00
+      features:
+        - "Cross-region replication"
+        - "Automated failover"
+        - "15-minute RTO"
+        - "1-hour RPO"
+        - "Disaster recovery testing"
+
+  # Volume discounts
+  volume_discounts:
+    - min_contracts: 2
+      discount_percent: 5
+      description: "5% off for 2+ contracts"
+
+    - min_contracts: 5
+      discount_percent: 10
+      description: "10% off for 5+ contracts"
+
+    - min_contracts: 10
+      discount_percent: 15
+      description: "15% off for 10+ contracts"
+
+    - min_contracts: 25
+      discount_percent: 20
+      description: "Contact sales for 25+ contracts"
+
+  # Contract terms
+  contract_terms:
+    - duration: 12
+      unit: months
+      discount_percent: 17
+      description: "Annual contract (17% savings)"
+
+    - duration: 24
+      unit: months
+      discount_percent: 25
+      description: "2-year contract (25% savings)"
+
+    - duration: 36
+      unit: months
+      discount_percent: 33
+      description: "3-year contract (33% savings)"
+
+  # Azure-specific pricing considerations
+  azure_considerations:
+    reserved_instances:
+      enabled: true
+      description: "Use Azure Reserved VM Instances for additional savings"
+      savings_percent: 40
+
+    hybrid_benefit:
+      enabled: false
+      description: "Azure Hybrid Benefit not applicable (Java-based)"
+
+    spot_instances:
+      enabled: true
+      description: "Spot instances available for non-production workloads"
+      max_discount_percent: 90
+
+# Revenue share configuration (internal)
+revenue_share:
+  microsoft_percentage: 20  # Standard marketplace fee
+  seller_percentage: 80
+
+  # Reduced rate for transactable offers
+  transactable_rate:
+    microsoft_percentage: 10
+    seller_percentage: 90
+    qualification: "Co-sell ready status"
+
+# Azure cost estimation helper
+azure_cost_estimation:
+  # Estimated Azure infrastructure costs per tier (monthly)
+  infrastructure_costs:
+    basic:
+      aks_cluster: 73.00
+      aks_nodes: 280.00  # 2 x D4s_v3
+      postgresql: 180.00
+      storage: 5.00
+      networking: 50.00
+      total: 588.00
+
+    professional:
+      aks_cluster: 73.00
+      aks_nodes: 420.00  # 3 x D4s_v3
+      postgresql: 360.00
+      storage: 25.00
+      networking: 75.00
+      total: 953.00
+
+    enterprise:
+      aks_cluster: 73.00
+      aks_nodes: 1160.00  # 5 x D8s_v3
+      postgresql: 720.00
+      storage: 50.00
+      networking: 150.00
+      total: 2153.00
+
+    unlimited:
+      aks_cluster: 73.00
+      aks_nodes: 3720.00  # 10 x D16s_v3
+      postgresql: 1440.00
+      storage: 250.00
+      networking: 300.00
+      total: 5783.00
+
+  # Recommended Azure reservations
+  reservation_recommendations:
+    - tier: professional
+      resource: "aks_nodes"
+      term: "1_year"
+      savings_percent: 40
+    - tier: enterprise
+      resource: "postgresql"
+      term: "1_year"
+      savings_percent: 35
+
+# Metering configuration (internal)
+metering_config:
+  batch_size: 25
+  retry_attempts: 3
+  retry_delay_seconds: 60
+  timeout_seconds: 30
+  azure_storage_queue: true
+  azure_function_processing: true

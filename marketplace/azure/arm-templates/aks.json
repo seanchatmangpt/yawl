@@ -1,0 +1,334 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "YAWL Workflow Engine - Azure Kubernetes Service (AKS) Template",
+    "version": "5.2.0"
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for resource deployment"
+      }
+    },
+    "aksClusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AKS cluster"
+      }
+    },
+    "aksNodeCount": {
+      "type": "int",
+      "metadata": {
+        "description": "Number of nodes in the AKS cluster"
+      }
+    },
+    "aksNodeSize": {
+      "type": "string",
+      "metadata": {
+        "description": "VM size for AKS nodes"
+      }
+    },
+    "aksMaxPods": {
+      "type": "int",
+      "metadata": {
+        "description": "Maximum pods per node"
+      }
+    },
+    "enablePrivateCluster": {
+      "type": "bool",
+      "metadata": {
+        "description": "Enable private AKS cluster"
+      }
+    },
+    "enableAzureMonitor": {
+      "type": "bool",
+      "metadata": {
+        "description": "Enable Azure Monitor for containers"
+      }
+    },
+    "subnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Subnet ID for AKS nodes"
+      }
+    },
+    "userAssignedIdentityId": {
+      "type": "string",
+      "metadata": {
+        "description": "User assigned identity resource ID"
+      }
+    },
+    "lawWorkspaceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Log Analytics workspace resource ID"
+      }
+    },
+    "acrId": {
+      "type": "string",
+      "metadata": {
+        "description": "Container Registry resource ID"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "metadata": {
+        "description": "Resource tags"
+      }
+    },
+    "kubernetesVersion": {
+      "type": "string",
+      "defaultValue": "1.28",
+      "metadata": {
+        "description": "Kubernetes version"
+      }
+    },
+    "nodeOsDiskSizeGB": {
+      "type": "int",
+      "defaultValue": 128,
+      "metadata": {
+        "description": "Node OS disk size in GB"
+      }
+    },
+    "enableAutoScaling": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable cluster auto-scaler"
+      }
+    },
+    "minNodeCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Minimum node count for auto-scaler"
+      }
+    },
+    "maxNodeCount": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Maximum node count for auto-scaler"
+      }
+    },
+    "networkPlugin": {
+      "type": "string",
+      "defaultValue": "azure",
+      "allowedValues": [
+        "azure",
+        "kubenet"
+      ],
+      "metadata": {
+        "description": "Network plugin for AKS"
+      }
+    },
+    "networkPolicy": {
+      "type": "string",
+      "defaultValue": "calico",
+      "allowedValues": [
+        "calico",
+        "azure"
+      ],
+      "metadata": {
+        "description": "Network policy for AKS"
+      }
+    },
+    "loadBalancerSku": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": [
+        "basic",
+        "standard"
+      ],
+      "metadata": {
+        "description": "Load balancer SKU"
+      }
+    }
+  },
+  "variables": {
+    "aksClusterId": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]",
+    "systemNodePoolName": "system",
+    "userNodePoolName": "yawl",
+    "aadProfile": {
+      "managed": true,
+      "enableAzureRBAC": true
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerService/managedClusters",
+      "apiVersion": "2023-10-01",
+      "name": "[parameters('aksClusterName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentityId')]": {}
+        }
+      },
+      "properties": {
+        "kubernetesVersion": "[parameters('kubernetesVersion')]",
+        "dnsPrefix": "[concat(parameters('aksClusterName'), '-dns')]",
+        "agentPoolProfiles": [
+          {
+            "name": "[variables('systemNodePoolName')]",
+            "count": 2,
+            "vmSize": "Standard_D4s_v3",
+            "osDiskSizeGB": "[parameters('nodeOsDiskSizeGB')]",
+            "vnetSubnetID": "[parameters('subnetId')]",
+            "maxPods": "[parameters('aksMaxPods')]",
+            "type": "VirtualMachineScaleSets",
+            "mode": "System",
+            "osType": "Linux",
+            "enableNodePublicIP": false,
+            "scaleSetPriority": "Regular",
+            "scaleSetEvictionPolicy": "Delete",
+            "spotMaxPrice": -1,
+            "tags": "[parameters('tags')]"
+          },
+          {
+            "name": "[variables('userNodePoolName')]",
+            "count": "[parameters('aksNodeCount')]",
+            "vmSize": "[parameters('aksNodeSize')]",
+            "osDiskSizeGB": "[parameters('nodeOsDiskSizeGB')]",
+            "vnetSubnetID": "[parameters('subnetId')]",
+            "maxPods": "[parameters('aksMaxPods')]",
+            "type": "VirtualMachineScaleSets",
+            "mode": "User",
+            "osType": "Linux",
+            "enableNodePublicIP": false,
+            "scaleSetPriority": "Regular",
+            "scaleSetEvictionPolicy": "Delete",
+            "enableAutoScaling": "[parameters('enableAutoScaling')]",
+            "minCount": "[parameters('minNodeCount')]",
+            "maxCount": "[parameters('maxNodeCount')]",
+            "tags": "[parameters('tags')]"
+          }
+        ],
+        "linuxProfile": {
+          "adminUsername": "azureuser",
+          "ssh": {
+            "publicKeys": [
+              {
+                "keyData": ""
+              }
+            ]
+          }
+        },
+        "addonProfiles": {
+          "omsagent": {
+            "enabled": "[parameters('enableAzureMonitor')]",
+            "config": {
+              "logAnalyticsWorkspaceResourceID": "[parameters('lawWorkspaceId')]"
+            }
+          },
+          "azurepolicy": {
+            "enabled": true
+          },
+          "httpApplicationRouting": {
+            "enabled": false
+          },
+          "ingressApplicationGateway": {
+            "enabled": false
+          }
+        },
+        "networkProfile": {
+          "networkPlugin": "[parameters('networkPlugin')]",
+          "networkPolicy": "[parameters('networkPolicy')]",
+          "loadBalancerSku": "[parameters('loadBalancerSku')]",
+          "serviceCidr": "10.96.0.0/16",
+          "dnsServiceIP": "10.96.0.10",
+          "dockerBridgeCidr": "172.17.0.1/16",
+          "outboundType": "loadBalancer"
+        },
+        "aadProfile": "[variables('aadProfile')]",
+        "enableRBAC": true,
+        "disableLocalAccounts": "[parameters('enablePrivateCluster')]",
+        "apiServerAccessProfile": {
+          "enablePrivateCluster": "[parameters('enablePrivateCluster')]",
+          "enablePrivateClusterPublicFQDN": false
+        },
+        "autoScalerProfile": {
+          "balance-similar-node-groups": "false",
+          "expander": "random",
+          "max-empty-bulk-delete": "10",
+          "max-graceful-termination-sec": "600",
+          "max-node-provision-time": "15m",
+          "max-total-unready-percentage": "45",
+          "new-pod-scale-up-delay": "0s",
+          "ok-total-unready-count": "3",
+          "scale-down-delay-after-add": "10m",
+          "scale-down-delay-after-delete": "10s",
+          "scale-down-delay-after-failure": "3m",
+          "scale-down-unneeded-time": "10m",
+          "scale-down-unready-time": "20m",
+          "scale-down-utilization-threshold": "0.5",
+          "scan-interval": "10s",
+          "skip-nodes-with-local-storage": "true",
+          "skip-nodes-with-system-pods": "true"
+        },
+        "podIdentityProfile": {
+          "enabled": false
+        },
+        "oidcIssuerProfile": {
+          "enabled": true
+        },
+        "securityProfile": {
+          "workloadIdentity": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), 'AcrPull')]",
+      "scope": "[concat('Microsoft.ContainerService/managedClusters', '/', parameters('aksClusterName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '7f951dcc-4d5f-462a-ad7d-b9ed8d348be3')]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2023-10-01').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(parameters('acrId'), 'AcrPull')]",
+      "scope": "[parameters('acrId')]",
+      "properties": {
+        "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '7f951dcc-4d5f-462a-ad7d-b9ed8d348be3')]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2023-10-01').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal"
+      }
+    }
+  ],
+  "outputs": {
+    "clusterId": {
+      "type": "string",
+      "value": "[variables('aksClusterId')]"
+    },
+    "clusterName": {
+      "type": "string",
+      "value": "[parameters('aksClusterName')]"
+    },
+    "clusterFqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2023-10-01').fqdn]"
+    },
+    "clusterPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2023-10-01').identityProfile.kubeletidentity.objectId]"
+    },
+    "oidcIssuerUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2023-10-01').oidcIssuerProfile.issuerURL]"
+    }
+  }
+}

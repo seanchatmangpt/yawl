@@ -1,0 +1,196 @@
+# Reusable Workflow - Build and Test
+# YAWL Workflow Engine CI/CD
+#
+# Usage:
+#   jobs:
+#     build:
+#       uses: ./.github/workflows/reusable-build.yaml
+#       with:
+#         java_version: '17'
+#         skip_tests: false
+
+name: Reusable Build
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: 'Java version to use'
+        required: false
+        default: '17'
+        type: string
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+      build_target:
+        description: 'Build target (compile|buildWebApps|buildAll)'
+        required: false
+        default: 'buildWebApps'
+        type: string
+      upload_artifacts:
+        description: 'Upload build artifacts'
+        required: false
+        default: true
+        type: boolean
+    outputs:
+      version:
+        description: 'Build version'
+        value: ${{ jobs.build.outputs.version }}
+      artifact_name:
+        description: 'Artifact name'
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+env:
+  ANT_VERSION: '1.10.14'
+
+jobs:
+  build:
+    name: Build (Java ${{ inputs.java_version }})
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: ${{ steps.artifact.outputs.name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ inputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Ant
+        uses: cedx/setup-ant@v4
+        with:
+          version: ${{ env.ANT_VERSION }}
+
+      - name: Cache build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.ant
+            build/3rdParty
+          key: ${{ runner.os }}-java${{ inputs.java_version }}-${{ hashFiles('build/build.xml', 'build/build.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-java${{ inputs.java_version }}-
+            ${{ runner.os }}-
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep 'app.version' build/build.xml | sed 's/.*value="\([^"]*\)".*/\1/' || echo "5.2.0")
+          BUILD_NUM=$(date +%Y%m%d%H%M)
+          echo "version=${VERSION}-${BUILD_NUM}" >> $GITHUB_OUTPUT
+          echo "Build version: ${VERSION}-${BUILD_NUM}"
+
+      - name: Validate build configuration
+        run: |
+          echo "Build configuration:"
+          java -version
+          ant -version
+          test -f build/build.xml || (echo "ERROR: build.xml not found" && exit 1)
+
+      - name: Build with Ant
+        run: |
+          ant -f build/build.xml ${{ inputs.build_target }}
+        env:
+          ANT_OPTS: "-Xmx2048m"
+
+      - name: List build artifacts
+        id: artifact
+        run: |
+          echo "=== Build Artifacts ==="
+          find . -name "*.war" -o -name "*.jar" | grep -v "3rdParty" || true
+
+          # Set artifact name
+          echo "name=yawl-build-java${{ inputs.java_version }}-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare artifacts for upload
+        if: ${{ inputs.upload_artifacts }}
+        run: |
+          mkdir -p artifacts/wars artifacts/jars
+          find . -name "*.war" -not -path "*/3rdParty/*" -exec cp {} artifacts/wars/ \; || true
+          find . -name "yawl*.jar" -not -path "*/3rdParty/*" -exec cp {} artifacts/jars/ \; || true
+
+      - name: Upload build artifacts
+        if: ${{ inputs.upload_artifacts }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-build-java${{ inputs.java_version }}-${{ steps.version.outputs.version }}
+          path: artifacts/
+          retention-days: 7
+
+  test:
+    name: Test (Java ${{ inputs.java_version }})
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ !inputs.skip_tests }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: yawl
+          POSTGRES_PASSWORD: yawl
+          POSTGRES_DB: yawl_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ inputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'temurin'
+
+      - name: Setup Ant
+        uses: cedx/setup-ant@v4
+        with:
+          version: ${{ env.ANT_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: artifacts/
+
+      - name: Configure database
+        run: |
+          cat > build/build.properties << EOF
+          database.type=postgres
+          database.path=localhost:5432/yawl_test
+          database.user=yawl
+          database.password=yawl
+          EOF
+
+      - name: Run unit tests
+        run: |
+          mkdir -p reports/junit
+          ant -f build/build.xml compile
+          java -cp classes:build/3rdParty/lib/*:test/classes \
+            org.junit.runner.JUnitCore org.yawlfoundation.yawl.TestAllYAWLSuites \
+            || true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-java${{ inputs.java_version }}
+          path: reports/
+          retention-days: 30

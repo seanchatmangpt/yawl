@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: config
+data:
+  # Database configuration
+  DATABASE_TYPE: "postgres"
+  DATABASE_PATH: "yawl"
+
+  # Logging levels
+  YAWL_LOGGING_LEVEL: "WARN"
+  WORKLET_LOGGING_LEVEL: "INFO"
+  RESOURCE_LOGGING_LEVEL: "INFO"
+  SCHEDULING_LOGGING_LEVEL: "DEBUG"
+  PROCLET_LOGGING_LEVEL: "INFO"
+  HIBERNATE_LOGGING_LEVEL: "ERROR"
+  ROOT_LOGGING_LEVEL: "ERROR"
+  MAIL_LOGGING_LEVEL: "INFO"
+
+  # JVM options
+  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+  # Service URLs (internal cluster addresses)
+  ENGINE_URL: "http://yawl-engine:8080/engine"
+  RESOURCE_SERVICE_URL: "http://yawl-resource-service:8080/resourceService"
+  WORKLET_SERVICE_URL: "http://yawl-worklet-service:8080/workletService"
+  MONITOR_SERVICE_URL: "http://yawl-monitor-service:8080/monitorService"
+  COST_SERVICE_URL: "http://yawl-cost-service:8080/costService"
+  SCHEDULING_SERVICE_URL: "http://yawl-scheduling-service:8080/schedulingService"
+
+  # Tomcat settings
+  CATALINA_OPTS: "-Djava.security.egd=file:/dev/./urandom"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-hibernate-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: hibernate-config
+data:
+  hibernate.dialect: "org.hibernate.dialect.PostgreSQLDialect"
+  hibernate.show_sql: "false"
+  hibernate.hbm2ddl.auto: "update"
+  hibernate.cache.use_second_level_cache: "true"
+  hibernate.cache.use_query_cache: "true"
+  hibernate.jdbc.batch_size: "20"
+  hibernate.order_inserts: "true"
+  hibernate.order_updates: "true"

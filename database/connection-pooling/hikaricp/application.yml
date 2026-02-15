@@ -1,0 +1,107 @@
+# Spring Boot HikariCP Configuration for YAWL
+# Application.yml format for Spring Boot applications
+
+spring:
+  datasource:
+    # Primary DataSource Configuration
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:yawl}
+    username: ${DB_USER:yawl}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+
+    # HikariCP Connection Pool Configuration
+    hikari:
+      # Pool name for identification in logs and metrics
+      pool-name: YAWLConnectionPool
+
+      # Pool Sizing
+      # Formula: connections = (core_count * 2) + effective_spindle_count
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+      # Timeouts (in milliseconds)
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+
+      # Connection Testing
+      connection-test-query: SELECT 1
+      connection-init-sql: SET TIME ZONE 'UTC'
+
+      # Performance Tuning
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useLocalSessionState: true
+        cacheResultSetMetadata: true
+        cacheDatabaseMetaData: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+        useLocalTransactionState: true
+
+      # Health and Monitoring
+      keepalive-time: 120000
+      register-mbeans: true
+      allow-pool-suspension: true
+
+      # Connection Behavior
+      auto-commit: true
+      read-only: false
+      initialization-fail-timeout: 1
+      isolate-internal-queries: false
+
+  # Read-Only Replica Configuration (Optional)
+  read-datasource:
+    url: jdbc:postgresql://${DB_READ_HOST:localhost}:${DB_READ_PORT:5433}/${DB_NAME:yawl}
+    username: ${DB_READ_USER:yawl_readonly}
+    password: ${DB_READ_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: YAWLReadOnlyPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      read-only: true
+
+# JPA/Hibernate Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # Batch processing
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        # Statistics (disable in production)
+        generate_statistics: false
+        # Connection handling
+        connection.handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_STATEMENT
+        # Query optimization
+        cache.use_query_cache: false
+        cache.use_second_level_cache: false
+
+# Actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,bindings
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    com.zaxxer.hikari: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

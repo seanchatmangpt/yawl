@@ -1,0 +1,62 @@
+apiVersion: v2
+name: yawl
+description: YAWL (Yet Another Workflow Language) - Multi-cloud Helm Chart for BPM/Workflow Engine
+type: application
+version: 5.2.0
+appVersion: "5.2"
+kubeVersion: ">=1.25.0-0"
+home: https://yawlfoundation.github.io/
+sources:
+  - https://github.com/yawlfoundation/yawl
+maintainers:
+  - name: YAWL Foundation
+    email: support@yawlfoundation.org
+    url: https://yawlfoundation.github.io/
+keywords:
+  - bpm
+  - workflow
+  - yawl
+  - petri-net
+  - process-automation
+  - workflow-engine
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://yawlfoundation.github.io/yawl/v5.2/
+    - name: GitHub
+      url: https://github.com/yawlfoundation/yawl
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/changes: |
+    - kind: added
+      description: Multi-cloud Helm chart support (GCP, AWS, Azure, Oracle, IBM)
+    - kind: added
+      description: CloudSQL proxy integration for GCP
+    - kind: added
+      description: AWS RDS proxy integration
+    - kind: added
+      description: Redis subchart for session management
+    - kind: added
+      description: PostgreSQL subchart for database
+    - kind: added
+      description: Horizontal Pod Autoscaler support
+    - kind: added
+      description: Pod Disruption Budget support
+    - kind: added
+      description: Network Policy support
+
+dependencies:
+  - name: postgresql
+    version: "15.x.x"
+    repository: "file://charts/postgresql"
+    condition: postgresql.enabled
+    alias: postgresql
+
+  - name: redis
+    version: "18.x.x"
+    repository: "file://charts/redis"
+    condition: redis.enabled
+    alias: redis

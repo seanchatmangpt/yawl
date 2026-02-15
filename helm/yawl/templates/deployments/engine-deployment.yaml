@@ -1,0 +1,127 @@
+{{- if .Values.services.engine.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.name" . }}-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: engine
+  {{- with .Values.services.engine.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.services.engine.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: engine
+        app.kubernetes.io/part-of: yawl
+      {{- with .Values.services.engine.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.services.engine.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: engine
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.services.engine.image.repository | default "yawl/engine" }}:{{ .Values.services.engine.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.services.engine.image.pullPolicy | default .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.engine.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: "engine"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.cloudsqlProxy.enabled }}
+            - name: DATABASE_HOST
+              value: "{{ include "yawl.fullname" . }}-cloudsql-proxy"
+            - name: DATABASE_PORT
+              value: {{ .Values.cloudsqlProxy.proxyPort | quote }}
+            {{- else if .Values.awsRdsProxy.enabled }}
+            - name: DATABASE_HOST
+              value: {{ .Values.awsRdsProxy.endpoint | quote }}
+            - name: DATABASE_PORT
+              value: {{ .Values.awsRdsProxy.port | quote }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yawl.databaseSecretName" . }}
+          {{- with .Values.services.engine.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.services.engine.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.services.engine.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.services.engine.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/yawl
+            {{- with .Values.services.engine.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.services.engine.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClassName }}
+{{- end }}

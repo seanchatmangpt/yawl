@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yawl.fullname" . }}-config
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config
+data:
+  # Database configuration
+  DATABASE_TYPE: "postgres"
+  DATABASE_PATH: {{ include "yawl.databaseName" . | quote }}
+  DATABASE_HOST: {{ include "yawl.databaseHost" . | quote }}
+  DATABASE_PORT: {{ include "yawl.databasePort" . | quote }}
+
+  # Logging levels
+  YAWL_LOGGING_LEVEL: {{ .Values.logging.yawl | quote }}
+  WORKLET_LOGGING_LEVEL: {{ .Values.logging.worklet | quote }}
+  RESOURCE_LOGGING_LEVEL: {{ .Values.logging.resource | quote }}
+  SCHEDULING_LOGGING_LEVEL: {{ .Values.logging.scheduling | quote }}
+  PROCLET_LOGGING_LEVEL: {{ .Values.logging.proclet | quote }}
+  HIBERNATE_LOGGING_LEVEL: {{ .Values.logging.hibernate | quote }}
+  ROOT_LOGGING_LEVEL: {{ .Values.logging.root | quote }}
+  MAIL_LOGGING_LEVEL: {{ .Values.logging.mail | quote }}
+
+  # JVM options
+  JAVA_OPTS: {{ .Values.jvm.opts | quote }}
+
+  # Service URLs (internal cluster addresses)
+  ENGINE_URL: {{ printf "http://%s-engine:%d/engine" (include "yawl.name" .) (int .Values.services.engine.service.port) | quote }}
+  RESOURCE_SERVICE_URL: {{ printf "http://%s-resource-service:%d/resourceService" (include "yawl.name" .) (int .Values.services.resourceService.service.port) | quote }}
+  WORKLET_SERVICE_URL: {{ printf "http://%s-worklet-service:%d/workletService" (include "yawl.name" .) (int .Values.services.workletService.service.port) | quote }}
+  MONITOR_SERVICE_URL: {{ printf "http://%s-monitor-service:%d/monitorService" (include "yawl.name" .) (int .Values.services.monitorService.service.port) | quote }}
+  COST_SERVICE_URL: {{ printf "http://%s-cost-service:%d/costService" (include "yawl.name" .) (int .Values.services.costService.service.port) | quote }}
+  SCHEDULING_SERVICE_URL: {{ printf "http://%s-scheduling-service:%d/schedulingService" (include "yawl.name" .) (int .Values.services.schedulingService.service.port) | quote }}
+
+  # Tomcat settings
+  CATALINA_OPTS: {{ .Values.jvm.catalinaOpts | quote }}
+
+  # Redis configuration
+  REDIS_HOST: {{ include "yawl.redisHost" . | quote }}
+  REDIS_PORT: {{ include "yawl.redisPort" . | quote }}
+
+  # YAWL version
+  YAWL_VERSION: {{ .Values.yawlVersion | quote }}
+  YAWL_BUILD_NUMBER: {{ .Values.buildNumber | quote }}
+
+  # Cloud provider
+  CLOUD_PROVIDER: {{ .Values.cloudProvider | default "" | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yawl.fullname" . }}-hibernate-config
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hibernate-config
+data:
+  hibernate.dialect: "org.hibernate.dialect.PostgreSQLDialect"
+  hibernate.show_sql: "false"
+  hibernate.hbm2ddl.auto: "update"
+  hibernate.cache.use_second_level_cache: "true"
+  hibernate.cache.use_query_cache: "true"
+  hibernate.jdbc.batch_size: "20"
+  hibernate.order_inserts: "true"
+  hibernate.order_updates: "true"
+  hibernate.cache.region.factory_class: "org.hibernate.cache.ehcache.EhCacheRegionFactory"
+  hibernate.generate_statistics: "false"
+  hibernate.connection.provider_class: "org.hibernate.hikaricp.internal.HikariCPConnectionProvider"
+  hibernate.hikari.minimumIdle: "5"
+  hibernate.hikari.maximumPoolSize: "20"
+  hibernate.hikari.idleTimeout: "300000"
+  hibernate.hikari.connectionTimeout: "30000"
+  hibernate.hikari.maxLifetime: "1800000"

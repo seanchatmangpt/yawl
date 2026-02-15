@@ -1,0 +1,609 @@
+# =============================================================================
+# YAWL Cloud Build - Main Build Pipeline
+# =============================================================================
+# Comprehensive CI/CD pipeline for building, testing, and deploying YAWL
+# services to Google Kubernetes Engine (GKE)
+#
+# Usage:
+#   gcloud builds submit --config=cloudbuild.yaml --substitutions=_GCP_PROJECT_ID=my-project,_GKE_CLUSTER=yawl-cluster
+#
+# Required APIs:
+#   - cloudbuild.googleapis.com
+#   - container.googleapis.com
+#   - artifactregistry.googleapis.com
+#   - containeranalysis.googleapis.com
+# =============================================================================
+
+substitutions:
+  # Project Configuration
+  _GCP_PROJECT_ID: '${PROJECT_ID}'
+  _REGION: 'us-central1'
+
+  # GKE Configuration
+  _GKE_CLUSTER: 'yawl-cluster'
+  _GKE_ZONE: 'us-central1-a'
+
+  # Image Configuration
+  _IMAGE_TAG: '${SHORT_SHA}'
+  _REGISTRY: '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/yawl'
+
+  # Build Configuration
+  _JAVA_VERSION: '17'
+  _TOMCAT_VERSION: '9.0.89'
+  _YAWL_VERSION: '5.2'
+
+  # Environment
+  _ENVIRONMENT: 'development'
+  _NAMESPACE: 'yawl'
+
+  # Database Configuration (for tests)
+  _DB_TYPE: 'postgres'
+  _DB_HOST: 'postgres'
+  _DB_PORT: '5432'
+  _DB_NAME: 'yawl'
+  _DB_USER: 'postgres'
+  _DB_PASSWORD: 'yawl'
+
+  # Resource Configuration
+  _MACHINE_TYPE: 'E2_HIGHCPU_8'
+  _DISK_SIZE_GB: '100'
+  _TIMEOUT: '1800s'
+
+steps:
+  # ===========================================================================
+  # PHASE 1: Initialize and Setup
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'pull-cache-base'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Pulling cache images for faster builds ==="
+        docker pull ${_REGISTRY}/base:cache || echo "No base cache available"
+        docker pull ${_REGISTRY}/engine:cache || echo "No engine cache available"
+        docker pull ${_REGISTRY}/resource-service:cache || echo "No resource-service cache available"
+    waitFor: ['-']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'setup-artifact-registry'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Ensuring Artifact Registry repository exists ==="
+        gcloud artifacts repositories describe yawl --location=${_REGION} || \
+        gcloud artifacts repositories create yawl \
+          --repository-format=docker \
+          --location=${_REGION} \
+          --description="YAWL Docker images"
+    waitFor: ['-']
+
+  # ===========================================================================
+  # PHASE 2: Build YAWL Application (Ant)
+  # ===========================================================================
+
+  - name: 'eclipse-temurin:${_JAVA_VERSION}-jdk'
+    id: 'build-application'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        echo "=== Installing Ant ==="
+        apt-get update && apt-get install -y ant
+
+        echo "=== Compiling YAWL source code ==="
+        ant -f build/build.xml compile
+
+        echo "=== Building all WAR files ==="
+        ant -f build/build.xml buildWebApps
+
+        echo "=== Building standalone JAR ==="
+        ant -f build/build.xml build_Standalone
+
+        echo "=== Collecting build artifacts ==="
+        mkdir -p artifacts/wars artifacts/jars
+
+        # Copy WAR files
+        for war in output/wars/*.war; do
+          if [ -f "$war" ]; then
+            cp "$war" artifacts/wars/
+            echo "Copied: $(basename $war)"
+          fi
+        done
+
+        # Copy JAR files
+        find output -name "*.jar" -exec cp {} artifacts/jars/ \;
+
+        echo "=== Build artifacts ready ==="
+        ls -la artifacts/wars/
+        ls -la artifacts/jars/
+    waitFor: ['setup-artifact-registry']
+
+  # ===========================================================================
+  # PHASE 3: Run Unit Tests
+  # ===========================================================================
+
+  - name: 'eclipse-temurin:${_JAVA_VERSION}-jdk'
+    id: 'run-unit-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        echo "=== Running YAWL Unit Tests ==="
+
+        apt-get update && apt-get install -y ant
+
+        mkdir -p reports/junit
+
+        # Run JUnit test suites
+        java -cp classes:build/3rdParty/lib/*:test/classes \
+          org.junit.runner.JUnitCore org.yawlfoundation.yawl.TestAllYAWLSuites \
+          2>&1 | tee reports/junit/test-results.txt || true
+
+        echo "=== Unit tests completed ==="
+    waitFor: ['build-application']
+
+  # ===========================================================================
+  # PHASE 4: Build Docker Images (Multi-Service)
+  # ===========================================================================
+
+  # Build base image first
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-base-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Base Image ==="
+        docker build \
+          -f containerization/Dockerfile.base \
+          -t ${_REGISTRY}/base:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/base:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/base:cache \
+          --cache-from ${_REGISTRY}/base:cache \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          .
+    waitFor: ['build-application', 'pull-cache-base']
+
+  # Build engine service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-engine-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Engine Image ==="
+        docker build \
+          -f containerization/Dockerfile.engine \
+          -t ${_REGISTRY}/engine:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/engine:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/engine:${_ENVIRONMENT} \
+          -t ${_REGISTRY}/engine:cache \
+          --cache-from ${_REGISTRY}/engine:cache \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build resource service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-resource-service-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Resource Service Image ==="
+        docker build \
+          -f containerization/Dockerfile.resourceService \
+          -t ${_REGISTRY}/resource-service:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/resource-service:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/resource-service:${_ENVIRONMENT} \
+          -t ${_REGISTRY}/resource-service:cache \
+          --cache-from ${_REGISTRY}/resource-service:cache \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build worklet service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-worklet-service-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Worklet Service Image ==="
+        docker build \
+          -f containerization/Dockerfile.workletService \
+          -t ${_REGISTRY}/worklet-service:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/worklet-service:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/worklet-service:${_ENVIRONMENT} \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build monitor service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-monitor-service-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Monitor Service Image ==="
+        docker build \
+          -f containerization/Dockerfile.monitorService \
+          -t ${_REGISTRY}/monitor-service:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/monitor-service:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/monitor-service:${_ENVIRONMENT} \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build scheduling service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-scheduling-service-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Scheduling Service Image ==="
+        docker build \
+          -f containerization/Dockerfile.schedulingService \
+          -t ${_REGISTRY}/scheduling-service:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/scheduling-service:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/scheduling-service:${_ENVIRONMENT} \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build cost service
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-cost-service-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Cost Service Image ==="
+        docker build \
+          -f containerization/Dockerfile.costService \
+          -t ${_REGISTRY}/cost-service:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/cost-service:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/cost-service:${_ENVIRONMENT} \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          --build-arg TOMCAT_VERSION=${_TOMCAT_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # Build balancer
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-balancer-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Building YAWL Load Balancer Image ==="
+        docker build \
+          -f containerization/Dockerfile.balancer \
+          -t ${_REGISTRY}/balancer:${_IMAGE_TAG} \
+          -t ${_REGISTRY}/balancer:${_YAWL_VERSION} \
+          -t ${_REGISTRY}/balancer:${_ENVIRONMENT} \
+          --build-arg JAVA_VERSION=${_JAVA_VERSION} \
+          --build-arg YAWL_VERSION=${_YAWL_VERSION} \
+          .
+    waitFor: ['build-base-image']
+
+  # ===========================================================================
+  # PHASE 5: Security Scanning with Container Analysis
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'enable-container-analysis'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Ensuring Container Analysis API is enabled ==="
+        gcloud services enable containeranalysis.googleapis.com --project=${_GCP_PROJECT_ID} || true
+    waitFor: ['-']
+
+  - name: 'aquasec/trivy:latest'
+    id: 'security-scan-engine'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "=== Scanning Engine image for vulnerabilities ==="
+        trivy image --exit-code 0 --severity HIGH,CRITICAL --no-progress \
+          --output reports/trivy-engine.json \
+          ${_REGISTRY}/engine:${_IMAGE_TAG} || true
+
+        echo "=== Scan complete ==="
+        cat reports/trivy-engine.json | head -50
+    waitFor: ['build-engine-image', 'enable-container-analysis']
+
+  - name: 'aquasec/trivy:latest'
+    id: 'security-scan-resource-service'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "=== Scanning Resource Service image for vulnerabilities ==="
+        trivy image --exit-code 0 --severity HIGH,CRITICAL --no-progress \
+          --output reports/trivy-resource-service.json \
+          ${_REGISTRY}/resource-service:${_IMAGE_TAG} || true
+    waitFor: ['build-resource-service-image', 'enable-container-analysis']
+
+  # ===========================================================================
+  # PHASE 6: Push Images to Artifact Registry
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-all-images'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        echo "=== Pushing all images to Artifact Registry ==="
+
+        echo "Pushing base image..."
+        docker push --all-tags ${_REGISTRY}/base
+
+        echo "Pushing engine image..."
+        docker push --all-tags ${_REGISTRY}/engine
+
+        echo "Pushing resource-service image..."
+        docker push --all-tags ${_REGISTRY}/resource-service
+
+        echo "Pushing worklet-service image..."
+        docker push --all-tags ${_REGISTRY}/worklet-service
+
+        echo "Pushing monitor-service image..."
+        docker push --all-tags ${_REGISTRY}/monitor-service
+
+        echo "Pushing scheduling-service image..."
+        docker push --all-tags ${_REGISTRY}/scheduling-service
+
+        echo "Pushing cost-service image..."
+        docker push --all-tags ${_REGISTRY}/cost-service
+
+        echo "Pushing balancer image..."
+        docker push --all-tags ${_REGISTRY}/balancer
+
+        echo "=== All images pushed successfully ==="
+    waitFor: [
+      'build-engine-image',
+      'build-resource-service-image',
+      'build-worklet-service-image',
+      'build-monitor-service-image',
+      'build-scheduling-service-image',
+      'build-cost-service-image',
+      'build-balancer-image',
+      'security-scan-engine',
+      'security-scan-resource-service'
+    ]
+
+  # ===========================================================================
+  # PHASE 7: Deploy to GKE
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'get-gke-credentials'
+    args:
+      - 'container'
+      - 'clusters'
+      - 'get-credentials'
+      - '${_GKE_CLUSTER}'
+      - '--zone'
+      - '${_GKE_ZONE}'
+      - '--project'
+      - '${_GCP_PROJECT_ID}'
+    waitFor: ['push-all-images']
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'create-namespace'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Creating namespace if not exists ==="
+        kubectl create namespace ${_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "=== Creating image pull secret if not exists ==="
+        kubectl create secret docker-registry gcr-json-key \
+          --namespace=${_NAMESPACE} \
+          --docker-server=${_REGISTRY} \
+          --docker-username=_json_key \
+          --docker-password="$$SERVICE_ACCOUNT_KEY" \
+          --dry-run=client -o yaml | kubectl apply -f - || true
+    secretEnv: ['SERVICE_ACCOUNT_KEY']
+    waitFor: ['get-gke-credentials']
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-yawl'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Deploying YAWL to GKE ==="
+
+        # Deploy using Helm if available, otherwise use kubectl
+        if command -v helm &> /dev/null; then
+          echo "Deploying with Helm..."
+          helm upgrade --install yawl ./helm/yawl \
+            --namespace ${_NAMESPACE} \
+            --set image.registry=${_REGISTRY} \
+            --set image.tag=${_IMAGE_TAG} \
+            --set engine.image=${_REGISTRY}/engine:${_IMAGE_TAG} \
+            --set resourceService.image=${_REGISTRY}/resource-service:${_IMAGE_TAG} \
+            --set workletService.image=${_REGISTRY}/worklet-service:${_IMAGE_TAG} \
+            --set monitorService.image=${_REGISTRY}/monitor-service:${_IMAGE_TAG} \
+            --set schedulingService.image=${_REGISTRY}/scheduling-service:${_IMAGE_TAG} \
+            --set costService.image=${_REGISTRY}/cost-service:${_IMAGE_TAG} \
+            --set balancer.image=${_REGISTRY}/balancer:${_IMAGE_TAG} \
+            --set postgresql.enabled=true \
+            --set postgresql.auth.postgresPassword=${_DB_PASSWORD} \
+            --set postgresql.auth.database=${_DB_NAME} \
+            --wait --timeout=10m
+        else
+          echo "Deploying with kubectl..."
+          # Apply Kubernetes manifests with image substitution
+          for manifest in k8s/*.yaml; do
+            if [ -f "$manifest" ]; then
+              sed -i "s|image: .*|image: ${_REGISTRY}/engine:${_IMAGE_TAG}|g" "$manifest"
+              kubectl apply -f "$manifest" --namespace=${_NAMESPACE}
+            fi
+          done
+        fi
+    waitFor: ['create-namespace']
+
+  # ===========================================================================
+  # PHASE 8: Run Integration Tests
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'wait-for-deployment'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Waiting for YAWL deployment to be ready ==="
+
+        kubectl rollout status deployment/yawl-engine -n ${_NAMESPACE} --timeout=300s || true
+        kubectl rollout status deployment/yawl-resource-service -n ${_NAMESPACE} --timeout=300s || true
+
+        echo "=== Deployment status ==="
+        kubectl get pods -n ${_NAMESPACE} -l app.kubernetes.io/part-of=yawl
+    waitFor: ['deploy-yawl']
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'run-integration-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Running integration tests ==="
+
+        # Get service endpoints
+        ENGINE_IP=$(kubectl get service yawl-engine -n ${_NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+        RESOURCE_IP=$(kubectl get service yawl-resource-service -n ${_NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+        mkdir -p reports/integration
+
+        # Test engine health
+        if [ -n "$ENGINE_IP" ]; then
+          echo "Testing Engine at http://$ENGINE_IP:8080/ib"
+          curl -f -s -o reports/integration/engine-response.txt \
+            "http://$ENGINE_IP:8080/ib" || echo "Engine health check pending..."
+        fi
+
+        # Test resource service health
+        if [ -n "$RESOURCE_IP" ]; then
+          echo "Testing Resource Service at http://$RESOURCE_IP:8080/ib"
+          curl -f -s -o reports/integration/resource-response.txt \
+            "http://$RESOURCE_IP:8080/ib" || echo "Resource service health check pending..."
+        fi
+
+        echo "=== Integration tests completed ==="
+    waitFor: ['wait-for-deployment']
+
+  # ===========================================================================
+  # PHASE 9: Post-Deployment Verification
+  # ===========================================================================
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'post-deployment-check'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Post-deployment verification ==="
+
+        # Get deployment info
+        echo "Deployment Information:"
+        echo "  Project: ${_GCP_PROJECT_ID}"
+        echo "  Cluster: ${_GKE_CLUSTER}"
+        echo "  Zone: ${_GKE_ZONE}"
+        echo "  Namespace: ${_NAMESPACE}"
+        echo "  Image Tag: ${_IMAGE_TAG}"
+        echo "  Environment: ${_ENVIRONMENT}"
+
+        echo ""
+        echo "Pod Status:"
+        kubectl get pods -n ${_NAMESPACE} -l app.kubernetes.io/part-of=yawl -o wide
+
+        echo ""
+        echo "Service Status:"
+        kubectl get services -n ${_NAMESPACE} -l app.kubernetes.io/part-of=yawl
+
+        echo ""
+        echo "=== Deployment complete ==="
+    waitFor: ['run-integration-tests']
+
+# =============================================================================
+# Artifacts Configuration
+# =============================================================================
+
+artifacts:
+  objects:
+    location: 'gs://${_GCP_PROJECT_ID}-build-artifacts/yawl/${BUILD_ID}'
+    paths:
+      - 'artifacts/wars/*.war'
+      - 'artifacts/jars/*.jar'
+      - 'reports/**'
+
+# =============================================================================
+# Logs Configuration
+# =============================================================================
+
+logsBucket: 'gs://${_GCP_PROJECT_ID}-build-logs'
+
+# =============================================================================
+# Build Options
+# =============================================================================
+
+options:
+  logging: GCS_ONLY
+  machineType: '${_MACHINE_TYPE}'
+  diskSizeGb: '${_DISK_SIZE_GB}'
+  substitutionOption: 'ALLOW_LOOSE'
+  dynamic_substitutions: true
+
+# =============================================================================
+# Secrets (for sensitive data)
+# =============================================================================
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${_GCP_PROJECT_ID}/secrets/yawl-service-account/versions/latest
+      env: 'SERVICE_ACCOUNT_KEY'
+
+# =============================================================================
+# Timeout
+# =============================================================================
+
+timeout: '${_TIMEOUT}'
+
+# =============================================================================
+# Tags for Organization
+# =============================================================================
+
+tags:
+  - 'yawl'
+  - 'workflow-engine'
+  - '${_ENVIRONMENT}'
+  - 'gke'

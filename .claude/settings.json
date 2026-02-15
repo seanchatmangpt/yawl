@@ -24,8 +24,47 @@
     "outputDir": "output"
   },
   "notes": {
-    "environment": "This project runs only in Docker/DevContainer",
-    "hooks": "No automatic hooks - use .claude/build.sh manually",
-    "webSessions": "Claude Code Web is not supported for this project"
+    "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
+    "hooks": "Hyper-validation enabled: PostToolUse validates all Write/Edit operations",
+    "webSessions": "Supported via SessionStart hook (Ant install + H2 database)"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "timeout": 120,
+            "statusMessage": "Setting up YAWL for Claude Code Web..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hyper-validate.sh",
+            "timeout": 30,
+            "statusMessage": "Validating Fortune 5 standards..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/validate-no-mocks.sh",
+            "timeout": 60,
+            "statusMessage": "Final quality gate check..."
+          }
+        ]
+      }
+    ]
   }
 }

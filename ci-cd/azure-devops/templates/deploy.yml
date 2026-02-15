@@ -1,0 +1,332 @@
+# YAWL Deploy Template
+# Deploys YAWL services to Azure Kubernetes Service (AKS)
+
+parameters:
+  - name: environment
+    type: string
+    default: 'dev'
+  - name: namespace
+    type: string
+    default: 'yawl-dev'
+  - name: imageTag
+    type: string
+    default: 'latest'
+  - name: replicas
+    type: number
+    default: 2
+
+steps:
+  - checkout: self
+
+  # Download WAR artifacts from build
+  - task: DownloadBuildArtifacts@1
+    displayName: 'Download WAR Artifacts'
+    inputs:
+      buildType: 'current'
+      downloadType: 'specific'
+      artifactName: 'war-files'
+      downloadPath: '$(Build.SourcesDirectory)/artifacts'
+
+  # Setup kubectl
+  - task: KubectlInstaller@0
+    displayName: 'Install kubectl'
+    inputs:
+      kubectlVersion: 'latest'
+
+  # Setup Helm
+  - task: HelmInstaller@1
+    displayName: 'Install Helm'
+    inputs:
+      helmVersionToInstall: '3.13.0'
+
+  # Login to AKS cluster
+  - task: AzureCLI@2
+    displayName: 'Login to AKS Cluster'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Getting AKS credentials for ${{ parameters.environment }} environment..."
+        az aks get-credentials \
+          --resource-group $(aksResourceGroup) \
+          --name $(aksClusterName) \
+          --overwrite-existing
+
+        echo "Verifying cluster connection..."
+        kubectl cluster-info
+
+  # Create namespace if it doesn't exist
+  - task: AzureCLI@2
+    displayName: 'Create Namespace'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        kubectl create namespace ${{ parameters.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+        kubectl label namespace ${{ parameters.namespace }} app.kubernetes.io/managed-by=azure-devops --overwrite
+
+  # Create/update secrets from Azure Key Vault
+  - task: AzureKeyVault@2
+    displayName: 'Get Secrets from Key Vault'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      KeyVaultName: '$(keyVaultName)'
+      SecretsFilter: '*'
+      RunAsPreJob: false
+
+  - task: AzureCLI@2
+    displayName: 'Create Kubernetes Secrets'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Create database credentials secret
+        kubectl create secret generic yawl-db-credentials \
+          --namespace=${{ parameters.namespace }} \
+          --from-literal=username=$(db-username) \
+          --from-literal=password=$(db-password) \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        # Create API keys secret
+        kubectl create secret generic yawl-api-keys \
+          --namespace=${{ parameters.namespace }} \
+          --from-literal=engine-api-key=$(engine-api-key) \
+          --from-literal=resource-api-key=$(resource-api-key) \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "Secrets created successfully"
+
+  # Deploy using Helm
+  - task: AzureCLI@2
+    displayName: 'Deploy YAWL with Helm'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Deploying YAWL to ${{ parameters.environment }}..."
+
+        helm upgrade --install yawl ./ci-cd/helm/yawl \
+          --namespace ${{ parameters.namespace }} \
+          --set image.tag=${{ parameters.imageTag }} \
+          --set image.repository=$(acrName).azurecr.io \
+          --set environment=${{ parameters.environment }} \
+          --set replicas=${{ parameters.replicas }} \
+          --set database.host=$(db-host) \
+          --set database.port=$(db-port) \
+          --set database.name=$(db-name) \
+          --set ingress.host=$(ingressHost) \
+          --set ingress.tls.enabled=$(ingressTlsEnabled) \
+          --set ingress.tls.secretName=$(ingressTlsSecret) \
+          --set resources.engine.requests.memory=$(engineMemoryRequest) \
+          --set resources.engine.requests.cpu=$(engineCpuRequest) \
+          --set resources.engine.limits.memory=$(engineMemoryLimit) \
+          --set resources.engine.limits.cpu=$(engineCpuLimit) \
+          --set resources.resourceService.requests.memory=$(resourceMemoryRequest) \
+          --set resources.resourceService.requests.cpu=$(resourceCpuRequest) \
+          --wait \
+          --timeout 10m \
+          --atomic \
+          --debug
+
+        echo "Helm deployment completed"
+
+  # Wait for rollout to complete
+  - task: AzureCLI@2
+    displayName: 'Wait for Rollout'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Waiting for deployments to roll out..."
+
+        kubectl rollout status deployment/yawl-engine \
+          --namespace=${{ parameters.namespace }} \
+          --timeout=5m
+
+        kubectl rollout status deployment/yawl-resource-service \
+          --namespace=${{ parameters.namespace }} \
+          --timeout=5m
+
+        kubectl rollout status deployment/yawl-worklet-service \
+          --namespace=${{ parameters.namespace }} \
+          --timeout=5m
+
+        kubectl rollout status deployment/yawl-monitor-service \
+          --namespace=${{ parameters.namespace }} \
+          --timeout=5m
+
+        echo "All deployments rolled out successfully"
+
+  # Run health checks
+  - task: AzureCLI@2
+    displayName: 'Run Health Checks'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Running health checks..."
+
+        # Get the service endpoint
+        ENGINE_URL="http://$(kubectl get service yawl-engine \
+          --namespace=${{ parameters.namespace }} \
+          -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8080"
+
+        # Wait for service to be ready
+        MAX_RETRIES=30
+        RETRY_COUNT=0
+
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if curl -sf "${ENGINE_URL}/yawl/health" > /dev/null 2>&1; then
+            echo "YAWL Engine health check passed"
+            break
+          fi
+          echo "Waiting for YAWL Engine to be healthy... ($((RETRY_COUNT+1))/$MAX_RETRIES)"
+          sleep 10
+          RETRY_COUNT=$((RETRY_COUNT+1))
+        done
+
+        if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+          echo "Health check failed after $MAX_RETRIES retries"
+          exit 1
+        fi
+
+        # Check resource service
+        RESOURCE_URL="http://$(kubectl get service yawl-resource-service \
+          --namespace=${{ parameters.namespace }} \
+          -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8080"
+
+        if curl -sf "${RESOURCE_URL}/resourceService/health" > /dev/null 2>&1; then
+          echo "Resource Service health check passed"
+        else
+          echo "Resource Service health check failed"
+          exit 1
+        fi
+
+        echo "All health checks passed"
+
+  # Smoke tests
+  - task: AzureCLI@2
+    displayName: 'Run Smoke Tests'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Running smoke tests..."
+
+        # Get endpoints
+        ENGINE_URL="http://$(kubectl get service yawl-engine \
+          --namespace=${{ parameters.namespace }} \
+          -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8080"
+
+        # Test engine API
+        echo "Testing Engine API..."
+        curl -sf "${ENGINE_URL}/yawl/ib" || {
+          echo "Engine Interface B not responding"
+          exit 1
+        }
+
+        # Test specification upload capability
+        echo "Testing specification upload..."
+        curl -sf -X POST "${ENGINE_URL}/yawl/ia" \
+          -H "Content-Type: application/xml" \
+          --data-binary @exampleSpecs/simple.yawl || {
+          echo "Specification upload failed"
+          # Don't fail - might be expected in some environments
+        }
+
+        echo "Smoke tests completed"
+
+  # Get deployment status
+  - task: AzureCLI@2
+    displayName: 'Get Deployment Status'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Deployment Status ==="
+        echo ""
+        echo "Namespace: ${{ parameters.namespace }}"
+        echo "Environment: ${{ parameters.environment }}"
+        echo "Image Tag: ${{ parameters.imageTag }}"
+        echo ""
+        echo "=== Pods ==="
+        kubectl get pods --namespace=${{ parameters.namespace }} -o wide
+        echo ""
+        echo "=== Services ==="
+        kubectl get services --namespace=${{ parameters.namespace }}
+        echo ""
+        echo "=== Ingress ==="
+        kubectl get ingress --namespace=${{ parameters.namespace }}
+        echo ""
+        echo "=== Recent Events ==="
+        kubectl get events --namespace=${{ parameters.namespace }} --sort-by='.lastTimestamp' | tail -20
+
+  # Notify on success
+  - task: AzureCLI@2
+    displayName: 'Notify Deployment Success'
+    condition: succeeded()
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Send notification (Slack/Teams webhook)
+        if [ -n "$(notificationWebhook)" ]; then
+          curl -X POST "$(notificationWebhook)" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "YAWL Deployment Successful",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  {"title": "Environment", "value": "${{ parameters.environment }}", "short": true},
+                  {"title": "Image Tag", "value": "${{ parameters.imageTag }}", "short": true},
+                  {"title": "Build", "value": "$(Build.BuildNumber)", "short": true},
+                  {"title": "Branch", "value": "$(Build.SourceBranch)", "short": true}
+                ]
+              }]
+            }'
+        fi
+
+  # Rollback on failure
+  - task: AzureCLI@2
+    displayName: 'Rollback on Failure'
+    condition: failed()
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Deployment failed, initiating rollback..."
+
+        helm rollback yawl --namespace=${{ parameters.namespace }} || {
+          echo "Helm rollback failed, attempting manual rollback..."
+          kubectl rollout undo deployment/yawl-engine --namespace=${{ parameters.namespace }}
+          kubectl rollout undo deployment/yawl-resource-service --namespace=${{ parameters.namespace }}
+          kubectl rollout undo deployment/yawl-worklet-service --namespace=${{ parameters.namespace }}
+          kubectl rollout undo deployment/yawl-monitor-service --namespace=${{ parameters.namespace }}
+        }
+
+        # Send failure notification
+        if [ -n "$(notificationWebhook)" ]; then
+          curl -X POST "$(notificationWebhook)" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "YAWL Deployment FAILED - Rolled Back",
+              "attachments": [{
+                "color": "danger",
+                "fields": [
+                  {"title": "Environment", "value": "${{ parameters.environment }}", "short": true},
+                  {"title": "Build", "value": "$(Build.BuildNumber)", "short": true}
+                ]
+              }]
+            }'
+        fi

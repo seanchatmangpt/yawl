@@ -1,0 +1,64 @@
+# Composite Action - Setup Java and Ant Build Environment
+# YAWL Workflow Engine CI/CD
+#
+# Usage:
+#   - uses: ./.github/actions/setup-java-ant
+#     with:
+#       java_version: '17'
+
+name: 'Setup Java and Ant'
+description: 'Sets up Java and Ant build environment for YAWL'
+
+inputs:
+  java_version:
+    description: 'Java version to use'
+    required: false
+    default: '17'
+  java_distribution:
+    description: 'Java distribution'
+    required: false
+    default: 'temurin'
+  ant_version:
+    description: 'Apache Ant version'
+    required: false
+    default: '1.10.14'
+  cache_dependencies:
+    description: 'Cache dependencies'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up JDK ${{ inputs.java_version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java_version }}
+        distribution: ${{ inputs.java_distribution }}
+        cache: 'maven'
+
+    - name: Setup Ant
+      uses: cedx/setup-ant@v4
+      with:
+        version: ${{ inputs.ant_version }}
+
+    - name: Cache build dependencies
+      if: ${{ inputs.cache_dependencies == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.m2/repository
+          ~/.ant
+          build/3rdParty
+        key: ${{ runner.os }}-java${{ inputs.java_version }}-${{ hashFiles('build/build.xml', 'build/build.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-java${{ inputs.java_version }}-
+          ${{ runner.os }}-
+
+    - name: Verify environment
+      shell: bash
+      run: |
+        echo "=== Build Environment ==="
+        echo "Java version: $(java -version 2>&1 | head -1)"
+        echo "Ant version: $(ant -version)"
+        echo "Maven home: $(mvn -v 2>/dev/null | grep 'Maven home' || echo 'N/A')"

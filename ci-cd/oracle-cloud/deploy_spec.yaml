@@ -1,0 +1,258 @@
+# OCI DevOps Deploy Specification for YAWL
+# Deploys YAWL workflow engine to Oracle Kubernetes Engine (OKE)
+# Version: 1.0.0
+
+version: 1.0.0
+component: deploy
+
+# Deployment environment configuration
+environment:
+  name: ${DEPLOY_ENVIRONMENT}
+  description: "YAWL Workflow Engine Deployment"
+
+# Deployment parameters
+parameters:
+  # Environment-specific settings
+  - name: environment
+    type: STRING
+    default: "development"
+    description: "Deployment environment (development, staging, production)"
+
+  - name: namespace
+    type: STRING
+    default: "yawl"
+    description: "Kubernetes namespace for deployment"
+
+  - name: replica_count
+    type: INTEGER
+    default: 2
+    description: "Number of pod replicas"
+
+  - name: cpu_request
+    type: STRING
+    default: "500m"
+    description: "CPU request per pod"
+
+  - name: memory_request
+    type: STRING
+    default: "1Gi"
+    description: "Memory request per pod"
+
+  - name: cpu_limit
+    type: STRING
+    default: "2000m"
+    description: "CPU limit per pod"
+
+  - name: memory_limit
+    type: STRING
+    default: "4Gi"
+    description: "Memory limit per pod"
+
+  # Database configuration (from OCI Vault)
+  - name: db_host
+    type: SECRET
+    vaultName: ${OCI_VAULT_NAME}
+    secretName: yawl-db-host
+    description: "Database host"
+
+  - name: db_port
+    type: SECRET
+    vaultName: ${OCI_VAULT_NAME}
+    secretName: yawl-db-port
+    description: "Database port"
+
+  - name: db_name
+    type: SECRET
+    vaultName: ${OCI_VAULT_NAME}
+    secretName: yawl-db-name
+    description: "Database name"
+
+  - name: db_user
+    type: SECRET
+    vaultName: ${OCI_VAULT_NAME}
+    secretName: yawl-db-user
+    description: "Database username"
+
+  - name: db_password
+    type: SECRET
+    vaultName: ${OCI_VAULT_NAME}
+    secretName: yawl-db-password
+    description: "Database password"
+
+# Deploy stages
+stages:
+  # Stage 1: Pre-deployment validation
+  - stage: PreDeployValidation
+    type: Command
+    name: "Pre-deployment Validation"
+    command: |
+      echo "Running pre-deployment validation..."
+
+      # Verify OKE cluster access
+      kubectl cluster-info
+
+      # Verify namespace exists or create it
+      kubectl get namespace ${namespace} || kubectl create namespace ${namespace}
+
+      # Verify secrets exist
+      kubectl get secret yawl-db-credentials -n ${namespace} || {
+        echo "Creating database credentials secret..."
+        kubectl create secret generic yawl-db-credentials \
+          --from-literal=db-host=${db_host} \
+          --from-literal=db-port=${db_port} \
+          --from-literal=db-name=${db_name} \
+          --from-literal=db-user=${db_user} \
+          --from-literal=db-password=${db_password} \
+          -n ${namespace}
+      }
+
+      # Verify image pull secret for OCIR
+      kubectl get secret ocir-secret -n ${namespace} || {
+        echo "Warning: OCIR pull secret not found. Create it manually."
+      }
+
+      echo "Pre-deployment validation completed"
+    timeoutInSeconds: 300
+
+  # Stage 2: Deploy to OKE
+  - stage: DeployToOKE
+    type: OKE
+    name: "Deploy to Oracle Kubernetes Engine"
+    clusterId: ${OKE_CLUSTER_ID}
+    namespace: ${namespace}
+    manifestFile: ci-cd/oracle-cloud/k8s-manifests/deployment.yaml
+    timeoutInSeconds: 900
+
+  # Stage 3: Wait for rollout
+  - stage: WaitForRollout
+    type: Command
+    name: "Wait for Deployment Rollout"
+    command: |
+      echo "Waiting for deployment rollout..."
+
+      # Wait for engine deployment
+      kubectl rollout status deployment/yawl-engine -n ${namespace} --timeout=300s
+
+      # Wait for resource service deployment
+      kubectl rollout status deployment/yawl-resource-service -n ${namespace} --timeout=300s
+
+      # Wait for worklet service deployment
+      kubectl rollout status deployment/yawl-worklet-service -n ${namespace} --timeout=300s
+
+      echo "All deployments rolled out successfully"
+    timeoutInSeconds: 600
+
+  # Stage 4: Post-deployment health check
+  - stage: HealthCheck
+    type: Command
+    name: "Post-deployment Health Check"
+    command: |
+      echo "Running post-deployment health checks..."
+
+      # Check pod status
+      echo "Pod status:"
+      kubectl get pods -n ${namespace} -l app=yawl
+
+      # Check service endpoints
+      echo "Service endpoints:"
+      kubectl get services -n ${namespace}
+
+      # Wait for services to be ready
+      sleep 30
+
+      # Health check for engine
+      ENGINE_IP=$(kubectl get service yawl-engine -n ${namespace} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      if [ -n "$ENGINE_IP" ]; then
+        echo "Checking engine health at $ENGINE_IP..."
+        curl -sf "http://${ENGINE_IP}:8080/yawl/health" || echo "Health check returned non-200 status"
+      fi
+
+      # Health check for resource service
+      RESOURCE_IP=$(kubectl get service yawl-resource-service -n ${namespace} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      if [ -n "$RESOURCE_IP" ]; then
+        echo "Checking resource service health at $RESOURCE_IP..."
+        curl -sf "http://${RESOURCE_IP}:8080/resourceService/health" || echo "Health check returned non-200 status"
+      fi
+
+      echo "Health checks completed"
+    timeoutInSeconds: 300
+
+  # Stage 5: Integration tests
+  - stage: IntegrationTests
+    type: Command
+    name: "Run Integration Tests"
+    command: |
+      echo "Running integration tests..."
+
+      # Get service endpoints
+      ENGINE_URL="http://$(kubectl get service yawl-engine -n ${namespace} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8080/yawl"
+
+      # Test YAWL engine API
+      echo "Testing YAWL Engine API..."
+
+      # Test connection
+      RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${ENGINE_URL}/api/connection" || echo "000")
+      if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 401 ]; then
+        echo "Engine API connection test: PASSED"
+      else
+        echo "Engine API connection test: FAILED (HTTP $RESPONSE)"
+      fi
+
+      # Test specification upload (requires authentication in production)
+      echo "Integration tests completed"
+    timeoutInSeconds: 600
+    onFailure:
+      - type: Command
+        command: |
+          echo "Integration tests failed. Rolling back deployment..."
+          kubectl rollout undo deployment/yawl-engine -n ${namespace}
+          kubectl rollout undo deployment/yawl-resource-service -n ${namespace}
+          kubectl rollout undo deployment/yawl-worklet-service -n ${namespace}
+          exit 1
+
+  # Stage 6: Notify deployment status
+  - stage: NotifyDeployment
+    type: Command
+    name: "Notify Deployment Status"
+    command: |
+      echo "Notifying deployment status..."
+
+      DEPLOYMENT_STATUS="SUCCESS"
+      ENGINE_PODS=$(kubectl get pods -n ${namespace} -l app=yawl,component=engine --field-selector=status.phase=Running --no-headers | wc -l)
+      RESOURCE_PODS=$(kubectl get pods -n ${namespace} -l app=yawl,component=resource --field-selector=status.phase=Running --no-headers | wc -l)
+
+      echo "Deployment Status: ${DEPLOYMENT_STATUS}"
+      echo "Engine pods running: ${ENGINE_PODS}"
+      echo "Resource service pods running: ${RESOURCE_PODS}"
+
+      # Send notification (Slack, PagerDuty, etc.)
+      # curl -X POST -H 'Content-type: application/json' \
+      #   --data "{\"text\":\"YAWL deployment to ${environment} completed: ${DEPLOYMENT_STATUS}\"}" \
+      #   ${SLACK_WEBHOOK_URL}
+    timeoutInSeconds: 60
+
+# Rollback configuration
+rollback:
+  enabled: true
+  strategy: rolling
+  monitoringPeriod: 300
+
+# Blue/Green deployment support
+blueGreen:
+  enabled: false
+  strategy: blueGreen
+  productionTraffic:
+    - blue: 100
+    - green: 0
+
+# Canary deployment support
+canary:
+  enabled: false
+  strategy: canary
+  stages:
+    - percentage: 10
+      duration: 300
+    - percentage: 50
+      duration: 300
+    - percentage: 100
+      duration: 0

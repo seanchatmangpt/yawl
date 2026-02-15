@@ -1,0 +1,532 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IBM Cloud Marketplace Product Definition - YAWL Workflow Engine",
+  "description": "Product configuration template for YAWL SaaS listing on IBM Cloud Marketplace",
+  "version": "2025-01",
+
+  "product": {
+    "productId": "{{PRODUCT_ID}}",
+    "name": "yawl-workflow-engine",
+    "displayName": "YAWL Workflow Engine - Enterprise BPM Platform",
+    "shortDescription": "Production-ready workflow engine with 43+ control-flow patterns for enterprise business process automation",
+    "longDescription": "YAWL (Yet Another Workflow Language) is a powerful BPM/Workflow engine built on formal foundations in Petri Net theory. Trusted by enterprises worldwide for mission-critical business process automation.\n\n**Key Features:**\n- 43+ Workflow Control-Flow Patterns (WCP) implemented\n- Petri Net-based execution with formal verification\n- Human and non-human resource management\n- Dynamic process adaptation via Worklets\n- Real-time process monitoring and analytics\n- Calendar-based task scheduling\n- Cost tracking and budgeting\n- Multi-tenant architecture\n\n**Supported Patterns Include:**\n- Sequence, Parallel Split, Synchronization\n- Exclusive Choice, Multi-Choice, Discriminator\n- N-out-of-M, Deferred Choice, Interleaved Routing\n- Milestone, Critical Section, Structured Loop\n- Cancellation patterns (activity, case, region)\n- Data transformation and accumulation\n\n**Integration Options:**\n- REST API (Interface A/B/E/X)\n- Web-based administration console\n- Custom worklist handlers\n- External resource allocation\n\n**Deployment on IBM Cloud:**\n- IBM Kubernetes Service (IKS) or Red Hat OpenShift\n- Databases for PostgreSQL (managed)\n- Cloud Object Storage for persistence\n- IBM Cloud Monitoring with Sysdig\n- GDPR, SOC 2, and ISO 27001 compliant",
+
+    "provider": {
+      "name": "YAWL Foundation",
+      "contact": {
+        "email": "support@yawlfoundation.org",
+        "url": "https://yawlfoundation.github.io/yawl/",
+        "phone": ""
+      }
+    },
+
+    "categories": [
+      "Business Applications",
+      "Business Process Management",
+      "Developer Tools",
+      "Integration"
+    ],
+
+    "tags": [
+      "bpm",
+      "workflow",
+      "process-automation",
+      "petri-net",
+      "business-process",
+      "workflow-engine",
+      "yawl",
+      "orchestration",
+      "kubernetes"
+    ],
+
+    "logo": {
+      "small": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/logo-64x64.png",
+      "large": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/logo-128x128.png"
+    },
+
+    "screenshots": [
+      {
+        "url": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/screenshots/dashboard.png",
+        "caption": "YAWL Process Dashboard - Real-time monitoring"
+      },
+      {
+        "url": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/screenshots/designer.png",
+        "caption": "Visual Workflow Designer - Drag-and-drop process design"
+      },
+      {
+        "url": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/screenshots/worklist.png",
+        "caption": "Work Item Queue - Task management interface"
+      },
+      {
+        "url": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/screenshots/analytics.png",
+        "caption": "Process Analytics - Performance metrics and KPIs"
+      }
+    ],
+
+    "videos": [
+      {
+        "url": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/videos/getting-started.mp4",
+        "title": "Getting Started with YAWL",
+        "thumbnail": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/videos/getting-started-thumb.png"
+      }
+    ],
+
+    "highlights": [
+      "43+ workflow control-flow patterns",
+      "Petri Net formal verification",
+      "Multi-tenant architecture",
+      "99.9% SLA availability",
+      "Native IBM Cloud integration"
+    ],
+
+    "documentation": {
+      "api": "https://yawlfoundation.github.io/yawl/api/",
+      "user": "https://yawlfoundation.github.io/yawl/user-guide/",
+      "admin": "https://yawlfoundation.github.io/yawl/admin-guide/",
+      "developer": "https://yawlfoundation.github.io/yawl/developer/"
+    },
+
+    "support": {
+      "type": "Managed",
+      "contacts": [
+        {
+          "type": "Technical",
+          "name": "YAWL Support Team",
+          "email": "support@yawlfoundation.org",
+          "url": "https://yawlfoundation.github.io/yawl/support"
+        },
+        {
+          "type": "Billing",
+          "name": "YAWL Billing Support",
+          "email": "billing@yawlfoundation.org"
+        }
+      ],
+      "resources": [
+        {
+          "type": "Documentation",
+          "url": "https://yawlfoundation.github.io/yawl/",
+          "title": "YAWL Documentation"
+        },
+        {
+          "type": "FAQ",
+          "url": "https://yawlfoundation.github.io/yawl/faq",
+          "title": "Frequently Asked Questions"
+        },
+        {
+          "type": "Forum",
+          "url": "https://github.com/yawlfoundation/yawl/discussions",
+          "title": "Community Forum"
+        }
+      ]
+    },
+
+    "license": {
+      "type": "Proprietary",
+      "url": "https://yawlfoundation.github.io/yawl/license"
+    },
+
+    "legal": {
+      "termsOfUse": "https://yawlfoundation.github.io/yawl/terms",
+      "privacyPolicy": "https://yawlfoundation.github.io/yawl/privacy",
+      "eula": "https://yawlfoundation.github.io/yawl/eula"
+    }
+  },
+
+  "service_broker": {
+    "api_version": "2.15",
+    "url": "{{SERVICE_BROKER_URL}}",
+    "authentication": {
+      "type": "basic",
+      "credentials_secret": "{{SERVICE_BROKER_CREDENTIALS_SECRET}}"
+    },
+
+    "catalog": {
+      "services": [
+        {
+          "id": "yawl-workflow-engine-service",
+          "name": "yawl-workflow-engine",
+          "description": "Enterprise BPM/Workflow Engine with 43+ control-flow patterns",
+          "bindable": true,
+          "instances_retrievable": true,
+          "bindings_retrievable": true,
+          "plan_updateable": true,
+          "allow_context_updates": true,
+          "requires": ["route_forwarding", "syslog_drain"],
+          "tags": ["bpm", "workflow", "process-automation"],
+          "metadata": {
+            "displayName": "YAWL Workflow Engine",
+            "imageUrl": "https://yawl-assets.cos.us-south.cloudobjectstorage.appdomain.cloud/logo-128x128.png",
+            "longDescription": "YAWL is a powerful BPM/Workflow engine built on formal foundations in Petri Net theory.",
+            "providerDisplayName": "YAWL Foundation",
+            "documentationUrl": "https://yawlfoundation.github.io/yawl/",
+            "supportUrl": "https://yawlfoundation.github.io/yawl/support"
+          },
+
+          "plans": [
+            {
+              "id": "yawl-basic-plan",
+              "name": "basic",
+              "description": "Basic tier for small teams - up to 1,000 workflow executions/month",
+              "free": false,
+              "bindable": true,
+              "metadata": {
+                "displayName": "Basic",
+                "bullets": [
+                  "1,000 workflow executions/month",
+                  "5 active users",
+                  "10 GB data processing",
+                  "Email support",
+                  "99.5% SLA"
+                ],
+                "costs": [
+                  {
+                    "amount": {
+                      "usd": 299.00
+                    },
+                    "unit": "MONTHLY"
+                  }
+                ]
+              },
+              "schemas": {
+                "service_instance": {
+                  "create": {
+                    "$schema": "http://json-schema.org/draft-04/schema#",
+                    "type": "object",
+                    "properties": {
+                      "admin_email": {
+                        "type": "string",
+                        "description": "Administrator email address",
+                        "format": "email"
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Deployment region",
+                        "enum": ["us-south", "eu-de", "jp-tok", "au-syd"],
+                        "default": "us-south"
+                      },
+                      "enable_monitoring": {
+                        "type": "boolean",
+                        "description": "Enable IBM Cloud Monitoring with Sysdig",
+                        "default": true
+                      }
+                    },
+                    "required": ["admin_email", "region"]
+                  },
+                  "update": {
+                    "$schema": "http://json-schema.org/draft-04/schema#",
+                    "type": "object",
+                    "properties": {
+                      "enable_monitoring": {
+                        "type": "boolean",
+                        "description": "Enable IBM Cloud Monitoring with Sysdig"
+                      }
+                    }
+                  }
+                },
+                "service_binding": {
+                  "create": {
+                    "$schema": "http://json-schema.org/draft-04/schema#",
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "description": "IAM role for service binding",
+                        "enum": ["Reader", "Writer", "Manager"],
+                        "default": "Reader"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+
+            {
+              "id": "yawl-professional-plan",
+              "name": "professional",
+              "description": "Professional tier for growing teams - up to 10,000 workflow executions/month",
+              "free": false,
+              "bindable": true,
+              "metadata": {
+                "displayName": "Professional",
+                "bullets": [
+                  "10,000 workflow executions/month",
+                  "25 active users",
+                  "100 GB data processing",
+                  "Priority email & chat support",
+                  "99.9% SLA",
+                  "Audit logging",
+                  "Custom branding"
+                ],
+                "costs": [
+                  {
+                    "amount": {
+                      "usd": 999.00
+                    },
+                    "unit": "MONTHLY"
+                  }
+                ]
+              },
+              "schemas": {
+                "service_instance": {
+                  "create": {
+                    "$schema": "http://json-schema.org/draft-04/schema#",
+                    "type": "object",
+                    "properties": {
+                      "admin_email": {
+                        "type": "string",
+                        "description": "Administrator email address",
+                        "format": "email"
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Deployment region",
+                        "enum": ["us-south", "eu-de", "jp-tok", "au-syd"],
+                        "default": "us-south"
+                      },
+                      "enable_monitoring": {
+                        "type": "boolean",
+                        "description": "Enable IBM Cloud Monitoring with Sysdig",
+                        "default": true
+                      },
+                      "enable_log_analysis": {
+                        "type": "boolean",
+                        "description": "Enable IBM Cloud Log Analysis",
+                        "default": true
+                      },
+                      "custom_domain": {
+                        "type": "string",
+                        "description": "Custom domain for YAWL instance"
+                      }
+                    },
+                    "required": ["admin_email", "region"]
+                  }
+                }
+              }
+            },
+
+            {
+              "id": "yawl-enterprise-plan",
+              "name": "enterprise",
+              "description": "Enterprise tier for large organizations - up to 100,000 workflow executions/month",
+              "free": false,
+              "bindable": true,
+              "metadata": {
+                "displayName": "Enterprise",
+                "bullets": [
+                  "100,000 workflow executions/month",
+                  "100 active users",
+                  "1 TB data processing",
+                  "24/7 phone, chat & email support",
+                  "99.95% SLA",
+                  "SSO/SAML integration",
+                  "Advanced analytics",
+                  "Dedicated account manager"
+                ],
+                "costs": [
+                  {
+                    "amount": {
+                      "usd": 2999.00
+                    },
+                    "unit": "MONTHLY"
+                  }
+                ]
+              },
+              "schemas": {
+                "service_instance": {
+                  "create": {
+                    "$schema": "http://json-schema.org/draft-04/schema#",
+                    "type": "object",
+                    "properties": {
+                      "admin_email": {
+                        "type": "string",
+                        "description": "Administrator email address",
+                        "format": "email"
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Deployment region",
+                        "enum": ["us-south", "us-east", "eu-de", "eu-gb", "jp-tok", "au-syd"],
+                        "default": "us-south"
+                      },
+                      "enable_monitoring": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "enable_log_analysis": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "enable_activity_tracker": {
+                        "type": "boolean",
+                        "description": "Enable IBM Cloud Activity Tracker",
+                        "default": true
+                      },
+                      "custom_domain": {
+                        "type": "string",
+                        "description": "Custom domain for YAWL instance"
+                      },
+                      "sso_provider": {
+                        "type": "string",
+                        "description": "SSO provider type",
+                        "enum": ["saml", "oidc", "ibm-cloud-iam"],
+                        "default": "ibm-cloud-iam"
+                      },
+                      "kms_key_crn": {
+                        "type": "string",
+                        "description": "IBM Key Protect key CRN for encryption"
+                      }
+                    },
+                    "required": ["admin_email", "region"]
+                  }
+                }
+              }
+            },
+
+            {
+              "id": "yawl-unlimited-plan",
+              "name": "unlimited",
+              "description": "Unlimited tier for enterprise-scale deployments",
+              "free": false,
+              "bindable": true,
+              "metadata": {
+                "displayName": "Unlimited",
+                "bullets": [
+                  "Unlimited workflow executions",
+                  "Unlimited active users",
+                  "Unlimited data processing",
+                  "24/7 dedicated support team",
+                  "99.99% SLA",
+                  "Dedicated infrastructure",
+                  "Custom integrations",
+                  "Quarterly business reviews"
+                ],
+                "costs": [
+                  {
+                    "amount": {
+                      "usd": 9999.00
+                    },
+                    "unit": "MONTHLY"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "usage_metering": {
+    "enabled": true,
+    "api_endpoint": "https://resource-controller.cloud.ibm.com/v2/usage",
+    "metrics": [
+      {
+        "metric": "workflow_executions",
+        "name": "Workflow Executions",
+        "description": "Number of workflow instances executed",
+        "unit": "COUNT",
+        "rate": 0.05
+      },
+      {
+        "metric": "active_users",
+        "name": "Active Users",
+        "description": "Concurrent active users",
+        "unit": "COUNT",
+        "rate": 10.00
+      },
+      {
+        "metric": "data_processed_gb",
+        "name": "Data Processed",
+        "description": "Total data processed in GB",
+        "unit": "GIGABYTE",
+        "rate": 0.50
+      },
+      {
+        "metric": "api_calls",
+        "name": "API Calls",
+        "description": "API requests to YAWL interfaces",
+        "unit": "COUNT",
+        "rate": 0.001
+      },
+      {
+        "metric": "worklet_invocations",
+        "name": "Worklet Invocations",
+        "description": "Dynamic worklet rule executions",
+        "unit": "COUNT",
+        "rate": 0.10
+      }
+    ]
+  },
+
+  "deployment": {
+    "type": "kubernetes",
+    "container_registry": "icr.io/yawl",
+    "helm_chart": {
+      "name": "yawl",
+      "version": "5.2.0",
+      "repository": "https://yawlfoundation.github.io/yawl/helm"
+    },
+    "openshift": {
+      "compatible": true,
+      "operator": {
+        "name": "yawl-operator",
+        "version": "5.2.0",
+        "channel": "stable"
+      }
+    }
+  },
+
+  "compliance": {
+    "certifications": [
+      "SOC 2 Type II",
+      "ISO 27001",
+      "ISO 27017",
+      "ISO 27018",
+      "GDPR",
+      "HIPAA (optional add-on)",
+      "PCI DSS (optional add-on)"
+    ],
+    "data_residency": {
+      "supported_regions": [
+        "us-south",
+        "us-east",
+        "eu-de",
+        "eu-gb",
+        "jp-tok",
+        "au-syd"
+      ],
+      "data_locality": true
+    }
+  },
+
+  "target_market": {
+    "industries": [
+      "Financial Services",
+      "Healthcare",
+      "Manufacturing",
+      "Government",
+      "Telecommunications",
+      "Insurance"
+    ],
+    "company_sizes": [
+      "Mid-Market (100-999 employees)",
+      "Enterprise (1000+ employees)"
+    ],
+    "use_cases": [
+      "Business Process Automation",
+      "Workflow Orchestration",
+      "Compliance and Audit Workflows",
+      "Document Approval Workflows",
+      "Customer Onboarding",
+      "Claims Processing"
+    ]
+  },
+
+  "metadata": {
+    "version": "5.2.0",
+    "releaseDate": "2024-12-01",
+    "lastUpdated": "2025-02-01",
+    "sellerOfRecord": "YAWL Foundation",
+    "manufacturer": "YAWL Foundation"
+  }
+}

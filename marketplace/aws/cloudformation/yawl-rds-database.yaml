@@ -1,0 +1,550 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YAWL Workflow Engine - RDS PostgreSQL Database Configuration for AWS Marketplace'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Database Configuration'
+        Parameters:
+          - DatabaseInstanceIdentifier
+          - DatabaseEngine
+          - DatabaseEngineVersion
+          - DatabaseInstanceClass
+          - DatabaseStorageType
+          - DatabaseAllocatedStorage
+          - DatabaseMaxStorage
+      - Label:
+          default: 'Database Credentials'
+        Parameters:
+          - DatabaseMasterUsername
+          - DatabaseMasterPassword
+      - Label:
+          default: 'Network Configuration'
+        Parameters:
+          - VpcId
+          - DatabaseSubnetIds
+          - AllowedCidrBlocks
+      - Label:
+          default: 'High Availability'
+        Parameters:
+          - MultiAZ
+          - PreferredBackupWindow
+          - PreferredMaintenanceWindow
+      - Label:
+          default: 'Security'
+        Parameters:
+          - EnableEncryption
+          - EnablePerformanceInsights
+          - DeletionProtection
+
+Parameters:
+  DatabaseInstanceIdentifier:
+    Type: String
+    Default: 'yawl-database'
+    Description: 'Database instance identifier'
+    MinLength: 1
+    MaxLength: 63
+    AllowedPattern: '^[a-z][a-z0-9-]*$'
+
+  DatabaseEngine:
+    Type: String
+    Default: 'postgres'
+    AllowedValues:
+      - 'postgres'
+      - 'mysql'
+    Description: 'Database engine type'
+
+  DatabaseEngineVersion:
+    Type: String
+    Default: '15.7'
+    Description: 'Database engine version (PostgreSQL 15.7 or MySQL 8.0)'
+
+  DatabaseInstanceClass:
+    Type: String
+    Default: 'db.r6g.xlarge'
+    AllowedValues:
+      - 'db.t4g.medium'
+      - 'db.t4g.large'
+      - 'db.t4g.xlarge'
+      - 'db.r6g.large'
+      - 'db.r6g.xlarge'
+      - 'db.r6g.2xlarge'
+      - 'db.r6g.4xlarge'
+      - 'db.m6g.large'
+      - 'db.m6g.xlarge'
+      - 'db.m6g.2xlarge'
+      - 'db.m6g.4xlarge'
+    Description: 'Database instance class'
+
+  DatabaseStorageType:
+    Type: String
+    Default: 'gp3'
+    AllowedValues:
+      - 'gp3'
+      - 'io1'
+      - 'io2'
+    Description: 'Storage type for the database'
+
+  DatabaseAllocatedStorage:
+    Type: Number
+    Default: 100
+    MinValue: 20
+    MaxValue: 16384
+    Description: 'Allocated storage in GB'
+
+  DatabaseMaxStorage:
+    Type: Number
+    Default: 1000
+    MinValue: 100
+    MaxValue: 16384
+    Description: 'Maximum storage for autoscaling in GB'
+
+  DatabaseMasterUsername:
+    Type: String
+    Default: 'yawldbadmin'
+    Description: 'Master database username'
+    MinLength: 1
+    MaxLength: 16
+    NoEcho: true
+
+  DatabaseMasterPassword:
+    Type: String
+    Description: 'Master database password (min 8 characters)'
+    MinLength: 8
+    MaxLength: 41
+    NoEcho: true
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: 'VPC ID where the database will be deployed'
+
+  DatabaseSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'List of private subnet IDs for the database'
+
+  AllowedCidrBlocks:
+    Type: CommaDelimitedList
+    Default: '10.0.0.0/8'
+    Description: 'CIDR blocks allowed to access the database'
+
+  MultiAZ:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable Multi-AZ deployment for high availability'
+
+  PreferredBackupWindow:
+    Type: String
+    Default: '03:00-04:00'
+    Description: 'Preferred backup window (UTC)'
+
+  PreferredMaintenanceWindow:
+    Type: String
+    Default: 'sun:04:00-sun:05:00'
+    Description: 'Preferred maintenance window (UTC)'
+
+  EnableEncryption:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable storage encryption at rest'
+
+  EnablePerformanceInsights:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable Performance Insights'
+
+  DeletionProtection:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable deletion protection'
+
+Conditions:
+  IsPostgres: !Equals [!Ref DatabaseEngine, 'postgres']
+  IsMySQL: !Equals [!Ref DatabaseEngine, 'mysql']
+  EnableEncryptionCond: !Equals [!Ref EnableEncryption, 'true']
+  EnablePerformanceInsightsCond: !Equals [!Ref EnablePerformanceInsights, 'true']
+  MultiAZCond: !Equals [!Ref MultiAZ, 'true']
+  DeletionProtectionCond: !Equals [!Ref DeletionProtection, 'true']
+
+Resources:
+  # KMS Key for encryption
+  DatabaseEncryptionKey:
+    Type: AWS::KMS::Key
+    Condition: EnableEncryptionCond
+    Properties:
+      Description: 'YAWL RDS encryption key'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow RDS to use the key
+            Effect: Allow
+            Principal:
+              Service: rds.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+
+  DatabaseEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: EnableEncryptionCond
+    Properties:
+      AliasName: !Sub 'alias/yawl-rds-${DatabaseInstanceIdentifier}'
+      TargetKeyId: !Ref DatabaseEncryptionKey
+
+  # Database Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'Subnet group for YAWL database'
+      SubnetIds: !Split [',', !Join [',', !Ref DatabaseSubnetIds]]
+      Tags:
+        - Key: Name
+          Value: !Sub '${DatabaseInstanceIdentifier}-subnet-group'
+        - Key: Application
+          Value: YAWL
+
+  # Database Security Group
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for YAWL database'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'PostgreSQL access'
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'MySQL access'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: !Sub '${DatabaseInstanceIdentifier}-sg'
+        - Key: Application
+          Value: YAWL
+
+  # RDS Parameter Group for PostgreSQL
+  PostgreSQLParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Condition: IsPostgres
+    Properties:
+      Description: 'Custom PostgreSQL parameter group for YAWL'
+      Family: postgres15
+      Parameters:
+        max_connections: '500'
+        shared_buffers: '{DBInstanceClassMemory/32768}'
+        work_mem: '65536'
+        maintenance_work_mem: '262144'
+        effective_cache_size: '{DBInstanceClassMemory/16384}'
+        random_page_cost: '1.1'
+        effective_io_concurrency: '200'
+        log_min_duration_statement: '1000'
+        log_checkpoints: '1'
+        log_connections: '1'
+        log_disconnections: '1'
+        log_lock_waits: '1'
+        log_temp_files: '0'
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # RDS Parameter Group for MySQL
+  MySQLParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Condition: IsMySQL
+    Properties:
+      Description: 'Custom MySQL parameter group for YAWL'
+      Family: mysql8.0
+      Parameters:
+        max_connections: '500'
+        innodb_buffer_pool_size: '{DBInstanceClassMemory*3/4}'
+        innodb_log_file_size: '268435456'
+        innodb_flush_log_at_trx_commit: '1'
+        innodb_flush_method: 'O_DIRECT'
+        innodb_file_per_table: '1'
+        slow_query_log: '1'
+        long_query_time: '2'
+        log_queries_not_using_indexes: '1'
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Option Group for PostgreSQL
+  PostgreSQLOptionGroup:
+    Type: AWS::RDS::OptionGroup
+    Condition: IsPostgres
+    Properties:
+      EngineName: postgres
+      MajorEngineVersion: '15'
+      OptionGroupDescription: 'PostgreSQL option group for YAWL'
+      OptionConfigurations:
+        - OptionName: pgaudit
+          OptionSettings:
+            - Name: pgaudit.log
+              Value: 'write, ddl'
+            - Name: pgaudit.log_parameter
+              Value: '1'
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Option Group for MySQL
+  MySQLOptionGroup:
+    Type: AWS::RDS::OptionGroup
+    Condition: IsMySQL
+    Properties:
+      EngineName: mysql
+      MajorEngineVersion: '8.0'
+      OptionGroupDescription: 'MySQL option group for YAWL'
+      OptionConfigurations: []
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # RDS Database Instance
+  YAWLDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Ref DatabaseInstanceIdentifier
+      Engine: !Ref DatabaseEngine
+      EngineVersion: !Ref DatabaseEngineVersion
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      StorageType: !Ref DatabaseStorageType
+      AllocatedStorage: !Ref DatabaseAllocatedStorage
+      MaxAllocatedStorage: !Ref DatabaseMaxStorage
+      StorageEncrypted: !If [EnableEncryptionCond, true, false]
+      KmsKeyId: !If [EnableEncryptionCond, !GetAtt DatabaseEncryptionKey.Arn, !Ref 'AWS::NoValue']
+      MasterUsername: !Ref DatabaseMasterUsername
+      MasterUserPassword: !Ref DatabaseMasterPassword
+      DBName: !If [IsPostgres, yawl, yawl]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      DBParameterGroupName: !If
+        - IsPostgres
+        - !Ref PostgreSQLParameterGroup
+        - !Ref MySQLParameterGroup
+      OptionGroupName: !If
+        - IsPostgres
+        - !Ref PostgreSQLOptionGroup
+        - !Ref MySQLOptionGroup
+      MultiAZ: !If [MultiAZCond, true, false]
+      AvailabilityZone: !If [MultiAZCond, !Ref 'AWS::NoValue', !Select [0, !GetAZs '']
+      BackupRetentionPeriod: 30
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      CopyTagsToSnapshot: true
+      DeletionProtection: !If [DeletionProtectionCond, true, false]
+      EnablePerformanceInsights: !If [EnablePerformanceInsightsCond, true, false]
+      PerformanceInsightsRetentionPeriod: !If [EnablePerformanceInsightsCond, 7, !Ref 'AWS::NoValue']
+      MonitoringInterval: 60
+      MonitoringRoleArn: !GetAtt RDSEnhancedMonitoringRole.Arn
+      EnableCloudwatchLogsExports: !If
+        - IsPostgres
+        - - postgresql
+          - upgrade
+        - - error
+          - general
+          - slow_query
+      AutoMinorVersionUpgrade: true
+      AllowMajorVersionUpgrade: false
+      PubliclyAccessible: false
+      Tags:
+        - Key: Name
+          Value: !Ref DatabaseInstanceIdentifier
+        - Key: Application
+          Value: YAWL
+
+  # Enhanced Monitoring Role
+  RDSEnhancedMonitoringRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: monitoring.rds.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Store credentials in Secrets Manager
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'yawl/database/${DatabaseInstanceIdentifier}'
+      Description: !Sub 'YAWL database credentials for ${DatabaseInstanceIdentifier}'
+      SecretString: !Sub |
+        {
+          "username": "${DatabaseMasterUsername}",
+          "password": "${DatabaseMasterPassword}",
+          "host": "${YAWLDatabase.Endpoint.Address}",
+          "port": "${YAWLDatabase.Endpoint.Port}",
+          "database": "yawl",
+          "engine": "${DatabaseEngine}"
+        }
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Secret rotation schedule (every 30 days)
+  DatabaseSecretRotationSchedule:
+    Type: AWS::SecretsManager::RotationSchedule
+    DependsOn: DatabaseSecret
+    Properties:
+      SecretId: !Ref DatabaseSecret
+      RotationLambdaARN: !GetAtt SecretRotationFunction.Arn
+      RotationRules:
+        AutomaticallyAfterDays: 30
+
+  # Lambda function for secret rotation
+  SecretRotationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'yawl-db-secret-rotation-${DatabaseInstanceIdentifier}'
+      Handler: index.lambda_handler
+      Role: !GetAtt SecretRotationRole.Arn
+      Runtime: python3.11
+      Timeout: 300
+      Environment:
+        Variables:
+          SECRETS_MANAGER_ENDPOINT: !Sub 'https://secretsmanager.${AWS::Region}.amazonaws.com'
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import logging
+          import os
+          import random
+          import string
+
+          logger = logging.getLogger(__name__)
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event, context):
+              arn = event['SecretId']
+              token = event['ClientRequestToken']
+              step = event['Step']
+
+              client = boto3.client('secretsmanager', endpoint_url=os.environ['SECRETS_MANAGER_ENDPOINT'])
+
+              if step == 'createSecret':
+                  current_secret = client.get_secret_value(SecretId=arn, VersionStage='AWSCURRENT')
+                  current_dict = json.loads(current_secret['SecretString'])
+
+                  new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+                  current_dict['password'] = new_password
+
+                  client.put_secret_value(
+                      SecretId=arn,
+                      ClientRequestToken=token,
+                      SecretString=json.dumps(current_dict)
+                  )
+                  logger.info(f'Created new password for secret {arn}')
+
+              return {'statusCode': 200, 'body': json.dumps('Success')}
+
+  SecretRotationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SecretsManagerRotationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:PutSecretValue
+                  - secretsmanager:UpdateSecretVersionStage
+                Resource: !Ref DatabaseSecret
+
+Outputs:
+  DatabaseInstanceIdentifier:
+    Description: 'Database Instance Identifier'
+    Value: !Ref YAWLDatabase
+    Export:
+      Name: !Sub '${AWS::StackName}-DBIdentifier'
+
+  DatabaseEndpoint:
+    Description: 'Database Connection Endpoint'
+    Value: !GetAtt YAWLDatabase.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DBEndpoint'
+
+  DatabasePort:
+    Description: 'Database Port'
+    Value: !GetAtt YAWLDatabase.Endpoint.Port
+    Export:
+      Name: !Sub '${AWS::StackName}-DBPort'
+
+  DatabaseName:
+    Description: 'Database Name'
+    Value: !If [IsPostgres, yawl, yawl]
+    Export:
+      Name: !Sub '${AWS::StackName}-DBName'
+
+  DatabaseSecretArn:
+    Description: 'Secrets Manager Secret ARN'
+    Value: !Ref DatabaseSecret
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSecretArn'
+
+  DatabaseSecurityGroupId:
+    Description: 'Database Security Group ID'
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSecurityGroup'
+
+  ConnectionString:
+    Description: 'Database Connection String (JDBC format)'
+    Value: !If
+      - IsPostgres
+      - !Sub 'jdbc:postgresql://${YAWLDatabase.Endpoint.Address}:${YAWLDatabase.Endpoint.Port}/yawl'
+      - !Sub 'jdbc:mysql://${YAWLDatabase.Endpoint.Address}:${YAWLDatabase.Endpoint.Port}/yawl'
+    Export:
+      Name: !Sub '${AWS::StackName}-ConnectionString'

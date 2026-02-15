@@ -1,0 +1,312 @@
+# SAST (Static Application Security Testing) Configuration
+# For YAWL Java-based workflow engine
+
+# SonarQube Configuration
+sonar:
+  projectKey: yawl-engine
+  projectName: YAWL Workflow Engine
+  projectVersion: 5.2
+
+  # Source code paths
+  sources:
+    - src
+    - src/org/yawlfoundation/yawl
+
+  # Test paths
+  tests:
+    - test
+    - test/org/yawlfoundation/yawl
+
+  # Exclusions
+  exclusions:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/exampleSpecs/**"
+    - "**/generated/**"
+
+  # Quality gates
+  qualitygate:
+    wait: true
+    timeout: 300
+
+  # Security-specific rules
+  security:
+    # OWASP Top 10
+    rules:
+      - S5131  # XSS vulnerabilities
+      - S2076  # Command injection
+      - S2631  # SQL injection
+      - S5145  # Log injection
+      - S5146  # Open redirect
+      - S2078  # LDAP injection
+      - S2089  # XML external entity
+      - S2755  # XML injection
+      - S4790  # Weak hashing
+      - S5547  # Weak cipher
+      - S4426  # Weak key
+
+    # Hotspot detection
+    hotspots:
+      enabled: true
+      # Security hotspots to review
+      patterns:
+        - "crypto/*"
+        - "auth/*"
+        - "password/*"
+        - "secret/*"
+
+  # Vulnerability detection
+  vulnerabilities:
+    # SQL injection patterns
+    sql-injection:
+      - "executeQuery\\(.*\\+"
+      - "executeUpdate\\(.*\\+"
+
+    # XSS patterns
+    xss:
+      - "response.getWriter\\(\\).write\\("
+      - "JspWriter.print\\("
+
+    # Path traversal
+    path-traversal:
+      - "new File\\(.*request"
+      - "new FileReader\\(.*request"
+
+# Semgrep Configuration
+semgrep:
+  # Ruleset configuration
+  rules:
+    # Core rules
+    - p/security-audit
+    - p/secrets
+    - p/owasp-top-ten
+    - p/java
+
+    # Custom rules paths
+    - rules/custom/
+
+  # Severity threshold
+  severity:
+    - ERROR
+    - WARNING
+
+  # Paths to scan
+  paths:
+    include:
+      - src/
+    exclude:
+      - test/
+      - tests/
+      - "**/*Test.java"
+      - "**/*Tests.java"
+
+  # Configuration
+  config:
+    # Maximum memory (MB)
+    max_memory: 4096
+
+    # Timeout per file (seconds)
+    timeout: 30
+
+    # Number of jobs
+    jobs: 4
+
+# SpotBugs with FindSecBugs Configuration
+spotbugs:
+  # Enable FindSecBugs plugin
+  plugins:
+    - com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0
+
+  # Effort level
+  effort: max
+
+  # Priority threshold
+  threshold: low
+
+  # Security bug categories
+  categories:
+    - SECURITY
+    - MALICIOUS_CODE
+    - BAD_PRACTICE
+
+  # Exclude filters
+  excludes:
+    - "**/test/**"
+    - "**/*Test.class"
+
+  # FindSecBugs specific
+  findsecbugs:
+    # Additional security detectors
+    detectors:
+      - XSS_REQUEST_WRAPPER
+      - LDAP_INJECTION
+      - SQL_INJECTION_HIBERNATE
+      - SQL_INJECTION_JDO
+      - SQL_INJECTION_JPA
+      - PATH_TRAVERSAL_IN
+      - PATH_TRAVERSAL_OUT
+      - CRYPTO_BAD_MAC
+      - CRYPTO_PBE_KEY
+      - PREDICTABLE_RANDOM
+
+# Checkmarx Configuration (if using)
+checkmarx:
+  # Project settings
+  project:
+    name: YAWL-Engine
+    team: /YAWL/Security
+
+  # Scan settings
+  scan:
+    # Preset
+    preset: "All"
+
+    # Engine configuration
+    engine:
+      minLoc: 100
+      maxLoc: 1000000
+
+    # Source code
+    source:
+      - src/
+
+    # Exclusions
+    exclude:
+      - "**/test/**"
+      - "**/tests/**"
+
+  # Query configuration
+  queries:
+    - type: sast
+      severity: High
+      enabled: true
+    - type: sast
+      severity: Medium
+      enabled: true
+
+# Codacy Configuration
+codacy:
+  # Tools to run
+  tools:
+    - name: SpotBugs
+      patterns:
+        - SEC
+    - name: Semgrep
+      patterns:
+        - secrets
+        - security-audit
+
+  # Minimum grade
+  minGrade: B
+
+  # Fail on issues
+  failOnIssues: true
+
+# GitHub CodeQL Configuration
+codeql:
+  # Language
+  language: java
+
+  # Queries
+  queries:
+    - uses: security-and-quality
+    - uses: security-extended
+
+  # Paths
+  paths:
+    - src/
+
+  # Paths to ignore
+  paths-ignore:
+    - test/
+    - "**/*Test.java"
+
+  # Analysis configuration
+  analysis:
+    # Pack bundle
+    pack: codeql/java-queries
+
+    # Additional packs
+    packs:
+      - codeql/java-queries:AlertSuppression.ql
+      - codeql/java-queries:Security/CWE-*
+
+# Veracode Configuration (if using)
+veracode:
+  # Application
+  app:
+    name: YAWL-Engine
+    criticality: High
+
+  # Scan configuration
+  scan:
+    # Sandbox scan for development
+    sandbox: false
+
+    # Auto-scan
+    autoscan: false
+
+    # Include modules
+    include:
+      - yawl-engine.jar
+      - yawl-resourceservice.war
+
+    # Scan all top-level modules
+    scanAllNonPackagingModules: true
+
+# Snyk Configuration
+snyk:
+  # Organization
+  org: yawl-foundation
+
+  # Project settings
+  project:
+    name: yawl-engine
+    tags:
+      - team:security
+      - criticality:high
+
+  # Test configuration
+  test:
+    # Severity threshold
+    severity-threshold: high
+
+    # Fail on issues
+    fail-fast: true
+
+    # IaC scanning
+    iac:
+      enabled: true
+      path: deploy/
+
+    # Code scanning
+    code:
+      enabled: true
+      path: src/
+
+# Scan Schedule
+schedule:
+  # Daily full scan
+  daily:
+    time: "02:00"
+    timezone: UTC
+    tools:
+      - semgrep
+      - spotbugs
+
+  # Weekly comprehensive scan
+  weekly:
+    day: Sunday
+    time: "03:00"
+    timezone: UTC
+    tools:
+      - sonar
+      - codeql
+      - snyk
+
+  # On-pull-request
+  pull_request:
+    tools:
+      - semgrep
+      - spotbugs
+    threshold: medium

@@ -1,0 +1,78 @@
+{{- if .Values.tests.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "yawl.fullname" . }}-test-connection"
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: wget-engine
+      image: busybox:latest
+      command: ['wget']
+      args: ['{{ include "yawl.name" . }}-engine:{{ .Values.services.engine.service.port }}/engine/health']
+    - name: wget-resource-service
+      image: busybox:latest
+      command: ['wget']
+      args: ['{{ include "yawl.name" . }}-resource-service:{{ .Values.services.resourceService.service.port }}/resourceService/health']
+    - name: wget-worklet-service
+      image: busybox:latest
+      command: ['wget']
+      args: ['{{ include "yawl.name" . }}-worklet-service:{{ .Values.services.workletService.service.port }}/workletService/health']
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "yawl.fullname" . }}-test-database"
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test-database
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: postgresql-test
+      image: postgres:16
+      env:
+        - name: PGHOST
+          value: "{{ .Release.Name }}-postgresql"
+        - name: PGPORT
+          value: "5432"
+        - name: PGUSER
+          value: "postgres"
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-postgresql-auth
+              key: postgres-password
+        - name: PGDATABASE
+          value: {{ .Values.postgresql.auth.database }}
+      command: ['psql', '-c', 'SELECT 1;']
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "yawl.fullname" . }}-test-redis"
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test-redis
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: redis-test
+      image: redis:7
+      command: ['redis-cli', '-h', '{{ .Release.Name }}-redis-master', '-p', '6379', 'ping']
+{{- end }}

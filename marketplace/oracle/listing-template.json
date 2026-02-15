@@ -1,0 +1,263 @@
+{
+  "listing": {
+    "name": "YAWL Workflow Engine",
+    "version": "5.2.0",
+    "shortDescription": "Enterprise BPM/Workflow engine with formal verification and 36+ workflow patterns",
+    "longDescription": "YAWL (Yet Another Workflow Language) is a powerful BPM/Workflow engine built on formal foundations of Petri Nets and extensive research in workflow patterns. Trusted by enterprises worldwide for mission-critical process automation.\n\n## Key Features\n\n- **36+ Workflow Patterns**: Comprehensive support for control-flow, data, and resource patterns\n- **Formal Verification**: Petri Net foundations enable correctness verification\n- **Multi-Service Architecture**: Scalable distributed deployment on Kubernetes\n- **Enterprise Integration**: REST APIs, SOAP services, and custom worklet extensions\n- **Resource Management**: Advanced work allocation and queue management\n\n## Why YAWL on OCI?\n\n- **Oracle Kubernetes Engine (OKE)**: Cloud-native deployment with auto-scaling\n- **Autonomous Database**: Managed Oracle or PostgreSQL with automatic tuning\n- **Object Storage**: Secure document and attachment management\n- **Identity Cloud Service**: Enterprise SSO and RBAC integration\n\n## Use Cases\n\n- Financial services process automation\n- Healthcare workflow management\n- Government case management\n- Manufacturing process orchestration\n- IT service management workflows\n\n## Getting Started\n\nDeploy YAWL on OCI in minutes using our Helm chart and Terraform templates. Full documentation and 24/7 support available.",
+    "categories": [
+      {
+        "name": "Business Applications",
+        "subcategory": "Business Process Management"
+      },
+      {
+        "name": "Developer Tools",
+        "subcategory": "Application Frameworks"
+      }
+    ],
+    "tags": [
+      "workflow",
+      "bpm",
+      "process automation",
+      "petri net",
+      "kubernetes",
+      "oke",
+      "autonomous database",
+      "enterprise"
+    ],
+    "listingType": "PARTNER_IMAGE",
+    "pricingType": "BYOL",
+    "supportedRegions": [
+      "us-phoenix-1",
+      "us-ashburn-1",
+      "eu-frankfurt-1",
+      "eu-zurich-1",
+      "uk-london-1",
+      "ap-tokyo-1",
+      "ap-osaka-1",
+      "ap-sydney-1",
+      "ap-melbourne-1",
+      "ap-seoul-1",
+      "ap-chuncheon-1",
+      "ap-mumbai-1",
+      "ap-hyderabad-1",
+      "ca-toronto-1",
+      "ca-montreal-1",
+      "sa-saopaulo-1",
+      "sa-vinhedo-1"
+    ],
+    "compatibility": {
+      "ociServices": [
+        "Oracle Kubernetes Engine (OKE)",
+        "Autonomous Database",
+        "Object Storage",
+        "Identity Cloud Service",
+        "OCI Registry",
+        "OCI Monitoring",
+        "OCI Logging"
+      ],
+      "kubernetesVersions": [
+        "1.28",
+        "1.29",
+        "1.30"
+      ],
+      "databaseSupport": [
+        "Oracle Autonomous Database (ADB)",
+        "PostgreSQL (ADB)",
+        "Oracle Database 19c+",
+        "PostgreSQL 14+"
+      ]
+    }
+  },
+  "package": {
+    "type": "HELM_CHART",
+    "artifact": {
+      "helmChart": {
+        "repositoryUrl": "oci://${OCIR_REGION}/${TENANCY}/yawl-charts",
+        "chartName": "yawl-engine",
+        "version": "5.2.0"
+      },
+      "containerImages": [
+        {
+          "name": "yawl-engine",
+          "repository": "${OCIR_REGION}/${TENANCY}/yawl-engine",
+          "tag": "5.2.0",
+          "digest": ""
+        },
+        {
+          "name": "yawl-resource-service",
+          "repository": "${OCIR_REGION}/${TENANCY}/yawl-resource-service",
+          "tag": "5.2.0",
+          "digest": ""
+        },
+        {
+          "name": "yawl-worklet-service",
+          "repository": "${OCIR_REGION}/${TENANCY}/yawl-worklet-service",
+          "tag": "5.2.0",
+          "digest": ""
+        }
+      ]
+    }
+  },
+  "pricing": {
+    "type": "BYOL",
+    "description": "Bring Your Own License - Use your existing YAWL enterprise license. OCI infrastructure charges apply separately.",
+    "meteredPricing": {
+      "enabled": false,
+      "rates": []
+    },
+    "byolPricing": {
+      "enabled": true,
+      "licenseRequirement": "Valid YAWL enterprise license required for production use",
+      "infrastructureOnly": true
+    }
+  },
+  "documentation": {
+    "productOverview": {
+      "filename": "product-overview.pdf",
+      "required": true,
+      "maxSizeMB": 10
+    },
+    "deploymentGuide": {
+      "filename": "deployment-guide.md",
+      "required": true,
+      "format": "OCI_MARKDOWN"
+    },
+    "securityWhitepaper": {
+      "filename": "security-whitepaper.pdf",
+      "required": true,
+      "maxSizeMB": 10
+    },
+    "architectureDiagram": {
+      "filename": "architecture.png",
+      "required": true,
+      "format": "PNG",
+      "minWidth": 1200,
+      "minHeight": 800
+    },
+    "releaseNotes": {
+      "filename": "release-notes.md",
+      "required": true,
+      "format": "MARKDOWN"
+    },
+    "userGuide": {
+      "filename": "user-guide.pdf",
+      "required": false,
+      "maxSizeMB": 20
+    },
+    "apiReference": {
+      "url": "https://yawlfoundation.github.io/yawl/api/",
+      "required": false
+    }
+  },
+  "support": {
+    "provider": "YAWL Foundation",
+    "website": "https://yawlfoundation.org",
+    "email": "support@yawlfoundation.org",
+    "phone": "",
+    "responseTime": {
+      "critical": "1 hour",
+      "high": "4 hours",
+      "medium": "1 business day",
+      "low": "3 business days"
+    },
+    "supportHours": "24/7 for critical issues",
+    "includedWithSubscription": [
+      "Bug fixes and patches",
+      "Security updates",
+      "Technical documentation access",
+      "Community forum access"
+    ],
+    "premiumSupport": {
+      "available": true,
+      "includes": [
+        "Dedicated support engineer",
+        "Faster response times",
+        "Custom training",
+        "Architecture reviews"
+      ]
+    }
+  },
+  "legal": {
+    "licenseAgreement": "YAWL Enterprise License Agreement",
+    "licenseUrl": "https://yawlfoundation.org/licensing",
+    "privacyPolicy": "https://yawlfoundation.org/privacy",
+    "termsOfService": "https://yawlfoundation.org/terms",
+    "thirdPartyLicenses": [
+      {
+        "name": "Apache Commons",
+        "license": "Apache 2.0"
+      },
+      {
+        "name": "Hibernate",
+        "license": "LGPL 2.1"
+      },
+      {
+        "name": "JDOM",
+        "license": "Apache 2.0"
+      },
+      {
+        "name": "Log4j",
+        "license": "Apache 2.0"
+      },
+      {
+        "name": "Jackson",
+        "license": "Apache 2.0"
+      }
+    ]
+  },
+  "publisher": {
+    "name": "YAWL Foundation",
+    "description": "The YAWL Foundation is a non-profit organization dedicated to the development and support of YAWL, an open-source workflow language and engine based on rigorous academic research.",
+    "website": "https://yawlfoundation.org",
+    "contactEmail": "info@yawlfoundation.org",
+    "opnMemberId": "",
+    "certifications": [
+      "ISO 27001 (planned)"
+    ]
+  },
+  "marketing": {
+    "heroImage": {
+      "filename": "hero-image.png",
+      "width": 1920,
+      "height": 1080,
+      "maxSizeMB": 2
+    },
+    "screenshots": [
+      {
+        "filename": "screenshot-1.png",
+        "caption": "YAWL Process Designer",
+        "required": true
+      },
+      {
+        "filename": "screenshot-2.png",
+        "caption": "YAWL Administration Console",
+        "required": true
+      },
+      {
+        "filename": "screenshot-3.png",
+        "caption": "Work Queue Management",
+        "required": false
+      },
+      {
+        "filename": "screenshot-4.png",
+        "caption": "Process Analytics Dashboard",
+        "required": false
+      }
+    ],
+    "videoUrl": "",
+    "customerTestimonials": [
+      {
+        "company": "Financial Services Customer",
+        "quote": "YAWL's formal verification capabilities gave us confidence in our mission-critical workflows.",
+        "attribution": "CTO, Major Bank"
+      }
+    ],
+    "caseStudies": [
+      {
+        "title": "Banking Process Automation",
+        "url": "https://yawlfoundation.org/case-studies/banking",
+        "industry": "Financial Services"
+      }
+    ]
+  }
+}

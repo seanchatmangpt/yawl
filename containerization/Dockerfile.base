@@ -1,0 +1,118 @@
+# =============================================================================
+# YAWL Base Image - Eclipse Temurin JDK
+# =============================================================================
+# Multi-stage base image with Java runtime for YAWL services
+# Supports both JDK 11 and JDK 17 via build args
+# =============================================================================
+
+ARG JAVA_VERSION=17
+
+FROM eclipse-temurin:${JAVA_VERSION}-jdk-alpine AS builder-base
+
+# Build-time arguments
+ARG JAVA_VERSION=17
+ARG YAWL_VERSION=5.2
+
+# Labels for container metadata
+LABEL org.opencontainers.image.title="YAWL Base Builder"
+LABEL org.opencontainers.image.description="YAWL Workflow Engine - Build Stage"
+LABEL org.opencontainers.image.version="${YAWL_VERSION}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
+
+# Install build dependencies
+RUN apk add --no-cache \
+    ant \
+    git \
+    curl \
+    bash \
+    shadow \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for build
+RUN groupadd -r yawl && useradd -r -g yawl -d /yawl -s /sbin/nologin yawl
+
+# Set working directory
+WORKDIR /build
+
+# Copy build files
+COPY build/ ./build/
+COPY src/ ./src/
+COPY schema/ ./schema/
+COPY test/ ./test/
+COPY exampleSpecs/ ./exampleSpecs/
+
+# Set ownership
+RUN chown -R yawl:yawl /build
+
+# Build YAWL WARs
+RUN cd build && ant buildWebApps
+
+# =============================================================================
+# Runtime Base Image
+# =============================================================================
+FROM eclipse-temurin:${JAVA_VERSION}-jre-alpine AS runtime-base
+
+ARG JAVA_VERSION=17
+ARG YAWL_VERSION=5.2
+ARG TOMCAT_VERSION=9.0.89
+
+# Labels
+LABEL org.opencontainers.image.title="YAWL Runtime Base"
+LABEL org.opencontainers.image.description="YAWL Workflow Engine - Runtime Base"
+LABEL org.opencontainers.image.version="${YAWL_VERSION}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    curl \
+    bash \
+    shadow \
+    tzdata \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN groupadd -r yawl && \
+    useradd -r -g yawl -d /yawl -s /sbin/nologin yawl && \
+    mkdir -p /yawl /opt/tomcat /data && \
+    chown -R yawl:yawl /yawl /opt/tomcat /data
+
+# Download and install Tomcat
+RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" \
+    | tar -xzf - -C /opt/tomcat --strip-components=1
+
+# Remove default Tomcat applications and set permissions
+RUN rm -rf /opt/tomcat/webapps/* && \
+    rm -rf /opt/tomcat/webapps.dist && \
+    chown -R yawl:yawl /opt/tomcat
+
+# Configure Tomcat for YAWL
+RUN sed -i 's/<Connector port="8080"/<Connector port="8080" URIEncoding="UTF-8"/' \
+    /opt/tomcat/conf/server.xml
+
+# Create required directories
+RUN mkdir -p /opt/tomcat/logs /opt/tomcat/temp /opt/tomcat/work && \
+    chown -R yawl:yawl /opt/tomcat/logs /opt/tomcat/temp /opt/tomcat/work
+
+# Environment variables
+ENV CATALINA_HOME=/opt/tomcat \
+    JAVA_OPTS="-Xms512m -Xmx1024m -Djava.awt.headless=true" \
+    TZ=UTC \
+    YAWL_VERSION=${YAWL_VERSION}
+
+# Expose default port
+EXPOSE 8080
+
+# Health check base
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+# Switch to non-root user
+USER yawl
+
+# Set working directory
+WORKDIR /yawl
+
+# Default command
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

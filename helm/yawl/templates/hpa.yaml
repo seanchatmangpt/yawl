@@ -1,0 +1,126 @@
+{{- $root := . -}}
+{{- $fullName := include "yawl.fullname" . -}}
+{{- $name := include "yawl.name" . -}}
+
+{{- /* Engine HPA */ -}}
+{{- if and .Values.services.engine.enabled .Values.services.engine.autoscaling.enabled }}
+apiVersion: {{ include "yawl.hpa.apiVersion" . }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullName }}-engine-hpa
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: engine-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}-engine
+  minReplicas: {{ .Values.services.engine.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.services.engine.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.engine.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.services.engine.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.engine.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+---
+{{- end }}
+
+{{- /* Resource Service HPA */ -}}
+{{- if and .Values.services.resourceService.enabled .Values.services.resourceService.autoscaling.enabled }}
+apiVersion: {{ include "yawl.hpa.apiVersion" . }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullName }}-resource-service-hpa
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: resource-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}-resource-service
+  minReplicas: {{ .Values.services.resourceService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.services.resourceService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.resourceService.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.services.resourceService.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.resourceService.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+---
+{{- end }}
+
+{{- /* Worklet Service HPA */ -}}
+{{- if and .Values.services.workletService.enabled .Values.services.workletService.autoscaling.enabled }}
+apiVersion: {{ include "yawl.hpa.apiVersion" . }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullName }}-worklet-service-hpa
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: worklet-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}-worklet-service
+  minReplicas: {{ .Values.services.workletService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.services.workletService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.workletService.autoscaling.targetCPUUtilizationPercentage }}
+---
+{{- end }}
+
+{{- /* Balancer HPA */ -}}
+{{- if and .Values.services.balancer.enabled .Values.services.balancer.autoscaling.enabled }}
+apiVersion: {{ include "yawl.hpa.apiVersion" . }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullName }}-balancer-hpa
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: balancer-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}-balancer
+  minReplicas: {{ .Values.services.balancer.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.services.balancer.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.balancer.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

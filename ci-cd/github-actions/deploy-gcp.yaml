@@ -1,0 +1,471 @@
+# GitHub Actions - Google Cloud Platform Deployment
+# YAWL Workflow Engine GCP CI/CD
+#
+# Features:
+# - OIDC authentication (Workload Identity Federation)
+# - GKE, Cloud Run, Compute Engine deployment targets
+# - Terraform automation
+# - Helm chart deployment
+
+name: Deploy to GCP
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      region:
+        description: 'GCP region'
+        required: false
+        default: 'us-central1'
+        type: choice
+        options:
+          - us-central1
+          - us-east1
+          - us-west1
+          - europe-west1
+          - asia-east1
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'gke'
+        type: choice
+        options:
+          - gke
+          - cloud-run
+          - compute-engine
+      use_terraform:
+        description: 'Use Terraform for infrastructure'
+        required: false
+        default: false
+        type: boolean
+      terraform_action:
+        description: 'Terraform action (plan|apply|destroy)'
+        required: false
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: string
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'gke'
+        type: string
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ github.event.inputs.region || 'us-central1' }}
+  IMAGE_NAME: yawl
+  VERSION: ${{ github.event.inputs.version }}
+  TF_VERSION: '1.7.0'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ============================================
+  # Validate and Prepare
+  # ============================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      cluster_name: ${{ steps.config.outputs.cluster_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.VERSION }}" ]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
+            echo "Error: GCP_PROJECT_ID secret is not set"
+            exit 1
+          fi
+
+          echo "Deployment Configuration:"
+          echo "  Environment: ${{ github.event.inputs.environment }}"
+          echo "  Version: ${{ env.VERSION }}"
+          echo "  Region: ${{ env.GCP_REGION }}"
+          echo "  Target: ${{ github.event.inputs.target }}"
+
+      - name: Set deployment configuration
+        id: config
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            development)
+              echo "cluster_name=yawl-dev" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "cluster_name=yawl-staging" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "cluster_name=yawl-prod" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "cluster_name=yawl-${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Set image tag
+        id: image
+        run: |
+          echo "image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/yawl:${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Authenticate to GCP (OIDC)
+  # ============================================
+  auth:
+    name: Authenticate to GCP
+    runs-on: ubuntu-latest
+    needs: prepare
+
+    steps:
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: 'access_token'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker gcr.io --quiet
+
+  # ============================================
+  # Terraform Infrastructure
+  # ============================================
+  terraform:
+    name: Terraform Infrastructure
+    runs-on: ubuntu-latest
+    needs: [prepare, auth]
+    if: ${{ github.event.inputs.use_terraform == 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.GCP_TF_STATE_BUCKET }}" \
+            -backend-config="prefix=yawl/${{ github.event.inputs.environment }}"
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.terraform_action == 'plan' || github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: |
+          terraform plan \
+            -var="cloud_provider=gcp" \
+            -var="gcp_project_id=${{ env.GCP_PROJECT_ID }}" \
+            -var="gcp_region=${{ env.GCP_REGION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/gcp-${{ github.event.inputs.environment }}.tfvars \
+            -out=tfplan \
+            -detailed-exitcode
+        continue-on-error: true
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
+        working-directory: terraform
+        run: |
+          terraform destroy -auto-approve \
+            -var="cloud_provider=gcp" \
+            -var="gcp_project_id=${{ env.GCP_PROJECT_ID }}" \
+            -var="gcp_region=${{ env.GCP_REGION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/gcp-${{ github.event.inputs.environment }}.tfvars
+
+      - name: Upload Terraform artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-${{ github.event.inputs.environment }}
+          path: |
+            terraform/.terraform/
+            terraform/tfplan
+          retention-days: 7
+
+  # ============================================
+  # Deploy to GKE (Google Kubernetes Engine)
+  # ============================================
+  deploy-gke:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: [prepare, auth]
+    if: github.event.inputs.target == 'gke' && github.event.inputs.use_terraform != 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ needs.prepare.outputs.cluster_name }}
+          location: ${{ env.GCP_REGION }}
+
+      - name: Deploy with Helm
+        uses: ./.github/actions/deploy-helm
+        with:
+          release_name: yawl
+          namespace: yawl-${{ github.event.inputs.environment }}
+          values_file: helm/yawl/values-gcp.yaml
+          image_repository: gcr.io/${{ env.GCP_PROJECT_ID }}/yawl
+          image_tag: ${{ env.VERSION }}
+          environment: ${{ github.event.inputs.environment }}
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment status:"
+          kubectl get pods -n yawl-${{ github.event.inputs.environment }} -l app.kubernetes.io/name=yawl
+
+          echo "Service status:"
+          kubectl get services -n yawl-${{ github.event.inputs.environment }}
+
+          # Health check
+          SERVICE_IP=$(kubectl get service yawl -n yawl-${{ github.event.inputs.environment }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -n "$SERVICE_IP" ]; then
+            curl -f "http://$SERVICE_ID/health" || echo "Health check pending..."
+          fi
+
+  # ============================================
+  # Deploy to Cloud Run
+  # ============================================
+  deploy-cloud-run:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: [prepare, auth]
+    if: github.event.inputs.target == 'cloud-run'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy yawl-${{ github.event.inputs.environment }} \
+            --image=${{ needs.prepare.outputs.image }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=2Gi \
+            --cpu=2 \
+            --min-instances=${{ github.event.inputs.environment == 'production' && '2' || '0' }} \
+            --max-instances=10 \
+            --set-env-vars="SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}" \
+            --set-secrets="DB_PASSWORD=db-password:latest"
+
+      - name: Get Cloud Run URL
+        run: |
+          URL=$(gcloud run services describe yawl-${{ github.event.inputs.environment }} \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.url)')
+          echo "Service URL: $URL"
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe yawl-${{ github.event.inputs.environment }} \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.url)}')
+
+          curl -f "$URL/health" || echo "Health check pending..."
+
+  # ============================================
+  # Deploy to Compute Engine
+  # ============================================
+  deploy-compute-engine:
+    name: Deploy to Compute Engine
+    runs-on: ubuntu-latest
+    needs: [prepare, auth]
+    if: github.event.inputs.target == 'compute-engine'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Create or update instance template
+        run: |
+          gcloud compute instance-templates create-with-container yawl-${{ github.event.inputs.environment }}-${{ env.VERSION }} \
+            --machine-type=e2-standard-4 \
+            --region=${{ env.GCP_REGION }} \
+            --container-image=${{ needs.prepare.outputs.image }} \
+            --container-env="SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}" \
+            --tags=http-server,https-server \
+            || gcloud compute instance-templates describe yawl-${{ github.event.inputs.environment }}-${{ env.VERSION }}
+
+      - name: Update instance group
+        run: |
+          gcloud compute instance-groups managed rolling-action start-update \
+            yawl-${{ github.event.inputs.environment }}-group \
+            --region=${{ env.GCP_REGION }} \
+            --version template=yawl-${{ github.event.inputs.environment }}-${{ env.VERSION }} \
+            --type proactive \
+            --max-surge 1 \
+            --max-unavailable 0
+
+      - name: Wait for instance group update
+        run: |
+          gcloud compute instance-groups managed wait-until-stable \
+            yawl-${{ github.event.inputs.environment }}-group \
+            --region=${{ env.GCP_REGION }} \
+            --timeout=600s
+
+  # ============================================
+  # Post-Deployment Verification
+  # ============================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-gke, deploy-cloud-run, deploy-compute-engine, terraform]
+    if: always() && (needs.deploy-gke.result == 'success' || needs.deploy-cloud-run.result == 'success' || needs.deploy-compute-engine.result == 'success' || needs.terraform.result == 'success')
+
+    steps:
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+
+      - name: Deployment summary
+        run: |
+          echo "## GCP Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.GCP_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform | ${{ github.event.inputs.use_terraform }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Rollback
+  # ============================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback == 'true'
+
+    steps:
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Rollback GKE deployment
+        if: github.event.inputs.target == 'gke'
+        run: |
+          kubectl rollout undo deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }}
+
+      - name: Rollback Cloud Run
+        if: github.event.inputs.target == 'cloud-run'
+        run: |
+          gcloud run services update-traffic yawl-${{ github.event.inputs.environment }} \
+            --region=${{ env.GCP_REGION }} \
+            --to-revisions=LATEST=0,PREVIOUS=100

@@ -1,0 +1,46 @@
+[Unit]
+Description=PgBouncer Connection Pooler for YAWL
+Documentation=https://www.pgbouncer.org/
+After=network.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=postgres
+Group=postgres
+
+# Main executable
+ExecStart=/usr/bin/pgbouncer -d /etc/pgbouncer/pgbouncer.ini
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -INT $MAINPID
+
+# Process management
+PIDFile=/var/run/pgbouncer/pgbouncer.pid
+RuntimeDirectory=pgbouncer
+RuntimeDirectoryMode=0755
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadOnlyPaths=/
+ReadWritePaths=/var/run/pgbouncer /var/log/pgbouncer
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=65536
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# Timeout settings
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

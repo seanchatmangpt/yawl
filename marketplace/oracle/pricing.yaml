@@ -1,0 +1,307 @@
+# YAWL Workflow Engine - OCI Marketplace Pricing Configuration
+# Version: 5.2
+# Last Updated: 2024
+
+---
+# Pricing Model Configuration
+pricing:
+  model: hybrid  # Options: byol, metered, hybrid
+
+  # Bring Your Own License (BYOL) Configuration
+  byol:
+    enabled: true
+    description: |
+      Use your existing YAWL enterprise license.
+      OCI infrastructure charges apply separately.
+    requirements:
+      - Valid YAWL enterprise license
+      - License must cover deployment scale
+    infrastructure_charges:
+      - OKE cluster compute (per OCPU/hour)
+      - Autonomous Database (per OCPU/hour)
+      - Object Storage (per GB/month)
+      - Network egress (per GB)
+
+  # Metered Pricing Configuration
+  metered:
+    enabled: true
+    description: |
+      Pay-per-use model includes YAWL licensing.
+      Ideal for new customers or variable workloads.
+
+    # Base rate per OCPU/hour (includes YAWL license)
+    base_rate:
+      currency: USD
+      rate_per_ocpu_hour: 0.15
+
+    # Tiered pricing based on consumption
+    tiers:
+      - name: Development
+        min_ocpu: 1
+        max_ocpu: 4
+        rate_per_ocpu_hour: 0.15
+        description: "For development and testing workloads"
+
+      - name: Production
+        min_ocpu: 5
+        max_ocpu: 20
+        rate_per_ocpu_hour: 0.12
+        discount_percent: 20
+        description: "For production workloads"
+
+      - name: Enterprise
+        min_ocpu: 21
+        max_ocpu: null  # Unlimited
+        rate_per_ocpu_hour: 0.10
+        discount_percent: 33
+        description: "For large-scale enterprise deployments"
+
+  # Commitment Discounts
+  commitments:
+    - type: monthly
+      discount_percent: 10
+      minimum_ocpu: 2
+      description: "10% discount for monthly commitment"
+
+    - type: annual
+      discount_percent: 25
+      minimum_ocpu: 4
+      description: "25% discount for annual commitment"
+
+    - type: multi_year
+      years: 3
+      discount_percent: 40
+      minimum_ocpu: 8
+      description: "40% discount for 3-year commitment"
+
+# Service-Specific Pricing (for hybrid deployments)
+services:
+  engine:
+    name: "YAWL Engine"
+    description: "Core workflow execution engine"
+    pricing_model: per_ocpu_hour
+    metered_rate: 0.08
+    byol_compatible: true
+
+  resource_service:
+    name: "Resource Service"
+    description: "Human resource management and work allocation"
+    pricing_model: per_ocpu_hour
+    metered_rate: 0.04
+    byol_compatible: true
+
+  worklet_service:
+    name: "Worklet Service"
+    description: "Dynamic workflow adaptation and exception handling"
+    pricing_model: per_ocpu_hour
+    metered_rate: 0.03
+    byol_compatible: true
+
+# Bundle Pricing
+bundles:
+  - name: "Starter"
+    description: "For small teams and pilots"
+    components:
+      - service: engine
+        ocpu: 2
+      - service: resource_service
+        ocpu: 1
+    monthly_price: 150
+    currency: USD
+    includes_support: community
+
+  - name: "Professional"
+    description: "For production deployments"
+    components:
+      - service: engine
+        ocpu: 4
+      - service: resource_service
+        ocpu: 2
+      - service: worklet_service
+        ocpu: 1
+    monthly_price: 350
+    currency: USD
+    includes_support: standard
+
+  - name: "Enterprise"
+    description: "For large-scale deployments"
+    components:
+      - service: engine
+        ocpu: 8
+      - service: resource_service
+        ocpu: 4
+      - service: worklet_service
+        ocpu: 2
+    monthly_price: 700
+    currency: USD
+    includes_support: premium
+
+# Support Pricing (add-on)
+support:
+  community:
+    name: "Community Support"
+    price: 0
+    description: "Forum-based community support"
+
+  standard:
+    name: "Standard Support"
+    price_per_month: 100
+    currency: USD
+    description: |
+      - Email support (1 business day response)
+      - Bug fixes and patches
+      - Security updates
+    response_times:
+      critical: 8 hours
+      high: 1 business day
+      medium: 3 business days
+
+  premium:
+    name: "Premium Support"
+    price_per_month: 500
+    currency: USD
+    description: |
+      - 24/7 phone and email support
+      - Dedicated support engineer
+      - Architecture reviews
+      - Custom training sessions
+    response_times:
+      critical: 1 hour
+      high: 4 hours
+      medium: 1 business day
+
+  enterprise:
+    name: "Enterprise Support"
+    price_per_month: 2000
+    currency: USD
+    description: |
+      - All Premium features
+      - On-site support available
+      - Custom SLA negotiations
+      - Dedicated account manager
+      - Quarterly business reviews
+    response_times:
+      critical: 30 minutes
+      high: 2 hours
+      medium: 4 hours
+
+# Regional Pricing Adjustments
+regions:
+  default_multiplier: 1.0
+
+  adjustments:
+    - region: "us-phoenix-1"
+      multiplier: 1.0
+    - region: "us-ashburn-1"
+      multiplier: 1.0
+    - region: "eu-frankfurt-1"
+      multiplier: 1.1
+    - region: "eu-zurich-1"
+      multiplier: 1.15
+    - region: "uk-london-1"
+      multiplier: 1.1
+    - region: "ap-tokyo-1"
+      multiplier: 1.15
+    - region: "ap-osaka-1"
+      multiplier: 1.15
+    - region: "ap-sydney-1"
+      multiplier: 1.1
+    - region: "ap-mumbai-1"
+      multiplier: 0.9
+    - region: "sa-saopaulo-1"
+      multiplier: 1.05
+
+# Free Tier / Trial
+trial:
+  enabled: true
+  duration_days: 30
+  includes:
+    - service: engine
+      max_ocpu: 2
+    - service: resource_service
+      max_ocpu: 1
+  features:
+    - "Full feature access"
+    - "Community support"
+    - "Sample workflows"
+  limits:
+    max_cases_per_month: 1000
+    max_users: 10
+  automatic_conversion: false  # Manual conversion after trial
+
+# Pricing Calculator Inputs
+calculator:
+  inputs:
+    - name: "Expected cases per month"
+      type: number
+      default: 5000
+      unit: "cases"
+
+    - name: "Peak concurrent users"
+      type: number
+      default: 50
+      unit: "users"
+
+    - name: "Deployment region"
+      type: select
+      options:
+        - "us-phoenix-1"
+        - "us-ashburn-1"
+        - "eu-frankfurt-1"
+        - "ap-tokyo-1"
+      default: "us-phoenix-1"
+
+    - name: "Support level"
+      type: select
+      options:
+        - "community"
+        - "standard"
+        - "premium"
+        - "enterprise"
+      default: "standard"
+
+    - name: "Commitment term"
+      type: select
+      options:
+        - "on-demand"
+        - "monthly"
+        - "annual"
+        - "3-year"
+      default: "monthly"
+
+# Example Pricing Scenarios
+examples:
+  - name: "Small Development Team"
+    description: "5 users, development environment"
+    configuration:
+      engine_ocpu: 2
+      resource_ocpu: 1
+      region: "us-phoenix-1"
+      support: "community"
+      commitment: "monthly"
+    estimated_monthly: 85
+    currency: USD
+
+  - name: "Medium Business Production"
+    description: "50 users, production environment"
+    configuration:
+      engine_ocpu: 4
+      resource_ocpu: 2
+      worklet_ocpu: 1
+      region: "us-phoenix-1"
+      support: "standard"
+      commitment: "annual"
+    estimated_monthly: 380
+    currency: USD
+
+  - name: "Large Enterprise"
+    description: "500 users, high-availability"
+    configuration:
+      engine_ocpu: 16
+      resource_ocpu: 8
+      worklet_ocpu: 4
+      region: "eu-frankfurt-1"
+      support: "premium"
+      commitment: "annual"
+    estimated_monthly: 2200
+    currency: USD

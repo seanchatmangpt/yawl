@@ -1,0 +1,105 @@
+{{- if .Values.services.schedulingService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.name" . }}-scheduling-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduling-service
+spec:
+  replicas: {{ .Values.services.schedulingService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-scheduling-service
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-scheduling-service
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: scheduling-service
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: scheduling-service
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.services.schedulingService.image.repository | default "yawl/scheduling-service" }}:{{ .Values.services.schedulingService.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.services.schedulingService.image.pullPolicy | default .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.schedulingService.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: "scheduling-service"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if .Values.cloudsqlProxy.enabled }}
+            - name: DATABASE_HOST
+              value: "{{ include "yawl.fullname" . }}-cloudsql-proxy"
+            {{- else if .Values.awsRdsProxy.enabled }}
+            - name: DATABASE_HOST
+              value: {{ .Values.awsRdsProxy.endpoint | quote }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yawl.databaseSecretName" . }}
+          {{- with .Values.services.schedulingService.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.services.schedulingService.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.services.schedulingService.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.services.schedulingService.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/yawl
+            {{- with .Values.services.schedulingService.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.services.schedulingService.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClassName }}
+{{- end }}

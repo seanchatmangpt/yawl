@@ -1,0 +1,384 @@
+{
+  "$schema": "https://schema.mp.microsoft.com/schema/offer/2022-07-01",
+  "id": "yawl-workflow-engine",
+  "alias": "YAWL-Workflow-Engine",
+  "display name": "YAWL Workflow Engine - Enterprise BPM Platform",
+  "short description": "Production-ready workflow engine with 43+ control-flow patterns for enterprise business process automation",
+  "long description": "YAWL (Yet Another Workflow Language) is a powerful BPM/Workflow engine built on formal foundations in Petri Net theory. Trusted by enterprises worldwide for mission-critical business process automation.\n\n**Key Features:**\n- 43+ Workflow Control-Flow Patterns (WCP) implemented\n- Petri Net-based execution with formal verification\n- Human and non-human resource management\n- Dynamic process adaptation via Worklets\n- Real-time process monitoring and analytics\n- Calendar-based task scheduling\n- Cost tracking and budgeting\n- Multi-tenant architecture\n\n**Supported Patterns Include:**\n- Sequence, Parallel Split, Synchronization\n- Exclusive Choice, Multi-Choice, Discriminator\n- N-out-of-M, Deferred Choice, Interleaved Routing\n- Milestone, Critical Section, Structured Loop\n- Cancellation patterns (activity, case, region)\n- Data transformation and accumulation\n\n**Integration Options:**\n- REST API (Interface A/B/E/X)\n- Web-based administration console\n- Custom worklist handlers\n- External resource allocation\n\n**Deployment:**\n- Fully managed containers on Azure Kubernetes Service\n- Multi-zone high availability\n- Automatic scaling based on workload\n- GDPR and SOC 2 compliant\n- Azure AD integration for single sign-on",
+  "offer type": "AzureContainer",
+  "setup": {
+    "hosting type": "AzureContainer",
+    "lead management": {
+      "type": "AzureTable",
+      "connection string": "{{LEAD_CONNECTION_STRING}}"
+    }
+  },
+  "listing": {
+    "summary": "Enterprise-grade BPM/Workflow engine with Petri Net foundations, supporting 43+ workflow patterns for mission-critical business process automation.",
+    "language": "en",
+    "categories": [
+      {
+        "id": "developer-tools"
+      },
+      {
+        "id": "productivity"
+      }
+    ],
+    "industries": [
+      "Financial Services",
+      "Healthcare",
+      "Manufacturing",
+      "Government",
+      "Telecommunications"
+    ],
+    "keywords": [
+      "BPM",
+      "workflow",
+      "process automation",
+      "Petri Net",
+      "business process",
+      "workflow engine",
+      "YAWL",
+      "orchestration",
+      "Kubernetes",
+      "AKS"
+    ],
+    "logo": {
+      "small": {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/logo-48x48.png"
+      },
+      "large": {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/logo-216x216.png"
+      }
+    },
+    "screenshots": [
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/screenshots/dashboard.png",
+        "caption": "YAWL Process Dashboard - Real-time monitoring"
+      },
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/screenshots/designer.png",
+        "caption": "Visual Workflow Designer - Drag-and-drop process design"
+      },
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/screenshots/worklist.png",
+        "caption": "Work Item Queue - Task management interface"
+      },
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/screenshots/analytics.png",
+        "caption": "Process Analytics - Performance metrics and KPIs"
+      },
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/screenshots/azure-monitor.png",
+        "caption": "Azure Monitor Integration - Native observability"
+      }
+    ],
+    "videos": [
+      {
+        "url": "https://yawlfoundation.blob.core.windows.net/marketplace/videos/getting-started.mp4",
+        "title": "Getting Started with YAWL on Azure",
+        "thumbnail": "https://yawlfoundation.blob.core.windows.net/marketplace/videos/getting-started-thumb.png"
+      }
+    ],
+    "links": [
+      {
+        "type": "Privacy",
+        "url": "https://yawlfoundation.github.io/yawl/privacy"
+      },
+      {
+        "type": "Legal",
+        "url": "https://yawlfoundation.github.io/yawl/legal"
+      },
+      {
+        "type": "Support",
+        "url": "https://yawlfoundation.github.io/yawl/support"
+      },
+      {
+        "type": "Documentation",
+        "url": "https://yawlfoundation.github.io/yawl/"
+      }
+    ],
+    "contacts": [
+      {
+        "type": "Support",
+        "name": "YAWL Support Team",
+        "email": "support@yawlfoundation.org",
+        "phone": "+1-555-YAWL-HELP"
+      },
+      {
+        "type": "Engineering",
+        "name": "YAWL Engineering Team",
+        "email": "engineering@yawlfoundation.org"
+      }
+    ]
+  },
+  "technical configuration": {
+    "container": {
+      "type": "Kubernetes",
+      "images": [
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/engine:5.2.0",
+          "type": "engine"
+        },
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/resource-service:5.2.0",
+          "type": "resource-service"
+        },
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/worklet-service:5.2.0",
+          "type": "worklet-service"
+        },
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/monitor-service:5.2.0",
+          "type": "monitor-service"
+        },
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/scheduling-service:5.2.0",
+          "type": "scheduling-service"
+        },
+        {
+          "image": "yawlfoundation.azurecr.io/yawl/cost-service:5.2.0",
+          "type": "cost-service"
+        }
+      ],
+      "deploymentTemplates": [
+        {
+          "name": "Main Deployment",
+          "type": "ARM",
+          "url": "https://yawlfoundation.blob.core.windows.net/marketplace/arm-templates/main.json",
+          "filename": "main.json"
+        }
+      ],
+      "customerPlans": [
+        {
+          "planId": "basic",
+          "displayName": "Basic Tier",
+          "description": "Small team deployment with essential features",
+          "templates": [
+            {
+              "type": "ARM",
+              "url": "https://yawlfoundation.blob.core.windows.net/marketplace/arm-templates/main.json"
+            }
+          ]
+        },
+        {
+          "planId": "professional",
+          "displayName": "Professional Tier",
+          "description": "Growing organization deployment with advanced features",
+          "templates": [
+            {
+              "type": "ARM",
+              "url": "https://yawlfoundation.blob.core.windows.net/marketplace/arm-templates/main.json"
+            }
+          ]
+        },
+        {
+          "planId": "enterprise",
+          "displayName": "Enterprise Tier",
+          "description": "Large organization deployment with premium features",
+          "templates": [
+            {
+              "type": "ARM",
+              "url": "https://yawlfoundation.blob.core.windows.net/marketplace/arm-templates/main.json"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "plans": [
+    {
+      "id": "basic",
+      "displayName": "Basic Tier",
+      "description": "Perfect for small teams getting started with workflow automation. Includes core YAWL features with email support.",
+      "billing": {
+        "billingType": "Metered",
+        "prices": {
+          "pricesUsd": {
+            "monthly": 299.00,
+            "yearly": 2990.00
+          }
+        },
+        "meteredBilling": {
+          "dimensions": [
+            {
+              "id": "workflow_executions",
+              "displayName": "Workflow Executions",
+              "description": "Number of workflow instances executed",
+              "unitOfMeasure": "Executions",
+              "pricePerUnit": 0.05,
+              "includedQuantity": 1000
+            },
+            {
+              "id": "active_users",
+              "displayName": "Active Users",
+              "description": "Concurrent active users",
+              "unitOfMeasure": "Users",
+              "pricePerUnit": 10.00,
+              "includedQuantity": 5
+            }
+          ]
+        }
+      },
+      "supportedClouds": [
+        "public"
+      ],
+      "regions": [
+        "azureglobal"
+      ]
+    },
+    {
+      "id": "professional",
+      "displayName": "Professional Tier",
+      "description": "Ideal for growing organizations with moderate workflow needs. Includes advanced features and priority support.",
+      "billing": {
+        "billingType": "Metered",
+        "prices": {
+          "pricesUsd": {
+            "monthly": 999.00,
+            "yearly": 9990.00
+          }
+        },
+        "meteredBilling": {
+          "dimensions": [
+            {
+              "id": "workflow_executions",
+              "displayName": "Workflow Executions",
+              "description": "Number of workflow instances executed",
+              "unitOfMeasure": "Executions",
+              "pricePerUnit": 0.05,
+              "includedQuantity": 10000
+            },
+            {
+              "id": "active_users",
+              "displayName": "Active Users",
+              "description": "Concurrent active users",
+              "unitOfMeasure": "Users",
+              "pricePerUnit": 10.00,
+              "includedQuantity": 25
+            },
+            {
+              "id": "data_processed_gb",
+              "displayName": "Data Processed",
+              "description": "Total data processed through workflows",
+              "unitOfMeasure": "GB",
+              "pricePerUnit": 0.50,
+              "includedQuantity": 100
+            }
+          ]
+        }
+      },
+      "supportedClouds": [
+        "public"
+      ],
+      "regions": [
+        "azureglobal"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "displayName": "Enterprise Tier",
+      "description": "Designed for large organizations with high-volume workflow requirements. Includes premium support and advanced security.",
+      "billing": {
+        "billingType": "Metered",
+        "prices": {
+          "pricesUsd": {
+            "monthly": 2999.00,
+            "yearly": 29990.00
+          }
+        },
+        "meteredBilling": {
+          "dimensions": [
+            {
+              "id": "workflow_executions",
+              "displayName": "Workflow Executions",
+              "description": "Number of workflow instances executed",
+              "unitOfMeasure": "Executions",
+              "pricePerUnit": 0.05,
+              "includedQuantity": 100000
+            },
+            {
+              "id": "active_users",
+              "displayName": "Active Users",
+              "description": "Concurrent active users",
+              "unitOfMeasure": "Users",
+              "pricePerUnit": 10.00,
+              "includedQuantity": 100
+            },
+            {
+              "id": "data_processed_gb",
+              "displayName": "Data Processed",
+              "description": "Total data processed through workflows",
+              "unitOfMeasure": "GB",
+              "pricePerUnit": 0.50,
+              "includedQuantity": 1000
+            },
+            {
+              "id": "api_calls",
+              "displayName": "API Calls",
+              "description": "API requests to YAWL interfaces",
+              "unitOfMeasure": "1000 Calls",
+              "pricePerUnit": 1.00,
+              "includedQuantity": 5000
+            }
+          ]
+        }
+      },
+      "supportedClouds": [
+        "public"
+      ],
+      "regions": [
+        "azureglobal"
+      ]
+    }
+  ],
+  "availability": {
+    "audience": "Public",
+    "plans": [
+      {
+        "planId": "basic",
+        "displayName": "Basic Tier"
+      },
+      {
+        "planId": "professional",
+        "displayName": "Professional Tier"
+      },
+      {
+        "planId": "enterprise",
+        "displayName": "Enterprise Tier"
+      }
+    ],
+    "markets": [
+      "US",
+      "CA",
+      "GB",
+      "DE",
+      "FR",
+      "AU",
+      "JP",
+      "SG"
+    ]
+  },
+  "legal": {
+    "standardContract": {
+      "enabled": true
+    },
+    "termsOfUse": {
+      "url": "https://yawlfoundation.github.io/yawl/terms"
+    },
+    "privacyPolicy": {
+      "url": "https://yawlfoundation.github.io/yawl/privacy"
+    },
+    "eula": {
+      "url": "https://yawlfoundation.github.io/yawl/eula"
+    }
+  },
+  "metadata": {
+    "version": "5.2.0",
+    "releaseDate": "2025-02-01",
+    "lastUpdated": "2025-02-14",
+    "publisher": "YAWL Foundation",
+    "manufacturer": "YAWL Foundation",
+    "releaseNotes": "YAWL 5.2 includes Azure-native deployment, Azure AD integration, enhanced multi-tenant support, and improved performance for high-volume workflows."
+  }
+}

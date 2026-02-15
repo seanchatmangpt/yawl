@@ -1,6 +1,9 @@
 version: '3.8'
 
 services:
+  # =============================================================================
+  # Development Environment
+  # =============================================================================
   yawl-dev:
     build:
       context: .
@@ -10,29 +13,34 @@ services:
     volumes:
       - .:/workspace
     environment:
-      - JAVA_HOME=/usr/local/openjdk-21
-      - ANT_HOME=/opt/ant
-      - PATH=/opt/ant/bin:/usr/local/openjdk-21/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - JAVA_HOME=/opt/java/openjdk
+      - ANT_HOME=/usr/share/ant
+      - PATH=/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
     ports:
-      - "8080:8080"  # YAWL Engine
-      - "8081:8081"  # Tomcat
+      - "9080:8080"  # YAWL Engine (mapped to 9080 to avoid conflicts)
+      - "9081:8081"  # Tomcat
     stdin_open: true
     tty: true
     command: /bin/bash
     networks:
       - yawl-network
 
+  # =============================================================================
+  # Database - PostgreSQL
+  # =============================================================================
   postgres:
     image: postgres:15-alpine
     container_name: yawl-postgres
     environment:
       POSTGRES_USER: yawl
-      POSTGRES_PASSWORD: yawl
+      POSTGRES_PASSWORD: yawl123
       POSTGRES_DB: yawl
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
     networks:
       - yawl-network
     healthcheck:
@@ -40,6 +48,131 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # =============================================================================
+  # YAWL Engine - Core workflow engine (production)
+  # =============================================================================
+  engine:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.engine
+    container_name: yawl-engine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms512m -Xmx1024m -Djava.awt.headless=true
+      - RESOURCE_SERVICE_URL=http://resource-service:8080/ib
+      - WORKLET_SERVICE_URL=http://worklet-service:8080/ib
+    ports:
+      - "8888:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - yawl-network
+    profiles:
+      - production
+
+  # =============================================================================
+  # YAWL Resource Service - Resource allocation (production)
+  # =============================================================================
+  resource-service:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.resourceService
+    container_name: yawl-resource-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms256m -Xmx512m
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8081:8080"
+    networks:
+      - yawl-network
+    profiles:
+      - production
+
+  # =============================================================================
+  # YAWL Worklet Service - Dynamic workflow adaptation (production)
+  # =============================================================================
+  worklet-service:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.workletService
+    container_name: yawl-worklet-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms256m -Xmx512m
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8082:8080"
+    networks:
+      - yawl-network
+    profiles:
+      - production
+
+  # =============================================================================
+  # YAWL Monitor Service - Process monitoring (production)
+  # =============================================================================
+  monitor-service:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.monitorService
+    container_name: yawl-monitor-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD=yawl123
+      - JAVA_OPTS=-Xms128m -Xmx256m
+      - ENGINE_URL=http://engine:8080/ib
+    ports:
+      - "8083:8080"
+    networks:
+      - yawl-network
+    profiles:
+      - production
 
 networks:
   yawl-network:

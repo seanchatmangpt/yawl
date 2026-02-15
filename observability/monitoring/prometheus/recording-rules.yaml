@@ -1,0 +1,215 @@
+# YAWL Recording Rules for Prometheus
+# Pre-computed metrics for efficient queries and dashboards
+
+groups:
+  # ============================================================================
+  # Workflow Metrics
+  # ============================================================================
+  - name: yawl.workflow.recording_rules
+    interval: 30s
+    rules:
+      # Workflow throughput (per minute)
+      - record: yawl:workflow:throughput_1m
+        expr: sum(rate(yawl_workflow_completions_total[1m])) by (workflow_type)
+
+      # Workflow throughput (5 minute window)
+      - record: yawl:workflow:throughput_5m
+        expr: sum(rate(yawl_workflow_completions_total[5m])) by (workflow_type)
+
+      # Workflow success rate
+      - record: yawl:workflow:success_rate_5m
+        expr: |
+          sum(rate(yawl_workflow_completions_total{status="success"}[5m])) by (workflow_type)
+          /
+          sum(rate(yawl_workflow_completions_total[5m])) by (workflow_type)
+
+      # Workflow failure rate
+      - record: yawl:workflow:failure_rate_5m
+        expr: |
+          sum(rate(yawl_workflow_failures_total[5m])) by (workflow_type, error_type)
+          /
+          sum(rate(yawl_workflow_starts_total[5m])) by (workflow_type)
+
+      # Average workflow duration
+      - record: yawl:workflow:duration_avg_5m
+        expr: |
+          sum(rate(yawl_workflow_duration_seconds_sum[5m])) by (workflow_type)
+          /
+          sum(rate(yawl_workflow_duration_seconds_count[5m])) by (workflow_type)
+
+      # P50 workflow duration
+      - record: yawl:workflow:duration_p50_5m
+        expr: histogram_quantile(0.50, sum(rate(yawl_workflow_duration_seconds_bucket[5m])) by (le, workflow_type))
+
+      # P95 workflow duration
+      - record: yawl:workflow:duration_p95_5m
+        expr: histogram_quantile(0.95, sum(rate(yawl_workflow_duration_seconds_bucket[5m])) by (le, workflow_type))
+
+      # P99 workflow duration
+      - record: yawl:workflow:duration_p99_5m
+        expr: histogram_quantile(0.99, sum(rate(yawl_workflow_duration_seconds_bucket[5m])) by (le, workflow_type))
+
+      # Active workflow count
+      - record: yawl:workflow:active_count
+        expr: sum(yawl_workflows_active) by (workflow_type, status)
+
+      # Workflow queue depth
+      - record: yawl:workflow:queue_depth
+        expr: sum(yawl_workflows_queued) by (priority)
+
+  # ============================================================================
+  # Work Item Metrics
+  # ============================================================================
+  - name: yawl.workitem.recording_rules
+    interval: 30s
+    rules:
+      # Work item processing rate
+      - record: yawl:workitem:processing_rate_5m
+        expr: sum(rate(yawl_work_items_processed_total[5m])) by (task_type)
+
+      # Work item allocation latency
+      - record: yawl:workitem:allocation_latency_p95_5m
+        expr: histogram_quantile(0.95, sum(rate(yawl_work_item_allocation_seconds_bucket[5m])) by (le, task_type))
+
+      # Work item completion latency
+      - record: yawl:workitem:completion_latency_p95_5m
+        expr: histogram_quantile(0.95, sum(rate(yawl_work_item_completion_seconds_bucket[5m])) by (le, task_type))
+
+      # Queued work items by state
+      - record: yawl:workitem:queued_by_state
+        expr: sum(yawl_work_items_queued) by (state, priority)
+
+      # Work item timeout rate
+      - record: yawl:workitem:timeout_rate_5m
+        expr: sum(rate(yawl_work_item_timeouts_total[5m])) by (task_type)
+
+  # ============================================================================
+  # Resource Metrics
+  # ============================================================================
+  - name: yawl.resource.recording_rules
+    interval: 30s
+    rules:
+      # Resource utilization
+      - record: yawl:resource:utilization_ratio
+        expr: yawl_resources_allocated / yawl_resources_available
+
+      # Participant utilization
+      - record: yawl:participant:utilization_ratio
+        expr: yawl_participant_work_items_active / yawl_participant_work_items_max
+
+      # Role-based utilization
+      - record: yawl:role:utilization_ratio
+        expr: |
+          sum(yawl_role_members_active) by (role_id)
+          /
+          sum(yawl_role_members_total) by (role_id)
+
+      # Work queue depth
+      - record: yawl:queue:depth
+        expr: sum(yawl_work_queue_size) by (queue_name, queue_type)
+
+      # Queue wait time
+      - record: yawl:queue:wait_time_p95_5m
+        expr: histogram_quantile(0.95, sum(rate(yawl_queue_wait_seconds_bucket[5m])) by (le, queue_name))
+
+  # ============================================================================
+  # Database Metrics
+  # ============================================================================
+  - name: yawl.database.recording_rules
+    interval: 30s
+    rules:
+      # Connection pool utilization
+      - record: yawl:db:pool_utilization
+        expr: yawl_db_connections_active / yawl_db_connections_max
+
+      # Query rate
+      - record: yawl:db:query_rate_5m
+        expr: sum(rate(yawl_db_queries_total[5m])) by (query_type)
+
+      # Slow query rate
+      - record: yawl:db:slow_query_rate_5m
+        expr: sum(rate(yawl_db_slow_queries_total[5m])) by (query_type)
+
+      # Query latency
+      - record: yawl:db:query_latency_p99_5m
+        expr: histogram_quantile(0.99, sum(rate(yawl_db_query_duration_seconds_bucket[5m])) by (le, query_type))
+
+      # Transaction rate
+      - record: yawl:db:transaction_rate_5m
+        expr: sum(rate(yawl_db_transactions_total[5m])) by (transaction_type)
+
+  # ============================================================================
+  # SLO Metrics
+  # ============================================================================
+  - name: yawl.slo.recording_rules
+    interval: 1m
+    rules:
+      # Availability SLO (30-day window)
+      - record: yawl:slo:availability_30d
+        expr: |
+          (
+            sum(increase(yawl_workflow_completions_total{status="success"}[30d]))
+            /
+            sum(increase(yawl_workflow_starts_total[30d]))
+          )
+
+      # Latency SLO (percentage of requests under threshold)
+      - record: yawl:slo:latency_satisfied_5m
+        expr: |
+          sum(rate(yawl_workflow_duration_seconds_bucket{le="5"}[5m]))
+          /
+          sum(rate(yawl_workflow_duration_seconds_count[5m]))
+
+      # Error budget remaining
+      - record: yawl:slo:error_budget_remaining
+        expr: |
+          (
+            (yawl_slo_availability_target - (1 - yawl:slo:availability_30d))
+            /
+            yawl_slo_availability_target
+          )
+
+      # Error budget burn rate (hourly)
+      - record: yawl:slo:error_budget_burn_rate_hourly
+        expr: |
+          (
+            sum(rate(yawl_workflow_failures_total[1h]))
+            /
+            sum(rate(yawl_workflow_starts_total[1h]))
+          )
+          /
+          (1 - yawl_slo_availability_target)
+
+  # ============================================================================
+  # Aggregated Infrastructure Metrics
+  # ============================================================================
+  - name: yawl.infrastructure.recording_rules
+    interval: 30s
+    rules:
+      # CPU usage per service
+      - record: yawl:service:cpu_usage_5m
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container=~"yawl-.*"}[5m])) by (pod, container)
+
+      # Memory usage per service
+      - record: yawl:service:memory_usage
+        expr: |
+          sum(container_memory_working_set_bytes{container=~"yawl-.*"}) by (pod, container)
+
+      # Network traffic
+      - record: yawl:service:network_in_5m
+        expr: sum(rate(container_network_receive_bytes_total{container=~"yawl-.*"}[5m])) by (pod)
+
+      - record: yawl:service:network_out_5m
+        expr: sum(rate(container_network_transmit_bytes_total{container=~"yawl-.*"}[5m])) by (pod)
+
+      # Request rate per service
+      - record: yawl:service:request_rate_5m
+        expr: sum(rate(http_requests_total{service=~"yawl-.*"}[5m])) by (service, method)
+
+      # Error rate per service
+      - record: yawl:service:error_rate_5m
+        expr: |
+          sum(rate(http_requests_total{service=~"yawl-.*",status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total{service=~"yawl-.*"}[5m])) by (service)

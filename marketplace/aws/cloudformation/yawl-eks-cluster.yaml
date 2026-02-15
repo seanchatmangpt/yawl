@@ -1,0 +1,499 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YAWL Workflow Engine - EKS Cluster Configuration for AWS Marketplace'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Cluster Configuration'
+        Parameters:
+          - ClusterName
+          - KubernetesVersion
+          - ClusterEndpointAccess
+      - Label:
+          default: 'Network Configuration'
+        Parameters:
+          - VpcId
+          - PublicSubnetIds
+          - PrivateSubnetIds
+      - Label:
+          default: 'Node Group Configuration'
+        Parameters:
+          - NodeGroupName
+          - NodeInstanceType
+          - NodeGroupMinSize
+          - NodeGroupMaxSize
+          - NodeGroupDesiredSize
+      - Label:
+          default: 'Security Configuration'
+        Parameters:
+          - KeyPairName
+          - AllowedCidrBlocks
+
+Parameters:
+  ClusterName:
+    Type: String
+    Default: 'yawl-cluster'
+    Description: 'Name of the EKS cluster'
+    MinLength: 1
+    MaxLength: 100
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9\-]*$'
+
+  KubernetesVersion:
+    Type: String
+    Default: '1.28'
+    AllowedValues:
+      - '1.27'
+      - '1.28'
+      - '1.29'
+    Description: 'Kubernetes version for the cluster'
+
+  ClusterEndpointAccess:
+    Type: String
+    Default: 'private'
+    AllowedValues:
+      - 'public'
+      - 'private'
+      - 'public_and_private'
+    Description: 'Cluster endpoint access configuration'
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: 'VPC ID where the cluster will be deployed'
+
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'List of public subnet IDs for load balancers'
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'List of private subnet IDs for worker nodes'
+
+  NodeGroupName:
+    Type: String
+    Default: 'yawl-workers'
+    Description: 'Name of the managed node group'
+
+  NodeInstanceType:
+    Type: String
+    Default: 'm6i.xlarge'
+    AllowedValues:
+      - 'm5.xlarge'
+      - 'm5.2xlarge'
+      - 'm6i.xlarge'
+      - 'm6i.2xlarge'
+      - 'c5.xlarge'
+      - 'c5.2xlarge'
+      - 'c6i.xlarge'
+      - 'c6i.2xlarge'
+      - 'r5.xlarge'
+      - 'r5.2xlarge'
+      - 'r6i.xlarge'
+      - 'r6i.2xlarge'
+    Description: 'EC2 instance type for worker nodes'
+
+  NodeGroupMinSize:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 100
+    Description: 'Minimum number of worker nodes'
+
+  NodeGroupMaxSize:
+    Type: Number
+    Default: 10
+    MinValue: 1
+    MaxValue: 100
+    Description: 'Maximum number of worker nodes'
+
+  NodeGroupDesiredSize:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    MaxValue: 100
+    Description: 'Desired number of worker nodes'
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: 'EC2 Key Pair for SSH access to worker nodes'
+
+  AllowedCidrBlocks:
+    Type: CommaDelimitedList
+    Default: '10.0.0.0/8'
+    Description: 'CIDR blocks allowed to access the cluster API'
+
+Conditions:
+  HasPublicEndpoint: !Or
+    - !Equals [!Ref ClusterEndpointAccess, 'public']
+    - !Equals [!Ref ClusterEndpointAccess, 'public_and_private']
+
+Resources:
+  # IAM Role for EKS Cluster
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+      Policies:
+        - PolicyName: YAWLClusterPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:AttachNetworkInterface
+                  - ec2:DetachNetworkInterface
+                  - ec2:CreateNetworkInterfacePermission
+                Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ClusterName}-cluster-role'
+        - Key: Application
+          Value: YAWL
+
+  # IAM Role for EKS Node Group
+  EKSNodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: YAWLNodePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${YAWLDataBucket}'
+                  - !Sub 'arn:aws:s3:::${YAWLDataBucket}/*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:yawl/*'
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !GetAtt EncryptionKey.Arn
+      Tags:
+        - Key: Name
+          Value: !Sub '${ClusterName}-node-role'
+        - Key: Application
+          Value: YAWL
+
+  # KMS Key for encryption
+  EncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'YAWL EKS encryption key'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow EKS to use the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt EKSClusterRole.Arn
+                - !GetAtt EKSNodeRole.Arn
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+
+  EncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/yawl-eks-${ClusterName}'
+      TargetKeyId: !Ref EncryptionKey
+
+  # Security Group for EKS Cluster
+  EKSClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for EKS cluster control plane'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'HTTPS access to cluster API'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ClusterName}-cluster-sg'
+        - Key: Application
+          Value: YAWL
+
+  # Security Group for Worker Nodes
+  EKSNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for EKS worker nodes'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'SSH access'
+        - IpProtocol: tcp
+          FromPort: 1025
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref EKSClusterSecurityGroup
+          Description: 'Node port range from cluster'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref EKSClusterSecurityGroup
+          Description: 'HTTPS from cluster'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ClusterName}-node-sg'
+        - Key: Application
+          Value: YAWL
+
+  # Allow nodes to communicate with cluster
+  ClusterToNodeIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EKSNodeSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref EKSClusterSecurityGroup
+
+  NodeToClusterIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EKSClusterSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref EKSNodeSecurityGroup
+
+  # Allow nodes to communicate with each other
+  NodeToNodeIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EKSNodeSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref EKSNodeSecurityGroup
+
+  # EKS Cluster
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      Version: !Ref KubernetesVersion
+      RoleArn: !GetAtt EKSClusterRole.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref EKSClusterSecurityGroup
+        SubnetIds: !Split [',', !Join [',', !Ref PrivateSubnetIds]]
+      EncryptionConfig:
+        - Provider:
+            KeyArn: !GetAtt EncryptionKey.Arn
+          Resources:
+            - secrets
+      KubernetesNetworkConfig:
+        ServiceIpv4Cidr: '172.20.0.0/16'
+      Logging:
+        ClusterLogging:
+          EnabledTypes:
+            - Type: api
+            - Type: audit
+            - Type: authenticator
+            - Type: controllerManager
+            - Type: scheduler
+      Tags:
+        - Key: Name
+          Value: !Ref ClusterName
+        - Key: Application
+          Value: YAWL
+
+  # EKS Managed Node Group
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    DependsOn: EKSCluster
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodegroupName: !Ref NodeGroupName
+      NodeRole: !GetAtt EKSNodeRole.Arn
+      Subnets: !Split [',', !Join [',', !Ref PrivateSubnetIds]]
+      ScalingConfig:
+        MinSize: !Ref NodeGroupMinSize
+        MaxSize: !Ref NodeGroupMaxSize
+        DesiredSize: !Ref NodeGroupDesiredSize
+      InstanceTypes:
+        - !Ref NodeInstanceType
+      AmiType: AL2_x86_64
+      RemoteAccess:
+        Ec2SshKey: !Ref KeyPairName
+        SourceSecurityGroups:
+          - !Ref EKSNodeSecurityGroup
+      Labels:
+        application: yawl
+        tier: workload
+      Tags:
+        - Key: Name
+          Value: !Sub '${ClusterName}-${NodeGroupName}'
+        - Key: Application
+          Value: YAWL
+
+  # S3 Bucket for YAWL data
+  YAWLDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'yawl-data-${AWS::AccountId}-${AWS::Region}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt EncryptionKey.Arn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionToIA
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 90
+                StorageClass: STANDARD_IA
+          - Id: TransitionToGlacier
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 365
+                StorageClass: GLACIER
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  YAWLDataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref YAWLDataBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${YAWLDataBucket}'
+              - !Sub 'arn:aws:s3:::${YAWLDataBucket}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+          - Sid: AllowSSLRequestsOnly
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${YAWLDataBucket}'
+              - !Sub 'arn:aws:s3:::${YAWLDataBucket}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'true'
+
+Outputs:
+  ClusterName:
+    Description: 'EKS Cluster Name'
+    Value: !Ref EKSCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+
+  ClusterArn:
+    Description: 'EKS Cluster ARN'
+    Value: !GetAtt EKSCluster.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterArn'
+
+  ClusterEndpoint:
+    Description: 'EKS Cluster Endpoint'
+    Value: !GetAtt EKSCluster.Endpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterEndpoint'
+
+  ClusterCertificateAuthorityData:
+    Description: 'EKS Cluster Certificate Authority Data'
+    Value: !GetAtt EKSCluster.CertificateAuthorityData
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterCA'
+
+  NodeGroupArn:
+    Description: 'EKS Node Group ARN'
+    Value: !GetAtt EKSNodeGroup.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-NodeGroupArn'
+
+  ClusterSecurityGroupId:
+    Description: 'Cluster Security Group ID'
+    Value: !Ref EKSClusterSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterSG'
+
+  NodeSecurityGroupId:
+    Description: 'Node Security Group ID'
+    Value: !Ref EKSNodeSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-NodeSG'
+
+  DataBucketName:
+    Description: 'S3 Bucket for YAWL Data'
+    Value: !Ref YAWLDataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-DataBucket'
+
+  EncryptionKeyArn:
+    Description: 'KMS Key ARN for encryption'
+    Value: !GetAtt EncryptionKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-EncryptionKey'
+
+  KubectlConfigCommand:
+    Description: 'Command to update kubectl config'
+    Value: !Sub 'aws eks update-kubeconfig --name ${EKSCluster} --region ${AWS::Region}'

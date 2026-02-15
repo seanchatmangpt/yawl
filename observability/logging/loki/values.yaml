@@ -1,0 +1,272 @@
+# Loki Helm Values for YAWL Multi-Cloud Deployment
+# Distributed mode for production scalability
+
+# Deployment mode: distributed, simple-scalable, or single-binary
+deploymentMode: Distributed
+
+# Loki configuration
+loki:
+  # Common configuration
+  auth_enabled: true
+
+  # Ring configuration for distributed mode
+  ring:
+    kvstore:
+      store: memberlist
+    instance_addr: 127.0.0.1
+
+  # Storage configuration
+  storage:
+    type: s3
+    s3:
+      endpoint: ${S3_ENDPOINT}
+      region: ${AWS_REGION:-us-east-1}
+      bucketnames: ${LOKI_BUCKET_NAME}
+      access_key_id: ${AWS_ACCESS_KEY_ID}
+      secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+      s3forcepathstyle: true
+      insecure: false
+
+  # Schema configuration
+  schemaConfig:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+  # Limits configuration
+  limits_config:
+    enforce_metric_name: false
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    max_cache_freshness_per_query: 10m
+    max_query_length: 721h
+    max_query_parallelism: 32
+    per_stream_rate_limit: 10MB
+    per_stream_rate_limit_burst: 20MB
+    retention_period: 730h  # 30 days
+
+  # Compactor configuration for retention
+  compactor:
+    working_directory: /data/retention
+    shared_store: s3
+    compaction_interval: 10m
+    retention_enabled: true
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+    delete_request_store: s3
+
+  # Ingester configuration
+  ingester:
+    chunk_idle_period: 5m
+    chunk_block_size: 262144
+    chunk_retain_period: 1m
+    max_transfer_retries: 0
+    lifecycler:
+      ring:
+        kvstore:
+          store: inmemory
+        replication_factor: 3
+
+  # Querier configuration
+  querier:
+    max_concurrent: 20
+
+  # Query range configuration
+  query_range:
+    align_queries_with_step: true
+    max_retries: 5
+    parallelise_shardable_queries: true
+    cache_results: true
+    results_cache:
+      cache:
+        memcached_client:
+          consistent_hash: true
+          host: memcached.yawl-monitoring.svc
+          service: memcached-client
+          timeout: 500ms
+
+  # Ruler configuration for alerts
+  ruler:
+    enable_api: true
+    alertmanager_url: http://alertmanager.yawl-monitoring.svc:9093
+    storage:
+      type: s3
+      s3:
+        bucketnames: ${LOKI_RULES_BUCKET}
+
+# Single binary configuration (for non-distributed mode)
+singleBinary:
+  replicas: 0
+
+# Distributed mode components
+distributor:
+  replicas: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+ingester:
+  replicas: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 60
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+querier:
+  replicas: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 60
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+query-frontend:
+  replicas: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+compactor:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+index-gateway:
+  replicas: 2
+  persistence:
+    enabled: true
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+# Memcached for caching
+memcached:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+memcached-chunks:
+  enabled: true
+  replicas: 2
+
+memcached-queries:
+  enabled: true
+  replicas: 2
+
+memcached-index-queries:
+  enabled: true
+  replicas: 2
+
+memcached-metadata:
+  enabled: true
+  replicas: 2
+
+# Gateway (nginx)
+gateway:
+  enabled: true
+  replicas: 2
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# Service account and RBAC
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  create: true
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# Monitoring
+monitoring:
+  selfMonitoring:
+    enabled: true
+    grafanaAgent:
+      installOperator: false
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: prometheus
+
+# Dashboards
+dashboards:
+  enabled: true
+  labels:
+    grafana_dashboard: "1"

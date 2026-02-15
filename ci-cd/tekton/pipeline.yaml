@@ -1,0 +1,319 @@
+# Tekton Pipeline for YAWL Workflow Engine
+# Kubernetes-native CI/CD pipeline
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: yawl-pipeline
+  namespace: yawl-ci
+  labels:
+    app: yawl
+    pipeline: build-deploy
+spec:
+  description: YAWL Workflow Engine CI/CD Pipeline
+
+  params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+      default: 'https://github.com/yawlfoundation/yawl'
+    - name: git-revision
+      type: string
+      description: Git revision to build
+      default: 'main'
+    - name: image-tag
+      type: string
+      description: Docker image tag
+      default: 'latest'
+    - name: dockerfile-path
+      type: string
+      description: Path to Dockerfile
+      default: './Dockerfile'
+    - name: context-path
+      type: string
+      description: Build context path
+      default: '.'
+    - name: environment
+      type: string
+      description: Target environment
+      default: 'development'
+    - name: java-version
+      type: string
+      description: Java version to use
+      default: '17'
+
+  workspaces:
+    - name: shared-workspace
+      description: Shared workspace for pipeline tasks
+    - name: docker-config
+      description: Docker config for registry authentication
+    - name: kubeconfig
+      description: Kubernetes config for deployment
+
+  results:
+    - name: image-digest
+      description: Digest of the built image
+      value: $(tasks.build-image.results.image-digest)
+
+  tasks:
+    # ============================================
+    # Task 1: Clone Repository
+    # ============================================
+    - name: fetch-source
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+        - name: deleteExisting
+          value: 'true'
+
+    # ============================================
+    # Task 2: Build Application
+    # ============================================
+    - name: build-app
+      taskRef:
+        name: yawl-build
+      runAfter:
+        - fetch-source
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: java-version
+          value: $(params.java-version)
+        - name: context-path
+          value: $(params.context-path)
+
+    # ============================================
+    # Task 3: Run Unit Tests
+    # ============================================
+    - name: run-tests
+      taskRef:
+        name: yawl-test
+      runAfter:
+        - build-app
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: java-version
+          value: $(params.java-version)
+
+    # ============================================
+    # Task 4: Security Scan
+    # ============================================
+    - name: security-scan
+      taskRef:
+        name: trivy-scanner
+      runAfter:
+        - run-tests
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: scan-type
+          value: 'fs'
+        - name: severity
+          value: 'HIGH,CRITICAL'
+
+    # ============================================
+    # Task 5: Build Docker Image
+    # ============================================
+    - name: build-image
+      taskRef:
+        name: kaniko
+      runAfter:
+        - security-scan
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-config
+      params:
+        - name: IMAGE
+          value: 'yawl/yawl:$(params.image-tag)'
+        - name: DOCKERFILE
+          value: $(params.dockerfile-path)
+        - name: CONTEXT
+          value: $(params.context-path)
+        - name: BUILD_EXTRA_ARGS
+          value: |
+            --build-arg=VERSION=$(params.image-tag)
+            --build-arg=BUILD_DATE=$(tasks.fetch-source.results.commit-timestamp)
+            --build-arg=VCS_REF=$(tasks.fetch-source.results.commit-sha)
+
+    # ============================================
+    # Task 6: Scan Container Image
+    # ============================================
+    - name: scan-image
+      taskRef:
+        name: trivy-scanner
+      runAfter:
+        - build-image
+      params:
+        - name: scan-type
+          value: 'image'
+        - name: image-uri
+          value: 'yawl/yawl:$(params.image-tag)'
+        - name: severity
+          value: 'HIGH,CRITICAL'
+
+    # ============================================
+    # Task 7: Deploy to Kubernetes
+    # ============================================
+    - name: deploy
+      taskRef:
+        name: kubernetes-deploy
+      runAfter:
+        - scan-image
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: kubeconfig
+          workspace: kubeconfig
+      params:
+        - name: manifest-dir
+          value: 'k8s/'
+        - name: namespace
+          value: 'yawl-$(params.environment)'
+        - name: image
+          value: 'yawl/yawl:$(params.image-tag)'
+
+    # ============================================
+    # Task 8: Health Check
+    # ============================================
+    - name: health-check
+      taskRef:
+        name: kubectl-wait
+      runAfter:
+        - deploy
+      workspaces:
+        - name: kubeconfig
+          workspace: kubeconfig
+      params:
+        - name: namespace
+          value: 'yawl-$(params.environment)'
+        - name: resource-type
+          value: 'deployment'
+        - name: resource-name
+          value: 'yawl'
+        - name: condition
+          value: 'available'
+        - name: timeout
+          value: '600s'
+
+---
+# ============================================
+# Pipeline Run Template
+# ============================================
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: yawl-pipeline-run
+  namespace: yawl-ci
+  labels:
+    app: yawl
+    pipeline-run: manual
+spec:
+  pipelineRef:
+    name: yawl-pipeline
+  params:
+    - name: git-url
+      value: 'https://github.com/yawlfoundation/yawl'
+    - name: git-revision
+      value: 'main'
+    - name: image-tag
+      value: 'v5.2.0'
+    - name: environment
+      value: 'staging'
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+    - name: docker-config
+      secret:
+        secretName: docker-config-secret
+    - name: kubeconfig
+      secret:
+        secretName: kubeconfig-secret
+  serviceAccountName: yawl-pipeline-sa
+  timeout: 2h
+
+---
+# ============================================
+# Trigger Template
+# ============================================
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: yawl-trigger-template
+  namespace: yawl-ci
+spec:
+  params:
+    - name: git-revision
+    - name: git-url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: yawl-pipeline-
+        namespace: yawl-ci
+      spec:
+        pipelineRef:
+          name: yawl-pipeline
+        params:
+          - name: git-revision
+            value: $(tt.params.git-revision)
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: image-tag
+            value: $(tt.params.git-revision)
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Gi
+          - name: docker-config
+            secret:
+              secretName: docker-config-secret
+          - name: kubeconfig
+            secret:
+              secretName: kubeconfig-secret
+        serviceAccountName: yawl-pipeline-sa
+
+---
+# ============================================
+# Event Listener
+# ============================================
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: yawl-event-listener
+  namespace: yawl-ci
+spec:
+  serviceAccountName: yawl-pipeline-sa
+  triggers:
+    - name: github-push
+      bindings:
+        - ref: yawl-github-binding
+      template:
+        ref: yawl-trigger-template
+  resources:
+    kubernetesResource:
+      spec:
+        type: ClusterIP

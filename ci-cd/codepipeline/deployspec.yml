@@ -1,0 +1,246 @@
+# AWS CodeBuild Deploy Specification for YAWL Workflow Engine
+# Deploy stage for EKS Kubernetes deployment
+# Version: 5.2
+
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    EKS_CLUSTER_NAME: "yawl-cluster"
+    EKS_REGION: "us-east-1"
+    KUBECTL_VERSION: "1.28"
+    HELM_VERSION: "3.13.0"
+    NAMESPACE: "yawl"
+  parameter-store:
+    EKS_CLUSTER_NAME: "/yawl/eks/cluster-name"
+    EKS_REGION: "/yawl/eks/region"
+    SLACK_WEBHOOK_URL: "/yawl/notifications/slack-webhook"
+  secrets-manager:
+    AWS_ACCESS_KEY_ID: "yawl-aws-credentials:access-key-id"
+    AWS_SECRET_ACCESS_KEY: "yawl-aws-credentials:secret-access-key"
+  exported-variables:
+    - DEPLOYMENT_STATUS
+    - DEPLOYMENT_VERSION
+
+phases:
+  # ============================================
+  # Install Phase - Setup deployment tools
+  # ============================================
+  install:
+    runtime-versions:
+      java: corretto17
+    commands:
+      - echo "=== Install Phase Started at $(date) ==="
+      # Install kubectl
+      - echo "Installing kubectl ${KUBECTL_VERSION}..."
+      - curl -LO "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+      - kubectl version --client --short || kubectl version --client
+      # Install Helm
+      - echo "Installing Helm ${HELM_VERSION}..."
+      - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - helm version --short
+      # Install AWS CLI v2
+      - |
+        if ! command -v aws &> /dev/null; then
+          echo "Installing AWS CLI v2..."
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install
+          rm -rf awscliv2.zip aws
+        fi
+      - aws --version
+      # Install jq for JSON processing
+      - apt-get update && apt-get install -y jq curl
+
+  # ============================================
+  # Pre-Build Phase - Prepare deployment
+  # ============================================
+  pre_build:
+    commands:
+      - echo "=== Pre-Build Phase Started at $(date) ==="
+      # Read build info from artifact
+      - |
+        if [ -f build-info.json ]; then
+          DEPLOYMENT_VERSION=$(jq -r '.version' build-info.json)
+          IMAGE_TAG=$(jq -r '.commit' build-info.json | cut -c1-7)
+          echo "DEPLOYMENT_VERSION=$DEPLOYMENT_VERSION"
+          echo "IMAGE_TAG=$IMAGE_TAG"
+        else
+          DEPLOYMENT_VERSION="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}-${CODEBUILD_BUILD_NUMBER}"
+          IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}"
+        fi
+      # Configure AWS credentials
+      - echo "Configuring AWS credentials..."
+      - aws configure set default.region $EKS_REGION
+      - aws configure set output json
+      # Update kubeconfig for EKS cluster
+      - echo "Updating kubeconfig for EKS cluster: $EKS_CLUSTER_NAME"
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_REGION
+      # Verify cluster connectivity
+      - echo "Verifying cluster connectivity..."
+      - kubectl cluster-info
+      # Create namespace if it doesn't exist
+      - echo "Creating namespace $NAMESPACE if not exists..."
+      - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+      # Create image pull secret for ECR if not exists
+      - |
+        echo "Creating ECR image pull secret..."
+        ECR_TOKEN=$(aws ecr get-login-password --region $EKS_REGION)
+        kubectl create secret docker-registry ecr-credentials \
+          --docker-server=$AWS_ACCOUNT_ID.dkr.ecr.$EKS_REGION.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password=$ECR_TOKEN \
+          --namespace=$NAMESPACE \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+  # ============================================
+  # Build Phase - Deploy to EKS
+  # ============================================
+  build:
+    commands:
+      - echo "=== Build Phase (Deploy) Started at $(date) ==="
+      # Determine deployment strategy
+      - |
+        if [ "${CODEBUILD_SOURCE_VERSION}" = "main" ] || [ "${CODEBUILD_SOURCE_VERSION}" = "refs/heads/main" ]; then
+          ENVIRONMENT="production"
+          VALUES_FILE="values-prod.yaml"
+        elif [ "${CODEBUILD_SOURCE_VERSION}" = "develop" ] || [ "${CODEBUILD_SOURCE_VERSION}" = "refs/heads/develop" ]; then
+          ENVIRONMENT="staging"
+          VALUES_FILE="values-staging.yaml"
+        else
+          ENVIRONMENT="development"
+          VALUES_FILE="values-dev.yaml"
+        fi
+        echo "Deploying to environment: $ENVIRONMENT"
+        echo "Using values file: $VALUES_FILE"
+      # Deploy using Helm
+      - echo "Deploying YAWL with Helm..."
+      - |
+        if [ -d "helm/yawl" ]; then
+          helm upgrade --install yawl ./helm/yawl \
+            --namespace $NAMESPACE \
+            --set image.repository=$AWS_ACCOUNT_ID.dkr.ecr.$EKS_REGION.amazonaws.com/yawl \
+            --set image.tag=$IMAGE_TAG \
+            --set environment=$ENVIRONMENT \
+            --set buildVersion=$DEPLOYMENT_VERSION \
+            $(test -f helm/yawl/$VALUES_FILE && echo "-f helm/yawl/$VALUES_FILE") \
+            --wait \
+            --timeout 15m \
+            --atomic \
+            --debug
+        else
+          echo "Helm chart not found, using kubectl deployment..."
+          # Deploy using kubectl if Helm chart is not available
+          envsubst < k8s/deployment.yaml | kubectl apply -f - --namespace $NAMESPACE
+          kubectl rollout status deployment/yawl --namespace $NAMESPACE --timeout=15m
+        fi
+      # Verify deployment
+      - echo "Verifying deployment..."
+      - kubectl get pods -n $NAMESPACE -l app=yawl
+      - kubectl get services -n $NAMESPACE
+      - kubectl get ingress -n $NAMESPACE || true
+      # Run deployment health checks
+      - echo "Running health checks..."
+      - |
+        # Wait for pods to be ready
+        kubectl wait --for=condition=ready pod -l app=yawl -n $NAMESPACE --timeout=300s
+        # Check if pods are running
+        READY_PODS=$(kubectl get pods -n $NAMESPACE -l app=yawl -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | tr ' ' '\n' | grep -c "True" || echo "0")
+        TOTAL_PODS=$(kubectl get pods -n $NAMESPACE -l app=yawl --no-headers | wc -l)
+        echo "Ready pods: $READY_PODS / $TOTAL_PODS"
+        if [ "$READY_PODS" -lt "$TOTAL_PODS" ]; then
+          echo "Warning: Not all pods are ready"
+        fi
+
+  # ============================================
+  # Post-Build Phase - Post-deployment tasks
+  # ============================================
+  post_build:
+    commands:
+      - echo "=== Post-Build Phase Started at $(date) ==="
+      # Set deployment status
+      - DEPLOYMENT_STATUS="success"
+      # Get deployment information
+      - |
+        echo "Collecting deployment information..."
+        kubectl describe deployment yawl -n $NAMESPACE > reports/deployment-info.yaml || true
+        kubectl logs -l app=yawl -n $NAMESPACE --tail=100 > reports/pod-logs.txt || true
+      # Run post-deployment smoke tests
+      - echo "Running smoke tests..."
+      - |
+        SERVICE_URL=$(kubectl get ingress yawl-ingress -n $NAMESPACE -o jsonpath='{.spec.rules[0].host}' 2>/dev/null || echo "")
+        if [ -n "$SERVICE_URL" ]; then
+          echo "Testing service at: http://$SERVICE_URL"
+          curl -sf "http://$SERVICE_URL/health" || curl -sf "http://$SERVICE_URL/" || echo "Health check returned non-200"
+        fi
+      # Send deployment notification
+      - |
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          echo "Sending Slack notification..."
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"YAWL Deployment Completed\",
+              \"attachments\": [{
+                \"color\": \"good\",
+                \"fields\": [
+                  {\"title\": \"Environment\", \"value\": \"$ENVIRONMENT\", \"short\": true},
+                  {\"title\": \"Version\", \"value\": \"$DEPLOYMENT_VERSION\", \"short\": true},
+                  {\"title\": \"Cluster\", \"value\": \"$EKS_CLUSTER_NAME\", \"short\": true},
+                  {\"title\": \"Namespace\", \"value\": \"$NAMESPACE\", \"short\": true},
+                  {\"title\": \"Status\", \"value\": \"$DEPLOYMENT_STATUS\", \"short\": true},
+                  {\"title\": \"Build Number\", \"value\": \"$CODEBUILD_BUILD_NUMBER\", \"short\": true}
+                ]
+              }]
+            }" \
+            $SLACK_WEBHOOK_URL || true
+        fi
+      # Generate deployment report
+      - |
+        cat > deployment-report.json << EOF
+        {
+          "deploymentStatus": "$DEPLOYMENT_STATUS",
+          "deploymentVersion": "$DEPLOYMENT_VERSION",
+          "environment": "$ENVIRONMENT",
+          "cluster": "$EKS_CLUSTER_NAME",
+          "namespace": "$NAMESPACE",
+          "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+          "buildNumber": "$CODEBUILD_BUILD_NUMBER",
+          "commitSha": "$CODEBUILD_RESOLVED_SOURCE_VERSION"
+        }
+        EOF
+      - echo "Deployment completed successfully at $(date)"
+
+# ============================================
+# Reports Configuration
+# ============================================
+reports:
+  deployment-reports:
+    files:
+      - 'reports/**/*'
+    discard-paths: no
+
+# ============================================
+# Artifacts Configuration
+# ============================================
+artifacts:
+  files:
+    - deployment-report.json
+    - reports/**/*
+  discard-paths: no
+
+# ============================================
+# Cache Configuration
+# ============================================
+cache:
+  paths:
+    - '/root/.kube/**/*'
+    - '/root/.helm/**/*'
+    - '/root/.cache/**/*'
+
+# ============================================
+# onFailure - Handle deployment failures
+# ============================================
+# Note: This would be handled by a separate rollback spec if needed

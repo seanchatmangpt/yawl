@@ -1,0 +1,424 @@
+# YAWL Workflow Engine - IBM Cloud Marketplace Pricing Configuration
+# Version: 1.0
+# Last Updated: February 2025
+
+---
+pricing:
+  model: subscription_with_consumption  # IBM Cloud supports subscription + metering
+
+  # Currency configuration
+  currency: USD
+  price_currency: USD
+
+  # Free trial configuration
+  free_trial:
+    enabled: true
+    duration_days: 14
+    description: "14-day free trial with Professional Tier features"
+    plan: professional
+
+  # Subscription-based pricing tiers
+  plans:
+    - id: basic
+      name: "Basic"
+      description: |
+        Perfect for small teams getting started with workflow automation.
+        Includes core YAWL features with email support.
+
+      monthly_price: 299.00
+      annual_price: 2988.00  # ~17% discount for annual
+
+      limits:
+        workflow_executions: 1000
+        active_users: 5
+        data_processed_gb: 10
+        api_calls: 50000
+        worklet_invocations: 500
+
+      features:
+        - "1,000 workflow executions/month"
+        - "5 active users"
+        - "10 GB data processing"
+        - "50,000 API calls"
+        - "Email support"
+        - "Standard SLA (99.5%)"
+        - "IBM Cloud IAM integration"
+        - "Basic monitoring"
+
+      recommended_for: "Small teams, POC projects"
+
+      service_instance:
+        memory_gb: 4
+        cpu_cores: 2
+        storage_gb: 50
+        database_members: 2
+
+    - id: professional
+      name: "Professional"
+      description: |
+        Ideal for growing organizations with moderate workflow needs.
+        Includes advanced features and priority support.
+
+      monthly_price: 999.00
+      annual_price: 9996.00  # ~17% discount for annual
+
+      limits:
+        workflow_executions: 10000
+        active_users: 25
+        data_processed_gb: 100
+        api_calls: 500000
+        worklet_invocations: 5000
+
+      features:
+        - "10,000 workflow executions/month"
+        - "25 active users"
+        - "100 GB data processing"
+        - "500,000 API calls"
+        - "5,000 worklet invocations"
+        - "Priority email & chat support"
+        - "Enhanced SLA (99.9%)"
+        - "Audit logging"
+        - "Custom branding"
+        - "IBM Cloud Monitoring with Sysdig"
+        - "IBM Cloud Log Analysis"
+
+      recommended_for: "Growing teams, production workloads"
+      popular: true
+
+      service_instance:
+        memory_gb: 8
+        cpu_cores: 4
+        storage_gb: 200
+        database_members: 3
+
+    - id: enterprise
+      name: "Enterprise"
+      description: |
+        Designed for large organizations with high-volume workflow requirements.
+        Includes premium support and advanced security features.
+
+      monthly_price: 2999.00
+      annual_price: 29988.00  # ~17% discount for annual
+
+      limits:
+        workflow_executions: 100000
+        active_users: 100
+        data_processed_gb: 1000
+        api_calls: 5000000
+        worklet_invocations: 50000
+
+      features:
+        - "100,000 workflow executions/month"
+        - "100 active users"
+        - "1 TB data processing"
+        - "5,000,000 API calls"
+        - "50,000 worklet invocations"
+        - "24/7 phone, chat & email support"
+        - "Premium SLA (99.95%)"
+        - "SSO/SAML integration"
+        - "Advanced analytics"
+        - "API rate limiting customization"
+        - "Dedicated account manager"
+        - "IBM Key Protect integration"
+        - "IBM Cloud Activity Tracker"
+
+      recommended_for: "Large organizations, critical workflows"
+
+      service_instance:
+        memory_gb: 16
+        cpu_cores: 8
+        storage_gb: 500
+        database_members: 3
+
+    - id: unlimited
+      name: "Unlimited"
+      description: |
+        For organizations requiring unlimited scale with dedicated infrastructure.
+        Includes all features with premium enterprise support.
+
+      monthly_price: 9999.00
+      annual_price: 99996.00  # ~17% discount for annual
+
+      limits:
+        workflow_executions: -1  # Unlimited
+        active_users: -1  # Unlimited
+        data_processed_gb: -1  # Unlimited
+        api_calls: -1  # Unlimited
+        worklet_invocations: -1  # Unlimited
+
+      features:
+        - "Unlimited workflow executions"
+        - "Unlimited active users"
+        - "Unlimited data processing"
+        - "Unlimited API calls"
+        - "Unlimited worklet invocations"
+        - "24/7 dedicated support team"
+        - "Maximum SLA (99.99%)"
+        - "Dedicated infrastructure"
+        - "Custom integrations"
+        - "On-premise deployment option"
+        - "Quarterly business reviews"
+        - "Custom SLA negotiations"
+        - "IBM Cloud Internet Services (CDN/WAF)"
+        - "Dedicated Key Protect instance"
+
+      recommended_for: "Enterprise-scale, mission-critical deployments"
+      contact_sales: true
+
+      service_instance:
+        memory_gb: 32
+        cpu_cores: 16
+        storage_gb: 1000
+        database_members: 5
+
+  # Usage-based metering (for overage beyond subscription limits)
+  metering:
+    enabled: true
+    frequency: hourly  # IBM Cloud requirement
+
+    dimensions:
+      - key: workflow_executions
+        name: "Workflow Executions"
+        description: "Number of workflow instances executed beyond included allocation"
+        unit: "Executions"
+        rate: 0.05
+        aggregation: sum
+        display_order: 1
+
+      - key: active_users
+        name: "Additional Active Users"
+        description: "Concurrent active users beyond included allocation"
+        unit: "Users/Month"
+        rate: 10.00
+        aggregation: max
+        display_order: 2
+
+      - key: data_processed_gb
+        name: "Additional Data Processed"
+        description: "Total data processed through workflows in GB beyond included allocation"
+        unit: "GB"
+        rate: 0.50
+        aggregation: sum
+        display_order: 3
+
+      - key: api_calls
+        name: "Additional API Calls"
+        description: "API requests to YAWL interfaces beyond included allocation"
+        unit: "1000 Calls"
+        rate: 1.00
+        aggregation: sum
+        display_order: 4
+
+      - key: worklet_invocations
+        name: "Additional Worklet Invocations"
+        description: "Dynamic worklet rule executions beyond included allocation"
+        unit: "Invocations"
+        rate: 0.10
+        aggregation: sum
+        display_order: 5
+
+  # Overage pricing example calculations
+  overage_examples:
+    - plan: professional
+      scenario: "150% of workflow executions"
+      calculation:
+        included: 10000
+        actual: 15000
+        overage: 5000
+        overage_cost: 250.00  # 5000 * $0.05
+        total_monthly: 1249.00  # $999 + $250
+
+    - plan: enterprise
+      scenario: "Additional 50 users"
+      calculation:
+        included: 100
+        actual: 150
+        overage: 50
+        overage_cost: 500.00  # 50 * $10
+        total_monthly: 3499.00  # $2999 + $500
+
+  # Regional pricing adjustments (IBM Cloud regions)
+  regional_pricing:
+    # US Regions
+    us-south:
+      name: "US South (Dallas)"
+      multiplier: 1.00
+      currency: USD
+
+    us-east:
+      name: "US East (Washington DC)"
+      multiplier: 1.00
+      currency: USD
+
+    # European Regions
+    eu-de:
+      name: "EU Germany (Frankfurt)"
+      multiplier: 1.10
+      currency: USD
+
+    eu-gb:
+      name: "EU United Kingdom (London)"
+      multiplier: 1.10
+      currency: USD
+
+    # Asia Pacific Regions
+    jp-tok:
+      name: "Japan (Tokyo)"
+      multiplier: 1.05
+      currency: USD
+
+    au-syd:
+      name: "Australia (Sydney)"
+      multiplier: 1.10
+      currency: USD
+
+  # Private offer configuration
+  private_offers:
+    enabled: true
+    min_discount_percent: 10
+    max_discount_percent: 30
+    custom_terms_available: true
+
+  # BYOL (Bring Your Own License) configuration
+  byol:
+    enabled: true
+    description: "For customers with existing YAWL licenses"
+    price: 0.00
+    requirements:
+      - "Valid YAWL license certificate"
+      - "License transfer approval"
+      - "Annual verification"
+
+  # Bundle pricing (optional add-ons)
+  bundles:
+    - id: support_premium
+      name: "Premium Support Add-on"
+      monthly_price: 499.00
+      features:
+        - "4-hour response time"
+        - "Dedicated support engineer"
+        - "Quarterly architecture reviews"
+        - "Priority feature requests"
+
+    - id: security_compliance
+      name: "Security & Compliance Add-on"
+      monthly_price: 299.00
+      features:
+        - "HIPAA compliance module"
+        - "PCI DSS compliance module"
+        - "Enhanced audit logging"
+        - "Custom security policies"
+        - "IBM Cloud Activity Tracker integration"
+
+    - id: advanced_analytics
+      name: "Advanced Analytics Add-on"
+      monthly_price: 199.00
+      features:
+        - "Custom dashboards"
+        - "Advanced reporting"
+        - "Predictive analytics"
+        - "Historical data retention (2 years)"
+        - "IBM Cognos integration"
+
+    - id: disaster_recovery
+      name: "Disaster Recovery Add-on"
+      monthly_price: 399.00
+      features:
+        - "Cross-region replication"
+        - "Automated failover"
+        - "15-minute RPO"
+        - "1-hour RTO"
+        - "Annual DR testing"
+
+  # Volume discounts
+  volume_discounts:
+    - min_instances: 2
+      discount_percent: 5
+      description: "5% off for 2+ instances"
+
+    - min_instances: 5
+      discount_percent: 10
+      description: "10% off for 5+ instances"
+
+    - min_instances: 10
+      discount_percent: 15
+      description: "15% off for 10+ instances"
+
+    - min_instances: 25
+      discount_percent: 20
+      description: "Contact sales for 25+ instances"
+
+  # Contract terms available
+  contract_terms:
+    - duration: 12
+      unit: months
+      discount_percent: 17  # ~2 months free vs monthly
+      description: "Annual contract (17% savings)"
+
+    - duration: 24
+      unit: months
+      discount_percent: 25
+      description: "2-year contract (25% savings)"
+
+    - duration: 36
+      unit: months
+      discount_percent: 33
+      description: "3-year contract (33% savings)"
+
+  # IBM Cloud committed use discounts
+  committed_use:
+    enabled: true
+    minimum_commitment: 10000.00  # $10K minimum
+    discount_tiers:
+      - commitment: 10000
+        discount_percent: 5
+      - commitment: 25000
+        discount_percent: 10
+      - commitment: 50000
+        discount_percent: 15
+      - commitment: 100000
+        discount_percent: 20
+
+# Revenue share configuration (internal)
+revenue_share:
+  ibm_percentage: 20  # IBM takes 20% of transaction
+  seller_percentage: 80
+
+# Metering configuration (internal)
+metering_config:
+  batch_size: 100
+  retry_attempts: 3
+  retry_delay_seconds: 60
+  timeout_seconds: 30
+  queue_visibility_timeout: 300
+  dead_letter_queue_enabled: true
+  ibm_api_endpoint: "https://resource-controller.cloud.ibm.com/v2/usage"
+
+# IBM Cloud specific settings
+ibm_cloud:
+  resource_group:
+    default: "Default"
+    production: "YAWL-Production"
+
+  billing:
+    currency_support:
+      - USD
+      - EUR
+      - GBP
+      - JPY
+      - AUD
+
+  metering_api:
+    version: "v2"
+    endpoint: "https://global-search.cloud.ibm.com/api/v1"
+    usage_endpoint: "https://resource-controller.cloud.ibm.com/v2/usage"
+
+  support_codes:
+    - code: "YAWL-BASIC"
+      description: "Basic tier support"
+    - code: "YAWL-PRO"
+      description: "Professional tier support"
+    - code: "YAWL-ENT"
+      description: "Enterprise tier support"
+    - code: "YAWL-UNL"
+      description: "Unlimited tier support"

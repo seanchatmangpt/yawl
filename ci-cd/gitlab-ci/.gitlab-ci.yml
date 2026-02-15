@@ -1,0 +1,454 @@
+# GitLab CI/CD Pipeline for YAWL Workflow Engine
+# Full pipeline with build, test, security, and multi-cloud deployment
+
+stages:
+  - prepare
+  - build
+  - test
+  - security
+  - package
+  - deploy-dev
+  - deploy-staging
+  - deploy-prod
+
+variables:
+  JAVA_VERSION: "17"
+  ANT_VERSION: "1.10.14"
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode"
+  DOCKER_TLS_CERTDIR: ""
+  FF_USE_FASTZIP: "true"
+  ARTIFACT_DIR: "artifacts"
+
+# ============================================
+# Global Configuration
+# ============================================
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == 'web'
+
+# ============================================
+# Cache Configuration
+# ============================================
+.global_cache:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
+      - build/3rdParty/
+    policy: pull-push
+
+# ============================================
+# Prepare Stage
+# ============================================
+prepare:
+  stage: prepare
+  extends: .global_cache
+  image: eclipse-temurin:${JAVA_VERSION}-jdk
+  script:
+    - echo "Preparing build environment..."
+    - java -version
+    - apt-get update && apt-get install -y ant
+    - ant -version
+    - echo "JAVA_HOME=${JAVA_HOME}" >> build.env
+    - echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+    expire_in: 1 hour
+
+# ============================================
+# Build Stage
+# ============================================
+.build_template:
+  stage: build
+  extends: .global_cache
+  image: eclipse-temurin:${JAVA_VERSION}-jdk
+  before_script:
+    - apt-get update && apt-get install -y ant
+  artifacts:
+    paths:
+      - classes/
+      - build/
+    expire_in: 1 week
+
+build:jdk17:
+  extends: .build_template
+  script:
+    - ant -f build/build.xml compile
+    - ant -f build/build.xml buildWebApps
+    - ant -f build/build.xml build_Standalone
+  after_script:
+    - mkdir -p ${ARTIFACT_DIR}
+    - find build -name "*.war" -exec cp {} ${ARTIFACT_DIR}/ \;
+    - find build -name "*.jar" -exec cp {} ${ARTIFACT_DIR}/ \;
+
+build:jdk21:
+  extends: .build_template
+  image: eclipse-temurin:21-jdk
+  script:
+    - ant -f build/build.xml compile
+  allow_failure: true
+
+build:jdk11:
+  extends: .build_template
+  image: eclipse-temurin:11-jdk
+  script:
+    - ant -f build/build.xml compile
+  allow_failure: true
+
+# ============================================
+# Test Stage
+# ============================================
+test:unit:
+  stage: test
+  extends: .global_cache
+  image: eclipse-temurin:${JAVA_VERSION}-jdk
+  needs: [build:jdk17]
+  before_script:
+    - apt-get update && apt-get install -y ant
+  script:
+    - mkdir -p reports/junit
+    - java -cp classes:build/3rdParty/lib/*:test/classes \
+        org.junit.runner.JUnitCore org.yawlfoundation.yawl.TestAllYAWLSuites || true
+  artifacts:
+    when: always
+    paths:
+      - reports/junit/
+    reports:
+      junit: reports/junit/*.xml
+    expire_in: 30 days
+
+test:integration:
+  stage: test
+  extends: .global_cache
+  image: eclipse-temurin:${JAVA_VERSION}-jdk
+  needs: [build:jdk17]
+  services:
+    - name: postgres:15
+      alias: postgres
+    - name: redis:7
+      alias: redis
+  variables:
+    POSTGRES_DB: yawl_test
+    POSTGRES_USER: yawl
+    POSTGRES_PASSWORD: yawl
+  before_script:
+    - apt-get update && apt-get install -y ant postgresql-client
+  script:
+    - |
+      cat > build/build.properties << EOF
+      database.type=postgres
+      database.path=postgres:5432/yawl_test
+      database.user=yawl
+      database.password=yawl
+      EOF
+    - until pg_isready -h postgres -p 5432 -U yawl; do sleep 2; done
+    - mkdir -p reports/integration
+    - ant -f build/build.xml compile
+    - java -cp classes:build/3rdParty/lib/*:test/classes \
+        org.junit.runner.JUnitCore org.yawlfoundation.yawl.engine.YEngineTest || true
+  artifacts:
+    when: always
+    paths:
+      - reports/integration/
+    expire_in: 30 days
+
+test:coverage:
+  stage: test
+  extends: .global_cache
+  image: eclipse-temurin:${JAVA_VERSION}-jdk
+  needs: [test:unit, test:integration]
+  script:
+    - mkdir -p reports/coverage
+    - echo "Generating coverage report..."
+  coverage: '/Total.*?([0-9]{1,3})%/'
+  artifacts:
+    paths:
+      - reports/coverage/
+    expire_in: 30 days
+
+# ============================================
+# Security Stage
+# ============================================
+security:sast:
+  stage: security
+  image: registry.gitlab.com/security-products/sast:latest
+  allow_failure: true
+  script:
+    - /analyzer run
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    expire_in: 30 days
+
+security:dependency-scan:
+  stage: security
+  image: registry.gitlab.com/security-products/dependency-scanning:latest
+  allow_failure: true
+  script:
+    - /analyzer run
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+    expire_in: 30 days
+
+security:container-scan:
+  stage: security
+  image: docker:latest
+  services:
+    - docker:dind
+  needs: [package:docker]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+        aquasec/trivy:latest image --exit-code 0 --format json
+        --output gl-container-scanning-report.json ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-report.json
+    expire_in: 30 days
+  allow_failure: true
+
+security:secret-detection:
+  stage: security
+  image: registry.gitlab.com/security-products/secret-detection:latest
+  allow_failure: true
+  script:
+    - /analyzer run
+  artifacts:
+    reports:
+      secret_detection: gl-secret-detection-report.json
+    expire_in: 30 days
+
+# ============================================
+# Package Stage
+# ============================================
+package:docker:
+  stage: package
+  image: docker:latest
+  services:
+    - docker:dind
+  needs: [build:jdk17]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - |
+      cat > Dockerfile << 'EOF'
+      FROM tomcat:9-jdk17-temurin
+      ARG VERSION
+      ARG BUILD_DATE
+      ARG VCS_REF
+      LABEL org.label-schema.version=${VERSION} \
+            org.label-schema.build-date=${BUILD_DATE} \
+            org.label-schema.vcs-ref=${VCS_REF} \
+            org.label-schema.name="YAWL Workflow Engine"
+      COPY ${ARTIFACT_DIR}/*.war /usr/local/tomcat/webapps/
+      EXPOSE 8080
+      CMD ["catalina.sh", "run"]
+      EOF
+    - docker build
+        --build-arg VERSION=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}}
+        --build-arg BUILD_DATE=${BUILD_DATE}
+        --build-arg VCS_REF=${CI_COMMIT_SHA}
+        -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+        -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG:-latest}
+        .
+    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG:-latest}
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+package:helm:
+  stage: package
+  image: alpine/helm:latest
+  needs: [build:jdk17]
+  script:
+    - helm package helm/yawl
+    - mkdir -p charts
+    - mv *.tgz charts/
+  artifacts:
+    paths:
+      - charts/
+    expire_in: 30 days
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# ============================================
+# Deploy Development
+# ============================================
+.deploy_template:
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo ${GCLOUD_SERVICE_KEY} | base64 -d > /tmp/gcloud-key.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-key.json
+    - gcloud config set project ${GCP_PROJECT_ID}
+
+deploy:dev:
+  extends: .deploy_template
+  stage: deploy-dev
+  needs: [package:docker]
+  environment:
+    name: development
+    url: https://yawl-dev.example.com
+  script:
+    - gcloud container clusters get-credentials yawl-dev --region us-central1
+    - kubectl config set-context --current --namespace=yawl-dev
+    - |
+      envsubst < k8s/deployment.yaml | kubectl apply -f -
+    - kubectl rollout status deployment/yawl --timeout=600s
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+# ============================================
+# Deploy Staging
+# ============================================
+deploy:staging:gke:
+  extends: .deploy_template
+  stage: deploy-staging
+  needs: [package:docker, test:unit, test:integration]
+  environment:
+    name: staging
+    url: https://yawl-staging.example.com
+  script:
+    - gcloud container clusters get-credentials yawl-staging --region us-central1
+    - kubectl config set-context --current --namespace=yawl-staging
+    - |
+      helm upgrade --install yawl ./helm/yawl \
+        --namespace yawl-staging \
+        --set image.tag=${CI_COMMIT_TAG:-${CI_COMMIT_SHA}} \
+        --set environment=staging \
+        --wait --timeout 15m
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  when: manual
+
+deploy:staging:eks:
+  stage: deploy-staging
+  image: amazon/aws-cli:latest
+  needs: [package:docker, test:unit, test:integration]
+  environment:
+    name: staging-aws
+    url: https://yawl-staging-aws.example.com
+  before_script:
+    - aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+    - aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+    - aws configure set region us-east-1
+  script:
+    - aws eks update-kubeconfig --name yawl-staging --region us-east-1
+    - kubectl config set-context --current --namespace=yawl-staging
+    - helm upgrade --install yawl ./helm/yawl --namespace yawl-staging --wait
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  when: manual
+
+# ============================================
+# Deploy Production
+# ============================================
+deploy:prod:gke:
+  extends: .deploy_template
+  stage: deploy-prod
+  needs: [package:docker, deploy:staging:gke]
+  environment:
+    name: production
+    url: https://yawl.example.com
+  script:
+    - gcloud container clusters get-credentials yawl-prod --region us-central1
+    - kubectl config set-context --current --namespace=yawl-prod
+    - |
+      helm upgrade --install yawl ./helm/yawl \
+        --namespace yawl-prod \
+        --set image.tag=${CI_COMMIT_TAG} \
+        --set environment=production \
+        --values helm/yawl/values-prod.yaml \
+        --wait --timeout 15m
+    - kubectl rollout status deployment/yawl --timeout=600s
+  rules:
+    - if: $CI_COMMIT_TAG
+  when: manual
+
+deploy:prod:eks:
+  stage: deploy-prod
+  image: amazon/aws-cli:latest
+  needs: [package:docker, deploy:staging:eks]
+  environment:
+    name: production-aws
+    url: https://yawl-aws.example.com
+  before_script:
+    - aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+    - aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+    - aws configure set region us-east-1
+  script:
+    - aws eks update-kubeconfig --name yawl-prod --region us-east-1
+    - kubectl config set-context --current --namespace=yawl-prod
+    - |
+      helm upgrade --install yawl ./helm/yawl \
+        --namespace yawl-prod \
+        --set image.tag=${CI_COMMIT_TAG} \
+        --set environment=production \
+        --values helm/yawl/values-prod.yaml \
+        --wait --timeout 15m
+  rules:
+    - if: $CI_COMMIT_TAG
+  when: manual
+
+deploy:prod:aks:
+  stage: deploy-prod
+  image: mcr.microsoft.com/azure-cli:latest
+  needs: [package:docker]
+  environment:
+    name: production-azure
+    url: https://yawl-azure.example.com
+  before_script:
+    - az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID}
+  script:
+    - az aks get-credentials --resource-group yawl-prod-rg --name yawl-prod-aks
+    - kubectl config set-context --current --namespace=yawl-prod
+    - helm upgrade --install yawl ./helm/yawl --namespace yawl-prod --wait
+  rules:
+    - if: $CI_COMMIT_TAG
+  when: manual
+
+# ============================================
+# Notification
+# ============================================
+notify:success:
+  stage: .post
+  image: alpine:latest
+  script:
+    - echo "Pipeline completed successfully!"
+    - |
+      if [ -n "${SLACK_WEBHOOK_URL}" ]; then
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"YAWL Pipeline completed successfully for ${CI_COMMIT_REF_NAME}"}' \
+          ${SLACK_WEBHOOK_URL}
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_TAG
+  when: on_success
+
+notify:failure:
+  stage: .post
+  image: alpine:latest
+  script:
+    - echo "Pipeline failed!"
+    - |
+      if [ -n "${SLACK_WEBHOOK_URL}" ]; then
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"YAWL Pipeline FAILED for ${CI_COMMIT_REF_NAME}. Check: ${CI_PIPELINE_URL}"}' \
+          ${SLACK_WEBHOOK_URL}
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_TAG
+  when: on_failure

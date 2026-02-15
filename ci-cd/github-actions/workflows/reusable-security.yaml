@@ -1,0 +1,313 @@
+# Reusable Workflow - Security Scanning
+# YAWL Workflow Engine CI/CD
+#
+# Usage:
+#   jobs:
+#     security:
+#       uses: ./.github/workflows/reusable-security.yaml
+#       with:
+#         scan_types: 'sast,dependency,container'
+#       secrets: inherit
+
+name: Reusable Security Scan
+
+on:
+  workflow_call:
+    inputs:
+      scan_types:
+        description: 'Comma-separated scan types (sast,dependency,container,secret,iac)'
+        required: false
+        default: 'sast,dependency,secret,iac'
+        type: string
+      fail_on_vulnerability:
+        description: 'Fail on vulnerability found'
+        required: false
+        default: true
+        type: boolean
+      severity_threshold:
+        description: 'Minimum severity to fail (critical|high|medium|low)'
+        required: false
+        default: 'high'
+        type: string
+      upload_sarif:
+        description: 'Upload SARIF to GitHub Security'
+        required: false
+        default: true
+        type: boolean
+    outputs:
+      vulnerabilities_found:
+        description: 'Number of vulnerabilities found'
+        value: ${{ jobs.summary.outputs.vulnerabilities }}
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  # SAST - Static Application Security Testing
+  sast:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    if: contains(inputs.scan_types, 'sast')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+          queries: security-extended,security-and-quality
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Ant
+        uses: cedx/setup-ant@v4
+
+      - name: Build for CodeQL analysis
+        run: |
+          ant -f build/build.xml compile
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: sast
+          upload: ${{ inputs.upload_sarif }}
+
+  # Dependency Vulnerability Scan
+  dependency:
+    name: Dependency Scan
+    runs-on: ubuntu-latest
+    if: contains(inputs.scan_types, 'dependency')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'YAWL Workflow Engine'
+          path: '.'
+          format: 'ALL'
+          out: 'reports/dependency-check'
+          args: >
+            --enableExperimental
+            --failOnCVSS ${{ inputs.severity_threshold == 'critical' && '9' || inputs.severity_threshold == 'high' && '7' || inputs.severity_threshold == 'medium' && '4' || '0' }}
+
+      - name: Upload Dependency Check results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check/
+          retention-days: 30
+
+      - name: Upload to GitHub Security
+        if: ${{ inputs.upload_sarif && always() }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/dependency-check/dependency-check-report.sarif
+          category: dependency-check
+
+  # Secret Scanning
+  secret:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    if: contains(inputs.scan_types, 'secret')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified --fail
+        continue-on-error: true
+
+      - name: Generate secret scan report
+        run: |
+          mkdir -p reports/secrets
+          echo "Secret scan completed" > reports/secrets/summary.txt
+
+      - name: Upload secret scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: secret-scan-report
+          path: reports/secrets/
+          retention-days: 30
+
+  # IaC Security Scan
+  iac:
+    name: IaC Scan
+    runs-on: ubuntu-latest
+    if: contains(inputs.scan_types, 'iac')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Checkov scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform,cloudformation,kubernetes,dockerfile
+          output_format: cli,sarif,json
+          output_file_path: reports/iac/checkov-results
+          soft_fail: true
+        continue-on-error: true
+
+      - name: Run KICS scan
+        uses: checkmarx/kics-action@v1
+        with:
+          path: .
+          output_path: reports/iac/
+          output_formats: json,sarif
+        continue-on-error: true
+
+      - name: Upload IaC scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iac-scan-report
+          path: reports/iac/
+          retention-days: 30
+
+  # Container Security Scan
+  container:
+    name: Container Scan
+    runs-on: ubuntu-latest
+    if: contains(inputs.scan_types, 'container')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build container image
+        run: |
+          if [ -f containerization/Dockerfile.engine ]; then
+            docker build -f containerization/Dockerfile.engine -t yawl-scan:${{ github.sha }} .
+          else
+            echo "No Dockerfile found, skipping container scan"
+            exit 0
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: yawl-scan:${{ github.sha }}
+          format: 'sarif'
+          output: 'reports/container/trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+      - name: Run Grype vulnerability scanner
+        uses: anchore/scan-action@v3
+        with:
+          image: yawl-scan:${{ github.sha }}
+          output-format: sarif
+          severity-cutoff: high
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        if: ${{ inputs.upload_sarif && always() }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/container/trivy-results.sarif
+          category: container-scan
+
+      - name: Upload container scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-scan-report
+          path: reports/container/
+          retention-days: 30
+
+  # Summary Job
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [sast, dependency, secret, iac, container]
+    if: always()
+    outputs:
+      vulnerabilities: ${{ steps.count.outputs.vulnerabilities }}
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+
+      - name: Count vulnerabilities
+        id: count
+        run: |
+          VULN_COUNT=0
+
+          # Count from various reports
+          if [ -d "reports/dependency-check" ]; then
+            VULN_COUNT=$((VULN_COUNT + $(grep -c "HIGH\|CRITICAL" reports/dependency-check/*.json 2>/dev/null || echo 0)))
+          fi
+
+          if [ -d "reports/container" ]; then
+            VULN_COUNT=$((VULN_COUNT + $(grep -c "CRITICAL\|HIGH" reports/container/*.sarif 2>/dev/null || echo 0)))
+          fi
+
+          echo "vulnerabilities=$VULN_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate Security Summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST | ${{ needs.sast.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency | ${{ needs.dependency.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret | ${{ needs.secret.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| IaC | ${{ needs.iac.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | ${{ needs.container.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Vulnerabilities Found:** ${{ steps.count.outputs.vulnerabilities }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check vulnerability threshold
+        if: ${{ inputs.fail_on_vulnerability && steps.count.outputs.vulnerabilities > 0 }}
+        run: |
+          echo "::error::Found ${{ steps.count.outputs.vulnerabilities }} vulnerabilities exceeding threshold"
+          exit 1

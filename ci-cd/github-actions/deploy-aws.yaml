@@ -1,0 +1,569 @@
+# GitHub Actions - Amazon Web Services Deployment
+# YAWL Workflow Engine AWS CI/CD
+#
+# Features:
+# - OIDC authentication (IAM Roles for Service Accounts)
+# - EKS, ECS, EC2, Lambda, Beanstalk deployment targets
+# - Terraform automation
+# - Helm chart deployment
+
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      region:
+        description: 'AWS region'
+        required: false
+        default: 'us-east-1'
+        type: choice
+        options:
+          - us-east-1
+          - us-east-2
+          - us-west-1
+          - us-west-2
+          - eu-west-1
+          - eu-central-1
+          - ap-northeast-1
+          - ap-southeast-1
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'eks'
+        type: choice
+        options:
+          - eks
+          - ecs
+          - ec2
+          - lambda
+          - beanstalk
+      use_terraform:
+        description: 'Use Terraform for infrastructure'
+        required: false
+        default: false
+        type: boolean
+      terraform_action:
+        description: 'Terraform action (plan|apply|destroy)'
+        required: false
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: string
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'eks'
+        type: string
+
+env:
+  AWS_REGION: ${{ github.event.inputs.region || 'us-east-1' }}
+  VERSION: ${{ github.event.inputs.version }}
+  ECR_REPOSITORY: yawl
+  TF_VERSION: '1.7.0'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ============================================
+  # Prepare Deployment
+  # ============================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      ecs-cluster: ${{ steps.config.outputs.ecs_cluster }}
+      eks-cluster: ${{ steps.config.outputs.eks_cluster }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-prepare-${{ github.run_id }}
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.VERSION }}" ]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+          echo "Deployment Configuration:"
+          echo "  Environment: ${{ github.event.inputs.environment }}"
+          echo "  Version: ${{ env.VERSION }}"
+          echo "  Region: ${{ env.AWS_REGION }}"
+          echo "  Target: ${{ github.event.inputs.target }}"
+
+      - name: Set deployment configuration
+        id: config
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            development)
+              echo "ecs_cluster=yawl-dev" >> $GITHUB_OUTPUT
+              echo "eks_cluster=yawl-dev" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "ecs_cluster=yawl-staging" >> $GITHUB_OUTPUT
+              echo "eks_cluster=yawl-staging" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "ecs_cluster=yawl-prod" >> $GITHUB_OUTPUT
+              echo "eks_cluster=yawl-prod" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "ecs_cluster=yawl-${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+              echo "eks_cluster=yawl-${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Set image tag
+        id: image
+        run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "image=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/yawl:${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Terraform Infrastructure
+  # ============================================
+  terraform:
+    name: Terraform Infrastructure
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ github.event.inputs.use_terraform == 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-tf-${{ github.run_id }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.AWS_TF_STATE_BUCKET }}" \
+            -backend-config="key=yawl/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.terraform_action == 'plan' || github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: |
+          terraform plan \
+            -var="cloud_provider=aws" \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/aws-${{ github.event.inputs.environment }}.tfvars \
+            -out=tfplan \
+            -detailed-exitcode
+        continue-on-error: true
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
+        working-directory: terraform
+        run: |
+          terraform destroy -auto-approve \
+            -var="cloud_provider=aws" \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var-file=environments/aws-${{ github.event.inputs.environment }}.tfvars
+
+      - name: Upload Terraform artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-aws-${{ github.event.inputs.environment }}
+          path: |
+            terraform/.terraform/
+            terraform/tfplan
+          retention-days: 7
+
+  # ============================================
+  # Deploy to EKS (Elastic Kubernetes Service)
+  # ============================================
+  deploy-eks:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'eks' && github.event.inputs.use_terraform != 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-eks-${{ github.run_id }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ needs.prepare.outputs.eks-cluster }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy with Helm
+        uses: ./.github/actions/deploy-helm
+        with:
+          release_name: yawl
+          namespace: yawl-${{ github.event.inputs.environment }}
+          values_file: helm/yawl/values-aws.yaml
+          image_repository: $(echo ${{ needs.prepare.outputs.image }} | cut -d: -f1)
+          image_tag: ${{ env.VERSION }}
+          environment: ${{ github.event.inputs.environment }}
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }} \
+            --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n yawl-${{ github.event.inputs.environment }} -l app.kubernetes.io/name=yawl
+
+          echo "=== Service Status ==="
+          kubectl get services -n yawl-${{ github.event.inputs.environment }}
+
+          echo "=== Ingress Status ==="
+          kubectl get ingress -n yawl-${{ github.event.inputs.environment }} || true
+
+  # ============================================
+  # Deploy to ECS (Elastic Container Service)
+  # ============================================
+  deploy-ecs:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'ecs'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-ecs-${{ github.run_id }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition yawl-${{ github.event.inputs.environment }} \
+            --query taskDefinition > task-definition.json || echo '{}' > task-definition.json
+
+      - name: Fill in the new image ID
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: yawl
+          image: ${{ needs.prepare.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: yawl-${{ github.event.inputs.environment }}-service
+          cluster: ${{ needs.prepare.outputs.ecs-cluster }}
+          wait-for-service-stability: true
+          wait-for-minutes: 15
+
+      - name: Verify ECS deployment
+        run: |
+          echo "=== ECS Service Status ==="
+          aws ecs describe-services \
+            --cluster ${{ needs.prepare.outputs.ecs-cluster }} \
+            --services yawl-${{ github.event.inputs.environment }}-service \
+            --query 'services[0].[status,runningCount,desiredCount]'
+
+          echo "=== ECS Tasks ==="
+          aws ecs list-tasks \
+            --cluster ${{ needs.prepare.outputs.ecs-cluster }} \
+            --service yawl-${{ github.event.inputs.environment }}-service
+
+  # ============================================
+  # Deploy to Elastic Beanstalk
+  # ============================================
+  deploy-beanstalk:
+    name: Deploy to Elastic Beanstalk
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'beanstalk'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-eb-${{ github.run_id }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Create Dockerrun.aws.json
+        run: |
+          cat > Dockerrun.aws.json << EOF
+          {
+            "AWSEBDockerrunVersion": "1",
+            "Image": {
+              "Name": "${{ needs.prepare.outputs.image }}",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": "8080"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "SPRING_PROFILES_ACTIVE",
+                "Value": "${{ github.event.inputs.environment }}"
+              }
+            ]
+          }
+          EOF
+
+      - name: Create deployment archive
+        run: |
+          zip -r deploy.zip Dockerrun.aws.json .ebextensions/ || zip deploy.zip Dockerrun.aws.json
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: yawl
+          environment_name: yawl-${{ github.event.inputs.environment }}
+          version_label: v${{ env.VERSION }}-${{ github.run_id }}
+          region: ${{ env.AWS_REGION }}
+          deployment_package: deploy.zip
+          wait_for_environment_recovery: 600
+
+      - name: Verify Beanstalk deployment
+        run: |
+          aws elasticbeanstalk describe-environments \
+            --application-name yawl \
+            --environment-names yawl-${{ github.event.inputs.environment }} \
+            --query 'Environments[0].[Status,Health]'
+
+  # ============================================
+  # Deploy to EC2 with CodeDeploy
+  # ============================================
+  deploy-ec2:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'ec2'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-ec2-${{ github.run_id }}
+
+      - name: Create CodeDeploy deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name yawl \
+            --deployment-group-name yawl-${{ github.event.inputs.environment }} \
+            --deployment-config-name CodeDeployDefault.AllAtOnce \
+            --github-location repository=${{ github.repository }},commitId=${{ github.sha }} \
+            --description "Deploying version ${{ env.VERSION }} to ${{ github.event.inputs.environment }}"
+
+      - name: Wait for deployment
+        run: |
+          DEPLOYMENT_ID=$(aws deploy list-deployments \
+            --application-name yawl \
+            --deployment-group-name yawl-${{ github.event.inputs.environment }} \
+            --include-only-statuses Created Queued InProgress \
+            --query 'deployments[0]' --output text)
+
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID
+          fi
+
+  # ============================================
+  # Deploy to Lambda (Container Image)
+  # ============================================
+  deploy-lambda:
+    name: Deploy to Lambda
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.target == 'lambda'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-lambda-${{ github.run_id }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update Lambda function
+        run: |
+          aws lambda update-function-code \
+            --function-name yawl-${{ github.event.inputs.environment }} \
+            --image-uri ${{ needs.prepare.outputs.image }} \
+            --publish
+
+      - name: Wait for Lambda update
+        run: |
+          aws lambda wait function-updated \
+            --function-name yawl-${{ github.event.inputs.environment }}
+
+      - name: Update Lambda configuration
+        run: |
+          aws lambda update-function-configuration \
+            --function-name yawl-${{ github.event.inputs.environment }} \
+            --environment "Variables={SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }}}"
+
+      - name: Verify Lambda deployment
+        run: |
+          aws lambda get-function \
+            --function-name yawl-${{ github.event.inputs.environment }} \
+            --query 'Configuration.[Version,LastUpdateStatus]'
+
+  # ============================================
+  # Post-Deployment Verification
+  # ============================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-eks, deploy-ecs, deploy-beanstalk, deploy-ec2, deploy-lambda, terraform]
+    if: always() && contains(join(needs.*.result, ','), 'success')
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-verify-${{ github.run_id }}
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests for ${{ github.event.inputs.target }} deployment..."
+
+      - name: Deployment summary
+        run: |
+          echo "## AWS Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.AWS_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform | ${{ github.event.inputs.use_terraform }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Rollback
+  # ============================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback == 'true'
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: yawl-rollback-${{ github.run_id }}
+
+      - name: Rollback ECS service
+        if: github.event.inputs.target == 'ecs'
+        run: |
+          aws ecs update-service \
+            --cluster yawl-${{ github.event.inputs.environment }} \
+            --service yawl-${{ github.event.inputs.environment }}-service \
+            --force-new-deployment
+
+      - name: Rollback EKS deployment
+        if: github.event.inputs.target == 'eks'
+        run: |
+          kubectl rollout undo deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }}

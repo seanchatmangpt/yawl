@@ -1,0 +1,38 @@
+{{- if .Values.awsRdsProxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "yawl.fullname" . }}-rds-proxy
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rds-proxy
+  annotations:
+    # External name for AWS RDS Proxy endpoint
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.awsRdsProxy.endpoint }}
+spec:
+  type: ExternalName
+  externalName: {{ .Values.awsRdsProxy.endpoint }}
+  ports:
+    - name: postgres
+      port: {{ .Values.awsRdsProxy.port }}
+      targetPort: {{ .Values.awsRdsProxy.port }}
+      protocol: TCP
+---
+{{- if .Values.awsRdsProxy.iamAuth.enabled }}
+# IAM authentication configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yawl.fullname" . }}-rds-proxy-config
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rds-proxy-config
+data:
+  AWS_REGION: {{ .Values.awsRdsProxy.iamAuth.region | quote }}
+  RDS_PROXY_ENDPOINT: {{ .Values.awsRdsProxy.endpoint | quote }}
+  RDS_PROXY_PORT: {{ .Values.awsRdsProxy.port | quote }}
+  IAM_AUTH_ENABLED: "true"
+{{- end }}
+{{- end }}

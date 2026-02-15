@@ -7,3 +7,5 @@ exampleSpecs/xml/*.xsd
 src/org/yawlfoundation/yawl/unmarshal/*.xsd
 
 !/src/org/yawlfoundation/yawl/balancer/output/
+logs/
+build/jar/*.jar

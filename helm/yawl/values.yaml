@@ -1,0 +1,693 @@
+# YAWL Helm Chart - Default Values
+# This file contains default configuration values for YAWL deployment
+# Override these values with environment-specific values files
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  namespace: yawl
+  labels: {}
+  annotations: {}
+
+# -----------------------------------------------------------------------------
+# YAWL Version
+# -----------------------------------------------------------------------------
+yawlVersion: "5.2"
+buildNumber: "1724"
+
+# -----------------------------------------------------------------------------
+# Cloud Provider Configuration
+# -----------------------------------------------------------------------------
+cloudProvider: ""  # gcp, aws, azure, oracle, ibm, or empty for generic
+
+# -----------------------------------------------------------------------------
+# Image Configuration
+# -----------------------------------------------------------------------------
+image:
+  registry: docker.io
+  repository: yawl/yawl
+  tag: "5.2"
+  pullPolicy: IfNotPresent
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "yawl"
+    password: "yawl"
+    database: "yawl"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+  readReplicas:
+    replicaCount: 0
+
+# External PostgreSQL (when postgresql.enabled is false)
+externalDatabase:
+  host: ""
+  port: 5432
+  database: yawl
+  user: postgres
+  password: ""
+  existingSecret: ""
+  existingSecretPasswordKey: password
+
+# -----------------------------------------------------------------------------
+# Redis Configuration
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "yawl-redis"
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+  replica:
+    replicaCount: 1
+
+# External Redis (when redis.enabled is false)
+externalRedis:
+  host: ""
+  port: 6379
+  password: ""
+  existingSecret: ""
+  existingSecretPasswordKey: password
+
+# -----------------------------------------------------------------------------
+# Service Configuration (7 Core Services)
+# -----------------------------------------------------------------------------
+services:
+  engine:
+    name: engine
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: yawl/engine
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+    livenessProbe:
+      httpGet:
+        path: /engine/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /engine/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  resourceService:
+    name: resource-service
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: yawl/resource-service
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+    livenessProbe:
+      httpGet:
+        path: /resourceService/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /resourceService/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  workletService:
+    name: worklet-service
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: yawl/worklet-service
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+    livenessProbe:
+      httpGet:
+        path: /workletService/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /workletService/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  monitorService:
+    name: monitor-service
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/monitor-service
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    livenessProbe:
+      httpGet:
+        path: /monitorService/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /monitorService/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  costService:
+    name: cost-service
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/cost-service
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    livenessProbe:
+      httpGet:
+        path: /costService/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /costService/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  schedulingService:
+    name: scheduling-service
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/scheduling-service
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    livenessProbe:
+      httpGet:
+        path: /schedulingService/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /schedulingService/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+  balancer:
+    name: balancer
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: yawl/balancer
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+      annotations: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    livenessProbe:
+      httpGet:
+        path: /balancer/health
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /balancer/ready
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    env: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+# -----------------------------------------------------------------------------
+# Additional Services
+# -----------------------------------------------------------------------------
+additionalServices:
+  mailService:
+    name: mail-service
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/mail-service
+      tag: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+
+  digitalSignature:
+    name: digital-signature
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/digital-signature
+      tag: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+
+  documentStore:
+    name: document-store
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/document-store
+      tag: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+
+  procletService:
+    name: proclet-service
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: yawl/proclet-service
+      tag: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: yawl.example.com
+      paths:
+        - path: /engine
+          pathType: Prefix
+          service: engine
+        - path: /resourceService
+          pathType: Prefix
+          service: resource-service
+        - path: /workletService
+          pathType: Prefix
+          service: worklet-service
+        - path: /monitorService
+          pathType: Prefix
+          service: monitor-service
+        - path: /costService
+          pathType: Prefix
+          service: cost-service
+        - path: /schedulingService
+          pathType: Prefix
+          service: scheduling-service
+        - path: /mailService
+          pathType: Prefix
+          service: mail-service
+        - path: /digitalSignature
+          pathType: Prefix
+          service: digital-signature
+        - path: /documentStore
+          pathType: Prefix
+          service: document-store
+        - path: /procletService
+          pathType: Prefix
+          service: proclet-service
+        - path: /balancer
+          pathType: Prefix
+          service: balancer
+  tls:
+    - secretName: yawl-tls-secret
+      hosts:
+        - yawl.example.com
+
+# -----------------------------------------------------------------------------
+# Service Account
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  labels: {}
+  automountServiceAccountToken: true
+
+# -----------------------------------------------------------------------------
+# Pod Disruption Budget
+# -----------------------------------------------------------------------------
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# -----------------------------------------------------------------------------
+# Network Policy
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 6379  # Redis
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53  # DNS
+        - protocol: UDP
+          port: 53
+
+# -----------------------------------------------------------------------------
+# Security Context
+# -----------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# -----------------------------------------------------------------------------
+# JVM Configuration
+# -----------------------------------------------------------------------------
+jvm:
+  opts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+  catalinaOpts: "-Djava.security.egd=file:/dev/./urandom"
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  yawl: WARN
+  worklet: INFO
+  resource: INFO
+  scheduling: DEBUG
+  proclet: INFO
+  hibernate: ERROR
+  root: ERROR
+  mail: INFO
+
+# -----------------------------------------------------------------------------
+# Secrets Configuration
+# -----------------------------------------------------------------------------
+secrets:
+  database:
+    create: true
+    name: ""
+    user: postgres
+    password: yawl
+  apiKeys:
+    create: true
+    name: ""
+    engineApiKey: ""
+    resourceServiceKey: ""
+    workletServiceKey: ""
+
+# -----------------------------------------------------------------------------
+# Cloud-Specific Settings
+# -----------------------------------------------------------------------------
+# GCP CloudSQL Proxy
+cloudsqlProxy:
+  enabled: false
+  instanceConnectionName: ""
+  serviceAccount: ""
+  serviceAccountJson: ""
+  proxyPort: 5432
+
+# AWS RDS Proxy
+awsRdsProxy:
+  enabled: false
+  endpoint: ""
+  port: 5432
+
+# Azure Database
+azureDatabase:
+  enabled: false
+  serverName: ""
+
+# Oracle Cloud
+oracleDatabase:
+  enabled: false
+  ocid: ""
+
+# IBM Cloud
+ibmDatabase:
+  enabled: false
+  instanceId: ""
+
+# -----------------------------------------------------------------------------
+# Node Selector, Tolerations, Affinity
+# -----------------------------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+# -----------------------------------------------------------------------------
+# Priority Class
+# -----------------------------------------------------------------------------
+priorityClassName: ""
+
+# -----------------------------------------------------------------------------
+# Termination Grace Period
+# -----------------------------------------------------------------------------
+terminationGracePeriodSeconds: 30
+
+# -----------------------------------------------------------------------------
+# Init Containers
+# -----------------------------------------------------------------------------
+initContainers: []
+
+# -----------------------------------------------------------------------------
+# Extra Resources
+# -----------------------------------------------------------------------------
+extraDeploy: []

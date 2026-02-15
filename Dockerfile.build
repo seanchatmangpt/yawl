@@ -1,0 +1,69 @@
+# =============================================================================
+# YAWL Build Image - Builds YAWL from source
+# =============================================================================
+FROM eclipse-temurin:17-jdk AS builder
+
+# Install Ant manually
+RUN apt-get update && apt-get install -y ant curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy source files
+COPY build/ ./build/
+COPY src/ ./src/
+COPY schema/ ./schema/
+COPY exampleSpecs/ ./exampleSpecs/
+
+# Build YAWL
+RUN cd build && ant buildWebApps
+
+# Output directory
+RUN mkdir -p /output && \
+    cp -r output/wars /output/ && \
+    cp -r build/3rdParty/lib /output/libs
+
+# =============================================================================
+# YAWL Runtime Image
+# =============================================================================
+FROM eclipse-temurin:17-jre AS runtime
+
+ARG SERVICE=engine
+
+# Install dependencies
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Create user
+RUN groupadd -r yawl && useradd -r -g yawl -d /yawl yawl
+
+# Create directories
+RUN mkdir -p /yawl /opt/tomcat /data && chown -R yawl:yawl /yawl /opt/tomcat /data
+
+# Download Tomcat
+RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.89/bin/apache-tomcat-9.0.89.tar.gz" \
+    | tar -xzf - -C /opt/tomcat --strip-components=1 && \
+    rm -rf /opt/tomcat/webapps/* && \
+    chown -R yawl:yawl /opt/tomcat
+
+# Copy built WAR from builder
+COPY --from=builder --chown=yawl:yawl /output/wars/yawl.war /opt/tomcat/webapps/ROOT.war
+COPY --from=builder --chown=yawl:yawl /output/libs/*.jar /opt/tomcat/lib/
+
+# Environment
+ENV CATALINA_HOME=/opt/tomcat \
+    JAVA_OPTS="-Xms512m -Xmx1024m" \
+    DB_TYPE=postgres \
+    DB_HOST=postgres \
+    DB_PORT=5432 \
+    DB_NAME=yawl \
+    DB_USER=yawl \
+    DB_PASSWORD=yawl
+
+USER yawl
+WORKDIR /yawl
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

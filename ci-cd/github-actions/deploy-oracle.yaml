@@ -1,0 +1,414 @@
+# GitHub Actions - Oracle Cloud Infrastructure Deployment
+# YAWL Workflow Engine OCI CI/CD
+
+name: Deploy to Oracle Cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      region:
+        description: 'OCI region'
+        required: false
+        default: 'us-phoenix-1'
+        type: choice
+        options:
+          - us-phoenix-1
+          - us-ashburn-1
+          - eu-frankfurt-1
+          - ap-tokyo-1
+          - ap-sydney-1
+      target:
+        description: 'Deployment target'
+        required: false
+        default: 'oke'
+        type: choice
+        options:
+          - oke
+          - container-instances
+          - functions
+          - compute
+
+env:
+  OCI_REGION: ${{ github.event.inputs.region || 'us-phoenix-1' }}
+  VERSION: ${{ github.event.inputs.version }}
+  OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+  IMAGE_NAME: yawl
+
+jobs:
+  # ============================================
+  # Prepare Deployment
+  # ============================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      oke-cluster: ${{ steps.config.outputs.oke_cluster }}
+      registry: ${{ steps.config.outputs.registry }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.VERSION }}" ]; then
+            echo "Error: Version is required"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.OCI_COMPARTMENT_ID }}" ]; then
+            echo "Error: OCI_COMPARTMENT_ID secret is not set"
+            exit 1
+          fi
+
+          echo "Deployment Configuration:"
+          echo "  Environment: ${{ github.event.inputs.environment }}"
+          echo "  Version: ${{ env.VERSION }}"
+          echo "  Region: ${{ env.OCI_REGION }}"
+          echo "  Target: ${{ github.event.inputs.target }}"
+
+      - name: Set deployment configuration
+        id: config
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            development)
+              echo "oke_cluster=yawl-dev-cluster" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "oke_cluster=yawl-staging-cluster" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "oke_cluster=yawl-prod-cluster" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+          TENANCY=$(echo "${{ secrets.OCI_TENANCY }}" | tr '[:upper:]' '[:lower:]')
+          REGION="${{ env.OCI_REGION }}"
+          echo "registry=${REGION}.ocir.io/${TENANCY}/yawl" >> $GITHUB_OUTPUT
+
+      - name: Set image tag
+        id: image
+        run: |
+          echo "image=${{ steps.config.outputs.registry }}:${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Authenticate to OCI
+  # ============================================
+  oci-auth:
+    name: OCI Authentication
+    runs-on: ubuntu-latest
+    needs: prepare
+
+    steps:
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify OCI access
+        run: |
+          oci os ns get --auth security_token || echo "OCI CLI ready"
+
+  # ============================================
+  # Deploy to OKE (Oracle Kubernetes Engine)
+  # ============================================
+  deploy-oke:
+    name: Deploy to OKE
+    runs-on: ubuntu-latest
+    needs: [prepare, oci-auth]
+    if: github.event.inputs.target == 'oke'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install helm
+        uses: azure/setup-helm@v3
+
+      - name: Get OKE kubeconfig
+        run: |
+          oci ce cluster create-kubeconfig \
+            --cluster-id ${{ needs.prepare.outputs.oke-cluster }} \
+            --file $HOME/.kube/config \
+            --region ${{ env.OCI_REGION }} \
+            --token-version 2.0.0 \
+            --kube-endpoint PUBLIC_ENDPOINT
+
+      - name: Create namespace
+        run: |
+          kubectl create namespace yawl-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create OCI Vault secrets
+        run: |
+          # Create Kubernetes secret from OCI Vault
+          kubectl create secret generic oci-vault-secrets \
+            --namespace=yawl-${{ github.event.inputs.environment }} \
+            --from-literal=db-password=${{ secrets.OCI_DB_PASSWORD }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy application with Helm
+        run: |
+          helm upgrade --install yawl ./helm/yawl \
+            --namespace yawl-${{ github.event.inputs.environment }} \
+            --set image.repository=$(echo ${{ needs.prepare.outputs.image }} | cut -d: -f1) \
+            --set image.tag=${{ env.VERSION }} \
+            --set environment=${{ github.event.inputs.environment }} \
+            --set oci.region=${{ env.OCI_REGION }} \
+            --set oci.compartmentId=${{ env.OCI_COMPARTMENT_ID }} \
+            --values helm/yawl/values-oci.yaml \
+            --wait \
+            --timeout 15m
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }} \
+            --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n yawl-${{ github.event.inputs.environment }} -l app.kubernetes.io/name=yawl
+
+          echo "=== Service Status ==="
+          kubectl get services -n yawl-${{ github.event.inputs.environment }}
+
+          echo "=== OCI Load Balancer ==="
+          kubectl get svc yawl -n yawl-${{ github.event.inputs.environment }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+  # ============================================
+  # Deploy to Container Instances
+  # ============================================
+  deploy-container-instances:
+    name: Deploy to Container Instances
+    runs-on: ubuntu-latest
+    needs: [prepare, oci-auth]
+    if: github.event.inputs.target == 'container-instances'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Deploy Container Instance
+        run: |
+          oci artifacts container configuration update \
+            --is-repository-created-on-first-push true \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }}
+
+          # Create container instance
+          oci container-instances container create \
+            --display-name yawl-${{ github.event.inputs.environment }} \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }} \
+            --availability-domain "AD-1" \
+            --shape "CI.Standard.E4.Flex" \
+            --shape-config '{"ocpus": 2, "memoryInGBs": 4}' \
+            --container-repository ${{ needs.prepare.outputs.image }} \
+            --port-list '[{"port": 8080, "protocol": "TCP"}]' \
+            --environment-variables '{"SPRING_PROFILES_ACTIVE": "${{ github.event.inputs.environment }}"}'
+
+      - name: Get container instance status
+        run: |
+          oci container-instances container list \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }} \
+            --display-name yawl-${{ github.event.inputs.environment }}
+
+  # ============================================
+  # Deploy to OCI Functions
+  # ============================================
+  deploy-functions:
+    name: Deploy to OCI Functions
+    runs-on: ubuntu-latest
+    needs: [prepare, oci-auth]
+    if: github.event.inputs.target == 'functions'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI and Fn CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          curl -LSs https://raw.githubusercontent.com/fnproject/cli/master/install | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Configure Fn CLI
+        run: |
+          fn use context ${{ env.OCI_REGION }}
+          fn update context oracle.compartment-id ${{ env.OCI_COMPARTMENT_ID }}
+          fn update context registry ${{ needs.prepare.outputs.registry }}
+
+      - name: Deploy Function
+        run: |
+          fn deploy --app yawl-${{ github.event.inputs.environment }} \
+            --registry ${{ needs.prepare.outputs.registry }}
+
+      - name: Verify function deployment
+        run: |
+          fn list functions yawl-${{ github.event.inputs.environment }}
+
+  # ============================================
+  # Deploy to Compute Instance
+  # ============================================
+  deploy-compute:
+    name: Deploy to Compute Instance
+    runs-on: ubuntu-latest
+    needs: [prepare, oci-auth]
+    if: github.event.inputs.target == 'compute'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Get Compute Instance
+        id: instance
+        run: |
+          INSTANCE_ID=$(oci compute instance list \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }} \
+            --display-name yawl-${{ github.event.inputs.environment }} \
+            --query 'data[0].id' --raw-output)
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy via cloud-init
+        run: |
+          # Create cloud-init script
+          cat > cloud-init.yaml << EOF
+          #cloud-config
+          runcmd:
+            - docker pull ${{ needs.prepare.outputs.image }}
+            - docker stop yawl || true
+            - docker rm yawl || true
+            - docker run -d --name yawl -p 8080:8080 \
+                -e SPRING_PROFILES_ACTIVE=${{ github.event.inputs.environment }} \
+                ${{ needs.prepare.outputs.image }}
+          EOF
+
+          # Update instance with cloud-init
+          oci compute instance launch \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }} \
+            --availability-domain "AD-1" \
+            --shape "VM.Standard.E4.Flex" \
+            --shape-config '{"ocpus": 2, "memoryInGBs": 4}' \
+            --image-id ${{ secrets.OCI_IMAGE_ID }} \
+            --subnet-id ${{ secrets.OCI_SUBNET_ID }} \
+            --user-data-file cloud-init.yaml \
+            --display-name yawl-${{ github.event.inputs.environment }}-new || true
+
+      - name: Verify deployment
+        run: |
+          oci compute instance list \
+            --compartment-id ${{ env.OCI_COMPARTMENT_ID }} \
+            --display-name yawl-${{ github.event.inputs.environment }}
+
+  # ============================================
+  # Post-Deployment Verification
+  # ============================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-oke, deploy-container-instances, deploy-functions, deploy-compute]
+    if: always() && contains(join(needs.*.result, ','), 'success')
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## Oracle Cloud Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.OCI_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Rollback
+  # ============================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback == 'true'
+
+    steps:
+      - name: Setup OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+
+      - name: Rollback OKE deployment
+        if: github.event.inputs.target == 'oke'
+        run: |
+          kubectl rollout undo deployment/yawl \
+            --namespace=yawl-${{ github.event.inputs.environment }}

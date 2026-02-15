@@ -1,0 +1,522 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YAWL Workflow Engine - Application Load Balancer Configuration for AWS Marketplace'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Load Balancer Configuration'
+        Parameters:
+          - LoadBalancerName
+          - Scheme
+          - IpAddressType
+      - Label:
+          default: 'Network Configuration'
+        Parameters:
+          - VpcId
+          - PublicSubnetIds
+          - AllowedCidrBlocks
+      - Label:
+          default: 'SSL/TLS Configuration'
+        Parameters:
+          - DomainName
+          - HostedZoneId
+          - CertificateArn
+      - Label:
+          default: 'Health Check Configuration'
+        Parameters:
+          - HealthCheckPath
+          - HealthCheckIntervalSeconds
+          - HealthyThresholdCount
+
+Parameters:
+  LoadBalancerName:
+    Type: String
+    Default: 'yawl-alb'
+    Description: 'Name of the Application Load Balancer'
+    MinLength: 1
+    MaxLength: 32
+    AllowedPattern: '^[a-z][a-z0-9-]*$'
+
+  Scheme:
+    Type: String
+    Default: 'internet-facing'
+    AllowedValues:
+      - 'internet-facing'
+      - 'internal'
+    Description: 'Load balancer scheme'
+
+  IpAddressType:
+    Type: String
+    Default: 'ipv4'
+    AllowedValues:
+      - 'ipv4'
+      - 'dualstack'
+    Description: 'IP address type'
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: 'VPC ID where the load balancer will be deployed'
+
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'List of public subnet IDs for the load balancer'
+
+  AllowedCidrBlocks:
+    Type: CommaDelimitedList
+    Default: '0.0.0.0/0'
+    Description: 'CIDR blocks allowed to access the load balancer'
+
+  DomainName:
+    Type: String
+    Default: ''
+    Description: 'Custom domain name for the application (optional)'
+
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: 'Route53 Hosted Zone ID for custom domain (optional)'
+
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: 'ACM Certificate ARN for HTTPS (optional, will create self-signed if empty)'
+
+  HealthCheckPath:
+    Type: String
+    Default: '/yawl/health'
+    Description: 'Health check path'
+
+  HealthCheckIntervalSeconds:
+    Type: Number
+    Default: 30
+    MinValue: 5
+    MaxValue: 300
+    Description: 'Health check interval in seconds'
+
+  HealthyThresholdCount:
+    Type: Number
+    Default: 3
+    MinValue: 2
+    MaxValue: 10
+    Description: 'Number of healthy checks before marking healthy'
+
+Conditions:
+  HasCustomDomain: !Not [!Equals [!Ref DomainName, '']]
+  HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
+  CreateCertificate: !And
+    - !Equals [!Ref Scheme, 'internet-facing']
+    - !Equals [!Ref CertificateArn, '']
+  CreateDNSRecord: !And
+    - Condition: HasCustomDomain
+    - !Not [!Equals [!Ref HostedZoneId, '']]
+  IsInternal: !Equals [!Ref Scheme, 'internal']
+
+Resources:
+  # Security Group for ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for YAWL Application Load Balancer'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'HTTP access (redirects to HTTPS)'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Join [',', !Ref AllowedCidrBlocks]
+          Description: 'HTTPS access'
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: !Sub '${LoadBalancerName}-sg'
+        - Key: Application
+          Value: YAWL
+
+  # Self-signed certificate if none provided
+  SelfSignedCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: CreateCertificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub '*.${DomainName}'
+      ValidationMethod: DNS
+      Tags:
+        - Key: Name
+          Value: !Sub '${LoadBalancerName}-cert'
+        - Key: Application
+          Value: YAWL
+
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Ref LoadBalancerName
+      Scheme: !Ref Scheme
+      Type: application
+      IpAddressType: !Ref IpAddressType
+      Subnets: !Split [',', !Join [',', !Ref PublicSubnetIds]]
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: 'true'
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+        - Key: routing.http2.enabled
+          Value: 'true'
+        - Key: routing.http.drop_invalid_header_fields.enabled
+          Value: 'true'
+        - Key: access_logs.s3.enabled
+          Value: 'true'
+        - Key: access_logs.s3.bucket
+          Value: !Ref ALBAccessLogsBucket
+        - Key: access_logs.s3.prefix
+          Value: !Sub '${LoadBalancerName}-logs'
+      Tags:
+        - Key: Name
+          Value: !Ref LoadBalancerName
+        - Key: Application
+          Value: YAWL
+
+  # S3 Bucket for ALB Access Logs
+  ALBAccessLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'yawl-alb-logs-${AWS::AccountId}-${AWS::Region}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldLogs
+            Status: Enabled
+            ExpirationInDays: 90
+          - Id: TransitionToIA
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Bucket Policy for ALB Access Logs
+  ALBAccessLogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ALBAccessLogsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowELBToWriteLogs
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub 'arn:aws:s3:::${ALBAccessLogsBucket}/${LoadBalancerName}-logs/AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': 'bucket-owner-full-control'
+
+  # HTTP Listener (redirect to HTTPS)
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: 443
+            StatusCode: HTTP_301
+
+  # HTTPS Listener
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !If
+            - HasCertificate
+            - !Ref CertificateArn
+            - !If
+              - CreateCertificate
+              - !Ref SelfSignedCertificate
+              - !Ref 'AWS::NoValue'
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref YAWLTargetGroup
+
+  # Target Group for YAWL Application
+  YAWLTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${LoadBalancerName}-tg'
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckConfig:
+        HealthCheckEnabled: true
+        HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
+        HealthCheckPath: !Ref HealthCheckPath
+        HealthCheckPort: traffic-port
+        HealthCheckProtocol: HTTP
+        HealthCheckTimeoutSeconds: 10
+        HealthyThresholdCount: !Ref HealthyThresholdCount
+        UnhealthyThresholdCount: 3
+        Matcher:
+          HttpCode: '200,202,301,302'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '60'
+        - Key: slow_start.duration_seconds
+          Value: '30'
+        - Key: stickiness.enabled
+          Value: 'true'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.duration_seconds
+          Value: '86400'
+        - Key: proxy_protocol_v2.enabled
+          Value: 'false'
+      Tags:
+        - Key: Name
+          Value: !Sub '${LoadBalancerName}-tg'
+        - Key: Application
+          Value: YAWL
+
+  # Listener Rules for YAWL Services
+  # Rule for YAWL Engine API
+  YAWLEngineListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 100
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - '/yawl/*'
+            - '/api/*'
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref YAWLTargetGroup
+
+  # WAF Web ACL for ALB protection
+  WAFWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${LoadBalancerName}-waf'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${LoadBalancerName}-WAF-Metric'
+      Rules:
+        # AWS Managed Rules - Core Rule Set
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesCommonRuleSetMetric
+        # AWS Managed Rules - SQL Injection
+        - Name: AWSManagedRulesSQLiRuleSet
+          Priority: 2
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesSQLiRuleSetMetric
+        # Rate limiting
+        - Name: RateLimitRule
+          Priority: 3
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              AggregateKeyType: IP
+              Limit: 10000
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRuleMetric
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  # Associate WAF with ALB
+  WAFWebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApplicationLoadBalancer
+      WebACLArn: !GetAtt WAFWebACL.Arn
+
+  # Route53 DNS Record (if custom domain provided)
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: CreateDNSRecord
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApplicationLoadBalancer.DNSName
+        HostedZoneId: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+
+  # CloudWatch Alarms for ALB
+  ALBTargetResponseTimeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${LoadBalancerName}-HighResponseTime'
+      AlarmDescription: 'Alarm when target response time exceeds threshold'
+      MetricName: TargetResponseTime
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  ALB5XXErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${LoadBalancerName}-High5XXErrors'
+      AlarmDescription: 'Alarm when 5XX error rate is high'
+      MetricName: HTTPCode_Target_5XX_Count
+      Namespace: AWS/ApplicationELB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+  ALBUnhealthyTargetAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${LoadBalancerName}-UnhealthyTargets'
+      AlarmDescription: 'Alarm when unhealthy targets detected'
+      MetricName: UnHealthyHostCount
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !GetAtt YAWLTargetGroup.TargetGroupFullName
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Application
+          Value: YAWL
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: 'Load Balancer DNS Name'
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBDNSName'
+
+  LoadBalancerCanonicalHostedZoneID:
+    Description: 'Load Balancer Canonical Hosted Zone ID'
+    Value: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBHostedZoneId'
+
+  LoadBalancerArn:
+    Description: 'Load Balancer ARN'
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBArn'
+
+  LoadBalancerFullName:
+    Description: 'Load Balancer Full Name'
+    Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBFullName'
+
+  HTTPSListenerArn:
+    Description: 'HTTPS Listener ARN'
+    Value: !Ref HTTPSListener
+    Export:
+      Name: !Sub '${AWS::StackName}-HTTPSListenerArn'
+
+  TargetGroupArn:
+    Description: 'Target Group ARN'
+    Value: !Ref YAWLTargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-TargetGroupArn'
+
+  SecurityGroupId:
+    Description: 'ALB Security Group ID'
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBSecurityGroup'
+
+  WAFWebACLArn:
+    Description: 'WAF Web ACL ARN'
+    Value: !GetAtt WAFWebACL.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-WAFWebACLArn'
+
+  ApplicationURL:
+    Description: 'Application URL'
+    Value: !If
+      - HasCustomDomain
+      - !Sub 'https://${DomainName}'
+      - !Sub 'https://${ApplicationLoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApplicationURL'
