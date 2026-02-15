@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Freight Output Template -->
+<!-- Variables available: ${variableName} from input data -->
+<data>
+    <FreightCharge>${FreightCharge:-0.00}</FreightCharge>
+    <ShippingCost>${ShippingCost:-0.00}</ShippingCost>
+    <TotalCost>${TotalCost:-0.00}</TotalCost>
+    <Currency>${Currency:-USD}</Currency>
+    <CalculationDate>${CalculationDate:-2026-02-15}</CalculationDate>
+    <FreightClass>${FreightClass:-Standard}</FreightClass>
+    <Weight>${Weight:-0.0}</Weight>
+    <WeightUnit>${WeightUnit:-kg}</WeightUnit>
+    <Dimensions>${Dimensions:-N/A}</Dimensions>
+    <Origin>${Origin:-N/A}</Origin>
+    <Destination>${Destination:-N/A}</Destination>
+    <CustomsRequired>${CustomsRequired:-false}</CustomsRequired>
+    <CustomsDuty>${CustomsDuty:-0.00}</CustomsDuty>
+    <HandlingFee>${HandlingFee:-0.00}</HandlingFee>
+    <InsuranceCost>${InsuranceCost:-0.00}</InsuranceCost>
+    <EstimatedTransitDays>${EstimatedTransitDays:-3}</EstimatedTransitDays>
+    <CalculationMethod>${CalculationMethod:-Standard}</CalculationMethod>
+    <Notes>${Notes:-Freight calculation completed}</Notes>
+</data>

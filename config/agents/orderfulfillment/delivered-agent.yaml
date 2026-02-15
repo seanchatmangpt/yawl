@@ -1,0 +1,74 @@
+# Delivered Agent Configuration
+# Domain: OrderFulfillment - Delivered capability
+# Reasoning: ZAI-based eligibility and decision making
+
+agent:
+  name: "Delivered Agent"
+  capability:
+    domain: "Delivered"
+    description: "delivery confirmation, proof of delivery, delivery status updates, customer notification"
+
+  discovery:
+    strategy: "polling"
+    interval_ms: 3000
+
+  reasoning:
+    eligibility_engine: "zai"
+    decision_engine: "zai"
+
+    eligibility_prompt: |
+      You are an eligibility analyzer for a Delivered Agent in a YAWL workflow system.
+
+      Given a workitem with:
+      - Task Name: {taskName}
+      - Task Description: {taskDescription}
+      - Input Data: {inputData}
+
+      Determine if this Delivered Agent should handle this task.
+      The Delivered Agent handles: delivery confirmation, proof of delivery, delivery updates.
+
+      Respond with ONLY a JSON object:
+      {
+        "eligible": true/false,
+        "confidence": 0.0-1.0,
+        "reason": "brief explanation"
+      }
+
+    decision_prompt: |
+      You are the Delivered Agent confirming deliveries for YAWL workflow tasks.
+
+      Task: {taskName}
+      Description: {taskDescription}
+      Input Data: {inputData}
+
+      Based on the input data, process delivery confirmation.
+      Record delivery time, confirm recipient, update delivery status.
+
+      Respond with ONLY a JSON object containing the output data fields:
+      {
+        "DeliveryStatus": "Delivered/Failed/Returned",
+        "DeliveryDate": "YYYY-MM-DD",
+        "DeliveryTime": "HH:MM",
+        "RecipientName": "...",
+        "SignatureReceived": "Yes/No",
+        "ProofOfDeliveryURL": "...",
+        "...": "other relevant fields"
+      }
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8095
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD:-YAWL}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3

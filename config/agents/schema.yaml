@@ -1,0 +1,407 @@
+# YAWL Generic Agent Configuration Schema Documentation
+# Version: 1.0
+# Date: 2026-02-15
+
+---
+# Root Configuration Structure
+agent_config:
+  description: "Root configuration object for a YAWL generic agent"
+  required: true
+  structure:
+
+    agent:
+      description: "Agent identity and behavior configuration"
+      required: true
+      fields:
+
+        name:
+          type: string
+          required: true
+          description: "Human-readable agent name"
+          example: "Ordering Agent"
+
+        capability:
+          required: true
+          fields:
+            domain:
+              type: string
+              required: true
+              description: "Agent capability domain (must be unique)"
+              example: "Ordering"
+              constraints:
+                - "Must be unique across all agents"
+                - "Used for agent selection and routing"
+
+            description:
+              type: string
+              required: true
+              description: "Comma-separated capability keywords for semantic matching"
+              example: "purchase order approval, order validation, order creation"
+              usage: "Used by ZAI eligibility engine for semantic matching"
+
+        discovery:
+          required: true
+          fields:
+            strategy:
+              type: string
+              required: true
+              enum: ["polling", "event-driven"]
+              default: "polling"
+              description: "How agent discovers available workitems"
+
+            interval_ms:
+              type: integer
+              required: true
+              min: 1000
+              default: 3000
+              description: "Polling interval in milliseconds (if strategy=polling)"
+
+        reasoning:
+          required: true
+          description: "Agent reasoning and decision-making configuration"
+          fields:
+
+            eligibility_engine:
+              type: string
+              required: true
+              enum: ["zai", "static"]
+              description: "Engine type for eligibility determination"
+              options:
+                zai: "Use ZAI LLM for semantic eligibility analysis"
+                static: "Use static mapping file for exact task name matching"
+
+            decision_engine:
+              type: string
+              required: true
+              enum: ["zai", "template"]
+              description: "Engine type for decision making and output generation"
+              options:
+                zai: "Use ZAI LLM to generate output data dynamically"
+                template: "Use XML template with variable substitution"
+
+            eligibility_prompt:
+              type: string
+              required_if: "eligibility_engine == zai"
+              description: "Prompt template for ZAI eligibility analysis"
+              format: "Plain text with {taskName}, {taskDescription}, {inputData} placeholders"
+              output_format: "JSON with {eligible, confidence, reason} fields"
+
+            decision_prompt:
+              type: string
+              required_if: "decision_engine == zai"
+              description: "Prompt template for ZAI decision making"
+              format: "Plain text with {taskName}, {taskDescription}, {inputData} placeholders"
+              output_format: "JSON with output data fields"
+
+            mapping_file:
+              type: string
+              required_if: "eligibility_engine == static"
+              description: "Path to static mapping JSON file (relative to YAWL root)"
+              example: "config/agents/mappings/orderfulfillment-static.json"
+
+            template_file:
+              type: string
+              required_if: "decision_engine == template"
+              description: "Path to XML template file (relative to YAWL root)"
+              example: "config/agents/templates/freight-output.xml"
+
+        output:
+          required: true
+          fields:
+            format:
+              type: string
+              required: true
+              enum: ["xml", "json"]
+              default: "xml"
+              description: "Output data format for YAWL"
+
+        server:
+          required: true
+          fields:
+            port:
+              type: integer
+              required: true
+              min: 1024
+              max: 65535
+              description: "HTTP server port for agent"
+              constraints:
+                - "Must be unique across all agents"
+                - "Recommended range: 8091-8098"
+
+    yawl:
+      description: "YAWL Engine connection configuration"
+      required: true
+      fields:
+
+        engine_url:
+          type: string
+          required: true
+          description: "YAWL Engine base URL"
+          example: "http://localhost:8080/yawl"
+          supports_env: true
+          env_var: "YAWL_ENGINE_URL"
+
+        username:
+          type: string
+          required: true
+          description: "YAWL Engine username"
+          default: "admin"
+          supports_env: true
+          env_var: "YAWL_USERNAME"
+
+        password:
+          type: string
+          required: true
+          description: "YAWL Engine password"
+          default: "YAWL"
+          supports_env: true
+          env_var: "YAWL_PASSWORD"
+          security: "Should be provided via environment variable in production"
+
+    zai:
+      description: "Z.AI LLM configuration (required if using ZAI engines)"
+      required_if: "eligibility_engine == zai OR decision_engine == zai"
+      fields:
+
+        api_key:
+          type: string
+          required: true
+          description: "Z.AI API key"
+          supports_env: true
+          env_var: "ZAI_API_KEY"
+          security: "MUST be provided via environment variable"
+
+        model:
+          type: string
+          required: true
+          description: "Z.AI model identifier"
+          default: "GLM-4-Flash"
+          supports_env: true
+          env_var: "ZAI_MODEL"
+          options:
+            - "GLM-4-Flash"
+            - "GLM-4-Plus"
+            - "GLM-4"
+
+        base_url:
+          type: string
+          required: false
+          description: "Z.AI API base URL"
+          default: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+          supports_env: true
+          env_var: "ZAI_BASE_URL"
+
+        timeout_ms:
+          type: integer
+          required: false
+          default: 30000
+          min: 5000
+          description: "API request timeout in milliseconds"
+
+        max_retries:
+          type: integer
+          required: false
+          default: 3
+          min: 0
+          max: 10
+          description: "Maximum retry attempts for failed API calls"
+
+---
+# Static Mapping File Schema
+static_mapping_file:
+  description: "Schema for static task-to-agent mapping files"
+  format: "JSON"
+  structure:
+
+    description:
+      type: string
+      required: true
+      description: "Human-readable description of mapping file"
+
+    version:
+      type: string
+      required: true
+      description: "Mapping file version"
+      example: "1.0"
+
+    taskMappings:
+      type: object
+      required: true
+      description: "Map of task names to agent domains"
+      format: "{ 'TaskName': 'AgentDomain' }"
+      example:
+        Approve_Purchase_Order: "Ordering"
+        Process_Payment: "Payment"
+
+    defaultAgent:
+      type: string
+      required: false
+      description: "Default agent domain if task not found in mappings"
+
+    comments:
+      type: array
+      required: false
+      description: "Human-readable comments about the mapping"
+
+---
+# Template File Schema
+template_file:
+  description: "Schema for XML template files"
+  format: "XML"
+  structure:
+
+    root_element:
+      name: "data"
+      required: true
+      description: "Root element containing output fields"
+
+    variable_substitution:
+      format: "${variableName:-defaultValue}"
+      description: "Variables are substituted from input data"
+      examples:
+        - "${OrderID:-N/A}"
+        - "${Status:-Completed}"
+        - "${Amount:-0.00}"
+
+    field_elements:
+      description: "Any valid XML element names"
+      constraints:
+        - "Must be valid XML element names"
+        - "Should match expected YAWL output schema"
+
+---
+# Environment Variables Reference
+environment_variables:
+  required:
+    ZAI_API_KEY:
+      description: "Z.AI API key (required if using ZAI engines)"
+      example: "your-zai-api-key-here"
+
+  optional:
+    YAWL_ENGINE_URL:
+      description: "YAWL Engine base URL"
+      default: "http://localhost:8080/yawl"
+
+    YAWL_USERNAME:
+      description: "YAWL Engine username"
+      default: "admin"
+
+    YAWL_PASSWORD:
+      description: "YAWL Engine password"
+      default: "YAWL"
+
+    ZAI_MODEL:
+      description: "Z.AI model identifier"
+      default: "GLM-4-Flash"
+
+    ZAI_BASE_URL:
+      description: "Z.AI API base URL"
+      default: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+
+---
+# Configuration Examples
+examples:
+
+  zai_based_agent:
+    description: "Agent using ZAI for both eligibility and decision"
+    file: "config/agents/orderfulfillment/ordering-agent.yaml"
+    reasoning:
+      eligibility_engine: "zai"
+      decision_engine: "zai"
+
+  static_eligibility_agent:
+    description: "Agent using static mapping for eligibility, ZAI for decision"
+    file: "config/agents/orderfulfillment/payment-agent.yaml"
+    reasoning:
+      eligibility_engine: "static"
+      decision_engine: "zai"
+
+  template_based_agent:
+    description: "Agent using ZAI for eligibility, template for decision"
+    file: "config/agents/orderfulfillment/freight-agent.yaml"
+    reasoning:
+      eligibility_engine: "zai"
+      decision_engine: "template"
+
+  fully_static_agent:
+    description: "Agent using static mapping and template (no ZAI)"
+    file: "config/agents/notification/alert-agent.yaml"
+    reasoning:
+      eligibility_engine: "static"
+      decision_engine: "template"
+
+---
+# Validation Rules
+validation_rules:
+
+  port_uniqueness:
+    rule: "All agent server.port values must be unique"
+    enforcement: "Runtime check on agent startup"
+
+  domain_uniqueness:
+    rule: "All agent capability.domain values must be unique"
+    enforcement: "Runtime check on agent startup"
+
+  zai_config_required:
+    rule: "zai section required if eligibility_engine=zai OR decision_engine=zai"
+    enforcement: "Startup validation"
+
+  prompt_required:
+    rule: "eligibility_prompt required if eligibility_engine=zai"
+    enforcement: "Startup validation"
+
+  decision_prompt_required:
+    rule: "decision_prompt required if decision_engine=zai"
+    enforcement: "Startup validation"
+
+  mapping_file_required:
+    rule: "mapping_file required if eligibility_engine=static"
+    enforcement: "Startup validation"
+
+  template_file_required:
+    rule: "template_file required if decision_engine=template"
+    enforcement: "Startup validation"
+
+  file_existence:
+    rule: "All referenced files (mapping_file, template_file) must exist"
+    enforcement: "Startup validation"
+
+---
+# Best Practices
+best_practices:
+
+  prompt_engineering:
+    - "Keep prompts focused and specific to agent domain"
+    - "Use clear JSON output format requirements"
+    - "Include examples of expected input/output in prompts"
+    - "Test prompts with actual YAWL data before deployment"
+
+  static_mappings:
+    - "Use exact task names from YAWL specifications"
+    - "Task names are case-sensitive"
+    - "Provide defaultAgent as fallback"
+    - "Document mapping rationale in comments"
+
+  templates:
+    - "Provide sensible default values for all variables"
+    - "Use ${variable:-default} syntax for safety"
+    - "Ensure template matches YAWL output schema"
+    - "Test template with various input data scenarios"
+
+  port_allocation:
+    - "OrderFulfillment agents: 8091-8095"
+    - "Notification agents: 8096-8098"
+    - "Reserve 8090 for generic agent framework"
+    - "Document port assignments"
+
+  security:
+    - "NEVER hardcode API keys in config files"
+    - "Use environment variables for secrets"
+    - "Protect YAWL credentials"
+    - "Use HTTPS in production"
+
+  performance:
+    - "Set appropriate polling intervals (default 3000ms)"
+    - "Configure ZAI timeouts based on expected response times"
+    - "Use static/template engines for simple tasks to reduce API calls"
+    - "Monitor ZAI API usage and costs"

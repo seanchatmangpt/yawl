@@ -1,0 +1,56 @@
+# Freight Agent Configuration
+# Domain: OrderFulfillment - Freight capability
+# Reasoning: Template-based decision making
+
+agent:
+  name: "Freight Agent"
+  capability:
+    domain: "Freight"
+    description: "freight calculation, shipping cost estimation, customs handling, logistics planning"
+
+  discovery:
+    strategy: "polling"
+    interval_ms: 3000
+
+  reasoning:
+    eligibility_engine: "zai"
+    decision_engine: "template"
+
+    eligibility_prompt: |
+      You are an eligibility analyzer for a Freight Agent in a YAWL workflow system.
+
+      Given a workitem with:
+      - Task Name: {taskName}
+      - Task Description: {taskDescription}
+      - Input Data: {inputData}
+
+      Determine if this Freight Agent should handle this task.
+      The Freight Agent handles: freight costs, shipping calculations, customs, logistics.
+
+      Respond with ONLY a JSON object:
+      {
+        "eligible": true/false,
+        "confidence": 0.0-1.0,
+        "reason": "brief explanation"
+      }
+
+    # Template file for decision output
+    template_file: "config/agents/templates/freight-output.xml"
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8094
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD:-YAWL}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3

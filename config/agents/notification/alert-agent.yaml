@@ -1,0 +1,41 @@
+# Alert Agent Configuration
+# Domain: Notification - Alert capability
+# Reasoning: Static mapping for eligibility, template for decision
+
+agent:
+  name: "Alert Agent"
+  capability:
+    domain: "Alert"
+    description: "system alerts, critical notifications, warning messages, escalation alerts"
+
+  discovery:
+    strategy: "polling"
+    interval_ms: 3000
+
+  reasoning:
+    eligibility_engine: "static"
+    decision_engine: "template"
+
+    # Static mapping file for eligibility
+    mapping_file: "config/agents/mappings/notification-static.json"
+
+    # Template file for alert output
+    template_file: "config/agents/templates/notification-output.xml"
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8098
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD:-YAWL}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3
