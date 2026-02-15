@@ -1,23 +1,23 @@
 Testsuite: org.yawlfoundation.yawl.TestAllYAWLSuites
-Tests run: 102, Failures: 12, Errors: 41, Skipped: 0, Time elapsed: 1.726 sec
+Tests run: 102, Failures: 12, Errors: 41, Skipped: 0, Time elapsed: 1.676 sec
 ------------- Standard Output ---------------
 
 
-org.yawlfoundation.yawl.util.YVerificationMessage@6ea1bcdc
-org.yawlfoundation.yawl.util.YVerificationMessage@1ee29c84
-org.yawlfoundation.yawl.util.YVerificationMessage@7c8326a4
-org.yawlfoundation.yawl.util.YVerificationMessage@77128dab
-org.yawlfoundation.yawl.util.YVerificationMessage@63429932
-org.yawlfoundation.yawl.util.YVerificationMessage@69ce2f62
-org.yawlfoundation.yawl.util.YVerificationMessage@c9d82f9
-org.yawlfoundation.yawl.util.YVerificationMessage@6f012914
-org.yawlfoundation.yawl.util.YVerificationMessage@18fdb6cf
+org.yawlfoundation.yawl.util.YVerificationMessage@4b21844c
+org.yawlfoundation.yawl.util.YVerificationMessage@2adddc06
+org.yawlfoundation.yawl.util.YVerificationMessage@301d8120
+org.yawlfoundation.yawl.util.YVerificationMessage@6d367020
+org.yawlfoundation.yawl.util.YVerificationMessage@72458efc
+org.yawlfoundation.yawl.util.YVerificationMessage@36bc415e
+org.yawlfoundation.yawl.util.YVerificationMessage@6a74d228
+org.yawlfoundation.yawl.util.YVerificationMessage@349d0836
+org.yawlfoundation.yawl.util.YVerificationMessage@6a714237
 ------------- ---------------- ---------------
 
-Testcase: testSchemaCatching took 0.25 sec
+Testcase: testSchemaCatching took 0.254 sec
 Testcase: testFullAtomicTask took 0.232 sec
 Testcase: testEmptyAtomicTask took 0.001 sec
-Testcase: testFireAtomicTask took 0.002 sec
+Testcase: testFireAtomicTask took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -59,16 +59,16 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testValidCompositeTask took 0.032 sec
-Testcase: testInvalidCompositeTask took 0.023 sec
+Testcase: testValidCompositeTask took 0.03 sec
+Testcase: testInvalidCompositeTask took 0.019 sec
 	FAILED
 CompositeTask:ct1 should have thrown exception but didn't.
 junit.framework.AssertionFailedError: CompositeTask:ct1 should have thrown exception but didn't.
 	at org.yawlfoundation.yawl.elements.TestYCompositeTask.testInvalidCompositeTask(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testConstructor took 0.002 sec
-Testcase: testMovingIdentifiers took 0.001 sec
+Testcase: testConstructor took 0.001 sec
+Testcase: testMovingIdentifiers took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -111,7 +111,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
 Testcase: testFlowStuff took 0.001 sec
-Testcase: testInvalidMIAttributeVerify took 0.089 sec
+Testcase: testInvalidMIAttributeVerify took 0.082 sec
 	FAILED
 [expectedResult]
 Error:A output parameter is used twice.  The task (id=3) uses the same parameter through its multi-instance output and its regular output.
@@ -123,10 +123,10 @@ Error:A output parameter is used twice.  The task (id=3) uses the same parameter
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
 Testcase: testValidStuff took 0.002 sec
-Testcase: testBadQueries took 0.009 sec
+Testcase: testBadQueries took 0.01 sec
 Testcase: testBadQueries2 took 0.004 sec
 Testcase: testInvalidVerify took 0.002 sec
-Testcase: testNeedsPredicateVerify took 0.005 sec
+Testcase: testNeedsPredicateVerify took 0.004 sec
 Testcase: testNeedsNoPredicateVerify took 0.001 sec
 Testcase: testThrowsAppropriateStateExceptions took 0.002 sec
 	Caused an ERROR
@@ -177,8 +177,8 @@ junit.framework.ComparisonFailure: expected:<...<nextElementRef id="[3"/><isDefa
 	at org.yawlfoundation.yawl.elements.TestYExternalTask.testToXML(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testToXML2 took 0.001 sec
-Testcase: testSelfCancellation took 0.002 sec
+Testcase: testToXML2 took 0.002 sec
+Testcase: testSelfCancellation took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -220,9 +220,9 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testToString took 0.001 sec
-Testcase: testXOR_ORSplitNeedsDefaultFlowNotBoth took 0.001 sec
-Testcase: testANDCantBeDefaultFlow took 0.001 sec
+Testcase: testToString took 0 sec
+Testcase: testXOR_ORSplitNeedsDefaultFlowNotBoth took 0 sec
+Testcase: testANDCantBeDefaultFlow took 0 sec
 Testcase: testConditionToCondition took 0.001 sec
 Testcase: testInputOutputFlow took 0.001 sec
 Testcase: testInvalidInputCondition took 0.001 sec
@@ -233,8 +233,8 @@ junit.framework.AssertionFailedError: Should receive 2 error messages, but didn'
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
 Testcase: testValidStuff took 0 sec
-Testcase: testInvalidVerify took 0 sec
-Testcase: testGoodNetVerify took 0.058 sec
+Testcase: testInvalidVerify took 0.001 sec
+Testcase: testGoodNetVerify took 0.055 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -275,7 +275,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testBadNetVerify took 0.042 sec
+Testcase: testBadNetVerify took 0.045 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -316,7 +316,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testCloneBasics took 0.038 sec
+Testcase: testCloneBasics took 0.033 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -357,7 +357,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testCloneVerify took 0.037 sec
+Testcase: testCloneVerify took 0.035 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -439,7 +439,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testDataStructureAgainstWierdSpecification took 0.036 sec
+Testcase: testDataStructureAgainstWierdSpecification took 0.034 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -480,9 +480,9 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testNothingMuch took 0.001 sec
+Testcase: testNothingMuch took 0 sec
 Testcase: testInvalidInputCondition took 0.001 sec
-Testcase: testGoodNetVerify took 0.104 sec
+Testcase: testGoodNetVerify took 0.093 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type.
@@ -490,22 +490,22 @@ junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><s
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
 Testcase: testValidDataTypesInSpecification took 0.053 sec
-Testcase: testBadSpecVerify took 0.075 sec
+Testcase: testBadSpecVerify took 0.079 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:top] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:top] is not valid for its data type.
 	at org.yawlfoundation.yawl.elements.TestYSpecification.testBadSpecVerify(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testSpecWithLoops took 0.101 sec
+Testcase: testSpecWithLoops took 0.091 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:d] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:d] is not valid for its data type.
 	at org.yawlfoundation.yawl.elements.TestYSpecification.testSpecWithLoops(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testDataStructure took 0.04 sec
-Testcase: testClonedDataStructure took 0.04 sec
+Testcase: testDataStructure took 0.042 sec
+Testcase: testClonedDataStructure took 0.041 sec
 Testcase: warning took 0 sec
 	FAILED
 Exception in constructor: testEquals (java.lang.NoClassDefFoundError: org/jboss/logging/Logger
@@ -756,7 +756,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder.<clinit>(StrategySelectorBuilder.java:44)
 )
 
-Testcase: warning took 0 sec
+Testcase: warning took 0.001 sec
 	FAILED
 Exception in constructor: testGetDescendants (java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 	at org.hibernate.boot.registry.BootstrapServiceRegistryBuilder.<init>(BootstrapServiceRegistryBuilder.java:42)
@@ -817,7 +817,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder.<clinit>(StrategySelectorBuilder.java:44)
 )
 
-Testcase: testEquals took 0 sec
+Testcase: testEquals took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -858,7 +858,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testGreaterThanOrEquals took 0 sec
+Testcase: testGreaterThanOrEquals took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -899,7 +899,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testLessThan took 0.001 sec
+Testcase: testLessThan took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -981,7 +981,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testDoPowerSetRecursion took 0 sec
+Testcase: testDoPowerSetRecursion took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1063,7 +1063,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testAndJoinOrSplit took 0 sec
+Testcase: testAndJoinOrSplit took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1104,7 +1104,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testDeadlock took 0.001 sec
+Testcase: testDeadlock took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1145,7 +1145,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testContainsEquivalentTo took 0.004 sec
+Testcase: testContainsEquivalentTo took 0.003 sec
 Testcase: testIt took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1226,7 +1226,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testCaseCompletion took 0 sec
+Testcase: testCaseCompletion took 0.001 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1266,7 +1266,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testMultimergeNets took 0.008 sec
+Testcase: testMultimergeNets took 0.009 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1386,7 +1386,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testImproperCompletion took 0.008 sec
+Testcase: testImproperCompletion took 0.009 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1426,7 +1426,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testImproperCompletion took 0.009 sec
+Testcase: testImproperCompletion took 0.008 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1508,7 +1508,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testGetTaskWithoutSpecification took 0.023 sec
+Testcase: testGetTaskWithoutSpecification took 0.022 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1548,7 +1548,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testGetTask took 0.021 sec
+Testcase: testGetTask took 0.02 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1588,7 +1588,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testUseCase1 took 0.01 sec
+Testcase: testUseCase1 took 0.009 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1628,7 +1628,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testAddInstance took 0.01 sec
+Testcase: testBasicFireAtomic took 0.008 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1668,7 +1668,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testBasicFireAtomic took 0.008 sec
+Testcase: testAddInstance took 0.008 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1790,47 +1790,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testUniqueIDGenerator took 0.031 sec
-Testcase: testChildren took 0 sec
-	Caused an ERROR
-Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
-java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
-	at org.hibernate.boot.registry.BootstrapServiceRegistryBuilder.<init>(BootstrapServiceRegistryBuilder.java:42)
-	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.<init>(StandardServiceRegistryBuilder.java:87)
-	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:83)
-	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
-	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
-	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
-	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
-	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
-	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
-Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDefFoundError: org/jboss/logging/Logger [in thread "main"]
-	at org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder.<clinit>(StrategySelectorBuilder.java:44)
-	at org.hibernate.boot.registry.BootstrapServiceRegistryBuilder.<init>(BootstrapServiceRegistryBuilder.java:42)
-	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.<init>(StandardServiceRegistryBuilder.java:87)
-	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:83)
-	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
-	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
-	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
-	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
-	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
-	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
-	at org.yawlfoundation.yawl.elements.state.YIdentifier.<init>(YIdentifier.java:56)
-	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.<init>(Unknown Source)
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
-	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
-	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-
+Testcase: testUniqueIDGenerator took 0.033 sec
 Testcase: testGetItem took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1871,9 +1831,49 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
+Testcase: testChildren took 0 sec
+	Caused an ERROR
+Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
+java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
+	at org.hibernate.boot.registry.BootstrapServiceRegistryBuilder.<init>(BootstrapServiceRegistryBuilder.java:42)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.<init>(StandardServiceRegistryBuilder.java:87)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:83)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+	at org.yawlfoundation.yawl.engine.TestYWorkItemRepository.setUp(Unknown Source)
+Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDefFoundError: org/jboss/logging/Logger [in thread "main"]
+	at org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder.<clinit>(StrategySelectorBuilder.java:44)
+	at org.hibernate.boot.registry.BootstrapServiceRegistryBuilder.<init>(BootstrapServiceRegistryBuilder.java:42)
+	at org.hibernate.boot.registry.StandardServiceRegistryBuilder.<init>(StandardServiceRegistryBuilder.java:87)
+	at org.yawlfoundation.yawl.util.HibernateEngine.initialise(HibernateEngine.java:83)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:72)
+	at org.yawlfoundation.yawl.util.HibernateEngine.<init>(HibernateEngine.java:77)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.initDb(YSessionCache.java:272)
+	at org.yawlfoundation.yawl.authentication.YSessionCache.<init>(YSessionCache.java:50)
+	at org.yawlfoundation.yawl.engine.YEngine.<init>(YEngine.java:117)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:141)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:155)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:149)
+	at org.yawlfoundation.yawl.engine.YEngine.getInstance(YEngine.java:167)
+	at org.yawlfoundation.yawl.elements.state.YIdentifier.<init>(YIdentifier.java:56)
+	at org.yawlfoundation.yawl.elements.state.TestYIdentifier.<init>(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.yawlfoundation.yawl.elements.state.StateTestSuite.suite(Unknown Source)
+	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+
 Testcase: testConstructor took 0.001 sec
-Testcase: testConstructor took 0 sec
-Testcase: testNextId took 0.01 sec
+Testcase: testConstructor took 0.001 sec
+Testcase: testNextId took 0.011 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
@@ -1914,22 +1914,22 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testSimpleValidSchema took 0.002 sec
-Testcase: testComplexValidSchema took 0.002 sec
-Testcase: testSimpleInvalidSchema took 0.002 sec
+Testcase: testComplexValidSchema took 0.001 sec
+Testcase: testSimpleInvalidSchema took 0.001 sec
 Testcase: testComplexInvalidSchema took 0.002 sec
+Testcase: testSimpleValidSchema took 0.001 sec
 Testcase: testMalformedSchema took 0.006 sec
-Testcase: testIncorrectXMLSchemaInstance took 0.003 sec
+Testcase: testIncorrectXMLSchemaInstance took 0.002 sec
 Testcase: testSimpleInstance took 0.002 sec
-Testcase: testInvlaidSimpleInstance took 0.003 sec
+Testcase: testInvlaidSimpleInstance took 0.002 sec
 Testcase: testXMLSchemaInstance took 0.002 sec
-Testcase: testXSDAny took 0.003 sec
-Testcase: testMalformedXSDAny took 0.003 sec
-Testcase: testValidationBeforeCompilation took 0.002 sec
-Testcase: testToXML took 0.002 sec
-Testcase: testBothEqual took 0.051 sec
-Testcase: testLineByLine took 0.043 sec
-Testcase: testGetColumnClass took 0.037 sec
+Testcase: testXSDAny took 0.002 sec
+Testcase: testMalformedXSDAny took 0.002 sec
+Testcase: testValidationBeforeCompilation took 0.001 sec
+Testcase: testToXML took 0.001 sec
+Testcase: testBothEqual took 0.049 sec
+Testcase: testLineByLine took 0.04 sec
+Testcase: testGetColumnClass took 0.033 sec
 Testcase: testGetColumnName took 0.001 sec
 Testcase: testAccessors took 0.002 sec
 Testcase: testRemoveRow took 0.001 sec
@@ -1974,7 +1974,7 @@ Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoClassDef
 	at org.yawlfoundation.yawl.TestAllYAWLSuites.suite(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testUnbreakable took 0.001 sec
+Testcase: testUnbreakable took 0 sec
 	Caused an ERROR
 Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
 java.lang.NoClassDefFoundError: Could not initialize class org.hibernate.boot.registry.selector.internal.StrategySelectorBuilder
