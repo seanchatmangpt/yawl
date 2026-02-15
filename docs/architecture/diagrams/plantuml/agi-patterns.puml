@@ -1,0 +1,426 @@
+@startuml AGI-Orchestration-Patterns
+!theme blueprint
+
+' AGI Swarm Orchestration Patterns
+' Shows how YAWL workflow patterns map to AGI swarm coordination
+
+title AGI Swarm Orchestration Patterns Using YAWL
+
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+
+' Pattern Categories
+package "Control Flow Patterns → Swarm Coordination" {
+
+    rectangle "Basic Patterns" #lightblue {
+        card "Pattern 1: Sequence" as seq {
+            **YAWL**: Task A → Task B
+            ----
+            **AGI Swarm**: Sequential agent execution
+            ----
+            Agent 1 completes → Agent 2 starts
+            Strict ordering, no parallelism
+        }
+
+        card "Pattern 2: Parallel Split" as parsplit {
+            **YAWL**: AND-split
+            ----
+            **AGI Swarm**: Fork-Join pattern
+            ----
+            Master agent spawns N worker agents
+            Parallel independent execution
+            Workers execute concurrently
+        }
+
+        card "Pattern 3: Synchronization" as sync {
+            **YAWL**: AND-join
+            ----
+            **AGI Swarm**: Barrier synchronization
+            ----
+            All worker agents must complete
+            Master waits for all results
+            Proceeds when all arrive
+        }
+
+        card "Pattern 4: Exclusive Choice" as xor {
+            **YAWL**: XOR-split
+            ----
+            **AGI Swarm**: Leader decision
+            ----
+            Leader agent evaluates condition
+            Single path selected
+            Other paths not executed
+        }
+    }
+
+    rectangle "Advanced Patterns" #lightgreen {
+        card "Pattern 5: Multi-Choice" as multi {
+            **YAWL**: OR-split
+            ----
+            **AGI Swarm**: Swarm voting
+            ----
+            Agents vote on execution paths
+            Multiple paths may be selected
+            Consensus determines choices
+        }
+
+        card "Pattern 6: OR-Join" as orjoin {
+            **YAWL**: Non-local OR-join
+            ----
+            **AGI Swarm**: Partial synchronization
+            ----
+            Wait for subset of agents
+            Dynamic quorum based on splits
+            Complex synchronization semantics
+        }
+
+        card "Pattern 7: Multiple Instances" as multi_inst {
+            **YAWL**: Multiple instance task
+            ----
+            **AGI Swarm**: Dynamic agent pool
+            ----
+            Spawn N agents at runtime
+            N determined dynamically
+            Can be sequential, parallel, or dynamic
+        }
+
+        card "Pattern 8: Cancellation" as cancel {
+            **YAWL**: Cancellation region
+            ----
+            **AGI Swarm**: Abort protocol
+            ----
+            Cancel all agents in region
+            Cleanup and rollback
+            Exception propagation
+        }
+    }
+}
+
+package "Resource Patterns → Agent Allocation" {
+
+    rectangle "Allocation Strategies" #lightyellow {
+        card "Pattern R1: Role-Based" as role {
+            **YAWL**: Role-based allocation
+            ----
+            **AGI Swarm**: Capability-based matching
+            ----
+            Match agent capabilities to task requirements
+            Use embeddings for semantic similarity
+            Skill-based routing
+        }
+
+        card "Pattern R2: Work Distribution" as workdist {
+            **YAWL**: Distribution by allocation
+            ----
+            **AGI Swarm**: Task marketplace
+            ----
+            Agents bid on tasks (Contract Net)
+            Auction-based allocation
+            Market dynamics (supply/demand)
+        }
+
+        card "Pattern R3: Retention" as retention {
+            **YAWL**: Resource retention
+            ----
+            **AGI Swarm**: Agent affinity
+            ----
+            Same agent handles related tasks
+            Maintains context and state
+            Reduces coordination overhead
+        }
+
+        card "Pattern R4: Load Balancing" as loadbal {
+            **YAWL**: Resource balancing
+            ----
+            **AGI Swarm**: Swarm load balancing
+            ----
+            Distribute tasks evenly
+            Prevent agent overload
+            Optimize throughput
+        }
+    }
+}
+
+package "Data Patterns → Agent Communication" {
+
+    rectangle "Data Flow" #lightpink {
+        card "Pattern D1: Task Data" as taskdata {
+            **YAWL**: Task input/output parameters
+            ----
+            **AGI Swarm**: Structured agent I/O
+            ----
+            JSON/XML data exchange
+            Schema validation
+            Type checking
+        }
+
+        card "Pattern D2: Case Data" as casedata {
+            **YAWL**: Net variables (case scope)
+            ----
+            **AGI Swarm**: Shared memory
+            ----
+            Vector database for agent context
+            Semantic search for relevance
+            RAG for context retrieval
+        }
+
+        card "Pattern D3: Environment Data" as envdata {
+            **YAWL**: Environment variables
+            ----
+            **AGI Swarm**: Knowledge graphs
+            ----
+            Domain ontologies
+            External knowledge bases
+            Shared understanding
+        }
+
+        card "Pattern D4: Triggers" as triggers {
+            **YAWL**: External triggers
+            ----
+            **AGI Swarm**: Event-driven agents
+            ----
+            Agents react to workflow events
+            Pub/Sub messaging (Kafka)
+            Asynchronous coordination
+        }
+    }
+}
+
+package "Exception Patterns → Fault Tolerance" {
+
+    rectangle "Exception Handling" #lightcoral {
+        card "Pattern E1: Retry" as retry {
+            **YAWL**: Worklet exception handling
+            ----
+            **AGI Swarm**: Agent retry with backoff
+            ----
+            Retry failed tasks
+            Exponential backoff
+            Failure tracking
+        }
+
+        card "Pattern E2: Compensation" as comp {
+            **YAWL**: Compensation workflow
+            ----
+            **AGI Swarm**: Compensating agents
+            ----
+            Undo completed work
+            Saga pattern for distributed transactions
+            State rollback
+        }
+
+        card "Pattern E3: Escalation" as esc {
+            **YAWL**: Exception escalation
+            ----
+            **AGI Swarm**: Human-in-the-loop
+            ----
+            Escalate to human supervisor
+            Agent cannot resolve
+            Manual intervention
+        }
+
+        card "Pattern E4: Substitution" as subst {
+            **YAWL**: Dynamic worklet substitution
+            ----
+            **AGI Swarm**: Agent failover
+            ----
+            Replace failed agent
+            Reassign task to backup
+            Maintain progress
+        }
+    }
+}
+
+' Blue Ocean Innovations
+package "🚀 Blue Ocean: AGI-Specific Patterns" #technology {
+
+    rectangle "Novel Swarm Patterns" #gold {
+        card "🧠 Collective Intelligence" as collective {
+            **Pattern**: Swarm learning
+            ----
+            **Innovation**: Federated learning across agents
+            ----
+            • Agents improve collectively
+            • Share model updates, not data
+            • Privacy-preserving learning
+            • Performance optimization
+        }
+
+        card "🎯 Dynamic Re-Planning" as replan {
+            **Pattern**: Runtime workflow adaptation
+            ----
+            **Innovation**: Agents modify workflow
+            ----
+            • Detect suboptimal paths
+            • Propose workflow changes
+            • Consensus on modifications
+            • Self-optimizing swarms
+        }
+
+        card "🤝 Emergent Coordination" as emergent {
+            **Pattern**: Bottom-up coordination
+            ----
+            **Innovation**: No central coordinator
+            ----
+            • Agents self-organize
+            • Local interactions → global behavior
+            • Swarm intelligence algorithms
+            • Resilient to failures
+        }
+
+        card "🔮 Predictive Allocation" as predict {
+            **Pattern**: ML-based task routing
+            ----
+            **Innovation**: Predict best agent
+            ----
+            • Learn from past executions
+            • Predict task duration, quality
+            • Optimize for objectives
+            • Multi-armed bandit algorithms
+        }
+
+        card "🌊 Context-Aware Prompting" as context_prompt {
+            **Pattern**: Dynamic prompt generation
+            ----
+            **Innovation**: MCP integration
+            ----
+            • Generate task-specific prompts
+            • Include workflow context
+            • RAG for relevant history
+            • Model-optimized formatting
+        }
+
+        card "🎪 Multi-Agent Debate" as debate {
+            **Pattern**: Consensus through debate
+            ----
+            **Innovation**: Agents deliberate
+            ----
+            • Multiple agents analyze task
+            • Debate solutions
+            • Convergence to consensus
+            • Improved decision quality
+        }
+    }
+}
+
+' Example Workflow Mapping
+package "📋 Example: Order Fulfillment → AGI Swarm" {
+
+    rectangle "Workflow Decomposition" #lightskyblue {
+        card "Step 1: Check Inventory" as inv {
+            **Task**: InventoryCheck
+            **Agent**: Inventory analyzer agent
+            **MCP Prompt**:
+            "Analyze inventory levels for order #XYZ.
+            Check stock, location, availability.
+            Return JSON with item status."
+        }
+
+        card "Step 2: Parallel Processing" as par {
+            **Task**: AND-split to payment & shipping
+            **Agents**: Payment agent + Shipping agent
+            **A2A Coordination**:
+            Fork-join pattern
+            Both agents execute in parallel
+            Barrier sync before proceeding
+        }
+
+        card "Step 3: Dynamic Exception" as exc {
+            **Task**: Payment failure worklet
+            **Agent**: Exception handler agent
+            **Worklet Substitution**:
+            Detect payment failure → substitute retry workflow
+            Agent negotiates with payment systems
+            Escalate to human if needed
+        }
+
+        card "Step 4: Collective Decision" as decision {
+            **Task**: Shipping method selection
+            **Agents**: Swarm of logistics agents
+            **Consensus**:
+            Agents vote on optimal shipping
+            Consider cost, speed, carbon footprint
+            Raft consensus for decision
+        }
+    }
+}
+
+' Formal Semantics Note
+note right of collective
+  **Formal Verification**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Based on van der Aalst's Petri net semantics:
+
+  • **Soundness**: Every case completes
+  • **Deadlock-free**: No agent deadlock
+  • **Livelock-free**: No infinite loops
+  • **Proper completion**: Exactly one token in end
+
+  AGI patterns inherit YAWL correctness properties!
+end note
+
+note bottom of emergent
+  **Emergence Detection**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Process mining discovers actual agent behavior:
+
+  1. Log all agent interactions
+  2. Apply process discovery algorithms
+  3. Compare actual vs. designed workflow
+  4. Identify emergent patterns
+  5. Formalize as new YAWL patterns
+
+  Swarm behavior becomes reusable patterns!
+end note
+
+note bottom of context_prompt
+  **MCP Prompt Example**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  ```
+  You are an inventory analysis agent.
+
+  **Task**: InventoryCheck for Order #12345
+
+  **Context**:
+  - Customer: Premium tier (fast shipping required)
+  - Items: [{"sku": "ABC123", "qty": 2}, ...]
+  - Warehouse: "US-WEST-1"
+
+  **Workflow State**:
+  - Previous task: OrderValidation (completed)
+  - Next task: Payment & Shipping (waiting)
+
+  **Expected Output**:
+  JSON: {"available": boolean, "location": string, ...}
+
+  **RAG Context**:
+  Similar past orders: [retrieved from vector DB]
+  Best practices: [domain documentation]
+  ```
+
+  Generated dynamically by YawlMcpPromptProvider!
+end note
+
+' Legend
+legend right
+  **Pattern Notation**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YAWL: Workflow pattern definition
+  • AGI Swarm: Agent coordination mapping
+  • Innovation: Blue ocean contribution
+
+  **Color Coding**
+  • Light Blue: Basic control flow
+  • Light Green: Advanced control flow
+  • Light Yellow: Resource patterns
+  • Light Pink: Data patterns
+  • Light Coral: Exception patterns
+  • Gold: Novel AGI patterns
+
+  **Formal Foundation**
+  All patterns have Petri net semantics.
+  Correctness properties are provable.
+  Process mining validates actual behavior.
+end legend
+
+@enduml

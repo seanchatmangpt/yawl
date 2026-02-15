@@ -1,0 +1,422 @@
+@startuml C4-Level4-Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' YAWL Code Structure - Class Diagram
+' C4 Level 4: Key classes and their relationships
+
+title YAWL AGI Orchestration - Code Structure (Key Classes)
+
+' Core Engine Classes
+package "org.yawlfoundation.yawl.engine" {
+    class YEngine {
+        - _specifications: Map<YSpecificationID, YSpecification>
+        - _runningCases: Map<String, YNetRunner>
+        - _persistenceManager: YPersistenceManager
+        - _eventDispatcher: YEventDispatcher
+        --
+        + launchCase(specID, caseData, sessionHandle): String
+        + getAvailableWorkItems(agentID): List<YWorkItem>
+        + startWorkItem(itemID, agentID, sessionHandle): YWorkItem
+        + completeWorkItem(itemID, outputData, sessionHandle): void
+        + cancelCase(caseID, sessionHandle): void
+        + getWorkflowState(caseID): YState
+        --
+        // Interface B operations for agents
+        // Singleton instance
+    }
+
+    class YStatelessEngine {
+        - _specifications: Map<YSpecificationID, YSpecification>
+        --
+        + validateSpecification(specXML): ValidationResult
+        + simulateExecution(specID, inputData): SimulationResult
+        + analyzeWorkflow(specID): AnalysisResult
+        --
+        // Lightweight engine for validation
+        // No persistence
+    }
+
+    class YNetRunner {
+        - _specification: YSpecification
+        - _caseID: String
+        - _netInstance: YNetInstance
+        - _engine: YEngine
+        --
+        + start(inputData): void
+        + fireTask(task: YTask, inputData): void
+        + completeTask(task: YTask, outputData): void
+        + getCurrentMarking(): Set<YCondition>
+        + isDeadlocked(): boolean
+        --
+        // Executes workflow net
+        // Manages token flow
+    }
+
+    class YWorkItem {
+        - _id: String
+        - _caseID: String
+        - _task: YTask
+        - _status: WorkItemStatus
+        - _enablementTime: Timestamp
+        - _startTime: Timestamp
+        - _completionTime: Timestamp
+        - _assignedAgent: String
+        --
+        + enable(): void
+        + start(agentID): void
+        + complete(outputData): void
+        + cancel(reason): void
+        + getInputData(): Document
+        + setOutputData(data): void
+        --
+        // Unit of work for agents
+    }
+}
+
+' Element Model Classes
+package "org.yawlfoundation.yawl.elements" {
+    abstract class YElement {
+        - _id: String
+        - _name: String
+        - _documentation: String
+        --
+        + getID(): String
+        + getName(): String
+    }
+
+    class YTask {
+        - _decomposition: YDecomposition
+        - _splitType: SplitType
+        - _joinType: JoinType
+        - _multiInstanceType: MultiInstanceType
+        --
+        + isAtomic(): boolean
+        + isComposite(): boolean
+        + isMultipleInstance(): boolean
+        + fire(inputData): void
+        + complete(outputData): void
+        --
+        // YAWL task types:
+        // Atomic, Composite, Multiple
+    }
+
+    class YCondition {
+        - _tokens: Set<Token>
+        --
+        + addToken(token): void
+        + removeToken(token): void
+        + getTokenCount(): int
+        + isEmpty(): boolean
+        --
+        // Place in Petri net
+    }
+
+    class YFlow {
+        - _source: YElement
+        - _target: YElement
+        - _predicate: String
+        - _isDefaultFlow: boolean
+        --
+        + evaluate(data): boolean
+        + getSource(): YElement
+        + getTarget(): YElement
+        --
+        // Arc with guard condition
+    }
+
+    YElement <|-- YTask
+    YElement <|-- YCondition
+    YTask --> YFlow : "has outgoing/incoming"
+    YCondition --> YFlow : "has outgoing/incoming"
+}
+
+' MCP Integration Classes
+package "org.yawlfoundation.yawl.integration.mcp" {
+    class YawlMcpPromptProvider {
+        - _engine: YEngine
+        - _capabilityMatcher: CapabilityMatcher
+        - _taskRecommender: TaskRecommender
+        - _promptOptimizer: PromptOptimizer
+        --
+        + generateTaskPrompt(workItem, agentProfile): String
+        + generateDecisionPrompt(caseID, choicePoint): String
+        + generateExceptionPrompt(exception, context): String
+        + recommendNextTask(agentID): List<WorkItemRecommendation>
+        --
+        // Core MCP innovation
+        // Context-aware prompting
+    }
+
+    class McpToolProvider {
+        - _engine: YEngine
+        - _dataMapper: DataMapper
+        --
+        + launchWorkflow(specID, caseData): McpToolResult
+        + getWorkItems(filters): McpToolResult
+        + completeWorkItem(itemID, outputData): McpToolResult
+        + queryWorkflowState(caseID): McpToolResult
+        --
+        // Exposes workflow operations as MCP tools
+    }
+
+    class McpResourceProvider {
+        - _engine: YEngine
+        - _specAnalyzer: SpecificationAnalyzer
+        --
+        + getSpecification(specID): Resource
+        + getSchema(): Resource
+        + getDocumentation(topic): Resource
+        + getExamples(category): Resource
+        --
+        // Provides workflow resources to agents
+    }
+
+    class CapabilityMatcher {
+        - _embeddingService: EmbeddingService
+        - _memoryClient: MemoryClient
+        --
+        + matchAgentsToTask(task: YTask): List<AgentMatch>
+        + computeCapabilitySimilarity(agent, task): double
+        + extractTaskRequirements(task): Capabilities
+        --
+        // ML-based capability matching
+    }
+
+    YawlMcpPromptProvider --> YEngine
+    YawlMcpPromptProvider --> CapabilityMatcher
+    McpToolProvider --> YEngine
+    McpResourceProvider --> YEngine
+}
+
+' A2A Integration Classes
+package "org.yawlfoundation.yawl.integration.a2a" {
+    class A2AServer {
+        - _agentRegistry: AgentRegistry
+        - _taskNegotiation: TaskNegotiationEngine
+        - _consensusEngine: ConsensusEngine
+        - _messageRouter: MessageRouter
+        --
+        + registerAgent(agentInfo): RegistrationResult
+        + negotiateTask(taskAnnouncement): NegotiationResult
+        + initiateConsensus(proposal): ConsensusResult
+        + routeMessage(message): void
+        --
+        // Agent-to-Agent coordination server
+    }
+
+    class AgentRegistry {
+        - _agents: ConcurrentHashMap<String, AgentInfo>
+        - _capabilityIndex: CapabilityDirectory
+        --
+        + registerAgent(info): void
+        + deregisterAgent(agentID): void
+        + getAgent(agentID): AgentInfo
+        + findAgentsByCapability(capability): List<AgentInfo>
+        + updateHeartbeat(agentID): void
+        --
+        // Service discovery for agents
+    }
+
+    class TaskNegotiationEngine {
+        - _protocol: NegotiationProtocol
+        - _allocationEngine: AllocationEngine
+        --
+        + announceTask(task): void
+        + receiveBid(bid): void
+        + selectWinner(): AgentInfo
+        + awardTask(agentID, task): void
+        --
+        // Contract Net, Auctions
+    }
+
+    class ConsensusEngine {
+        - _algorithm: ConsensusAlgorithm
+        - _quorumSize: int
+        --
+        + propose(proposal): void
+        + vote(vote): void
+        + reachConsensus(): ConsensusResult
+        + getDecision(): Decision
+        --
+        // Raft/Paxos for swarm decisions
+    }
+
+    A2AServer --> AgentRegistry
+    A2AServer --> TaskNegotiationEngine
+    A2AServer --> ConsensusEngine
+}
+
+' Event Notification Classes
+package "org.yawlfoundation.yawl.integration" {
+    class YawlEventNotifier {
+        - _listeners: ConcurrentHashMap<String, EventListener>
+        - _webSocketSessions: Set<WebSocketSession>
+        - _sseEmitters: Set<SseEmitter>
+        - _executor: ExecutorService
+        --
+        + addEventListener(listener): void
+        + removeEventListener(listenerID): void
+        + notifyEvent(event: YawlEvent): void
+        + subscribeWebSocket(session): void
+        + subscribeSSE(emitter): void
+        --
+        // Real-time event streaming
+        // Thread-safe concurrent delivery
+    }
+
+    class YawlEvent {
+        - _eventType: EventType
+        - _caseID: String
+        - _workItemID: String
+        - _timestamp: Timestamp
+        - _payload: Map<String, Object>
+        --
+        + getEventType(): EventType
+        + getCaseID(): String
+        + getPayload(): Map
+        --
+        // Immutable event object
+    }
+
+    enum EventType {
+        CASE_LAUNCHED
+        CASE_COMPLETED
+        CASE_CANCELLED
+        WORKITEM_ENABLED
+        WORKITEM_STARTED
+        WORKITEM_COMPLETED
+        WORKITEM_CANCELLED
+        EXCEPTION_RAISED
+    }
+
+    YawlEventNotifier --> YawlEvent
+    YawlEvent --> EventType
+}
+
+' Persistence Classes
+package "org.yawlfoundation.yawl.persistence" {
+    class YPersistenceManager {
+        - _sessionFactory: SessionFactory
+        - _transactionManager: TransactionManager
+        --
+        + persistSpecification(spec): void
+        + persistCase(caseData): void
+        + persistWorkItem(workItem): void
+        + loadSpecification(specID): YSpecification
+        + loadCase(caseID): CaseData
+        + loadWorkItem(itemID): YWorkItem
+        --
+        // Hibernate-based persistence
+    }
+
+    interface YawlDAO {
+        + save(entity): void
+        + update(entity): void
+        + delete(entity): void
+        + findById(id): T
+        + findAll(): List<T>
+    }
+
+    class SpecificationDAO implements YawlDAO
+    class CaseDAO implements YawlDAO
+    class WorkItemDAO implements YawlDAO
+
+    YPersistenceManager --> YawlDAO
+    YPersistenceManager --> SpecificationDAO
+    YPersistenceManager --> CaseDAO
+    YPersistenceManager --> WorkItemDAO
+}
+
+' Key Relationships Across Packages
+
+YEngine --> YNetRunner : "manages"
+YEngine --> YWorkItem : "creates"
+YEngine --> YPersistenceManager : "uses"
+YEngine --> YawlEventNotifier : "publishes to"
+
+YNetRunner --> YTask : "executes"
+YNetRunner --> YCondition : "manages tokens"
+YWorkItem --> YTask : "represents"
+
+YawlMcpPromptProvider --> YWorkItem : "generates prompts for"
+A2AServer --> YEngine : "coordinates via Interface B"
+
+' Notes
+
+note right of YEngine
+  **YEngine Responsibilities**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Implements Interface A, B, E, X
+  • Manages workflow lifecycle
+  • Coordinates YNetRunner instances
+  • Publishes events
+  • Thread-safe operation
+  • Persistence coordination
+
+  **Key Methods for AI Agents**
+  • launchCase(): Start workflow
+  • getAvailableWorkItems(): Query tasks
+  • startWorkItem(): Claim task
+  • completeWorkItem(): Submit result
+  • getWorkflowState(): Monitor progress
+end note
+
+note right of YawlMcpPromptProvider
+  **Blue Ocean Innovation**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Context-aware prompting for AI agents
+
+  **Prompt Generation Pipeline**
+  1. Extract workflow state (marking)
+  2. Analyze task requirements
+  3. Match agent capabilities
+  4. Retrieve relevant past experiences (RAG)
+  5. Optimize for agent model
+  6. Generate natural language prompt
+
+  **Prompt Components**
+  • Task description
+  • Input data context
+  • Expected output format
+  • Constraints and rules
+  • Examples (few-shot)
+  • Tool recommendations
+end note
+
+note right of A2AServer
+  **AGI Swarm Coordination**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Decentralized coordination layer
+
+  **Coordination Mechanisms**
+  • Task negotiation (Contract Net)
+  • Consensus (Raft/Paxos)
+  • Message routing (pub/sub)
+  • Service discovery (registry)
+
+  **Swarm Patterns**
+  • Leader election
+  • Barrier synchronization
+  • Mutual exclusion
+  • Rendezvous
+  • Group communication
+end note
+
+note right of YawlEventNotifier
+  **Real-Time Event Streaming**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Multi-protocol event delivery
+
+  **Protocols**
+  • WebSocket: full-duplex
+  • SSE: server-sent events
+  • HTTP Polling: fallback
+
+  **Guarantees**
+  • Thread-safe delivery
+  • Ordering preservation
+  • At-least-once delivery
+  • Failure handling
+end note
+
+@enduml

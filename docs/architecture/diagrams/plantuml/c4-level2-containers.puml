@@ -1,0 +1,199 @@
+@startuml C4-Level2-Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' YAWL AGI Orchestration - Container Diagram
+' C4 Level 2: Runtime containers and their interactions
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+title YAWL AGI Orchestration Platform - Container Diagram
+
+' External Actors
+Person(agent_dev, "AI Agent Developer", "Develops autonomous agents")
+Person(workflow_designer, "Workflow Designer", "Designs coordination patterns")
+System_Ext(agi_agents, "AGI Agents", "Autonomous AI agents")
+System_Ext(mcp_clients, "MCP Clients", "Claude, IDEs, Tools")
+
+' YAWL System Boundary
+System_Boundary(yawl_system, "YAWL AGI Orchestration Platform") {
+
+    ' Core Engine Container
+    Container(engine, "YAWL Engine", "Java 21, Tomcat", "Core workflow engine executing YAWL specifications. Manages workflow instances, work items, and state transitions. Based on Petri net semantics.")
+
+    ' MCP Server Container
+    Container(mcp_server, "MCP Server", "Java 21, MCP Protocol", "Model Context Protocol server providing AI agents with workflow context, prompts, and task allocation. Real-time agent integration.")
+
+    ' A2A Server Container
+    Container(a2a_server, "A2A Server", "Java 21, A2A Protocol", "Agent-to-Agent coordination server. Manages distributed agent communication, task negotiation, and swarm consensus.")
+
+    ' Event Notifier Container
+    Container(event_notifier, "Event Notifier", "Java 21, WebSocket/SSE", "Real-time event streaming service. Broadcasts workflow events to agents via WebSocket, SSE, and HTTP polling. Thread-safe concurrent distribution.")
+
+    ' Resource Service Container
+    Container(resource_service, "Resource Service", "Java 21, WAR", "Human and non-human resource management. Allocates AI agents to tasks based on capabilities, availability, and policies.")
+
+    ' Worklet Service Container
+    Container(worklet_service, "Worklet Service", "Java 21, WAR", "Dynamic workflow adaptation. Enables runtime workflow modification based on agent feedback and exception handling patterns.")
+
+    ' Monitor Service Container
+    Container(monitor_service, "Monitor Service", "Java 21, WAR", "Process monitoring and analytics. Tracks workflow execution, agent performance, and system health metrics.")
+
+    ' API Gateway Container
+    Container(api_gateway, "API Gateway", "Kong/Nginx", "External API gateway. Rate limiting, authentication, request routing, and load balancing.")
+
+    ' Web Console Container
+    Container(web_console, "Admin Console", "React, TypeScript", "Web-based administration interface. Workflow deployment, monitoring dashboards, agent management, and system configuration.")
+}
+
+' Data Storage
+ContainerDb(workflow_db, "Workflow Database", "PostgreSQL 16", "Stores workflow specifications, execution state, work items, and audit logs. Partitioned for scalability.")
+
+ContainerDb(agent_memory, "Agent Memory", "Vector DB (Pinecone)", "Persistent memory for AI agents. Stores embeddings, context windows, and agent learning state.")
+
+ContainerDb(process_mining_db, "Process Mining DB", "ClickHouse", "Time-series database for process mining. Stores event logs for agent behavior analysis.")
+
+ContainerDb(cache, "Redis Cache", "Redis 7", "Distributed cache for session state, workflow instances, and hot data. Enables horizontal scaling.")
+
+' Message Queue
+Container_Ext(message_queue, "Message Queue", "Kafka", "Event streaming platform. Asynchronous agent communication and workflow event distribution.")
+
+' Monitoring Stack
+Container_Ext(monitoring, "Monitoring", "Prometheus/Grafana", "Metrics collection, alerting, and visualization. Tracks SLAs and agent performance.")
+
+Container_Ext(tracing, "Distributed Tracing", "Jaeger", "Request tracing across containers. Debugs agent interaction flows.")
+
+Container_Ext(logging, "Centralized Logging", "ELK Stack", "Log aggregation from all containers. Security audit and troubleshooting.")
+
+' Relationships - External to System
+
+Rel(agent_dev, web_console, "Manages workflows", "HTTPS")
+Rel(agent_dev, mcp_server, "Develops agent integrations", "MCP Protocol")
+
+Rel(workflow_designer, web_console, "Designs workflows", "HTTPS")
+Rel(workflow_designer, engine, "Uploads specifications", "Interface A")
+
+Rel(agi_agents, a2a_server, "Coordinates tasks", "A2A Protocol")
+Rel(agi_agents, event_notifier, "Subscribes to events", "WebSocket/SSE")
+
+Rel(mcp_clients, mcp_server, "Requests workflow context", "MCP Protocol")
+Rel(mcp_clients, api_gateway, "API requests", "HTTPS/REST")
+
+' Relationships - Within System
+
+Rel(api_gateway, engine, "Routes requests", "HTTP")
+Rel(api_gateway, mcp_server, "Routes MCP", "MCP Protocol")
+Rel(api_gateway, a2a_server, "Routes A2A", "HTTP")
+
+Rel(engine, event_notifier, "Publishes events", "Internal API")
+Rel(engine, resource_service, "Allocates resources", "Interface X")
+Rel(engine, worklet_service, "Handles exceptions", "Interface E")
+Rel(engine, monitor_service, "Reports metrics", "Interface E")
+
+Rel(mcp_server, engine, "Launches workflows", "Interface B")
+Rel(mcp_server, resource_service, "Queries agent availability", "REST")
+
+Rel(a2a_server, engine, "Coordinates work items", "Interface B")
+Rel(a2a_server, message_queue, "Publishes messages", "Kafka Protocol")
+
+Rel(event_notifier, message_queue, "Distributes events", "Kafka Protocol")
+
+Rel(resource_service, engine, "Completes work items", "Interface B")
+Rel(worklet_service, engine, "Substitutes workflows", "Interface A")
+Rel(monitor_service, engine, "Queries state", "Interface B")
+
+Rel(web_console, engine, "Admin operations", "REST API")
+Rel(web_console, monitor_service, "Fetches dashboards", "REST API")
+
+' Relationships - Data Storage
+
+Rel(engine, workflow_db, "Persists state", "JDBC/Hibernate")
+Rel(engine, cache, "Caches instances", "Redis Protocol")
+
+Rel(mcp_server, agent_memory, "Stores/retrieves context", "Vector Search")
+Rel(a2a_server, agent_memory, "Shared agent knowledge", "Vector Search")
+
+Rel(monitor_service, process_mining_db, "Writes event logs", "HTTPS")
+Rel(monitor_service, monitoring, "Exports metrics", "Prometheus Exporter")
+
+Rel(event_notifier, message_queue, "Consumes events", "Kafka Consumer")
+
+' Relationships - Observability
+
+Rel(engine, monitoring, "Exposes metrics", "/metrics endpoint")
+Rel(engine, tracing, "Sends traces", "OpenTelemetry")
+Rel(engine, logging, "Ships logs", "Log4j Appender")
+
+Rel(mcp_server, monitoring, "Exposes metrics", "/metrics endpoint")
+Rel(a2a_server, monitoring, "Exposes metrics", "/metrics endpoint")
+Rel(event_notifier, monitoring, "Exposes metrics", "/metrics endpoint")
+
+' Notes
+
+note right of engine
+  **Core Engine Capabilities**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YEngine: stateful workflow execution
+  • YStatelessEngine: lightweight variant
+  • Interface B: client operations
+  • Interface A: design-time operations
+  • Interface E: event notifications
+  • Interface X: extended operations
+
+  **Scalability**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Horizontal scaling via load balancer
+  • Redis cache for session state
+  • Database connection pooling
+  • Async event processing
+end note
+
+note right of mcp_server
+  **MCP Integration**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YawlMcpPromptProvider
+  • Real-time prompt generation
+  • Context-aware task allocation
+  • Agent capability matching
+
+  **Supported Clients**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Claude Desktop
+  • VS Code extensions
+  • Custom MCP clients
+  • CLI tools
+end note
+
+note right of a2a_server
+  **A2A Coordination**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Task negotiation protocols
+  • Swarm consensus algorithms
+  • Distributed work allocation
+  • Agent reputation tracking
+
+  **Patterns**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Master-slave coordination
+  • Peer-to-peer negotiation
+  • Market-based allocation
+  • Auction protocols
+end note
+
+note right of event_notifier
+  **Event Streaming**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • WebSocket: full-duplex streaming
+  • SSE: server-sent events
+  • HTTP Polling: fallback mechanism
+  • Thread-safe concurrent delivery
+
+  **Event Types**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Case launched/completed
+  • Work item enabled/started/completed
+  • Resource allocated/deallocated
+  • Exception raised/handled
+end note
+
+@enduml

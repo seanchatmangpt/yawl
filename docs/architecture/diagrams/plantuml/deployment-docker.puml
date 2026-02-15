@@ -1,0 +1,288 @@
+@startuml Deployment-Docker-Compose
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+' Docker Compose Deployment Architecture
+' Shows container deployment with Docker Compose for dev/test/production
+
+LAYOUT_WITH_LEGEND()
+
+title YAWL AGI Orchestration - Docker Compose Deployment
+
+' Deployment Nodes
+Deployment_Node(dev_machine, "Development Machine", "Docker Desktop / Linux") {
+
+    Deployment_Node(docker_network, "Docker Network: yawl_network", "Bridge Network") {
+
+        ' YAWL Engine Container
+        Deployment_Node(engine_container, "yawl-engine", "Tomcat 10 + Java 21") {
+            Container(engine_app, "YAWL Engine", "Java WAR", "Core workflow engine with Interface A/B/E/X")
+            Container(resource_service, "Resource Service", "Java WAR", "Resource management")
+            Container(worklet_service, "Worklet Service", "Java WAR", "Dynamic adaptation")
+            Container(monitor_service, "Monitor Service", "Java WAR", "Monitoring & analytics")
+        }
+
+        ' MCP Server Container
+        Deployment_Node(mcp_container, "yawl-mcp-server", "Java 21") {
+            Container(mcp_server, "MCP Server", "Java Process", "Model Context Protocol server for AI agents")
+        }
+
+        ' A2A Server Container
+        Deployment_Node(a2a_container, "yawl-a2a-server", "Java 21") {
+            Container(a2a_server, "A2A Server", "Java Process", "Agent-to-Agent coordination server")
+        }
+
+        ' Event Notifier Container
+        Deployment_Node(event_container, "yawl-event-notifier", "Java 21") {
+            Container(event_notifier, "Event Notifier", "Java Process", "Real-time event streaming (WebSocket/SSE)")
+        }
+
+        ' API Gateway Container
+        Deployment_Node(gateway_container, "yawl-api-gateway", "Nginx 1.25") {
+            Container(nginx, "Nginx Gateway", "Nginx", "Reverse proxy, load balancing, SSL termination")
+        }
+
+        ' Web Console Container
+        Deployment_Node(console_container, "yawl-web-console", "Node 20 + Nginx") {
+            Container(web_console, "Admin Console", "React SPA", "Web-based administration interface")
+        }
+
+        ' PostgreSQL Container
+        Deployment_Node(db_container, "yawl-postgres", "PostgreSQL 16") {
+            ContainerDb(postgres, "Workflow Database", "PostgreSQL", "Stores specifications, cases, work items, audit logs")
+        }
+
+        ' Redis Container
+        Deployment_Node(cache_container, "yawl-redis", "Redis 7") {
+            ContainerDb(redis, "Cache & Session Store", "Redis", "Distributed cache, session state, distributed locks")
+        }
+
+        ' Kafka Container
+        Deployment_Node(kafka_container, "yawl-kafka", "Kafka 3.6") {
+            Container(kafka, "Message Queue", "Kafka", "Event streaming, async agent communication")
+            Container(zookeeper, "Zookeeper", "Zookeeper", "Kafka coordination")
+        }
+
+        ' Vector Database Container
+        Deployment_Node(vector_container, "yawl-vector-db", "Weaviate") {
+            ContainerDb(vector_db, "Agent Memory", "Weaviate", "Vector embeddings, agent context, knowledge base")
+        }
+
+        ' Process Mining Container
+        Deployment_Node(clickhouse_container, "yawl-clickhouse", "ClickHouse") {
+            ContainerDb(clickhouse, "Process Mining DB", "ClickHouse", "Time-series event logs for process mining")
+        }
+
+        ' Monitoring Stack
+        Deployment_Node(monitoring_container, "yawl-monitoring", "Docker Compose") {
+            Container(prometheus, "Prometheus", "Prometheus", "Metrics collection & alerting")
+            Container(grafana, "Grafana", "Grafana", "Dashboards & visualization")
+            Container(jaeger, "Jaeger", "Jaeger", "Distributed tracing")
+        }
+
+        ' Logging Stack
+        Deployment_Node(logging_container, "yawl-logging", "Docker Compose") {
+            Container(elasticsearch, "Elasticsearch", "ES", "Log storage & search")
+            Container(logstash, "Logstash", "Logstash", "Log processing")
+            Container(kibana, "Kibana", "Kibana", "Log visualization")
+        }
+    }
+}
+
+' External Actors
+Person(developer, "Developer", "Develops workflows")
+System_Ext(ai_agents, "AI Agents", "AGI swarm agents")
+System_Ext(mcp_clients, "MCP Clients", "Claude Desktop, IDEs")
+
+' Container Relationships
+
+Rel(developer, nginx, "HTTPS requests", "443")
+Rel(ai_agents, nginx, "A2A protocol", "443")
+Rel(mcp_clients, nginx, "MCP requests", "443")
+
+Rel(nginx, engine_app, "Proxies to", "8080")
+Rel(nginx, mcp_server, "Proxies to", "8081")
+Rel(nginx, a2a_server, "Proxies to", "8082")
+Rel(nginx, web_console, "Serves SPA", "80")
+
+Rel(engine_app, postgres, "JDBC", "5432")
+Rel(engine_app, redis, "Redis protocol", "6379")
+Rel(engine_app, kafka, "Produces events", "9092")
+Rel(engine_app, event_notifier, "Publishes events", "HTTP")
+
+Rel(mcp_server, engine_app, "Interface B API", "HTTP")
+Rel(mcp_server, vector_db, "Vector search", "8080")
+Rel(mcp_server, redis, "Caching", "6379")
+
+Rel(a2a_server, engine_app, "Interface B API", "HTTP")
+Rel(a2a_server, kafka, "Pub/Sub", "9092")
+Rel(a2a_server, vector_db, "Shared memory", "8080")
+
+Rel(event_notifier, kafka, "Consumes events", "9092")
+Rel(event_notifier, ai_agents, "WebSocket/SSE", "WebSocket")
+
+Rel(monitor_service, clickhouse, "Event logs", "8123")
+Rel(monitor_service, prometheus, "Metrics", "9090")
+
+Rel(resource_service, postgres, "Resource data", "5432")
+Rel(worklet_service, postgres, "Worklet rules", "5432")
+
+' Monitoring Relationships
+
+Rel(engine_app, prometheus, "/metrics endpoint", "9090")
+Rel(mcp_server, prometheus, "/metrics endpoint", "9090")
+Rel(a2a_server, prometheus, "/metrics endpoint", "9090")
+Rel(prometheus, grafana, "Data source", "3000")
+
+Rel(engine_app, elasticsearch, "Ships logs", "9200")
+Rel(mcp_server, elasticsearch, "Ships logs", "9200")
+Rel(a2a_server, elasticsearch, "Ships logs", "9200")
+Rel(logstash, elasticsearch, "Processes logs", "9200")
+Rel(kibana, elasticsearch, "Queries logs", "9200")
+
+Rel(engine_app, jaeger, "Traces", "14268")
+Rel(mcp_server, jaeger, "Traces", "14268")
+Rel(a2a_server, jaeger, "Traces", "14268")
+
+' Volume Mounts
+
+note right of postgres
+  **Volumes**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • /var/lib/postgresql/data
+    → ./volumes/postgres
+
+  **Environment**
+  • POSTGRES_DB=yawl
+  • POSTGRES_USER=yawl
+  • POSTGRES_PASSWORD=***
+
+  **Ports**
+  • 5432:5432
+
+  **Health Check**
+  • pg_isready -U yawl
+end note
+
+note right of redis
+  **Volumes**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • /data → ./volumes/redis
+
+  **Configuration**
+  • Persistence: RDB + AOF
+  • Max memory: 2GB
+  • Eviction: allkeys-lru
+
+  **Ports**
+  • 6379:6379
+end note
+
+note right of engine_app
+  **Volumes**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • ./output/*.war → /usr/local/tomcat/webapps/
+  • ./exampleSpecs → /opt/yawl/specs
+  • ./build/build.properties → /opt/yawl/config/
+
+  **Environment**
+  • JAVA_OPTS=-Xmx4g -Xms2g
+  • YAWL_DB_URL=jdbc:postgresql://yawl-postgres:5432/yawl
+  • YAWL_REDIS_HOST=yawl-redis
+  • YAWL_KAFKA_BROKERS=yawl-kafka:9092
+
+  **Ports**
+  • 8080:8080 (HTTP)
+  • 8443:8443 (HTTPS)
+
+  **Health Check**
+  • curl -f http://localhost:8080/yawl/ib/health
+
+  **Depends On**
+  • yawl-postgres (healthy)
+  • yawl-redis (started)
+  • yawl-kafka (started)
+end note
+
+note right of mcp_server
+  **Environment**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YAWL_ENGINE_URL=http://yawl-engine:8080
+  • VECTOR_DB_URL=http://yawl-vector-db:8080
+  • OPENAI_API_KEY=***
+
+  **Ports**
+  • 8081:8081
+
+  **Health Check**
+  • curl -f http://localhost:8081/mcp/health
+end note
+
+note right of a2a_server
+  **Environment**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YAWL_ENGINE_URL=http://yawl-engine:8080
+  • KAFKA_BROKERS=yawl-kafka:9092
+  • CONSENSUS_ALGORITHM=raft
+
+  **Ports**
+  • 8082:8082 (HTTP)
+  • 8083:8083 (gRPC)
+
+  **Health Check**
+  • curl -f http://localhost:8082/a2a/health
+end note
+
+note right of kafka
+  **Configuration**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Topics:
+    - yawl.events (workflow events)
+    - yawl.agent.coordination (A2A)
+    - yawl.audit (audit logs)
+
+  • Partitions: 3
+  • Replication: 1 (dev), 3 (prod)
+
+  **Ports**
+  • 9092:9092 (internal)
+  • 9093:9093 (external)
+end note
+
+note bottom of docker_network
+  **Docker Compose Services**
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  **Core Services**
+  • yawl-engine (Tomcat + YAWL WARs)
+  • yawl-mcp-server (MCP integration)
+  • yawl-a2a-server (Agent coordination)
+  • yawl-event-notifier (Real-time events)
+
+  **Data Services**
+  • yawl-postgres (Workflow database)
+  • yawl-redis (Cache & locks)
+  • yawl-kafka + zookeeper (Event streaming)
+  • yawl-vector-db (Agent memory)
+  • yawl-clickhouse (Process mining)
+
+  **Infrastructure**
+  • yawl-api-gateway (Nginx)
+  • yawl-web-console (React SPA)
+
+  **Observability**
+  • prometheus + grafana (Metrics)
+  • elasticsearch + logstash + kibana (Logs)
+  • jaeger (Tracing)
+
+  **Network**
+  • Bridge network: yawl_network
+  • Internal DNS: service name resolution
+
+  **Commands**
+  • Start: docker-compose up -d
+  • Stop: docker-compose down
+  • Logs: docker-compose logs -f [service]
+  • Scale: docker-compose up -d --scale yawl-engine=3
+end note
+
+@enduml

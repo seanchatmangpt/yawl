@@ -1,0 +1,238 @@
+@startuml C4-Level3-Engine-Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' YAWL Engine - Component Diagram
+' C4 Level 3: Internal components of the YAWL Engine container
+
+LAYOUT_WITH_LEGEND()
+
+title YAWL Engine - Component Diagram
+
+' External Systems
+Container_Ext(mcp_server, "MCP Server", "Requests workflow context")
+Container_Ext(a2a_server, "A2A Server", "Coordinates agent tasks")
+Container_Ext(web_console, "Admin Console", "Administration")
+ContainerDb_Ext(workflow_db, "Workflow DB", "PostgreSQL")
+ContainerDb_Ext(cache, "Redis Cache", "Session state")
+Container_Ext(event_notifier, "Event Notifier", "Event streaming")
+
+' YAWL Engine Boundary
+Container_Boundary(engine_container, "YAWL Engine Container") {
+
+    ' Interface Layer
+    Component(interface_b, "Interface B", "REST API", "Client operations: launch cases, complete work items, query state. Primary interface for AI agents.")
+
+    Component(interface_a, "Interface A", "REST API", "Design-time operations: upload specifications, manage services, configure engine.")
+
+    Component(interface_e, "Interface E", "Callback API", "Event notifications: broadcasts workflow events to registered listeners (agents, monitors).")
+
+    Component(interface_x, "Interface X", "REST API", "Extended operations: resource queries, worklet invocation, advanced workflow control.")
+
+    ' Core Engine Components
+    Component(yengine, "YEngine", "Java Class", "Main engine orchestrator. Manages workflow lifecycle, state transitions, and coordinates all engine operations. Singleton instance.")
+
+    Component(ystateless_engine, "YStatelessEngine", "Java Class", "Lightweight engine without persistence. Used for validation, simulation, and testing.")
+
+    Component(net_runner, "YNetRunner", "Java Class", "Executes individual workflow nets (processes). Manages net instances, token flow, and transition firing.")
+
+    Component(task_manager, "YTaskManager", "Java Class", "Manages work items and their lifecycle. Handles enabling, starting, completing, and cancelling tasks.")
+
+    Component(case_manager, "YCaseManager", "Java Class", "Manages workflow cases (instances). Handles case creation, completion, cancellation, and suspension.")
+
+    ' Specification Management
+    Component(spec_loader, "YSpecificationLoader", "Java Class", "Loads and validates YAWL specifications from XML. Parses schema, builds element graph.")
+
+    Component(spec_repository, "YSpecificationRepository", "Repository", "In-memory cache of loaded specifications. Indexed by specification ID.")
+
+    Component(unmarshaller, "YUnmarshaller", "JDOM Parser", "XML to object unmarshalling. Validates against YAWL Schema 4.0 XSD.")
+
+    ' Element Model
+    Component(elements, "YElements", "Domain Model", "Workflow element graph: tasks (atomic, composite, multiple), conditions, flows, joins, splits.")
+
+    Component(data_handler, "YDataHandler", "Java Class", "Manages workflow data: variables, parameters, expressions, XPath/XQuery evaluation.")
+
+    Component(expression_evaluator, "YExpressionEvaluator", "Java Class", "Evaluates predicates, guards, and data expressions using XPath/JEXL.")
+
+    ' Persistence Layer
+    Component(persistence_manager, "YPersistenceManager", "Hibernate", "Manages database persistence. Handles transactions, entity mapping, and state recovery.")
+
+    Component(dao_layer, "DAO Layer", "Repository Pattern", "Data access objects for specifications, cases, work items, logs, and configuration.")
+
+    ' State Management
+    Component(state_manager, "YStateManager", "Java Class", "Manages engine state: running, paused, suspended. Handles state transitions and recovery.")
+
+    Component(lock_manager, "YLockManager", "Java Class", "Distributed locking for concurrent access. Prevents race conditions in multi-instance deployments.")
+
+    Component(transaction_manager, "YTransactionManager", "Spring TX", "Transaction coordination. Ensures atomic operations across workflow state changes.")
+
+    ' Event System
+    Component(event_dispatcher, "YEventDispatcher", "Observer Pattern", "Dispatches workflow events to registered listeners. Supports async and sync delivery.")
+
+    Component(event_logger, "YEventLogger", "Log4j2", "Logs all workflow events for audit, process mining, and debugging.")
+
+    ' Cache Layer
+    Component(cache_manager, "YCacheManager", "Redis Client", "Caches hot workflow instances, work items, and session state. Reduces database load.")
+}
+
+' Relationships - External to Engine
+
+Rel(mcp_server, interface_b, "Launches cases, queries work items", "REST/JSON")
+Rel(a2a_server, interface_b, "Coordinates agent work items", "REST/JSON")
+Rel(web_console, interface_a, "Uploads specifications, configures engine", "REST/JSON")
+Rel(web_console, interface_b, "Admin queries", "REST/JSON")
+
+' Relationships - Interface to Core
+
+Rel(interface_b, yengine, "Delegates operations", "Method calls")
+Rel(interface_a, yengine, "Delegates operations", "Method calls")
+Rel(interface_e, event_dispatcher, "Registers listeners", "Callback")
+Rel(interface_x, yengine, "Extended operations", "Method calls")
+
+' Relationships - Core Engine Flow
+
+Rel(yengine, case_manager, "Manages cases", "Method calls")
+Rel(yengine, task_manager, "Manages work items", "Method calls")
+Rel(yengine, spec_repository, "Retrieves specifications", "Query")
+Rel(yengine, state_manager, "Manages engine state", "State updates")
+Rel(yengine, event_dispatcher, "Publishes events", "Event objects")
+
+Rel(case_manager, net_runner, "Creates net instances", "Factory")
+Rel(case_manager, persistence_manager, "Persists case state", "DAO")
+Rel(case_manager, cache_manager, "Caches active cases", "Put/Get")
+
+Rel(net_runner, elements, "Executes workflow graph", "Traversal")
+Rel(net_runner, data_handler, "Evaluates data", "XPath/XQuery")
+Rel(net_runner, task_manager, "Enables work items", "Creation")
+Rel(net_runner, event_dispatcher, "Fires events", "Notifications")
+
+Rel(task_manager, persistence_manager, "Persists work items", "DAO")
+Rel(task_manager, cache_manager, "Caches hot items", "Put/Get")
+Rel(task_manager, lock_manager, "Acquires locks", "Lock/Unlock")
+
+' Relationships - Specification Loading
+
+Rel(spec_loader, unmarshaller, "Parses XML", "JDOM")
+Rel(spec_loader, elements, "Builds element graph", "Factory")
+Rel(spec_loader, spec_repository, "Stores specification", "Register")
+
+Rel(unmarshaller, elements, "Creates elements", "Factory")
+
+' Relationships - Data Handling
+
+Rel(data_handler, expression_evaluator, "Evaluates expressions", "XPath/JEXL")
+Rel(elements, data_handler, "Binds data", "Variables")
+
+' Relationships - Persistence
+
+Rel(persistence_manager, dao_layer, "Uses DAOs", "Repository pattern")
+Rel(dao_layer, workflow_db, "CRUD operations", "JDBC/Hibernate")
+
+Rel(persistence_manager, transaction_manager, "Coordinates transactions", "TX boundaries")
+
+' Relationships - State & Locking
+
+Rel(state_manager, persistence_manager, "Persists state", "DAO")
+Rel(lock_manager, cache, "Distributed locks", "Redis Protocol")
+
+' Relationships - Caching
+
+Rel(cache_manager, cache, "Cache operations", "Redis Protocol")
+
+' Relationships - Events
+
+Rel(event_dispatcher, event_logger, "Logs events", "Async")
+Rel(event_dispatcher, event_notifier, "Broadcasts events", "HTTP/WebSocket")
+Rel(event_logger, workflow_db, "Persists event logs", "JDBC")
+
+' Relationships - YStatelessEngine (validation flow)
+
+Rel(ystateless_engine, spec_loader, "Loads specifications", "Validation")
+Rel(ystateless_engine, net_runner, "Simulates execution", "In-memory")
+
+' Notes
+
+note right of yengine
+  **YEngine Responsibilities**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Workflow lifecycle orchestration
+  • Interface implementations (A, B, E, X)
+  • State persistence and recovery
+  • Event publishing
+  • Transaction coordination
+
+  **Thread Safety**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Synchronized access to shared state
+  • Distributed locking via Redis
+  • Transaction isolation
+  • ConcurrentHashMap for caches
+end note
+
+note right of net_runner
+  **YNetRunner Execution**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Token-based Petri net execution
+  • YAWL-specific patterns:
+    - OR-join (non-local semantics)
+    - Cancellation regions
+    - Multiple instance tasks
+    - Composite tasks (sub-nets)
+
+  **Correctness**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Soundness verification
+  • Deadlock detection
+  • Livelock prevention
+end note
+
+note right of elements
+  **Element Types**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • YTask: Atomic, Composite, Multiple
+  • YCondition: Places in Petri net
+  • YFlow: Arcs with guards
+  • YInputCondition: Start marker
+  • YOutputCondition: End marker
+
+  **Split/Join Types**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • AND-split/join
+  • XOR-split/join
+  • OR-split/join (advanced)
+end note
+
+note right of persistence_manager
+  **Persistence Strategy**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Hibernate 5 ORM
+  • Lazy loading for large graphs
+  • Optimistic locking (version fields)
+  • Database partitioning by case ID
+
+  **Recovery**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Engine restart recovery
+  • Transaction rollback
+  • Checkpoint/restore
+end note
+
+note right of event_dispatcher
+  **Event Types**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • CASE_LAUNCHED
+  • CASE_COMPLETED
+  • CASE_CANCELLED
+  • WORKITEM_ENABLED
+  • WORKITEM_STARTED
+  • WORKITEM_COMPLETED
+  • WORKITEM_CANCELLED
+  • EXCEPTION_RAISED
+
+  **Delivery**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Synchronous callbacks
+  • Asynchronous queue
+  • Guaranteed delivery (retry)
+end note
+
+@enduml

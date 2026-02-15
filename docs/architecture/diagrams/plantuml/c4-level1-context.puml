@@ -1,0 +1,87 @@
+@startuml C4-Level1-SystemContext
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+' YAWL AGI Orchestration - System Context Diagram
+' C4 Level 1: Shows how YAWL fits in the AGI ecosystem
+
+LAYOUT_WITH_LEGEND()
+
+title YAWL AGI Orchestration Platform - System Context
+
+' Core system
+System(yawl, "YAWL Engine", "Formal workflow orchestration engine for AGI swarm coordination. Based on Petri net semantics with provable correctness properties.")
+
+' AI Agent Systems (Primary users)
+Person(agent_dev, "AI Agent Developer", "Develops autonomous agents that participate in coordinated workflows")
+System_Ext(agi_swarm, "AGI Swarm", "Distributed collection of autonomous AI agents requiring coordination and task allocation")
+System_Ext(llm_agents, "LLM-Based Agents", "Claude, GPT-4, Gemini agents executing workflow tasks via MCP protocol")
+System_Ext(specialist_agents, "Specialist Agents", "Domain-specific agents (coding, analysis, data processing)")
+
+' Human Users
+Person(workflow_designer, "Workflow Designer", "Designs complex multi-agent coordination patterns using YAWL notation")
+Person(process_analyst, "Process Analyst", "Monitors agent behavior and analyzes swarm performance using process mining")
+Person(system_admin, "System Administrator", "Manages YAWL infrastructure, scaling, and security")
+
+' External Systems
+System_Ext(mcp_clients, "MCP Clients", "Model Context Protocol clients (Claude Desktop, IDEs, custom tools)")
+System_Ext(a2a_network, "A2A Network", "Agent-to-Agent communication network for distributed coordination")
+System_Ext(knowledge_graphs, "Knowledge Graphs", "Domain knowledge and ontologies for agent reasoning")
+System_Ext(monitoring, "Monitoring Systems", "Prometheus, Grafana, ELK stack for observability")
+
+' Data Systems
+SystemDb_Ext(agent_memory, "Agent Memory Store", "Vector databases and persistent memory for agents (Pinecone, Weaviate)")
+SystemDb_Ext(workflow_db, "Workflow Database", "PostgreSQL database storing workflow definitions and execution state")
+SystemDb_Ext(process_mining_db, "Process Mining Database", "Time-series data for agent behavior analysis")
+
+' Integration Systems
+System_Ext(event_bus, "Event Bus", "Kafka/RabbitMQ for asynchronous agent communication")
+System_Ext(api_gateway, "API Gateway", "Kong/Nginx for external access and rate limiting")
+System_Ext(auth_service, "Authentication Service", "OAuth2/OIDC for agent and user authentication")
+
+' Relationships - AI Agents
+Rel(agent_dev, yawl, "Develops workflows for", "YAWL Schema 4.0, REST API")
+Rel(agi_swarm, yawl, "Coordinates tasks through", "A2A Protocol, MCP")
+Rel(llm_agents, yawl, "Receives tasks from", "MCP Protocol")
+Rel(specialist_agents, yawl, "Executes work items via", "Interface B API")
+
+' Relationships - Human Users
+Rel(workflow_designer, yawl, "Designs coordination patterns", "YAWL Editor, XML")
+Rel(process_analyst, yawl, "Analyzes agent behavior", "Process Mining API, Event Logs")
+Rel(system_admin, yawl, "Manages and monitors", "Admin Console, CLI")
+
+' Relationships - External Systems
+Rel(yawl, mcp_clients, "Provides prompts and context to", "MCP Server Protocol")
+Rel(yawl, a2a_network, "Broadcasts coordination events", "A2A Protocol")
+Rel(yawl, knowledge_graphs, "Queries domain knowledge", "SPARQL, GraphQL")
+Rel(yawl, monitoring, "Sends metrics and traces", "OpenTelemetry, Logs")
+
+' Relationships - Data Systems
+Rel(yawl, agent_memory, "Stores/retrieves agent context", "Vector Search API")
+Rel(yawl, workflow_db, "Persists workflow state", "JDBC, Hibernate")
+Rel(yawl, process_mining_db, "Logs execution events", "Time-series API")
+
+' Relationships - Integration Systems
+Rel(yawl, event_bus, "Publishes workflow events", "Kafka Protocol")
+Rel_Back(api_gateway, yawl, "Routes external requests", "HTTP/REST")
+Rel(yawl, auth_service, "Validates credentials", "OAuth2, JWT")
+
+' Key Innovation Highlights
+note right of yawl
+  **Blue Ocean Innovations**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  ✓ First formal BPM for AGI swarms
+  ✓ Petri net semantics for agents
+  ✓ Verifiable coordination patterns
+  ✓ MCP/A2A native integration
+  ✓ Process mining for AI behavior
+
+  **Fortune 5 Production Grade**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  ✓ Zero mock implementations
+  ✓ Real-time event streaming
+  ✓ Horizontal scalability
+  ✓ Security hardened
+  ✓ Chaos engineering validated
+end note
+
+@enduml

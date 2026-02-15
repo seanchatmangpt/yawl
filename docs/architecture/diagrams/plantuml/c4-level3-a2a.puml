@@ -1,0 +1,315 @@
+@startuml C4-Level3-A2A-Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' A2A Server - Component Diagram
+' C4 Level 3: Agent-to-Agent coordination components
+
+LAYOUT_WITH_LEGEND()
+
+title A2A Server - Component Diagram (AGI Swarm Coordination)
+
+' External Systems
+System_Ext(agi_agents, "AGI Swarm", "Distributed autonomous agents")
+Container_Ext(yawl_engine, "YAWL Engine", "Workflow execution")
+Container_Ext(mcp_server, "MCP Server", "Agent prompting")
+ContainerDb_Ext(agent_memory, "Agent Memory", "Vector DB")
+Container_Ext(message_queue, "Message Queue", "Kafka")
+Container_Ext(monitoring, "Monitoring", "Prometheus")
+
+' A2A Server Boundary
+Container_Boundary(a2a_container, "A2A Server Container") {
+
+    ' Protocol Layer
+    Component(a2a_protocol, "A2A Protocol Handler", "Custom Protocol", "Implements Agent-to-Agent communication protocol. Message routing, reliability, and ordering guarantees.")
+
+    Component(message_router, "Message Router", "Routing Engine", "Routes messages between agents based on addressing, topics, and workflow context. Supports unicast, multicast, broadcast.")
+
+    Component(transport_layer, "Transport Layer", "WebSocket/gRPC", "Multi-transport support: WebSocket for web agents, gRPC for high-performance agents, MQTT for IoT agents.")
+
+    ' Coordination Primitives
+    Component(task_negotiation, "Task Negotiation Engine", "Protocol", "Implements task negotiation protocols: Contract Net, Auction, Market-based. Agents negotiate task allocation.")
+
+    Component(consensus_engine, "Consensus Engine", "Raft/Paxos", "Distributed consensus for swarm decisions. Agents vote on workflow paths, exception handling, resource allocation.")
+
+    Component(coordination_patterns, "Coordination Patterns", "Pattern Library", "Implements swarm patterns: Leader Election, Mutual Exclusion, Barrier Synchronization, Rendezvous.")
+
+    Component(workflow_choreography, "Workflow Choreography", "Java Class", "Maps YAWL workflow patterns to agent choreography. Translates centralized workflows to distributed coordination.")
+
+    ' Agent Management
+    Component(agent_registry, "Agent Registry", "Service Registry", "Maintains directory of active agents: capabilities, location, status, reputation. Supports service discovery.")
+
+    Component(capability_directory, "Capability Directory", "Index", "Indexes agent capabilities and skills. Enables semantic capability search and matchmaking.")
+
+    Component(reputation_tracker, "Reputation Tracker", "Analytics", "Tracks agent reputation based on task completion, quality, timeliness. Influences task allocation.")
+
+    Component(heartbeat_monitor, "Heartbeat Monitor", "Health Check", "Monitors agent liveness. Detects failures, handles agent disconnections, triggers failover.")
+
+    ' Task Allocation Strategies
+    Component(allocation_engine, "Allocation Engine", "Strategy Pattern", "Implements task allocation strategies: Round-robin, Least-loaded, Capability-based, Market-based, ML-optimized.")
+
+    Component(load_balancer, "Load Balancer", "Balancing", "Balances workload across agents. Prevents overload, ensures fair distribution, optimizes throughput.")
+
+    Component(priority_queue, "Priority Queue Manager", "Queue", "Manages task priority queues. Ensures urgent tasks are allocated first, supports preemption.")
+
+    ' Workflow Integration
+    Component(workflow_client, "Workflow Client", "Interface B Client", "Client for YAWL Engine. Queries available work items, allocates to agents, reports completion.")
+
+    Component(work_item_cache, "Work Item Cache", "Cache", "Caches available work items for fast allocation. Reduces database load, improves latency.")
+
+    Component(state_synchronizer, "State Synchronizer", "Sync Protocol", "Synchronizes workflow state between YAWL Engine and agent swarm. Ensures consistency.")
+
+    ' Communication Patterns
+    Component(pub_sub_broker, "Pub/Sub Broker", "Topic-based", "Topic-based publish/subscribe for agent communication. Agents subscribe to workflow events, task announcements.")
+
+    Component(request_reply, "Request/Reply Manager", "RPC Pattern", "Synchronous request/reply between agents. Used for queries, confirmations, approvals.")
+
+    Component(streaming_handler, "Streaming Handler", "Stream Protocol", "Bidirectional streaming for long-running agent interactions. Task progress updates, collaborative work.")
+
+    ' Swarm Intelligence
+    Component(swarm_optimizer, "Swarm Optimizer", "PSO/ACO", "Particle Swarm Optimization and Ant Colony Optimization for task allocation and resource optimization.")
+
+    Component(collective_learning, "Collective Learning", "Federated ML", "Enables swarm to learn collectively. Agents share knowledge without centralizing data. Improves performance over time.")
+
+    Component(emergence_detector, "Emergence Detector", "Pattern Detection", "Detects emergent behavior in swarm. Identifies new coordination patterns, bottlenecks, optimization opportunities.")
+
+    ' Security & Trust
+    Component(auth_manager, "Authentication Manager", "mTLS/JWT", "Authenticates agents. Mutual TLS for agent-to-agent, JWT for agent-to-server. Prevents impersonation.")
+
+    Component(authorization_engine, "Authorization Engine", "RBAC/ABAC", "Authorizes agent operations. Role-based and attribute-based access control. Enforces workflow policies.")
+
+    Component(trust_evaluator, "Trust Evaluator", "Trust Model", "Evaluates agent trustworthiness. Considers reputation, past behavior, attestations. Influences task allocation.")
+
+    ' Monitoring & Analytics
+    Component(swarm_metrics, "Swarm Metrics Collector", "Prometheus", "Collects swarm-level metrics: agent count, message rate, task throughput, consensus latency, failure rate.")
+
+    Component(interaction_logger, "Interaction Logger", "Event Log", "Logs all agent interactions for process mining, debugging, and compliance. Captures message traces.")
+
+    Component(process_miner, "Process Miner", "Analytics", "Applies process mining to agent interactions. Discovers actual coordination patterns, identifies deviations, suggests improvements.")
+}
+
+' Relationships - External to A2A
+
+Rel(agi_agents, transport_layer, "Connects to swarm", "WebSocket/gRPC")
+Rel(agi_agents, auth_manager, "Authenticates", "mTLS/JWT")
+
+' Relationships - Transport & Protocol
+
+Rel(transport_layer, a2a_protocol, "Decodes messages", "Protocol parsing")
+Rel(auth_manager, a2a_protocol, "Validates identity", "Signature verification")
+
+' Relationships - Protocol to Routing
+
+Rel(a2a_protocol, message_router, "Routes messages", "Addressing")
+Rel(message_router, pub_sub_broker, "Topic routing", "Pub/Sub")
+Rel(message_router, request_reply, "RPC routing", "Request matching")
+Rel(message_router, streaming_handler, "Stream routing", "Connection management")
+
+' Relationships - Agent Management
+
+Rel(a2a_protocol, agent_registry, "Registers/deregisters agents", "Service registration")
+Rel(agent_registry, capability_directory, "Indexes capabilities", "Capability registration")
+Rel(agent_registry, heartbeat_monitor, "Reports liveness", "Heartbeat")
+
+Rel(heartbeat_monitor, agent_registry, "Updates agent status", "Status change")
+Rel(heartbeat_monitor, allocation_engine, "Triggers failover", "Agent failure")
+
+Rel(reputation_tracker, agent_registry, "Updates reputation scores", "Score update")
+
+' Relationships - Task Allocation
+
+Rel(workflow_client, work_item_cache, "Caches work items", "Cache population")
+Rel(work_item_cache, allocation_engine, "Provides available tasks", "Task queue")
+
+Rel(allocation_engine, task_negotiation, "Initiates negotiation", "Protocol invocation")
+Rel(allocation_engine, capability_directory, "Queries capabilities", "Capability match")
+Rel(allocation_engine, reputation_tracker, "Queries reputation", "Score retrieval")
+Rel(allocation_engine, priority_queue, "Manages priorities", "Queue operations")
+Rel(allocation_engine, load_balancer, "Balances load", "Load query")
+
+Rel(task_negotiation, message_router, "Sends negotiation messages", "Agent messages")
+Rel(consensus_engine, message_router, "Sends vote requests", "Consensus messages")
+
+' Relationships - Workflow Integration
+
+Rel(workflow_client, yawl_engine, "Queries/updates work items", "Interface B API")
+Rel(state_synchronizer, yawl_engine, "Synchronizes state", "Polling/Events")
+Rel(state_synchronizer, work_item_cache, "Updates cache", "State changes")
+
+Rel(workflow_choreography, workflow_client, "Translates patterns", "Workflow mapping")
+Rel(workflow_choreography, coordination_patterns, "Maps to swarm patterns", "Pattern translation")
+
+' Relationships - Coordination
+
+Rel(coordination_patterns, consensus_engine, "Uses consensus", "Voting")
+Rel(coordination_patterns, message_router, "Coordinates via messages", "Coordination messages")
+
+' Relationships - Communication Patterns
+
+Rel(pub_sub_broker, message_queue, "Persists topics", "Kafka topics")
+Rel(streaming_handler, agi_agents, "Bidirectional streams", "Stream protocol")
+
+' Relationships - Swarm Intelligence
+
+Rel(swarm_optimizer, allocation_engine, "Optimizes allocation", "Optimization algorithms")
+Rel(swarm_optimizer, work_item_cache, "Analyzes task graph", "Graph optimization")
+
+Rel(collective_learning, agent_registry, "Coordinates learning", "Learning rounds")
+Rel(collective_learning, agent_memory, "Aggregates knowledge", "Vector DB")
+
+Rel(emergence_detector, interaction_logger, "Analyzes interactions", "Pattern mining")
+Rel(emergence_detector, process_miner, "Discovers patterns", "Process discovery")
+
+' Relationships - Security
+
+Rel(authorization_engine, agent_registry, "Queries agent roles", "Role lookup")
+Rel(authorization_engine, workflow_client, "Enforces workflow policies", "Policy enforcement")
+
+Rel(trust_evaluator, reputation_tracker, "Evaluates trust", "Trust calculation")
+Rel(trust_evaluator, allocation_engine, "Filters untrusted agents", "Trust threshold")
+
+' Relationships - Monitoring
+
+Rel(swarm_metrics, a2a_protocol, "Collects protocol metrics", "Metrics API")
+Rel(swarm_metrics, allocation_engine, "Collects allocation metrics", "Metrics API")
+Rel(swarm_metrics, monitoring, "Exports metrics", "Prometheus exporter")
+
+Rel(interaction_logger, message_router, "Logs messages", "Message capture")
+Rel(interaction_logger, agent_memory, "Persists logs", "Event storage")
+
+Rel(process_miner, interaction_logger, "Analyzes event logs", "Process mining algorithms")
+Rel(process_miner, mcp_server, "Provides insights", "Analytics API")
+
+' Notes
+
+note right of task_negotiation
+  **Negotiation Protocols**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  **Contract Net Protocol (CNP)**
+  1. Manager announces task
+  2. Agents submit bids
+  3. Manager selects winner
+  4. Winner executes task
+  5. Manager evaluates result
+
+  **Auction-Based**
+  • First-price sealed-bid
+  • Second-price (Vickrey)
+  • English (ascending)
+  • Dutch (descending)
+
+  **Market-Based**
+  • Supply/demand dynamics
+  • Dynamic pricing
+  • Optimization for welfare
+end note
+
+note right of consensus_engine
+  **Consensus Algorithms**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  **Raft Consensus**
+  • Leader election
+  • Log replication
+  • Safety guarantees
+  • Fault tolerance (< n/2 failures)
+
+  **Byzantine Fault Tolerance**
+  • Handles malicious agents
+  • 3f + 1 agents for f faults
+  • Cryptographic signatures
+
+  **Use Cases**
+  • Workflow path selection
+  • Exception handling votes
+  • Resource allocation decisions
+  • Dynamic re-planning
+end note
+
+note right of coordination_patterns
+  **Swarm Coordination Patterns**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  **Leader Election**
+  Bully, Ring, Raft algorithms
+
+  **Mutual Exclusion**
+  Token-based, timestamp-based
+
+  **Barrier Synchronization**
+  All agents wait until all arrive
+
+  **Rendezvous**
+  Pair-wise agent synchronization
+
+  **Group Communication**
+  Reliable broadcast, total order
+
+  **Workflow Patterns**
+  • Parallel Split → Fork/Join
+  • Exclusive Choice → Leader decides
+  • Multi-Choice → Voting
+  • Synchronizing Merge → Barrier
+  • OR-Join → Partial synchronization
+end note
+
+note right of swarm_optimizer
+  **Swarm Intelligence Algorithms**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  **Particle Swarm Optimization (PSO)**
+  • Task allocation optimization
+  • Resource placement
+  • Parameter tuning
+
+  **Ant Colony Optimization (ACO)**
+  • Workflow path discovery
+  • Routing optimization
+  • Pheromone-based learning
+
+  **Bee Algorithm**
+  • Resource foraging
+  • Exploration/exploitation
+
+  **Flocking Behavior**
+  • Load balancing
+  • Distributed placement
+end note
+
+note right of collective_learning
+  **Federated Learning**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  1. Agents train local models
+  2. Share model updates (not data)
+  3. Aggregate updates (FedAvg)
+  4. Distribute global model
+  5. Iterate
+
+  **Privacy Preservation**
+  • Differential privacy
+  • Secure aggregation
+  • Homomorphic encryption
+
+  **Applications**
+  • Task duration prediction
+  • Failure prediction
+  • Optimal allocation strategies
+end note
+
+note right of workflow_choreography
+  **YAWL → Swarm Choreography**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Centralized workflow → Distributed coordination
+
+  **Mappings**
+  • Task → Agent responsibility
+  • AND-split → Parallel execution
+  • XOR-split → Leader decision
+  • OR-split → Swarm voting
+  • AND-join → Barrier sync
+  • OR-join → Partial sync
+  • Cancellation → Abort protocol
+
+  **Decentralization**
+  No single point of control
+  Agents self-organize
+  Emergent coordination
+end note
+
+@enduml

@@ -1,0 +1,262 @@
+@startuml C4-Level3-MCP-Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' MCP Server - Component Diagram
+' C4 Level 3: Model Context Protocol integration components
+
+LAYOUT_WITH_LEGEND()
+
+title MCP Server - Component Diagram (AI Agent Integration)
+
+' External Systems
+System_Ext(mcp_clients, "MCP Clients", "Claude Desktop, IDEs, Custom Tools")
+Container_Ext(yawl_engine, "YAWL Engine", "Workflow execution")
+ContainerDb_Ext(agent_memory, "Agent Memory", "Vector DB")
+ContainerDb_Ext(workflow_db, "Workflow DB", "PostgreSQL")
+Container_Ext(event_notifier, "Event Notifier", "Real-time events")
+
+' MCP Server Boundary
+Container_Boundary(mcp_container, "MCP Server Container") {
+
+    ' Protocol Layer
+    Component(mcp_protocol, "MCP Protocol Handler", "JSON-RPC", "Implements MCP protocol specification. Handles request/response, notifications, and streaming.")
+
+    Component(transport_layer, "Transport Layer", "WebSocket/HTTP", "Multi-transport support: WebSocket for streaming, HTTP for request/response, stdio for local clients.")
+
+    Component(auth_handler, "Authentication Handler", "OAuth2/API Key", "Validates client credentials, manages sessions, enforces rate limits.")
+
+    ' Core MCP Components
+    Component(prompt_provider, "YawlMcpPromptProvider", "Java Class", "Generates context-aware prompts for AI agents based on workflow state and agent capabilities. Core innovation.")
+
+    Component(tool_provider, "MCP Tool Provider", "Java Class", "Exposes workflow operations as MCP tools. Agents can invoke: launchCase, completeWorkItem, queryWorkflow.")
+
+    Component(resource_provider, "MCP Resource Provider", "Java Class", "Provides workflow specifications, schemas, and documentation as MCP resources. Enables agent learning.")
+
+    Component(context_manager, "Context Manager", "Java Class", "Manages agent context windows. Tracks conversation history, workflow state, and agent decisions.")
+
+    ' Agent Intelligence Layer
+    Component(capability_matcher, "Capability Matcher", "ML Algorithm", "Matches agent capabilities to workflow task requirements. Uses embeddings and semantic similarity.")
+
+    Component(task_recommender, "Task Recommender", "Recommendation Engine", "Recommends next best tasks for agents based on skills, availability, workload, and priority.")
+
+    Component(prompt_optimizer, "Prompt Optimizer", "LLM Chain", "Optimizes prompts for specific agent models (Claude, GPT-4, etc.). Model-aware formatting.")
+
+    Component(learning_tracker, "Learning Tracker", "Analytics", "Tracks agent learning progress. Identifies skill gaps and recommends training workflows.")
+
+    ' Workflow Integration
+    Component(workflow_client, "Workflow Client", "Interface B Client", "Client for YAWL Engine Interface B. Launches cases, queries work items, completes tasks.")
+
+    Component(spec_analyzer, "Specification Analyzer", "Graph Algorithm", "Analyzes YAWL specifications. Extracts task dependencies, data flow, control flow patterns.")
+
+    Component(data_mapper, "Data Mapper", "Transformer", "Maps between YAWL data format (XML) and agent-friendly formats (JSON, natural language).")
+
+    ' Agent Memory Integration
+    Component(memory_client, "Memory Client", "Vector DB Client", "Stores and retrieves agent context in vector database. Semantic search for relevant past interactions.")
+
+    Component(embedding_service, "Embedding Service", "OpenAI/Local", "Generates embeddings for agent messages, workflow descriptions, and task descriptions.")
+
+    Component(rag_engine, "RAG Engine", "Retrieval-Augmented", "Retrieval-Augmented Generation. Enhances prompts with relevant past experiences and domain knowledge.")
+
+    ' Monitoring & Observability
+    Component(metrics_collector, "Metrics Collector", "Prometheus Client", "Collects MCP-specific metrics: request latency, agent performance, tool usage, error rates.")
+
+    Component(audit_logger, "Audit Logger", "Log4j2", "Logs all agent interactions for compliance, debugging, and process mining.")
+
+    Component(trace_recorder, "Trace Recorder", "OpenTelemetry", "Records distributed traces of agent-workflow interactions for performance analysis.")
+}
+
+' Relationships - External to MCP
+
+Rel(mcp_clients, transport_layer, "MCP requests", "JSON-RPC over WS/HTTP")
+Rel(mcp_clients, auth_handler, "Authenticates", "OAuth2/API Key")
+
+' Relationships - Transport & Protocol
+
+Rel(transport_layer, mcp_protocol, "Decodes messages", "JSON-RPC")
+Rel(auth_handler, mcp_protocol, "Validates session", "Token verification")
+
+' Relationships - Protocol to Core
+
+Rel(mcp_protocol, prompt_provider, "Requests prompts", "Method calls")
+Rel(mcp_protocol, tool_provider, "Invokes tools", "Method calls")
+Rel(mcp_protocol, resource_provider, "Fetches resources", "Method calls")
+Rel(mcp_protocol, context_manager, "Updates context", "State management")
+
+' Relationships - Prompt Provider Flow
+
+Rel(prompt_provider, workflow_client, "Queries workflow state", "Interface B API")
+Rel(prompt_provider, spec_analyzer, "Analyzes specifications", "Graph queries")
+Rel(prompt_provider, capability_matcher, "Matches agents to tasks", "ML algorithm")
+Rel(prompt_provider, task_recommender, "Gets recommendations", "Ranking")
+Rel(prompt_provider, prompt_optimizer, "Optimizes for model", "LLM-specific")
+Rel(prompt_provider, rag_engine, "Enhances with context", "RAG retrieval")
+
+' Relationships - Tool Provider Flow
+
+Rel(tool_provider, workflow_client, "Executes workflow operations", "Interface B API")
+Rel(tool_provider, data_mapper, "Transforms data", "XML ↔ JSON")
+Rel(tool_provider, audit_logger, "Logs tool invocations", "Audit trail")
+
+' Relationships - Resource Provider Flow
+
+Rel(resource_provider, spec_analyzer, "Extracts spec metadata", "Analysis")
+Rel(resource_provider, workflow_client, "Fetches specifications", "Interface A API")
+Rel(resource_provider, data_mapper, "Converts to JSON", "Transformation")
+
+' Relationships - Context Manager Flow
+
+Rel(context_manager, memory_client, "Persists context", "Vector DB")
+Rel(context_manager, embedding_service, "Generates embeddings", "API call")
+
+' Relationships - Agent Intelligence
+
+Rel(capability_matcher, memory_client, "Queries agent history", "Vector search")
+Rel(capability_matcher, embedding_service, "Computes similarity", "Embeddings")
+
+Rel(task_recommender, workflow_client, "Queries available work items", "Interface B")
+Rel(task_recommender, capability_matcher, "Filters by capability", "Matching")
+
+Rel(prompt_optimizer, context_manager, "Gets agent context", "Context retrieval")
+
+Rel(learning_tracker, audit_logger, "Analyzes agent behavior", "Log analysis")
+Rel(learning_tracker, memory_client, "Tracks skill development", "Analytics")
+
+' Relationships - Workflow Integration
+
+Rel(workflow_client, yawl_engine, "API calls", "REST/JSON")
+Rel(spec_analyzer, yawl_engine, "Fetches specifications", "Interface A")
+
+' Relationships - Memory Integration
+
+Rel(memory_client, agent_memory, "Vector operations", "Vector DB API")
+Rel(embedding_service, agent_memory, "Stores embeddings", "Batch upload")
+
+Rel(rag_engine, memory_client, "Retrieves context", "Semantic search")
+Rel(rag_engine, workflow_db, "Queries workflow history", "SQL")
+
+' Relationships - Monitoring
+
+Rel(metrics_collector, mcp_protocol, "Collects metrics", "Internal API")
+Rel(audit_logger, workflow_db, "Persists audit logs", "JDBC")
+Rel(trace_recorder, mcp_protocol, "Records spans", "OpenTelemetry")
+
+' Relationships - Events
+
+Rel(event_notifier, context_manager, "Delivers workflow events", "WebSocket/SSE")
+Rel(context_manager, prompt_provider, "Triggers prompt updates", "State change")
+
+' Notes
+
+note right of prompt_provider
+  **YawlMcpPromptProvider**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Core innovation: Context-aware prompts
+
+  **Prompt Types**
+  • Task assignment prompts
+  • Decision-making prompts
+  • Exception handling prompts
+  • Collaboration prompts
+
+  **Inputs**
+  • Workflow state (current marking)
+  • Agent capabilities
+  • Task requirements
+  • Historical performance
+  • Domain ontologies
+
+  **Outputs**
+  • Natural language prompts
+  • Structured data context
+  • Tool recommendations
+  • Expected outputs specification
+end note
+
+note right of capability_matcher
+  **Capability Matching Algorithm**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  1. Extract task requirements from YAWL
+  2. Generate task embedding
+  3. Retrieve agent capability embeddings
+  4. Compute cosine similarity
+  5. Apply business rules/constraints
+  6. Rank agents by suitability
+
+  **Capabilities Model**
+  • Skills: programming, analysis, domain
+  • Availability: current workload
+  • Performance: historical success rate
+  • Cost: resource consumption
+  • Preferences: agent specialization
+end note
+
+note right of task_recommender
+  **Recommendation Strategy**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Multi-criteria ranking:
+  • Task priority (urgency)
+  • Agent skill match (capability)
+  • Dependencies (control flow)
+  • Resource availability
+  • Learning opportunity (skill development)
+
+  **Algorithms**
+  • Multi-Armed Bandit (exploration/exploitation)
+  • Thompson Sampling
+  • Contextual bandits
+  • Reinforcement learning
+end note
+
+note right of rag_engine
+  **Retrieval-Augmented Generation**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  Enhances prompts with:
+  • Similar past workflows (vector search)
+  • Best practices (curated knowledge)
+  • Domain documentation (specs, schemas)
+  • Error patterns (failure analysis)
+
+  **Retrieval Pipeline**
+  1. Generate query embedding
+  2. Semantic search (vector DB)
+  3. Re-rank by relevance
+  4. Inject into prompt context
+  5. Track retrieval effectiveness
+end note
+
+note right of tool_provider
+  **MCP Tools Exposed**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • launchWorkflow(specId, caseData)
+  • getWorkItems(agentId, filters)
+  • startWorkItem(itemId)
+  • completeWorkItem(itemId, outputData)
+  • cancelWorkItem(itemId, reason)
+  • queryWorkflowState(caseId)
+  • searchWorkflows(criteria)
+
+  **Tool Schema**
+  JSON Schema for each tool
+  Parameter validation
+  Type checking
+  Authorization rules
+end note
+
+note right of resource_provider
+  **MCP Resources Provided**
+  ━━━━━━━━━━━━━━━━━━━━━━
+  • Workflow specifications (YAWL XML)
+  • Schema definitions (XSD)
+  • Data type documentation
+  • Best practice guides
+  • Example workflows
+  • API documentation
+
+  **Resource URIs**
+  yawl://specifications/{specId}
+  yawl://schemas/YAWL_Schema4.0.xsd
+  yawl://docs/{topic}
+  yawl://examples/{category}
+end note
+
+@enduml
