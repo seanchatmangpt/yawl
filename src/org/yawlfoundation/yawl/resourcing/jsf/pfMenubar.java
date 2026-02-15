@@ -42,7 +42,7 @@ public class pfMenubar extends AbstractFragmentBean {
 
     // Required jsf members and abstract method implementations //
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

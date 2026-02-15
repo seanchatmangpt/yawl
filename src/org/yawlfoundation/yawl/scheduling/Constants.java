@@ -129,7 +129,7 @@ public interface Constants
 	public static final String WORD_SEPARATORS = " .:,;+*~/\\?=})]([/{&%$��\"�!^�|<>#'�`@��";
 
 	/**
-	 * TODO@tbe: some data types are not yet supported, see comments below
+	 * Some data types are not yet supported, see inline comments below.
 	 * Unsupported data types will be handled like strings.
 	 * 
 	 * see www.w3schools.com/schema/schema_dtypes_string.asp

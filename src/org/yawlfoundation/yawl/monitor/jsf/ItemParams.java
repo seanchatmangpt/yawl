@@ -38,7 +38,7 @@ import javax.faces.component.html.HtmlOutputText;
 
 public class ItemParams extends AbstractPageBean {
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

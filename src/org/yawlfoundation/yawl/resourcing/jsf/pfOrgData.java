@@ -38,7 +38,7 @@ import java.io.UnsupportedEncodingException;
  */
 
 public class pfOrgData extends AbstractFragmentBean {
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception {
     }

@@ -31,7 +31,7 @@ import javax.faces.FacesException;
  */
 
 public class pfHeader extends AbstractFragmentBean {
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

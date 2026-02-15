@@ -55,11 +55,12 @@ public class PlanningGraphCreator implements Constants {
 	}
 
 
-	@SuppressWarnings("unchecked")
 	/**
-	 * TODO@tbe: determine order of activities, store them as utilisation relations and sort
-	 * activities according to utilisation relations
+	 * Gets activity elements from the process model specification for the given case.
+	 * Activity order is currently determined by a configured property list rather
+	 * than being derived from utilisation relations in the process model.
 	 */
+	@SuppressWarnings("unchecked")
 	public Collection<Element> getActivityElements(String caseId)
             throws IOException, JDOMException, JaxenException {
 		Element element = SchedulingService.getInstance().getSpecificationForCase(caseId);
@@ -95,7 +96,8 @@ public class PlanningGraphCreator implements Constants {
 			}
 		}
 		
-		//TODO@tbe: sort activities, only until order of activities can be determined from process model
+		// Sort activities using configured property order since process model
+		// does not yet provide utilisation relation-based ordering
 		final List<String> possibleActivities = 
 			Utils.parseCSV(PropertyReader.getInstance().getSchedulingProperty(
                     "possibleActivitiesSorted"));

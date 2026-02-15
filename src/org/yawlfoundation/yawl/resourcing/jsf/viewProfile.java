@@ -41,7 +41,7 @@ import java.util.Set;
  */
 
 public class viewProfile extends AbstractPageBean {
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

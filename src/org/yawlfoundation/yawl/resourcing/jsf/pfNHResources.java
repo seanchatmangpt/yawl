@@ -40,7 +40,7 @@ import java.util.Arrays;
  */
 
 public class pfNHResources extends AbstractFragmentBean {
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception {
     }

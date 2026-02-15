@@ -34,7 +34,7 @@ import java.util.*;
 
 /**
  * (re)schedules RUPs automatically
- * 
+ *
  * @author tbe
  * @version $Id$
  */
@@ -51,22 +51,30 @@ public class Scheduler implements Constants
         rs = ResourceServiceInterface.getInstance();
     }
 
+	/**
+	 * Adds a Duration to a Date using UTC calendar to avoid DST offset errors.
+	 * Duration.addTo(Date) uses the default timezone Calendar internally, which
+	 * can introduce a one-hour shift when the duration spans a DST boundary.
+	 */
+	private static Date addDurationUtc(Date date, Duration duration) {
+		Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		utcCal.setTimeInMillis(date.getTime());
+		duration.addTo(utcCal);
+		return utcCal.getTime();
+	}
+
 
 	/**
-	 * set times of activities if FROM and DURATION are given Rescheduling
-	 * kollidierender RUPs, welche definiert sind als: alle RUPs welche die
-	 * selben Ressourcen zur gleichen Zeit definieren wie der vorhergehend RUP.
-	 * als selbe Ressourcen werden nur nicht austauschbare Ressourcen betrachtet,
-	 * das sind Ressourcen mit Reservierung by Id (TODO@tbe: Reservierungen by
-	 * Role oder Category k�nnten auch kollidieren, hier aber erstmal weglassen)
-	 * TODO@tbe: Rescheduling von RUPs die Leerlaufzeiten haben, z.B. durch
-	 * fr�heres ende einer Aktivit�t, erstmal nicht betrachten
-	 * 
-	 * @param rup
-	 * @param activity
-	 * @param withValidation
-	 * @param rescheduleCollidingRUPs
-	 * 
+	 * Sets times of activities when FROM and DURATION are given. Reschedules
+	 * colliding RUPs, defined as: all RUPs that define the same resources at
+	 * the same time as the preceding RUP. Checks collisions by resource Id,
+	 * Role, and Category.
+	 *
+	 * @param rup the resource utilisation plan document
+	 * @param activity the activity element to set times for
+	 * @param withValidation whether to validate during processing
+	 * @param rescheduleCollidingRUPs whether to reschedule colliding RUPs
+	 * @param defaultDuration fallback duration if none specified
 	 */
 	public boolean setTimes(Document rup, Element activity, boolean withValidation,
                             boolean rescheduleCollidingRUPs, Duration defaultDuration) {
@@ -122,10 +130,7 @@ public class Scheduler implements Constants
 				}
 
 				if (!allCollidingRUPs.isEmpty()) {
-					// 3) save rup with new times, should not conflicting with other
-					// rups
-					// logger.debug("----------------wait 30s and save: "+caseId);
-					// Thread.sleep(30000); // FIXME@tbe: raus
+					// 3) save rup with new times, should not conflict with other rups
 					Set<String> errors = SchedulingService.getInstance().optimizeAndSaveRup(
                             rup, "reschedulingRUP", null, false);
 					logger.debug("----------------save rescheduled rup caseId: " + caseId + ", errors: "
@@ -144,18 +149,14 @@ public class Scheduler implements Constants
 					}
 				});
 
-				// 5) find new time slot for each colliding rup and save it
+				// 5) find new time slot for each colliding rup and save it.
+				// Searches both forward and backward within maxTimeslotPeriod.
 				for (Document collidingRUP : allCollidingRUPs) {
 					String collCaseId = null;
 					try	{
 						collCaseId = XMLUtils.getCaseId(collidingRUP);
 						if (collCaseId.equals(caseId)) continue;
 
-						// TODO@tbe: so ist nur das suchen eines sp�teren timeslots
-						// m�glich, es sollte auch
-						// ein fr�herer m�glich sein, falls RUP nach vorne verschoben
-						// wurde, dazu evntl.
-						// from auf 00:00 Uhr setzen, dann findTimeSlot aufrufen
 						hasRescheduledRUPs = findTimeSlot(collidingRUP, true) || hasRescheduledRUPs;
 
                         SchedulingService.getInstance().optimizeAndSaveRup(collidingRUP,
@@ -184,15 +185,17 @@ public class Scheduler implements Constants
 	}
 
 	/**
-	 * set TO time of an activity depending on FROM and DURATION set FROM time of
-	 * previous and following activities and recurses to set their TO times also
-	 * 
-	 * TODO@tbe: erstmal ohne Beachtung von Max und ohne Ausnutzung des
-	 * �Gummibandes� zwischen Min und Max, d.h. es wird Min als fester Wert
-	 * angenommen, ausserdem wird nur von einer Relation pro Aktivit�t
-	 * ausgegangen
-	 * 
-	 * @param activity
+	 * Sets the TO time of an activity depending on FROM and DURATION. Sets the FROM
+	 * time of previous and following activities and recurses to set their TO times.
+	 *
+	 * <p>Currently uses Min as a fixed value (Max is not considered), and only
+	 * handles one utilisation relation per activity.
+	 *
+	 * @param rup the resource utilisation plan document
+	 * @param activity the activity element to process
+	 * @param withValidation whether to validate during processing
+	 * @param activityNamesProcessed list of already processed activity names to prevent cycles
+	 * @param defaultDuration fallback duration if none specified
 	 */
 	private void setTimes(Document rup, Element activity, boolean withValidation,
                           List<String> activityNamesProcessed, Duration defaultDuration) {
@@ -211,26 +214,22 @@ public class Scheduler implements Constants
 		}
 		else if (fromDate == null) {
             if (toDate != null) {
-		    	fromDate = new Date(toDate.getTime());
 			    if (duration != null) {
-				    duration.negate().addTo(fromDate);
+				    fromDate = addDurationUtc(toDate, duration.negate());
 				    XMLUtils.setDateValue(from, fromDate);
-                }
-			}
-			else if (defaultDuration != null) {
-				defaultDuration.negate().addTo(fromDate);
-				XMLUtils.setDateValue(from, fromDate);
+                } else if (defaultDuration != null) {
+				    fromDate = addDurationUtc(toDate, defaultDuration.negate());
+				    XMLUtils.setDateValue(from, fromDate);
+				}
 			}
 		}
 		else {
-			toDate = new Date(fromDate.getTime());
 			if (duration != null) {
-				duration.addTo(toDate); // TODO@tbe: if very very long duration, to is
-											// one hour to high
+				toDate = addDurationUtc(fromDate, duration);
 				XMLUtils.setDateValue(to, toDate);
 			}
 			else if (defaultDuration != null) {
-				defaultDuration.addTo(toDate);
+				toDate = addDurationUtc(fromDate, defaultDuration);
 				XMLUtils.setDateValue(to, toDate);
 			}
 		}
@@ -255,20 +254,21 @@ public class Scheduler implements Constants
                 Element otherActivity = (Element) obj;
 				Date thisDate;
 				if (relation.getChildText(XML_THISUTILISATIONTYPE).equals(UTILISATION_TYPE_BEGIN)) {
-					thisDate = fromDate;
+					thisDate = new Date(fromDate.getTime());
 				}
 				else if (duration != null) {
-					thisDate = toDate;
+					thisDate = new Date(toDate.getTime());
 				}
 				else {
 					continue;
 				}
-				min.addTo(thisDate); // add time gap between activities
+				thisDate = addDurationUtc(thisDate, min);
 
 				if (relation.getChildText(XML_OTHERUTILISATIONTYPE).equals(UTILISATION_TYPE_END)) {
 					Duration otherDuration = XMLUtils.getDurationValue(
                             otherActivity.getChild(XML_DURATION), withValidation);
-					(otherDuration == null ? defaultDuration : otherDuration).negate().addTo(thisDate);
+					Duration negDur = (otherDuration == null ? defaultDuration : otherDuration).negate();
+					thisDate = addDurationUtc(thisDate, negDur);
 				}
 				XMLUtils.setDateValue(otherActivity.getChild(XML_FROM), thisDate);
 
@@ -294,20 +294,21 @@ public class Scheduler implements Constants
 			Date otherDate;
 			if (relation.getChildText(XML_OTHERUTILISATIONTYPE).equals(UTILISATION_TYPE_BEGIN))	{
 				fromDate = XMLUtils.getDateValue(from, withValidation);
-				otherDate = fromDate;
+				otherDate = new Date(fromDate.getTime());
 			}
 			else if (duration != null) {
 				toDate = XMLUtils.getDateValue(to, withValidation);
-				otherDate = toDate;
+				otherDate = new Date(toDate.getTime());
 			}
 			else {
 				continue;
 			}
-			min.negate().addTo(otherDate);
+			otherDate = addDurationUtc(otherDate, min.negate());
 
 			if (relation.getChildText(XML_THISUTILISATIONTYPE).equals(UTILISATION_TYPE_END)) {
 				Duration otherDuration = XMLUtils.getDurationValue(otherActivity.getChild(XML_DURATION), withValidation);
-				(otherDuration == null ? defaultDuration : otherDuration).negate().addTo(otherDate);
+				Duration negDur = (otherDuration == null ? defaultDuration : otherDuration).negate();
+				otherDate = addDurationUtc(otherDate, negDur);
 			}
 			XMLUtils.setDateValue(otherActivity.getChild(XML_FROM), otherDate);
 
@@ -317,7 +318,7 @@ public class Scheduler implements Constants
 
 	/**
 	 * find time slot for rup
-	 * 
+	 *
 	 * @param rup
 	 */
 	public boolean findTimeSlot(Document rup, boolean withValidation) {
@@ -329,7 +330,8 @@ public class Scheduler implements Constants
 			// Map with activities and their list of possible offsets for adding to
 			// FROM
 			Map<String, List<List<Long>>> actOffsets = new HashMap<String, List<List<Long>>>();
-			Date latestTO = null;
+			Date searchStartDate = null;
+			Date searchEndDate = null;
 
 			// get availabilities for all resources of rup between from and to
 			String xpath = XMLUtils.getXPATH_Activities();
@@ -337,8 +339,6 @@ public class Scheduler implements Constants
 			for (Element activity : activities)
 			{
 				String activityName = activity.getChildText(XML_ACTIVITYNAME);
-				// logger.debug("activity name: " + activityName);
-				// logger.debug("activity: " + Utils.object2String(activity));
 				List<Element> reservations = activity.getChildren(XML_RESERVATION);
 				if (reservations.isEmpty())
 				{
@@ -349,38 +349,52 @@ public class Scheduler implements Constants
 				Date from = XMLUtils.getDateValue(activity.getChild(XML_FROM), withValidation);
 				Date to = XMLUtils.getDateValue(activity.getChild(XML_TO), withValidation);
 
-				// compute latest date to check for free timeslots
-				// between earliest FROM date (of first activity) and
-				// maxTimeslotPeriod hours later
-				if (latestTO == null)
+				// compute search window for free timeslots: from
+				// maxTimeslotPeriod hours before earliest FROM to
+				// maxTimeslotPeriod hours after earliest FROM
+				if (searchEndDate == null)
 				{
-					Calendar cal = Calendar.getInstance();
-					/*
-					 * latestTO = Utils.string2Date(Utils.date2String(to,
-					 * Utils.DATE_PATTERN_XML), Utils.DATE_PATTERN_XML);
-					 * cal.setTime(latestTO); cal.roll(Calendar.DAY_OF_MONTH, 1);
-					 * latestTO = cal.getTime();
-					 */
 					Integer maxTimeslotPeriod =
                             PropertyReader.getInstance().getIntProperty(
                                     PropertyReader.SCHEDULING, "maxTimeslotPeriod");
-					cal.setTime(from);
-					cal.add(Calendar.HOUR_OF_DAY, maxTimeslotPeriod);
-					// cal.roll(Calendar.HOUR_OF_DAY, maxTimeslotPeriod);
-					latestTO = cal.getTime();
-					// logger.debug("latestTO set to " + Utils.date2String(latestTO,
-					// Utils.DATETIME_PATTERN));
+
+					Calendar calEnd = Calendar.getInstance();
+					calEnd.setTime(from);
+					calEnd.add(Calendar.HOUR_OF_DAY, maxTimeslotPeriod);
+					searchEndDate = calEnd.getTime();
+
+					// also search backward for earlier timeslots
+					Calendar calStart = Calendar.getInstance();
+					calStart.setTime(from);
+					calStart.add(Calendar.HOUR_OF_DAY, -maxTimeslotPeriod);
+					// don't search before current time
+					Date now = new Date();
+					searchStartDate = calStart.getTime().before(now) ? now : calStart.getTime();
 				}
 
 				long duration = to.getTime() - from.getTime();
+
+				// Track consumed workload per resource+timeslot to prevent
+				// over-counting when multiple reservations use the same resource
+				Map<String, Map<Integer, Integer>> consumedWorkloadMap =
+						new HashMap<String, Map<Integer, Integer>>();
+
 				for (Element reservation : reservations)
 				{
 					Element resource = null;
 					try
 					{
 						resource = reservation.getChild(XML_RESOURCE);
+						String resourceId = resource.getChildText(XML_ID);
 						int workload = XMLUtils.getIntegerValue(reservation.getChild(XML_WORKLOAD), withValidation);
-						List<Element> timeslots = rs.getAvailabilities(resource, from, latestTO);
+						List<Element> timeslots = rs.getAvailabilities(resource, searchStartDate, searchEndDate);
+
+						// initialise consumed map for this resource if needed
+						if (!consumedWorkloadMap.containsKey(resourceId)) {
+							consumedWorkloadMap.put(resourceId, new HashMap<Integer, Integer>());
+						}
+						Map<Integer, Integer> consumed = consumedWorkloadMap.get(resourceId);
+
 						for (int i = 0; i < timeslots.size(); i++)
 						{
 							Element timeslot = timeslots.get(i);
@@ -390,24 +404,23 @@ public class Scheduler implements Constants
 							long offsetMin = tsFrom.getTime() - from.getTime();
 							long offsetMax = tsTo.getTime() - to.getTime();
 							int tsAvailability = XMLUtils.getIntegerValue(timeslot.getChild("availability"), withValidation);
-							int tsAvailabilityDiff = tsAvailability - workload;
 
-							// try to pass activity into timeslot, if possible, add min
-							// and max offset
-							if (tsAvailabilityDiff >= 0 && duration <= tsDuration && offsetMin >= 0 && offsetMax >= 0)
+							// subtract already consumed workload for this resource+timeslot
+							int alreadyConsumed = consumed.containsKey(i) ? consumed.get(i) : 0;
+							int tsAvailabilityDiff = tsAvailability - alreadyConsumed - workload;
+
+							// try to pass activity into timeslot (negative offsets
+							// represent earlier timeslots)
+							if (tsAvailabilityDiff >= 0 && duration <= tsDuration)
 							{
+								// record consumed workload for this timeslot
+								consumed.put(i, alreadyConsumed + workload);
+
 								List<Long> offset = new ArrayList<Long>();
 								offset.add(offsetMin);
 								offset.add(offsetMax);
 								List<List<Long>> offsets = actOffsets.get(activityName);
 								offsets.add(offset);
-								// logger.debug("insert offset for "+activityName+", timeslot "+i+": "
-								// + Utils.toString(offset));
-								// TODO@tbe: ohne Speicherung des verbrauchten workloads
-								// (nur relevant wenn gleiche Ressource mehrfach pro
-								// Aktivit�t)
-								// --> verbrauchte availabiliy (tsAvailabilityDiff) am
-								// offset speichern und beachten
 							}
 						}
 					}
@@ -417,7 +430,6 @@ public class Scheduler implements Constants
 					}
 				}
 			}
-			// logger.debug("offsets: " + Utils.toString(actOffsets));
 
 			// get average of offsets of each activity
 			List<List<Long>> offsetsAvg = new ArrayList<List<Long>>();
@@ -467,14 +479,18 @@ public class Scheduler implements Constants
 			}
 			else
 			{
+				// pick the offset with the smallest absolute value (least disruption)
 				long offsetAvgMin = Long.MAX_VALUE;
 				for (List<Long> offsetAvg : offsetsAvg)
 				{
-					offsetAvgMin = Math.min(offsetAvgMin, offsetAvg.get(0));
+					long candidate = offsetAvg.get(0);
+					if (Math.abs(candidate) < Math.abs(offsetAvgMin)) {
+						offsetAvgMin = candidate;
+					}
 				}
 				logger.info("timeslot for case: " + caseId + " found, offset=" + offsetAvgMin + " ("
-						+ Utils.date2String(new Date(offsetAvgMin), Utils.TIME_PATTERN, TimeZone.getTimeZone("GMT")) + " h)");
-				if (offsetAvgMin > 0)
+						+ Utils.date2String(new Date(Math.abs(offsetAvgMin)), Utils.TIME_PATTERN, TimeZone.getTimeZone("GMT")) + " h)");
+				if (offsetAvgMin != 0)
 				{
 					for (Element activity : activities)
 					{
@@ -484,15 +500,11 @@ public class Scheduler implements Constants
 						Date fromDate = XMLUtils.getDateValue(from, false);
 						fromDate = new Date(fromDate.getTime() + offsetAvgMin);
 						XMLUtils.setDateValue(from, fromDate);
-						// logger.debug("set "+activityName+" from: " +
-						// Utils.date2String(fromDate, Utils.DATETIME_PATTERN));
 
 						Element to = activity.getChild(XML_TO);
 						Date toDate = XMLUtils.getDateValue(to, false);
 						toDate = new Date(toDate.getTime() + offsetAvgMin);
 						XMLUtils.setDateValue(to, toDate);
-						// logger.debug("set "+activityName+" to: " +
-						// Utils.date2String(toDate, Utils.DATETIME_PATTERN));
 						isRescheduledRUP = true;
 					}
 				}
@@ -508,26 +520,50 @@ public class Scheduler implements Constants
 	}
 
 	/**
-	 * findet potentiell kollidierende RUPs, welche definiert sind als: alle RUPs
-	 * welche die selben Ressourcen zur gleichen Zeit definieren wie der
-	 * vorhergehend RUP. als selbe Ressourcen werden nur nicht austauschbare
-	 * Ressourcen betrachtet, das sind Ressourcen mit Reservierung by Id
-	 * (TODO@tbe: Reservierungen by Role oder Category k�nnten auch kollidieren,
-	 * hier aber erstmal weglassen) TODO@tbe: nur Aktivit�ten beachten, welche
-	 * Reservierungen haben
-	 * 
-	 * @param rup
-	 * @return
+	 * Finds potentially colliding RUPs, defined as: all RUPs that define the
+	 * same resources at the same time as the preceding RUP. Checks collisions
+	 * by resource Id, Role, and Category.
+	 *
+	 * @param rup the resource utilisation plan to check collisions for
+	 * @param excludedCaseIds case IDs to exclude from the collision search
+	 * @return list of potentially colliding RUP documents
 	 */
 	private List<Document> getCollidingRups(Document rup, List<String> excludedCaseIds) {
 
-		// find earliest FROM and latest TO time of rup
-		Date earliestBeginDate = XMLUtils.getEarliestBeginDate(rup);
-		Date latestEndDate = XMLUtils.getLatestEndDate(rup);
+		// find earliest FROM and end-of-range TO time of rup
+		Date beginBound = XMLUtils.getEarliestBeginDate(rup);
+		Date endBound = XMLUtils.getLatestEndDate
+				(rup);
+
+		// collect resource Ids, Roles and Categories from this RUP
+		Set<String> rupResourceIds = new HashSet<String>();
+		Set<String> rupRoleIds = new HashSet<String>();
+		Set<String> rupCategoryIds = new HashSet<String>();
+		String resXpath = XMLUtils.getXPATH_ActivitiesElement(null, XML_RESERVATION, null);
+		List<Element> rupReservations = XMLUtils.getXMLObjects(rup, resXpath);
+		for (Element reservation : rupReservations) {
+			Element resource = reservation.getChild(XML_RESOURCE);
+			if (resource != null) {
+				String resId = resource.getChildText(XML_ID);
+				String roleId = resource.getChildText(XML_ROLE);
+				String categoryId = resource.getChildText(XML_CATEGORY);
+				if (resId != null && !resId.isEmpty()) rupResourceIds.add(resId);
+				if (roleId != null && !roleId.isEmpty()) rupRoleIds.add(roleId);
+				if (categoryId != null && !categoryId.isEmpty()) rupCategoryIds.add(categoryId);
+			}
+		}
 
         List<Case> collidingCases = dataMapper.getRupsByInterval(
-                earliestBeginDate, latestEndDate, excludedCaseIds, true);
-        List<Document> collidingRups = SchedulingService.getInstance().getRupList(collidingCases);
+                beginBound, endBound, excludedCaseIds, true);
+        List<Document> allCandidateRups = SchedulingService.getInstance().getRupList(collidingCases);
+
+		// filter candidates to those that actually share a resource by Id, Role, or Category
+		List<Document> collidingRups = new ArrayList<Document>();
+		for (Document candidateRup : allCandidateRups) {
+			if (hasResourceOverlap(candidateRup, rupResourceIds, rupRoleIds, rupCategoryIds)) {
+				collidingRups.add(candidateRup);
+			}
+		}
 
 		if (debug) {
 			List<String> caseIds = new ArrayList<String>();
@@ -538,6 +574,36 @@ public class Scheduler implements Constants
                     " potential colliding rups: " + Utils.getCSV(caseIds));
 		}
 		return collidingRups;
+	}
+
+	/**
+	 * Checks whether a candidate RUP has any resource overlap with the given
+	 * resource Ids, Roles, or Categories.
+	 */
+	private boolean hasResourceOverlap(Document candidateRup,
+			Set<String> resourceIds, Set<String> roleIds, Set<String> categoryIds) {
+		String resXpath = XMLUtils.getXPATH_ActivitiesElement(null, XML_RESERVATION, null);
+		List<Element> reservations = XMLUtils.getXMLObjects(candidateRup, resXpath);
+		for (Element reservation : reservations) {
+			Element resource = reservation.getChild(XML_RESOURCE);
+			if (resource == null) continue;
+
+			String resId = resource.getChildText(XML_ID);
+			if (resId != null && !resId.isEmpty() && resourceIds.contains(resId)) {
+				return true;
+			}
+
+			String roleId = resource.getChildText(XML_ROLE);
+			if (roleId != null && !roleId.isEmpty() && roleIds.contains(roleId)) {
+				return true;
+			}
+
+			String categoryId = resource.getChildText(XML_CATEGORY);
+			if (categoryId != null && !categoryId.isEmpty() && categoryIds.contains(categoryId)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

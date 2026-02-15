@@ -42,7 +42,7 @@ import java.util.List;
 
 public class customServices extends AbstractPageBean {
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 

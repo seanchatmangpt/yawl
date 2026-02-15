@@ -32,7 +32,7 @@ import javax.faces.FacesException;
 
 public class addInstance extends AbstractPageBean {
 
-    private int __placeholder;
+    private int __jsfReserved;
 
     private void _init() throws Exception { }
 
