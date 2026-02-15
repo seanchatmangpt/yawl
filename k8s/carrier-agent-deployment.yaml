@@ -1,0 +1,75 @@
+# Carrier Agent - Kubernetes Deployment
+# Autonomous agent for transportation, quotes, pickup/delivery, BOL, manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carrier-agent
+  labels:
+    app: carrier-agent
+    domain: orderfulfillment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: carrier-agent
+  template:
+    metadata:
+      labels:
+        app: carrier-agent
+        domain: orderfulfillment
+    spec:
+      containers:
+        - name: agent
+          image: yawl/party-agent:latest
+          env:
+            - name: AGENT_CAPABILITY
+              value: "Carrier: transportation, quotes, pickup/delivery, BOL, manifest, shipment notice"
+            - name: AGENT_PORT
+              value: "8092"
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: engine_url
+            - name: YAWL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: username
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-secrets
+                  key: api_key
+          ports:
+            - containerPort: 8092
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8092
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: carrier-agent
+spec:
+  selector:
+    app: carrier-agent
+  ports:
+    - port: 8092
+      targetPort: 8092
+  type: ClusterIP

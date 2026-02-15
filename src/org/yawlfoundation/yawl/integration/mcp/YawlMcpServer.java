@@ -14,6 +14,7 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import java.io.IOException;
 
@@ -56,6 +57,7 @@ public class YawlMcpServer {
     private static final String SERVER_NAME = "yawl-mcp-server";
     private static final String SERVER_VERSION = "5.2.0";
 
+    private final String yawlEngineUrl;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
     private final String yawlUsername;
@@ -83,6 +85,7 @@ public class YawlMcpServer {
             throw new IllegalArgumentException("YAWL password is required");
         }
 
+        this.yawlEngineUrl = yawlEngineUrl;
         this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(
                 yawlEngineUrl + "/ib");
         this.interfaceAClient = new InterfaceA_EnvironmentBasedClient(
@@ -104,6 +107,17 @@ public class YawlMcpServer {
     public void start() throws IOException {
         connectToEngine();
 
+        ZaiFunctionService zaiFunctionService = null;
+        String zaiApiKey = System.getenv("ZAI_API_KEY");
+        if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
+            try {
+                zaiFunctionService = new ZaiFunctionService(
+                    zaiApiKey, yawlEngineUrl, yawlUsername, yawlPassword);
+            } catch (Exception e) {
+                System.err.println("Z.AI not available: " + e.getMessage());
+            }
+        }
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
         JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(mapper);
@@ -120,7 +134,7 @@ public class YawlMcpServer {
                 "Resources provide read-only access to specifications, cases, and work items. " +
                 "Prompts guide workflow analysis, task completion, troubleshooting, and design review.")
             .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle))
+                interfaceBClient, interfaceAClient, sessionHandle, zaiFunctionService))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -132,8 +146,9 @@ public class YawlMcpServer {
             .build();
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
+        int toolCount = zaiFunctionService != null ? 16 : 15;
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
+        System.err.println("Capabilities: " + toolCount + " tools, 3 resources, 3 resource templates, " +
             "4 prompts, 3 completions, logging");
     }
 

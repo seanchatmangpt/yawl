@@ -19,6 +19,7 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import io.a2a.server.auth.User;
 
@@ -59,10 +60,12 @@ public class YawlA2AServer {
 
     private static final String SERVER_VERSION = "5.2.0";
 
+    private final String yawlEngineUrl;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final String yawlUsername;
     private final String yawlPassword;
     private final int port;
+    private final ZaiFunctionService zaiFunctionService;
     private HttpServer httpServer;
     private ExecutorService executorService;
     private String sessionHandle;
@@ -91,11 +94,20 @@ public class YawlA2AServer {
             throw new IllegalArgumentException("Port must be between 1 and 65535");
         }
 
+        this.yawlEngineUrl = yawlEngineUrl;
         this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(
             yawlEngineUrl + "/ib");
         this.yawlUsername = username;
         this.yawlPassword = password;
         this.port = port;
+
+        String zaiApiKey = System.getenv("ZAI_API_KEY");
+        if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
+            this.zaiFunctionService = new ZaiFunctionService(
+                zaiApiKey, yawlEngineUrl, username, password);
+        } else {
+            this.zaiFunctionService = null;
+        }
     }
 
     /**
@@ -321,6 +333,13 @@ public class YawlA2AServer {
         }
 
         private String processWorkflowRequest(String userText) throws IOException {
+            if (zaiFunctionService != null) {
+                try {
+                    return zaiFunctionService.processWithFunctions(userText);
+                } catch (Exception e) {
+                    return "Z.AI processing error: " + e.getMessage();
+                }
+            }
             ensureEngineConnection();
             String lower = userText.toLowerCase().trim();
 

@@ -8,6 +8,7 @@ import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,6 +45,23 @@ public final class YawlToolSpecifications {
             InterfaceB_EnvironmentBasedClient interfaceBClient,
             InterfaceA_EnvironmentBasedClient interfaceAClient,
             String sessionHandle) {
+        return createAll(interfaceBClient, interfaceAClient, sessionHandle, null);
+    }
+
+    /**
+     * Creates all YAWL MCP tool specifications, optionally including the Z.AI natural-language tool.
+     *
+     * @param interfaceBClient  the YAWL InterfaceB client for runtime operations
+     * @param interfaceAClient  the YAWL InterfaceA client for design-time operations
+     * @param sessionHandle     the active YAWL session handle
+     * @param zaiFunctionService optional Z.AI function service; when non-null, adds yawl_natural_language tool
+     * @return list of all YAWL tool specifications for MCP registration
+     */
+    public static List<McpServerFeatures.SyncToolSpecification> createAll(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            InterfaceA_EnvironmentBasedClient interfaceAClient,
+            String sessionHandle,
+            ZaiFunctionService zaiFunctionService) {
 
         if (interfaceBClient == null) {
             throw new IllegalArgumentException(
@@ -77,7 +95,46 @@ public final class YawlToolSpecifications {
         tools.add(createResumeCaseTool(interfaceBClient, sessionHandle));
         tools.add(createSkipWorkItemTool(interfaceBClient, sessionHandle));
 
+        if (zaiFunctionService != null) {
+            tools.add(createNaturalLanguageTool(zaiFunctionService));
+        }
+
         return tools;
+    }
+
+    // =========================================================================
+    // Tool: yawl_natural_language (Z.AI)
+    // =========================================================================
+
+    private static McpServerFeatures.SyncToolSpecification createNaturalLanguageTool(
+            ZaiFunctionService zaiFunctionService) {
+
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("query", Map.of(
+            "type", "string",
+            "description", "Natural language request (e.g. list workflows, launch OrderProcessing)"));
+
+        List<String> required = List.of("query");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_natural_language")
+                .description("Process a natural language request using Z.AI: list workflows, " +
+                    "launch cases, check status, complete work items, etc.")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
+                try {
+                    String query = requireStringArg(args, "query");
+                    String result = zaiFunctionService.processWithFunctions(query);
+                    return new McpSchema.CallToolResult(result, false);
+                } catch (Exception e) {
+                    return new McpSchema.CallToolResult(
+                        "Z.AI natural language error: " + e.getMessage(), true);
+                }
+            });
     }
 
     // =========================================================================

@@ -1,0 +1,74 @@
+#!/bin/bash
+# =============================================================================
+# Order Fulfillment Simulation - Launch case and validate 100% automation
+# =============================================================================
+# Prerequisites:
+#   - YAWL engine running (production profile or external)
+#   - Party agents running (docker-compose simulation or separate processes)
+#   - ZAI_API_KEY set for agents (not needed for launcher)
+#
+# Usage:
+#   ./scripts/run-orderfulfillment-simulation.sh
+#
+# With engine on host:
+#   YAWL_ENGINE_URL=http://localhost:8888/yawl ./scripts/run-orderfulfillment-simulation.sh
+#
+# With Docker full stack (engine + agents):
+#   docker compose -f docker-compose.yml -f docker-compose.simulation.yml \
+#     --profile production --profile simulation up -d
+#   # Wait for engine healthy, then:
+#   YAWL_ENGINE_URL=http://localhost:8888/yawl ./scripts/run-orderfulfillment-simulation.sh
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_DIR"
+
+export YAWL_ENGINE_URL="${YAWL_ENGINE_URL:-http://localhost:8888/yawl}"
+export YAWL_USERNAME="${YAWL_USERNAME:-admin}"
+export YAWL_PASSWORD="${YAWL_PASSWORD:-YAWL}"
+export UPLOAD_SPEC="${UPLOAD_SPEC:-true}"
+export TIMEOUT_SEC="${TIMEOUT_SEC:-600}"
+
+# Resolve engine host for connectivity check (strip path)
+ENGINE_HOST="${YAWL_ENGINE_URL%%/*}"
+ENGINE_HOST="${ENGINE_HOST#*://}"
+ENGINE_HOST="${ENGINE_HOST%%:*}"
+ENGINE_PORT="${YAWL_ENGINE_URL#*://}"
+ENGINE_PORT="${ENGINE_PORT#*:}"
+ENGINE_PORT="${ENGINE_PORT%%/*}"
+ENGINE_PORT="${ENGINE_PORT:-8888}"
+
+echo "Order Fulfillment Simulation"
+echo "  Engine: $YAWL_ENGINE_URL"
+echo "  Upload spec: $UPLOAD_SPEC"
+echo "  Timeout: ${TIMEOUT_SEC}s"
+echo ""
+
+# Optional: check engine reachability (best-effort)
+if command -v curl &>/dev/null; then
+    if curl -sf --connect-timeout 5 "${YAWL_ENGINE_URL%%/yawl*}/" &>/dev/null; then
+        echo "Engine reachable."
+    else
+        echo "Warning: Engine may not be reachable at $YAWL_ENGINE_URL"
+        echo "  Ensure engine is running and agents are started."
+    fi
+fi
+
+if [ ! -d "classes" ]; then
+    echo "Building..."
+    ant -f build/build.xml compile -q
+fi
+
+echo "Launching case and waiting for completion..."
+if ant -f build/build.xml run-orderfulfillment-launcher; then
+    echo ""
+    echo "SUCCESS: Order fulfillment case completed (100% agent automation validated)."
+    exit 0
+else
+    echo ""
+    echo "FAILURE: Case did not complete within timeout or launcher error."
+    exit 1
+fi

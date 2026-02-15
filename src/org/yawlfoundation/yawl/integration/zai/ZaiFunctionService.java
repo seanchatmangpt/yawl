@@ -20,11 +20,13 @@ import java.util.*;
  */
 public class ZaiFunctionService {
 
-    // Z.AI model identifiers (real AI model IDs from Zhipu AI)
-    private static final String ZHIPU_AI_MODEL_GLM_4 = "glm-4";  // Standard model
-    private static final String ZHIPU_AI_MODEL_GLM_4_FLASH = "glm-4-flash";  // Fast, economical
-    private static final String ZHIPU_AI_MODEL_GLM_4_AIR = "glm-4-air";  // Balanced
-    private static final String ZHIPU_AI_MODEL_GLM_4_PLUS = "glm-4-plus";  // Most capable
+    // Z.AI default model (override via ZAI_MODEL env)
+    private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
+
+    private static String defaultModel() {
+        String env = System.getenv("ZAI_MODEL");
+        return (env != null && !env.isEmpty()) ? env : DEFAULT_MODEL;
+    }
 
     private final ZaiHttpClient httpClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
@@ -149,7 +151,7 @@ public class ZaiFunctionService {
      * Process a natural language request with function calling
      */
     public String processWithFunctions(String userMessage) {
-        return processWithFunctions(userMessage, ZHIPU_AI_MODEL_GLM_4_FLASH);
+        return processWithFunctions(userMessage, defaultModel());
     }
 
     /**

@@ -37,7 +37,7 @@ public class ZaiHttpClient {
 
     /**
      * Create a chat completion
-     * @param model Model to use (e.g., "glm-4.6", "glm-5")
+     * @param model Model to use (e.g., "GLM-4.7-Flash", "glm-4.6", "glm-5")
      * @param messages List of messages with role and content
      * @return Response body as string
      */
@@ -216,7 +216,7 @@ public class ZaiHttpClient {
             messages.add(client.mapOf("role", "system", "content", "You are a helpful assistant."));
             messages.add(client.mapOf("role", "user", "content", "Say hello in one sentence."));
 
-            String response = client.createChatCompletion("glm-4.6", messages);
+            String response = client.createChatCompletion("GLM-4.7-Flash", messages);
             System.out.println("Raw response: " + response);
             System.out.println("\nExtracted content: " + client.extractContent(response));
         } catch (Exception e) {

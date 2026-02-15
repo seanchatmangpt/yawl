@@ -1,0 +1,132 @@
+# =============================================================================
+# Order Fulfillment Simulation - Autonomous Party Agents
+# =============================================================================
+# Each agent polls work items, reasons about eligibility via ZAI, produces
+# output dynamically. No central orchestrator.
+#
+# Usage (full stack: engine + agents):
+#   docker compose -f docker-compose.yml -f docker-compose.simulation.yml
+#     --profile production --profile simulation up -d
+#   # Start engine first; agents retry until engine is ready.
+#
+# Or with engine on host:
+#   YAWL_ENGINE_URL=http://host.docker.internal:8888/yawl docker compose
+#     -f docker-compose.simulation.yml up
+# =============================================================================
+
+version: '3.8'
+
+services:
+  ordering-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: yawl/party-agent:latest
+    command: bash -c "ant -f build/build.xml compile -q && ant -f build/build.xml run-party-agent"
+    working_dir: /workspace
+    environment:
+      - "AGENT_CAPABILITY=Ordering: procurement, purchase orders, approvals, order lifecycle"
+      - AGENT_PORT=8091
+      - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
+      - YAWL_USERNAME=${YAWL_USERNAME:-admin}
+      - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
+      - ZAI_API_KEY=${ZAI_API_KEY}
+    ports:
+      - "8091:8091"
+    networks:
+      - yawl-network
+    restart: unless-stopped
+    profiles:
+      - simulation
+
+  carrier-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: yawl/party-agent:latest
+    command: bash -c "ant -f build/build.xml compile -q && ant -f build/build.xml run-party-agent"
+    working_dir: /workspace
+    environment:
+      - "AGENT_CAPABILITY=Carrier: transportation, quotes, pickup/delivery, BOL, manifest, shipment notice"
+      - AGENT_PORT=8092
+      - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
+      - YAWL_USERNAME=${YAWL_USERNAME:-admin}
+      - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
+      - ZAI_API_KEY=${ZAI_API_KEY}
+    ports:
+      - "8092:8092"
+    networks:
+      - yawl-network
+    restart: unless-stopped
+    profiles:
+      - simulation
+
+  freight-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: yawl/party-agent:latest
+    command: bash -c "ant -f build/build.xml compile -q && ant -f build/build.xml run-party-agent"
+    working_dir: /workspace
+    environment:
+      - "AGENT_CAPABILITY=Freight: in-transit tracking, trackpoints, acceptance certificate"
+      - AGENT_PORT=8093
+      - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
+      - YAWL_USERNAME=${YAWL_USERNAME:-admin}
+      - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
+      - ZAI_API_KEY=${ZAI_API_KEY}
+    ports:
+      - "8093:8093"
+    networks:
+      - yawl-network
+    restart: unless-stopped
+    profiles:
+      - simulation
+
+  payment-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: yawl/party-agent:latest
+    command: bash -c "ant -f build/build.xml compile -q && ant -f build/build.xml run-party-agent"
+    working_dir: /workspace
+    environment:
+      - "AGENT_CAPABILITY=Payment: invoices, payment orders, remittance, freight payment"
+      - AGENT_PORT=8094
+      - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
+      - YAWL_USERNAME=${YAWL_USERNAME:-admin}
+      - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
+      - ZAI_API_KEY=${ZAI_API_KEY}
+    ports:
+      - "8094:8094"
+    networks:
+      - yawl-network
+    restart: unless-stopped
+    profiles:
+      - simulation
+
+  delivered-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: yawl/party-agent:latest
+    command: bash -c "ant -f build/build.xml compile -q && ant -f build/build.xml run-party-agent"
+    working_dir: /workspace
+    environment:
+      - "AGENT_CAPABILITY=Delivered: claims, returns, adjustments, post-delivery"
+      - AGENT_PORT=8095
+      - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
+      - YAWL_USERNAME=${YAWL_USERNAME:-admin}
+      - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
+      - ZAI_API_KEY=${ZAI_API_KEY}
+    ports:
+      - "8095:8095"
+    networks:
+      - yawl-network
+    restart: unless-stopped
+    profiles:
+      - simulation
+
+networks:
+  yawl-network:
+    driver: bridge

@@ -1,0 +1,319 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ */
+
+package org.yawlfoundation.yawl.integration.orderfulfillment;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiService;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * Autonomous party agent for order fulfillment simulation.
+ *
+ * Polls YAWL engine for work items, uses stateless workflows (ZAI) to determine
+ * eligibility and produce output, then completes work items. No central
+ * orchestrator; each agent figures out what to do dynamically.
+ *
+ * Exposes /.well-known/agent.json for A2A discovery.
+ *
+ * @author YAWL Foundation
+ * @version 5.2
+ */
+public final class PartyAgent {
+
+    private static final String VERSION = "5.2.0";
+    private static final long POLL_INTERVAL_MS = 3000;
+
+    private final AgentCapability capability;
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final EligibilityWorkflow eligibilityWorkflow;
+    private final DecisionWorkflow decisionWorkflow;
+    private final int port;
+    private final String sessionHandle;
+
+    private HttpServer httpServer;
+    private Thread discoveryThread;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+
+    public PartyAgent(AgentCapability capability,
+                      String engineUrl,
+                      String username,
+                      String password,
+                      int port) throws IOException {
+        if (capability == null) {
+            throw new IllegalArgumentException("capability is required");
+        }
+        if (engineUrl == null || engineUrl.isEmpty()) {
+            throw new IllegalArgumentException("engineUrl is required");
+        }
+        if (username == null || password == null) {
+            throw new IllegalArgumentException("username and password are required");
+        }
+
+        this.capability = capability;
+        this.port = port > 0 ? port : 8091;
+
+        String interfaceBUrl = engineUrl.endsWith("/") ? engineUrl + "ib" : engineUrl + "/ib";
+        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(interfaceBUrl);
+
+        String session = interfaceBClient.connect(username, password);
+        if (session == null || session.contains("failure") || session.contains("error")) {
+            throw new IOException("Failed to connect to YAWL engine: " + session);
+        }
+        this.sessionHandle = session;
+
+        String zaiKey = System.getenv("ZAI_API_KEY");
+        ZaiService zaiService = (zaiKey != null && !zaiKey.isEmpty())
+            ? new ZaiService(zaiKey)
+            : null;
+
+        if (zaiService == null) {
+            throw new IllegalStateException(
+                "ZAI_API_KEY is required for autonomous agent reasoning.");
+        }
+
+        this.eligibilityWorkflow = new EligibilityWorkflow(capability, zaiService);
+        this.decisionWorkflow = new DecisionWorkflow(zaiService);
+    }
+
+    /**
+     * Start the agent: HTTP server for discovery + discovery loop.
+     */
+    public void start() throws IOException {
+        if (running.get()) {
+            return;
+        }
+        running.set(true);
+
+        startHttpServer();
+        startDiscoveryLoop();
+
+        System.out.println("Party Agent [" + capability.getDomainName() + "] v" + VERSION
+            + " started on port " + port);
+        System.out.println("  Capability: " + capability.getDescription());
+        System.out.println("  Agent card: http://localhost:" + port + "/.well-known/agent.json");
+    }
+
+    /**
+     * Stop the agent.
+     */
+    public void stop() {
+        running.set(false);
+        if (discoveryThread != null) {
+            discoveryThread.interrupt();
+            try {
+                discoveryThread.join(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (httpServer != null) {
+            httpServer.stop(2);
+            httpServer = null;
+        }
+        try {
+            interfaceBClient.disconnect(sessionHandle);
+        } catch (IOException ignored) {
+        }
+        System.out.println("Party Agent [" + capability.getDomainName() + "] stopped");
+    }
+
+    private void startHttpServer() throws IOException {
+        String agentCard = buildAgentCardJson();
+
+        httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+        httpServer.setExecutor(Executors.newSingleThreadExecutor());
+
+        httpServer.createContext("/.well-known/agent.json", exchange -> {
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+            byte[] body = agentCard.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+
+        httpServer.createContext("/health", exchange -> {
+            String json = "{\"status\":\"ok\",\"agent\":\"" + capability.getDomainName() + "\"}";
+            byte[] body = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+
+        httpServer.start();
+    }
+
+    private String buildAgentCardJson() {
+        return "{"
+            + "\"name\":\"Order Fulfillment - " + capability.getDomainName() + " Agent\","
+            + "\"description\":\"Autonomous agent for " + capability.getDescription() + ". "
+            + "Discovers work items, reasons about eligibility, produces output dynamically.\","
+            + "\"version\":\"" + VERSION + "\","
+            + "\"capabilities\":{\"domain\":\"" + capability.getDomainName() + "\"},"
+            + "\"skills\":[{"
+            + "\"id\":\"complete_work_item\","
+            + "\"name\":\"Complete Work Item\","
+            + "\"description\":\"Discover and complete workflow tasks in this agent's domain\""
+            + "}]"
+            + "}";
+    }
+
+    private void startDiscoveryLoop() {
+        discoveryThread = new Thread(() -> {
+            while (running.get()) {
+                try {
+                    runDiscoveryCycle();
+                } catch (Exception e) {
+                    System.err.println("Discovery cycle error: " + e.getMessage());
+                }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(POLL_INTERVAL_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }, "discovery-" + capability.getDomainName());
+        discoveryThread.setDaemon(false);
+        discoveryThread.start();
+    }
+
+    private void runDiscoveryCycle() throws IOException {
+        List<WorkItemRecord> items = interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandle);
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        for (WorkItemRecord wir : items) {
+            if (!running.get()) {
+                break;
+            }
+            if (!wir.hasLiveStatus()) {
+                continue;
+            }
+            if (wir.getStatus().equals(WorkItemRecord.statusIsParent)) {
+                continue;
+            }
+
+            if (!eligibilityWorkflow.isEligible(wir)) {
+                continue;
+            }
+
+            String workItemId = wir.getID();
+            try {
+                String checkoutResult = interfaceBClient.checkOutWorkItem(workItemId, sessionHandle);
+                if (checkoutResult == null || checkoutResult.contains("failure")
+                    || checkoutResult.contains("error")) {
+                    continue;
+                }
+
+                String outputData = decisionWorkflow.produceOutput(wir);
+                String checkinResult = interfaceBClient.checkInWorkItem(
+                    workItemId, outputData, null, sessionHandle);
+
+                if (checkinResult != null && checkinResult.contains("success")) {
+                    System.out.println("  [" + capability.getDomainName() + "] Completed "
+                        + workItemId + " (" + wir.getTaskName() + ")");
+                }
+            } catch (Exception e) {
+                System.err.println("  [" + capability.getDomainName() + "] Failed " + workItemId
+                    + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Entry point for running a party agent.
+     *
+     * Required env: AGENT_CAPABILITY, YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD, ZAI_API_KEY
+     * Optional: AGENT_PORT (default 8091)
+     */
+    public static void main(String[] args) {
+        String engineUrl = System.getenv("YAWL_ENGINE_URL");
+        if (engineUrl == null || engineUrl.isEmpty()) {
+            engineUrl = "http://localhost:8080/yawl";
+        }
+
+        String username = System.getenv("YAWL_USERNAME");
+        if (username == null || username.isEmpty()) {
+            username = "admin";
+        }
+
+        String password = System.getenv("YAWL_PASSWORD");
+        if (password == null || password.isEmpty()) {
+            password = "YAWL";
+        }
+
+        int port = 8091;
+        String portStr = System.getenv("AGENT_PORT");
+        if (portStr != null && !portStr.isEmpty()) {
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        AgentCapability capability;
+        try {
+            capability = AgentCapability.fromEnvironment();
+        } catch (IllegalStateException e) {
+            System.err.println(e.getMessage());
+            System.err.println("\nExample: AGENT_CAPABILITY=\"Ordering: procurement, purchase orders\"");
+            System.exit(1);
+            return;
+        }
+
+        PartyAgent agent;
+        try {
+            agent = new PartyAgent(
+                capability, engineUrl, username, password, port);
+            agent.start();
+        } catch (IOException e) {
+            System.err.println("Failed to start agent: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.err.println("Shutting down...");
+            agent.stop();
+        }));
+
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            agent.stop();
+        }
+    }
+}

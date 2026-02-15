@@ -14,9 +14,13 @@ import java.util.*;
  */
 public class ZaiService {
 
-    // Real Zhipu AI model identifiers
-    private static final String ZHIPU_AI_MODEL_GLM_4 = "glm-4";  // Standard model
-    private static final String ZHIPU_AI_MODEL_GLM_4_FLASH = "glm-4-flash";  // Fast, economical
+    // Z.AI / Zhipu model identifiers (override via ZAI_MODEL env)
+    private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
+
+    private static String defaultModel() {
+        String env = System.getenv("ZAI_MODEL");
+        return (env != null && !env.isEmpty()) ? env : DEFAULT_MODEL;
+    }
 
     private ZaiHttpClient httpClient;
     private List<Map<String, String>> conversationHistory;
@@ -56,7 +60,7 @@ public class ZaiService {
      * Send a chat message and get AI response
      */
     public String chat(String message) {
-        return chat(message, ZHIPU_AI_MODEL_GLM_4_FLASH);
+        return chat(message, defaultModel());
     }
 
     /**
@@ -136,7 +140,7 @@ public class ZaiService {
                         "Return only the transformed data, no explanation.",
                 inputData, transformationRule
         );
-        return chat(prompt, ZHIPU_AI_MODEL_GLM_4_FLASH);
+        return chat(prompt, defaultModel());
     }
 
     /**
@@ -182,7 +186,7 @@ public class ZaiService {
                         "Return VALID if all rules pass, or list the validation issues found.",
                 data, rules
         );
-        return chat(prompt, ZHIPU_AI_MODEL_GLM_4_FLASH);
+        return chat(prompt, defaultModel());
     }
 
     /**

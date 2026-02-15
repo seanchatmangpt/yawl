@@ -1,0 +1,40 @@
+# YAWL: Docker / Devcontainer Only
+
+This project is **Docker/devcontainer-only**. Do not assume the host has Java, Ant, or any runtime. All build, test, and run operations must happen **inside** the container.
+
+## Why
+
+- Java, Ant, and dependencies are provided only in the devcontainer and in `yawl-dev` (Dockerfile.dev).
+- Running `ant`, `java`, or `./run-integration-tests.sh` on the host will fail or behave inconsistently if the host lacks a proper JDK or has a different version.
+- ZAI integration tests (SelfPlayTest), MCP/A2A servers, and the YAWL engine are intended to run inside the same environment that has the correct classpath and env (e.g. ZAI_API_KEY, YAWL_ENGINE_URL).
+
+## How to work in the correct environment
+
+1. **Devcontainer (recommended)**  
+   Open the repo in VS Code/Cursor and use **“Reopen in Container”** (or open via “Remote - Containers”).  
+   Config: [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)  
+   - Uses Java 21 image; `postCreateCommand` installs Ant.  
+   - All terminal commands in the IDE run inside the container.
+
+2. **Docker Compose (dev service)**  
+   ```bash
+   docker compose run --rm yawl-dev bash
+   ```  
+   Then inside the container:
+   - `ant -f build/build.xml compile`
+   - `./run-integration-tests.sh` (or `ant -f build/build.xml run-zai-integration`)
+   - `./run-mcp-server.sh` / `./run-a2a-server.sh` as needed.  
+   Env (e.g. ZAI_API_KEY) can be passed via docker-compose or `-e` when using `run`.
+
+## What to do in this repo
+
+- **Build:** Run `ant -f build/build.xml compile` (or equivalent) **inside** the devcontainer or `yawl-dev` container.
+- **Tests / ZAI:** Run integration tests and ZAI support **inside** the same container; do not rely on host `java` or `ant`.
+- **Scripts:** Treat `run-integration-tests.sh`, `run-mcp-server.sh`, `run-a2a-server.sh`, etc. as scripts to be executed in the container.
+- **Docs/plans:** When describing “how to run” anything, always say “inside the devcontainer” or “inside `docker compose run yawl-dev`”, not “on your machine” or “in the terminal” without specifying the container.
+
+## References
+
+- Devcontainer: [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)
+- Dev image: [Dockerfile.dev](Dockerfile.dev)
+- Compose (yawl-dev, postgres, engine, etc.): [docker-compose.yml](docker-compose.yml)

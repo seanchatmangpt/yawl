@@ -1,0 +1,75 @@
+# Delivered Agent - Kubernetes Deployment
+# Autonomous agent for claims, returns, adjustments, post-delivery
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delivered-agent
+  labels:
+    app: delivered-agent
+    domain: orderfulfillment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: delivered-agent
+  template:
+    metadata:
+      labels:
+        app: delivered-agent
+        domain: orderfulfillment
+    spec:
+      containers:
+        - name: agent
+          image: yawl/party-agent:latest
+          env:
+            - name: AGENT_CAPABILITY
+              value: "Delivered: claims, returns, adjustments, post-delivery"
+            - name: AGENT_PORT
+              value: "8095"
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: engine_url
+            - name: YAWL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: username
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-secrets
+                  key: api_key
+          ports:
+            - containerPort: 8095
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8095
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: delivered-agent
+spec:
+  selector:
+    app: delivered-agent
+  ports:
+    - port: 8095
+      targetPort: 8095
+  type: ClusterIP

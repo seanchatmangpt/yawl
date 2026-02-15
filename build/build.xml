@@ -350,6 +350,9 @@
     <property name="simplemail" value="simple-java-mail-5.5.1.jar"/>
     <!-- sml -->
     <property name="slf4j" value="slf4j-api-1.7.12.jar"/>
+    <!-- A2A client runtime (required by a2a-java-sdk at runtime) -->
+    <property name="protobuf-java" value="protobuf-java-3.25.1.jar"/>
+
     <!-- hbn -->
     <property name="smtp" value="smtp.jar"/>
     <!-- sml -->
@@ -390,6 +393,9 @@
     <property name="kiota-serialization-multipart" value="microsoft-kiota-serialization-multipart-1.8.10.jar"/>
     <property name="kiota-serialization-text" value="microsoft-kiota-serialization-text-1.8.10.jar"/>
 
+    <!-- JSpecify (nullable annotations, required by MCP/A2A SDK at compile time) -->
+    <property name="jspecify" value="jspecify-1.0.0.jar"/>
+
     <!-- MCP (Model Context Protocol) SDK -->
     <property name="mcp" value="mcp-0.17.2.jar"/>
     <property name="mcp-core" value="mcp-core-0.17.2.jar"/>
@@ -398,6 +404,9 @@
     <property name="reactor-core" value="reactor-core-3.7.0.jar"/>
     <property name="reactive-streams" value="reactive-streams-1.0.4.jar"/>
     <property name="json-schema-validator" value="json-schema-validator-2.0.0.jar"/>
+
+    <!-- Jakarta CDI API (required by A2A transport-rest at compile time) -->
+    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-3.0.0.jar"/>
 
     <!-- A2A (Agent-to-Agent) SDK -->
     <property name="a2a-spec" value="a2a-java-sdk-spec-1.0.0.Alpha2.jar"/>
@@ -636,6 +645,12 @@
         <pathelement location="${lib.dir}/${jackson-annotations}"/>
         <pathelement location="${lib.dir}/${jackson-core}"/>
         <pathelement location="${lib.dir}/${jackson-databind}"/>
+
+        <!-- JSpecify (required by MCP/A2A SDK) -->
+        <pathelement location="${lib.dir}/${jspecify}"/>
+
+        <!-- Jakarta CDI API (required by A2A transport-rest) -->
+        <pathelement location="${lib.dir}/${jakarta-cdi-api}"/>
 
         <!-- MCP SDK -->
         <pathelement location="${lib.dir}/${mcp}"/>
@@ -3218,6 +3233,89 @@
             <formatter type="plain"/>
             <test name="org.yawlfoundation.yawl.TestAllYAWLSuites"/>
         </junit>
+    </target>
+
+    <!--
+        Run ZAI/MCP/A2A self-play integration tests (requires ZAI_API_KEY, optional YAWL_ENGINE_URL etc.)
+    -->
+    <target name="run-zai-integration" depends="compile">
+        <java classname="org.yawlfoundation.yawl.integration.test.SelfPlayTest"
+              fork="true" failonerror="false">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.simplemail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath refid="cp.proclet"/>
+            <classpath refid="cp.balancer"/>
+            <classpath refid="cp.etc"/>
+            <!-- SLF4J required by MCP client (YawlMcpClient / HttpClientSseClientTransport) -->
+            <classpath>
+                <pathelement location="${lib.dir}/${slf4j}"/>
+                <pathelement location="${lib.dir}/${log4j-slf4j}"/>
+            </classpath>
+            <!-- Protobuf required by A2A client (YawlA2AClient / io.a2a.A2A) -->
+            <classpath>
+                <pathelement location="${lib.dir}/${protobuf-java}"/>
+            </classpath>
+        </java>
+    </target>
+
+    <!--
+        Launch orderfulfillment case, optionally upload spec, poll until complete.
+        Env: YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD.
+        Optional: SPEC_PATH, TIMEOUT_SEC, UPLOAD_SPEC (default true).
+    -->
+    <target name="run-orderfulfillment-launcher" depends="compile"
+            description="Launch orderfulfillment case and validate completion">
+        <java classname="org.yawlfoundation.yawl.integration.orderfulfillment.OrderfulfillmentLauncher"
+              fork="true" failonerror="true">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.simplemail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath refid="cp.proclet"/>
+            <classpath refid="cp.balancer"/>
+            <classpath refid="cp.etc"/>
+        </java>
+    </target>
+
+    <!--
+        Run an autonomous party agent for order fulfillment simulation.
+        Requires: AGENT_CAPABILITY, ZAI_API_KEY. Optional: YAWL_ENGINE_URL, AGENT_PORT.
+    -->
+    <target name="run-party-agent" depends="compile"
+            description="Run PartyAgent (requires AGENT_CAPABILITY, ZAI_API_KEY)">
+        <java classname="org.yawlfoundation.yawl.integration.orderfulfillment.PartyAgent"
+              fork="true">
+            <classpath refid="cp.standard"/>
+            <classpath refid="cp.compile"/>
+            <classpath refid="cp.wsif"/>
+            <classpath refid="cp.xsd"/>
+            <classpath refid="cp.persist"/>
+            <classpath refid="cp.apacheCommons"/>
+            <classpath refid="cp.jsf"/>
+            <classpath refid="cp.ds"/>
+            <classpath refid="cp.mail"/>
+            <classpath refid="cp.simplemail"/>
+            <classpath refid="cp.scheduling"/>
+            <classpath refid="cp.proclet"/>
+            <classpath refid="cp.balancer"/>
+            <classpath refid="cp.etc"/>
+        </java>
     </target>
 
     <!--

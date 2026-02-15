@@ -1,0 +1,7 @@
+# YAWL configuration for party agents
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-config
+data:
+  engine_url: "http://yawl-engine:8080/yawl"
