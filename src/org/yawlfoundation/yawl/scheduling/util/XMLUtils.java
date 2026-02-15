@@ -505,10 +505,40 @@ public class XMLUtils implements Constants
 				// nothing to do
 
 			}
+			else if (restriction.getName().equals("pattern"))
+			{
+				if (!o.toString().matches(value))
+				{
+					addErrorValue(element, withValidation, "msgPatternMismatch", new String[] { value });
+				}
+
+			}
+			else if (restriction.getName().equals("totalDigits"))
+			{
+				String digits = o.toString().replaceAll("[^0-9]", "");
+				if (digits.length() > Integer.parseInt(value))
+				{
+					addErrorValue(element, withValidation, "msgTotalDigitsExceeded", new String[] { value });
+				}
+
+			}
+			else if (restriction.getName().equals("fractionDigits"))
+			{
+				String str = o.toString();
+				int dotIndex = str.indexOf('.');
+				if (dotIndex >= 0)
+				{
+					String fraction = str.substring(dotIndex + 1);
+					if (fraction.length() > Integer.parseInt(value))
+					{
+						addErrorValue(element, withValidation, "msgFractionDigitsExceeded", new String[] { value });
+					}
+				}
+
+			}
 			else
 			{
-				// Unsupported restriction types: pattern, fractionDigits, totalDigits
-				logger.error("restriction '" + restriction.getName() + "' is unsupported, treating as string");
+				logger.warn("restriction '" + restriction.getName() + "' is not recognized");
 			}
 		}
 

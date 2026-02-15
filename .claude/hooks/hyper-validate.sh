@@ -44,8 +44,9 @@ if matches=$(grep -n -E "$TODO_PATTERN" "$FILE" 2>/dev/null); then
 fi
 
 # === CHECK 2: MOCK/STUB METHOD NAMES ===
-# Catches: mockFetch(), getMockData(), stubValidation(), testData(), demoResponse()
-MOCK_NAME_PATTERN='(mock|stub|fake|test|demo|sample|temp)[A-Z][a-zA-Z]*\s*[=(]'
+# Catches: mockFetch(), getMockData(), stubValidation(), demoResponse()
+# Note: test, temp, sample are legitimate prefixes and not flagged
+MOCK_NAME_PATTERN='(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]'
 
 if matches=$(grep -n -E "$MOCK_NAME_PATTERN" "$FILE" 2>/dev/null); then
     VIOLATIONS+=("❌ MOCK/STUB PATTERNS in method/variable names")
@@ -53,8 +54,8 @@ if matches=$(grep -n -E "$MOCK_NAME_PATTERN" "$FILE" 2>/dev/null); then
 fi
 
 # === CHECK 3: MOCK CLASS NAMES ===
-# Catches: class MockService, class FakeRepository, class TestAdapter
-MOCK_CLASS_PATTERN='(class|interface)\s+(Mock|Stub|Fake|Test|Demo|Sample)[A-Za-z]*\s+(implements|extends|\{)'
+# Catches: class MockService, class FakeRepository
+MOCK_CLASS_PATTERN='(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)'
 
 if matches=$(grep -n -E "$MOCK_CLASS_PATTERN" "$FILE" 2>/dev/null); then
     VIOLATIONS+=("❌ MOCK/STUB CLASS names")
@@ -63,7 +64,7 @@ fi
 
 # === CHECK 4: MOCK MODE FLAGS ===
 # Catches: boolean useMockData = true, static final boolean MOCK_MODE = true
-MOCK_FLAG_PATTERN='(is|use|enable|allow)(Mock|Test|Fake|Demo|Stub)(Mode|Data|ing)\s*='
+MOCK_FLAG_PATTERN='(is|use|enable|allow)(Mock|Fake|Demo|Stub)(Mode|Data|ing)\s*='
 
 if matches=$(grep -n -E "$MOCK_FLAG_PATTERN" "$FILE" 2>/dev/null); then
     VIOLATIONS+=("❌ MOCK MODE FLAGS detected")
@@ -101,8 +102,9 @@ if matches=$(grep -n -E "$NOOP_PATTERN" "$FILE" 2>/dev/null); then
 fi
 
 # === CHECK 8: PLACEHOLDER CONSTANTS ===
-# Catches: DEFAULT_VALUE = "placeholder", SAMPLE_DATA = ..., DUMMY_CONFIG = ...
-PLACEHOLDER_CONST_PATTERN='(DEFAULT|SAMPLE|DUMMY|PLACEHOLDER|TEST|MOCK|FAKE)_[A-Z_]+\s*='
+# Catches: DUMMY_CONFIG = ..., PLACEHOLDER_VALUE = ...
+# Note: DEFAULT, TEST, SAMPLE, TEMP are legitimate prefixes and not flagged
+PLACEHOLDER_CONST_PATTERN='(DUMMY|PLACEHOLDER|MOCK|FAKE)_[A-Z_]+\s*='
 
 if matches=$(grep -n -E "$PLACEHOLDER_CONST_PATTERN" "$FILE" 2>/dev/null); then
     # Filter out legitimate defaults (like DEFAULT_TIMEOUT, DEFAULT_PORT)

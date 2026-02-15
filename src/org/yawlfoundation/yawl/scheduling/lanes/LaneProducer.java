@@ -166,7 +166,7 @@ public class LaneProducer implements Constants {
 					put(processUnit, "hasConflicts", XMLUtils.hasErrors(cas.getRUP().getRootElement()));
 					put(processUnit, "hasErrors", XMLUtils.hasErrors(cas.getRUP().getRootElement()));
 					put(processUnit, "hasWarnings", XMLUtils.hasWarnings(cas.getRUP().getRootElement()));
-					// canBeEdited is determined at the UI layer based on case state
+					put(processUnit, "canBeEdited", cas.isActive());
 					
 					Map<String, Object> data = new HashMap<String, Object>();
 					//put(data, "description", cas.getId() + ": " + cas.getPatientFullName() + (cas.getPatientSex()==null ? "" : " (" + cas.getPatientSex() + ")"));

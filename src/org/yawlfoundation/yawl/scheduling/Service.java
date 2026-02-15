@@ -27,6 +27,7 @@ import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.scheduling.persistence.DataMapper;
 import org.yawlfoundation.yawl.scheduling.util.PropertyReader;
 import org.yawlfoundation.yawl.scheduling.util.Utils;
+import org.yawlfoundation.yawl.scheduling.util.XMLUtils;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -227,18 +228,32 @@ public abstract class Service extends InterfaceBWebsideController implements Con
   }
   
 	/**
-	 * Checks in a work item with optional payload. Note: payload is not
-	 * pre-validated; invalid payloads will cause the work item to fail.
+	 * Checks in a work item with optional payload. The payload is validated
+	 * for well-formedness before submission to the engine.
 	 *
 	 * @param mapping the mapping for the work item to check in
 	 * @param payload the data payload (may be null)
-	 * @throws YAWLException if the check-in fails
+	 * @throws YAWLException if validation or check-in fails
 	 */
 	public void checkInWorkItem(Mapping mapping, String payload) throws YAWLException {
 		try {
 			WorkItemRecord wir = getWorkItemFromCache(mapping);
+			Element outputData = getOutputData(payload);
+
+			// validate payload structure before submitting to engine
+			if (payload != null && outputData == null) {
+				throw new YAWLException("Invalid payload for work item " +
+						wir.getID() + ": could not parse as XML");
+			}
+			if (outputData != null && outputData.getChildren().isEmpty()
+					&& outputData.getText().isEmpty() && payload != null
+					&& !payload.trim().isEmpty()) {
+				_log.warn("Payload for work item " + wir.getID() +
+						" produced empty output element; data may be malformed");
+			}
+
 			String result = checkInWorkItem(wir.getID(), wir.getDataList(),
-                    getOutputData(payload), null, getHandle());
+                    outputData, null, getHandle());
 
 			if (!successful(result)) {
 				if (REMOVE_MAPPING_NOT_IN_YAWL && isNoWorkItemErrorMsg(result)) {
