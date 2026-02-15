@@ -1,220 +1,271 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
-import org.yawlfoundation.yawl.integration.zai.ZaiService;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import io.a2a.A2A;
+import io.a2a.client.Client;
+import io.a2a.client.ClientEvent;
+import io.a2a.client.MessageEvent;
+import io.a2a.client.TaskEvent;
+import io.a2a.client.transport.rest.RestTransport;
+import io.a2a.client.transport.rest.RestTransportConfig;
+import io.a2a.spec.*;
+
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * A2A Client Integration for YAWL with Z.AI Intelligence
+ * Agent-to-Agent (A2A) Client for YAWL using the official A2A Java SDK.
  *
- * Connects YAWL to other agents using the A2A protocol with AI capabilities.
+ * Connects to remote A2A agents to invoke their capabilities from within
+ * YAWL workflows. Supports agent card discovery, message sending, task
+ * management, and streaming events.
+ *
+ * Uses the official A2A Java SDK with REST transport.
  *
  * @author YAWL Foundation
  * @version 5.2
  */
-public class YawlA2AClient {
+public class YawlA2AClient implements AutoCloseable {
 
     private final String agentUrl;
-    private final ZaiService zaiService;
-    private final ZaiFunctionService functionService;
-    private String agentCapabilities;
-    private boolean connected = false;
+    private AgentCard agentCard;
+    private Client a2aClient;
+    private boolean connected;
 
+    /**
+     * Construct a YAWL A2A Client for a remote agent.
+     *
+     * @param agentUrl base URL of the A2A agent (e.g. http://localhost:8081)
+     */
     public YawlA2AClient(String agentUrl) {
+        if (agentUrl == null || agentUrl.isEmpty()) {
+            throw new IllegalArgumentException("Agent URL is required");
+        }
         this.agentUrl = agentUrl;
-        this.zaiService = new ZaiService();
-        this.functionService = new ZaiFunctionService();
-        System.out.println("Initializing YAWL A2A Client for agent at: " + agentUrl);
+        this.connected = false;
     }
 
-    public YawlA2AClient(String agentUrl, String zaiApiKey) {
-        this.agentUrl = agentUrl;
-        this.zaiService = new ZaiService(zaiApiKey);
-        // Use no-arg constructor - ZaiFunctionService will read from environment
-        this.functionService = new ZaiFunctionService();
-        System.out.println("Initializing YAWL A2A Client with Z.AI for agent at: " + agentUrl);
-    }
-
-    public void connect() {
+    /**
+     * Connect to the remote A2A agent by fetching its agent card.
+     *
+     * @throws A2AClientException if the agent card cannot be fetched
+     * @throws A2AClientError if there is a protocol-level error
+     * @throws A2AClientJSONError if JSON deserialization fails
+     */
+    public void connect() throws A2AClientException, A2AClientError, A2AClientJSONError {
         if (connected) {
-            System.out.println("Already connected to agent");
-            return;
+            throw new IllegalStateException("Already connected to agent at " + agentUrl);
         }
 
-        System.out.println("Connecting to A2A agent at: " + agentUrl);
+        agentCard = A2A.getAgentCard(agentUrl);
 
-        zaiService.setSystemPrompt(
-                "You are an intelligent assistant for YAWL A2A (Agent-to-Agent) communication. " +
-                        "Help coordinate between YAWL workflows and external agents."
-        );
+        a2aClient = Client.builder(agentCard)
+            .withTransport(RestTransport.class, new RestTransportConfig())
+            .build();
 
-        this.agentCapabilities = discoverCapabilities();
         connected = true;
-        System.out.println("Successfully connected to A2A agent");
-    }
-
-    public void disconnect() {
-        if (!connected) {
-            System.out.println("Not connected to any agent");
-            return;
-        }
-
-        System.out.println("Disconnecting from A2A agent...");
-        connected = false;
-        System.out.println("Disconnected");
-    }
-
-    private String discoverCapabilities() {
-        throw new UnsupportedOperationException("A2A SDK integration required to discover agent capabilities. Add A2A SDK dependency.");
+        System.out.println("Connected to A2A agent: " + agentCard.name()
+            + " v" + agentCard.version());
     }
 
     /**
-     * Invoke a capability using natural language with AI enhancement
+     * Send a text message to the remote agent and wait for a response.
+     *
+     * @param text the text message to send
+     * @return the agent's text response
+     * @throws A2AClientException if the message cannot be sent
      */
-    public String invokeWithAI(String naturalLanguageRequest, String data) {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to agent");
-        }
+    public String sendMessage(String text) throws A2AClientException {
+        ensureConnected();
 
-        System.out.println("AI-enhanced invocation: " + naturalLanguageRequest);
+        Message userMessage = A2A.toUserMessage(text);
 
-        String prompt = String.format(
-                "Given the task: '%s'\n\n" +
-                        "Available capabilities: %s\n\n" +
-                        "Data to process: %s\n\n" +
-                        "Determine the best capability to use and format the request appropriately. " +
-                        "Return in format: CAPABILITY: [name] PARAMS: [json]",
-                naturalLanguageRequest, agentCapabilities, data
+        AtomicReference<String> result = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        a2aClient.sendMessage(userMessage,
+            List.of((event, card) -> {
+                if (event instanceof TaskEvent) {
+                    Task task = ((TaskEvent) event).getTask();
+                    if (task.status() != null && task.status().state().isFinal()) {
+                        if (task.status().message() != null) {
+                            result.set(extractTextFromMessage(task.status().message()));
+                        }
+                        latch.countDown();
+                    }
+                } else if (event instanceof MessageEvent) {
+                    Message msg = ((MessageEvent) event).getMessage();
+                    result.set(extractTextFromMessage(msg));
+                    latch.countDown();
+                }
+            }),
+            err -> {
+                error.set(err);
+                latch.countDown();
+            },
+            null
         );
 
-        String aiResponse = zaiService.chat(prompt);
-
-        String capability = extractCapability(aiResponse);
-        String params = extractParams(aiResponse, data);
-
-        return invokeCapability(capability, params);
-    }
-
-    /**
-     * Invoke a capability on the remote agent
-     */
-    public String invokeCapability(String capabilityName, String data) {
-        if (!connected) {
-            throw new IllegalStateException("Not connected to agent");
+        try {
+            if (!latch.await(60, TimeUnit.SECONDS)) {
+                throw new RuntimeException(
+                    "Timeout waiting for agent response after 60 seconds");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted waiting for agent response", e);
         }
 
-        System.out.println("Invoking capability: " + capabilityName);
-
-        throw new UnsupportedOperationException("A2A SDK integration required to invoke agent capabilities. Add A2A SDK dependency.");
-    }
-
-    /**
-     * Get AI-powered orchestration plan for multi-step workflow
-     */
-    public String getOrchestrationPlan(String workflowDescription, String[] availableAgents) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("Create an orchestration plan for the following workflow:\n\n");
-        prompt.append("Workflow: ").append(workflowDescription).append("\n\n");
-        prompt.append("Available Agents:\n");
-        for (String agent : availableAgents) {
-            prompt.append("- ").append(agent).append("\n");
+        Throwable err = error.get();
+        if (err != null) {
+            throw new RuntimeException("Agent communication error: " + err.getMessage(), err);
         }
-        prompt.append("\nProvide a step-by-step plan with agent assignments.");
 
-        return zaiService.chat(prompt.toString());
+        String response = result.get();
+        if (response == null) {
+            throw new RuntimeException("Agent returned no response content");
+        }
+        return response;
     }
 
     /**
-     * Handle exception with AI assistance
+     * Get a task by its ID from the remote agent.
+     *
+     * @param taskId the task ID to query
+     * @return the task details
+     * @throws A2AClientException if the task cannot be fetched
      */
-    public String handleExceptionWithAI(String exceptionDetails, String context) {
-        String prompt = String.format(
-                "An A2A agent interaction encountered an exception:\n\n" +
-                        "Exception: %s\n\n" +
-                        "Context: %s\n\n" +
-                        "Available capabilities: %s\n\n" +
-                        "Suggest the best recovery action or alternative capability to use.",
-                exceptionDetails, context, agentCapabilities
-        );
-
-        return zaiService.chat(prompt);
+    public Task getTask(String taskId) throws A2AClientException {
+        ensureConnected();
+        TaskQueryParams params = new TaskQueryParams(taskId);
+        return a2aClient.getTask(params, null);
     }
 
     /**
-     * Transform data for agent compatibility using AI
+     * Cancel a task on the remote agent.
+     *
+     * @param taskId the task ID to cancel
+     * @return the cancelled task
+     * @throws A2AClientException if the task cannot be cancelled
      */
-    public String transformForAgent(String inputData, String targetAgentCapabilities) {
-        return zaiService.transformData(inputData,
-                "Transform to be compatible with agent capabilities: " + targetAgentCapabilities);
+    public Task cancelTask(String taskId) throws A2AClientException {
+        ensureConnected();
+        TaskIdParams params = new TaskIdParams(taskId);
+        return a2aClient.cancelTask(params, null);
     }
 
-    public String getCapabilities() {
-        return agentCapabilities;
+    /**
+     * Get the agent card of the connected agent.
+     *
+     * @return the agent card describing the agent's capabilities
+     */
+    public AgentCard getAgentCard() {
+        ensureConnected();
+        return agentCard;
     }
 
+    /**
+     * Get the agent's skills/capabilities.
+     *
+     * @return list of agent skills
+     */
+    public List<AgentSkill> getSkills() {
+        ensureConnected();
+        return agentCard.skills();
+    }
+
+    /**
+     * Get the agent's capabilities (streaming, push notifications, etc.).
+     *
+     * @return the agent capabilities
+     */
+    public AgentCapabilities getCapabilities() {
+        ensureConnected();
+        return agentCard.capabilities();
+    }
+
+    /**
+     * Check if connected to an agent.
+     */
     public boolean isConnected() {
         return connected;
     }
 
-    public boolean isAIEnabled() {
-        return zaiService.isInitialized();
+    /**
+     * Disconnect from the remote agent and release resources.
+     */
+    @Override
+    public void close() {
+        if (a2aClient != null) {
+            a2aClient.close();
+            a2aClient = null;
+        }
+        agentCard = null;
+        connected = false;
     }
 
-    private String extractCapability(String aiResponse) {
-        String lower = aiResponse.toLowerCase();
-        if (lower.contains("processdocument") || lower.contains("process document")) {
-            return "processDocument";
-        } else if (lower.contains("analyzedata") || lower.contains("analyze data")) {
-            return "analyzeData";
-        } else if (lower.contains("generatereport") || lower.contains("generate report")) {
-            return "generateReport";
-        } else if (lower.contains("handleexception") || lower.contains("handle exception")) {
-            return "handleException";
-        } else if (lower.contains("notifyuser") || lower.contains("notify user")) {
-            return "notifyUser";
+    private void ensureConnected() {
+        if (!connected || a2aClient == null) {
+            throw new IllegalStateException(
+                "Not connected to an A2A agent. Call connect() first.");
         }
-        return "processDocument";
     }
 
-    private String extractParams(String aiResponse, String originalData) {
-        if (aiResponse.contains("PARAMS:")) {
-            int start = aiResponse.indexOf("PARAMS:") + 7;
-            return aiResponse.substring(start).trim();
+    private String extractTextFromMessage(Message message) {
+        if (message == null || message.parts() == null) {
+            throw new RuntimeException("Message has no content parts");
         }
-        return originalData;
+        StringBuilder text = new StringBuilder();
+        for (Part<?> part : message.parts()) {
+            if (part instanceof TextPart) {
+                text.append(((TextPart) part).text());
+            }
+        }
+        if (text.length() == 0) {
+            throw new RuntimeException("Message contains no text parts");
+        }
+        return text.toString();
     }
 
     /**
-     * Main method for testing
+     * Entry point for testing the A2A client.
+     *
+     * Usage: java YawlA2AClient &lt;agent-url&gt;
      */
     public static void main(String[] args) {
-        String agentUrl = args.length > 0 ? args[0] : "http://localhost:8080";
+        if (args.length < 1) {
+            System.err.println("Usage: java YawlA2AClient <agent-url>");
+            System.err.println("Example: java YawlA2AClient http://localhost:8081");
+            System.exit(1);
+        }
 
+        String agentUrl = args[0];
         YawlA2AClient client = new YawlA2AClient(agentUrl);
-        client.connect();
 
-        System.out.println("\nAvailable capabilities: " + client.getCapabilities());
+        try {
+            client.connect();
 
-        System.out.println("\n=== Testing AI-Enhanced Invocation ===");
-        String result = client.invokeWithAI(
-                "Process this invoice and check for any discrepancies",
-                "{\"invoiceId\": \"INV-123\", \"amount\": 1500, \"vendor\": \"Acme Corp\"}"
-        );
-        System.out.println(result);
+            AgentCard card = client.getAgentCard();
+            System.out.println("Agent: " + card.name());
+            System.out.println("Description: " + card.description());
+            System.out.println("Version: " + card.version());
+            System.out.println("Provider: " + card.provider().organization());
 
-        System.out.println("\n=== Testing Exception Handling ===");
-        String resolution = client.handleExceptionWithAI(
-                "Timeout while waiting for agent response",
-                "{\"taskId\": \"task-456\", \"retryCount\": 2}"
-        );
-        System.out.println(resolution);
+            System.out.println("\nSkills:");
+            for (AgentSkill skill : client.getSkills()) {
+                System.out.println("  - " + skill.name() + ": " + skill.description());
+            }
 
-        System.out.println("\n=== Testing Orchestration Plan ===");
-        String plan = client.getOrchestrationPlan(
-                "Process customer order, verify inventory, and schedule delivery",
-                new String[]{"OrderAgent", "InventoryAgent", "DeliveryAgent"}
-        );
-        System.out.println(plan);
-
-        client.disconnect();
+            System.out.println("\nSending test message...");
+            String response = client.sendMessage("List all loaded workflow specifications");
+            System.out.println("Response: " + response);
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            client.close();
+        }
     }
 }

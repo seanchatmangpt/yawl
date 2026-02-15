@@ -1,26 +1,32 @@
 package org.yawlfoundation.yawl.integration.test;
 
+import io.a2a.spec.AgentCapabilities;
+import io.a2a.spec.AgentSkill;
+import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
 import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Integration tests for MCP, A2A, and Z.AI
+ * Integration verification for MCP, A2A, and Z.AI services.
  *
- * Chicago TDD: Tests drive the implementation.
- * All tests require ZAI_API_KEY environment variable.
+ * Chicago TDD: Real integration checks drive the implementation.
+ * Requires ZAI_API_KEY environment variable for Z.AI checks.
+ * Requires running MCP server for MCP checks.
+ * Requires running A2A server for A2A checks.
  */
 public class SelfPlayTest {
 
-    private static int testsRun = 0;
-    private static int testsPassed = 0;
+    private static int checksRun = 0;
+    private static int checksPassed = 0;
 
     public static void main(String[] args) {
         System.out.println("========================================");
-        System.out.println("YAWL MCP/A2A/Z.AI Integration Tests");
+        System.out.println("YAWL MCP/A2A/Z.AI Integration Checks");
         System.out.println("========================================\n");
 
         String apiKey = System.getenv("ZAI_API_KEY");
@@ -31,21 +37,21 @@ public class SelfPlayTest {
         }
         System.out.println("Z.AI Service initialized successfully\n");
 
-        testZaiConnection();
-        testBasicChat();
-        testWorkflowDecision();
-        testDataTransformation();
-        testFunctionCalling();
-        testMcpClient();
-        testA2aClient();
-        testMultiAgentOrchestration();
-        testEndToEndWorkflow();
+        verifyZaiConnection();
+        verifyBasicChat();
+        verifyWorkflowDecision();
+        verifyDataTransformation();
+        verifyFunctionCalling();
+        verifyMcpClient();
+        verifyA2aClient();
+        verifyMultiAgentOrchestration();
+        verifyEndToEndWorkflow();
 
         printSummary();
     }
 
-    static void testZaiConnection() {
-        runTest("Z.AI Connection", () -> {
+    static void verifyZaiConnection() {
+        runCheck("Z.AI Connection", () -> {
             ZaiService service = new ZaiService();
             boolean connected = service.verifyConnection();
             if (!connected) {
@@ -54,8 +60,8 @@ public class SelfPlayTest {
         });
     }
 
-    static void testBasicChat() {
-        runTest("Basic Chat", () -> {
+    static void verifyBasicChat() {
+        runCheck("Basic Chat", () -> {
             ZaiService service = new ZaiService();
             service.setSystemPrompt("You are a helpful assistant for YAWL workflows.");
 
@@ -67,8 +73,8 @@ public class SelfPlayTest {
         });
     }
 
-    static void testWorkflowDecision() {
-        runTest("Workflow Decision", () -> {
+    static void verifyWorkflowDecision() {
+        runCheck("Workflow Decision", () -> {
             ZaiService service = new ZaiService();
 
             String decision = service.makeWorkflowDecision(
@@ -84,8 +90,8 @@ public class SelfPlayTest {
         });
     }
 
-    static void testDataTransformation() {
-        runTest("Data Transformation", () -> {
+    static void verifyDataTransformation() {
+        runCheck("Data Transformation", () -> {
             ZaiService service = new ZaiService();
 
             String transformed = service.transformData(
@@ -100,8 +106,8 @@ public class SelfPlayTest {
         });
     }
 
-    static void testFunctionCalling() {
-        runTest("Function Calling", () -> {
+    static void verifyFunctionCalling() {
+        runCheck("Function Calling", () -> {
             ZaiFunctionService service = new ZaiFunctionService();
 
             String result = service.processWithFunctions("List all available workflows");
@@ -112,83 +118,117 @@ public class SelfPlayTest {
         });
     }
 
-    static void testMcpClient() {
-        runTest("MCP Client", () -> {
-            YawlMcpClient client = new YawlMcpClient("http://localhost:3000");
-            client.connect();
+    static void verifyMcpClient() {
+        runCheck("MCP Client", () -> {
+            String sseUrl = System.getenv("MCP_SERVER_URL");
+            if (sseUrl == null || sseUrl.isEmpty()) {
+                sseUrl = "http://localhost:3000";
+            }
+
+            YawlMcpClient client = new YawlMcpClient();
+            client.connectSse(sseUrl);
 
             if (!client.isConnected()) {
                 throw new AssertionError("MCP client not connected");
             }
 
-            String[] tools = client.listTools();
-            if (tools == null || tools.length == 0) {
+            List<McpSchema.Tool> tools = client.listTools();
+            if (tools == null || tools.isEmpty()) {
                 throw new AssertionError("No tools available");
             }
-            System.out.println("  Tools: " + tools.length + " available");
+            System.out.println("  Tools: " + tools.size() + " available");
 
-            client.disconnect();
+            client.close();
         });
     }
 
-    static void testA2aClient() {
-        runTest("A2A Client", () -> {
-            YawlA2AClient client = new YawlA2AClient("http://localhost:8080");
+    static void verifyA2aClient() {
+        runCheck("A2A Client", () -> {
+            String agentUrl = System.getenv("A2A_AGENT_URL");
+            if (agentUrl == null || agentUrl.isEmpty()) {
+                agentUrl = "http://localhost:8081";
+            }
+
+            YawlA2AClient client = new YawlA2AClient(agentUrl);
             client.connect();
 
             if (!client.isConnected()) {
                 throw new AssertionError("A2A client not connected");
             }
 
-            String capabilities = client.getCapabilities();
-            if (capabilities == null || capabilities.isEmpty()) {
+            AgentCapabilities capabilities = client.getCapabilities();
+            if (capabilities == null) {
                 throw new AssertionError("No capabilities available");
             }
-            System.out.println("  Capabilities: " + capabilities.substring(0, Math.min(40, capabilities.length())) + "...");
+            System.out.println("  Streaming: " + capabilities.streaming());
+            System.out.println("  Push Notifications: " + capabilities.pushNotifications());
 
-            client.disconnect();
+            List<AgentSkill> skills = client.getSkills();
+            System.out.println("  Skills: " + skills.size() + " available");
+
+            client.close();
         });
     }
 
-    static void testMultiAgentOrchestration() {
-        runTest("Multi-Agent Orchestration", () -> {
-            YawlA2AClient orderAgent = new YawlA2AClient("http://order-agent:8080");
-            YawlA2AClient inventoryAgent = new YawlA2AClient("http://inventory-agent:8080");
+    static void verifyMultiAgentOrchestration() {
+        runCheck("Multi-Agent Orchestration", () -> {
+            String orderUrl = System.getenv("ORDER_AGENT_URL");
+            if (orderUrl == null || orderUrl.isEmpty()) {
+                orderUrl = "http://order-agent:8081";
+            }
+            String inventoryUrl = System.getenv("INVENTORY_AGENT_URL");
+            if (inventoryUrl == null || inventoryUrl.isEmpty()) {
+                inventoryUrl = "http://inventory-agent:8081";
+            }
+
+            YawlA2AClient orderAgent = new YawlA2AClient(orderUrl);
+            YawlA2AClient inventoryAgent = new YawlA2AClient(inventoryUrl);
 
             orderAgent.connect();
             inventoryAgent.connect();
 
-            String plan = orderAgent.getOrchestrationPlan(
-                    "Process customer order and check inventory",
-                    new String[]{"OrderAgent", "InventoryAgent"}
-            );
-
-            if (plan == null || plan.isEmpty()) {
-                throw new AssertionError("Empty orchestration plan");
+            String orderResponse = orderAgent.sendMessage(
+                    "List all loaded workflow specifications");
+            if (orderResponse == null || orderResponse.isEmpty()) {
+                throw new AssertionError("Empty orchestration response from order agent");
             }
-            System.out.println("  Plan: " + plan.substring(0, Math.min(50, plan.length())) + "...");
+            System.out.println("  Order Agent: " + orderResponse.substring(0, Math.min(50, orderResponse.length())) + "...");
 
-            orderAgent.disconnect();
-            inventoryAgent.disconnect();
+            String inventoryResponse = inventoryAgent.sendMessage(
+                    "Show all work items");
+            if (inventoryResponse == null || inventoryResponse.isEmpty()) {
+                throw new AssertionError("Empty orchestration response from inventory agent");
+            }
+            System.out.println("  Inventory Agent: " + inventoryResponse.substring(0, Math.min(50, inventoryResponse.length())) + "...");
+
+            orderAgent.close();
+            inventoryAgent.close();
         });
     }
 
-    static void testEndToEndWorkflow() {
-        runTest("End-to-End Workflow", () -> {
-            // Initialize all services
+    static void verifyEndToEndWorkflow() {
+        runCheck("End-to-End Workflow", () -> {
             ZaiService zai = new ZaiService();
             ZaiFunctionService functions = new ZaiFunctionService();
-            YawlMcpClient mcp = new YawlMcpClient("http://localhost:3000");
-            YawlA2AClient a2a = new YawlA2AClient("http://localhost:8080");
 
-            mcp.connect();
+            String sseUrl = System.getenv("MCP_SERVER_URL");
+            if (sseUrl == null || sseUrl.isEmpty()) {
+                sseUrl = "http://localhost:3000";
+            }
+            String agentUrl = System.getenv("A2A_AGENT_URL");
+            if (agentUrl == null || agentUrl.isEmpty()) {
+                agentUrl = "http://localhost:8081";
+            }
+
+            YawlMcpClient mcp = new YawlMcpClient();
+            mcp.connectSse(sseUrl);
+
+            YawlA2AClient a2a = new YawlA2AClient(agentUrl);
             a2a.connect();
 
-            // Verify all connected
             if (!mcp.isConnected()) throw new AssertionError("MCP not connected");
             if (!a2a.isConnected()) throw new AssertionError("A2A not connected");
 
-            // Use AI to analyze workflow context
             String analysis = zai.analyzeWorkflowContext(
                     "OrderProcessing",
                     "ValidateOrder",
@@ -198,46 +238,45 @@ public class SelfPlayTest {
                 throw new AssertionError("Empty analysis");
             }
 
-            // Execute function via AI
-            String result = functions.processWithFunctions("Check status of case case-test-001");
+            String result = functions.processWithFunctions("Check status of case case-001");
             if (result == null || result.isEmpty()) {
                 throw new AssertionError("Empty function result");
             }
 
             System.out.println("  All services integrated successfully");
 
-            mcp.disconnect();
-            a2a.disconnect();
+            mcp.close();
+            a2a.close();
         });
     }
 
-    static void runTest(String name, Runnable test) {
-        testsRun++;
+    static void runCheck(String name, Runnable check) {
+        checksRun++;
         System.out.println("\n--- Running: " + name + " ---");
         try {
-            test.run();
-            testsPassed++;
-            System.out.println("✓ PASSED: " + name);
+            check.run();
+            checksPassed++;
+            System.out.println("PASSED: " + name);
         } catch (Exception e) {
-            System.out.println("✗ FAILED: " + name);
+            System.out.println("FAILED: " + name);
             System.out.println("  Error: " + e.getMessage());
         }
     }
 
     static void printSummary() {
         System.out.println("\n========================================");
-        System.out.println("Test Summary");
+        System.out.println("Check Summary");
         System.out.println("========================================");
-        System.out.println("Tests Run:    " + testsRun);
-        System.out.println("Tests Passed: " + testsPassed);
-        System.out.println("Tests Failed: " + (testsRun - testsPassed));
+        System.out.println("Checks Run:    " + checksRun);
+        System.out.println("Checks Passed: " + checksPassed);
+        System.out.println("Checks Failed: " + (checksRun - checksPassed));
         System.out.println();
 
-        if (testsPassed == testsRun) {
-            System.out.println("Result: ALL TESTS PASSED");
+        if (checksPassed == checksRun) {
+            System.out.println("Result: ALL CHECKS PASSED");
             System.exit(0);
         } else {
-            System.out.println("Result: SOME TESTS FAILED");
+            System.out.println("Result: SOME CHECKS FAILED");
             System.exit(1);
         }
     }
