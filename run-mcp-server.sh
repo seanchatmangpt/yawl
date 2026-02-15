@@ -1,9 +1,15 @@
 #!/bin/bash
-
+#
 # Run YAWL MCP Server
+#
+# Usage: ./run-mcp-server.sh [port]
+#
+# Environment Variables:
+#   YAWL_ENGINE_URL  - YAWL engine URL (default: http://localhost:8080/yawl/ib)
+#   YAWL_USERNAME    - YAWL username (default: admin)
+#   YAWL_PASSWORD    - YAWL password (default: YAWL)
+#   MCP_TRANSPORT    - Transport type: SSE, STDIO (default: SSE)
 
-echo "Starting YAWL MCP Server..."
-echo "Press Ctrl+C to stop"
-echo ""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-java -cp classes org.yawlfoundation.yawl.integration.mcp.YawlMcpServer
+exec "$SCRIPT_DIR/scripts/start-mcp-server.sh" "$@"
