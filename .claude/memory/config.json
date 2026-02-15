@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "description": "YAWL memory configuration for Claude Code native",
+  "persistence": {
+    "type": "file",
+    "path": ".claude/memory/history.log"
+  },
+  "namespaces": {
+    "swarm/yawl/architecture": {
+      "description": "Architecture decisions - store in CLAUDE.md or rules"
+    },
+    "swarm/yawl/patterns": {
+      "description": "Control-flow patterns - store in src/patterns/"
+    },
+    "swarm/yawl/decisions": {
+      "description": "Technical decisions - store in CLAUDE.md or docs/"
+    },
+    "swarm/yawl/integration": {
+      "description": "MCP/A2A knowledge - store in integration package"
+    },
+    "swarm/yawl/features": {
+      "description": "Feature implementations - store in code and tests"
+    }
+  },
+  "sessionTracking": {
+    "enabled": true,
+    "logFile": "history.log",
+    "reportFile": "session-report.txt"
+  }
+}

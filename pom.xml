@@ -50,20 +50,23 @@
         -->
 
         <!-- MCP Java SDK dependencies -->
-        <!-- Note: Using placeholder coordinates as the actual MCP Java SDK may not be published yet -->
-        <!-- You may need to build and install it locally or use JitPack -->
-        <!--
         <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp</artifactId>
-            <version>0.1.0</version>
+            <version>0.5.0</version>
         </dependency>
         <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp-core</artifactId>
-            <version>0.1.0</version>
+            <groupId>io.modelcontextprotocol</groupId>
+            <artifactId>mcp-spring-webmvc</artifactId>
+            <version>0.5.0</version>
         </dependency>
-        -->
+
+        <!-- Reactor for async support -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.6.0</version>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
