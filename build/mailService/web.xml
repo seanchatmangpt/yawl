@@ -29,7 +29,7 @@
     <display-name>YAWL Simple Mail Service</display-name>
     <description>
         This custom YAWL Service allows a process to send an email.
-        Copyright © 2011 The YAWL Foundation. All rights reserved.
+        Copyright (c) 2011 The YAWL Foundation. All rights reserved.
         Author: Michael Adams
         For more information about the YAWL SOFTWARE LICENCE refer to the 'downloads' section under
         http://www.yawlfoundation.org/.
@@ -136,6 +136,32 @@
         </description>
     </context-param>
 
+    <!--CharsetFilter -->
+
+    <filter>
+        <filter-name>CharsetFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.util.CharsetFilter</filter-class>
+        <init-param>
+            <param-name>requestEncoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CharsetFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- CORS Filter for REST API -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
     <servlet>
         <servlet-name>InterfaceB_Servlet</servlet-name>
@@ -158,6 +184,14 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
+    <servlet>
+        <servlet-name>simpleMailGateway</servlet-name>
+        <description>
+            Initialises the defaults set in this file.
+        </description>
+        <servlet-class>org.yawlfoundation.yawl.mailService.MailServiceGateway</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>InterfaceB_Servlet</servlet-name>
@@ -169,22 +203,34 @@
 		<url-pattern>/error</url-pattern>
 	</servlet-mapping>
 
-
-    <servlet>
-        <servlet-name>simpleMailGateway</servlet-name>
-        <description>
-            Initialises the defaults set in this file.
-        </description>
-        <servlet-class>org.yawlfoundation.yawl.mailService.MailServiceGateway</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet> 
-    
     <servlet-mapping>
         <servlet-name>simpleMailGateway</servlet-name>
         <url-pattern>/gateway</url-pattern>
     </servlet-mapping>
 
-    
+    <!-- JAX-RS REST API Configuration -->
+    <servlet>
+        <servlet-name>JerseyServlet</servlet-name>
+        <description>
+            JAX-RS servlet for modern REST API endpoints.
+            Provides JSON-based REST APIs for Mail Service operations.
+        </description>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jakarta.ws.rs.Application</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+        </init-param>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>JerseyServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
 
     <!--
         Define the default session timeout for your application,
