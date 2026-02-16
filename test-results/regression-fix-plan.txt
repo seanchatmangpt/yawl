@@ -1,0 +1,66 @@
+REGRESSION FIX PLAN - Record Conversion Call Sites
+===================================================
+
+Date: 2026-02-16
+Status: CRITICAL - 7 compilation errors blocking all tests
+Priority: P0 - Immediate fix required
+
+AFFECTED FILES (4)
+==================
+
+1. /home/user/yawl/src/org/yawlfoundation/yawl/stateless/engine/YWorkItem.java
+   Lines: 665, 670, 677
+   Errors: 3
+   Pattern: _specID.setX() → _specID = _specID.withX()
+
+2. /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/SpecificationData.java
+   Line: 192
+   Errors: 1
+   Pattern: _specificationID.setVersion() → _specificationID = _specificationID.withVersion()
+
+3. /home/user/yawl/src/org/yawlfoundation/yawl/unmarshal/YSpecificationParser.java
+   Lines: 85, 197, 199
+   Errors: 3 (estimated)
+   Pattern: x.setVersion() → x = x.withVersion()
+
+4. /home/user/yawl/src/org/yawlfoundation/yawl/stateless/unmarshal/YSpecificationParser.java
+   Lines: 93, 205, 207
+   Errors: 3 (estimated)
+   Pattern: x.setVersion() → x = x.withVersion()
+
+FIX COMMANDS
+============
+
+# Step 1: Verify current errors
+ant -f build/build.xml compile 2>&1 | grep "error:" | wc -l
+# Expected: 7
+
+# Step 2: Apply fixes (to be done by Agent 1-5 or engineer)
+# See detailed fixes in TEST_REGRESSION_REPORT.md
+
+# Step 3: Recompile
+ant -f build/build.xml compile
+
+# Step 4: Run tests
+ant unitTest
+
+# Step 5: Verify coverage
+mvn clean test jacoco:report
+
+VALIDATION CRITERIA
+===================
+
+✅ Zero compilation errors
+✅ All unit tests pass (100%)
+✅ No new warnings introduced
+✅ Test coverage maintained or improved
+✅ Performance regression < 5%
+
+COORDINATION
+============
+
+Agent 1: Fix YSpecificationID call sites (if responsible for that record)
+Agent 6: Prepare to run new tests once compilation succeeds
+Agent 7: Re-run serialization tests post-fix
+Agent 8: Re-run full regression suite after fixes applied
+

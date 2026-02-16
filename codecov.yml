@@ -1,0 +1,155 @@
+# Codecov Configuration for YAWL v5.2
+# https://docs.codecov.io/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "50...100"
+  
+  status:
+    project:
+      default:
+        target: 75%           # Target overall coverage
+        threshold: 2%         # Allow 2% drop before failing
+        base: auto
+        if_not_found: success
+        only_pulls: false
+    
+    patch:
+      default:
+        target: 70%           # New code should have 70%+ coverage
+        threshold: 5%
+        base: auto
+        if_not_found: success
+        only_pulls: true
+    
+    changes:
+      default:
+        if_not_found: success
+
+  # Coverage thresholds by file
+  target: auto
+  
+  # Minimum coverage to avoid regression
+  minimum_coverage:
+    project:
+      default: 65%
+    patch:
+      default: 60%
+
+# Comment formatting on PRs
+comment:
+  layout: "header, diff, files, footer"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+  branches: null
+
+# Files/paths to ignore
+ignore:
+  - "test/**/*"
+  - "**/*Test.java"
+  - "**/*TestCase.java"
+  - "**/*TestSuite.java"
+  - "**/package-info.java"
+  - "build/**/*"
+  - "target/**/*"
+  - "**/*.xml"
+  - "**/*.xsd"
+
+# Flags for different test types
+flags:
+  unittests:
+    paths:
+      - src/
+    carryforward: true
+  
+  integrationtests:
+    paths:
+      - src/
+    carryforward: true
+
+# Ignore failures from these sources
+ignore_errors:
+  - "jacoco"
+
+# Notification settings
+notifications:
+  webhook:
+    default:
+      only_pulls: false
+      
+# Coverage display
+coverage_threshold: 65%
+
+# Module-specific targets
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 65%
+  
+  individual_components:
+    # High priority modules (75% target)
+    - component_id: yawl-elements
+      name: YAWL Elements
+      paths:
+        - yawl-elements/**
+      target: 75%
+    
+    - component_id: yawl-engine
+      name: YAWL Engine
+      paths:
+        - yawl-engine/**
+      target: 80%
+    
+    - component_id: yawl-stateless
+      name: YAWL Stateless
+      paths:
+        - yawl-stateless/**
+      target: 75%
+    
+    # Medium priority modules (70% target)
+    - component_id: yawl-integration
+      name: YAWL Integration
+      paths:
+        - yawl-integration/**
+      target: 70%
+    
+    - component_id: yawl-utilities
+      name: YAWL Utilities
+      paths:
+        - yawl-utilities/**
+      target: 70%
+    
+    # Standard priority modules (65% target)
+    - component_id: yawl-resourcing
+      name: YAWL Resourcing
+      paths:
+        - yawl-resourcing/**
+      target: 65%
+    
+    - component_id: yawl-worklet
+      name: YAWL Worklet
+      paths:
+        - yawl-worklet/**
+      target: 65%
+    
+    - component_id: yawl-scheduling
+      name: YAWL Scheduling
+      paths:
+        - yawl-scheduling/**
+      target: 65%
+    
+    - component_id: yawl-monitoring
+      name: YAWL Monitoring
+      paths:
+        - yawl-monitoring/**
+      target: 65%
+    
+    - component_id: yawl-control-panel
+      name: YAWL Control Panel
+      paths:
+        - yawl-control-panel/**
+      target: 65%

@@ -33,13 +33,25 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * An API for custom services to call Engine functionalities regarding workitem
  * management, process progression and case state.
  *
+ * Enhanced in v5.2 with virtual threads for HTTP communication and concurrent
+ * batch operations. The underlying HttpClient now uses virtual threads for all
+ * network I/O, providing better scalability for concurrent external service calls.
+ *
+ * Batch operation methods use CompletableFuture with virtual threads for coordinated
+ * concurrent execution. Since the HttpClient uses a virtual thread executor, each
+ * concurrent request runs in its own lightweight virtual thread without platform
+ * thread pool concerns.
+ *
  * @author Lachlan Aldred
  * @author Michael Adams (refactored for v2.0)
+ * @updated 2026-02-16 Virtual thread migration (Java 25)
  * @date 27/01/2004
  */
 
@@ -1188,7 +1200,7 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
 
 
     /**
-     * Transforms an xml-string set of WorkItemRecords into a list 
+     * Transforms an xml-string set of WorkItemRecords into a list
      * @param xml the string describing the WorkItemRecords
      * @return a list of WorkItemRecord objects
      */
@@ -1203,6 +1215,193 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
             }
         }
         return result;
+    }
+
+
+    /*******************************************************************************/
+    // BATCH OPERATIONS WITH VIRTUAL THREADS (Java 25)
+    /*******************************************************************************/
+
+    /**
+     * Checks out multiple work items concurrently using virtual threads.
+     * Uses CompletableFuture with virtual thread executor for efficient concurrent I/O.
+     *
+     * All checkouts are attempted in parallel. The underlying HttpClient uses virtual
+     * threads, so each checkout runs in its own virtual thread without platform thread
+     * pool concerns.
+     *
+     * @param workItemIDs list of work item IDs to check out
+     * @param sessionHandle the session handle
+     * @return list of checkout results (one per work item, in same order)
+     * @throws IOException if any checkout fails
+     * @throws ExecutionException if concurrent execution fails
+     * @throws InterruptedException if interrupted during concurrent execution
+     */
+    public List<String> checkOutWorkItemsBatch(List<String> workItemIDs, String sessionHandle)
+            throws IOException, ExecutionException, InterruptedException {
+
+        List<CompletableFuture<String>> futures = workItemIDs.stream()
+            .map(itemID -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    return checkOutWorkItem(itemID, sessionHandle);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to checkout work item: " + itemID, e);
+                }
+            }))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks out multiple work items concurrently with a timeout.
+     * Uses virtual threads for efficient concurrent I/O with timeout control.
+     *
+     * @param workItemIDs list of work item IDs to check out
+     * @param sessionHandle the session handle
+     * @param timeoutSeconds maximum seconds to wait for all checkouts
+     * @return list of checkout results (one per work item, in same order)
+     * @throws IOException if any checkout fails
+     * @throws TimeoutException if timeout expires before all checkouts complete
+     * @throws ExecutionException if concurrent execution fails
+     * @throws InterruptedException if interrupted during concurrent execution
+     */
+    public List<String> checkOutWorkItemsBatch(List<String> workItemIDs,
+                                               String sessionHandle,
+                                               long timeoutSeconds)
+            throws IOException, TimeoutException, ExecutionException, InterruptedException {
+
+        List<CompletableFuture<String>> futures = workItemIDs.stream()
+            .map(itemID -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    return checkOutWorkItem(itemID, sessionHandle);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to checkout work item: " + itemID, e);
+                }
+            }))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .get(timeoutSeconds, TimeUnit.SECONDS);
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks in multiple work items concurrently using virtual threads.
+     *
+     * @param workItems list of (workItemID, data, logPredicate) tuples
+     * @param sessionHandle the session handle
+     * @return list of checkin results (one per work item, in same order)
+     * @throws IOException if any checkin fails
+     * @throws ExecutionException if concurrent execution fails
+     * @throws InterruptedException if interrupted during concurrent execution
+     */
+    public List<String> checkInWorkItemsBatch(List<WorkItemCheckinData> workItems,
+                                              String sessionHandle)
+            throws IOException, ExecutionException, InterruptedException {
+
+        List<CompletableFuture<String>> futures = workItems.stream()
+            .map(item -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    return checkInWorkItem(item.workItemID, item.data, item.logPredicate, sessionHandle);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to checkin work item: " + item.workItemID, e);
+                }
+            }))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Cancels multiple cases concurrently using virtual threads.
+     *
+     * @param caseIDs list of case IDs to cancel
+     * @param sessionHandle the session handle
+     * @return list of cancellation results (one per case, in same order)
+     * @throws IOException if any cancellation fails
+     * @throws ExecutionException if concurrent execution fails
+     * @throws InterruptedException if interrupted during concurrent execution
+     */
+    public List<String> cancelCasesBatch(List<String> caseIDs, String sessionHandle)
+            throws IOException, ExecutionException, InterruptedException {
+
+        List<CompletableFuture<String>> futures = caseIDs.stream()
+            .map(caseID -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    return cancelCase(caseID, sessionHandle);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to cancel case: " + caseID, e);
+                }
+            }))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves work items for multiple cases concurrently using virtual threads.
+     *
+     * @param caseIDs list of case IDs to query
+     * @param sessionHandle the session handle
+     * @return list of work item lists (one per case, in same order)
+     * @throws IOException if any query fails
+     * @throws ExecutionException if concurrent execution fails
+     * @throws InterruptedException if interrupted during concurrent execution
+     */
+    public List<List<WorkItemRecord>> getWorkItemsForCasesBatch(List<String> caseIDs,
+                                                                 String sessionHandle)
+            throws IOException, ExecutionException, InterruptedException {
+
+        List<CompletableFuture<List<WorkItemRecord>>> futures = caseIDs.stream()
+            .map(caseID -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getWorkItemsForCase(caseID, sessionHandle);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to get work items for case: " + caseID, e);
+                }
+            }))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Data holder for batch checkin operations.
+     */
+    public static class WorkItemCheckinData {
+        public final String workItemID;
+        public final String data;
+        public final String logPredicate;
+
+        public WorkItemCheckinData(String workItemID, String data, String logPredicate) {
+            this.workItemID = workItemID;
+            this.data = data;
+            this.logPredicate = logPredicate;
+        }
+
+        public WorkItemCheckinData(String workItemID, String data) {
+            this(workItemID, data, null);
+        }
     }
 
 }

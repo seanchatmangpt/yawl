@@ -1,56 +1,56 @@
 # =============================================================================
-# YAWL Build Image - Builds YAWL from source
+# YAWL Build Image - Builds YAWL from source using Maven and Java 25
 # =============================================================================
-FROM eclipse-temurin:25-jdk AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 
-# Install Ant manually
-RUN apt-get update && apt-get install -y ant curl && rm -rf /var/lib/apt/lists/*
+LABEL stage=builder
+
+# Install Maven and dependencies
+RUN apk add --no-cache \
+    maven \
+    curl \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /build
 
-# Copy source files
-COPY build/ ./build/
+# Copy Maven configuration and source files
+COPY pom.xml ./
 COPY src/ ./src/
+COPY test/ ./test/
 COPY schema/ ./schema/
-COPY exampleSpecs/ ./exampleSpecs/
+COPY build/ ./build/
 
-# Build YAWL
-RUN cd build && ant buildWebApps
-
-# Output directory
-RUN mkdir -p /output && \
-    cp -r output/wars /output/ && \
-    cp -r build/3rdParty/lib /output/libs
+# Build YAWL with Maven
+RUN mvn clean package -DskipTests -B
 
 # =============================================================================
 # YAWL Runtime Image
 # =============================================================================
-FROM eclipse-temurin:25-jre AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 ARG SERVICE=engine
 
 # Install dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl bash
 
 # Create user
-RUN groupadd -r yawl && useradd -r -g yawl -d /yawl yawl
+RUN addgroup -S yawl && adduser -S yawl -G yawl
 
 # Create directories
 RUN mkdir -p /yawl /opt/tomcat /data && chown -R yawl:yawl /yawl /opt/tomcat /data
 
-# Download Tomcat
+# Download Tomcat 9.0.89
 RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.89/bin/apache-tomcat-9.0.89.tar.gz" \
     | tar -xzf - -C /opt/tomcat --strip-components=1 && \
     rm -rf /opt/tomcat/webapps/* && \
     chown -R yawl:yawl /opt/tomcat
 
-# Copy built WAR from builder
-COPY --from=builder --chown=yawl:yawl /output/wars/yawl.war /opt/tomcat/webapps/ROOT.war
-COPY --from=builder --chown=yawl:yawl /output/libs/*.jar /opt/tomcat/lib/
+# Copy built WAR from builder (Maven packages to target/)
+COPY --from=builder --chown=yawl:yawl /build/target/*.war /opt/tomcat/webapps/ROOT.war
 
 # Environment
 ENV CATALINA_HOME=/opt/tomcat \
-    JAVA_OPTS="-Xms512m -Xmx1024m" \
+    JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC" \
     DB_TYPE=postgres \
     DB_HOST=postgres \
     DB_PORT=5432 \

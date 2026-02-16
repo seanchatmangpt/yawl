@@ -78,7 +78,7 @@ public class HealthCheck {
             server.createContext("/health", new HealthHandler());
             server.createContext("/health/ready", new ReadinessHandler());
             server.createContext("/health/live", new LivenessHandler());
-            server.setExecutor(null);
+            server.setExecutor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor());
             server.start();
 
             logger.info("Health check HTTP server started on port {}", port);

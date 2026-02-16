@@ -114,23 +114,24 @@ public class YTimer extends Timer {
 
 
     public long schedule(YTimedObject timee, long count, TimeUnit unit) {
-        long msecFactor = 1;
-        int dateFactor = 1;
-
-        switch (unit) {
-            case YEAR  : dateFactor *= 12 ;
-            case MONTH : { Calendar date = Calendar.getInstance(); 
-                           date.add(Calendar.MONTH, dateFactor * (int) count) ;
-                           return schedule(timee, date.getTime());
-                         }
-            case WEEK  : msecFactor *= 7 ;
-            case DAY   : msecFactor *= 24 ;
-            case HOUR  : msecFactor *= 60 ;
-            case MIN   : msecFactor *= 60 ;
-            case SEC   : msecFactor *= 1000 ;
-            case MSEC  : return schedule(timee, msecFactor * count) ;
-        }
-        return -1 ;
+        return switch (unit) {
+            case YEAR -> {
+                Calendar date = Calendar.getInstance();
+                date.add(Calendar.MONTH, 12 * (int) count);
+                yield schedule(timee, date.getTime());
+            }
+            case MONTH -> {
+                Calendar date = Calendar.getInstance();
+                date.add(Calendar.MONTH, (int) count);
+                yield schedule(timee, date.getTime());
+            }
+            case WEEK -> schedule(timee, 7L * 24 * 60 * 60 * 1000 * count);
+            case DAY -> schedule(timee, 24L * 60 * 60 * 1000 * count);
+            case HOUR -> schedule(timee, 60L * 60 * 1000 * count);
+            case MIN -> schedule(timee, 60L * 1000 * count);
+            case SEC -> schedule(timee, 1000L * count);
+            case MSEC -> schedule(timee, count);
+        };
     }
 
     

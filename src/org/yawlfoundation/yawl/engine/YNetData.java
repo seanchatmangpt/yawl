@@ -46,8 +46,8 @@ public class YNetData {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YNetData) &&    // instanceof = false if other is null
-                ((getId() != null) ? getId().equals(((YNetData) other).getId())
+        return other instanceof YNetData data &&    // instanceof = false if other is null
+                ((getId() != null) ? getId().equals(data.getId())
                 : super.equals(other));
     }
 

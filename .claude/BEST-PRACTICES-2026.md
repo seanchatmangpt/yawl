@@ -62,7 +62,7 @@ package org.yawlfoundation.yawl.stateless;
 # YAWL v5.2 | A = μ(O)
 
 O = {engine, elements, stateless, integration, schema, test}
-Σ = Java11 + Ant + JUnit + XML/XSD
+Σ = Java25 + Maven + JUnit5 + XML/XSD
 Λ = compile ≺ test ≺ validate ≺ deploy
 
 ## μ(O) → A (Agents)

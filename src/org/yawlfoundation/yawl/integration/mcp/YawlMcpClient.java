@@ -174,8 +174,8 @@ public class YawlMcpClient implements AutoCloseable {
         List<McpSchema.ResourceContents> contents = result.contents();
         if (contents != null && !contents.isEmpty()) {
             McpSchema.ResourceContents first = contents.get(0);
-            if (first instanceof McpSchema.TextResourceContents) {
-                return ((McpSchema.TextResourceContents) first).text();
+            if (first instanceof McpSchema.TextResourceContents textContents) {
+                return textContents.text();
             }
         }
         throw new RuntimeException("Resource at " + uri + " did not return text content");

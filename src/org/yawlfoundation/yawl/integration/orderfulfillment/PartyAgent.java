@@ -168,7 +168,7 @@ public final class PartyAgent {
         String agentCard = buildAgentCardJson();
 
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
-        httpServer.setExecutor(Executors.newSingleThreadExecutor());
+        httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         httpServer.createContext("/.well-known/agent.json", exchange -> {
             if (!"GET".equals(exchange.getRequestMethod())) {
@@ -233,7 +233,9 @@ public final class PartyAgent {
     }
 
     private void startDiscoveryLoop() {
-        discoveryThread = new Thread(() -> {
+        discoveryThread = Thread.ofVirtual()
+            .name("discovery-" + capability.getDomainName())
+            .start(() -> {
             while (running.get()) {
                 try {
                     runDiscoveryCycle();
@@ -247,9 +249,7 @@ public final class PartyAgent {
                     break;
                 }
             }
-        }, "discovery-" + capability.getDomainName());
-        discoveryThread.setDaemon(false);
-        discoveryThread.start();
+        });
     }
 
     private void runDiscoveryCycle() throws IOException {
@@ -369,10 +369,12 @@ public final class PartyAgent {
             return;
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.err.println("Shutting down...");
-            agent.stop();
-        }));
+        Runtime.getRuntime().addShutdownHook(
+            Thread.ofVirtual().unstarted(() -> {
+                System.err.println("Shutting down...");
+                agent.stop();
+            })
+        );
 
         try {
             Thread.currentThread().join();

@@ -26,7 +26,7 @@ import org.yawlfoundation.yawl.performance.PerformanceTest;
  * 2. Database Compatibility (H2, PostgreSQL, MySQL, Derby, HSQLDB, Oracle)
  * 3. Jakarta EE Migration (javax -> jakarta)
  * 4. Engine Core Integration (YEngine, YNetRunner, YWorkItem)
- * 5. Virtual Thread Tests (Java 21+)
+ * 5. Virtual Thread Tests (Java 25+)
  * 6. Security Tests (OWASP, SQL injection, XSS)
  * 7. Performance Tests (throughput, latency, scalability)
  * 8. Cloud Modernization (OpenTelemetry, Spring Boot, Resilience4j)

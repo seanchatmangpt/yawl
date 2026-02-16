@@ -198,9 +198,9 @@ ln -sf build/build.properties.local build/build.properties
 ---
 
 ### 9. **Java Compilation** ✅
-**Compiler:** javac (OpenJDK 21)
-**Source Compatibility:** Java 11+
-**Target:** Java 11
+**Compiler:** javac (OpenJDK 25)
+**Source Compatibility:** Java 25
+**Target:** Java 25
 
 **Sources Compiled:** 875 files
 **Output:** `classes/` directory

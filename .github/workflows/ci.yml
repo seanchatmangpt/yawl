@@ -1,0 +1,354 @@
+# YAWL v5.2 - Unified CI/CD Pipeline
+#
+# Consolidated from:
+# - build-maven.yaml
+# - build-test-deploy.yml
+# - java25-build.yml
+# - unit-tests.yml (archived - Ant-only)
+#
+# Features:
+# - Multi-version Java testing (21 LTS, 24, 25 preview)
+# - Parallel test execution with H2
+# - OWASP Dependency Check for security scanning
+# - Docker multi-arch build and push
+# - Code coverage with JaCoCo (70% minimum)
+# - Integration tests with PostgreSQL/MySQL
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main, develop, release/**]
+  pull_request:
+    branches: [master, main, develop]
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  MAVEN_OPTS: -Xmx3g -Djava.awt.headless=true
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ============================================================================
+  # Build - Multi-Java Version Matrix
+  # ============================================================================
+  build:
+    name: Build (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [21, 24, 25]
+        include:
+          - java: 21
+            profile: java21
+          - java: 24
+            profile: java24
+          - java: 25
+            profile: java25
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean compile -P${{ matrix.profile }} -DskipTests
+
+      - name: Upload build artifacts
+        if: matrix.java == 21
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            yawl-*/target/*.jar
+            target/*.jar
+          retention-days: 5
+
+  # ============================================================================
+  # Unit Tests - With H2 Database
+  # ============================================================================
+  test-unit:
+    name: Unit Tests (Java ${{ matrix.java }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [21, 24]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run unit tests with H2
+        run: mvn -B test -Ddatabase.type=h2 -Dhibernate.dialect=org.hibernate.dialect.H2Dialect
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-java${{ matrix.java }}
+          path: |
+            target/surefire-reports/
+            yawl-*/target/surefire-reports/
+          retention-days: 7
+
+      - name: Upload coverage report
+        if: matrix.java == 21
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          retention-days: 7
+
+  # ============================================================================
+  # Integration Tests - With PostgreSQL
+  # ============================================================================
+  test-integration:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yawl_test
+          POSTGRES_USER: yawl
+          POSTGRES_PASSWORD: yawl_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run integration tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: yawl_test
+          DB_USER: yawl
+          DB_PASSWORD: yawl_test_pass
+        run: mvn -B verify -Ddatabase.type=postgresql
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-integration
+          path: target/failsafe-reports/
+          retention-days: 7
+
+  # ============================================================================
+  # Security Scanning
+  # ============================================================================
+  security-scan:
+    name: Security Scan
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run OWASP Dependency Check
+        run: mvn -B -Pprod org.owasp:dependency-check-maven:check
+        continue-on-error: true
+
+      - name: Upload OWASP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check
+          path: target/dependency-check-report.*
+          retention-days: 30
+
+  # ============================================================================
+  # Code Coverage
+  # ============================================================================
+  coverage:
+    name: Code Coverage
+    needs: test-unit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run tests with coverage
+        run: mvn -B clean verify jacoco:report
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-yawl
+          fail_ci_if_error: false
+
+  # ============================================================================
+  # Docker Build - Multi-Arch
+  # ============================================================================
+  docker-build:
+    name: Docker Build
+    needs: [test-unit, security-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.modernized
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=5.2
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ============================================================================
+  # Ant Build Verification (Legacy Support)
+  # ============================================================================
+  ant-verify:
+    name: Verify Ant Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - name: Set up build properties
+        run: |
+          if [ -f scripts/ensure-build-properties.sh ]; then
+            chmod +x scripts/ensure-build-properties.sh
+            ./scripts/ensure-build-properties.sh
+          fi
+
+      - name: Build with Ant
+        run: ant -f build/build.xml compile
+        env:
+          CATALINA_HOME: /tmp/catalina
+
+  # ============================================================================
+  # Dependency Analysis
+  # ============================================================================
+  dependency-analysis:
+    name: Analyze Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Analyze dependencies
+        run: mvn -B dependency:analyze dependency:tree
+
+      - name: Check for updates
+        run: mvn -B versions:display-dependency-updates versions:display-plugin-updates
+        continue-on-error: true

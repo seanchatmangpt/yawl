@@ -555,7 +555,7 @@ curl http://engine:8080/health
    - Runbooks and troubleshooting
 
 3. **Modern Technology Stack**
-   - Java 21 (virtual threads)
+   - Java 25 (virtual threads)
    - Spring Boot 3.2.2
    - Hibernate 6.5.1
    - Jakarta EE 10

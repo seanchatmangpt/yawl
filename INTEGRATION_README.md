@@ -160,7 +160,7 @@ Run tests anytime with: `./run-tests.sh`
 ## Dependencies
 
 ### Required
-- Java 21+
+- Java 25+
 - Bash shell
 
 ### Optional (for full integration)
@@ -207,6 +207,6 @@ This integration code follows the YAWL license. See `license.txt`.
 
 ---
 
-**Built with:** Java 21, A2A Protocol, Model Context Protocol
+**Built with:** Java 25, A2A Protocol, Model Context Protocol
 **Version:** 5.2
 **Status:** ✓ Ready for SDK integration

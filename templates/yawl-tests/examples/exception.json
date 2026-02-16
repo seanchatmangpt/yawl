@@ -1,0 +1,25 @@
+{
+  "package": "org.yawlfoundation.yawl.exceptions",
+  "exception_class": "YStateException",
+  "parent_class": "YAWLException",
+  "test_class": "TestYStateException",
+  "junit_version": "5",
+  "constructors": [
+    {"signature": "()", "params": [], "description": "Default constructor creates exception with null message"},
+    {"signature": "(String)", "params": [{"type": "String", "name": "message"}], "description": "Constructor with error message"},
+    {"signature": "(String, Throwable)", "params": [{"type": "String", "name": "message"}, {"type": "Throwable", "name": "cause"}], "description": "Constructor with message and cause for exception chaining"},
+    {"signature": "(Throwable)", "params": [{"type": "Throwable", "name": "cause"}], "description": "Constructor with cause only"}
+  ],
+  "methods": [
+    {"name": "getTaskId", "return_type": "String", "description": "Returns the task ID where state error occurred"},
+    {"name": "getCaseId", "return_type": "String", "description": "Returns the case ID where state error occurred"},
+    {"name": "isRecoverable", "return_type": "boolean", "description": "Indicates if the state error can be recovered"}
+  ],
+  "fields": [
+    {"name": "taskId", "type": "String", "access": "private"},
+    {"name": "caseId", "type": "String", "access": "private"},
+    {"name": "recoverable", "type": "boolean", "access": "private"}
+  ],
+  "author": "YAWL Foundation",
+  "version": "5.2"
+}

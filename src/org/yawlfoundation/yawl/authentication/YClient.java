@@ -68,9 +68,9 @@ public class YClient {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YClient) &&
+        return other instanceof YClient client &&
                 ((getUserName() != null) ?
-                  getUserName().equals(((YClient) other).getUserName()) :
+                  getUserName().equals(client.getUserName()) :
                         super.equals(other));
     }
 

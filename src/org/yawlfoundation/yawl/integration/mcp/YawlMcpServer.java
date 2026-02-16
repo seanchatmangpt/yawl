@@ -256,10 +256,12 @@ public class YawlMcpServer {
 
         YawlMcpServer server = new YawlMcpServer(engineUrl, username, password);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.err.println("Shutting down YAWL MCP Server...");
-            server.stop();
-        }));
+        Runtime.getRuntime().addShutdownHook(
+            Thread.ofVirtual().unstarted(() -> {
+                System.err.println("Shutting down YAWL MCP Server...");
+                server.stop();
+            })
+        );
 
         try {
             server.start();

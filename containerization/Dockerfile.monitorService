@@ -4,36 +4,25 @@
 # Process monitoring and management
 # =============================================================================
 
-# Build stage - use Debian-based image which has ant
+# Build stage - use Debian-based image with Maven
 FROM eclipse-temurin:25-jdk AS builder
 
 ARG YAWL_VERSION=5.2
 
 # Install build dependencies (Debian-based)
-RUN apt-get update && apt-get install -y ant curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y maven curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-# Copy source files (layered for caching)
-COPY build/3rdParty/ ./build/3rdParty/
-COPY build/build.xml ./build/
-COPY build/build.properties ./build/
-COPY build/properties/ ./build/properties/
-COPY build/monitorService/ ./build/monitorService/
-
-COPY schema/ ./schema/
+# Copy Maven configuration and source files
+COPY pom.xml ./
 COPY src/ ./src/
-COPY exampleSpecs/ ./exampleSpecs/
-COPY graphics/ ./graphics/
+COPY test/ ./test/
+COPY build/ ./build/
+COPY schema/ ./schema/
 
-# Copy antTask for custom Ant tasks
-COPY antTask/ ./antTask/
-
-# Copy checksums for build verification
-COPY checksums/ ./checksums/
-
-# Build monitor service WAR
-RUN cd build && ant compile && ant build_monitorService.war
+# Build monitor service with Maven
+RUN mvn clean package -DskipTests -B
 
 # =============================================================================
 # Runtime stage
@@ -66,16 +55,8 @@ RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSIO
     /opt/tomcat/conf/server.xml && \
     chown -R yawl:yawl /opt/tomcat
 
-# Copy built WAR from builder
-COPY --from=builder --chown=yawl:yawl /build/output/monitorService.war /opt/tomcat/webapps/ROOT.war
-
-# Copy shared libraries (excluding servlet-api which conflicts with Tomcat's)
-COPY --from=builder --chown=yawl:yawl /build/build/3rdParty/lib/*.jar /tmp/libs/
-RUN cd /opt/tomcat/lib && \
-    for jar in /tmp/libs/*.jar; do \
-      [ "$(basename $jar)" != "servlet-api.jar" ] && cp "$jar" .; \
-    done && \
-    rm -rf /tmp/libs
+# Copy built WAR from builder (Maven packages to target/)
+COPY --from=builder --chown=yawl:yawl /build/target/*.war /opt/tomcat/webapps/ROOT.war
 
 # Environment configuration
 ENV CATALINA_HOME=/opt/tomcat \

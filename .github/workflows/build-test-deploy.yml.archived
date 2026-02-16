@@ -1,0 +1,528 @@
+name: Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, release/** ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION_PRIMARY: '25'
+  JAVA_VERSION_MATRIX: '["24", "25"]'
+  MAVEN_OPTS: -Xmx2048m -Djava.awt.headless=true
+  DOCKER_PLATFORMS: linux/amd64,linux/arm64
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: Build (Java ${{ matrix.java-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [24, 25]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Compile with Maven
+        run: |
+          mvn clean compile -B -V \
+            -DskipTests \
+            -Dmaven.javadoc.skip=true \
+            --no-transfer-progress
+
+      - name: Build JAR
+        run: |
+          mvn package -B -V \
+            -DskipTests \
+            -Dmaven.javadoc.skip=true \
+            --no-transfer-progress
+
+      - name: Upload Build Artifacts
+        if: matrix.java-version == 25
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-jar-java${{ matrix.java-version }}
+          path: target/*.jar
+          retention-days: 5
+
+  test-unit:
+  test-unit:
+    name: Unit Tests (Java ${{ matrix.java-version }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [24, 25]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Unit Tests with Coverage
+        run: |
+          mvn test -B -V \
+            -Dmaven.javadoc.skip=true \
+            --no-transfer-progress
+
+      - name: Generate Coverage Report
+        if: matrix.java-version == 25
+        run: mvn jacoco:report
+
+      - name: Verify Coverage Threshold (65% minimum)
+        if: matrix.java-version == 25
+        run: mvn jacoco:check || echo "⚠️  Coverage threshold not met - continuing build but please add tests"
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit-java${{ matrix.java-version }}
+          path: |
+            target/surefire-reports/
+            target/test-results/
+          retention-days: 7
+
+      - name: Upload Coverage Report
+        if: matrix.java-version == 25
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          retention-days: 7
+
+      - name: Upload Coverage to Codecov
+        if: matrix.java-version == 25
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-yawl
+          fail_ci_if_error: false
+  test-integration:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yawl_test
+          POSTGRES_USER: yawl
+          POSTGRES_PASSWORD: yawl_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: yawl_test
+          MYSQL_USER: yawl
+          MYSQL_PASSWORD: yawl_test_pass
+          MYSQL_ROOT_PASSWORD: root_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Integration Tests
+        env:
+          DB_HOST: localhost
+          DB_PORT_POSTGRES: 5432
+          DB_PORT_MYSQL: 3306
+          DB_USER: yawl
+          DB_PASSWORD: yawl_test_pass
+        run: |
+          mvn verify -B -V \
+            -Pintegration-tests \
+            -Dmaven.javadoc.skip=true \
+            --no-transfer-progress
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-integration
+          path: |
+            target/failsafe-reports/
+            target/integration-test-results/
+          retention-days: 7
+
+  test-performance:
+    name: Performance Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6 -y
+
+      - name: Start YAWL Application
+        run: |
+          mvn spring-boot:start -B -V \
+            -Dspring-boot.run.arguments="--server.port=8080" &
+          sleep 30
+
+      - name: Run k6 Load Test (100 concurrent users)
+        run: |
+          k6 run --vus 100 --duration 5m \
+            --out json=k6-results.json \
+            validation/performance/load-test.js || true
+
+      - name: Run k6 Stress Test (ramp to 1000 users)
+        run: |
+          k6 run --stages 1m:100,3m:500,2m:1000,2m:0 \
+            --out json=k6-stress-results.json \
+            validation/performance/stress-test.js || true
+
+      - name: Upload Performance Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            k6-*.json
+            target/performance-reports/
+          retention-days: 30
+
+  security-owasp:
+    name: OWASP Dependency Check
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run OWASP Dependency Check
+        run: |
+          mvn org.owasp:dependency-check-maven:check \
+            -DsuppressionFiles=owasp-suppressions.xml \
+            -DfailBuildOnCVSS=8 \
+            -Dformat=ALL \
+            --no-transfer-progress
+
+      - name: Upload OWASP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check
+          path: target/dependency-check-report.*
+          retention-days: 30
+
+  security-sonarqube:
+    name: SonarQube Code Quality
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache SonarQube Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Run SonarQube Analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=yawl \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            --no-transfer-progress || echo "SonarQube scan failed (optional)"
+
+  security-container:
+    name: Container Security Scan
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -t yawl:test -f Dockerfile .
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'yawl:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Generate SBOM with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'yawl:test'
+          format: 'cyclonedx'
+          output: 'sbom.json'
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 90
+
+  docker-build:
+    name: Docker Build (Multi-Arch)
+    needs: [test-unit, test-integration, security-owasp, security-container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=5.2
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [docker-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.yawl.example.com
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging Environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add deployment commands here (kubectl, helm, docker-compose, etc.)
+
+      - name: Run Smoke Tests
+        run: |
+          echo "Running smoke tests..."
+          curl -f https://staging.yawl.example.com/health || exit 1
+
+      - name: Notify Team
+        if: always()
+        run: |
+          echo "Deployment completed - Status: ${{ job.status }}"
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [docker-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://yawl.example.com
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Blue-Green Deployment
+        run: |
+          echo "Executing blue-green deployment..."
+          # Add blue-green deployment logic
+
+      - name: Health Check
+        run: |
+          echo "Running health checks..."
+          curl -f https://yawl.example.com/health || exit 1
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "Health check failed - initiating rollback..."
+          # Add rollback logic
+
+  notify:
+    name: Notification
+    needs: [build, test-unit, test-integration, security-owasp, security-container, docker-build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack Notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "${{ steps.status.outputs.color }}",
+                "title": "YAWL CI/CD Pipeline - ${{ steps.status.outputs.status }}",
+                "text": "Build #${{ github.run_number }} - Branch: ${{ github.ref_name }}",
+                "fields": [
+                  {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                  {"title": "Author", "value": "${{ github.actor }}", "short": true}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '"$(date +%s)"'
+              }]
+            }'
+
+      - name: Send Email on Security Vulnerability
+        if: needs.security-owasp.result == 'failure' || needs.security-container.result == 'failure'
+        run: |
+          echo "Security vulnerability detected - manual review required"
+          # Add email notification logic

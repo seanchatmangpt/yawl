@@ -90,7 +90,7 @@ public class YWorkflowMetrics {
         this.registry = registry;
         this.engine = YEngine.getInstance();
         this.workItemRepository = YWorkItemRepository.getInstance();
-        this.netRunnerRepository = YNetRunnerRepository.getInstance();
+        this.netRunnerRepository = engine.getNetRunnerRepository();
         this.specificationTable = YSpecificationTable.getInstance();
 
         this.casesLaunched = new AtomicInteger(0);

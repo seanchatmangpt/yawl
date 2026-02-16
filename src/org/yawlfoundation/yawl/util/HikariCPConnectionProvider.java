@@ -34,7 +34,7 @@ import java.util.Properties;
 
 /**
  * HikariCP Connection Provider for Hibernate.
- * Replaces c3p0 with modern HikariCP connection pooling optimized for Java 21 virtual threads.
+ * Replaces c3p0 with modern HikariCP connection pooling optimized for Java 25 virtual threads.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -253,19 +253,13 @@ public class HikariCPConnectionProvider implements ConnectionProvider, Configura
     }
 
     private String getIsolationLevelName(int level) {
-        switch (level) {
-            case Connection.TRANSACTION_NONE:
-                return "TRANSACTION_NONE";
-            case Connection.TRANSACTION_READ_UNCOMMITTED:
-                return "TRANSACTION_READ_UNCOMMITTED";
-            case Connection.TRANSACTION_READ_COMMITTED:
-                return "TRANSACTION_READ_COMMITTED";
-            case Connection.TRANSACTION_REPEATABLE_READ:
-                return "TRANSACTION_REPEATABLE_READ";
-            case Connection.TRANSACTION_SERIALIZABLE:
-                return "TRANSACTION_SERIALIZABLE";
-            default:
-                throw new IllegalArgumentException("Unknown isolation level: " + level);
-        }
+        return switch (level) {
+            case Connection.TRANSACTION_NONE -> "TRANSACTION_NONE";
+            case Connection.TRANSACTION_READ_UNCOMMITTED -> "TRANSACTION_READ_UNCOMMITTED";
+            case Connection.TRANSACTION_READ_COMMITTED -> "TRANSACTION_READ_COMMITTED";
+            case Connection.TRANSACTION_REPEATABLE_READ -> "TRANSACTION_REPEATABLE_READ";
+            case Connection.TRANSACTION_SERIALIZABLE -> "TRANSACTION_SERIALIZABLE";
+            default -> throw new IllegalArgumentException("Unknown isolation level: " + level);
+        };
     }
 }

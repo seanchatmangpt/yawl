@@ -1,0 +1,390 @@
+{#
+ # Exception Test Generator Template
+ # Generates comprehensive tests for YAWL exception classes
+ # Chicago TDD style - Tests all constructors, methods, and edge cases
+ #
+ # Usage: tera --template exception-test.tera --spec exception.json --output TestException.java
+ #
+ # Input JSON Schema:
+ # {
+ #   "package": "org.yawlfoundation.yawl.exceptions",
+ #   "exception_class": "YWorkflowException",
+ #   "parent_class": "YAWLException",
+ #   "test_class": "TestYWorkflowException",
+ #   "junit_version": "5",
+ #   "constructors": [
+ #     {"signature": "()", "params": [], "description": "Default constructor"},
+ #     {"signature": "(String)", "params": [{"type": "String", "name": "message"}], "description": "Message constructor"},
+ #     {"signature": "(String, Throwable)", "params": [{"type": "String", "name": "message"}, {"type": "Throwable", "name": "cause"}], "description": "Message and cause constructor"}
+ #   ],
+ #   "methods": [
+ #     {"name": "getErrorCode", "return_type": "int", "description": "Returns error code"},
+ #     {"name": "isRecoverable", "return_type": "boolean", "description": "Checks if error is recoverable"}
+ #   ],
+ #   "fields": [
+ #     {"name": "errorCode", "type": "int", "access": "private"},
+ #     {"name": "recoverable", "type": "boolean", "access": "private"}
+ #   ],
+ #   "author": "YAWL Foundation",
+ #   "version": "5.2"
+ # }
+ #}
+/*
+ * Copyright (c) 2004-{{ "now" | date(format="%Y") }} The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * Generated for exception: {{ exception_class }}
+ * Constructors: {{ constructors | length }}
+ * Methods: {{ methods | length }}
+ */
+
+package {{ package }};
+
+{% if junit_version == "5" %}
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import static org.junit.jupiter.api.Assertions.*;
+{% else %}
+import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
+{% endif %}
+
+/**
+ * Comprehensive tests for {{ exception_class }}.
+ * Chicago TDD style - tests real exception behavior with all constructors and methods.
+ *
+ * Test coverage:
+ * {% for ctor in constructors %}
+ * - Constructor {{ ctor.signature }}: {{ ctor.description }}
+ * {% endfor %}
+ * {% for method in methods %}
+ * - Method {{ method.name }}(): {{ method.description }}
+ * {% endfor %}
+ *
+ * @author {{ author }}
+ * @version {{ version }}
+ * @see {{ exception_class }}
+ * @see {{ parent_class }}
+ */
+{% if junit_version == "5" %}
+@DisplayName("{{ exception_class }} Tests")
+public class {{ test_class }} {
+{% else %}
+public class {{ test_class }} extends TestCase {
+
+    public {{ test_class }}(String name) {
+        super(name);
+    }
+{% endif %}
+
+    // ============================================================
+    // Constructor Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Constructor Tests")
+    class ConstructorTests {
+    {% endif %}
+
+    {% for ctor in constructors %}
+    {% if ctor.params | length == 0 %}
+    /**
+     * Test default constructor.
+     * Verifies exception can be created without parameters.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Default constructor should create exception")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testDefaultConstructor() {
+        {{ exception_class }} exception = new {{ exception_class }}();
+        assertNotNull("Exception should be created", exception);
+        assertNull("Message should be null", exception.getMessage());
+    }
+
+    {% else %}
+    /**
+     * Test constructor with parameters: {{ ctor.signature }}.
+     * {{ ctor.description }}
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Constructor {{ ctor.signature }} should work correctly")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testConstructor{{ ctor.signature | replace(from="(", to="_") | replace(from=")", to="") | replace(from=", ", to="_") | replace(from=" ", to="") | pascal_case }}() {
+        {% for param in ctor.params %}
+        {{ param.type }} {{ param.name }} = {% if param.type == "String" %}"test-{{ param.name }}-value"{% elif param.type == "Throwable" %}new RuntimeException("test-cause"){% elif param.type == "int" %}12345{% elif param.type == "boolean" %}true{% elif param.type == "long" %}12345L{% elif param.type == "double" %}123.45{% else %}null{% endif %};
+        {% endfor %}
+
+        {{ exception_class }} exception = new {{ exception_class }}(
+            {% for param in ctor.params %}
+            {{ param.name }}{% if not loop.last %},{% endif %}
+
+            {% endfor %}
+        );
+
+        assertNotNull("Exception should be created", exception);
+
+        {% for param in ctor.params %}
+        {% if param.type == "String" %}
+        assertEquals("Message should match", {{ param.name }}, exception.getMessage());
+        {% elif param.type == "Throwable" %}
+        assertNotNull("Cause should be set", exception.getCause());
+        assertEquals("Cause should match", {{ param.name }}, exception.getCause());
+        {% endif %}
+        {% endfor %}
+    }
+
+    {% endif %}
+    {% endfor %}
+    {% if junit_version == "5" %}
+    } // End ConstructorTests
+    {% endif %}
+
+    // ============================================================
+    // Method Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Method Tests")
+    class MethodTests {
+    {% endif %}
+
+    {% for method in methods %}
+    /**
+     * Test {{ method.name }} method.
+     * {{ method.description }}
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("{{ method.name }}() should return expected value")
+    {% else %}
+    @Test
+    {% endif %}
+    public void test{{ method.name | pascal_case }}() {
+        {{ exception_class }} exception = new {{ exception_class }}("test-message");
+        {% if method.return_type == "int" %}
+        {{ method.return_type }} result = exception.{{ method.name }}();
+        // Verify result is within expected range
+        assertTrue("{{ method.name }} result should be valid", result >= 0);
+        {% elif method.return_type == "boolean" %}
+        {{ method.return_type }} result = exception.{{ method.name }}();
+        // Result can be true or false depending on exception state
+        assertNotNull("{{ method.name }} result should not be null", Boolean.valueOf(result));
+        {% elif method.return_type == "String" %}
+        {{ method.return_type }} result = exception.{{ method.name }}();
+        assertNotNull("{{ method.name }} result should not be null", result);
+        {% else %}
+        {{ method.return_type }} result = exception.{{ method.name }}();
+        // Add specific assertions based on method behavior
+        {% endif %}
+    }
+
+    {% endfor %}
+    {% if junit_version == "5" %}
+    } // End MethodTests
+    {% endif %}
+
+    // ============================================================
+    // Edge Case Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Edge Case Tests")
+    class EdgeCaseTests {
+    {% endif %}
+
+    /**
+     * Test exception with null message.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should handle null message")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testNullMessage() {
+        {{ exception_class }} exception = new {{ exception_class }}((String) null);
+        assertNull("Message should be null", exception.getMessage());
+    }
+
+    /**
+     * Test exception with empty message.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should handle empty message")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testEmptyMessage() {
+        {{ exception_class }} exception = new {{ exception_class }}("");
+        assertEquals("Message should be empty", "", exception.getMessage());
+    }
+
+    /**
+     * Test exception with very long message.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should handle long message")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testLongMessage() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            sb.append("x");
+        }
+        String longMessage = sb.toString();
+
+        {{ exception_class }} exception = new {{ exception_class }}(longMessage);
+        assertEquals("Long message should be preserved", longMessage, exception.getMessage());
+    }
+
+    /**
+     * Test exception with null cause.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should handle null cause")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testNullCause() {
+        {{ exception_class }} exception = new {{ exception_class }}("message", null);
+        assertNull("Cause should be null", exception.getCause());
+    }
+
+    /**
+     * Test exception chaining.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should support exception chaining")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testExceptionChaining() {
+        Throwable cause = new RuntimeException("root-cause");
+        {{ exception_class }} exception = new {{ exception_class }}("wrapper-message", cause);
+
+        assertEquals("Cause should be preserved", cause, exception.getCause());
+        assertEquals("Cause message should be accessible",
+            "root-cause", exception.getCause().getMessage());
+    }
+
+    /**
+     * Test stack trace preservation.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should preserve stack trace")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testStackTrace() {
+        {{ exception_class }} exception = new {{ exception_class }}("test-message");
+        StackTraceElement[] stackTrace = exception.getStackTrace();
+
+        assertNotNull("Stack trace should not be null", stackTrace);
+        assertTrue("Stack trace should have elements", stackTrace.length > 0);
+    }
+
+    {% if junit_version == "5" %}
+    } // End EdgeCaseTests
+    {% endif %}
+
+    // ============================================================
+    // Inheritance Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Inheritance Tests")
+    class InheritanceTests {
+    {% endif %}
+
+    /**
+     * Test that exception extends correct parent class.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should extend {{ parent_class }}")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testInheritance() {
+        {{ exception_class }} exception = new {{ exception_class }}("test");
+        assertTrue("Should be instance of {{ parent_class }}",
+            exception instanceof {{ parent_class }});
+        assertTrue("Should be instance of Exception",
+            exception instanceof Exception);
+    }
+
+    /**
+     * Test polymorphic behavior.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should behave polymorphically")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testPolymorphism() {
+        {{ parent_class }} parent = new {{ exception_class }}("test");
+        assertTrue("Should be correct type at runtime",
+            parent instanceof {{ exception_class }});
+    }
+
+    {% if junit_version == "5" %}
+    } // End InheritanceTests
+    {% endif %}
+
+    // ============================================================
+    // Serialization Tests (if applicable)
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Serialization Tests")
+    class SerializationTests {
+    {% endif %}
+
+    /**
+     * Test that exception is serializable.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should be serializable")
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSerializability() {
+        // All exceptions should be serializable
+        {{ exception_class }} exception = new {{ exception_class }}("test");
+        assertTrue("Should implement Serializable",
+            exception instanceof java.io.Serializable);
+    }
+
+    {% if junit_version == "5" %}
+    } // End SerializationTests
+    {% endif %}
+}

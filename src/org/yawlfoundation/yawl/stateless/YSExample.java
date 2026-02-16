@@ -138,31 +138,25 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
     public void handleLogEvent(YLogEvent event) {
 
         // just print the log event info
-        switch (event.getEventType())  {
-            case ITEM_STATUS_CHANGE: {
+        switch (event.getEventType()) {
+            case ITEM_STATUS_CHANGE -> {
                 YWorkItem item = event.getWorkItem();
                 print(event, "(Log)", "Item:", item.getIDString(), "to:",
                         event.getItemStatus());
-                break;
             }
-            case ITEM_DATA_VALUE_CHANGE: {
+            case ITEM_DATA_VALUE_CHANGE -> {
                 YWorkItem item = event.getWorkItem();
                 YLogDataItemList dataList = event.getLogData();
-                String dataItem = ! (dataList == null || dataList.isEmpty()) ?
+                String dataItem = !(dataList == null || dataList.isEmpty()) ?
                         dataItemToString(dataList.get(0)) : "null";
                 print(event, "Item:", item.getIDString(), "Data:", dataItem);
-                break;
             }
-            case ITEM_COMPLETED: {
+            case ITEM_COMPLETED -> {
                 YWorkItem item = event.getWorkItem();
                 print(event, "(Log)", "Item:", item.getIDString());
-                break;
             }
-            default: {
-                print(event, "(Log)", "SpecID:",
-                       event.getSpecID().toFullString(), "CaseID:", event.getCaseID().toString());
-                break;
-            }
+            default -> print(event, "(Log)", "SpecID:",
+                    event.getSpecID().toFullString(), "CaseID:", event.getCaseID().toString());
         }
     }
 
@@ -203,31 +197,22 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
             switch (event.getEventType()) {
 
                 // if the item is enabled, we can choose to start it
-                case ITEM_ENABLED: {
-                    _engine.startWorkItem(item);
-                    break;
-                }
+                case ITEM_ENABLED -> _engine.startWorkItem(item);
 
                 // once the item is started, we can do some work with it
-                case ITEM_STARTED: {
-
+                case ITEM_STARTED -> {
                     // not sure if this check is necessary
                     if (item.hasCompletedStatus()) {
                         print(null,
                                 "**Item: ", item.getIDString(), "has already completed**");
                     }
                     else processWorkItem(item);
-//                    else _engine.cancelCase(_caseRunner);
-                    break;
                 }
 
                 // just print out any state changes
-                case ITEM_STATUS_CHANGE: {
-                     print(event,"Item:", item.getIDString(), "from:",
-                             event.getPreviousStatus().toString(), "to:",
-                             event.getCurrentStatus().toString());
-                     break;
-                }
+                case ITEM_STATUS_CHANGE -> print(event, "Item:", item.getIDString(), "from:",
+                        event.getPreviousStatus().toString(), "to:",
+                        event.getCurrentStatus().toString());
             }
         }
         catch (YDataStateException ydse) {
