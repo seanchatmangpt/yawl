@@ -16,6 +16,7 @@
     <modules>
         <module>yawl-utilities</module>
         <module>yawl-elements</module>
+        <module>yawl-authentication</module>
         <module>yawl-engine</module>
         <module>yawl-stateless</module>
         <module>yawl-resourcing</module>
@@ -23,6 +24,7 @@
         <module>yawl-scheduling</module>
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
+        <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
     </modules>
 
