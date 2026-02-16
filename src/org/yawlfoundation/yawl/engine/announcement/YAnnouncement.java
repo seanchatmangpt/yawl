@@ -63,8 +63,7 @@ public class YAnnouncement {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof YAnnouncement) {
-            YAnnouncement other = (YAnnouncement) o;
+        if (o instanceof YAnnouncement other) {
             return _yawlService.equals(other._yawlService) && _item.equals(other._item)
                    && (_event == other._event) && (_context == other._context);
         }

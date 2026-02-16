@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive test suite for virtual thread migration in YAWL engine.
@@ -31,7 +31,7 @@ public class VirtualThreadMigrationTest {
     private ExecutorService virtualThreadExecutor;
     private ExecutorService platformThreadExecutor;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
         platformThreadExecutor = Executors.newFixedThreadPool(
@@ -39,7 +39,7 @@ public class VirtualThreadMigrationTest {
         );
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws InterruptedException {
         shutdownExecutor(virtualThreadExecutor);
         shutdownExecutor(platformThreadExecutor);

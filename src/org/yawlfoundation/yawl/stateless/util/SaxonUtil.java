@@ -68,8 +68,7 @@ public class SaxonUtil {
 
         // create a StringWriter to receive the output of the evaluation
         StringWriter writer = new StringWriter();
-        Serializer output = new Serializer();
-        output.setOutputWriter(writer);
+        Serializer output = _processor.newSerializer(writer);
 
         // evaluate the query & return the result as a string
         evaluator.run(output);

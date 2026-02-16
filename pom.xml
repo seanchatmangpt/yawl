@@ -16,6 +16,7 @@
     <modules>
         <module>yawl-utilities</module>
         <module>yawl-elements</module>
+        <module>yawl-authentication</module>
         <module>yawl-engine</module>
         <module>yawl-stateless</module>
         <module>yawl-resourcing</module>
@@ -24,13 +25,14 @@
         <module>yawl-security</module>
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
+        <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
 
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.2.5</spring-boot.version>
@@ -39,20 +41,22 @@
         <opentelemetry-instrumentation.version>2.6.0</opentelemetry-instrumentation.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.19.7</testcontainers.version>
+        <jmh.version>1.37</jmh.version>
+        <jacoco.version>0.8.11</jacoco.version>
 
         <!-- Jakarta EE & Framework -->
         <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.xml.bind.version>3.0.1</jakarta.xml.bind.version>
-        <jakarta.mail.version>2.1.0</jakarta.mail.version>
-        <jakarta.activation.version>2.1.0</jakarta.activation.version>
+        <jakarta.mail.version>2.0.1</jakarta.mail.version>
+        <jakarta.activation.version>2.0.1</jakarta.activation.version>
         <jakarta.faces.version>3.0.0</jakarta.faces.version>
         <jakarta.cdi.version>3.0.0</jakarta.cdi.version>
 
         <!-- ORM -->
         <hibernate.version>6.5.1.Final</hibernate.version>
-        
+
         <!-- Core Libraries -->
         <commons.lang3.version>3.14.0</commons.lang3.version>
         <commons.io.version>2.15.1</commons.io.version>
@@ -66,14 +70,14 @@
 
         <!-- Database Drivers -->
         <h2.version>2.2.224</h2.version>
-        <postgresql.version>42.7.2</postgresql.version>
-        <mysql.version>8.0.36</mysql.version>
+        <postgresql.version>42.7.4</postgresql.version>
+        <mysql.version>8.0.33</mysql.version>
         <derby.version>10.17.1.0</derby.version>
         <hsqldb.version>2.7.2</hsqldb.version>
         <hikaricp.version>5.1.0</hikaricp.version>
 
-        <!-- Logging - security fix: 2.18.0 → 2.23.1 (Log4Shell patches) -->
-        <log4j.version>2.23.1</log4j.version>
+        <!-- Logging - security fix: 2.18.0 → 2.24.1 (Log4Shell patches) -->
+        <log4j.version>2.24.1</log4j.version>
         <slf4j.version>2.0.9</slf4j.version>
         <jboss.logging.version>3.5.3.Final</jboss.logging.version>
 
@@ -103,9 +107,25 @@
 
         <!-- Other -->
         <jandex.version>3.1.7</jandex.version>
-        <byte.buddy.version>1.12.23</byte.buddy.version>
+        <byte.buddy.version>1.15.11</byte.buddy.version>
         <classmate.version>1.5.1</classmate.version>
         <istack.version>4.1.1</istack.version>
+
+        <!-- Additional Dependencies for Migration -->
+        <saxon.version>12.4</saxon.version>
+        <jung.version>2.1.1</jung.version>
+        <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
+        <jersey.version>3.1.5</jersey.version>
+        <microsoft.graph.version>6.55.0</microsoft.graph.version>
+        <azure.identity.version>1.18.1</azure.identity.version>
+
+        <!-- Additional Libraries -->
+        <jjwt.version>0.12.5</jjwt.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <jakarta.soap.version>1.5.3</jakarta.soap.version>
+        <simple-java-mail.version>8.11.2</simple-java-mail.version>
+        <ant.version>1.10.15</ant.version>
+        <micrometer.version>1.12.5</micrometer.version>
     </properties>
 
     <repositories>
@@ -179,8 +199,8 @@
                 <version>${jakarta.activation.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.activation</groupId>
-                <artifactId>jakarta.activation</artifactId>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-activation</artifactId>
                 <version>${jakarta.activation.version}</version>
             </dependency>
             <dependency>
@@ -441,6 +461,148 @@
                 <version>${jspecify.version}</version>
             </dependency>
 
+            <!-- Saxon XSLT/XQuery Processor -->
+            <dependency>
+                <groupId>net.sf.saxon</groupId>
+                <artifactId>Saxon-HE</artifactId>
+                <version>${saxon.version}</version>
+            </dependency>
+
+            <!-- JUNG Graph Library -->
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-api</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-graph-impl</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-algorithms</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+
+            <!-- Jakarta JAX-RS API -->
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${jakarta.ws.rs.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Jersey JAX-RS Implementation -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <!-- Microsoft Graph SDK -->
+            <dependency>
+                <groupId>com.microsoft.graph</groupId>
+                <artifactId>microsoft-graph</artifactId>
+                <version>${microsoft.graph.version}</version>
+            </dependency>
+
+            <!-- Azure Identity -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-identity</artifactId>
+                <version>${azure.identity.version}</version>
+            </dependency>
+
+            <!-- JJWT (JSON Web Token) -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+
+            <!-- Commons BeanUtils -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <!-- SOAP API (javax namespace for backwards compatibility) -->
+            <dependency>
+                <groupId>javax.xml.soap</groupId>
+                <artifactId>javax.xml.soap-api</artifactId>
+                <version>1.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.messaging.saaj</groupId>
+                <artifactId>saaj-impl</artifactId>
+                <version>1.5.3</version>
+            </dependency>
+
+            <!-- Simple Java Mail -->
+            <dependency>
+                <groupId>org.simplejavamail</groupId>
+                <artifactId>simple-java-mail</artifactId>
+                <version>${simple-java-mail.version}</version>
+            </dependency>
+
+            <!-- Apache Ant (for build utilities) -->
+            <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant</artifactId>
+                <version>${ant.version}</version>
+            </dependency>
+
+            <!-- Micrometer (metrics) -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+
+            <!-- Spring Boot Actuator -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-actuator</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+
             <!-- Supporting Libraries -->
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -483,6 +645,16 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-exporter-logging</artifactId>
                 <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-prometheus</artifactId>
+                <version>1.39.0-alpha</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.semconv</groupId>
+                <artifactId>opentelemetry-semconv</artifactId>
+                <version>1.25.0-alpha</version>
             </dependency>
 
             <!-- OpenTelemetry Instrumentation (would be managed by opentelemetry-instrumentation-bom-alpha) -->
@@ -554,6 +726,18 @@
                 <artifactId>xmlunit</artifactId>
                 <version>${xmlunit.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -611,8 +795,8 @@
             <version>${jakarta.activation.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>jakarta.activation</artifactId>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-activation</artifactId>
             <version>${jakarta.activation.version}</version>
         </dependency>
 
@@ -809,54 +993,65 @@
             <version>${okhttp.version}</version>
         </dependency>
 
-        <!-- MCP SDK -->
+        <!-- MCP SDK (not on Maven Central - install locally if needed, versions managed in dependencyManagement)
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-core</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-json</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-json-jackson2</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
+        -->
 
-        <!-- A2A SDK -->
+        <!-- A2A SDK (not on Maven Central - install locally if needed, versions managed in dependencyManagement)
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-spec</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-common</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-server-common</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-transport-rest</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-http-client</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
+        -->
 
         <!-- JSpecify (nullable annotations) -->
         <dependency>
@@ -904,16 +1099,29 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-prometheus</artifactId>
+            <version>1.39.0-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.semconv</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.25.0-alpha</version>
+        </dependency>
 
-        <!-- OpenTelemetry Instrumentation (versions managed by dependencyManagement) -->
+        <!-- OpenTelemetry Instrumentation (alpha versions - versions managed in dependencyManagement)
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-api</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <optional>true</optional>
         </dependency>
+        -->
 
         <!-- Resilience4j (versions managed by dependencyManagement) -->
         <dependency>
@@ -927,6 +1135,150 @@
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
+        </dependency>
+
+        <!-- Saxon XSLT/XQuery Processor -->
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+            <version>${saxon.version}</version>
+        </dependency>
+
+        <!-- JUNG Graph Library -->
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-algorithms</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+
+        <!-- Jakarta JAX-RS API -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>${jakarta.ws.rs.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jersey JAX-RS Implementation -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Microsoft Graph SDK (optional - for Outlook integration) -->
+        <dependency>
+            <groupId>com.microsoft.graph</groupId>
+            <artifactId>microsoft-graph</artifactId>
+            <version>${microsoft.graph.version}</version>
+        </dependency>
+
+        <!-- Azure Identity (optional - for Microsoft auth) -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
+            <version>${azure.identity.version}</version>
+        </dependency>
+
+        <!-- JJWT (JSON Web Token) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Commons BeanUtils -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>${commons-beanutils.version}</version>
+        </dependency>
+
+        <!-- SOAP API (javax namespace for backwards compatibility) -->
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+
+        <!-- Simple Java Mail -->
+        <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <version>${simple-java-mail.version}</version>
+        </dependency>
+
+        <!-- Apache Ant (for build utilities) -->
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>${ant.version}</version>
+        </dependency>
+
+        <!-- Micrometer (metrics) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Actuator -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
 
         <!-- Testing Dependencies -->
@@ -968,12 +1320,32 @@
             <version>${xmlunit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
 
+        <!-- Maven Build Cache for faster incremental builds -->
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.extensions</groupId>
+                <artifactId>maven-build-cache-extension</artifactId>
+                <version>1.1.0</version>
+            </extension>
+        </extensions>
+
+        <!-- Parallel build configuration -->
         <plugins>
             <!-- Compiler Plugin -->
             <plugin>
@@ -994,13 +1366,40 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.5</version>
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                         <include>**/*TestSuite.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <database.type>h2</database.type>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                    </systemPropertyVariables>
+                    <parallel>classes</parallel>
+                    <threadCount>4</threadCount>
+                </configuration>
+            </plugin>
+
+            <!-- Failsafe Integration Test Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <database.type>h2</database.type>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -1019,18 +1418,21 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Code Coverage - temporarily disabled for offline builds -->
-            <!--
+            <!-- JaCoCo Code Coverage Plugin -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
                 <executions>
+                    <!-- Prepare agent for test execution -->
                     <execution>
+                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+
+                    <!-- Generate coverage report after tests -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
@@ -1038,9 +1440,96 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+
+                    <!-- Aggregate reports across all modules -->
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- Enforce minimum coverage thresholds -->
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <!-- Overall project coverage must be >= 70% (instructions) -->
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.65</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Package-level coverage (excluding tests) -->
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                        <exclude>*.test.*</exclude>
+                                        <exclude>*.tests.*</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Class-level coverage -->
+                                <rule>
+                                    <element>CLASS</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                        <exclude>*TestCase</exclude>
+                                        <exclude>*TestSuite</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.50</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
+                <configuration>
+                    <!-- Exclude patterns -->
+                    <excludes>
+                        <exclude>**/*Test.class</exclude>
+                        <exclude>**/*Tests.class</exclude>
+                        <exclude>**/*TestCase.class</exclude>
+                        <exclude>**/*TestSuite.class</exclude>
+                        <exclude>**/test/**</exclude>
+                        <exclude>**/package-info.class</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
-            -->
 
             <!-- Dependency Plugin for analyzing dependencies -->
             <plugin>
@@ -1129,15 +1618,15 @@
     </build>
 
     <profiles>
-        <!-- Java 21 (LTS - Default Production Profile) -->
+        <!-- Java 25 (Current Default Production Profile) -->
         <profile>
-            <id>java21</id>
+            <id>java25</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.source>21</maven.compiler.source>
-                <maven.compiler.target>21</maven.compiler.target>
+                <maven.compiler.source>25</maven.compiler.source>
+                <maven.compiler.target>25</maven.compiler.target>
             </properties>
             <build>
                 <plugins>
@@ -1147,6 +1636,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.incubator.concurrent</arg>
                                 <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
@@ -1179,38 +1670,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <argLine>--enable-preview</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- Java 25 (Preview Features Evaluation) -->
-        <profile>
-            <id>java25</id>
-            <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>--add-modules</arg>
-                                <arg>jdk.incubator.concurrent</arg>
-                                <arg>-Xlint:all</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>--enable-preview --add-modules jdk.incubator.concurrent</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

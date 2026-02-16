@@ -18,15 +18,10 @@
 
 package org.yawlfoundation.yawl.engine.actuator.config;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
-import org.springframework.boot.actuate.health.HealthEndpoint;
-import org.springframework.boot.actuate.health.HealthEndpointGroups;
-import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,6 +33,11 @@ import org.springframework.context.annotation.Configuration;
  * - Prometheus metrics registry
  * - Custom endpoint paths for Kubernetes compatibility
  * - Security and access controls
+ *
+ * Note: HealthEndpointGroups is auto-configured by Spring Boot Actuator.
+ * Configure groups via application.properties:
+ * - management.endpoint.health.group.liveness.include=livenessProbe
+ * - management.endpoint.health.group.readiness.include=readinessProbe
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -53,14 +53,5 @@ public class ActuatorConfiguration {
     public PrometheusMeterRegistry prometheusMeterRegistry() {
         _logger.info("Configuring Prometheus metrics registry for YAWL");
         return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-    }
-
-    @Bean
-    public HealthEndpointGroups healthEndpointGroups() {
-        _logger.info("Configuring health endpoint groups for YAWL");
-        return HealthEndpointGroups.of(
-            org.springframework.boot.actuate.health.HealthEndpointGroup.class,
-            java.util.Map.of()
-        );
     }
 }

@@ -125,26 +125,24 @@ public class OpenTelemetryConfig {
      */
     @Bean
     public SpanExporter spanExporter() {
-        SpanExporter exporter;
-
-        switch (exporterType.toLowerCase()) {
-            case "otlp":
-                exporter = OtlpGrpcSpanExporter.builder()
+        SpanExporter exporter = switch (exporterType.toLowerCase()) {
+            case "otlp" -> {
+                SpanExporter exp = OtlpGrpcSpanExporter.builder()
                     .setEndpoint(otlpEndpoint)
                     .setTimeout(30, TimeUnit.SECONDS)
                     .build();
                 _logger.info("OTLP SpanExporter configured with endpoint: {}", otlpEndpoint);
-                break;
-
-            case "logging":
-                exporter = LoggingSpanExporter.create();
+                yield exp;
+            }
+            case "logging" -> {
                 _logger.info("Logging SpanExporter configured (for development)");
-                break;
-
-            default:
-                exporter = LoggingSpanExporter.create();
+                yield LoggingSpanExporter.create();
+            }
+            default -> {
                 _logger.warn("Unknown exporter type: {}. Using logging exporter.", exporterType);
-        }
+                yield LoggingSpanExporter.create();
+            }
+        };
 
         return exporter;
     }
@@ -237,7 +235,7 @@ public class OpenTelemetryConfig {
     public SdkMeterProvider sdkMeterProvider(Resource resource,
                                               MetricReader prometheusMetricReader,
                                               MetricReader otlpMetricReader) {
-        SdkMeterProvider.Builder builder = SdkMeterProvider.builder()
+        var builder = SdkMeterProvider.builder()
             .setResource(resource)
             .registerMetricReader(prometheusMetricReader);
 

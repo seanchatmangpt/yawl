@@ -569,7 +569,7 @@ public class YawlEngineAdapter {
         if (trimmed.startsWith("<")) {
             return trimmed;
         }
-        return "<data>" + trimmed + "</data>";
+        return "<data>%s</data>".formatted(trimmed);
     }
 
     /**

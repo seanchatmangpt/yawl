@@ -103,13 +103,11 @@ public class YTimerVariable {
     // Since a workitem expires before it is fully completed, this guards
     // against a transition from expired -> closed
     private boolean isValidTransition(State state) {
-        switch (state) {
-            case dormant : return true;                         // an initialisation 
-            case active  : return _state == State.dormant;
-            case closed  :
-            case expired : return _state == State.active;
-        }
-        return false;
+        return switch (state) {
+            case dormant -> true;  // an initialisation
+            case active -> _state == State.dormant;
+            case closed, expired -> _state == State.active;
+        };
     }
 
 

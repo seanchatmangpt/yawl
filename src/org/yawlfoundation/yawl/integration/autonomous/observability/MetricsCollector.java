@@ -55,7 +55,7 @@ public class MetricsCollector {
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
 
         server.createContext("/metrics", new MetricsHandler());
-        server.setExecutor(null);
+        server.setExecutor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor());
         server.start();
 
         logger.info("Metrics collector started on port {}", port);

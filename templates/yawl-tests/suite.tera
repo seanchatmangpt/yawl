@@ -1,0 +1,115 @@
+{#
+ # Test Suite Generator Template
+ # Generates JUnit 5 test suite classes aggregating multiple test classes
+ # Chicago TDD style - Organizes related tests for efficient execution
+ #
+ # Usage: tera --template suite.tera --spec suite.json --output TestSuite.java
+ #
+ # Input JSON Schema:
+ # {
+ #   "package": "org.yawlfoundation.yawl.engine",
+ #   "suite_name": "Engine",
+ #   "suite_class": "EngineTestSuite",
+ #   "test_classes": [
+ #     {"class": "TestYEngineInit", "description": "Engine initialization tests"},
+ #     {"class": "TestYNetRunner", "description": "Net runner tests"},
+ #     {"class": "TestYWorkItem", "description": "Work item tests"}
+ #   ],
+ #   "sub_suites": [
+ #     {"class": "SubmoduleTestSuite", "description": "Submodule tests"}
+ #   ],
+ #   "execution_mode": "CONCURRENT",  // "SAME_THREAD" or "CONCURRENT"
+ #   "fail_fast": true,
+ #   "author": "YAWL Foundation",
+ #   "version": "5.2"
+ # }
+ #}
+/*
+ * Copyright (c) 2004-{{ "now" | date(format="%Y") }} The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * Generated test suite: {{ suite_name }}
+ * Test classes: {{ test_classes | length }}
+ * Sub-suites: {{ sub_suites | length }}
+ */
+
+package {{ package }};
+
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.SelectSuites;
+import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.SuiteDisplayName;
+import org.junit.platform.suite.api.ExecutionMode;
+import org.junit.platform.suite.api.FailFast;
+
+{% for test_class in test_classes %}
+import {{ package }}.{{ test_class.class }};
+{% endfor %}
+{% for sub_suite in sub_suites %}
+import {{ package }}.{{ sub_suite.class }};
+{% endfor %}
+
+/**
+ * JUnit 5 Test Suite for {{ suite_name }} package.
+ * Chicago TDD style - aggregates all related tests for efficient execution.
+ *
+ * Included test classes:
+ * {% for test_class in test_classes %}
+ * - {{ test_class.class }}: {{ test_class.description }}
+ * {% endfor %}
+ * {% if sub_suites | length > 0 %}
+ *
+ * Included sub-suites:
+ * {% for sub_suite in sub_suites %}
+ * - {{ sub_suite.class }}: {{ sub_suite.description }}
+ * {% endfor %}
+ * {% endif %}
+ *
+ * Execution mode: {{ execution_mode }}
+ * Fail fast: {{ fail_fast }}
+ *
+ * @author {{ author }}
+ * @version {{ version }}
+ * @see org.junit.platform.suite.api.Suite
+ */
+@Suite
+@SuiteDisplayName("{{ suite_name }} Test Suite")
+{% if execution_mode == "CONCURRENT" %}
+@ExecutionMode(ExecutionMode.CONCURRENT)
+{% else %}
+@ExecutionMode(ExecutionMode.SAME_THREAD)
+{% endif %}
+{% if fail_fast %}
+@FailFast
+{% endif %}
+@SelectClasses({
+    {% for test_class in test_classes %}
+    {{ test_class.class }}.class{% if not loop.last %},{% endif %}
+
+    {% endfor %}
+})
+{% if sub_suites | length > 0 %}
+@SelectSuites({
+    {% for sub_suite in sub_suites %}
+    {{ sub_suite.class }}class{% if not loop.last %},{% endif %}
+
+    {% endfor %}
+})
+{% endif %}
+public class {{ suite_class }} {
+    // This class serves as a test suite aggregator.
+    // Run with: java -jar junit-platform-console-standalone.jar
+    //          --select-class {{ package }}.{{ suite_class }}
+    //
+    // Or via Maven: mvn test -Dtest={{ suite_class }}
+    // Or via Gradle: gradle test --tests "{{ package }}.{{ suite_class }}"
+    // Or via Ant: ant unitTest -Dtest.suite={{ suite_class }}
+}

@@ -5,11 +5,11 @@ import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.collections4.collection.CollectionUtils;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Commons Library Compatibility Tests - Verifies commons-collections API compatibility

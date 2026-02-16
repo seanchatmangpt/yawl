@@ -27,9 +27,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * A 'stringified' record of a workitem for passing across various HTTP interfaces
+ * A 'stringified' record of a workitem for passing across various HTTP interfaces.
+ *
+ * This class has been refactored to use Java 25 records for immutable components
+ * while maintaining Hibernate persistence and backward compatibility.
  *
  * @author Lachlan Aldred
  * Date: 2/02/2004
@@ -37,7 +41,9 @@ import java.util.Map;
  *
  * Extended & refactored for version 2.0 by Michael Adams
  * Last Date: 27/05/2008
- * 
+ *
+ * Refactored for Java 25 records - version 5.2
+ * Last Date: 16/02/2026
  */
 
 public class WorkItemRecord implements Cloneable {
@@ -65,59 +71,59 @@ public class WorkItemRecord implements Cloneable {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy H:mm:ss").withZone(ZoneId.systemDefault());
 
-    // item identifiers
-    private long _id;                                    // hibernate primary key
+    // hibernate primary key
+    private long _id;
+
+    // RECORD COMPONENTS - Immutable identity, timing, and metadata
+    // Note: These are lazily initialized and cached. The individual fields below
+    // are maintained for Hibernate persistence compatibility.
+    private transient WorkItemIdentity identity;
+    private transient WorkItemTiming timing;
+    private transient WorkItemMetadata metadata;
+
+    // IDENTITY FIELDS - Persisted by Hibernate, wrapped by WorkItemIdentity record
     private String _specIdentifier;
     private String _specVersion = "0.1" ;
     private String _specURI;
     private String _caseID;
     private String _taskID;
     private String _uniqueID;                            // used by PDF Forms service
+
+    // METADATA FIELDS - Persisted by Hibernate, wrapped by WorkItemMetadata record
     private String _taskName;                            // the unmodified task name
     private String _documentation;
     private String _allowsDynamicCreation;
     private String _requiresManualResourcing;
     private String _codelet;
+    private Map<String, String> _attributeTable;         // task/decomp level attribs
+    private String _deferredChoiceGroupID = null;        // deferred choice group member
+    private String _customFormURL;                       // path to alternate jsp
+    private String _logPredicateStarted;                 // configurable logging predicates
+    private String _logPredicateCompletion;
 
-    // task/decomp level attribs
-    private Map<String, String> _attributeTable;
-
-    // identifies this item as a member of a group of deferred choice items
-    private String _deferredChoiceGroupID = null;
-
-    // status timestamps
+    // TIMING FIELDS - Persisted by Hibernate, wrapped by WorkItemTiming record
     private String _enablementTimeMs;
     private String _firingTimeMs;
     private String _startTimeMs ;
     private String _completionTimeMs ;
-
-    // timer values (if item has a timer enabled)
-    private String _timerTrigger;
+    private String _timerTrigger;                        // timer values (if item has a timer enabled)
     private String _timerExpiry;
 
-    // current statuses
+    // MUTABLE STATE - Current execution status
     private String _status;
     private String _resourceStatus = statusResourceUnresourced;
 
-    // who performed the workitem
-    private String _startedBy;
+    // MUTABLE STATE - Resource assignment
+    private String _startedBy;                           // who performed the workitem
     private String _completedBy;
 
-    // initial data params and values
-    private Element _dataList;
+    // MUTABLE STATE - Data elements
+    private Element _dataList;                           // initial data params and values
+    private Element _dataListUpdated;                    // interim data store for custom services
 
-    // interim data store - for use by custom services for data change storage
-    private Element _dataListUpdated;
-
-    // configurable logging predicates
-    private String _logPredicateStarted;
-    private String _logPredicateCompletion;
-
-    private String _customFormURL;                         // path to alternate jsp
-
-    private boolean _docoChanged = false;                  // documentation updated?
-
-    private String _tag;                                   // for user-defined values
+    // MUTABLE STATE - Flags and tags
+    private boolean _docoChanged = false;                // documentation updated?
+    private String _tag;                                 // for user-defined values
 
     /********************************************************************************/
 
@@ -135,55 +141,155 @@ public class WorkItemRecord implements Cloneable {
 
 
     public void resetDataState() {
-        _dataListUpdated = null ; 
+        _dataListUpdated = null ;
+    }
+
+    /********************************************************************************/
+
+    // RECORD COMPONENT ACCESSORS //
+
+    /**
+     * Returns the immutable identity record for this work item.
+     * The record is constructed on-demand and cached.
+     */
+    public WorkItemIdentity identity() {
+        if (identity == null) {
+            identity = new WorkItemIdentity(_specIdentifier, _specVersion, _specURI,
+                                           _caseID, _taskID, _uniqueID);
+        }
+        return identity;
+    }
+
+    /**
+     * Returns the immutable timing record for this work item.
+     * The record is constructed on-demand and cached.
+     */
+    public WorkItemTiming timing() {
+        if (timing == null) {
+            timing = new WorkItemTiming(_enablementTimeMs, _firingTimeMs, _startTimeMs,
+                                       _completionTimeMs, _timerTrigger, _timerExpiry);
+        }
+        return timing;
+    }
+
+    /**
+     * Returns the immutable metadata record for this work item.
+     * The record is constructed on-demand and cached.
+     */
+    public WorkItemMetadata metadata() {
+        if (metadata == null) {
+            metadata = new WorkItemMetadata(_taskName, _documentation, _allowsDynamicCreation,
+                                           _requiresManualResourcing, _codelet, _deferredChoiceGroupID,
+                                           _attributeTable, _customFormURL, _logPredicateStarted,
+                                           _logPredicateCompletion);
+        }
+        return metadata;
+    }
+
+    /**
+     * Invalidates cached record components.
+     * Called internally when fields are modified to ensure records are reconstructed.
+     */
+    private void invalidateRecordCache() {
+        identity = null;
+        timing = null;
+        metadata = null;
     }
 
     /********************************************************************************/
 
     // SETTERS //
 
-    public void setSpecIdentifier(String id) { _specIdentifier = id; }
+    public void setSpecIdentifier(String id) {
+        _specIdentifier = id;
+        identity = null;  // invalidate cached identity
+    }
 
-    public void setSpecVersion(String version) { _specVersion = version; }
+    public void setSpecVersion(String version) {
+        _specVersion = version;
+        identity = null;
+    }
 
-    public void setSpecURI(String uri) { _specURI = uri; }
+    public void setSpecURI(String uri) {
+        _specURI = uri;
+        identity = null;
+    }
 
-    public void setCaseID(String caseID) {_caseID = caseID; }
+    public void setCaseID(String caseID) {
+        _caseID = caseID;
+        identity = null;
+    }
 
-    public void setTaskID(String taskID) { _taskID = taskID; }
+    public void setTaskID(String taskID) {
+        _taskID = taskID;
+        identity = null;
+    }
 
-    public void setUniqueID(String uniqueID) { _uniqueID = uniqueID;  }
+    public void setUniqueID(String uniqueID) {
+        _uniqueID = uniqueID;
+        identity = null;
+    }
 
-    public void setTaskName(String name) { _taskName = name;  }
+    public void setTaskName(String name) {
+        _taskName = name;
+        metadata = null;  // invalidate cached metadata
+    }
 
     public void setAllowsDynamicCreation(String allows) {
-        _allowsDynamicCreation = allows ;
+        _allowsDynamicCreation = allows;
+        metadata = null;
     }
 
     public void setRequiresManualResourcing(String manual) {
         _requiresManualResourcing = manual;
+        metadata = null;
     }
 
-    public void setCodelet(String codelet) { _codelet = codelet; }
+    public void setCodelet(String codelet) {
+        _codelet = codelet;
+        metadata = null;
+    }
 
-    public void setDeferredChoiceGroupID(String id) { _deferredChoiceGroupID = id ; }
+    public void setDeferredChoiceGroupID(String id) {
+        _deferredChoiceGroupID = id;
+        metadata = null;
+    }
 
     public void setExtendedAttributes(Map<String, String> attrMap) {
-        _attributeTable = attrMap ;
+        _attributeTable = attrMap;
+        metadata = null;
     }
 
-    
-    public void setEnablementTimeMs(String time) { _enablementTimeMs = time; }
 
-    public void setFiringTimeMs(String time) { _firingTimeMs = time; }
+    public void setEnablementTimeMs(String time) {
+        _enablementTimeMs = time;
+        timing = null;  // invalidate cached timing
+    }
 
-    public void setStartTimeMs(String time) { _startTimeMs = time; }
+    public void setFiringTimeMs(String time) {
+        _firingTimeMs = time;
+        timing = null;
+    }
 
-    public void setCompletionTimeMs(String time) {_completionTimeMs = time; }
+    public void setStartTimeMs(String time) {
+        _startTimeMs = time;
+        timing = null;
+    }
 
-    public void setTimerTrigger(String trigger) { _timerTrigger = trigger; }
+    public void setCompletionTimeMs(String time) {
+        _completionTimeMs = time;
+        timing = null;
+    }
 
-    public void setTimerExpiry(String expiry) { _timerExpiry = expiry; }
+    public void setTimerTrigger(String trigger) {
+        _timerTrigger = trigger;
+        timing = null;
+    }
+
+    public void setTimerExpiry(String expiry) {
+        _timerExpiry = expiry;
+        timing = null;
+    }
     
 
     public void setStatus(String status) {_status = status; }
@@ -206,18 +312,24 @@ public class WorkItemRecord implements Cloneable {
         _dataListUpdated = dataListUpdated;
     }
 
-    public void setCustomFormURL(String url) { _customFormURL = url ; }
+    public void setCustomFormURL(String url) {
+        _customFormURL = url;
+        metadata = null;
+    }
 
     public void setLogPredicateStarted(String predicate) {
         _logPredicateStarted = predicate;
+        metadata = null;
     }
 
     public void setLogPredicateCompletion(String predicate) {
         _logPredicateCompletion = predicate;
+        metadata = null;
     }
 
     public void setDocumentation(String doco) {
         _documentation = doco;
+        metadata = null;
     }
 
     public void setDocumentationChanged(boolean added) {
@@ -243,29 +355,28 @@ public class WorkItemRecord implements Cloneable {
     public String getAllowsDynamicCreation() { return _allowsDynamicCreation ; }
 
     public boolean isDynamicCreationAllowed() {
-        return _allowsDynamicCreation != null &&
-                _allowsDynamicCreation.equalsIgnoreCase("true");
+        return metadata().isDynamicCreationAllowed();
     }
 
     public String getDeferredChoiceGroupID() { return _deferredChoiceGroupID ; }
 
     public String getRequiresManualResourcing() { return _requiresManualResourcing; }
 
-    public boolean isManualResourcingRequired() { return !isAutoTask(); }
+    public boolean isManualResourcingRequired() { return metadata().isManualResourcingRequired(); }
 
     public String getCodelet() { return _codelet; }
 
     public Map<String, String> getAttributeTable() { return _attributeTable; }
 
-    public String getID() { return _caseID + ":" + _taskID; }
+    public String getID() { return identity().getID(); }
 
-    public String getEnablementTime() { return getFormattedDate(getEnablementTimeMs()); }
+    public String getEnablementTime() { return timing().getEnablementTime(); }
 
-    public String getFiringTime() { return getFormattedDate(getFiringTimeMs()); }
+    public String getFiringTime() { return timing().getFiringTime(); }
 
-    public String getStartTime() { return getFormattedDate(getStartTimeMs()); }
+    public String getStartTime() { return timing().getStartTime(); }
 
-    public String getCompletionTime() { return getFormattedDate(getCompletionTimeMs()); }
+    public String getCompletionTime() { return timing().getCompletionTime(); }
 
     public String getEnablementTimeMs() { return _enablementTimeMs; }
 
@@ -315,34 +426,23 @@ public class WorkItemRecord implements Cloneable {
 
     public String getDocumentation() { return _documentation; }
 
-    public boolean hasDocumentation() { return _documentation != null; }
+    public boolean hasDocumentation() { return metadata().hasDocumentation(); }
 
     public boolean isDocumentationChanged() { return _docoChanged; }
 
-    // returns the case id of the root ancestor case
+    /**
+     * Returns the case id of the root ancestor case.
+     */
     public String getRootCaseID() {
-        if (_caseID != null) {
-            int firstDot = _caseID.indexOf('.');
-            return (firstDot > -1) ? _caseID.substring(0, firstDot) : _caseID;
-        }
-        return null;
+        return identity().getRootCaseID();
     }
 
     public String getNetID() {
-        if (_status.equals(statusIsParent)) {
-            return _caseID;
-        }
-        if (_caseID != null) {
-            int pos = _caseID.lastIndexOf('.');
-            return (pos < 0) ? _caseID : _caseID.substring(0, pos);
-        }
-        return null;
+        return identity().getNetID(_status);
     }
 
     public String getParentID() {
-        if (isEnabledOrFired()) return null;
-        int pos = _caseID.lastIndexOf('.');        
-        return (pos < 0) ? null : _caseID.substring(0, pos) + ":" + _taskID;
+        return identity().getParentID(isEnabledOrFired());
     }
 
     public String getLogPredicateStarted() { return _logPredicateStarted; }
@@ -353,12 +453,11 @@ public class WorkItemRecord implements Cloneable {
     public boolean isEdited() { return (_dataListUpdated != null); }
 
     public boolean isDeferredChoiceGroupMember() {
-        return (_deferredChoiceGroupID != null) ;
+        return metadata().isDeferredChoiceGroupMember();
     }
 
     public boolean isAutoTask() {
-        return ((getRequiresManualResourcing() != null) &&
-                (getRequiresManualResourcing().equalsIgnoreCase("false")));
+        return metadata().isAutoTask();
     }
 
 
@@ -384,8 +483,7 @@ public class WorkItemRecord implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof WorkItemRecord) {
-            WorkItemRecord other = (WorkItemRecord) o;
+        if (o instanceof WorkItemRecord other) {
             return getID().equals(other.getID()) &&
                  _status.equals(other.getStatus()) &&
                  _uniqueID != null ? _uniqueID.equals(other._uniqueID) :
@@ -481,13 +579,18 @@ public class WorkItemRecord implements Cloneable {
     }
 
 
+    /**
+     * Formats a date for display. Delegates to WorkItemTiming record.
+     * @deprecated Use timing().getEnablementTime() etc. instead
+     */
+    @Deprecated
     private String getFormattedDate(String msStr) {
         if (StringUtil.isNullOrEmpty(msStr)) {
-            return new String();  // Return empty but valid date string for XML serialization
+            return null;
         }
         long ms = StringUtil.strToLong(msStr, 0);
         if (ms <= 0) {
-            return new String();  // Return empty but valid date string for invalid timestamp
+            return null;
         }
         return DATE_FORMAT.format(Instant.ofEpochMilli(ms));
     }

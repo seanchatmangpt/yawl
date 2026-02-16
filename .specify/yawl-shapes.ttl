@@ -1,0 +1,1246 @@
+# YAWL SHACL Shapes v4.0
+# Validation shapes for YAWL RDF specifications
+#
+# These shapes define validation rules for YAWL specifications
+# expressed in RDF according to the yawl-ontology.ttl
+#
+# Namespaces:
+#   sh:     http://www.w3.org/ns/shacl#
+#   yawls:  http://www.yawlfoundation.org/yawlschema#
+
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix yawls: <http://www.yawlfoundation.org/yawlschema#> .
+@prefix : <http://www.yawlfoundation.org/yawlschema/shapes#> .
+
+<http://www.yawlfoundation.org/yawlschema/shapes> a owl:Ontology ;
+    rdfs:label "YAWL SHACL Shapes" ;
+    rdfs:comment "Validation shapes for YAWL workflow specifications" ;
+    owl:imports <http://www.yawlfoundation.org/yawlschema> ;
+    sh:declare [
+        sh:prefix "yawls" ;
+        sh:namespace "http://www.yawlfoundation.org/yawlschema#"^^xsd:anyURI
+    ] .
+
+#################################################################
+# SPECIFICATION SET SHAPES
+#################################################################
+
+:SpecificationSetShape a sh:NodeShape ;
+    sh:targetClass yawls:SpecificationSet ;
+    rdfs:label "Specification Set Shape" ;
+    rdfs:comment "Validates YAWL specification sets" ;
+
+    sh:property [
+        sh:path yawls:hasSpecification ;
+        sh:minCount 1 ;
+        sh:class yawls:Specification ;
+        sh:message "A specification set must have at least one specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:specificationVersion ;
+        sh:hasValue "4.0" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Specification set must declare version 4.0"
+    ] .
+
+#################################################################
+# SPECIFICATION SHAPES
+#################################################################
+
+:SpecificationShape a sh:NodeShape ;
+    sh:targetClass yawls:Specification ;
+    rdfs:label "Specification Shape" ;
+    rdfs:comment "Validates YAWL specifications" ;
+
+    sh:property [
+        sh:path yawls:uri ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "Specification must have exactly one URI"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasMetaData ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:MetaData ;
+        sh:message "Specification must have exactly one metadata element"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasDecomposition ;
+        sh:minCount 1 ;
+        sh:class yawls:Decomposition ;
+        sh:message "Specification must have at least one decomposition"
+    ] ;
+
+    sh:property [
+        sh:path yawls:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Specification name must be a non-empty string"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Documentation must be a string"
+    ] .
+
+:SpecificationKeyShape a sh:NodeShape ;
+    sh:targetClass yawls:Specification ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Specifications must be identified by URI" .
+
+#################################################################
+# METADATA SHAPES (Dublin Core Alignment)
+#################################################################
+
+:MetaDataShape a sh:NodeShape ;
+    sh:targetClass yawls:MetaData ;
+    rdfs:label "Meta Data Shape" ;
+    rdfs:comment "Validates Dublin Core metadata for specifications" ;
+
+    sh:property [
+        sh:path <http://purl.org/dc/terms/title> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:normalizedString ;
+        sh:message "Title must be a normalized string"
+    ] ;
+
+    sh:property [
+        sh:path <http://purl.org/dc/terms/creator> ;
+        sh:datatype xsd:string ;
+        sh:message "Creator must be a string"
+    ] ;
+
+    sh:property [
+        sh:path <http://purl.org/dc/terms/created> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message "Created date must be a valid date"
+    ] ;
+
+    sh:property [
+        sh:path <http://purl.org/dc/terms/valid> ;
+        sh:maxCount 2 ;
+        sh:datatype xsd:date ;
+        sh:message "Valid dates must be valid dates (validFrom, validUntil)"
+    ] ;
+
+    sh:property [
+        sh:path yawls:version ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0.1 ;
+        sh:message "Version must be a decimal >= 0.1"
+    ] ;
+
+    sh:property [
+        sh:path yawls:isPersistent ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "Persistent flag must be a boolean"
+    ] ;
+
+    sh:property [
+        sh:path <http://purl.org/dc/terms/identifier> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Identifier must be an NCName"
+    ] .
+
+#################################################################
+# DECOMPOSITION SHAPES
+#################################################################
+
+:DecompositionShape a sh:NodeShape ;
+    sh:targetClass yawls:Decomposition ;
+    rdfs:label "Decomposition Shape" ;
+    rdfs:comment "Base validation for all decompositions" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Decomposition must have exactly one NCName id"
+    ] ;
+
+    sh:property [
+        sh:path yawls:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Name must be a non-empty string"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Documentation must be a string"
+    ] .
+
+:WorkflowNetShape a sh:NodeShape ;
+    sh:targetClass yawls:WorkflowNet ;
+    rdfs:label "Workflow Net Shape" ;
+    rdfs:comment "Validates YAWL workflow nets" ;
+
+    sh:property [
+        sh:path yawls:hasProcessControlElements ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:ProcessControlElements ;
+        sh:message "Workflow net must have exactly one process control elements container"
+    ] ;
+
+    sh:property [
+        sh:path yawls:isRootNet ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "isRootNet must be a boolean"
+    ] ;
+
+    sh:property [
+        sh:path yawls:externalDataGateway ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "External data gateway must be a string"
+    ] .
+
+:WebServiceGatewayShape a sh:NodeShape ;
+    sh:targetClass yawls:WebServiceGateway ;
+    rdfs:label "Web Service Gateway Shape" ;
+    rdfs:comment "Validates web service gateway decompositions" ;
+
+    sh:property [
+        sh:path yawls:hasYawlService ;
+        sh:maxCount 1 ;
+        sh:class yawls:YawlService ;
+        sh:message "Web service gateway can have at most one YAWL service"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasCodelet ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Codelet must be an NCName"
+    ] ;
+
+    sh:property [
+        sh:path yawls:externalInteraction ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:manual yawls:automated ) ;
+        sh:message "External interaction must be 'manual' or 'automated'"
+    ] .
+
+#################################################################
+# NET ELEMENT SHAPES
+#################################################################
+
+:NetElementShape a sh:NodeShape ;
+    sh:targetClass yawls:NetElement ;
+    rdfs:label "Net Element Shape" ;
+    rdfs:comment "Base validation for all net elements" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NMTOKEN ;
+        sh:message "Net element must have exactly one NMTOKEN id"
+    ] ;
+
+    sh:property [
+        sh:path yawls:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Name must be a string"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Documentation must be a string"
+    ] .
+
+:ConditionShape a sh:NodeShape ;
+    sh:targetClass yawls:Condition ;
+    rdfs:label "Condition Shape" ;
+    rdfs:comment "Validates workflow conditions" ;
+
+    sh:property [
+        sh:path yawls:hasFlowInto ;
+        sh:minCount 1 ;
+        sh:class yawls:FlowInto ;
+        sh:message "Condition must have at least one outgoing flow"
+    ] .
+
+:InputConditionShape a sh:NodeShape ;
+    sh:targetClass yawls:InputCondition ;
+    rdfs:label "Input Condition Shape" ;
+    rdfs:comment "Validates workflow entry points" ;
+
+    sh:property [
+        sh:path yawls:hasFlowInto ;
+        sh:minCount 1 ;
+        sh:message "Input condition must have at least one outgoing flow"
+    ] .
+
+:OutputConditionShape a sh:NodeShape ;
+    sh:targetClass yawls:OutputCondition ;
+    rdfs:label "Output Condition Shape" ;
+    rdfs:comment "Validates workflow exit points" ;
+
+    sh:property [
+        sh:path yawls:hasFlowInto ;
+        sh:maxCount 0 ;
+        sh:message "Output condition must not have outgoing flows"
+    ] .
+
+#################################################################
+# TASK SHAPES
+#################################################################
+
+:TaskShape a sh:NodeShape ;
+    sh:targetClass yawls:Task ;
+    rdfs:label "Task Shape" ;
+    rdfs:comment "Validates YAWL tasks" ;
+
+    sh:property [
+        sh:path yawls:hasJoin ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:Join ;
+        sh:message "Task must have exactly one join specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasSplit ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:Split ;
+        sh:message "Task must have exactly one split specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasFlowInto ;
+        sh:minCount 1 ;
+        sh:class yawls:FlowInto ;
+        sh:message "Task must have at least one outgoing flow"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasResourcing ;
+        sh:maxCount 1 ;
+        sh:class yawls:Resourcing ;
+        sh:message "Task can have at most one resourcing specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasTimer ;
+        sh:maxCount 1 ;
+        sh:class yawls:Timer ;
+        sh:message "Task can have at most one timer"
+    ] ;
+
+    sh:property [
+        sh:path yawls:decomposesTo ;
+        sh:maxCount 1 ;
+        sh:class yawls:Decomposition ;
+        sh:message "Task can decompose to at most one decomposition"
+    ] ;
+
+    sh:property [
+        sh:path yawls:removesTokens ;
+        sh:class yawls:NetElement ;
+        sh:message "Token removal must reference net elements"
+    ] ;
+
+    sh:property [
+        sh:path yawls:customForm ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:message "Custom form must be a URI"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasStartingMapping ;
+        sh:class yawls:VariableMapping ;
+        sh:message "Starting mappings must be variable mappings"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasCompletedMapping ;
+        sh:class yawls:VariableMapping ;
+        sh:message "Completed mappings must be variable mappings"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasEnablementMapping ;
+        sh:class yawls:VariableMapping ;
+        sh:message "Enablement mappings must be variable mappings"
+    ] .
+
+:MultipleInstanceTaskShape a sh:NodeShape ;
+    sh:targetClass yawls:MultipleInstanceTask ;
+    rdfs:label "Multiple Instance Task Shape" ;
+    rdfs:comment "Validates multiple instance tasks" ;
+
+    sh:property [
+        sh:path yawls:minimum ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Multiple instance task must have minimum bound"
+    ] ;
+
+    sh:property [
+        sh:path yawls:maximum ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Multiple instance task must have maximum bound"
+    ] ;
+
+    sh:property [
+        sh:path yawls:threshold ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Multiple instance task must have threshold"
+    ] ;
+
+    sh:property [
+        sh:path yawls:creationMode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:staticMode yawls:dynamicMode ) ;
+        sh:message "Creation mode must be 'static' or 'dynamic'"
+    ] .
+
+#################################################################
+# CONTROL FLOW SHAPES
+#################################################################
+
+:ControlTypeShape a sh:NodeShape ;
+    sh:targetClass yawls:ControlType ;
+    rdfs:label "Control Type Shape" ;
+    rdfs:comment "Validates control flow types" ;
+
+    sh:property [
+        sh:path rdf:type ;
+        sh:hasValue yawls:ControlType ;
+        sh:message "Control type must be AND, XOR, or OR"
+    ] ;
+
+    sh:in ( yawls:AND yawls:XOR yawls:OR ) .
+
+:JoinShape a sh:NodeShape ;
+    sh:targetClass yawls:Join ;
+    rdfs:label "Join Shape" ;
+    rdfs:comment "Validates join specifications" ;
+
+    sh:property [
+        sh:path yawls:code ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:AND yawls:XOR yawls:OR ) ;
+        sh:message "Join code must be AND, XOR, or OR"
+    ] .
+
+:SplitShape a sh:NodeShape ;
+    sh:targetClass yawls:Split ;
+    rdfs:label "Split Shape" ;
+    rdfs:comment "Validates split specifications" ;
+
+    sh:property [
+        sh:path yawls:code ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:AND yawls:XOR yawls:OR ) ;
+        sh:message "Split code must be AND, XOR, or OR"
+    ] .
+
+# XOR split must have predicates on all non-default flows
+:XORSplitPredicateShape a sh:NodeShape ;
+    sh:targetClass yawls:Split ;
+    sh:severity sh:Warning ;
+
+    sh:sparql [
+        sh:message "XOR splits should have predicates on conditional flows" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this ?task
+            WHERE {
+                $this yawls:code yawls:XOR .
+                ?task yawls:hasSplit $this .
+                ?task yawls:hasFlowInto ?flow .
+                ?flow yawls:isDefaultFlow false .
+                FILTER NOT EXISTS { ?flow yawls:hasPredicate ?pred }
+            }
+        """
+    ] .
+
+#################################################################
+# FLOW SHAPES
+#################################################################
+
+:FlowIntoShape a sh:NodeShape ;
+    sh:targetClass yawls:FlowInto ;
+    rdfs:label "Flow Into Shape" ;
+    rdfs:comment "Validates flow connections" ;
+
+    sh:property [
+        sh:path yawls:nextElement ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:NetElement ;
+        sh:message "Flow must reference exactly one net element"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasPredicate ;
+        sh:maxCount 1 ;
+        sh:class yawls:Predicate ;
+        sh:message "Flow can have at most one predicate"
+    ] ;
+
+    sh:property [
+        sh:path yawls:isDefaultFlow ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "isDefaultFlow must be a boolean"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Flow documentation must be a string"
+    ] .
+
+:PredicateShape a sh:NodeShape ;
+    sh:targetClass yawls:Predicate ;
+    rdfs:label "Predicate Shape" ;
+    rdfs:comment "Validates flow predicates" ;
+
+    sh:property [
+        sh:path yawls:xpathExpression ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Predicate must have a non-empty XPath expression"
+    ] ;
+
+    sh:property [
+        sh:path yawls:ordering ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message "Ordering must be an integer"
+    ] .
+
+#################################################################
+# RESOURCING SHAPES
+#################################################################
+
+:ResourcingShape a sh:NodeShape ;
+    sh:targetClass yawls:Resourcing ;
+    rdfs:label "Resourcing Shape" ;
+    rdfs:comment "Validates resource specifications" ;
+
+    sh:property [
+        sh:path yawls:hasOffer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:Offer ;
+        sh:message "Resourcing must have exactly one offer specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasAllocate ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:Allocate ;
+        sh:message "Resourcing must have exactly one allocate specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasStart ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:Allocate ;
+        sh:message "Resourcing must have exactly one start specification"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasPrivileges ;
+        sh:maxCount 1 ;
+        sh:class yawls:PrivilegeSet ;
+        sh:message "Resourcing can have at most one privilege set"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasSecondaryResources ;
+        sh:maxCount 1 ;
+        sh:class yawls:ResourceSet ;
+        sh:message "Resourcing can have at most one secondary resource set"
+    ] .
+
+:OfferShape a sh:NodeShape ;
+    sh:targetClass yawls:Offer ;
+    rdfs:label "Offer Shape" ;
+    rdfs:comment "Validates offer specifications" ;
+
+    sh:property [
+        sh:path yawls:initiator ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:systemInitiated yawls:userInitiated ) ;
+        sh:message "Offer initiator must be 'system' or 'user'"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasDistributionSet ;
+        sh:maxCount 1 ;
+        sh:class yawls:DistributionSet ;
+        sh:message "Offer can have at most one distribution set"
+    ] .
+
+:AllocateShape a sh:NodeShape ;
+    sh:targetClass yawls:Allocate ;
+    rdfs:label "Allocate Shape" ;
+    rdfs:comment "Validates allocation specifications" ;
+
+    sh:property [
+        sh:path yawls:initiator ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:systemInitiated yawls:userInitiated ) ;
+        sh:message "Allocate initiator must be 'system' or 'user'"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasAllocator ;
+        sh:maxCount 1 ;
+        sh:class yawls:Selector ;
+        sh:message "Allocate can have at most one allocator"
+    ] .
+
+:DistributionSetShape a sh:NodeShape ;
+    sh:targetClass yawls:DistributionSet ;
+    rdfs:label "Distribution Set Shape" ;
+    rdfs:comment "Validates distribution sets" ;
+
+    sh:property [
+        sh:path yawls:hasInitialSet ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:ResourceSet ;
+        sh:message "Distribution set must have exactly one initial set"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasFilter ;
+        sh:class yawls:Selector ;
+        sh:message "Filters must be selectors"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasConstraint ;
+        sh:class yawls:Selector ;
+        sh:message "Constraints must be selectors"
+    ] .
+
+:ResourceSetShape a sh:NodeShape ;
+    sh:targetClass yawls:ResourceSet ;
+    rdfs:label "Resource Set Shape" ;
+    rdfs:comment "Validates resource sets" ;
+
+    sh:property [
+        sh:path yawls:name ;
+        sh:datatype xsd:string ;
+        sh:message "Resource names must be strings"
+    ] .
+
+:PrivilegeSetShape a sh:NodeShape ;
+    sh:targetClass yawls:PrivilegeSet ;
+    rdfs:label "Privilege Set Shape" ;
+    rdfs:comment "Validates privilege sets (max 7 privileges)" ;
+
+    sh:property [
+        sh:path yawls:hasPrivilege ;
+        sh:maxCount 7 ;
+        sh:in (
+            yawls:canSuspend
+            yawls:canReallocateStateless
+            yawls:canReallocateStateful
+            yawls:canDeallocate
+            yawls:canDelegate
+            yawls:canSkip
+            yawls:canPile
+        ) ;
+        sh:message "Privileges must be one of the 7 defined privilege types"
+    ] .
+
+:PrivilegeShape a sh:NodeShape ;
+    sh:targetClass yawls:Privilege ;
+    rdfs:label "Privilege Shape" ;
+    sh:in (
+        yawls:canSuspend
+        yawls:canReallocateStateless
+        yawls:canReallocateStateful
+        yawls:canDeallocate
+        yawls:canDelegate
+        yawls:canSkip
+        yawls:canPile
+    ) ;
+    sh:message "Invalid privilege type" .
+
+:SelectorShape a sh:NodeShape ;
+    sh:targetClass yawls:Selector ;
+    rdfs:label "Selector Shape" ;
+    rdfs:comment "Validates resource selectors" ;
+
+    sh:property [
+        sh:path yawls:selectorName ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Selector must have a non-empty name"
+    ] .
+
+#################################################################
+# TIMER SHAPES
+#################################################################
+
+:TimerShape a sh:NodeShape ;
+    sh:targetClass yawls:Timer ;
+    rdfs:label "Timer Shape" ;
+    rdfs:comment "Validates timer specifications" ;
+
+    sh:property [
+        sh:path yawls:hasTrigger ;
+        sh:maxCount 1 ;
+        sh:in ( yawls:OnEnabled yawls:OnExecuting ) ;
+        sh:message "Timer trigger must be 'OnEnabled' or 'OnExecuting'"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasDuration ;
+        sh:maxCount 1 ;
+        sh:class yawls:TimerDuration ;
+        sh:message "Timer can have at most one duration"
+    ] ;
+
+    sh:property [
+        sh:path yawls:expiry ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:long ;
+        sh:message "Expiry must be a long integer"
+    ] ;
+
+    sh:property [
+        sh:path yawls:duration ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:duration ;
+        sh:message "Duration must be a valid duration"
+    ] ;
+
+    sh:property [
+        sh:path yawls:useWorkdays ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "useWorkdays must be a boolean"
+    ] .
+
+:TimerDurationShape a sh:NodeShape ;
+    sh:targetClass yawls:TimerDuration ;
+    rdfs:label "Timer Duration Shape" ;
+    rdfs:comment "Validates timer duration specifications" ;
+
+    sh:property [
+        sh:path yawls:ticks ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:long ;
+        sh:message "Timer duration must have exactly one ticks value"
+    ] ;
+
+    sh:property [
+        sh:path yawls:interval ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in (
+            yawls:YEAR
+            yawls:MONTH
+            yawls:WEEK
+            yawls:DAY
+            yawls:HOUR
+            yawls:MIN
+            yawls:SEC
+            yawls:MSEC
+        ) ;
+        sh:message "Timer interval must be one of: YEAR, MONTH, WEEK, DAY, HOUR, MIN, SEC, MSEC"
+    ] .
+
+:TimerIntervalShape a sh:NodeShape ;
+    sh:targetClass yawls:TimerInterval ;
+    sh:in (
+        yawls:YEAR
+        yawls:MONTH
+        yawls:WEEK
+        yawls:DAY
+        yawls:HOUR
+        yawls:MIN
+        yawls:SEC
+        yawls:MSEC
+    ) ;
+    sh:message "Invalid timer interval type" .
+
+#################################################################
+# DATA AND VARIABLE SHAPES
+#################################################################
+
+:VariableShape a sh:NodeShape ;
+    sh:targetClass yawls:Variable ;
+    rdfs:label "Variable Shape" ;
+    rdfs:comment "Validates workflow variables" ;
+
+    sh:property [
+        sh:path yawls:variableName ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NMTOKEN ;
+        sh:message "Variable must have exactly one NMTOKEN name"
+    ] ;
+
+    sh:property [
+        sh:path yawls:dataType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Variable must have exactly one data type"
+    ] ;
+
+    sh:property [
+        sh:path yawls:index ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message "Variable must have exactly one index"
+    ] ;
+
+    sh:property [
+        sh:path yawls:namespace ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:message "Namespace must be a URI"
+    ] ;
+
+    sh:property [
+        sh:path yawls:initialValue ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Initial value must be a string"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Variable documentation must be a string"
+    ] .
+
+:InputParameterShape a sh:NodeShape ;
+    sh:targetClass yawls:InputParameter ;
+    rdfs:label "Input Parameter Shape" ;
+    rdfs:comment "Validates input parameters" ;
+
+    sh:property [
+        sh:path yawls:isMandatory ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "isMandatory must be a boolean"
+    ] .
+
+:OutputParameterShape a sh:NodeShape ;
+    sh:targetClass yawls:OutputParameter ;
+    rdfs:label "Output Parameter Shape" ;
+    rdfs:comment "Validates output parameters" ;
+
+    sh:property [
+        sh:path yawls:defaultValue ;
+        sh:maxCount 1 ;
+        sh:message "Default value is optional"
+    ] ;
+
+    sh:property [
+        sh:path yawls:isMandatory ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "isMandatory must be a boolean"
+    ] ;
+
+    sh:property [
+        sh:path yawls:isCutThroughParam ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:message "isCutThroughParam must be a boolean"
+    ] .
+
+:VariableMappingShape a sh:NodeShape ;
+    sh:targetClass yawls:VariableMapping ;
+    rdfs:label "Variable Mapping Shape" ;
+    rdfs:comment "Validates variable mappings" ;
+
+    sh:property [
+        sh:path yawls:query ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Mapping must have a non-empty query expression"
+    ] ;
+
+    sh:property [
+        sh:path yawls:mapsTo ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NMTOKEN ;
+        sh:message "Mapping must map to exactly one variable"
+    ] .
+
+:ExpressionShape a sh:NodeShape ;
+    sh:targetClass yawls:Expression ;
+    rdfs:label "Expression Shape" ;
+    rdfs:comment "Validates XQuery expressions" ;
+
+    sh:property [
+        sh:path yawls:query ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Expression must have a non-empty query"
+    ] .
+
+:LogPredicateShape a sh:NodeShape ;
+    sh:targetClass yawls:LogPredicate ;
+    rdfs:label "Log Predicate Shape" ;
+    rdfs:comment "Validates log predicates" ;
+
+    sh:property [
+        sh:path yawls:name ;
+        sh:datatype xsd:string ;
+        sh:message "Log predicate names must be strings"
+    ] .
+
+#################################################################
+# CONFIGURATION SHAPES
+#################################################################
+
+:ConfigurationShape a sh:NodeShape ;
+    sh:targetClass yawls:Configuration ;
+    rdfs:label "Configuration Shape" ;
+    rdfs:comment "Validates variant configurations" ;
+
+    sh:property [
+        sh:path yawls:hasJoinConfig ;
+        sh:maxCount 1 ;
+        sh:class yawls:InputPortConfig ;
+        sh:message "Join configuration must be an input port config"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasSplitConfig ;
+        sh:maxCount 1 ;
+        sh:class yawls:OutputPortConfig ;
+        sh:message "Split configuration must be an output port config"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasRemConfig ;
+        sh:maxCount 1 ;
+        sh:message "Rem configuration is optional"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasNofiConfig ;
+        sh:maxCount 1 ;
+        sh:message "Nofi configuration is optional"
+    ] .
+
+:InputPortConfigShape a sh:NodeShape ;
+    sh:targetClass yawls:InputPortConfig ;
+    rdfs:label "Input Port Config Shape" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:in ( yawls:activated yawls:blocked yawls:hidden ) ;
+        sh:message "Input port value must be 'activated', 'blocked', or 'hidden'"
+    ] .
+
+:OutputPortConfigShape a sh:NodeShape ;
+    sh:targetClass yawls:OutputPortConfig ;
+    rdfs:label "Output Port Config Shape" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:in ( yawls:activatedOut yawls:blockedOut ) ;
+        sh:message "Output port value must be 'activated' or 'blocked'"
+    ] .
+
+#################################################################
+# PROCESS CONTROL ELEMENTS SHAPES
+#################################################################
+
+:ProcessControlElementsShape a sh:NodeShape ;
+    sh:targetClass yawls:ProcessControlElements ;
+    rdfs:label "Process Control Elements Shape" ;
+    rdfs:comment "Validates the container for net elements" ;
+
+    sh:property [
+        sh:path yawls:hasInputCondition ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:InputCondition ;
+        sh:message "Process control elements must have exactly one input condition"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasOutputCondition ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class yawls:OutputCondition ;
+        sh:message "Process control elements must have exactly one output condition"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasTask ;
+        sh:class yawls:Task ;
+        sh:message "Tasks must be valid task instances"
+    ] ;
+
+    sh:property [
+        sh:path yawls:hasCondition ;
+        sh:class yawls:Condition ;
+        sh:message "Conditions must be valid condition instances"
+    ] .
+
+#################################################################
+# YAWL SERVICE SHAPES
+#################################################################
+
+:YawlServiceShape a sh:NodeShape ;
+    sh:targetClass yawls:YawlService ;
+    rdfs:label "YAWL Service Shape" ;
+    rdfs:comment "Validates YAWL service definitions" ;
+
+    sh:property [
+        sh:path yawls:serviceId ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:message "YAWL service must have exactly one URI identifier"
+    ] ;
+
+    sh:property [
+        sh:path yawls:wsdlLocation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:message "WSDL location must be a URI"
+    ] ;
+
+    sh:property [
+        sh:path yawls:operationName ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NMTOKEN ;
+        sh:message "Operation name must be an NMTOKEN"
+    ] ;
+
+    sh:property [
+        sh:path yawls:documentation ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Service documentation must be a string"
+    ] .
+
+#################################################################
+# LAYOUT SHAPES
+#################################################################
+
+:LayoutShape a sh:NodeShape ;
+    sh:targetClass yawls:Layout ;
+    rdfs:label "Layout Shape" ;
+    rdfs:comment "Validates visual layout specifications" ;
+
+    sh:property [
+        sh:path yawls:hasLayoutNet ;
+        sh:minCount 1 ;
+        sh:class yawls:LayoutNet ;
+        sh:message "Layout must have at least one net layout"
+    ] .
+
+:LayoutNetShape a sh:NodeShape ;
+    sh:targetClass yawls:LayoutNet ;
+    rdfs:label "Layout Net Shape" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Layout net must have exactly one NCName id"
+    ] ;
+
+    sh:property [
+        sh:path yawls:bgColor ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message "Background color must be an integer"
+    ] .
+
+:LayoutVertexShape a sh:NodeShape ;
+    sh:targetClass yawls:LayoutVertex ;
+    rdfs:label "Layout Vertex Shape" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Layout vertex must have exactly one NCName id"
+    ] .
+
+:LayoutFlowShape a sh:NodeShape ;
+    sh:targetClass yawls:LayoutFlow ;
+    rdfs:label "Layout Flow Shape" ;
+
+    sh:property [
+        sh:path yawls:id ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:NCName ;
+        sh:message "Layout flow source must be specified"
+    ] .
+
+#################################################################
+# STRUCTURAL VALIDATION RULES
+#################################################################
+
+# Every root net must exist in the specification
+:RootNetExistsShape a sh:NodeShape ;
+    sh:targetClass yawls:Specification ;
+    sh:severity sh:Violation ;
+
+    sh:sparql [
+        sh:message "Specification must have exactly one root net" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this (COUNT(?rootNet) AS ?rootCount)
+            WHERE {
+                $this yawls:hasDecomposition ?decomp .
+                ?decomp a yawls:WorkflowNet .
+                ?decomp yawls:isRootNet true .
+                BIND(?decomp AS ?rootNet)
+            }
+            GROUP BY $this
+            HAVING (COUNT(?rootNet) != 1)
+        """
+    ] .
+
+# Flow targets must exist in the same net
+:FlowTargetInSameNetShape a sh:NodeShape ;
+    sh:targetClass yawls:FlowInto ;
+    sh:severity sh:Violation ;
+
+    sh:sparql [
+        sh:message "Flow target must exist in the same workflow net" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this ?sourceNet ?targetNet
+            WHERE {
+                ?source yawls:hasFlowInto $this .
+                $this yawls:nextElement ?target .
+                ?sourceNet yawls:hasProcessControlElements ?pce1 .
+                ?pce1 ?sourceRel ?source .
+                ?targetNet yawls:hasProcessControlElements ?pce2 .
+                ?pce2 ?targetRel ?target .
+                FILTER(?sourceNet != ?targetNet)
+            }
+        """
+    ] .
+
+# DecomposesTo must reference valid decomposition
+:ValidDecompositionReferenceShape a sh:NodeShape ;
+    sh:targetClass yawls:Task ;
+    sh:severity sh:Violation ;
+
+    sh:sparql [
+        sh:message "Task decomposesTo must reference an existing decomposition" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this ?decompRef
+            WHERE {
+                $this yawls:decomposesTo ?decompRef .
+                FILTER NOT EXISTS { ?decompRef a yawls:Decomposition }
+            }
+        """
+    ] .
+
+# Variable names must be unique within decomposition
+:UniqueVariableNamesShape a sh:NodeShape ;
+    sh:targetClass yawls:Decomposition ;
+    sh:severity sh:Violation ;
+
+    sh:sparql [
+        sh:message "Variable names must be unique within a decomposition" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this ?varName (COUNT(?var) AS ?count)
+            WHERE {
+                $this (yawls:hasInputParameter|yawls:hasOutputParameter|yawls:hasLocalVariable) ?var .
+                ?var yawls:variableName ?varName .
+            }
+            GROUP BY $this ?varName
+            HAVING (COUNT(?var) > 1)
+        """
+    ] .
+
+# At least one default flow for XOR split
+:XORSplitDefaultFlowShape a sh:NodeShape ;
+    sh:targetClass yawls:Task ;
+    sh:severity sh:Warning ;
+
+    sh:sparql [
+        sh:message "XOR splits should have at least one default flow" ;
+        sh:prefixes <http://www.yawlfoundation.org/yawlschema/shapes> ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this yawls:hasSplit ?split .
+                ?split yawls:code yawls:XOR .
+                $this yawls:hasFlowInto ?flow .
+                FILTER NOT EXISTS {
+                    $this yawls:hasFlowInto ?defaultFlow .
+                    ?defaultFlow yawls:isDefaultFlow true .
+                }
+            }
+        """
+    ] .
+
+# End of YAWL SHACL Shapes

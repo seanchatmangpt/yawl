@@ -1,9 +1,8 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.MySQLContainer;
@@ -12,7 +11,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Database Integration Tests - Verifies connectivity and operations with real databases
@@ -23,13 +22,13 @@ public class DatabaseIntegrationTest {
 
     private Connection connection;
 
-    @ClassRule
+    @Container
     public static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
         .withDatabaseName("yawl_test")
         .withUsername("test")
         .withPassword("test");
 
-    @Before
+    @BeforeEach
     public void setUp() throws SQLException {
         String jdbcUrl = postgresContainer.getJdbcUrl();
         String username = postgresContainer.getUsername();
@@ -39,7 +38,7 @@ public class DatabaseIntegrationTest {
         assertNotNull("Connection should be established", connection);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws SQLException {
         if (connection != null && !connection.isClosed()) {
             connection.close();

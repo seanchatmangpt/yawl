@@ -85,8 +85,7 @@ public class YWorkItemID {
 
     public boolean equals(Object other) {
         if (this == other) return true;
-        if (other instanceof YWorkItemID) {
-            YWorkItemID otherID = (YWorkItemID) other;
+        if (other instanceof YWorkItemID otherID) {
             return this.getCaseID().equals(otherID.getCaseID()) &&
                    this.getTaskID().equals(otherID.getTaskID()) &&
                     (((this.getUniqueID() == null) && (otherID.getUniqueID() == null)) ||

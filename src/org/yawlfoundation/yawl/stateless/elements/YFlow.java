@@ -216,25 +216,23 @@ public class YFlow implements Comparable<YFlow> {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<flowsInto>");
-        xml.append("<nextElementRef id=\"")
-           .append(_nextElement.getID())
-           .append("\"/>");
+        StringBuilder xml = new StringBuilder();
+        xml.append("<flowsInto>");
+        xml.append("<nextElementRef id=\"%s\"/>".formatted(_nextElement.getID()));
 
         if (_xpathPredicate != null) {
-            xml.append("<predicate");
-            if (_evalOrdering != null) {
-                xml.append(" ordering=\"")
-                   .append(_evalOrdering)
-                   .append("\"");
-            }
-            xml.append(">")
-               .append(JDOMUtil.encodeEscapes(_xpathPredicate))
-               .append("</predicate>");
+            String orderingAttr = _evalOrdering != null ? " ordering=\"%s\"".formatted(_evalOrdering) : "";
+            xml.append("<predicate%s>%s</predicate>".formatted(
+                orderingAttr,
+                JDOMUtil.encodeEscapes(_xpathPredicate)
+            ));
         }
-        if (_isDefaultFlow) xml.append("<isDefaultFlow/>");
-        if (_documentation != null)
+        if (_isDefaultFlow) {
+            xml.append("<isDefaultFlow/>");
+        }
+        if (_documentation != null) {
             xml.append(StringUtil.wrap(_documentation, "documentation"));
+        }
 
         xml.append("</flowsInto>");
         return xml.toString();

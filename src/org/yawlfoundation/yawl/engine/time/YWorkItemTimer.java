@@ -103,9 +103,9 @@ public class YWorkItemTimer implements YTimedObject {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YWorkItemTimer) &&
+        return other instanceof YWorkItemTimer timer &&
                 ((getOwnerID() != null) ?
-                 getOwnerID().equals(((YWorkItemTimer) other).getOwnerID()) :
+                 getOwnerID().equals(timer.getOwnerID()) :
                  super.equals(other));
     }
 

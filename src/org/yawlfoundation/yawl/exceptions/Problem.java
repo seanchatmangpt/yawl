@@ -69,9 +69,8 @@ public class Problem implements Serializable {
 
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Problem)) return false;
+        if (!(o instanceof Problem warning)) return false;
 
-        final Problem warning = (Problem) o;
         return _problemTime.equals(warning._problemTime) && _source.equals(warning._source);
     }
 

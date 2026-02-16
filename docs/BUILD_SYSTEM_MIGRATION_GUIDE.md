@@ -116,7 +116,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 **Key improvements:**
 - 40% smaller final image (JRE vs JDK)
-- Java 21 virtual threads support
+- Java 25 virtual threads support
 - ZGC (Z Garbage Collector) for low-latency
 - Health checks for Kubernetes/Cloud Run
 - Non-root user for security
@@ -125,11 +125,11 @@ FROM eclipse-temurin:21-jre-alpine
 
 | Version | Status | Use Case |
 |---------|--------|----------|
-| Java 21 | **LTS (Recommended)** | Production deployments |
+| Java 25 | **Latest** | Production deployments |
 | Java 24 | Testing | Future compatibility testing |
 | Java 25 | Preview | Preview features evaluation |
 
-**Virtual Threads Configuration (Java 21+):**
+**Virtual Threads Configuration (Java 25):**
 
 ```bash
 -Djdk.virtualThreadScheduler.parallelism=200
@@ -382,7 +382,7 @@ mvn verify -Pfailsafe
 ### Multi-Version Testing
 
 ```bash
-# Test on Java 21
+# Test on Java 25
 mvn clean test
 
 # Test on Java 24
@@ -432,7 +432,7 @@ find src -name "*.java" -exec sed -i 's/import javax\.xml\.bind/import jakarta.x
 |-----------|-------------|-------------|------------------|
 | Maven | 3.6+ | 3.9+ | None |
 | Ant | 1.10+ | 1.10+ (deprecated) | None |
-| Java | 11-21 | 21-25 | None (21 recommended) |
+| Java | 21 (legacy) | 25 | Java 25 required |
 | Spring Boot | 3.2.2 | 3.2.5 | None |
 | Hibernate | 5.6.14 | 6.4.4 (future) | API changes |
 | Jakarta EE | 9.x | 10.0 | javax → jakarta |
@@ -474,7 +474,7 @@ For questions or issues:
 
 ### Pre-Java 5 Concurrency (Removed)
 
-**Reason:** Java 21 has superior java.util.concurrent package.
+**Reason:** Java 25 has superior java.util.concurrent package with enhanced virtual thread support.
 
 - concurrent-1.3.4.jar (EDU.oswego.cs.dl.util.concurrent)
 
@@ -529,7 +529,7 @@ Resilience4j BOM 2.2.0
 │   ├── build.xml (Ant, legacy support)
 │   └── ivy.xml (deprecated, migrated to Maven)
 ├── Dockerfile (original)
-├── Dockerfile.modernized (multi-stage, Java 21+)
+├── Dockerfile.modernized (multi-stage, Java 25)
 ├── .github/workflows/
 │   ├── unit-tests.yml (Ant-based, existing)
 │   └── build-maven.yaml (Maven-based, new)

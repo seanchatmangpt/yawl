@@ -178,8 +178,8 @@ public class YNetRunner {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YNetRunner) &&   // instanceof = false if other is null
-                ((getCaseID() != null) ? getCaseID().equals(((YNetRunner) other).getCaseID())
+        return (other instanceof YNetRunner runner) &&   // instanceof = false if other is null
+                ((getCaseID() != null) ? getCaseID().equals(runner.getCaseID())
                 : super.equals(other));
     }
 
@@ -370,11 +370,10 @@ public class YNetRunner {
             throws YPersistenceException {
         Set<YExternalNetElement> notified = new HashSet<>();
         for (Object o : _caseIDForNet.getLocations()) {
-            if (o instanceof YExternalNetElement) {
-                YExternalNetElement element = (YExternalNetElement) o;
+            if (o instanceof YExternalNetElement element) {
                 if (_net.getNetElements().values().contains(element)) {
-                    if ((element instanceof YTask) && ! notified.contains(element)) {
-                        createDeadlockItem(pmgr, (YTask) element);
+                    if ((element instanceof YTask task) && ! notified.contains(element)) {
+                        createDeadlockItem(pmgr, task);
                         notified.add(element);
                     }
                     Set<YExternalNetElement> postset = element.getPostsetElements();
@@ -413,8 +412,8 @@ public class YNetRunner {
      */
     private boolean deadLocked() {
         for (YNetElement location : _caseIDForNet.getLocations()) {
-            if (location instanceof YExternalNetElement) {
-                if (((YExternalNetElement) location).getPostsetElements().size() > 0) {
+            if (location instanceof YExternalNetElement extElement) {
+                if (extElement.getPostsetElements().size() > 0) {
                     return true;
                 }
             }
@@ -874,8 +873,7 @@ public class YNetRunner {
 
         _cancelling = true;
         for (YExternalNetElement netElement : _net.getNetElements().values()) {
-            if (netElement instanceof YTask) {
-                YTask task = ((YTask) netElement);
+            if (netElement instanceof YTask task) {
                 if (task.t_isBusy()) {
                     task.cancel(pmgr);
                 }
@@ -953,11 +951,11 @@ public class YNetRunner {
 
     public boolean isEmpty() {
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (element instanceof YCondition) {
-                if (((YCondition) element).containsIdentifier()) return false;
+            if (element instanceof YCondition cond) {
+                if (cond.containsIdentifier()) return false;
             }
             else {
-                if (((YTask) element).t_isBusy()) return false;                
+                if (((YTask) element).t_isBusy()) return false;
             }
         }
         return true;
@@ -999,15 +997,15 @@ public class YNetRunner {
     private boolean warnIfNetNotEmpty() {
         List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (! (element instanceof YOutputCondition)) {  // ignore end condition tokens
-                if ((element instanceof YCondition) && ((YCondition) element).containsIdentifier()) {
+            if (! (element instanceof YOutputCondition outputCond)) {  // ignore end condition tokens
+                if ((element instanceof YCondition cond) && cond.containsIdentifier()) {
                     haveTokens.add(element);
                 }
-                else if ((element instanceof YTask) && ((YTask) element).t_isBusy()) {
+                else if ((element instanceof YTask task) && task.t_isBusy()) {
                     haveTokens.add(element);
 
                     // flag and announce any executing workitems
-                    YInternalCondition exeCondition = ((YTask) element).getMIExecuting();
+                    YInternalCondition exeCondition = task.getMIExecuting();
                     for (YIdentifier id : exeCondition.getIdentifiers()) {
                         YWorkItem executingItem = _workItemRepository.get(
                                 id.toString(), element.getID());
@@ -1093,8 +1091,8 @@ public class YNetRunner {
     /** returns true if the specified workitem is registered with the Time Service */
     public boolean isTimeServiceTask(YWorkItem item) {
         YTask task = (YTask) getNetElement(item.getTaskID());
-        if ((task != null) && (task instanceof YAtomicTask)) {
-            YAWLServiceGateway wsgw = (YAWLServiceGateway) task.getDecompositionPrototype();
+        if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
+            YAWLServiceGateway wsgw = (YAWLServiceGateway) atomicTask.getDecompositionPrototype();
             if (wsgw != null) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
@@ -1132,8 +1130,8 @@ public class YNetRunner {
         @param task the task to get the flows-into task id for
         @return the task id, or null if task is null or not an atomic task */
     private String getFlowsIntoTaskID(YTask task) {
-        if ((task != null) && (task instanceof YAtomicTask)) {
-            Element eTask = JDOMUtil.stringToElement(task.toXML());
+        if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
+            Element eTask = JDOMUtil.stringToElement(atomicTask.toXML());
             return eTask.getChild("flowsInto").getChild("nextElementRef").getAttributeValue("id");
         }
         return null ;

@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -11,7 +11,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Configuration Integration Tests - Verifies JAXB serialization and mail configuration
@@ -21,7 +21,7 @@ public class ConfigurationIntegrationTest {
 
     private JAXBContext jaxbContext;
 
-    @Before
+    @BeforeEach
     public void setUp() throws JAXBException {
         jaxbContext = JAXBContext.newInstance(WorkflowConfiguration.class);
     }

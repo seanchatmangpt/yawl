@@ -189,7 +189,7 @@ public class SpecificationData {
 
 
      public void setSpecVersion(String version) {
-         _specificationID.setVersion(version);
+         _specificationID = _specificationID.withVersion(version);
      }
 
 

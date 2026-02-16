@@ -8,12 +8,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * Single-threaded event notifier using virtual threads for I/O-bound event delivery.
+ * Virtual threads provide efficient concurrency without the overhead of platform threads.
+ *
  * @author Michael Adams
  * @date 18/1/2023
  */
 public class SingleThreadEventNotifier implements EventNotifier {
 
-    private final ExecutorService _executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService _executor = Executors.newVirtualThreadPerTaskExecutor();
 
 
     @Override

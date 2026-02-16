@@ -1,29 +1,34 @@
 # YAWL v5.2 | A = μ(O)
 
 O = {engine, elements, stateless, integration, schema, test}
-Σ = Java25 + Ant + JUnit + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy
+Σ = Java25 + Maven + JUnit5 + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy
 **Yet Another Workflow Language** - Enterprise BPM/Workflow system based on rigorous Petri net semantics.
 
 ## Quick Commands
 
 ```bash
-# Build
-ant compile                    # Compile source code
-ant buildAll                   # Full build (compile + web + libraries)
-ant clean                      # Clean build artifacts
+# Build (Maven - Primary)
+mvn clean install              # Full build with tests
+mvn compile                    # Compile source code only
+mvn test                       # Run test suite (JUnit5)
+mvn clean                      # Clean build artifacts
 
-# Test & Validate
-ant unitTest                   # Run JUnit test suite (required before commit)
+# Build (Ant - Legacy/Deprecated)
+ant compile                    # Legacy compile (use Maven instead)
+ant buildAll                   # Legacy full build
+ant unitTest                   # Legacy JUnit4 tests
+
+# Validate
 xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml  # Validate specifications
 
 # Before Committing
-ant compile && ant unitTest    # Build + test (must pass)
+mvn clean install              # Build + test (must pass)
 ```
 
 ## System Specification
 
 **O** = {engine, elements, stateless, integration, schema, test}
-**Σ** = Java11 + Ant + JUnit + XML/XSD
+**Σ** = Java25 + Maven + JUnit5 + XML/XSD
 **Λ** = compile ≺ test ≺ validate ≺ deploy
 
 ## μ(O) → A (Agents)
