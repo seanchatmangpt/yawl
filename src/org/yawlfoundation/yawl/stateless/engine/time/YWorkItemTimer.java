@@ -31,7 +31,7 @@ import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
 import javax.xml.datatype.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 
 /**
@@ -67,10 +67,10 @@ public class YWorkItemTimer implements YTimedObject {
     }
 
 
-    public YWorkItemTimer(YWorkItem item, Date expiryTime) {
+    public YWorkItemTimer(YWorkItem item, Instant expiryTime) {
         _owner = item ;
-        if (expiryTime.getTime() < System.currentTimeMillis()) {       // on restore, timer has expired
-            _endTime = expiryTime.getTime();
+        if (expiryTime.toEpochMilli() < System.currentTimeMillis()) {       // on restore, timer has expired
+            _endTime = expiryTime.toEpochMilli();
             handleTimerExpiry();
         }
         else {

@@ -31,7 +31,6 @@ import jakarta.xml.bind.DatatypeConverter;
 import javax.xml.datatype.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
@@ -252,9 +251,11 @@ public class YTimerParameters {
     public String toString() {
         if (_timerType == TimerType.Nil) return "Nil";
         String s = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy, h:mm a")
+                .withZone(ZoneId.systemDefault());
         switch (_timerType) {
             case Duration: s += _duration.toString(); break;
-            case Expiry: s += new SimpleDateFormat().format(_expiryTime); break;
+            case Expiry: s += formatter.format(_expiryTime); break;
             case Interval: s += _ticks + " " + _timeUnit.name(); break;
             case LateBound: s = "Variable: " + _variableName; break;
         }
