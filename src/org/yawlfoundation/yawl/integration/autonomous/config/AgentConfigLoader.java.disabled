@@ -1,0 +1,458 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ */
+
+package org.yawlfoundation.yawl.integration.autonomous.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
+import org.yawlfoundation.yawl.integration.autonomous.AgentConfiguration;
+import org.yawlfoundation.yawl.integration.autonomous.reasoners.*;
+import org.yawlfoundation.yawl.integration.autonomous.strategies.*;
+import org.yawlfoundation.yawl.integration.zai.ZaiService;
+
+import java.io.*;
+import java.util.*;
+
+/**
+ * Configuration loader for autonomous agents.
+ *
+ * Loads agent configuration from YAML or Properties files with environment variable expansion.
+ * Supports multiple reasoner types and flexible configuration.
+ *
+ * YAML Configuration Format:
+ * <pre>
+ * agent:
+ *   name: "Ordering Agent"
+ *   capability:
+ *     domain: "Ordering"
+ *     description: "purchase orders, approvals, requisitions"
+ *   discovery:
+ *     strategy: "polling"
+ *     interval_ms: 3000
+ *   reasoning:
+ *     eligibility_engine: "zai"
+ *     decision_engine: "zai"
+ *     eligibility_prompt: |
+ *       You are an eligibility analyzer...
+ *     decision_prompt: |
+ *       You are a decision maker...
+ *   server:
+ *     port: 8091
+ *
+ * yawl:
+ *   engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+ *   username: "${YAWL_USERNAME:-admin}"
+ *   password: "${YAWL_PASSWORD:-YAWL}"
+ *
+ * zai:
+ *   api_key: "${ZAI_API_KEY}"
+ *   model: "${ZAI_MODEL:-GLM-4-Flash}"
+ * </pre>
+ *
+ * @author YAWL Foundation
+ * @version 5.2
+ */
+public final class AgentConfigLoader {
+
+    private final Map<String, Object> config;
+    private final Map<String, String> envOverrides;
+
+    /**
+     * Create loader with configuration map.
+     */
+    public AgentConfigLoader(Map<String, Object> config) {
+        if (config == null) {
+            throw new IllegalArgumentException("config cannot be null");
+        }
+        this.config = config;
+        this.envOverrides = new HashMap<>();
+    }
+
+    /**
+     * Load configuration from YAML or Properties file (auto-detected by extension).
+     * @param filePath absolute path to configuration file
+     * @return configured loader
+     * @throws IOException if file cannot be read
+     */
+    public static AgentConfigLoader fromFile(String filePath) throws IOException {
+        if (filePath == null || filePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("filePath is required");
+        }
+
+        if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+            return fromYamlFile(filePath);
+        } else if (filePath.endsWith(".properties")) {
+            return fromPropertiesFile(filePath);
+        } else {
+            throw new IllegalArgumentException(
+                "Unsupported file format: " + filePath +
+                ". Supported formats: .yaml, .yml, .properties");
+        }
+    }
+
+    /**
+     * Load configuration from YAML file.
+     * @param filePath absolute path to YAML file
+     * @return configured loader
+     * @throws IOException if file cannot be read
+     */
+    public static AgentConfigLoader fromYamlFile(String filePath) throws IOException {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        Map<String, Object> config = mapper.readValue(new File(filePath), Map.class);
+        return new AgentConfigLoader(config);
+    }
+
+    /**
+     * Load configuration from Properties file.
+     * @param filePath absolute path to properties file
+     * @return configured loader
+     * @throws IOException if file cannot be read
+     */
+    public static AgentConfigLoader fromPropertiesFile(String filePath) throws IOException {
+        Properties props = new Properties();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            props.load(reader);
+        }
+
+        Map<String, Object> config = new HashMap<>();
+        for (String key : props.stringPropertyNames()) {
+            config.put(key, props.getProperty(key));
+        }
+
+        return new AgentConfigLoader(config);
+    }
+
+    /**
+     * Load configuration from file with environment variable overrides.
+     * @param filePath absolute path to configuration file
+     * @param envOverrides map of property keys to environment variable names
+     * @return configured loader
+     * @throws IOException if file cannot be read
+     */
+    public static AgentConfigLoader fromFile(String filePath,
+                                             Map<String, String> envOverrides) throws IOException {
+        AgentConfigLoader loader = fromFile(filePath);
+        if (envOverrides != null) {
+            loader.envOverrides.putAll(envOverrides);
+        }
+        return loader;
+    }
+
+    /**
+     * Build AgentConfiguration from loaded configuration.
+     * @return fully configured AgentConfiguration
+     * @throws IllegalStateException if required properties are missing
+     * @throws IOException if referenced configuration files cannot be read
+     */
+    public AgentConfiguration build() throws IOException {
+        AgentConfiguration.Builder builder = AgentConfiguration.builder();
+
+        builder.capability(loadCapability());
+        builder.engineUrl(getYawlString("engine_url", "http://localhost:8080/yawl"));
+        builder.username(getYawlString("username", "admin"));
+        builder.password(getYawlString("password", "YAWL"));
+        builder.port(getAgentInt("server.port", 8091));
+        builder.pollIntervalMs(getAgentLong("discovery.interval_ms", 3000L));
+        builder.version("5.2.0");
+
+        builder.discoveryStrategy(loadDiscoveryStrategy());
+        builder.eligibilityReasoner(loadEligibilityReasoner());
+        builder.decisionReasoner(loadDecisionReasoner());
+
+        return builder.build();
+    }
+
+    private AgentCapability loadCapability() {
+        Map<String, Object> agentConfig = getNestedMap("agent");
+        if (agentConfig == null) {
+            return AgentCapability.fromEnvironment();
+        }
+
+        Map<String, Object> capabilityConfig = getNestedMap(agentConfig, "capability");
+        if (capabilityConfig == null) {
+            return AgentCapability.fromEnvironment();
+        }
+
+        String domain = getString(capabilityConfig, "domain");
+        String description = getString(capabilityConfig, "description");
+
+        if (domain != null && description != null) {
+            return new AgentCapability(domain, description);
+        }
+
+        return AgentCapability.fromEnvironment();
+    }
+
+    private DiscoveryStrategy loadDiscoveryStrategy() {
+        String strategy = getAgentString("discovery.strategy", "polling");
+
+        if ("polling".equals(strategy)) {
+            return new PollingDiscoveryStrategy();
+        }
+
+        throw new UnsupportedOperationException(
+            "Discovery strategy not supported: " + strategy +
+            ". Only 'polling' is currently implemented.");
+    }
+
+    private EligibilityReasoner loadEligibilityReasoner() throws IOException {
+        String reasonerType = getReasoningString("eligibility_engine");
+        if (reasonerType == null) {
+            throw new IllegalStateException("eligibility_engine is required in agent.reasoning");
+        }
+
+        AgentCapability capability = loadCapability();
+
+        switch (reasonerType.toLowerCase()) {
+            case "zai":
+                return loadZaiEligibilityReasoner(capability);
+
+            case "static":
+                return loadStaticMappingReasoner(capability);
+
+            default:
+                throw new UnsupportedOperationException(
+                    "Eligibility reasoner not supported: " + reasonerType +
+                    ". Supported types: zai, static");
+        }
+    }
+
+    private EligibilityReasoner loadZaiEligibilityReasoner(AgentCapability capability) {
+        String apiKey = getZaiString("api_key");
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "ZAI API key is required. Set ZAI_API_KEY environment variable or zai.api_key in config.");
+        }
+
+        ZaiService zaiService = new ZaiService(apiKey);
+
+        String eligibilityPrompt = getReasoningString("eligibility_prompt");
+        if (eligibilityPrompt != null && !eligibilityPrompt.trim().isEmpty()) {
+            return new ZaiEligibilityReasoner(capability, zaiService, eligibilityPrompt, eligibilityPrompt);
+        }
+
+        return new ZaiEligibilityReasoner(capability, zaiService);
+    }
+
+    private EligibilityReasoner loadStaticMappingReasoner(AgentCapability capability) throws IOException {
+        StaticMappingReasoner reasoner = new StaticMappingReasoner(capability);
+
+        String mappingsFile = getReasoningString("mapping_file");
+        if (mappingsFile != null) {
+            reasoner.loadFromFile(expandEnvVars(mappingsFile));
+        }
+
+        return reasoner;
+    }
+
+    private DecisionReasoner loadDecisionReasoner() throws IOException {
+        String reasonerType = getReasoningString("decision_engine");
+        if (reasonerType == null) {
+            throw new IllegalStateException("decision_engine is required in agent.reasoning");
+        }
+
+        switch (reasonerType.toLowerCase()) {
+            case "zai":
+                return loadZaiDecisionReasoner();
+
+            case "template":
+                return loadTemplateDecisionReasoner();
+
+            default:
+                throw new UnsupportedOperationException(
+                    "Decision reasoner not supported: " + reasonerType +
+                    ". Supported types: zai, template");
+        }
+    }
+
+    private DecisionReasoner loadZaiDecisionReasoner() {
+        String apiKey = getZaiString("api_key");
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "ZAI API key is required. Set ZAI_API_KEY environment variable or zai.api_key in config.");
+        }
+
+        ZaiService zaiService = new ZaiService(apiKey);
+
+        String decisionPrompt = getReasoningString("decision_prompt");
+        if (decisionPrompt != null && !decisionPrompt.trim().isEmpty()) {
+            return new ZaiDecisionReasoner(zaiService, decisionPrompt, decisionPrompt);
+        }
+
+        return new ZaiDecisionReasoner(zaiService);
+    }
+
+    private DecisionReasoner loadTemplateDecisionReasoner() throws IOException {
+        String templateFile = getReasoningString("template_file");
+        if (templateFile == null) {
+            return new TemplateDecisionReasoner();
+        }
+
+        String expandedPath = expandEnvVars(templateFile);
+        String template = readFile(expandedPath);
+
+        return new TemplateDecisionReasoner(template);
+    }
+
+    private Map<String, Object> getNestedMap(String key) {
+        Object value = config.get(key);
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return null;
+    }
+
+    private Map<String, Object> getNestedMap(Map<String, Object> parent, String key) {
+        Object value = parent.get(key);
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return null;
+    }
+
+    private String getString(Map<String, Object> parent, String key) {
+        Object value = parent.get(key);
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString();
+        return expandEnvVars(str);
+    }
+
+    private String getAgentString(String path, String defaultValue) {
+        Map<String, Object> agentConfig = getNestedMap("agent");
+        if (agentConfig == null) {
+            return defaultValue;
+        }
+
+        String[] parts = path.split("\\.");
+        Map<String, Object> current = agentConfig;
+
+        for (int i = 0; i < parts.length - 1; i++) {
+            current = getNestedMap(current, parts[i]);
+            if (current == null) {
+                return defaultValue;
+            }
+        }
+
+        String value = getString(current, parts[parts.length - 1]);
+        return value != null ? value : defaultValue;
+    }
+
+    private int getAgentInt(String path, int defaultValue) {
+        String value = getAgentString(path, null);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Invalid integer value for " + path + ": " + value, e);
+        }
+    }
+
+    private long getAgentLong(String path, long defaultValue) {
+        String value = getAgentString(path, null);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Invalid long value for " + path + ": " + value, e);
+        }
+    }
+
+    private String getYawlString(String key, String defaultValue) {
+        Map<String, Object> yawlConfig = getNestedMap("yawl");
+        if (yawlConfig == null) {
+            return defaultValue;
+        }
+        String value = getString(yawlConfig, key);
+        return value != null ? value : defaultValue;
+    }
+
+    private String getZaiString(String key) {
+        Map<String, Object> zaiConfig = getNestedMap("zai");
+        if (zaiConfig == null) {
+            return null;
+        }
+        return getString(zaiConfig, key);
+    }
+
+    private String getReasoningString(String key) {
+        Map<String, Object> agentConfig = getNestedMap("agent");
+        if (agentConfig == null) {
+            return null;
+        }
+        Map<String, Object> reasoningConfig = getNestedMap(agentConfig, "reasoning");
+        if (reasoningConfig == null) {
+            return null;
+        }
+        return getString(reasoningConfig, key);
+    }
+
+    private String expandEnvVars(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String result = value;
+        int start = 0;
+
+        while ((start = result.indexOf("${", start)) != -1) {
+            int end = result.indexOf("}", start);
+            if (end == -1) {
+                break;
+            }
+
+            String varSpec = result.substring(start + 2, end);
+            String varName;
+            String defaultValue = null;
+
+            int colonDash = varSpec.indexOf(":-");
+            if (colonDash != -1) {
+                varName = varSpec.substring(0, colonDash);
+                defaultValue = varSpec.substring(colonDash + 2);
+            } else {
+                varName = varSpec;
+            }
+
+            String varValue = System.getenv(varName);
+            if (varValue == null || varValue.trim().isEmpty()) {
+                varValue = defaultValue;
+            }
+
+            if (varValue != null) {
+                result = result.substring(0, start) + varValue + result.substring(end + 1);
+                start += varValue.length();
+            } else {
+                start = end + 1;
+            }
+        }
+
+        return result;
+    }
+
+    private static String readFile(String filePath) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        }
+        return content.toString();
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Approval Output Template -->
+<!-- Variables available: ${variableName} from input data -->
+<data>
+    <ApprovalID>${ApprovalID:-N/A}</ApprovalID>
+    <RequestID>${RequestID:-N/A}</RequestID>
+    <ApprovalStatus>${ApprovalStatus:-Approved}</ApprovalStatus>
+    <ApprovalDecision>${ApprovalDecision:-Approve}</ApprovalDecision>
+    <ApproverID>${ApproverID:-System}</ApproverID>
+    <ApproverName>${ApproverName:-Autonomous Agent}</ApproverName>
+    <ApprovalDate>${ApprovalDate:-2026-02-15}</ApprovalDate>
+    <ApprovalTime>${ApprovalTime:-00:00:00}</ApprovalTime>
+    <Amount>${Amount:-0.00}</Amount>
+    <Currency>${Currency:-USD}</Currency>
+    <Priority>${Priority:-Normal}</Priority>
+    <Justification>${Justification:-Meets approval criteria}</Justification>
+    <Comments>${Comments:-}</Comments>
+    <Conditions>${Conditions:-None}</Conditions>
+    <NextStep>${NextStep:-Proceed}</NextStep>
+    <EscalationRequired>${EscalationRequired:-false}</EscalationRequired>
+    <DueDate>${DueDate:-}</DueDate>
+    <Notes>${Notes:-Approval processed successfully}</Notes>
+</data>

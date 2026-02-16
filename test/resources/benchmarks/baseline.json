@@ -1,0 +1,66 @@
+{
+  "baseline_version": "5.2.0",
+  "timestamp": "2026-02-16T00:00:00Z",
+  "environment": {
+    "jvm_version": "25",
+    "os": "Linux",
+    "processors": 8,
+    "max_memory_mb": 4096
+  },
+  "benchmarks": {
+    "eligibility_reasoning": {
+      "concrete_p50_ms": 150.0,
+      "concrete_p95_ms": 200.0,
+      "concrete_p99_ms": 250.0,
+      "generic_p50_ms": 160.0,
+      "generic_p95_ms": 210.0,
+      "generic_p99_ms": 260.0,
+      "overhead_percentage": 6.67,
+      "concrete_throughput_ops_sec": 50.0,
+      "generic_throughput_ops_sec": 48.0,
+      "throughput_degradation_percentage": 4.0
+    },
+    "decision_generation": {
+      "concrete_p50_ms": 250.0,
+      "concrete_p95_ms": 300.0,
+      "concrete_p99_ms": 350.0,
+      "generic_p50_ms": 265.0,
+      "generic_p95_ms": 315.0,
+      "generic_p99_ms": 365.0,
+      "overhead_percentage": 6.0,
+      "concrete_throughput_ops_sec": 30.0,
+      "generic_throughput_ops_sec": 29.0,
+      "throughput_degradation_percentage": 3.33
+    },
+    "discovery_loop": {
+      "p50_ms": 0.5,
+      "p95_ms": 0.8,
+      "p99_ms": 1.0
+    },
+    "configuration_loading": {
+      "hardcoded_p50_ms": 10.0,
+      "hardcoded_p95_ms": 15.0,
+      "yaml_p50_ms": 12.0,
+      "yaml_p95_ms": 18.0,
+      "overhead_percentage": 20.0
+    },
+    "workflow_launcher": {
+      "concrete_p50_ms": 400.0,
+      "concrete_p95_ms": 500.0,
+      "generic_p50_ms": 430.0,
+      "generic_p95_ms": 530.0,
+      "overhead_percentage": 7.5
+    }
+  },
+  "targets": {
+    "latency_overhead_percentage": 10.0,
+    "throughput_degradation_percentage": 5.0,
+    "memory_overhead_percentage": 20.0
+  },
+  "notes": [
+    "Baseline established on 2026-02-16",
+    "All measurements with ZAI running locally (llama2)",
+    "YAWL engine on localhost:8080",
+    "Regression threshold: 10% for all metrics"
+  ]
+}

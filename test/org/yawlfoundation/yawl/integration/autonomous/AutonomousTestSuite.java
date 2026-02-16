@@ -31,9 +31,15 @@ public class AutonomousTestSuite {
 
         suite.addTestSuite(AgentCapabilityTest.class);
         suite.addTestSuite(AgentConfigurationTest.class);
+        suite.addTestSuite(AgentFactoryTest.class);
+        suite.addTestSuite(GenericPartyAgentTest.class);
         suite.addTestSuite(RetryPolicyTest.class);
         suite.addTestSuite(CircuitBreakerTest.class);
         suite.addTestSuite(ZaiEligibilityReasonerTest.class);
+        suite.addTestSuite(PollingDiscoveryStrategyTest.class);
+        suite.addTestSuite(StaticMappingReasonerTest.class);
+        suite.addTestSuite(XmlOutputGeneratorTest.class);
+        suite.addTestSuite(TemplateOutputGeneratorTest.class);
 
         return suite;
     }
