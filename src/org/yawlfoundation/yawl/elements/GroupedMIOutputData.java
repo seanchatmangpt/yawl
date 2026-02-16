@@ -9,8 +9,8 @@ import org.yawlfoundation.yawl.engine.YWorkItemID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -106,11 +106,11 @@ public class GroupedMIOutputData {
     }
 
     private void setTimestamps(YWorkItem item, Element nItem) {
-        Date timestamp = makeDate(nItem.getChildText("enablementTimeMs"));
+        Instant timestamp = makeInstant(nItem.getChildText("enablementTimeMs"));
         if (timestamp != null) item.set_enablementTime(timestamp);
-        timestamp = makeDate(nItem.getChildText("firingTimeMs"));
+        timestamp = makeInstant(nItem.getChildText("firingTimeMs"));
         if (timestamp != null) item.set_firingTime(timestamp);
-        timestamp = makeDate(nItem.getChildText("startTimeMs"));
+        timestamp = makeInstant(nItem.getChildText("startTimeMs"));
         if (timestamp != null) item.set_startTime(timestamp);
     }
 
@@ -123,9 +123,12 @@ public class GroupedMIOutputData {
     }
 
 
-    private Date makeDate(String timeStr) {
-        return ! (timeStr == null || "0".equals(timeStr)) ?
-                new Date(StringUtil.strToLong(timeStr, 0)) : null;
+    private Instant makeInstant(String timeStr) {
+        if (timeStr == null || "0".equals(timeStr)) {
+            return null;
+        }
+        long ms = StringUtil.strToLong(timeStr, 0);
+        return ms > 0 ? Instant.ofEpochMilli(ms) : null;
     }
 
 

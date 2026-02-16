@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jsp:root version="1.2" xmlns:f="http://java.sun.com/jsf/core"
-          xmlns:h="http://java.sun.com/jsf/html"
+<jsp:root version="1.2" xmlns:f="jakarta.faces.core"
+          xmlns:h="jakarta.faces.html"
           xmlns:jsp="http://java.sun.com/JSP/Page"
           xmlns:ui="http://www.sun.com/web/ui">
 

@@ -266,7 +266,7 @@
     <!-- sml -->
     <property name="jakarta-mail" value="jakarta.mail-1.6.7.jar"/>
     <!-- sml -->
-    <property name="jakarta-xml" value="jakarta.xml.bind-api-3.0.1.jar"/>
+    <property name="jakarta-xml" value="jakarta.xml.bind-api-4.0.1.jar"/>
     <!-- dbd -->
     <property name="javax-activation" value="javax.activation-api-1.2.0.jar"/>
     <!--hbn-->
@@ -278,7 +278,9 @@
     <!--off,hbn-->
     <property name="jaxb-impl" value="jaxb-impl.jar"/>
     <!--off-->
-    <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar"/>
+    <property name="jaxb-runtime" value="jaxb-runtime-4.0.4.jar"/>
+    <!--off,hbn-->
+    <property name="jaxb-core" value="jaxb-core-4.0.4.jar"/>
     <!--off,hbn-->
     <property name="jaxb-xjc" value="jaxb-xjc.jar"/>
     <!-- hbn -->
@@ -293,9 +295,15 @@
     <!-- off -->
     <property name="jdom1" value="jdom.jar"/>
     <!-- hbn -->
-    <property name="jdom" value="jdom-2.0.5.jar"/>
+    <property name="jdom" value="jdom2-2.0.6.1.jar"/>
     <!-- mul -->
-    <property name="jsf-api" value="jakarta.faces-api-4.0.0.jar"/>
+    <property name="jsf-api" value="jakarta.faces-api-4.0.1.jar"/>
+    <!-- jsf -->
+    <property name="jsf-impl" value="jakarta.faces-4.0.5.jar"/>
+    <!-- jsf -->
+    <property name="jakarta-el-api" value="jakarta.el-api-5.0.1.jar"/>
+    <!-- jsf -->
+    <property name="jakarta-el-impl" value="jakarta.el-4.0.2.jar"/>
     <!-- jsf -->
     <property name="jsf-appbase" value="appbase.jar"/>
     <!-- jsf -->
@@ -306,8 +314,6 @@
     <property name="jsf-defaulttheme-gray" value="defaulttheme-gray.jar"/>
     <!-- jsf -->
     <property name="jsf-errorhandler" value="errorhandler.jar"/>
-    <!-- jsf -->
-    <property name="jsf-impl" value="jakarta.faces-4.0.0.jar"/>
     <!-- jsf -->
     <property name="jsf-rowset" value="rowset.jar"/>
     <!-- jsf -->
@@ -393,7 +399,7 @@
     <!-- dbd -->
     <property name="saaj" value="saaj.jar"/>
     <!-- wsi -->
-    <property name="saxon" value="saxon9.jar"/>
+    <property name="saxon" value="Saxon-HE-12.4.jar"/>
     <!-- mul -->
     <property name="saxonapi" value="saxon9-s9api.jar"/>
     <!-- mul -->
@@ -437,7 +443,7 @@
     <property name="azure-core" value="azure-core-1.57.0.jar"/>
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
-    <property name="jakarta-annotation" value="jakarta.annotation-api-3.0.0.jar"/>
+    <property name="jakarta-annotation" value="jakarta.annotation-api-2.1.1.jar"/>
     <property name="microsoft-graph" value="microsoft-graph-6.55.0.jar"/>
     <property name="microsoft-graph-core" value="microsoft-graph-core-3.6.5.jar"/>
     <property name="kiota-authentication-azure"
@@ -462,7 +468,7 @@
     <property name="json-schema-validator" value="json-schema-validator-2.0.0.jar"/>
 
     <!-- Jakarta CDI API (required by A2A transport-rest at compile time) -->
-    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-3.0.0.jar"/>
+    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-4.0.1.jar"/>
 
     <!-- A2A (Agent-to-Agent) SDK -->
     <property name="a2a-spec" value="a2a-java-sdk-spec-1.0.0.Alpha2.jar"/>
@@ -476,6 +482,18 @@
     <property name="a2a-client-transport-spi" value="a2a-java-sdk-client-transport-spi-1.0.0.Alpha2.jar"/>
     <property name="a2a-client-transport-rest" value="a2a-java-sdk-client-transport-rest-1.0.0.Alpha2.jar"/>
     <property name="a2a-client-transport-jsonrpc" value="a2a-java-sdk-client-transport-jsonrpc-1.0.0.Alpha2.jar"/>
+
+    <!-- Jakarta JAX-RS (RESTful Web Services) -->
+    <property name="jakarta.ws.rs.api" value="jakarta.ws.rs-api-3.1.0.jar"/>
+    <property name="jersey.server" value="jersey-server-3.1.5.jar"/>
+    <property name="jersey.client" value="jersey-client-3.1.5.jar"/>
+    <property name="jersey.common" value="jersey-common-3.1.5.jar"/>
+    <property name="jersey.servlet" value="jersey-container-servlet-3.1.5.jar"/>
+    <property name="jersey.hk2" value="jersey-hk2-3.1.5.jar"/>
+    <property name="jersey.jackson" value="jersey-media-json-jackson-3.1.5.jar"/>
+    <property name="hk2.locator" value="hk2-locator-3.0.5.jar"/>
+    <property name="hk2.api" value="hk2-api-3.0.5.jar"/>
+    <property name="hk2.utils" value="hk2-utils-3.0.5.jar"/>
 
     <!--
         Filters and properties for per-database-type operations, using
@@ -567,9 +585,11 @@
               value="${common} ${ecore}"/>
 
     <property name="jsf.libs"
-              value="${jsf-appbase} ${jsf-api} ${jsf-impl} ${jsf-cl} ${jsf-webui}
+              value="${jsf-api} ${jsf-impl} ${jakarta-el-api} ${jakarta-el-impl}
+                     ${jakarta-cdi-api} ${jakarta-annotation} ${servlet} ${jstl}
+                     ${jsf-appbase} ${jsf-cl} ${jsf-webui}
                      ${commonsDigester} ${commonsBeanutils} ${commonsFileupload}
-                     ${commonsIO} ${commonsLogging} ${jsf-standard} ${jstl} ${jsf-rowset}
+                     ${commonsIO} ${commonsLogging} ${jsf-standard} ${jsf-rowset}
                      ${jsf-dataprovider} ${jsf-errorhandler} ${jsf-defaulttheme-gray}"/>
 
     <property name="wsif.libs"
@@ -580,7 +600,7 @@
               value="${log4j-api} ${log4j-core} ${log4j-bridge} ${log4j-slf4j}"/>
 
     <property name="saxon.libs"
-              value="${saxon} ${saxondom} ${saxonapi} ${saxonjdom}"/>
+              value="${saxon}"/>
 
     <property name="simplemail.libs"
               value="${simplemail} ${slf4j} ${jakarta-activation}
@@ -598,7 +618,7 @@
 
     <property name="controlpanel.libs" value="${macify} ${commonsIO}"/>
 
-    <property name="jaxb.libs" value="${jaxb1} ${jaxb-api} ${jaxb-impl} ${jaxb-xjc}"/>
+    <property name="jaxb.libs" value="${jaxb1} ${jaxb-api} ${jaxb-impl} ${jaxb-runtime} ${jaxb-core} ${jaxb-xjc} ${jakarta-xml}"/>
 
     <property name="res_mail_libs" value="${courier} ${gson} ${jackson-annotations}
                     ${jackson-core} ${jackson-databind} ${jackson-jdk8} ${jackson-jsr310}
@@ -731,6 +751,18 @@
         <pathelement location="${lib.dir}/${a2a-client-transport-rest}"/>
         <pathelement location="${lib.dir}/${a2a-client-transport-jsonrpc}"/>
 
+        <!-- JAX-RS / Jakarta REST -->
+        <pathelement location="${lib.dir}/${jakarta.ws.rs.api}"/>
+        <pathelement location="${lib.dir}/${jersey.server}"/>
+        <pathelement location="${lib.dir}/${jersey.client}"/>
+        <pathelement location="${lib.dir}/${jersey.common}"/>
+        <pathelement location="${lib.dir}/${jersey.servlet}"/>
+        <pathelement location="${lib.dir}/${jersey.hk2}"/>
+        <pathelement location="${lib.dir}/${jersey.jackson}"/>
+        <pathelement location="${lib.dir}/${hk2.locator}"/>
+        <pathelement location="${lib.dir}/${hk2.api}"/>
+        <pathelement location="${lib.dir}/${hk2.utils}"/>
+
         <!-- Include all elements that Tomcat exposes to applications -->
         <pathelement location="${CATALINA_HOME}/lib"/>
     </path>
@@ -785,6 +817,8 @@
         <pathelement location="${lib.dir}/${javax-persistence}"/>
         <pathelement location="${lib.dir}/${jaxb-api}"/>
         <pathelement location="${lib.dir}/${jaxb-runtime}"/>
+        <pathelement location="${lib.dir}/${jaxb-core}"/>
+        <pathelement location="${lib.dir}/${jakarta-xml}"/>
         <pathelement location="${lib.dir}/${slf4j}"/>
     </path>
 
@@ -800,13 +834,21 @@
     </path>
 
     <path id="cp.jsf">
-        <pathelement location="${lib.dir}/${jsf-appbase}"/>
+        <!-- Jakarta Faces 4.0 (Jakarta EE 10) -->
         <pathelement location="${lib.dir}/${jsf-api}"/>
-        <pathelement location="${lib.dir}/${jsf-cl}"/>
         <pathelement location="${lib.dir}/${jsf-impl}"/>
+        <pathelement location="${lib.dir}/${jakarta-el-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-el-impl}"/>
+        <pathelement location="${lib.dir}/${jakarta-cdi-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-annotation}"/>
+        <!-- Jakarta Servlet/JSP APIs -->
+        <pathelement location="${lib.dir}/${servlet}"/>
+        <pathelement location="${lib.dir}/${jstl}"/>
+        <!-- Legacy JSF components (if still needed) -->
+        <pathelement location="${lib.dir}/${jsf-appbase}"/>
+        <pathelement location="${lib.dir}/${jsf-cl}"/>
         <pathelement location="${lib.dir}/${jsf-webui}"/>
         <pathelement location="${lib.dir}/${jsf-standard}"/>
-        <pathelement location="${lib.dir}/${jstl}"/>
         <pathelement location="${lib.dir}/${jsf-rowset}"/>
         <pathelement location="${lib.dir}/${jsf-dataprovider}"/>
         <pathelement location="${lib.dir}/${jsf-errorhandler}"/>
@@ -897,6 +939,19 @@
         <pathelement location="${lib.dir}/jolokia-client-java-1.2.3.jar"/>
         <pathelement location="${lib.dir}/json-simple-1.1.1.jar"/>
         <pathelement location="${lib.dir}/${jakarta-xml}"/>
+    </path>
+
+    <path id="cp.jaxrs">
+        <pathelement location="${lib.dir}/${jakarta.ws.rs.api}"/>
+        <pathelement location="${lib.dir}/${jersey.server}"/>
+        <pathelement location="${lib.dir}/${jersey.client}"/>
+        <pathelement location="${lib.dir}/${jersey.common}"/>
+        <pathelement location="${lib.dir}/${jersey.servlet}"/>
+        <pathelement location="${lib.dir}/${jersey.hk2}"/>
+        <pathelement location="${lib.dir}/${jersey.jackson}"/>
+        <pathelement location="${lib.dir}/${hk2.locator}"/>
+        <pathelement location="${lib.dir}/${hk2.api}"/>
+        <pathelement location="${lib.dir}/${hk2.utils}"/>
     </path>
 
     <!--

@@ -48,9 +48,9 @@ import org.yawlfoundation.yawl.stateless.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -68,15 +68,16 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
  */
 public class YWorkItem {
 
-    private static final DateFormat _df = new SimpleDateFormat("MMM:dd, yyyy H:mm:ss");
+    private static final DateTimeFormatter _df =
+            DateTimeFormatter.ofPattern("MMM:dd, yyyy H:mm:ss").withZone(ZoneId.systemDefault());
 
     private YWorkItemID _workItemID;
     private String _thisID = null;
     private YSpecificationID _specID;
     private YTask _task;                                // task item is derived from
-    private Date _enablementTime;
-    private Date _firingTime;
-    private Date _startTime;
+    private Instant _enablementTime;
+    private Instant _firingTime;
+    private Instant _startTime;
 
     private YAttributeMap _attributes;                    // decomposition attributes
 
@@ -119,17 +120,17 @@ public class YWorkItem {
         _task = task;
 
         createWorkItem(specID, workItemID, isDeadlocked ? statusDeadlocked : statusEnabled,
-                       allowsDynamicCreation); 
+                       allowsDynamicCreation);
 
         if (task != null) _documentation = task.getDocumentationPreParsed();
-        _enablementTime = new Date();
+        _enablementTime = Instant.now();
         logStatusChange(null);
     }
 
 
     /** Creates a fired WorkItem */
     private YWorkItem(YWorkItemID workItemID,
-                      YSpecificationID specID, Date workItemCreationTime, YWorkItem parent,
+                      YSpecificationID specID, Instant workItemCreationTime, YWorkItem parent,
                       boolean allowsDynamicInstanceCreation) {
 
         _log.debug("Spec={} WorkItem={}", specID, workItemID.getTaskID());
@@ -138,7 +139,7 @@ public class YWorkItem {
         createWorkItem(specID, workItemID, statusFired, allowsDynamicInstanceCreation);
 
         _enablementTime = workItemCreationTime;
-        _firingTime = new Date();
+        _firingTime = Instant.now();
         logStatusChange(createLogDataList("fired"));
     }
 
@@ -560,7 +561,7 @@ public class YWorkItem {
         }
 
         set_status(statusExecuting);
-        _startTime = new Date();
+        _startTime = Instant.now();
         if (! _timerStarted) checkStartTimer(null) ;
         logStatusChange(createLogDataList(_status.name()));
     }
@@ -709,17 +710,17 @@ public class YWorkItem {
 
     public void set_deferredChoiceGroupID(String id) { _deferredChoiceGroupID = id; }
 
-    public Date get_enablementTime() { return _enablementTime; }
+    public Instant get_enablementTime() { return _enablementTime; }
 
-    public void set_enablementTime(Date eTime) { _enablementTime = eTime; }
+    public void set_enablementTime(Instant eTime) { _enablementTime = eTime; }
 
-    public Date get_firingTime() { return _firingTime; }
+    public Instant get_firingTime() { return _firingTime; }
 
-    public void set_firingTime(Date fTime) { _firingTime = fTime; }
+    public void set_firingTime(Instant fTime) { _firingTime = fTime; }
 
-    public Date get_startTime() {return _startTime; }
+    public Instant get_startTime() {return _startTime; }
 
-    public void set_startTime(Date sTime) { _startTime = sTime; }
+    public void set_startTime(Instant sTime) { _startTime = sTime; }
 
 
     public String get_status() { return _status.toString(); }
@@ -752,15 +753,15 @@ public class YWorkItem {
 
     public YWorkItemID getWorkItemID() { return _workItemID; }
 
-    public Date getEnablementTime() { return _enablementTime; }
+    public Instant getEnablementTime() { return _enablementTime; }
 
     public String getEnablementTimeStr() { return _df.format(_enablementTime); }
 
-    public Date getFiringTime() { return _firingTime; }
+    public Instant getFiringTime() { return _firingTime; }
 
     public String getFiringTimeStr() { return _df.format(_firingTime); }
 
-    public Date getStartTime() { return _startTime; }
+    public Instant getStartTime() { return _startTime; }
 
     public String getStartTimeStr() { return _df.format(_startTime); }
 
@@ -872,16 +873,16 @@ public class YWorkItem {
         if (dataList != null)
             xml.append(StringUtil.wrap(getDataString(), "data"));
         xml.append(StringUtil.wrap(_df.format(getEnablementTime()), "enablementTime"));
-        xml.append(StringUtil.wrap(String.valueOf(getEnablementTime().getTime()),
+        xml.append(StringUtil.wrap(String.valueOf(getEnablementTime().toEpochMilli()),
                        "enablementTimeMs")) ;
         if (getFiringTime() != null) {
             xml.append(StringUtil.wrap(_df.format(getFiringTime()), "firingTime"));
-            xml.append(StringUtil.wrap(String.valueOf(getFiringTime().getTime()),
+            xml.append(StringUtil.wrap(String.valueOf(getFiringTime().toEpochMilli()),
                        "firingTimeMs")) ;
         }
         if (getStartTime() != null) {
             xml.append(StringUtil.wrap(_df.format(getStartTime()), "startTime"));
-            xml.append(StringUtil.wrap(String.valueOf(getStartTime().getTime()),
+            xml.append(StringUtil.wrap(String.valueOf(getStartTime().toEpochMilli()),
                          "startTimeMs")) ;
         }
         if (_timerParameters != null) {

@@ -62,8 +62,8 @@ public class WorkItemRecord implements Cloneable {
     public static final String statusResourceUnoffered = "Unoffered" ;
     public static final String statusResourceUnresourced = "Unresourced" ;
 
-    private static final DateFormat DATE_FORMAT =
-            new SimpleDateFormat("MMM dd yyyy H:mm:ss");
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("MMM dd yyyy H:mm:ss").withZone(ZoneId.systemDefault());
 
     // item identifiers
     private long _id;                                    // hibernate primary key
@@ -465,8 +465,10 @@ public class WorkItemRecord implements Cloneable {
 
 
     private String attributeTableToString() {
-        if (_attributeTable == null || _attributeTable.isEmpty()) return "" ;
-        
+        if (_attributeTable == null || _attributeTable.isEmpty()) {
+            return new String();  // Return empty but valid XML attribute string
+        }
+
         StringBuilder xml = new StringBuilder();
         for (String key : _attributeTable.keySet()) {
             xml.append(" ")
@@ -480,13 +482,14 @@ public class WorkItemRecord implements Cloneable {
 
 
     private String getFormattedDate(String msStr) {
-        if (! StringUtil.isNullOrEmpty(msStr)) {
-            long ms = StringUtil.strToLong(msStr, 0);
-            if (ms > 0) {
-                return DATE_FORMAT.format(new Date(ms));
-            }
+        if (StringUtil.isNullOrEmpty(msStr)) {
+            return new String();  // Return empty but valid date string for XML serialization
         }
-        return "";
+        long ms = StringUtil.strToLong(msStr, 0);
+        if (ms <= 0) {
+            return new String();  // Return empty but valid date string for invalid timestamp
+        }
+        return DATE_FORMAT.format(Instant.ofEpochMilli(ms));
     }
 
     /*******************************************************************************/

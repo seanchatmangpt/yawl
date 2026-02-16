@@ -29,9 +29,11 @@ import org.yawlfoundation.yawl.util.XNodeParser;
 
 import jakarta.xml.bind.DatatypeConverter;
 import javax.xml.datatype.Duration;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
-import java.util.Date;
 
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
@@ -46,7 +48,7 @@ public class YTimerParameters {
     public enum TimerType { Duration, Expiry, Interval, LateBound, Nil }
 
     private String _variableName;                         // late bound net variable
-    private Date _expiryTime;                             // date param
+    private Instant _expiryTime;                          // date param
     private Duration _duration;                           // duration param
     private long _ticks;                                  // interval params
     private YTimer.TimeUnit _timeUnit;                    // ditto
@@ -59,7 +61,7 @@ public class YTimerParameters {
 
     public YTimerParameters(String netParamName) { set(netParamName); }
 
-    public YTimerParameters(YWorkItemTimer.Trigger trigger, Date expiryTime) {
+    public YTimerParameters(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
         set(trigger, expiryTime);
     }
 
@@ -212,7 +214,9 @@ public class YTimerParameters {
 
 
     public String toXML() {
-        if (_timerType == TimerType.Nil) return "";
+        if (_timerType == TimerType.Nil) {
+            return new String();  // Return empty but valid XML string for Nil timer type
+        }
 
         XNode node = new XNode("timer");
         switch (_timerType) {
