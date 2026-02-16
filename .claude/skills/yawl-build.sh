@@ -133,8 +133,18 @@ cd "${PROJECT_ROOT}"
 BUILD_SUCCESS=false
 
 if [[ "${BUILD_SYSTEM}" == "maven" ]]; then
-    # Maven build with Java 25 preview features
-    MVN_ARGS=("--batch-mode" "--enable-preview" "-T" "1C")
+    # Maven build with Java preview features
+    # Note: --enable-preview must be passed via MAVEN_OPTS, not as CLI argument
+    # Only add incubator modules if Java 25+ is available
+    JAVA_VERSION=$(${MVN_CMD} --version 2>/dev/null | grep "Java version" | sed -n 's/.*Java version: \([0-9]*\).*/\1/p' || echo "11")
+
+    if [[ "${JAVA_VERSION}" -ge 25 ]]; then
+        export MAVEN_OPTS="--enable-preview --add-modules jdk.incubator.concurrent -Xmx2g ${MAVEN_OPTS:-}"
+    else
+        export MAVEN_OPTS="--enable-preview -Xmx2g ${MAVEN_OPTS:-}"
+    fi
+
+    MVN_ARGS=("--batch-mode" "-T" "1C")
 
     # Add verbose/quiet flags
     if [[ -n "${VERBOSE}" ]]; then
