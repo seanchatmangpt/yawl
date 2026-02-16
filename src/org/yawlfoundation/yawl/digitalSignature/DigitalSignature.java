@@ -19,8 +19,14 @@
 package org.yawlfoundation.yawl.digitalSignature;
 
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.*;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.DOMOutputter;
@@ -43,9 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
-import java.security.cert.CertStore;
 import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -190,31 +194,37 @@ public class DigitalSignature extends InterfaceBWebsideController
          System.out.println("Beginning of Checking XmlSignature:");
 
          // Get from the collection the appropriate registered certificate
-         CertStore cs = signature.getCertificatesAndCRLs("Collection", "BC");
-         Iterator iter = cs.getCertificates(signer.getSID()).iterator();
+         org.bouncycastle.util.Store certStore = signature.getCertificates();
+         org.bouncycastle.util.Selector certSelector = signer.getSID();
+         Iterator iter = certStore.getMatches(certSelector).iterator();
          System.out.println("Beginning of Checking XmlSignature:");
-         X509Certificate certificate = (X509Certificate) iter.next();
+         org.bouncycastle.cert.X509CertificateHolder certHolder =
+             (org.bouncycastle.cert.X509CertificateHolder) iter.next();
+         X509Certificate certificate = new JcaX509CertificateConverter()
+             .setProvider("BC").getCertificate(certHolder);
          System.out.println("Beginning of Checking XmlSignature:");
          // get the contents of the document
          CMSProcessable sg = signature.getSignedContent();
     	 byte[] data = (byte[]) sg.getContent();
     	 String content = new String(data);
-    	 
+
     	 //convert the document content to a valid xml document for YAWL
     	 org.w3c.dom.Document XMLNode = ConvertStringToDocument(content);
     	 org.jdom2.input.DOMBuilder builder = new org.jdom2.input.DOMBuilder();
          Doc = builder.build(XMLNode);
-         
+
          //Check the document
          System.out.println("xml to Sign:");
          System.out.println(JDOMUtil.documentToString(Doc));
-    
-        
+
+
 
     	// get the name of the signer
     	 _Name = certificate.getSubjectDN().getName().split("(=|, )", -1).toString();
     	 //return the result of the signature checking
-     	 return signer.verify(certificate, "BC");
+     	 return signer.verify(new JcaSignerInfoVerifierBuilder(
+             new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+             .build(certificate));
    
         }catch (Exception e) 
         	{
@@ -365,23 +375,26 @@ public class DigitalSignature extends InterfaceBWebsideController
             	Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
             	}
             
-            //register the user certificate in the collection 
+            //register the user certificate in the collection
      		ArrayList certList = new ArrayList();
-      		certList.add(cert);
-      		CertStore certs = CertStore.getInstance("Collection",new CollectionCertStoreParameters(certList), "BC");
-      		 
+      		certList.add(new JcaX509CertificateHolder(cert));
+      		org.bouncycastle.util.Store certs = new JcaCertStore(certList);
+
         	System.out.println("provider loaded");
             // create the CMSSignedData
             CMSSignedDataGenerator signGen = new CMSSignedDataGenerator();
         	System.out.println("CMS created");
-            signGen.addSigner(privatekey, cert, CMSSignedDataGenerator.DIGEST_SHA1);
-            signGen.addCertificatesAndCRLs(certs);
+            signGen.addSignerInfoGenerator(
+                new JcaSimpleSignerInfoGeneratorBuilder()
+                    .setProvider("BC")
+                    .build("SHA1withRSA", privatekey, cert));
+            signGen.addCertificates(certs);
             System.out.println("Signer loaded");
-            
-            CMSProcessable content = new CMSProcessableByteArray(Document.getBytes(StandardCharsets.UTF_8));
+
+            CMSTypedData content = new CMSProcessableByteArray(Document.getBytes(StandardCharsets.UTF_8));
             System.out.println("BytesArray loaded");
             // the second variable "true" means that the content will be wrap with the signature
-            return signGen.generate(content, true, "BC");
+            return signGen.generate(content, true);
             } 
             }
         catch (Exception e) {
