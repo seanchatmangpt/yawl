@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.editor;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
@@ -54,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 public class MainScreen {
+    private static final Logger logger = LogManager.getLogger(MainScreen.class);
 
   private static final int KEY_NEW_MODEL = KeyEvent.VK_N;
   private static final int KEY_QUIT = KeyEvent.VK_Q;
@@ -236,7 +240,9 @@ public class MainScreen {
       aFrame.setSelected(true);
       aFrame.setMaximum(true);
     }
-    catch (Exception e) {}
+    catch (Exception e) {
+        logger.warn("Exception in main screen initialization: " + e.getMessage(), e);
+    }
   }
   
   /**

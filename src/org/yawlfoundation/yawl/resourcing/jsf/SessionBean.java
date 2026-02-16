@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.resourcing.jsf;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.sun.rave.web.ui.appbase.AbstractSessionBean;
 import com.sun.rave.web.ui.component.Button;
 import com.sun.rave.web.ui.component.Listbox;
@@ -73,6 +76,7 @@ import java.util.*;
  */
 
 public class SessionBean extends AbstractSessionBean {
+    private static final Logger logger = LogManager.getLogger(SessionBean.class);
 
     // REQUIRED AND/OR IMPLEMENTED ABSTRACT SESSION BEAN METHODS //
 
@@ -678,8 +682,8 @@ public class SessionBean extends AbstractSessionBean {
             try {
                 FacesContext.getCurrentInstance().getExternalContext().redirect("Login.jsp");
             }
-            catch (IOException ignore) {
-                //
+            catch (IOException e) {
+                logger.error("Failed to redirect to Login.jsp: " + e.getMessage(), e);
             }
         }
     }
@@ -1725,8 +1729,9 @@ public class SessionBean extends AbstractSessionBean {
                 return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                         .format(chosenWIR.getEnablementTimeMs());
             }
-            catch (Exception ignore) {
-                // fall through to empty string below
+            catch (Exception e) {
+                logger.warn("Failed to format enablement time: " + e.getMessage(), e);
+                // Fall through to empty string
             }
         }
         return "" ;

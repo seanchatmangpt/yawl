@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.processmining;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
 
@@ -121,7 +124,8 @@ public final class ConformanceAnalyzer {
                 }
                 traces.add(new Trace(caseId, activities));
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.warn("Failed to parse XES trace data: " + e.getMessage(), e);
         }
         return traces;
     }

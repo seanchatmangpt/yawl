@@ -18,12 +18,16 @@
 
 package org.yawlfoundation.yawl.procletService.editor.pconns;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 
 import javax.swing.*;
 
 public class PConnsCoordinator extends InternalCoordinator {
+    private static final Logger logger = LogManager.getLogger(PConnsCoordinator.class);
 	
 	  // frame for the block
 	  private FrmPConns frame = null;
@@ -80,7 +84,9 @@ public class PConnsCoordinator extends InternalCoordinator {
 	    try {
 	      this.frame.setClosed(true);
 	    }
-	    catch (Exception pve) {}
+	    catch (Exception e) {
+            logger.warn("Failed to close internal frame: " + e.getMessage(), e);
+        }
 	    ;
 	  }
 

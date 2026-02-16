@@ -1,5 +1,8 @@
 package org.yawlfoundation.yawl.integration.zai;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -23,6 +26,8 @@ import java.util.*;
  * @version 5.2
  */
 public class ZaiFunctionService {
+    private static final Logger logger = LogManager.getLogger(ZaiFunctionService.class);
+
 
     // Z.AI default model (override via ZAI_MODEL env)
     private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
@@ -166,7 +171,11 @@ public class ZaiFunctionService {
                     return "{\"error\":\"XES export failed: " + e.getMessage() + "\"}";
                 } finally {
                     if (exporter != null) {
-                        try { exporter.close(); } catch (IOException ignored) { }
+                        try {
+                            exporter.close();
+                        } catch (IOException e) {
+                            logger.warn("Failed to close EventLogExporter: " + e.getMessage(), e);
+                        }
                     }
                 }
             }

@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,6 +32,7 @@ import java.util.Map;
  * @date 29/10/2015
  */
 public class ProcessRunner {
+    private static final Logger logger = LogManager.getLogger(ProcessRunner.class);
 
     private Process _process;
 
@@ -84,7 +88,10 @@ public class ProcessRunner {
                 try {
                     return _process.waitFor();
                 }
-                catch (InterruptedException ignore) {
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Thread interrupted during process wait: " + e.getMessage());
+                
 
                 }
             }

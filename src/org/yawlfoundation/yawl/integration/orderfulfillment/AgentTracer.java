@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.UUID;
 
 /**
@@ -26,6 +29,7 @@ import java.util.UUID;
  * @version 5.2
  */
 public final class AgentTracer {
+    private static final Logger logger = LogManager.getLogger(AgentTracer.class);
 
     private static final AgentSpanBuilder BUILDER = createBuilder();
 
@@ -33,7 +37,8 @@ public final class AgentTracer {
         if ("true".equalsIgnoreCase(System.getenv("OTEL_SDK_ENABLED"))) {
             try {
                 return new OtelSpanBuilder();
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                logger.info("OpenTelemetry not available, using structured logging: " + e.getMessage());
             }
         }
         return new StructuredLogSpanBuilder();
