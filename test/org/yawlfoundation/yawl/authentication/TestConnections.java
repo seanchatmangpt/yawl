@@ -1,31 +1,33 @@
 package org.yawlfoundation.yawl.authentication;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.yawlfoundation.yawl.engine.YEngine;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.exceptions.YAuthenticationException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 29/01/2004
  * Time: 16:17:58
- * 
+ *
  */
-public class TestConnections extends TestCase {
+class TestConnections {
     private YSessionCache _sessionCache;
     private YEngine _engine;
 
-    public void setUp() throws YAuthenticationException {
+    @BeforeEach
+
+    void setUp() throws YAuthenticationException {
         _engine = YEngine.getInstance();
         _sessionCache = _engine.getSessionCache();
     }
 
+    @Test
 
-    public void testConnect() throws YPersistenceException {
+    void testConnect() throws YPersistenceException {
         clearUsers();
         try {
             _engine.addExternalClient(new YExternalClient("fred", "head", "doco"));
@@ -45,13 +47,15 @@ public class TestConnections extends TestCase {
         _engine.removeExternalClient("derf");
     }
 
-
     private void clearUsers()  {
         _sessionCache.clear();
     }
 
-    
-    public void testUnbreakable() throws YAuthenticationException {
+
+    @Test
+
+
+    void testUnbreakable() throws YAuthenticationException {
         clearUsers();
 
         boolean valid;
@@ -62,18 +66,22 @@ public class TestConnections extends TestCase {
         assertFalse(valid);
     }
 
-    public void testRobust() throws YPersistenceException {
+    @Test
+
+    void testRobust() throws YPersistenceException {
         clearUsers();
         boolean added = _engine.addExternalClient(new YExternalClient(null, null, null));
         assertFalse(added);
 
         String outcome = _sessionCache.connect(null, null, -1);
-        assertEquals("<failure>Null user name</failure>", outcome);
+        assertEquals(outcome);
     }
 
-    public void testRemoveUser() throws YPersistenceException {
+    @Test
+
+    void testRemoveUser() throws YPersistenceException {
         clearUsers();
-        _engine.addExternalClient(new YExternalClient("fred", "head", "doco"));
+        _engine.addExternalClient(new YExternalClient("fred", "head", "doco", "<failure>Null user name</failure>"));
 
         String handle = _sessionCache.connect("fred", "head", 1200);
 
@@ -83,18 +91,5 @@ public class TestConnections extends TestCase {
         boolean valid = _sessionCache.checkConnection(handle);
         assertFalse(valid);
         _engine.removeExternalClient("derf");
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestConnections.class);
-        return suite;
     }
 }

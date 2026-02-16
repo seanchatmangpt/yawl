@@ -1,10 +1,8 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -16,13 +14,13 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 23/07/2003
  * Time: 12:24:13
- * 
+ *
  */
-public class TestEngineAgainstImproperCompletionOfASubnet extends TestCase {
+class TestEngineAgainstImproperCompletionOfASubnet {
 
     private YIdentifier _idForTopNet;
     private YWorkItemRepository _workItemRepository;
@@ -30,12 +28,9 @@ public class TestEngineAgainstImproperCompletionOfASubnet extends TestCase {
     private YEngine engine;
     private YSpecification _specification;
 
+    @BeforeEach
 
-    public TestEngineAgainstImproperCompletionOfASubnet(String name) {
-        super(name);
-    }
-
-    public void setUp() throws YSyntaxException, JDOMException, YSchemaBuildingException, IOException {
+    void setUp() throws YSyntaxException, JDOMException, YSchemaBuildingException, IOException {
 //        new YLocalWorklist("Barbara");
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
         File yawlXMLFile = new File(fileURL.getFile());
@@ -45,7 +40,6 @@ public class TestEngineAgainstImproperCompletionOfASubnet extends TestCase {
         engine = YEngine.getInstance();
         _workItemRepository = engine.getWorkItemRepository();
     }
-
 
     public synchronized void testImproperCompletionSubnet() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         EngineClearer.clear(engine);
@@ -79,19 +73,5 @@ public class TestEngineAgainstImproperCompletionOfASubnet extends TestCase {
                 catch(InterruptedException ie){ie.printStackTrace();}
             }
         }
-    }
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestEngineAgainstImproperCompletionOfASubnet.class);
-        return suite;
     }
 }

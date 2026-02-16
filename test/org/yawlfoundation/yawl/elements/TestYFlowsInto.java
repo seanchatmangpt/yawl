@@ -1,30 +1,29 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 26/09/2003
  * Time: 10:16:44
- * 
+ *
  */
-public class TestYFlowsInto extends TestCase{
+class TestYFlowsInto{
     private YFlow _flowsInto, _flowsInto2,  _flowsInto4, _flowsInto5;
     private YExternalNetElement _XORSplit;
     private YExternalNetElement _ANDSplit;
     private YCondition _condition1;
     private YVerificationHandler handler = new YVerificationHandler();
 
+    @BeforeEach
 
-
-    public void setUp(){
+    void setUp(){
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
 
@@ -40,20 +39,22 @@ public class TestYFlowsInto extends TestCase{
 
     }
 
+    @Test
 
-    public void testToString(){
+    void testToString(){
         assertTrue(_flowsInto.toString(), _flowsInto.toString().startsWith("Flow"));
     }
 
+    @Test
 
-    public void testXOR_ORSplitNeedsDefaultFlowNotBoth(){
+    void testXOR_ORSplitNeedsDefaultFlowNotBoth(){
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue("Unexpected messages", handler.getMessageCount() == 2);
+        assertTrue(handler.getMessageCount(, "Unexpected messages") == 2);
         _flowsInto.setIsDefaultFlow(true);
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue("Unexpected messages", handler.getMessageCount() == 1);
+        assertTrue(handler.getMessageCount(, "Unexpected messages") == 1);
         _flowsInto.setXpathPredicate("hi mum");
         /*
         null [error] any flow from any Element (YAtomicTask:XORSplit_1) to any Element (YCondition:condition1) must occur with the bounds of the same net.
@@ -62,11 +63,12 @@ public class TestYFlowsInto extends TestCase{
         */
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue("Unexpected messages", handler.getMessageCount() == 3);
+        assertTrue(handler.getMessageCount(, "Unexpected messages") == 3);
     }
 
+    @Test
 
-    public void testANDCantBeDefaultFlow(){
+    void testANDCantBeDefaultFlow(){
         _flowsInto2.setIsDefaultFlow(true);
         _flowsInto2.setXpathPredicate("hi mum");
         _flowsInto2.setEvalOrdering(Integer.valueOf(5));
@@ -80,8 +82,9 @@ public class TestYFlowsInto extends TestCase{
         assertTrue(handler.getMessageCount() == 4);
     }
 
+    @Test
 
-    public void testConditionToCondition(){
+    void testConditionToCondition(){
         handler.reset();
         _flowsInto4.verify(null, handler);
         assertTrue(handler.getMessageCount() == 1);
@@ -102,22 +105,11 @@ public class TestYFlowsInto extends TestCase{
         assertTrue(handler.getMessageCount() == 4);
     }
 
+    @Test
 
-    public void testInputOutputFlow(){
+    void testInputOutputFlow(){
         handler.reset();
          _flowsInto5.verify(null, handler);
          assertTrue(handler.getMessageCount() == 3);
-    }
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYFlowsInto.class);
-        return suite;
     }
 }

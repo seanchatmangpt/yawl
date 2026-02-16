@@ -1,8 +1,7 @@
 package org.yawlfoundation.yawl.swingWorklist;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -11,22 +10,10 @@ import junit.textui.TestRunner;
  * Time: 16:00:43
  * 
  */
-public class WorklistTestSuite extends TestSuite{
-    public WorklistTestSuite(String name){
-        super(name);
-    }
-
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestWorklistTableModel.class);
-        suite.addTestSuite(TestYWorkAvailablePanel.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-
-    }
+@Suite
+@SelectClasses({
+    TestWorklistTableModel.class,
+    TestYWorkAvailablePanel.class
+})
+public class WorklistTestSuite {
 }

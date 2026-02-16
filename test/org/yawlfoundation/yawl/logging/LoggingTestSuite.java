@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.logging;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -10,15 +10,9 @@ import junit.framework.TestSuite;
  * Time: 14:41:14
  * 
  */
-public class LoggingTestSuite extends TestSuite{
-    public LoggingTestSuite(String name)
-    {
-        super(name);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(YawlServletTestNextIdNew.class);
-        return suite;
-    }
+@Suite
+@SelectClasses({
+    YawlServletTestNextIdNew.class
+})
+public class LoggingTestSuite {
 }

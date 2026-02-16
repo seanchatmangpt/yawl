@@ -34,7 +34,6 @@ public class AgentRegistryTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        super.setUp();
         registry = new AgentRegistry(TEST_PORT);
         registry.start();
         client = new AgentRegistryClient("localhost", TEST_PORT);
@@ -46,7 +45,6 @@ public class AgentRegistryTest extends TestCase {
         if (registry != null) {
             registry.stop();
         }
-        super.tearDown();
     }
 
     public void testRegisterAgent() throws Exception {
@@ -56,8 +54,8 @@ public class AgentRegistryTest extends TestCase {
             capability, "localhost", 8080);
 
         boolean result = client.register(agent);
-        assertTrue("Registration should succeed", result);
-        assertEquals("Should have 1 agent", 1, registry.getAgentCount());
+        assertTrue(result, "Registration should succeed");
+        assertEquals(1, registry.getAgentCount(, "Should have 1 agent"));
     }
 
     public void testListAgents() throws Exception {
@@ -71,7 +69,7 @@ public class AgentRegistryTest extends TestCase {
         client.register(agent2);
 
         List<AgentInfo> agents = client.listAll();
-        assertEquals("Should have 2 agents", 2, agents.size());
+        assertEquals(2, agents.size(, "Should have 2 agents"));
     }
 
     public void testQueryByCapability() throws Exception {
@@ -85,12 +83,12 @@ public class AgentRegistryTest extends TestCase {
         client.register(agent2);
 
         List<AgentInfo> orderingAgents = client.queryByCapability("Ordering");
-        assertEquals("Should find 1 ordering agent", 1, orderingAgents.size());
-        assertEquals("Should be agent-1", "agent-1", orderingAgents.get(0).getId());
+        assertEquals(1, orderingAgents.size(, "Should find 1 ordering agent"));
+        assertEquals("agent-1", orderingAgents.get(0, "Should be agent-1").getId());
 
         List<AgentInfo> shippingAgents = client.queryByCapability("Shipping");
-        assertEquals("Should find 1 shipping agent", 1, shippingAgents.size());
-        assertEquals("Should be agent-2", "agent-2", shippingAgents.get(0).getId());
+        assertEquals(1, shippingAgents.size(, "Should find 1 shipping agent"));
+        assertEquals("agent-2", shippingAgents.get(0, "Should be agent-2").getId());
     }
 
     public void testHeartbeat() throws Exception {
@@ -104,12 +102,11 @@ public class AgentRegistryTest extends TestCase {
         Thread.sleep(50);
 
         boolean result = client.sendHeartbeat("agent-1");
-        assertTrue("Heartbeat should succeed", result);
+        assertTrue(result, "Heartbeat should succeed");
 
         List<AgentInfo> agents = client.listAll();
-        assertEquals("Should have 1 agent", 1, agents.size());
-        assertTrue("Heartbeat timestamp should be updated",
-                 agents.get(0).getLastHeartbeat() > beforeHeartbeat);
+        assertEquals(1, agents.size(, "Should have 1 agent"));
+        assertTrue(agents.get(0, "Heartbeat timestamp should be updated").getLastHeartbeat() > beforeHeartbeat);
     }
 
     public void testUnregister() throws Exception {
@@ -118,11 +115,11 @@ public class AgentRegistryTest extends TestCase {
             capability, "localhost", 8080);
 
         client.register(agent);
-        assertEquals("Should have 1 agent", 1, registry.getAgentCount());
+        assertEquals(1, registry.getAgentCount(, "Should have 1 agent"));
 
         boolean result = client.unregister("agent-1");
-        assertTrue("Unregister should succeed", result);
-        assertEquals("Should have 0 agents", 0, registry.getAgentCount());
+        assertTrue(result, "Unregister should succeed");
+        assertEquals(0, registry.getAgentCount(, "Should have 0 agents"));
     }
 
     public void testAgentInfoJsonSerialization() throws Exception {
@@ -132,18 +129,16 @@ public class AgentRegistryTest extends TestCase {
             capability, "localhost", 8080);
 
         String json = original.toJson();
-        assertNotNull("JSON should not be null", json);
-        assertTrue("JSON should contain id", json.contains("\"id\":\"agent-1\""));
-        assertTrue("JSON should contain name", json.contains("\"name\":\"Test Agent\""));
+        assertNotNull(json, "JSON should not be null");
+        assertTrue(json.contains("\"id\":\"agent-1\"", "JSON should contain id"));
+        assertTrue(json.contains("\"name\":\"Test Agent\"", "JSON should contain name"));
 
         AgentInfo deserialized = AgentInfo.fromJson(json);
-        assertEquals("ID should match", original.getId(), deserialized.getId());
-        assertEquals("Name should match", original.getName(), deserialized.getName());
-        assertEquals("Host should match", original.getHost(), deserialized.getHost());
-        assertEquals("Port should match", original.getPort(), deserialized.getPort());
-        assertEquals("Domain should match",
-                   original.getCapability().getDomainName(),
-                   deserialized.getCapability().getDomainName());
+        assertEquals(original.getId(), deserialized.getId(, "ID should match"));
+        assertEquals(original.getName(), deserialized.getName(, "Name should match"));
+        assertEquals(original.getHost(), deserialized.getHost(, "Host should match"));
+        assertEquals(original.getPort(), deserialized.getPort(, "Port should match"));
+        assertEquals(original.getCapability().getDomainName(), deserialized.getCapability(, "Domain should match").getDomainName());
     }
 
     public void testAgentHealthMonitor() throws Exception {
@@ -152,11 +147,11 @@ public class AgentRegistryTest extends TestCase {
             capability, "localhost", 8080);
 
         client.register(agent);
-        assertEquals("Should have 1 agent", 1, registry.getAgentCount());
+        assertEquals(1, registry.getAgentCount(, "Should have 1 agent"));
 
         Thread.sleep(35000);
 
-        assertEquals("Agent should be removed after timeout", 0, registry.getAgentCount());
+        assertEquals(0, registry.getAgentCount(, "Agent should be removed after timeout"));
     }
 
     public void testMultipleAgentsWithSameCapability() throws Exception {
@@ -169,7 +164,7 @@ public class AgentRegistryTest extends TestCase {
         client.register(agent2);
 
         List<AgentInfo> agents = client.queryByCapability("Ordering");
-        assertEquals("Should find 2 agents with Ordering capability", 2, agents.size());
+        assertEquals(2, agents.size(, "Should find 2 agents with Ordering capability"));
     }
 
     public void testInvalidRegistration() throws Exception {
@@ -177,7 +172,7 @@ public class AgentRegistryTest extends TestCase {
             client.register(null);
             fail("Should throw IllegalArgumentException for null agent");
         } catch (IllegalArgumentException e) {
-            assertTrue("Should have meaningful error", e.getMessage().contains("required"));
+            assertTrue(e.getMessage(, "Should have meaningful error").contains("required"));
         }
     }
 
@@ -186,7 +181,7 @@ public class AgentRegistryTest extends TestCase {
             client.sendHeartbeat("");
             fail("Should throw IllegalArgumentException for empty agent ID");
         } catch (IllegalArgumentException e) {
-            assertTrue("Should have meaningful error", e.getMessage().contains("required"));
+            assertTrue(e.getMessage(, "Should have meaningful error").contains("required"));
         }
     }
 

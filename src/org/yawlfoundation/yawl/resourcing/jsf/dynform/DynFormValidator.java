@@ -26,7 +26,7 @@ import org.yawlfoundation.yawl.util.DOMUtil;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.faces.component.UIComponent;
+import jakarta.faces.component.UIComponent;
 import javax.xml.XMLConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.transform.sax.SAXSource;

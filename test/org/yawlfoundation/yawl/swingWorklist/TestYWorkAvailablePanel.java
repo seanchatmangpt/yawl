@@ -1,28 +1,24 @@
 package org.yawlfoundation.yawl.swingWorklist;
 
-import junit.framework.TestCase;
-
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 15/05/2003
  * Time: 10:52:57
- * 
+ *
  */
-public class TestYWorkAvailablePanel extends TestCase{
+class TestYWorkAvailablePanel{
 
-    public TestYWorkAvailablePanel(String name){
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp(){
+    void setUp(){
 
     }
 
-    public void testSomething(){
+    @Test
+
+    void testSomething(){
 
     }
-
 
 }

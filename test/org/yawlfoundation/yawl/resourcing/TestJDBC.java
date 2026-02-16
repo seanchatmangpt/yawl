@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.resourcing.datastore.orgdata.DataSource;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.resourcing.resource.*;
 
 /**
@@ -10,10 +10,11 @@ import org.yawlfoundation.yawl.resourcing.resource.*;
  * Date: 01/08/2007
  *
  */
-public class TestJDBC extends TestCase {
+class TestJDBC {
 
+    @Test
 
-    public void testDB() {
+    void testDB() {
         ResourceManager rm = ResourceManager.getInstance();
 
         DataSource db = rm.getOrgDataSource();
@@ -50,8 +51,6 @@ public class TestJDBC extends TestCase {
 //        db.delete(r);
 //        db.delete(o);
 //        db.delete(po);
-
-
 
 //        DataSource db = rm.getOrgDataSource() ;
 //        Random rand = new Random();
@@ -97,12 +96,8 @@ public class TestJDBC extends TestCase {
 //            System.out.println(p.toXML());
 //        }
 
-
 //        rm.loadResources();
 //        System.out.println(rm.getParticipantsAsXML()) ;
-
-
-
 
     }
 }

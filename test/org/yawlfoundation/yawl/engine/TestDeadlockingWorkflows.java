@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -19,26 +18,24 @@ import java.util.Set;
 
 /**
  /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 3/03/2004
  * Time: 12:08:48
- * 
+ *
  */
-public class TestDeadlockingWorkflows extends TestCase{
+class TestDeadlockingWorkflows{
     private YIdentifier _idForTopNet;
 
-    public TestDeadlockingWorkflows(String s) {
-        super(s);
-    }
+    @BeforeEach
 
-
-    public void setUp(){
+    void setUp(){
 
     }
 
+    @Test
 
-    public void testDeadlockingSpecification()
+    void testDeadlockingSpecification()
             throws YSchemaBuildingException, YSyntaxException,
             JDOMException, IOException, YStateException, YPersistenceException, YEngineStateException, YQueryException, YDataStateException {
         URL fileURL = getClass().getResource("DeadlockingSpecification.xml");
@@ -67,18 +64,5 @@ public class TestDeadlockingWorkflows extends TestCase{
         }
         assertTrue(runner.isCompleted());
         assertFalse(runner.isAlive());
-    }
-
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestDeadlockingWorkflows.class);
-        return suite;
     }
 }

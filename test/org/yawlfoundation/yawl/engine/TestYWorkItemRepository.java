@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
@@ -10,23 +12,20 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 30/05/2003
  * Time: 15:32:26
- * 
+ *
  */
-public class TestYWorkItemRepository extends TestCase {
+class TestYWorkItemRepository {
     private YWorkItemRepository _workitemRepository;
     private YWorkItem _parentWorkItem;
     private YTask _task;
 
-    public TestYWorkItemRepository(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         _workitemRepository = YEngine.getInstance().getWorkItemRepository();
         _workitemRepository.clear();
         _task = new YAtomicTask("task-123", YTask._XOR, YTask._AND, null);
@@ -38,8 +37,9 @@ public class TestYWorkItemRepository extends TestCase {
         }
     }
 
+    @Test
 
-    public void testGetItem() throws YPersistenceException {
+    void testGetItem() throws YPersistenceException {
         assertTrue(_workitemRepository.getEnabledWorkItems().size() == 0);
         new YWorkItem(null, new YSpecificationID("ASpecID"), _task, new YWorkItemID(new YIdentifier(null), "task4321"), false, false);
         assertEquals(
@@ -50,8 +50,9 @@ public class TestYWorkItemRepository extends TestCase {
         assertNull(_workitemRepository.get(_parentWorkItem.getCaseID().toString(), _parentWorkItem.getTaskID()));
     }
 
+    @Test
 
-    public void testChildren() {
+    void testChildren() {
         Set enabledItems = _workitemRepository.getFiredWorkItems();
         Iterator iter = _parentWorkItem.getChildren().iterator();
         while (iter.hasNext()) {

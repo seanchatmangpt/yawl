@@ -1,8 +1,7 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.TestCase;
-
 import org.yawlfoundation.yawl.resourcing.interactions.*;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.resourcing.allocators.GenericAllocator;
 import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.resourcing.filters.GenericFilter;
@@ -18,9 +17,11 @@ import org.jdom2.Element;
  * Date: 01/08/2007
  *
  */
-public class TestResourceSpecXML extends TestCase {
+class TestResourceSpecXML {
 
-    public void testBuildSpecXML(){
+    @Test
+
+    void testBuildSpecXML(){
 
         ResourceManager rm = ResourceManager.getInstance();
 
@@ -64,7 +65,6 @@ public class TestResourceSpecXML extends TestCase {
         TaskPrivileges tp = new TaskPrivileges();
         tp.grantDeallocateByID("delallID");
         tp.grantDelegate(new Participant("newPIDDelegate"));
-
 
         // ResourceMap constructor would normally receive a ref to the parent taskID
         ResourceMap rMap = new ResourceMap("task_23") ;

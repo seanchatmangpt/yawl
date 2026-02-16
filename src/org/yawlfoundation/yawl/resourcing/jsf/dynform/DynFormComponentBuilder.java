@@ -29,7 +29,7 @@ import org.yawlfoundation.yawl.resourcing.jsf.FontUtil;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.faces.component.UIComponent;
+import jakarta.faces.component.UIComponent;
 import javax.swing.*;
 import java.awt.*;
 import java.net.MalformedURLException;

@@ -1,14 +1,14 @@
 package org.yawlfoundation.yawl.unmarshal;
 
 import org.yawlfoundation.yawl.elements.YNet;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.util.StringUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
@@ -19,28 +19,22 @@ import java.io.*;
 import java.util.List;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 3/10/2003
  * Time: 15:21:49
- * 
+ *
  */
-public class TestYMarshal extends TestCase {
+class TestYMarshal {
     private YSpecification _originalSpec;
     private YSpecification _copy;
     private String _originalXMLString;
     private String _copyXMLString;
     private String tempfileName = "tempTestFile.xml";
 
+    @BeforeEach
 
-    public TestYMarshal(String name) {
-        super(name);
-    }
-
-
-
-
-    public void setUp() throws YSyntaxException, IOException, YSchemaBuildingException, JDOMException {
+    void setUp() throws YSyntaxException, IOException, YSchemaBuildingException, JDOMException {
         File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
         List specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));
         _originalSpec = (YSpecification) specifications.iterator().next();
@@ -60,8 +54,6 @@ public class TestYMarshal extends TestCase {
         _originalXMLString = YMarshal.marshal(_originalSpec);
         _copyXMLString = YMarshal.marshal(_copy);
     }
-
-
 
     public void setUp2() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
 //        File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
@@ -96,7 +88,9 @@ System.out.println("marshalledSpecsString = " + marshalledSpecsString);
     }
 
 /*
-    public void testBothValid() {
+    @Test
+
+    void testBothValid() {
         List errorMessages = _originalSpec.verify();
         if (errorMessages.size() != 0) {
             fail(YMessagePrinter.getMessageString(errorMessages));
@@ -108,7 +102,9 @@ System.out.println("marshalledSpecsString = " + marshalledSpecsString);
     }
 
 */
-    public void testBothEqual() {
+    @Test
+
+    void testBothEqual() {
         assertEquals(_originalSpec.getURI(), _copy.getURI());
         YNet origNet = _originalSpec.getRootNet();
         YNet copyNet = _copy.getRootNet();
@@ -120,8 +116,9 @@ System.out.println("marshalledSpecsString = " + marshalledSpecsString);
         assertEquals(_originalXMLString, _copyXMLString);
     }
 
+    @Test
 
-    public void testLineByLine() {
+    void testLineByLine() {
         File testFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
 //System.out.println("origXML\n" + _originalXMLString);
 //YNet r = _originalSpec.getRootNet();
@@ -164,18 +161,5 @@ System.out.println("_originalXMLString = " + groomedOriginalXMLString);
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYMarshal.class);
-        return suite;
     }
 }

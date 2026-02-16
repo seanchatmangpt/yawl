@@ -1,9 +1,7 @@
 package org.yawlfoundation.yawl.unmarshal;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
-
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -20,21 +18,11 @@ import junit.textui.TestRunner;
  * The YAWL Project or it's members will not be held liable for any damage
  * occuring as a _errorsString of using this class.
  */
-public class UnmarshallerTestSuite extends TestSuite {
-    public UnmarshallerTestSuite(String name){
-        super(name);
-    }
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestMetaDataMarshal.class);
-//        suite.addTestSuite(TestYMarshal.class);
-        suite.addTestSuite(TestYMarshalB4.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-    }
+@Suite
+@SelectClasses({
+    TestMetaDataMarshal.class,
+    TestYMarshal.class,
+    TestYMarshalB4.class
+})
+public class UnmarshallerTestSuite {
 }

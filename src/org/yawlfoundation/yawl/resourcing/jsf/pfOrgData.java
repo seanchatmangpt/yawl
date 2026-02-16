@@ -26,8 +26,8 @@ import org.yawlfoundation.yawl.resourcing.datastore.orgdata.ResourceDataSet;
 import org.yawlfoundation.yawl.resourcing.resource.*;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.faces.FacesException;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.event.ValueChangeEvent;
 import java.io.UnsupportedEncodingException;
 
 /*

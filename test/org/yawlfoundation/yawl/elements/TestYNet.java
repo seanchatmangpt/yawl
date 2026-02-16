@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.state.TestYMarking;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.TestEngineAgainstImproperCompletionOfASubnet;
@@ -30,7 +29,7 @@ import java.util.Map;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
-public class TestYNet extends TestCase {
+class TestYNet {
     private YNet _goodNet;
     private YNet _badNet;
     private YNet _copy;
@@ -41,23 +40,14 @@ public class TestYNet extends TestCase {
 
     private YVerificationHandler handler = new YVerificationHandler();
 
+    @BeforeEach
 
-    /**
-     * Constructor for NetElementTest.
-     * @param name
-     */
-    public TestYNet(String name) {
-        super(name);
-    }
-
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YPersistenceException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YPersistenceException {
         File file1 = new File(getClass().getResource("GoodNetSpecification.xml").getFile());
         File file2 = new File(getClass().getResource("BadNetSpecification.xml").getFile());
         YSpecification specification1 = null;
 
         specification1 = (YSpecification) YMarshal.unmarshalSpecifications(StringUtil.fileToString(file1.getAbsolutePath())).get(0);
-
 
         _badSpecification = (YSpecification) YMarshal.unmarshalSpecifications(StringUtil.fileToString(file2.getAbsolutePath())).get(0);
 
@@ -110,8 +100,9 @@ public class TestYNet extends TestCase {
         }
     }
 
+    @Test
 
-    public void testGoodNetVerify() {
+    void testGoodNetVerify() {
         handler.reset();
         _goodNet.verify(handler);
         //there's three missing splits stuffs
@@ -123,8 +114,9 @@ public class TestYNet extends TestCase {
         }
     }
 
+    @Test
 
-    public void testBadNetVerify() {
+    void testBadNetVerify() {
         handler.reset();
         _badSpecification.verify(handler);
         if (handler.getMessageCount() != 5) {
@@ -142,8 +134,9 @@ public class TestYNet extends TestCase {
         }
     }
 
+    @Test
 
-    public void testCloneBasics() {
+    void testCloneBasics() {
         YInputCondition inputGoodNet = this._goodNet.getInputCondition();
         YInputCondition inputCopy = _copy.getInputCondition();
         assertNotSame(this._goodNet.getNetElements(), _copy.getNetElements());
@@ -160,8 +153,9 @@ public class TestYNet extends TestCase {
         assertNotSame(inputGoodNet, inputCopy);
     }
 
+    @Test
 
-    public void testCloneVerify() {
+    void testCloneVerify() {
         handler.reset();
         _copy.verify(handler);
         //there's three missing splits stuffs
@@ -173,8 +167,9 @@ public class TestYNet extends TestCase {
         }
     }
 
+    @Test
 
-    public void testORJoinEnabled() {
+    void testORJoinEnabled() {
         //XPathSaxonUser an orjoin with two tokens before the or join and a token that may arrive soon.
         assertFalse(_loopedNet.orJoinEnabled((YTask) _loopedNet.getNetElement("f"), _id1));
         //XPathSaxonUser a marking with a token before the orjoin and a token hidden in front of annother
@@ -197,8 +192,8 @@ public class TestYNet extends TestCase {
         assertFalse(_loopedNet.orJoinEnabled((YTask) _loopedNet.getNetElement("f"), _id8));
     }
 
-
-//    public void testCloneWithNewDataModel() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+//    @Test
+    void testCloneWithNewDataModel() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
 //        File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
 //        List specifications = null;
 //        specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));
@@ -219,8 +214,9 @@ public class TestYNet extends TestCase {
 //        assertEquals(originalNet.toXML(), clonedNet.toXML());
 //    }
 
+    @Test
 
-    public void testDataStructureAgainstWierdSpecification(){
+    void testDataStructureAgainstWierdSpecification(){
         YNet weirdRootClone = (YNet) _weirdSpecification.getRootNet().clone();
         try {
             YNet weirdleafDClone = (YNet) ((YTask)weirdRootClone.getNetElement("d-top"))
@@ -230,17 +226,5 @@ public class TestYNet extends TestCase {
             e.printStackTrace();
             fail(e.getMessage());
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYNet.class);
-        return suite;
     }
 }

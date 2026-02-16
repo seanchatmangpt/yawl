@@ -13,18 +13,20 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * HTTP client for PM4Py A2A agent. Sends JSON messages and extracts text response.
+ * Uses modern java.net.http.HttpClient and Jackson for JSON processing.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -32,12 +34,18 @@ import java.util.stream.Collectors;
 public final class Pm4PyClient {
 
     private final String agentUrl;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     public Pm4PyClient(String agentUrl) {
         if (agentUrl == null || agentUrl.isEmpty()) {
             throw new IllegalArgumentException("agentUrl is required");
         }
         this.agentUrl = agentUrl.endsWith("/") ? agentUrl : agentUrl + "/";
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -62,49 +70,67 @@ public final class Pm4PyClient {
      * Call PM4Py agent with skill, xes_input, and optional extra args.
      */
     public String call(String skill, String xesInput, Map<String, String> extraArgs) {
-        StringBuilder payload = new StringBuilder();
-        payload.append("{\"skill\":\"").append(escapeJson(skill)).append("\"");
-        payload.append(",\"xes_input\":\"").append(escapeJson(xesInput)).append("\"");
-        if (extraArgs != null) {
-            for (Map.Entry<String, String> e : extraArgs.entrySet()) {
-                payload.append(",\"").append(escapeJson(e.getKey())).append("\":\"");
-                payload.append(escapeJson(e.getValue())).append("\"");
-            }
-        }
-        payload.append("}");
-
-        String messageBody = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"message/send\",\"params\":"
-            + "{\"message\":{\"role\":\"user\",\"parts\":[{\"kind\":\"text\",\"text\":"
-            + escapeJson(payload.toString()) + "}]}}}";
-
         try {
-            HttpURLConnection conn = (HttpURLConnection) URI.create(agentUrl).toURL().openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(60000);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(messageBody.getBytes(StandardCharsets.UTF_8));
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("skill", skill);
+            payload.put("xes_input", xesInput);
+            if (extraArgs != null) {
+                payload.putAll(extraArgs);
             }
 
-            int code = conn.getResponseCode();
-            String body = new BufferedReader(new InputStreamReader(
-                code >= 400 ? conn.getErrorStream() : conn.getInputStream(), StandardCharsets.UTF_8))
-                .lines().collect(Collectors.joining("\n"));
+            Map<String, Object> textPart = new HashMap<>();
+            textPart.put("kind", "text");
+            textPart.put("text", objectMapper.writeValueAsString(payload));
 
-            if (code >= 400) {
-                return "{\"error\":\"PM4Py agent HTTP " + code + ": " + body + "\"}";
+            Map<String, Object> message = new HashMap<>();
+            message.put("role", "user");
+            message.put("parts", new Object[]{textPart});
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("message", message);
+
+            Map<String, Object> rpcRequest = new HashMap<>();
+            rpcRequest.put("jsonrpc", "2.0");
+            rpcRequest.put("id", 1);
+            rpcRequest.put("method", "message/send");
+            rpcRequest.put("params", params);
+
+            String requestBody = objectMapper.writeValueAsString(rpcRequest);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(agentUrl))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 400) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "PM4Py agent HTTP " + response.statusCode() + ": " + response.body());
+                return objectMapper.writeValueAsString(error);
             }
-            return body;
-        } catch (Exception e) {
-            return "{\"error\":\"PM4Py agent call failed: " + e.getMessage() + "\"}";
+
+            return response.body();
+        } catch (IOException e) {
+            try {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "PM4Py agent call failed: " + e.getMessage());
+                return objectMapper.writeValueAsString(error);
+            } catch (IOException jsonError) {
+                return "{\"error\":\"PM4Py agent call failed: " + e.getMessage() + "\"}";
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            try {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "PM4Py agent call interrupted");
+                return objectMapper.writeValueAsString(error);
+            } catch (IOException jsonError) {
+                return "{\"error\":\"PM4Py agent call interrupted\"}";
+            }
         }
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 }

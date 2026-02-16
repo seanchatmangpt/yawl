@@ -37,8 +37,7 @@ public class HibernateEngineSecurityTest {
             validateClassName.invoke(null, "User; DROP TABLE users; --");
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -55,8 +54,7 @@ public class HibernateEngineSecurityTest {
             validateClassName.invoke(null, "User UNION SELECT * FROM Role");
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -73,8 +71,7 @@ public class HibernateEngineSecurityTest {
             validateClassName.invoke(null, (String) null);
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -107,8 +104,7 @@ public class HibernateEngineSecurityTest {
             validateFieldName.invoke(null, "userid OR 1=1");
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -125,8 +121,7 @@ public class HibernateEngineSecurityTest {
             validateFieldName.invoke(null, "userid' OR '1'='1");
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -143,8 +138,7 @@ public class HibernateEngineSecurityTest {
             validateFieldName.invoke(null, (String) null);
             fail("Should have thrown IllegalArgumentException");
         } catch (java.lang.reflect.InvocationTargetException e) {
-            assertTrue("Should throw IllegalArgumentException",
-                    e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause(, "Should throw IllegalArgumentException") instanceof IllegalArgumentException);
         }
     }
 
@@ -171,7 +165,7 @@ public class HibernateEngineSecurityTest {
         // This test requires a valid HibernateEngine instance
         // For now, we verify the method signature exists and is deprecated
         Method method = HibernateEngine.class.getMethod("getObjectsForClassWhere", String.class, String.class);
-        assertTrue("Method should be deprecated", method.isAnnotationPresent(Deprecated.class));
+        assertTrue(method.isAnnotationPresent(Deprecated.class, "Method should be deprecated"));
 
         // Attempting to call it should throw UnsupportedOperationException
         // This would require a properly initialized HibernateEngine instance
@@ -187,8 +181,8 @@ public class HibernateEngineSecurityTest {
             Method validateClassName = HibernateEngine.class.getDeclaredMethod("validateClassName", String.class);
             Method validateFieldName = HibernateEngine.class.getDeclaredMethod("validateFieldName", String.class);
 
-            assertNotNull("validateClassName method should exist", validateClassName);
-            assertNotNull("validateFieldName method should exist", validateFieldName);
+            assertNotNull(validateClassName, "validateClassName method should exist");
+            assertNotNull(validateFieldName, "validateFieldName method should exist");
         } catch (NoSuchMethodException e) {
             fail("Validation methods should be present: " + e.getMessage());
         }
@@ -202,7 +196,7 @@ public class HibernateEngineSecurityTest {
         try {
             Method safeMethod = HibernateEngine.class.getMethod(
                     "getObjectsForClassWhereParam", String.class, String.class, Object.class);
-            assertNotNull("Safe parameterized method should exist", safeMethod);
+            assertNotNull(safeMethod, "Safe parameterized method should exist");
         } catch (NoSuchMethodException e) {
             fail("Safe parameterized method should be present: " + e.getMessage());
         }

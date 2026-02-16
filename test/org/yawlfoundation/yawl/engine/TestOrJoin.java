@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -19,26 +18,25 @@ import java.util.Iterator;
 
 /**
  /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 27/04/2004
  * Time: 15:03:20
- * 
+ *
  */
-public class TestOrJoin extends TestCase {
+class TestOrJoin {
     private long _sleepTime = 100;
     private YEngine _engine;
 
-    public TestOrJoin(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() {
+    void setUp() {
 
     }
 
-    public void testImproperCompletion() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
+    @Test
+
+    void testImproperCompletion() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL = getClass().getResource("TestOrJoin.xml");
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
@@ -126,9 +124,9 @@ public class TestOrJoin extends TestCase {
                     break;
                 }
             }
-            assertNotNull("itemA parent is null", itemA);
+            assertNotNull(itemA, "itemA parent is null");
             itemA = _engine.startWorkItem(itemA, _engine.getExternalClient("admin"));
-            assertNotNull("itemA child is null", itemA);
+            assertNotNull(itemA, "itemA child is null");
             try {
                 Thread.sleep(_sleepTime);
             } catch (InterruptedException ie) {
@@ -157,8 +155,9 @@ public class TestOrJoin extends TestCase {
         }
     }
 
+    @Test
 
-    public void testImproperCompletion2() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YDataStateException, YStateException, YQueryException, YPersistenceException {
+    void testImproperCompletion2() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL2 = getClass().getResource("Test55.xml");
         File yawlXMLFile2 = new File(fileURL2.getFile());
         YSpecification specification2 = YMarshal.
@@ -233,9 +232,9 @@ public class TestOrJoin extends TestCase {
         }
         {
             YWorkItem itemA = _engine.getAvailableWorkItems().iterator().next();
-            assertNotNull("itemA parent is null", itemA);
+            assertNotNull(itemA, "itemA parent is null");
             itemA = _engine.startWorkItem(itemA, _engine.getExternalClient("admin"));
-            assertNotNull("itemA child is null", itemA);
+            assertNotNull(itemA, "itemA child is null");
             try {
                 Thread.sleep(_sleepTime);
             } catch (InterruptedException ie) {
@@ -266,18 +265,4 @@ public class TestOrJoin extends TestCase {
     }
 
     //todo write two more test for or join using cancellationTest.ywl and another variant
-
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestOrJoin.class);
-        return suite;
-    }
 }

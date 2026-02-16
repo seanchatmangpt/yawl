@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
@@ -13,21 +15,19 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 17/04/2003
  * Time: 14:30:45
- * 
+ *
  */
-public class TestYCompositeTask extends TestCase{
+class TestYCompositeTask{
     private YCompositeTask _myCompositeTask1;
     private YCompositeTask _myCompositeTask2;
 
-    public TestYCompositeTask(String name){
-        super(name);
-    }
+    @BeforeEach
 
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
 		File file1  = new File(getClass().getResource("YAWL_Specification1.xml").getFile());
         YSpecification specification1 = null;
 
@@ -39,8 +39,9 @@ public class TestYCompositeTask extends TestCase{
         this._myCompositeTask2 = new YCompositeTask("ct1",YCompositeTask._AND,YCompositeTask._AND,net);
     }
 
+    @Test
 
-    public void testValidCompositeTask(){
+    void testValidCompositeTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _myCompositeTask1.verify(handler);
         if (handler.hasMessages()) {
@@ -51,10 +52,11 @@ public class TestYCompositeTask extends TestCase{
         }
     }
 
-    public void testInvalidCompositeTask(){
+    @Test
+
+    void testInvalidCompositeTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _myCompositeTask2.verify(handler);
-        assertTrue("Invalid composite task ct1 should produce verification messages",
-                   handler.hasMessages());
+        assertTrue(handler.hasMessages(, "Invalid composite task ct1 should produce verification messages"));
     }
 }

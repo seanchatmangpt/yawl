@@ -134,7 +134,7 @@ public class JdbcImplSecurityTest {
         try {
             Method loadConfig = jdbcImpl.class.getDeclaredMethod("loadDatabaseConfig");
             loadConfig.setAccessible(true);
-            assertNotNull("loadDatabaseConfig method should exist", loadConfig);
+            assertNotNull(loadConfig, "loadDatabaseConfig method should exist");
         } catch (NoSuchMethodException e) {
             fail("loadDatabaseConfig method should be present for externalized configuration");
         }
@@ -149,8 +149,8 @@ public class JdbcImplSecurityTest {
             Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
             Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
 
-            assertNotNull("validateTableName method should exist", validateTableName);
-            assertNotNull("validateFieldName method should exist", validateFieldName);
+            assertNotNull(validateTableName, "validateTableName method should exist");
+            assertNotNull(validateFieldName, "validateFieldName method should exist");
         } catch (NoSuchMethodException e) {
             fail("Validation methods should be present");
         }
@@ -165,8 +165,8 @@ public class JdbcImplSecurityTest {
             java.lang.reflect.Field validTables = jdbcImpl.class.getDeclaredField("VALID_TABLE_NAMES");
             java.lang.reflect.Field validFields = jdbcImpl.class.getDeclaredField("VALID_FIELD_NAMES");
 
-            assertNotNull("VALID_TABLE_NAMES constant should exist", validTables);
-            assertNotNull("VALID_FIELD_NAMES constant should exist", validFields);
+            assertNotNull(validTables, "VALID_TABLE_NAMES constant should exist");
+            assertNotNull(validFields, "VALID_FIELD_NAMES constant should exist");
         } catch (NoSuchFieldException e) {
             fail("Whitelist constants should be present");
         }

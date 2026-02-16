@@ -22,10 +22,10 @@ import com.sun.rave.web.ui.component.Button;
 import com.sun.rave.web.ui.component.*;
 import com.sun.rave.web.ui.component.Label;
 
-import javax.faces.application.Application;
-import javax.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
-import javax.faces.event.ActionEvent;
+import jakarta.faces.application.Application;
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.el.MethodBinding;
+import jakarta.faces.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.LinkedHashMap;

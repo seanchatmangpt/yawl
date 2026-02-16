@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -17,30 +18,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 28/04/2003
  * Time: 11:12:39
- * 
+ *
  */
-public class TestYAtomicTask extends TestCase{
+class TestYAtomicTask {
 	private YAtomicTask _atomicTask1;
     private YDecomposition _ydecomp;
     private String _activityID = "Activity1";
     private YAtomicTask _atomicTask2;
     private YCondition _c1;
 
-    /**
-	 * Constructor for TaskTest
-	 */
-	public TestYAtomicTask(String name) {
-		super(name);
-	}
 
-
-    public void setUp() throws YPersistenceException {
+    @BeforeEach
+    void setUp() throws YPersistenceException {
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
         YNet deadNet = new YNet("aNet", spec);
@@ -79,8 +77,8 @@ public class TestYAtomicTask extends TestCase{
         _atomicTask2.addPostset(f);
     }
 
-
-    public void testFullAtomicTask(){
+    @Test
+    void testFullAtomicTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _atomicTask1.verify(handler);
         if (handler.hasMessages()) {
@@ -91,8 +89,8 @@ public class TestYAtomicTask extends TestCase{
         }
     }
 
-
-    public void testEmptyAtomicTask(){
+    @Test
+    void testEmptyAtomicTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _atomicTask2.verify(handler);
         if (handler.hasMessages()) {
@@ -103,8 +101,8 @@ public class TestYAtomicTask extends TestCase{
         }
     }
 
-
-    public void testFireAtomicTask() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    @Test
+    void testFireAtomicTask() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         _c1.add(null, new YIdentifier(null));
         List l = null;
         l = _atomicTask1.t_fire(null);

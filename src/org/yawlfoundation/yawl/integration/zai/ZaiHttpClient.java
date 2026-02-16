@@ -1,17 +1,24 @@
 package org.yawlfoundation.yawl.integration.zai;
 
-import java.io.*;
-import java.net.HttpURLConnection;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * HTTP Client for Z.AI API
  *
- * Direct HTTP client for Z.AI chat completions API.
- * No external SDK dependencies required.
+ * Modern HTTP client for Z.AI chat completions API using java.net.http.HttpClient
+ * and Jackson for JSON processing.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -23,17 +30,22 @@ public class ZaiHttpClient {
 
     private final String apiKey;
     private final String baseUrl;
-    private int connectTimeout = 30000;
-    private int readTimeout = 60000;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+    private Duration connectTimeout = Duration.ofSeconds(30);
+    private Duration readTimeout = Duration.ofSeconds(60);
 
     public ZaiHttpClient(String apiKey) {
-        this.apiKey = apiKey;
-        this.baseUrl = ZAI_API_BASE;
+        this(apiKey, ZAI_API_BASE);
     }
 
     public ZaiHttpClient(String apiKey, String baseUrl) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(connectTimeout)
+                .build();
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -54,119 +66,69 @@ public class ZaiHttpClient {
         String url = baseUrl + CHAT_ENDPOINT;
         String requestBody = buildChatRequestBody(model, messages, temperature, maxTokens);
 
-        HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-        conn.setDoOutput(true);
-        conn.setConnectTimeout(connectTimeout);
-        conn.setReadTimeout(readTimeout);
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(readTimeout)
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
 
-        // Send request
-        try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
 
-        // Read response
-        int responseCode = conn.getResponseCode();
-        InputStream inputStream = responseCode >= 400 ? conn.getErrorStream() : conn.getInputStream();
-
-        if (inputStream == null) {
-            throw new IOException("No response from server (HTTP " + responseCode + ")");
-        }
-
-        StringBuilder response = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                response.append(line);
+            if (response.statusCode() >= 400) {
+                throw new IOException("API error (HTTP " + response.statusCode() + "): " + response.body());
             }
-        }
 
-        if (responseCode >= 400) {
-            throw new IOException("API error (HTTP " + responseCode + "): " + response.toString());
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
         }
-
-        return response.toString();
     }
 
     /**
-     * Build JSON request body for chat completion
+     * Build JSON request body for chat completion using Jackson
      */
     private String buildChatRequestBody(String model, List<Map<String, String>> messages,
-                                         double temperature, int maxTokens) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"model\":\"").append(escapeJson(model)).append("\",");
-        sb.append("\"messages\":[");
-        for (int i = 0; i < messages.size(); i++) {
-            Map<String, String> msg = messages.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{");
-            sb.append("\"role\":\"").append(escapeJson(msg.get("role"))).append("\",");
-            sb.append("\"content\":\"").append(escapeJson(msg.get("content"))).append("\"");
-            sb.append("}");
-        }
-        sb.append("],");
-        sb.append("\"temperature\":").append(temperature).append(",");
-        sb.append("\"max_tokens\":").append(maxTokens);
-        sb.append("}");
-        return sb.toString();
+                                         double temperature, int maxTokens) throws IOException {
+        Map<String, Object> request = new HashMap<>();
+        request.put("model", model);
+        request.put("messages", messages);
+        request.put("temperature", temperature);
+        request.put("max_tokens", maxTokens);
+
+        return objectMapper.writeValueAsString(request);
     }
 
     /**
-     * Parse response content from JSON
+     * Parse response content from JSON using Jackson
      */
     public String extractContent(String jsonResponse) {
-        // Simple JSON parsing without external dependencies
-        String contentKey = "\"content\":\"";
-        int contentStart = jsonResponse.indexOf(contentKey);
-        if (contentStart == -1) {
+        try {
+            JsonNode root = objectMapper.readTree(jsonResponse);
+            JsonNode choices = root.path("choices");
+            if (choices.isArray() && choices.size() > 0) {
+                JsonNode message = choices.get(0).path("message");
+                JsonNode content = message.path("content");
+                if (!content.isMissingNode()) {
+                    return content.asText();
+                }
+            }
+            return jsonResponse;
+        } catch (IOException e) {
             return jsonResponse;
         }
-        contentStart += contentKey.length();
-        int contentEnd = jsonResponse.indexOf("\"", contentStart);
-        if (contentEnd == -1) {
-            return jsonResponse;
-        }
-
-        String content = jsonResponse.substring(contentStart, contentEnd);
-        return unescapeJson(content);
     }
 
-    /**
-     * Escape special characters for JSON string.
-     * Note: Null input is semantically treated as empty string in JSON context.
-     */
-    private String escapeJson(String s) {
-        String input = (s != null) ? s : "";
-        return input.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+    public void setConnectTimeout(int timeoutMs) {
+        this.connectTimeout = Duration.ofMillis(timeoutMs);
     }
 
-    /**
-     * Unescape JSON string.
-     * Note: Null input is semantically treated as empty string in JSON context.
-     */
-    private String unescapeJson(String s) {
-        String input = (s != null) ? s : "";
-        return input.replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
-    }
-
-    public void setConnectTimeout(int timeout) {
-        this.connectTimeout = timeout;
-    }
-
-    public void setReadTimeout(int timeout) {
-        this.readTimeout = timeout;
+    public void setReadTimeout(int timeoutMs) {
+        this.readTimeout = Duration.ofMillis(timeoutMs);
     }
 
     /**

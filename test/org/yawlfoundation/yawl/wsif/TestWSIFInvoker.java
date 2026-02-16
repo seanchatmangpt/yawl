@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.wsif;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.Document;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.jdom2.input.SAXBuilder;
 
 import javax.swing.*;
@@ -17,26 +16,26 @@ import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
 
 /**
  /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 16/03/2004
  * Time: 12:31:17
- * 
+ *
  */
-public class TestWSIFInvoker extends TestCase {
+class TestWSIFInvoker {
     private static AuthenticationConfig _authconfig;
     private SAXBuilder _builder;
 
-    public TestWSIFInvoker(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-    public void setUp() {
+    void setUp() {
         setUpAuth();
         _builder = new SAXBuilder();
     }
 
-    public void testNewWay() {
+    @Test
+
+    void testNewWay() {
         HashMap map = null;
         try {
             Document doc = _builder.build(new StringReader("<data><input>33040</input></data>"));
@@ -52,8 +51,9 @@ public class TestWSIFInvoker extends TestCase {
         assertTrue(map.toString(), map.containsKey("return"));
     }
 
+    @Test
 
-    public void testGetQuote() {
+    void testGetQuote() {
         HashMap map = null;
         try {
             Document doc = _builder.build(new StringReader("<data><input>NAB.AX</input></data>"));
@@ -70,8 +70,9 @@ public class TestWSIFInvoker extends TestCase {
         assertTrue(map.toString(), map.containsKey("Result"));
     }
 
+    @Test
 
-    public void testGetBookPrice() {
+    void testGetBookPrice() {
         HashMap map = null;
         try {
             Document doc = _builder.build(
@@ -90,7 +91,6 @@ public class TestWSIFInvoker extends TestCase {
         Float result =  (Float) map.get("return");
         assertTrue(map.toString(), "29.95".equals(result.toString()));
     }
-
 
     public static Map invokeOldWay(String [] args){
         //taken from the command line version of clients.DynamicInvoker
@@ -157,7 +157,6 @@ public class TestWSIFInvoker extends TestCase {
         return null;
     }
 
-
     public static void usage() {
         System.err.println(
                 "Usage: java "
@@ -166,16 +165,7 @@ public class TestWSIFInvoker extends TestCase {
                 + "operationName[(portName)]:[inputMessageName]:[outputMessageName] "
                 + "[soap|axis] [argument1 ...]");
         System.exit(1);
-    }
-
-
-
-    public static void main(String args[]) {
-        if(args.length >= 2){
-            setUpAuth();
-            Map result = invokeOldWay(args);
-            System.out.println("result = " + result);
-        } else {
+    } else {
             TestRunner runner = new TestRunner();
             runner.doRun(suite());
             System.exit(0);
@@ -189,11 +179,5 @@ public class TestWSIFInvoker extends TestCase {
             String password = JOptionPane.showInputDialog("Enter Password");
             _authconfig.setProxyAuthentication(userName, password, "proxy.yawlfoundation.org", "3128");
         }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestWSIFInvoker.class);
-        return suite;
     }
 }

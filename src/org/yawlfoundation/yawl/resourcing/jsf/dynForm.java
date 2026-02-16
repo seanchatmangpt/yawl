@@ -26,9 +26,9 @@ import org.yawlfoundation.yawl.resourcing.jsf.dynform.DocComponent;
 import org.yawlfoundation.yawl.resourcing.jsf.dynform.DynFormFactory;
 import org.yawlfoundation.yawl.resourcing.jsf.dynform.SubPanel;
 
-import javax.faces.FacesException;
-import javax.faces.component.UIComponent;
-import javax.faces.event.ActionEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.component.UIComponent;
+import jakarta.faces.event.ActionEvent;
 import java.io.IOException;
 import java.util.List;
 

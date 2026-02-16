@@ -1,14 +1,14 @@
 package org.yawlfoundation.yawl.schema;
 
-import junit.framework.TestCase;
-
 /**
  * @author Mike Fowler
  *         Date: 04-Jul-2006
  */
-public class TestSchemaHandler extends TestCase
+class TestSchemaHandler
 {
-    public void testSimpleValidSchema() throws Exception
+    @Test
+
+    void testSimpleValidSchema() throws Exception
     {
         String schema = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                         "  <xsd:simpleType name=\"title\">\n" +
@@ -24,7 +24,9 @@ public class TestSchemaHandler extends TestCase
         assertTrue(handler.compileSchema());
     }
 
-    public void testComplexValidSchema() throws Exception
+    @Test
+
+    void testComplexValidSchema() throws Exception
     {
         String schema = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                         "  <xsd:complexType name=\"person\">\n" +
@@ -57,7 +59,9 @@ public class TestSchemaHandler extends TestCase
         assertTrue(handler.compileSchema());
     }
 
-    public void testSimpleInvalidSchema() throws Exception
+    @Test
+
+    void testSimpleInvalidSchema() throws Exception
     {
         String schema = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                         "  <xsd:simpleType name=\"title\">\n" +
@@ -73,7 +77,9 @@ public class TestSchemaHandler extends TestCase
         assertFalse(handler.compileSchema());
     }
 
-    public void testComplexInvalidSchema() throws Exception
+    @Test
+
+    void testComplexInvalidSchema() throws Exception
     {
         String schema = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                         "  <xsd:complexType name=\"person\">\n" +
@@ -97,7 +103,9 @@ public class TestSchemaHandler extends TestCase
         assertFalse(handler.compileSchema());
     }
 
-    public void testMalformedSchema() throws Exception
+    @Test
+
+    void testMalformedSchema() throws Exception
     {
         String schema = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                         "  <xsd:complexType name=\"person\">\n" +

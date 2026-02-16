@@ -1,24 +1,24 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 28/04/2003
  * Time: 11:13:27
- * 
+ *
  */
-public class TestYInputCondition extends TestCase{
+class TestYInputCondition{
     private YInputCondition _invalidInputCondition;
 
-    public TestYInputCondition(String name){
-        super(name);
-    }
+    @BeforeEach
 
-    public void setUp(){
+    void setUp(){
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
 
@@ -28,7 +28,9 @@ public class TestYInputCondition extends TestCase{
         _invalidInputCondition.addPreset(new YFlow(new YAtomicTask("at1", YTask._AND, YTask._AND, deadNet), _invalidInputCondition));
     }
 
-    public void testInvalidInputCondition(){
+    @Test
+
+    void testInvalidInputCondition(){
         YVerificationHandler handler = new YVerificationHandler();
         _invalidInputCondition.verify(handler);
         assertTrue("Should receive at least 1 error (input condition preset must be empty): " + handler.getMessages(),

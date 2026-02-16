@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.jdom2.Document;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -17,23 +19,15 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
-public class TestYExternalCondition extends TestCase {
+class TestYExternalCondition {
     private YNet _net;
     private YCondition _condition;
     private YTask _aTask;
     private YCondition _condition2;
 
+    @BeforeEach
 
-    /**
-	 * Constructor for ConditionTest.
-	 * @param name
-	 */
-	public TestYExternalCondition(String name) {
-		super(name);
-	}
-
-
-    public void setUp() throws YPersistenceException {
+    void setUp() throws YPersistenceException {
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
         _net = new YNet("aNetName", spec);
@@ -54,27 +48,27 @@ public class TestYExternalCondition extends TestCase {
         _aTask.addPostset(f);
     }
 
+	@Test
 
-
-	public void testConstructor(){
+	void testConstructor(){
 		assertTrue(_condition != null);
         assertTrue(_condition.getName().equals("C1"));
 	}
 
+    @Test
 
-    public void testMovingIdentifiers() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testMovingIdentifiers() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         YIdentifier id = new YIdentifier(null);
         assertTrue(id.getLocations().size() == 0);
         assertFalse(id.getLocations().contains(_condition));
         _condition.add(null, id);
-        assertTrue("locations should contain C1 ",
-                id.getLocations().contains(_condition) && id.getLocations().size() == 1);
+        assertTrue(id.getLocations(, "locations should contain C1 ").contains(_condition) && id.getLocations().size() == 1);
         assertTrue(id.getLocations().contains(_condition));
         assertTrue(_aTask.t_enabled(id));
         YIdentifier childID = null;
         childID = (YIdentifier) _aTask.t_fire(null).get(0);
 
-        assertTrue("locations should be empty ", id.getLocations().size() == 1);
+        assertTrue(id.getLocations(, "locations should be empty ").size() == 1);
         assertTrue(id.getLocations().iterator().next().equals(_aTask));
         assertFalse(id.getLocations().contains(_condition));
         _aTask.t_start(null, childID);

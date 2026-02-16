@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -18,23 +17,20 @@ import java.net.URL;
 import java.util.Set;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 29/05/2003
  * Time: 16:19:02
- * 
+ *
  */
-public class TestSimpleExecutionUseCases extends TestCase{
+class TestSimpleExecutionUseCases{
     private YIdentifier _caseId;
     private YWorkItemRepository _workItemRepository;
     private YEngine _engine;
 
-    public TestSimpleExecutionUseCases(String name){
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
 		File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
@@ -48,8 +44,9 @@ public class TestSimpleExecutionUseCases extends TestCase{
 
     }
 
+    @Test
 
-    public void testUseCase1(){
+    void testUseCase1(){
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -78,7 +75,6 @@ public class TestSimpleExecutionUseCases extends TestCase{
             fail(e.getMessage());
         }
 
-
         Set firedWorkItems = _workItemRepository.getFiredWorkItems();
         item = (YWorkItem) firedWorkItems.iterator().next();
         try {
@@ -86,17 +82,5 @@ public class TestSimpleExecutionUseCases extends TestCase{
         } catch (YAWLException e) {
             fail(e.getMessage());
         }
-    }
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestSimpleExecutionUseCases.class);
-        return suite;
     }
 }

@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.resourcing.resource.*;
 
+import org.junit.jupiter.api.Test;
 import java.util.Random;
 
 /**
@@ -11,10 +11,11 @@ import java.util.Random;
  * Date: 01/08/2007
  *
  */
-public class TestDB extends TestCase {
+class TestDB {
 
+    @Test
 
-    public void testDB() {
+    void testDB() {
 
         int HOW_MANY_PARTICIPANTS_TO_CREATE = 20 ;
 
@@ -59,7 +60,6 @@ public class TestDB extends TestCase {
         Capability c = new Capability("a capability", "some description", true) ;
         rm.getOrgDataSet().addCapability(c);
 
-
         for (int i=0; i < HOW_MANY_PARTICIPANTS_TO_CREATE; i++) {
             String first = f[rand.nextInt(10)] ;
             String last = l[rand.nextInt(10)] ;
@@ -69,7 +69,7 @@ public class TestDB extends TestCase {
 
             p.setAdministrator(rand.nextBoolean());
             p.setPassword("apple");
- 
+
             p.addPosition(po);
             p.addCapability(c);
             p.addRole(r);

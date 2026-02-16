@@ -1,6 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
 import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YCondition;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -9,10 +12,7 @@ import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -23,23 +23,20 @@ import java.net.URL;
 import java.util.List;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 4/06/2003
  * Time: 17:08:14
- * 
+ *
  */
-public class TestYNetRunner extends TestCase {
+class TestYNetRunner {
     private YNetRunner _netRunner1;
     private YIdentifier _id1;
     private Document _d;
 
-    public TestYNetRunner(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("YAWL_Specification2.xml");
         File yawlXMLFile1 = new File(fileURL.getFile());
         YSpecification specification = null;
@@ -55,8 +52,9 @@ public class TestYNetRunner extends TestCase {
         _d.setRootElement(new Element("data"));
     }
 
+    @Test
 
-    public void testBasicFireAtomic() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testBasicFireAtomic() throws YStateException, YDataStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         assertTrue(_netRunner1.getEnabledTasks().contains(_netRunner1.getNetElement("a-top")));
         assertTrue(_netRunner1.getEnabledTasks().size() == 1);
         List children = null;
@@ -66,12 +64,12 @@ public class TestYNetRunner extends TestCase {
             fail("Should have thrown YStateException for non-enabled task");
         } catch (YStateException e) {
             expectedException = e;
-            assertTrue("Exception message should mention task", e.getMessage().contains("b-top"));
+            assertTrue(e.getMessage(, "Exception message should mention task").contains("b-top"));
         } catch (YDataStateException e) {
             e.printStackTrace();
             fail();
         }
-        assertNotNull("Should have thrown YStateException", expectedException);
+        assertNotNull(expectedException, "Should have thrown YStateException");
         try {
             children = _netRunner1.attemptToFireAtomicTask(null, "a-top");
         } catch (YDataStateException e) {
@@ -135,8 +133,9 @@ public class TestYNetRunner extends TestCase {
         assertFalse(_netRunner1.isAlive());
     }
 
+    @Test
 
-    public void testAddInstance() throws YDataStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testAddInstance() throws YDataStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         List children = null;
         try {
             children = _netRunner1.attemptToFireAtomicTask(null, "a-top");
@@ -160,13 +159,6 @@ public class TestYNetRunner extends TestCase {
         _netRunner1.startWorkItemInTask(null, id, "b-top");
         extraID = _netRunner1.addNewInstance(null, "b-top", id, new Element("stub"));
         assertTrue(children.size() == 7 || extraID.getParent().equals(id.getParent()));
-    }
-
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYNetRunner.class);
-        return suite;
     }
     public static void main(String[] args) {
         TestRunner runner = new TestRunner();

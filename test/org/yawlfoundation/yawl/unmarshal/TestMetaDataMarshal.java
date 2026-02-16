@@ -1,26 +1,27 @@
 package org.yawlfoundation.yawl.unmarshal;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 4/08/2005
  * Time: 08:27:49
- * 
+ *
  */
-public class TestMetaDataMarshal extends TestCase{
+class TestMetaDataMarshal{
     private YMetaData metaData;
 
-    public void setUp(){
+    @BeforeEach
+
+    void setUp(){
         metaData = new YMetaData();
         metaData.addContributor("Lachlan Aldred");
         metaData.addContributor("Arthur ter Hofstede");
@@ -39,7 +40,9 @@ public class TestMetaDataMarshal extends TestCase{
         metaData.setVersion(new YSpecVersion("1.1"));
     }
 
-    public void testToXML(){
+    @Test
+
+    void testToXML(){
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         assertEquals("<metaData>" +
                 "<title>Meta Data Test</title>" +
@@ -60,17 +63,5 @@ public class TestMetaDataMarshal extends TestCase{
                 "<persistent>false</persistent>" +
                 "</metaData>",
                 metaData.toXML());
-    }
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestMetaDataMarshal.class);
-        return suite;
     }
 }

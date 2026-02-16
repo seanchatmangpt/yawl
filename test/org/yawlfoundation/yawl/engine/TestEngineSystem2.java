@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YCondition;
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -24,13 +23,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 6/06/2003
  * Time: 12:28:34
- * 
+ *
  */
-public class TestEngineSystem2 extends TestCase {
+class TestEngineSystem2 {
     private YIdentifier _idForBottomNet;
 //    private YIdentifier _idForTopNet;
     private YWorkItemRepository _workItemRepository;
@@ -39,12 +38,9 @@ public class TestEngineSystem2 extends TestCase {
     private YEngine _engine;
     private YSpecification _specification;
 
-    public TestEngineSystem2(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("YAWL_Specification4.xml");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
@@ -54,10 +50,9 @@ public class TestEngineSystem2 extends TestCase {
         _workItemRepository = _engine.getWorkItemRepository();
     }
 
+    @Test
 
-
-
-    public void testMultimergeNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testMultimergeNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized(this){
         EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);
@@ -137,9 +132,6 @@ public class TestEngineSystem2 extends TestCase {
         }
     }
 
-
-
-
     private boolean containsItemForTask(String taskID, Set workItems){
         for (Iterator iterator = workItems.iterator(); iterator.hasNext();) {
             YWorkItem item = (YWorkItem) iterator.next();
@@ -150,9 +142,9 @@ public class TestEngineSystem2 extends TestCase {
         return false;
     }
 
+    @Test
 
-
-    public void testMultimergeWorkItems() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testMultimergeWorkItems() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized(this){
         EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);
@@ -237,10 +229,9 @@ public class TestEngineSystem2 extends TestCase {
         }
     }
 
+    @Test
 
-
-
-    public void testStateAlignmentBetween_WorkItemRepository_and_Net()
+    void testStateAlignmentBetween_WorkItemRepository_and_Net()
             throws YSchemaBuildingException, YSyntaxException, JDOMException, YEngineStateException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL = getClass().getResource("TestOrJoin.xml");
         File yawlXMLFile = new File(fileURL.getFile());
@@ -431,18 +422,5 @@ public class TestEngineSystem2 extends TestCase {
                 }
             }
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestEngineSystem2.class);
-        return suite;
     }
 }

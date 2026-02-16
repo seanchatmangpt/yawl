@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
 import org.yawlfoundation.yawl.elements.YMultiInstanceAttributes;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -22,13 +21,13 @@ import java.util.Set;
 import java.util.Vector;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 6/06/2003
  * Time: 12:28:34
- * 
+ *
  */
-public class TestEngineSystem1 extends TestCase {
+class TestEngineSystem1 {
     private YNetRunner _netRunner;
     private YIdentifier _idForTopNet;
     private YWorkItemRepository _workItemRepository;
@@ -36,12 +35,9 @@ public class TestEngineSystem1 extends TestCase {
     private YEngine _engine;
     private YSpecification _specification;
 
-    public TestEngineSystem1(String name) {
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("YAWL_Specification3.xml");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
@@ -50,8 +46,9 @@ public class TestEngineSystem1 extends TestCase {
         _workItemRepository = _engine.getWorkItemRepository();
     }
 
+    @Test
 
-    public void testDecomposingNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testDecomposingNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         try {
             EngineClearer.clear(_engine);
             _engine.loadSpecification(_specification);
@@ -216,18 +213,5 @@ public class TestEngineSystem1 extends TestCase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestEngineSystem1.class);
-        return suite;
     }
 }

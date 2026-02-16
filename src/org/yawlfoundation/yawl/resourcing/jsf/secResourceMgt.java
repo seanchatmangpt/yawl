@@ -22,8 +22,8 @@ import com.sun.rave.web.ui.appbase.AbstractPageBean;
 import com.sun.rave.web.ui.component.*;
 import org.yawlfoundation.yawl.exceptions.YAWLException;
 
-import javax.faces.FacesException;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.event.ValueChangeEvent;
 import java.util.List;
 
 /**

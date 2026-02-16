@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.yawlfoundation.yawl.exceptions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
@@ -17,7 +16,7 @@ import java.net.URL;
 import java.util.Set;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 25/02/2005
  * Time: 14:56:46
@@ -28,13 +27,14 @@ import java.util.Set;
  * For more information about the YAWL licence refer to the 'downloads' section under
  * http://www.yawl-system.com
  */
-public class TestEngineAgainstABeta4Spec extends TestCase {
+class TestEngineAgainstABeta4Spec {
     private YSpecification _specification;
     private YEngine _engine;
     private YNetRunner _netRunner;
 
+    @BeforeEach
 
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("MakeRecordings(Beta4).xml");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
@@ -43,8 +43,9 @@ public class TestEngineAgainstABeta4Spec extends TestCase {
         _engine = YEngine.getInstance();
     }
 
+    @Test
 
-    public void testExpectedNormalOperation() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    void testExpectedNormalOperation() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized (this) {
             EngineClearer.clear(_engine);
             _engine.loadSpecification(_specification);
@@ -113,21 +114,7 @@ public class TestEngineAgainstABeta4Spec extends TestCase {
 
                 assertTrue(wiRecord_Executing.getStatus().equals(YWorkItemStatus.statusExecuting));
 
-
             }
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestEngineAgainstABeta4Spec.class);
-        return suite;
     }
 }

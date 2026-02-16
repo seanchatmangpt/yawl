@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.YCondition;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YNetElement;
 
 import java.util.ArrayList;
@@ -9,22 +11,19 @@ import java.util.List;
 
 /**
  /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 4/05/2004
  * Time: 12:43:03
- * 
+ *
  */
-public class TestYSetOfMarkings extends TestCase{
+class TestYSetOfMarkings{
     private YSetOfMarkings _markingSet1;
     private YSetOfMarkings _markingSet2;
 
-    public TestYSetOfMarkings(String name){
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp(){
+    void setUp(){
 //        Integer one = Integer.valueOf(1);
 //        Integer two = Integer.valueOf(2);
 //        Integer three = Integer.valueOf(3);
@@ -60,8 +59,9 @@ public class TestYSetOfMarkings extends TestCase{
         _markingSet2.addMarking(new YMarking(locs4));//1,2,5,6
     }
 
+    @Test
 
-    public void testContainsEquivalentTo() {
+    void testContainsEquivalentTo() {
         assertTrue(_markingSet1.containsEquivalentMarkingTo(_markingSet2));
 
     }

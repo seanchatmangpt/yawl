@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -19,24 +18,22 @@ import java.util.Set;
 
 /**
  /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 27/04/2004
  * Time: 14:23:09
- * 
+ *
  */
-public class TestImproperCompletion extends TestCase{
+class TestImproperCompletion{
     private YWorkItemRepository _workItemRepository;
     private long _sleepTime = 100;
     private YEngine _engine;
     private YIdentifier _id;
     private YSpecification _specification;
 
-    public TestImproperCompletion(String name){
-        super(name);
-    }
+    @BeforeEach
 
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("TestImproperCompletion.xml");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
@@ -56,7 +53,9 @@ public class TestImproperCompletion extends TestCase{
         else return "";
     }
 
-    public void testImproperCompletion() throws YStateException, YDataStateException,
+    @Test
+
+    void testImproperCompletion() throws YStateException, YDataStateException,
             YEngineStateException, YQueryException, YSchemaBuildingException,
             YPersistenceException, YLogException {
         EngineClearer.clear(_engine);
@@ -94,17 +93,5 @@ public class TestImproperCompletion extends TestCase{
         s = _engine.getCasesForSpecification(_specification.getSpecificationID());
 //        System.out.println("3: " + _id);
         assertFalse("s = " + s, s.contains(_id));
-    }
-
-
-   public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestImproperCompletion.class);
-        return suite;
     }
 }

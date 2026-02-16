@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.exceptions;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -10,17 +10,10 @@ import junit.framework.TestSuite;
  * Time: 14:41:14
  * 
  */
-public class ExceptionTestSuite extends TestSuite{
-    public ExceptionTestSuite(String name)
-    {
-        super(name);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYConnectivityException.class);
-        suite.addTestSuite(TestYSyntaxException.class);
-
-        return suite;
-    }
+@Suite
+@SelectClasses({
+    TestYConnectivityException.class,
+    TestYSyntaxException.class
+})
+public class ExceptionTestSuite {
 }
