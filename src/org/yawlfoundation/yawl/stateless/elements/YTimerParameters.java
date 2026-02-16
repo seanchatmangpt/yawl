@@ -111,6 +111,7 @@ public class YTimerParameters {
         return switch (_trigger) {
             case OnEnabled -> status.equals(statusEnabled);
             case OnExecuting -> status.equals(statusExecuting);
+            case Never -> false;
         };
     }
 
