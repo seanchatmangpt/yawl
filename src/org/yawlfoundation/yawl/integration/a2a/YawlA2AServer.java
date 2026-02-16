@@ -660,10 +660,12 @@ public class YawlA2AServer {
             YawlA2AServer server = new YawlA2AServer(
                 engineUrl, username, password, port);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("Shutting down YAWL A2A Server...");
-                server.stop();
-            }));
+            Runtime.getRuntime().addShutdownHook(
+                Thread.ofVirtual().unstarted(() -> {
+                    System.out.println("Shutting down YAWL A2A Server...");
+                    server.stop();
+                })
+            );
 
             server.start();
 

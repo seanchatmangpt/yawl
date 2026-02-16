@@ -366,10 +366,12 @@ public final class AgentRegistry {
             System.out.println("Agent Registry running on port " + port);
             System.out.println("Press Ctrl+C to stop");
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("\nShutting down registry...");
-                registry.stop();
-            }));
+            Runtime.getRuntime().addShutdownHook(
+                Thread.ofVirtual().unstarted(() -> {
+                    System.out.println("\nShutting down registry...");
+                    registry.stop();
+                })
+            );
 
             Thread.currentThread().join();
 
