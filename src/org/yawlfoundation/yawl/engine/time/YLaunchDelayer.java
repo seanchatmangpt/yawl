@@ -85,7 +85,7 @@ public class YLaunchDelayer implements YTimedObject {
                               YLogDataItemList logData, String serviceHandle,
                               Instant expiryTime, boolean persisting) {
         this(specID, caseParams, completionObserver, caseID, logData, serviceHandle, persisting);
-        _endTime = YTimer.getInstance().schedule(this, expiryTime) ;
+        _endTime = YTimer.getInstance().schedule(this, Date.from(expiryTime)) ;
         persistThis(true);
     }
 

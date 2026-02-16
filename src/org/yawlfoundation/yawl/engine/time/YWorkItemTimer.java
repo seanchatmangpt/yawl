@@ -54,7 +54,7 @@ public class YWorkItemTimer implements YTimedObject {
     public YWorkItemTimer(String workItemID, Instant expiryTime, boolean persisting) {
         _ownerID = workItemID ;
         _persisting = persisting ;
-        _endTime = YTimer.getInstance().schedule(this, expiryTime) ;
+        _endTime = YTimer.getInstance().schedule(this, Date.from(expiryTime)) ;
     }
 
 
