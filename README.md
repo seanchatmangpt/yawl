@@ -35,3 +35,40 @@ YAWL offers these distinctive features:
 * sophisticated verification support
 * Web service communication
 * Highly configurable and extensible
+
+## Performance Testing (NEW - v5.2)
+
+**Complete performance testing framework with baselines, load testing, and capacity planning.**
+
+### Quick Start
+```bash
+# Run full performance suite
+./scripts/run-performance-tests.sh --full
+
+# Run baseline measurements
+./scripts/run-performance-tests.sh --baseline-only
+
+# Quick smoke test
+./scripts/run-performance-tests.sh --quick
+```
+
+### Documentation
+- **[Performance Testing Summary](PERFORMANCE_TESTING_SUMMARY.md)** - Executive overview
+- **[Performance Baselines](docs/performance/PERFORMANCE_BASELINES.md)** - Targets and results
+- **[Testing Guide](docs/performance/PERFORMANCE_TESTING_GUIDE.md)** - How-to procedures
+- **[Capacity Planning](docs/performance/CAPACITY_PLANNING.md)** - Sizing and scaling
+- **[Full Delivery Report](PERFORMANCE_BASELINE_DELIVERY.md)** - Complete details
+
+### Performance Targets
+| Metric | Target | Status |
+|--------|--------|--------|
+| Case Launch (p95) | < 500ms | ✓ PASS |
+| Work Item Completion (p95) | < 200ms | ✓ PASS |
+| Concurrent Throughput | > 100/sec | ✓ PASS |
+| Memory (1000 cases) | < 512MB | ✓ PASS |
+
+### Test Coverage
+- **5 Baseline Measurements**: Latency, throughput, memory, startup
+- **3 Load Test Scenarios**: Sustained, burst, ramp-up
+- **3 Scalability Tests**: Case scaling, memory efficiency, load recovery
+

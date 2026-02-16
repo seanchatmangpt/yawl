@@ -40,6 +40,7 @@ public class ElementsTestSuite extends TestSuite{
         suite.addTestSuite(TestYNetElement.class);
         suite.addTestSuite(TestYOutputCondition.class);
         suite.addTestSuite(TestYSpecification.class);
+        suite.addTestSuite(TestYSpecificationValidator.class);
         //return
         return suite;
     }

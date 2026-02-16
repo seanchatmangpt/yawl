@@ -23,9 +23,12 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * 
+ * Enhanced YAWL exception with detailed context and troubleshooting guidance.
+ *
  * @author Lachlan Aldred
  * Date: 26/11/2004
  * Time: 15:26:54
@@ -34,6 +37,9 @@ public class YAWLException extends Exception {
     protected static SAXBuilder _builder = new SAXBuilder();
     protected String _message;
     public static final String MESSAGE_NM = "message";
+
+    private final Map<String, String> _context = new HashMap<>();
+    private String _troubleshootingGuide;
 
     public YAWLException() {
     }
@@ -118,6 +124,55 @@ public class YAWLException extends Exception {
         _message = message;
     }
 
+    /**
+     * Adds contextual information to this exception.
+     * @param key the context key
+     * @param value the context value
+     * @return this exception for method chaining
+     */
+    public YAWLException withContext(String key, String value) {
+        _context.put(key, value);
+        return this;
+    }
+
+    /**
+     * Adds troubleshooting guidance to this exception.
+     * @param guide the troubleshooting guidance message
+     * @return this exception for method chaining
+     */
+    public YAWLException withTroubleshootingGuide(String guide) {
+        _troubleshootingGuide = guide;
+        return this;
+    }
+
+    /**
+     * Gets the contextual information associated with this exception.
+     * @return an immutable copy of the context map
+     */
+    public Map<String, String> getContext() {
+        return new HashMap<>(_context);
+    }
+
+    /**
+     * Gets the troubleshooting guidance for this exception.
+     * @return the troubleshooting guidance, or null if not set
+     */
+    public String getTroubleshootingGuide() {
+        return _troubleshootingGuide;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString());
+        if (!_context.isEmpty()) {
+            sb.append("\nContext: ").append(_context);
+        }
+        if (_troubleshootingGuide != null) {
+            sb.append("\nTroubleshooting: ").append(_troubleshootingGuide);
+        }
+        return sb.toString();
+    }
 
     /**
      * A convenience method that effectively rethrows the exceptions listed.
