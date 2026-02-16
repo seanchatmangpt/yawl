@@ -436,7 +436,7 @@ public class LDAPSource extends DataSource {
         String limit = getProperty("maxSizeLimit");
         if (isNotNullOrEmpty(limit)) {
             try {
-                return new Integer(limit.trim());
+                return Integer.valueOf(limit.trim());
             }
             catch (NumberFormatException nfe) {
                 _log.warn("Ignoring invalid max size limit in LDAP properties: {}", limit);

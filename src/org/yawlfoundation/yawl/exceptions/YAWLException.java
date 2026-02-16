@@ -93,7 +93,7 @@ public class YAWLException extends Exception {
         return "<message>" + getMessage() + "</message>";
     }
 
-    public static YAWLException unmarshal(Document exceptionDoc) throws JDOMException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static YAWLException unmarshal(Document exceptionDoc) throws JDOMException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
 
         String exceptionType = exceptionDoc.getRootElement().getName();
         if ("YDataStateException".equals(exceptionType)) {
@@ -105,7 +105,7 @@ public class YAWLException extends Exception {
         if ("YDataValidationException".equals(exceptionType)) {
             return YDataValidationException.unmarshall(exceptionDoc);
         }
-        YAWLException e = (YAWLException) Class.forName(exceptionType).newInstance();
+        YAWLException e = (YAWLException) Class.forName(exceptionType).getDeclaredConstructor().newInstance();
         e.setMessage(parseMessage(exceptionDoc));
         return e;
     }

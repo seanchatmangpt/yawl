@@ -105,9 +105,9 @@ public class YApplicationXForm extends JDialog implements ActionListener {
          * AJH: Changed to force display onto primary screen in a dual-head X environment
          */
 //        Dimension guiSize = getPreferredSize();
-//        Double screenWidth = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
-//        Double screenHeight = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
-//        setSize(new Double((screenWidth - guiSize.width) * 2).intValue(), new Double((screenHeight - guiSize.height) * 2).intValue());
+//        Double screenWidth = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
+//        Double screenHeight = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
+//        setSize(Double.valueOf((screenWidth - guiSize.width) * 2).intValue(), Double.valueOf((screenHeight - guiSize.height) * 2).intValue());
 //        setLocation(((screenWidth.intValue() - guiSize.width) / 2),0);
 //        pack();
         setSize(1000, 800);
@@ -118,7 +118,7 @@ public class YApplicationXForm extends JDialog implements ActionListener {
     private void storeData() {
         _model.setActiveTableData(new Object[]{_caseID, _taskID, _description,
                                                _enableMentTime, _firingTimeTime,
-                                               _startTime, _sequence, new Boolean(_allowsInstanceCreation),
+                                               _startTime, _sequence, Boolean.valueOf(_allowsInstanceCreation),
                                                _inputData, _outputDataTextPane.getText()});
     }
 
@@ -259,7 +259,7 @@ public class YApplicationXForm extends JDialog implements ActionListener {
             _formatter.format(enablementTime),
             _formatter.format(firingTime),
             _formatter.format(startTime),
-            new Boolean(allowsDynamicInstanceCreation),
+            Boolean.valueOf(allowsDynamicInstanceCreation),
             xmlData
     */
 }

@@ -35,6 +35,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import javax.xml.datatype.Duration;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.*;
 
@@ -383,7 +384,7 @@ public class YDecompositionParser {
         String formStr = taskElem.getChildText("customForm", _yawlNS);
         if (formStr != null) {
             try {
-                URL formURI = new URL(formStr) ;
+                URL formURI = URI.create(formStr).toURL();
                 task.setCustomFormURI(formURI);
             }
             catch (MalformedURLException use) {
@@ -421,7 +422,7 @@ public class YDecompositionParser {
                 // expiry is a stringified long value representing a specific datetime
                 String expiry = timerElem.getChildText("expiry", _yawlNS) ;
                 if (expiry != null)
-                    timerParameters.set(trigger, new Date(new Long(expiry)));
+                    timerParameters.set(trigger, new Date(Long.valueOf(expiry)));
                 else {
                     // duration type - specified as a Duration?
                     String durationStr = timerElem.getChildText("duration", _yawlNS);
@@ -437,7 +438,7 @@ public class YDecompositionParser {
                         String tickStr = durationElem.getChildText("ticks", _yawlNS);
                         String intervalStr = durationElem.getChildText("interval", _yawlNS);
                         YTimer.TimeUnit interval = YTimer.TimeUnit.valueOf(intervalStr);
-                        timerParameters.set(trigger, new Long(tickStr), interval);
+                        timerParameters.set(trigger, Long.valueOf(tickStr), interval);
                     }
                 }
             }
@@ -462,7 +463,7 @@ public class YDecompositionParser {
                 String predicateOrderingStr = flowsIntoElem.getChild("predicate", _yawlNS).
                         getAttributeValue("ordering");
                 if (predicateOrderingStr != null) {
-                    flowStruct._predicateOrdering = new Integer(predicateOrderingStr);
+                    flowStruct._predicateOrdering = Integer.valueOf(predicateOrderingStr);
                 }
             }
             Element isDefaultFlow = flowsIntoElem.getChild("isDefaultFlow", _yawlNS);
@@ -564,7 +565,7 @@ public class YDecompositionParser {
             // set ordering (if schema 2.1 or later)
             String orderingStr = localVariableElem.getChildText("index", ns);
             if (StringUtil.isIntegerString(orderingStr)) {
-                variable.setOrdering(new Integer(orderingStr));
+                variable.setOrdering(Integer.valueOf(orderingStr));
             }
 
             variable.getAttributes().fromJDOM(localVariableElem.getAttributes());

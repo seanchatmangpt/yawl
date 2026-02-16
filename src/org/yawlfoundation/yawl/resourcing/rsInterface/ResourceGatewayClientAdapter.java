@@ -171,7 +171,7 @@ public class ResourceGatewayClientAdapter {
         String pkg = "org.yawlfoundation.yawl.resourcing.resource." ;
         try {
 			return (AbstractResourceAttribute) Class.forName(pkg + className)
-                                                     .newInstance() ;
+                                                     .getDeclaredConstructor().newInstance() ;
         }
         catch (Exception cnfe) {
             return null ;
@@ -189,7 +189,7 @@ public class ResourceGatewayClientAdapter {
     private AbstractSelector newSelectorClass(String className) {
          String pkg = "org.yawlfoundation.yawl.resourcing." ;
          try {
-             return (AbstractSelector) Class.forName(pkg + className).newInstance() ;
+             return (AbstractSelector) Class.forName(pkg + className).getDeclaredConstructor().newInstance() ;
          }
          catch (Exception cnfe) {
              System.out.println(pkg+className);

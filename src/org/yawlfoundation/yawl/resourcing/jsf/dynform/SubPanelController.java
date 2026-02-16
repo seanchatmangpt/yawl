@@ -171,7 +171,7 @@ public class SubPanelController {
                 result = Integer.MAX_VALUE ;
             else {
                 try {
-                    result = new Integer(occurs) ;
+                    result = Integer.valueOf(occurs) ;
                 }
                 catch (Exception e) {
                     // nothing to do - default 1 will be returned

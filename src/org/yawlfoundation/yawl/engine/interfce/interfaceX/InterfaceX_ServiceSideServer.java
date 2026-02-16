@@ -77,7 +77,7 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
                 _controller = (InterfaceX_Service) instMethod.invoke(null);
             }
             catch (NoSuchMethodException nsme) {
-                _controller = (InterfaceX_Service) controllerClass.newInstance();
+                _controller = (InterfaceX_Service) controllerClass.getDeclaredConstructor().newInstance();
             }
         }
         catch (Exception e) {

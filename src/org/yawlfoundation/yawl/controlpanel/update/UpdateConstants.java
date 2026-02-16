@@ -23,6 +23,7 @@ import org.yawlfoundation.yawl.util.XNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 
 import static org.yawlfoundation.yawl.util.HttpUtil.resolveURL;
@@ -70,7 +71,7 @@ public class UpdateConstants {
 
     public static URL getCheckUrl() throws IOException {
         checkInitSuccess();
-        return new URL(URL_BASE + URL_PATH + CHECK_PATH + CHECK_FILE + URL_SUFFIX);
+        return URI.create(URL_BASE + URL_PATH + CHECK_PATH + CHECK_FILE + URL_SUFFIX).toURL();
     }
 
 

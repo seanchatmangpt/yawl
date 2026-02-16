@@ -231,7 +231,7 @@ public class DynFormValidator {
 
      private boolean validateLong(String value, String fieldName, boolean untreated) {
          try {
-             new Long(value);
+             Long.valueOf(value);
              return true;
          }
          catch (NumberFormatException nfe) {
@@ -243,7 +243,7 @@ public class DynFormValidator {
 
     private boolean validateInt(String value, String fieldName, boolean untreated) {
         try {
-            new Integer(value);
+            Integer.valueOf(value);
             return true;
         }
         catch (NumberFormatException nfe) {
@@ -255,7 +255,7 @@ public class DynFormValidator {
 
      private boolean validateDouble(String value, String fieldName, boolean untreated) {
          try {
-             new Double(value);
+             Double.valueOf(value);
              return true;
          }
          catch (NumberFormatException nfe) {
@@ -267,7 +267,7 @@ public class DynFormValidator {
 
     private boolean validateDecimal(String value, String fieldName, boolean untreated) {
          try {
-             new Double(value);
+             Double.valueOf(value);
              return true;
          }
          catch (NumberFormatException nfe) {
