@@ -95,7 +95,7 @@ public class HibernateEngine {
 
         MetadataSources metadataSources = new MetadataSources(standardRegistry);
         for (Class clazz : classes) {
-            metadataSources.addClass(clazz);
+            metadataSources.addAnnotatedClass(clazz);
         }
 
         Metadata metadata = metadataSources.buildMetadata();
@@ -104,8 +104,6 @@ public class HibernateEngine {
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
         SchemaManagementTool schemaManagementTool = standardRegistry
                 .getService(SchemaManagementTool.class);
-        schemaManagementTool.getSchemaUpdater(null)
-                .doUpdate(metadata, targetTypes, false);
     }
 
     /**

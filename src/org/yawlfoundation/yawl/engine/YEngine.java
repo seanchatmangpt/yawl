@@ -655,6 +655,19 @@ public class YEngine implements InterfaceADesign,
         return _specifications.getSpecification(specID);
     }
 
+    /**
+     * Gets the specification table. 
+     * @return the specification table
+     */
+    public YSpecificationTable getSpecificationTable() {
+        return _specifications;
+    }
+
+
+    /**
+     * Gets the specification table. Provided for compatibility with YSpecificationTable.getInstance().
+     * @return the specification table
+     */
     public YSpecification getSpecificationForCase(YIdentifier caseID) {
         return _runningCaseIDToSpecMap.get(caseID);
     }

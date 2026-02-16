@@ -99,7 +99,7 @@ public class YSpecificationValidator {
      * Validates all decompositions in the specification.
      */
     private void validateDecompositions() {
-        Map<String, YDecomposition> decomps = _spec.getDecompositions();
+        Set<YDecomposition> decomps = _spec.getDecompositions();
 
         if (decomps == null || decomps.isEmpty()) {
             addError("Specification must have at least one decomposition",
@@ -107,7 +107,7 @@ public class YSpecificationValidator {
             return;
         }
 
-        for (YDecomposition decomp : decomps.values()) {
+        for (YDecomposition decomp : decomps) {
             if (decomp.getID() == null || decomp.getID().trim().isEmpty()) {
                 addError("Decomposition must have an ID", "decomp-id", null);
             }
@@ -118,12 +118,12 @@ public class YSpecificationValidator {
      * Validates the structure of all nets in the specification.
      */
     private void validateNetStructures() {
-        Map<String, YDecomposition> decomps = _spec.getDecompositions();
+        Set<YDecomposition> decomps = _spec.getDecompositions();
         if (decomps == null) {
             return;
         }
 
-        for (YDecomposition decomp : decomps.values()) {
+        for (YDecomposition decomp : decomps) {
             if (decomp instanceof YNet) {
                 validateNet((YNet) decomp);
             }
@@ -149,8 +149,8 @@ public class YSpecificationValidator {
                     "output-condition", netID);
         }
 
-        Set<YExternalNetElement> elements = net.getNetElements();
-        if (elements == null || elements.size() < 2) {
+        Map<String, YExternalNetElement> elementsMap = net.getNetElements();
+        if (elementsMap == null || elementsMap.size() < 2) {
             addError("Net '" + netID + "' must have at least input and output conditions",
                     "net-elements", netID);
         }
@@ -163,12 +163,12 @@ public class YSpecificationValidator {
      * @param net the net to validate
      */
     private void validateNetConnectivity(YNet net) {
-        Set<YExternalNetElement> elements = net.getNetElements();
-        if (elements == null) {
+        Map<String, YExternalNetElement> elementsMap = net.getNetElements();
+        if (elementsMap == null) {
             return;
         }
 
-        for (YExternalNetElement element : elements) {
+        for (YExternalNetElement element : elementsMap.values()) {
             if (element instanceof YTask) {
                 validateTaskConnectivity((YTask) element, net.getID());
             }

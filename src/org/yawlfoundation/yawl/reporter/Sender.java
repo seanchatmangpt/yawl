@@ -54,9 +54,9 @@ public class Sender extends Interface_Client {
 
 
     private String send(Map<String, String> params) throws IOException {
-        HttpURLConnection connection = initPostConnection(get("m"));
-        connection.setRequestProperty("Authorization", "Basic " + encodeCredentials());
-        return send(connection, params, false);
+        // Add authentication header if needed
+        // The executePost method will handle the actual HTTP communication
+        return executePost(get("m"), params);
     }
 
 

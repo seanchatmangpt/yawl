@@ -239,11 +239,11 @@ public class YCaseImporter {
 
     private void unmarshalTimestamps(YWorkItem item, Element nItem) {
          Date timestamp = toDate(getChildText(nItem, "enablement"));
-         if (timestamp != null) item.set_enablementTime(timestamp);
+         if (timestamp != null) item.set_enablementTime(timestamp.toInstant());
          timestamp = toDate(getChildText(nItem, "firing"));
-         if (timestamp != null) item.set_firingTime(timestamp);
+         if (timestamp != null) item.set_firingTime(timestamp.toInstant());
          timestamp = toDate(getChildText(nItem, "start"));
-         if (timestamp != null) item.set_startTime(timestamp);
+         if (timestamp != null) item.set_startTime(timestamp.toInstant());
      }
 
 

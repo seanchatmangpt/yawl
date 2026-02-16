@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 

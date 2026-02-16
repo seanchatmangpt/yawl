@@ -96,7 +96,7 @@ public class YPersistenceManager {
 
                 MetadataSources metadataSources = new MetadataSources(standardRegistry);
                 for (Class clazz : persistedClasses) {
-                    metadataSources.addClass(clazz);
+                    metadataSources.addAnnotatedClass(clazz);
                 }
 
                 Metadata metadata = metadataSources.buildMetadata();
@@ -105,9 +105,6 @@ public class YPersistenceManager {
                 EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
                 SchemaManagementTool schemaManagementTool = standardRegistry
                         .getService(SchemaManagementTool.class);
-                schemaManagementTool.getSchemaUpdater(null)
-                        .doUpdate(metadata, targetTypes, false);
-                setEnabled(true);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -403,7 +400,7 @@ public class YPersistenceManager {
         try {
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
-            throw new YPersistenceException("Error executing query: " + query.getQueryString(), he);
+            throw new YPersistenceException("Error executing query", he);
         }
     }
 
@@ -454,7 +451,8 @@ public class YPersistenceManager {
             throws YPersistenceException {
         String qryStr = String.format("select distinct t from %s as t where t.%s=%s",
                 className, field, value);
-        Iterator itr = createQuery(qryStr).iterate();
+        List results = createQuery(qryStr).getResultList();
+        Iterator itr = results.iterator();
         if (itr.hasNext()) return itr.next();
         else return null;
     }

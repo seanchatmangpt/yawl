@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import javax.xml.datatype.Duration;
 import java.time.Instant;
 import java.util.Set;
+import java.util.Date;
 
 /**
  * A timer associated with an Atomic Task.

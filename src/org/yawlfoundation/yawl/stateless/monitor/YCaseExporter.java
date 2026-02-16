@@ -73,9 +73,9 @@ public class YCaseExporter {
             XNode nItem = nItems.addChild("item");
             nItem.addChild("id", item.get_thisID());
             nItem.addChild("taskid", item.getTaskID());
-            nItem.addChild("enablement", getTime(item.getEnablementTime()));
-            nItem.addChild("firing", getTime(item.getFiringTime()));
-            nItem.addChild("start", getTime(item.getStartTime()));
+            nItem.addChild("enablement", getTime(Date.from(item.getEnablementTime())));
+            nItem.addChild("firing", getTime(Date.from(item.getFiringTime())));
+            nItem.addChild("start", getTime(Date.from(item.getStartTime())));
             nItem.addChild("status", item.getStatus().toString());
             nItem.addChild("prevstatus", item.get_prevStatus());
             nItem.addChild("allowsdynamic", item.allowsDynamicCreation());

@@ -44,7 +44,6 @@ public class YawlRestApplication extends Application {
         Set<Class<?>> resources = new HashSet<>();
 
         // Interface B - Client API (work items, cases)
-        resources.add(InterfaceBRestResource.class);
 
         // Interface A - Design API (specifications)
         resources.add(InterfaceARestResource.class);
