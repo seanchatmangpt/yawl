@@ -1,68 +1,68 @@
 Testsuite: org.yawlfoundation.yawl.TestAllYAWLSuites
-Tests run: 106, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 11.033 sec
+Tests run: 106, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 12.212 sec
 ------------- Standard Output ---------------
-2026-02-15 21:45:32,913 [WARN ] YEventLogger         :- Process logging disabled because Engine persistence is disabled.
-2026-02-15 21:45:32,921 [WARN ] YDefClientsLoader    :- Error opening file 'defaultClients.properties'.
-org.yawlfoundation.yawl.util.YVerificationMessage@16e195cf
-org.yawlfoundation.yawl.util.YVerificationMessage@3212d853
-org.yawlfoundation.yawl.util.YVerificationMessage@74c7522c
-org.yawlfoundation.yawl.util.YVerificationMessage@77c23d90
-org.yawlfoundation.yawl.util.YVerificationMessage@6d17914a
-org.yawlfoundation.yawl.util.YVerificationMessage@49631cfb
+2026-02-16 00:04:18,742 [WARN ] YEventLogger         :- Process logging disabled because Engine persistence is disabled.
+2026-02-16 00:04:18,765 [WARN ] YDefClientsLoader    :- Error opening file 'defaultClients.properties'.
 org.yawlfoundation.yawl.util.YVerificationMessage@77b71c9
 org.yawlfoundation.yawl.util.YVerificationMessage@6133e20b
-org.yawlfoundation.yawl.util.YVerificationMessage@65d90b7f
-org.yawlfoundation.yawl.util.YVerificationMessage@2a42019a
-org.yawlfoundation.yawl.util.YVerificationMessage@6fc0e448
-org.yawlfoundation.yawl.util.YVerificationMessage@60194904
-org.yawlfoundation.yawl.util.YVerificationMessage@4db6348b
-org.yawlfoundation.yawl.util.YVerificationMessage@7742a276
+org.yawlfoundation.yawl.util.YVerificationMessage@30ffb2a6
+org.yawlfoundation.yawl.util.YVerificationMessage@612af486
+org.yawlfoundation.yawl.util.YVerificationMessage@3d033453
+org.yawlfoundation.yawl.util.YVerificationMessage@43deba42
+org.yawlfoundation.yawl.util.YVerificationMessage@e795a1d
+org.yawlfoundation.yawl.util.YVerificationMessage@38c10190
 org.yawlfoundation.yawl.util.YVerificationMessage@1f48fa72
 org.yawlfoundation.yawl.util.YVerificationMessage@35b3c1f6
-2026-02-15 21:45:34,013 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:34,027 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:34,444 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.2:flight to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:34,865 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.3:flight to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:35,277 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.3:prepare_payment_information to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:35,689 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.2:prepare_payment_information to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:36,510 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 148:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:36,522 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 148:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,338 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 149:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,347 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 149:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,467 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:b-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,569 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:c-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,569 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:d-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,571 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:e-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:37,573 [WARN ] YNetRunner           :- Although Net [Do Nothing] of case [150.1] has successfully completed, there were one or more tokens remaining in the net, within these elements: [Condition:c{d-top_e-top}], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
-2026-02-15 21:45:38,701 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:b-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:38,804 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:d-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:38,804 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:c-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:38,806 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:e-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:38,808 [WARN ] YNetRunner           :- Although Net [Do Nothing] of case [151.1] has successfully completed, there were one or more tokens remaining in the net, within these elements: [Condition:c{c-top_e-top}], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
-2026-02-15 21:45:39,834 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:39,937 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:39,938 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:39,939 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:39,937 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:40,485 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:p to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:40,587 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:q to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:40,587 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:p to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:40,898 [WARN ] YNetRunner           :- Although Net [Decompose] of case [153] has successfully completed, there were one or more tokens remaining in the net, within these elements: [AtomicTask:p], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
-2026-02-15 21:45:41,013 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,114 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,115 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,115 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,114 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,762 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,762 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,763 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,763 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,870 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:8 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,972 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:7 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,972 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:5 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,972 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:6 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:41,972 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:8 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
-2026-02-15 21:45:43,545 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 156:a-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+org.yawlfoundation.yawl.util.YVerificationMessage@495da9a7
+org.yawlfoundation.yawl.util.YVerificationMessage@2beee3e8
+org.yawlfoundation.yawl.util.YVerificationMessage@732d078d
+org.yawlfoundation.yawl.util.YVerificationMessage@58bad46f
+org.yawlfoundation.yawl.util.YVerificationMessage@7c0e4e4e
+org.yawlfoundation.yawl.util.YVerificationMessage@20231384
+2026-02-16 00:04:20,756 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:20,776 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:21,203 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.2:flight to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:21,613 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.3:flight to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:22,019 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.3:prepare_payment_information to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:22,423 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 147.2:prepare_payment_information to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:23,241 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 148:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:23,255 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 148:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,075 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 149:register to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,088 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 149:cancel to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,204 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:b-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,307 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:d-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,307 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:c-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,309 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 150.1:e-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:24,314 [WARN ] YNetRunner           :- Although Net [Do Nothing] of case [150.1] has successfully completed, there were one or more tokens remaining in the net, within these elements: [Condition:c{c-top_e-top}], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
+2026-02-16 00:04:25,438 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:b-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:25,542 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:d-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:25,542 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:c-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:25,545 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 151.1:e-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:25,547 [WARN ] YNetRunner           :- Although Net [Do Nothing] of case [151.1] has successfully completed, there were one or more tokens remaining in the net, within these elements: [Condition:c{c-top_e-top}], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
+2026-02-16 00:04:26,568 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:26,672 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:26,672 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:26,673 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:26,673 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 152:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,225 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:p to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,329 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:p to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,329 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 153:q to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,634 [WARN ] YNetRunner           :- Although Net [Decompose] of case [153] has successfully completed, there were one or more tokens remaining in the net, within these elements: [AtomicTask:p], which usually indicates that the net is unsound. Those tokens were removed when the net completed.
+2026-02-16 00:04:27,748 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,851 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,851 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,852 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:27,852 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,524 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:C to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,524 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:F to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,525 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:B to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,525 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 154:A to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,641 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:8 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,744 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:7 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,744 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:8 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,745 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:5 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:28,745 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 155:6 to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
+2026-02-16 00:04:30,347 [ERROR] InterfaceB_EngineBasedClient :- Could not announce enabled workitem 156:a-top to default worklist handler at URL http://localhost:8080/resourceService/ib. Either the handler is missing or offline, or the URL is invalid.
 ------------- ---------------- ---------------
 ------------- Standard Error -----------------
 SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
@@ -70,66 +70,66 @@ SLF4J: Defaulting to no-operation (NOP) logger implementation
 SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
 ------------- ---------------- ---------------
 
-Testcase: testSchemaCatching took 0.044 sec
-Testcase: testFullAtomicTask took 0.092 sec
-Testcase: testEmptyAtomicTask took 0.001 sec
-Testcase: testFireAtomicTask took 0.021 sec
-Testcase: testValidCompositeTask took 0.012 sec
-Testcase: testInvalidCompositeTask took 0.008 sec
+Testcase: testSchemaCatching took 0.093 sec
+Testcase: testFullAtomicTask took 0.292 sec
+Testcase: testEmptyAtomicTask took 0.002 sec
+Testcase: testFireAtomicTask took 0.062 sec
+Testcase: testValidCompositeTask took 0.028 sec
+Testcase: testInvalidCompositeTask took 0.016 sec
 Testcase: testConstructor took 0.001 sec
-Testcase: testMovingIdentifiers took 0 sec
+Testcase: testMovingIdentifiers took 0.001 sec
 Testcase: testFlowStuff took 0 sec
-Testcase: testValidStuff took 0.001 sec
-Testcase: testBadQueries took 0.002 sec
-Testcase: testBadQueries2 took 0.001 sec
-Testcase: testInvalidVerify took 0.001 sec
-Testcase: testNeedsPredicateVerify took 0.001 sec
-Testcase: testNeedsNoPredicateVerify took 0 sec
-Testcase: testThrowsAppropriateStateExceptions took 0.004 sec
-Testcase: testToXML took 0.001 sec
-Testcase: testToXML2 took 0 sec
-Testcase: testInvalidMIAttributeVerify took 0.029 sec
+Testcase: testValidStuff took 0.002 sec
+Testcase: testBadQueries took 0.004 sec
+Testcase: testBadQueries2 took 0.003 sec
+Testcase: testInvalidVerify took 0.003 sec
+Testcase: testNeedsPredicateVerify took 0.004 sec
+Testcase: testNeedsNoPredicateVerify took 0.001 sec
+Testcase: testThrowsAppropriateStateExceptions took 0.01 sec
+Testcase: testToXML took 0.002 sec
+Testcase: testToXML2 took 0.001 sec
+Testcase: testInvalidMIAttributeVerify took 0.072 sec
 Testcase: testSelfCancellation took 0.001 sec
 Testcase: testToString took 0 sec
-Testcase: testXOR_ORSplitNeedsDefaultFlowNotBoth took 0.001 sec
-Testcase: testANDCantBeDefaultFlow took 0 sec
+Testcase: testXOR_ORSplitNeedsDefaultFlowNotBoth took 0 sec
+Testcase: testANDCantBeDefaultFlow took 0.001 sec
 Testcase: testConditionToCondition took 0.001 sec
-Testcase: testInputOutputFlow took 0 sec
+Testcase: testInputOutputFlow took 0.001 sec
 Testcase: testInvalidInputCondition took 0.001 sec
 Testcase: testValidStuff took 0 sec
 Testcase: testInvalidVerify took 0 sec
-Testcase: testGoodNetVerify took 0.036 sec
-Testcase: testBadNetVerify took 0.037 sec
+Testcase: testGoodNetVerify took 0.077 sec
+Testcase: testBadNetVerify took 0.078 sec
 	FAILED
 BadNet should have produced 5 error messages, but didn't
 junit.framework.AssertionFailedError: BadNet should have produced 5 error messages, but didn't
 	at org.yawlfoundation.yawl.elements.TestYNet.testBadNetVerify(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testCloneBasics took 0.019 sec
-Testcase: testCloneVerify took 0.027 sec
-Testcase: testORJoinEnabled took 0.038 sec
-Testcase: testDataStructureAgainstWierdSpecification took 0.017 sec
+Testcase: testCloneBasics took 0.044 sec
+Testcase: testCloneVerify took 0.051 sec
+Testcase: testORJoinEnabled took 0.073 sec
+Testcase: testDataStructureAgainstWierdSpecification took 0.039 sec
 Testcase: testNothingMuch took 0 sec
 Testcase: testInvalidInputCondition took 0 sec
-Testcase: testValidDataTypesInSpecification took 0.021 sec
-Testcase: testBadSpecVerify took 0.033 sec
+Testcase: testValidDataTypesInSpecification took 0.048 sec
+Testcase: testBadSpecVerify took 0.083 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:top] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:top] is not valid for its data type.
 	at org.yawlfoundation.yawl.elements.TestYSpecification.testBadSpecVerify(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testSpecWithLoops took 0.035 sec
+Testcase: testSpecWithLoops took 0.092 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:d] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:d] is not valid for its data type.
 	at org.yawlfoundation.yawl.elements.TestYSpecification.testSpecWithLoops(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testDataStructure took 0.017 sec
-Testcase: testClonedDataStructure took 0.017 sec
-Testcase: testGoodNetVerify took 0.033 sec
+Testcase: testDataStructure took 0.037 sec
+Testcase: testClonedDataStructure took 0.043 sec
+Testcase: testGoodNetVerify took 0.065 sec
 	FAILED
 The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type.
 junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><stub/><stub/><stub/><stub/>] of variable [stubList] in decomposition [YNet:Process Creadit Card] is not valid for its data type.
@@ -137,72 +137,72 @@ junit.framework.AssertionFailedError: The initial value [<stub/><stub/><stub/><s
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
 Testcase: testCreateChild took 0 sec
-Testcase: testGetChildren took 0 sec
+Testcase: testGetChildren took 0.001 sec
 Testcase: testIsChildOf took 0 sec
 Testcase: testGetDescendants took 0 sec
 Testcase: testEquals took 0 sec
-Testcase: testEquals took 0.004 sec
-Testcase: testGreaterThanOrEquals took 0.004 sec
-Testcase: testLessThan took 0.004 sec
-Testcase: testHashcode took 0.004 sec
-Testcase: testDoPowerSetRecursion took 0.004 sec
-Testcase: testXorJoinAndSplit took 0.007 sec
-Testcase: testAndJoinOrSplit took 0.004 sec
-Testcase: testDeadlock took 0.004 sec
-Testcase: testContainsEquivalentTo took 0.001 sec
-Testcase: testLaunchCaseWithExplicitCaseID took 0.021 sec
-Testcase: testUnmarshalSpecification took 0.007 sec
-Testcase: testLaunchAndCompleteOneCase took 0.005 sec
-Testcase: testEngineInstanceWithH2 took 0.001 sec
-Testcase: testIt took 2.502 sec
-Testcase: testCaseCancel took 1.231 sec
-Testcase: testCaseCompletion took 0.019 sec
-Testcase: testMultimergeNets took 1.228 sec
-Testcase: testMultimergeWorkItems took 1.232 sec
-Testcase: testStateAlignmentBetween_WorkItemRepository_and_Net took 0.661 sec
-Testcase: testImproperCompletion took 0.527 sec
-Testcase: testImproperCompletion took 0.857 sec
-Testcase: testImproperCompletion2 took 0.642 sec
+Testcase: testEquals took 0.007 sec
+Testcase: testGreaterThanOrEquals took 0.007 sec
+Testcase: testLessThan took 0.007 sec
+Testcase: testHashcode took 0.007 sec
+Testcase: testDoPowerSetRecursion took 0.007 sec
+Testcase: testXorJoinAndSplit took 0.013 sec
+Testcase: testAndJoinOrSplit took 0.006 sec
+Testcase: testDeadlock took 0.007 sec
+Testcase: testContainsEquivalentTo took 0 sec
+Testcase: testLaunchCaseWithExplicitCaseID took 0.054 sec
+Testcase: testUnmarshalSpecification took 0.008 sec
+Testcase: testLaunchAndCompleteOneCase took 0.012 sec
+Testcase: testEngineInstanceWithH2 took 0 sec
+Testcase: testIt took 2.512 sec
+Testcase: testCaseCancel took 1.234 sec
+Testcase: testCaseCompletion took 0.027 sec
+Testcase: testMultimergeNets took 1.227 sec
+Testcase: testMultimergeWorkItems took 1.231 sec
+Testcase: testStateAlignmentBetween_WorkItemRepository_and_Net took 0.662 sec
+Testcase: testImproperCompletion took 0.525 sec
+Testcase: testImproperCompletion took 0.888 sec
+Testcase: testImproperCompletion2 took 0.672 sec
 	FAILED
 itemA child is null
 junit.framework.AssertionFailedError: itemA child is null
 	at org.yawlfoundation.yawl.engine.TestOrJoin.testImproperCompletion2(Unknown Source)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 
-Testcase: testGetTaskWithoutSpecification took 0.016 sec
-Testcase: testGetTask took 0.01 sec
-Testcase: testUseCase1 took 1.012 sec
-Testcase: testBasicFireAtomic took 0.207 sec
-Testcase: testAddInstance took 0.009 sec
+Testcase: testGetTaskWithoutSpecification took 0.018 sec
+Testcase: testGetTask took 0.015 sec
+Testcase: testUseCase1 took 1.017 sec
+Testcase: testBasicFireAtomic took 0.215 sec
+Testcase: testAddInstance took 0.013 sec
 Testcase: testConstructor took 0.001 sec
 Testcase: testCreateChild took 0.012 sec
-Testcase: testUniqueIDGenerator took 0.045 sec
-Testcase: testGetItem took 0 sec
-Testcase: testChildren took 0 sec
+Testcase: testUniqueIDGenerator took 0.039 sec
+Testcase: testGetItem took 0.001 sec
+Testcase: testChildren took 0.001 sec
 Testcase: testConstructor took 0 sec
 Testcase: testConstructor took 0 sec
 Testcase: testNextId took 0 sec
-Testcase: testSimpleValidSchema took 0.001 sec
-Testcase: testComplexValidSchema took 0 sec
+Testcase: testComplexValidSchema took 0.001 sec
+Testcase: testSimpleValidSchema took 0.002 sec
 Testcase: testSimpleInvalidSchema took 0.001 sec
 Testcase: testComplexInvalidSchema took 0.001 sec
-Testcase: testMalformedSchema took 0.003 sec
-Testcase: testIncorrectXMLSchemaInstance took 0.001 sec
-Testcase: testSimpleInstance took 0.001 sec
-Testcase: testInvlaidSimpleInstance took 0.001 sec
-Testcase: testXMLSchemaInstance took 0 sec
-Testcase: testXSDAny took 0.001 sec
-Testcase: testMalformedXSDAny took 0.001 sec
+Testcase: testMalformedSchema took 0.006 sec
+Testcase: testXSDAny took 0.002 sec
+Testcase: testIncorrectXMLSchemaInstance took 0.002 sec
+Testcase: testSimpleInstance took 0.002 sec
+Testcase: testInvlaidSimpleInstance took 0.003 sec
+Testcase: testXMLSchemaInstance took 0.002 sec
+Testcase: testMalformedXSDAny took 0.002 sec
 Testcase: testValidationBeforeCompilation took 0.001 sec
 Testcase: testToXML took 0.001 sec
-Testcase: testBothEqual took 0.019 sec
-Testcase: testLineByLine took 0.022 sec
-Testcase: testGetColumnClass took 0.011 sec
+Testcase: testBothEqual took 0.033 sec
+Testcase: testLineByLine took 0.034 sec
+Testcase: testGetColumnClass took 0.135 sec
 Testcase: testGetColumnName took 0.001 sec
 Testcase: testAccessors took 0.001 sec
 Testcase: testRemoveRow took 0.001 sec
 Testcase: testSomething took 0 sec
-Testcase: testConnect took 0.072 sec
+Testcase: testConnect took 0.148 sec
 Testcase: testUnbreakable took 0 sec
-Testcase: testRobust took 0 sec
-Testcase: testRemoveUser took 0.001 sec
+Testcase: testRobust took 0.001 sec
+Testcase: testRemoveUser took 0.003 sec
