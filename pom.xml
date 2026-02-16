@@ -1336,14 +1336,14 @@
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
 
-        <!-- Maven Build Cache for faster incremental builds -->
-        <extensions>
+        <!-- Maven Build Cache for faster incremental builds (disabled - extension unavailable) -->
+        <!-- <extensions>
             <extension>
                 <groupId>org.apache.maven.extensions</groupId>
                 <artifactId>maven-build-cache-extension</artifactId>
                 <version>1.1.0</version>
             </extension>
-        </extensions>
+        </extensions> -->
 
         <!-- Parallel build configuration -->
         <plugins>
