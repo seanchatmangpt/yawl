@@ -85,8 +85,8 @@ public class YLogTaskInstance {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogTaskInstance) &&
-                (this.getTaskInstanceID() == ((YLogTaskInstance) other).getTaskInstanceID());
+        return other instanceof YLogTaskInstance instance &&
+                (this.getTaskInstanceID() == instance.getTaskInstanceID());
     }
 
     public int hashCode() {
@@ -95,14 +95,19 @@ public class YLogTaskInstance {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(170);
-        xml.append(String.format("<taskInstance key=\"%d\">", taskInstanceID));
-        xml.append(StringUtil.wrap(engineInstanceID, "caseid"));
-        xml.append(StringUtil.wrap(String.valueOf(taskID), "taskKey"));
-        xml.append(StringUtil.wrap(String.valueOf(parentNetInstanceID), "parentNetKey"));
-        xml.append(StringUtil.wrap(String.valueOf(parentTaskInstanceID), "parentTaskKey"));
-        xml.append("</taskInstance>");
-        return xml.toString();
+        return """
+            <taskInstance key="%d">\
+            %s\
+            %s\
+            %s\
+            %s\
+            </taskInstance>""".formatted(
+                taskInstanceID,
+                StringUtil.wrap(engineInstanceID, "caseid"),
+                StringUtil.wrap(String.valueOf(taskID), "taskKey"),
+                StringUtil.wrap(String.valueOf(parentNetInstanceID), "parentNetKey"),
+                StringUtil.wrap(String.valueOf(parentTaskInstanceID), "parentTaskKey")
+        );
     }
 
 }

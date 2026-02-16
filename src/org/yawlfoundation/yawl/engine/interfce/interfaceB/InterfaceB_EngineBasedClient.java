@@ -57,7 +57,7 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
  * Time: 17:19:12
  *
  * @author Michael Adams (refactored for v2.0, 06/2008 - 12/2008)
- * @updated 2026-02-16 Virtual thread migration (Java 21)
+ * @updated 2026-02-16 Virtual thread migration (Java 25)
  */
 
 public class InterfaceB_EngineBasedClient extends Interface_Client implements ObserverGateway {

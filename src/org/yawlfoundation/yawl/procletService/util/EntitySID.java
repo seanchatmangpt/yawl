@@ -18,23 +18,64 @@
 
 package org.yawlfoundation.yawl.procletService.util;
 
-public class EntitySID {
-	
-	private String esid = "";
-	
-	public EntitySID (String esid) {
-		this.esid = esid;
-	}
-	
-	public String getValue() {
-		return this.esid;
-	}
-	
-	public void setEsid(String esid) {
-		this.esid = esid;
-	}
-	
-	public String toString () {
-		return this.getValue();
-	}
+import java.io.Serializable;
+
+/**
+ * Immutable entity specific identifier (ESID) record.
+ * Converted to Java 25 record for improved immutability and type safety.
+ *
+ * @author YAWL Foundation
+ * @author YAWL Foundation (Java 25 conversion)
+ * @since 2.0
+ * @version 5.2
+ *
+ * @param esid Entity specific identifier value
+ */
+public record EntitySID(String esid) implements Serializable {
+
+    @java.io.Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Default constructor with empty esid.
+     */
+    public EntitySID() {
+        this("");
+    }
+
+    /**
+     * Canonical constructor ensuring non-null esid.
+     */
+    public EntitySID {
+        if (esid == null) {
+            esid = "";
+        }
+    }
+
+    /**
+     * Returns the esid value.
+     * @deprecated Use esid() accessor instead
+     * @return the esid value
+     */
+    @Deprecated
+    public String getValue() {
+        return esid;
+    }
+
+    /**
+     * Creates a new EntitySID with the specified value.
+     * @deprecated Use constructor EntitySID(String) instead
+     * @param newEsid the new esid value
+     */
+    @Deprecated
+    public void setEsid(String newEsid) {
+        throw new UnsupportedOperationException(
+            "EntitySID is immutable. Create a new instance: new EntitySID(\"" + newEsid + "\")"
+        );
+    }
+
+    @Override
+    public String toString() {
+        return esid;
+    }
 }

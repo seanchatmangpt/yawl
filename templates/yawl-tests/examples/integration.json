@@ -1,0 +1,49 @@
+{
+  "package": "org.yawlfoundation.yawl.integration",
+  "test_class": "WorkflowDatabaseIntegrationTest",
+  "class_under_test": "YEngine",
+  "junit_version": "5",
+  "database_type": "postgresql",
+  "use_testcontainers": true,
+  "test_scenarios": [
+    {
+      "name": "ConnectionEstablished",
+      "description": "Verifies database connection works with correct credentials",
+      "operation": "getConnection",
+      "assertions": ["connectionNotNull", "connectionIsValid"]
+    },
+    {
+      "name": "CaseTableCreation",
+      "description": "Tests creating the yawl_case table with proper schema",
+      "operation": "createTable",
+      "table_name": "yawl_case",
+      "assertions": ["tableExists", "columnsCorrect"]
+    },
+    {
+      "name": "TransactionRollback",
+      "description": "Tests transaction rollback on error prevents partial data",
+      "operation": "transaction",
+      "assertions": ["rollbackWorks", "noPartialData"]
+    },
+    {
+      "name": "SpecificationPersistence",
+      "description": "Tests saving and loading specifications from database",
+      "operation": "persistSpecification",
+      "assertions": ["specSaved", "specLoadable", "specUnchanged"]
+    },
+    {
+      "name": "WorkItemPersistence",
+      "description": "Tests work item state persistence across engine restarts",
+      "operation": "persistWorkItem",
+      "assertions": ["workItemSaved", "statePreserved"]
+    }
+  ],
+  "tables": [
+    {"name": "yawl_case", "columns": ["id", "case_id", "spec_id", "status", "created_at"]},
+    {"name": "yawl_workitem", "columns": ["id", "item_id", "case_id", "task_id", "status", "data"]},
+    {"name": "yawl_specification", "columns": ["id", "uri", "version", "content", "loaded_at"]}
+  ],
+  "cleanup_strategy": "rollback",
+  "author": "YAWL Foundation",
+  "version": "5.2"
+}

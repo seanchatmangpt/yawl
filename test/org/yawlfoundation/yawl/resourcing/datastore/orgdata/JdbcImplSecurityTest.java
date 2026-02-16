@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.resourcing.datastore.orgdata;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Security tests for jdbcImpl to verify SQL injection protection
@@ -23,7 +23,7 @@ public class JdbcImplSecurityTest {
 
     private jdbcImpl jdbc;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         jdbc = new jdbcImpl();
     }
@@ -31,35 +31,41 @@ public class JdbcImplSecurityTest {
     /**
      * Test that invalid table names are rejected
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidTableNameInjection() throws Exception {
-        Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
-        validateTableName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
+            validateTableName.setAccessible(true);
 
-        // Attempt SQL injection through table name
-        validateTableName.invoke(jdbc, "rsj_participant; DROP TABLE rsj_participant; --");
+            // Attempt SQL injection through table name
+            validateTableName.invoke(jdbc, "rsj_participant; DROP TABLE rsj_participant; --");
+        });
     }
 
     /**
      * Test that SQL injection keywords in table names are rejected
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTableNameWithUnion() throws Exception {
-        Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
-        validateTableName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
+            validateTableName.setAccessible(true);
 
-        validateTableName.invoke(jdbc, "rsj_participant UNION SELECT * FROM rsj_role");
+            validateTableName.invoke(jdbc, "rsj_participant UNION SELECT * FROM rsj_role");
+        });
     }
 
     /**
      * Test that null table names are rejected
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullTableName() throws Exception {
-        Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
-        validateTableName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateTableName = jdbcImpl.class.getDeclaredMethod("validateTableName", String.class);
+            validateTableName.setAccessible(true);
 
-        validateTableName.invoke(jdbc, (String) null);
+            validateTableName.invoke(jdbc, (String) null);
+        });
     }
 
     /**
@@ -79,35 +85,41 @@ public class JdbcImplSecurityTest {
     /**
      * Test that invalid field names are rejected
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidFieldNameInjection() throws Exception {
-        Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
-        validateFieldName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
+            validateFieldName.setAccessible(true);
 
-        // Attempt SQL injection through field name
-        validateFieldName.invoke(jdbc, "userid OR 1=1; --");
+            // Attempt SQL injection through field name
+            validateFieldName.invoke(jdbc, "userid OR 1=1; --");
+        });
     }
 
     /**
      * Test that SQL injection with quotes is rejected in field names
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFieldNameWithQuotes() throws Exception {
-        Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
-        validateFieldName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
+            validateFieldName.setAccessible(true);
 
-        validateFieldName.invoke(jdbc, "userid' OR '1'='1");
+            validateFieldName.invoke(jdbc, "userid' OR '1'='1");
+        });
     }
 
     /**
      * Test that null field names are rejected
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullFieldName() throws Exception {
-        Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
-        validateFieldName.setAccessible(true);
+        assertThrows(Exception.class, () -> {
+            Method validateFieldName = jdbcImpl.class.getDeclaredMethod("validateFieldName", String.class);
+            validateFieldName.setAccessible(true);
 
-        validateFieldName.invoke(jdbc, (String) null);
+            validateFieldName.invoke(jdbc, (String) null);
+        });
     }
 
     /**

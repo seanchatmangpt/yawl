@@ -225,25 +225,30 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
         xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getMinInstancesQuery()), "minimum"));
         xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getMaxInstancesQuery()), "maximum"));
         xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getThresholdQuery()), "threshold"));
-        xml.append("<creationMode code=\"");
-        xml.append(_creationMode).append("\"/>");
-        xml.append("<miDataInput>");
-        xml.append("<expression query=\"");
-        xml.append(JDOMUtil.encodeEscapes(_task.getPreSplittingMIQuery())).append("\"/>");
-        xml.append("<splittingExpression query=\"");
-        xml.append(JDOMUtil.encodeEscapes(_inputSplittingQuery)).append("\"/>");
-        xml.append(StringUtil.wrap(_inputVarName, "formalInputParam"));
-        xml.append("</miDataInput>");
+        xml.append("<creationMode code=\"%s\"/>".formatted(_creationMode));
+        xml.append("""
+                <miDataInput>
+                  <expression query="%s"/>
+                  <splittingExpression query="%s"/>
+                  %s
+                </miDataInput>
+                """.formatted(
+                    JDOMUtil.encodeEscapes(_task.getPreSplittingMIQuery()),
+                    JDOMUtil.encodeEscapes(_inputSplittingQuery),
+                    StringUtil.wrap(_inputVarName, "formalInputParam")
+                ));
         if (_remoteOutputQuery != null) {
-            xml.append("<miDataOutput>");
-            xml.append("<formalOutputExpression query=\"");
-            xml.append(JDOMUtil.encodeEscapes(_remoteOutputQuery));
-            xml.append("\"/>");
-            xml.append("<outputJoiningExpression query=\"");
-            xml.append(JDOMUtil.encodeEscapes(_outputProcessingQuery)).append("\"/>");
-            xml.append("<resultAppliedToLocalVariable>");
-            xml.append(getMIOutputAssignmentVar()).append("</resultAppliedToLocalVariable>");
-            xml.append("</miDataOutput>");
+            xml.append("""
+                    <miDataOutput>
+                      <formalOutputExpression query="%s"/>
+                      <outputJoiningExpression query="%s"/>
+                      <resultAppliedToLocalVariable>%s</resultAppliedToLocalVariable>
+                    </miDataOutput>
+                    """.formatted(
+                        JDOMUtil.encodeEscapes(_remoteOutputQuery),
+                        JDOMUtil.encodeEscapes(_outputProcessingQuery),
+                        getMIOutputAssignmentVar()
+                    ));
         }
         return xml.toString();
     }

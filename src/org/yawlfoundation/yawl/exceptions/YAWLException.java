@@ -90,13 +90,13 @@ public class YAWLException extends Exception {
     }
 
     public String toXML() {
-        return "<" + this.getClass().getName() + ">" +
-                toXMLGuts() +
-                "</" + this.getClass().getName() + ">";
+        return """
+            <%s>%s</%s>
+            """.formatted(this.getClass().getName(), toXMLGuts(), this.getClass().getName()).trim();
     }
 
     protected String toXMLGuts() {
-        return "<message>" + getMessage() + "</message>";
+        return "<message>%s</message>".formatted(getMessage());
     }
 
     public static YAWLException unmarshal(Document exceptionDoc) throws JDOMException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
@@ -187,14 +187,14 @@ public class YAWLException extends Exception {
     public void rethrow() throws YStateException, YDataStateException, YQueryException,
                                  YPersistenceException
     {
-        if (this instanceof YStateException) {
-            throw (YStateException) this;
-        } else if (this instanceof YDataStateException) {
-            throw (YDataStateException) this;
-        } else if (this instanceof YQueryException) {
-            throw (YQueryException) this;
-        } else if (this instanceof YPersistenceException) {
-            throw (YPersistenceException) this;
+        if (this instanceof YStateException stateEx) {
+            throw stateEx;
+        } else if (this instanceof YDataStateException dataEx) {
+            throw dataEx;
+        } else if (this instanceof YQueryException queryEx) {
+            throw queryEx;
+        } else if (this instanceof YPersistenceException persistEx) {
+            throw persistEx;
         }
 
     }

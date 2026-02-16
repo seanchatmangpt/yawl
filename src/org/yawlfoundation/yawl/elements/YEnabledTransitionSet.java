@@ -102,7 +102,7 @@ public class YEnabledTransitionSet {
 
 
     private boolean isEnablingCondition(YNetElement element) {
-        return (element instanceof YCondition) && ((YCondition) element).containsIdentifier();
+        return (element instanceof YCondition condition) && condition.containsIdentifier();
     }
 
 
@@ -141,11 +141,11 @@ public class YEnabledTransitionSet {
          * @return true if the added task was not already in the group
          */
         public boolean add(YTask task) {
-            if (task instanceof YCompositeTask) {
-                return addCompositeTask((YCompositeTask) task);
+            if (task instanceof YCompositeTask compositeTask) {
+                return addCompositeTask(compositeTask);
             }
-            else if (task instanceof YAtomicTask) {
-                return addAtomicTask((YAtomicTask) task);
+            else if (task instanceof YAtomicTask atomicTask) {
+                return addAtomicTask(atomicTask);
             }
             return false;
         }

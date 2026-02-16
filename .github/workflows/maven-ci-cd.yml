@@ -1,0 +1,494 @@
+name: Maven CI/CD - Java 25
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+
+env:
+  JAVA_VERSION: 25
+  MAVEN_OPTS: -Xmx2048m -Djava.awt.headless=true --enable-preview
+  COVERAGE_THRESHOLD: 65
+
+jobs:
+  build:
+    name: Build & Test (Java 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Display Java Version
+        run: |
+          java --version
+          javac --version
+          echo "JAVA_HOME=$JAVA_HOME"
+          mvn --version
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: |
+          mvn clean install \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -T 1C \
+            -DskipTests=false \
+            -Dmaven.javadoc.skip=true
+
+      - name: Run Tests
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Generate JaCoCo Coverage Report
+        run: |
+          mvn jacoco:report --batch-mode --no-transfer-progress
+
+      - name: Check Coverage (65% minimum)
+        run: |
+          mvn jacoco:check \
+            --batch-mode \
+            --no-transfer-progress \
+            -Djacoco.haltOnFailure=true
+        continue-on-error: true
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          retention-days: 7
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/target/surefire-reports/*.xml'
+          retention-days: 7
+
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-jars
+          path: |
+            target/*.jar
+            */target/*.jar
+          retention-days: 5
+
+  integration-tests:
+    name: Integration Tests (Java 25)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yawl_test
+          POSTGRES_USER: yawl
+          POSTGRES_PASSWORD: yawl_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      h2:
+        image: oscarfonts/h2:latest
+        ports:
+          - 9092:9092
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:9092 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Integration Tests
+        env:
+          DB_HOST: localhost
+          DB_PORT_POSTGRES: 5432
+          DB_USER: yawl
+          DB_PASSWORD: yawl_test_pass
+        run: |
+          mvn verify \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Pintegration-tests \
+            -Dmaven.javadoc.skip=true
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            target/failsafe-reports/
+            */target/failsafe-reports/
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan (OWASP)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run OWASP Dependency Check
+        run: |
+          mvn org.owasp:dependency-check-maven:check \
+            --batch-mode \
+            --no-transfer-progress \
+            -DfailBuildOnCVSS=8 \
+            -Dformat=HTML,JSON,XML \
+            -DsuppressionFiles=owasp-suppressions.xml
+        continue-on-error: true
+
+      - name: Upload OWASP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check
+          path: target/dependency-check-report.*
+          retention-days: 30
+
+  code-quality:
+    name: Code Quality Analysis
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run SpotBugs Analysis
+        run: |
+          mvn spotbugs:check \
+            --batch-mode \
+            --no-transfer-progress
+        continue-on-error: true
+
+      - name: Run Checkstyle
+        run: |
+          mvn checkstyle:check \
+            --batch-mode \
+            --no-transfer-progress
+        continue-on-error: true
+
+      - name: Dependency Analysis
+        run: |
+          mvn dependency:analyze \
+            --batch-mode \
+            --no-transfer-progress \
+            -DfailOnWarning=false
+
+      - name: Upload Quality Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-reports
+          path: |
+            target/spotbugs/
+            target/checkstyle/
+            */target/spotbugs/
+            */target/checkstyle/
+          retention-days: 30
+
+  performance-tests:
+    name: Performance Tests (Java 25 Virtual Threads)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build Application
+        run: |
+          mvn clean package \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -DskipTests=true
+
+      - name: Run Virtual Thread Scalability Test
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dtest=VirtualThreadScalabilityTest \
+            -Dmaven.test.failure.ignore=true
+        continue-on-error: true
+
+      - name: Check for Virtual Thread Pinning
+        run: |
+          if [ -f "target/yawl-parent-5.2.jar" ]; then
+            java -Djdk.tracePinnedThreads=full \
+                 --enable-preview \
+                 -jar target/yawl-parent-5.2.jar &
+            APP_PID=$!
+            sleep 30
+
+            if [ -f "logs/yawl.log" ]; then
+              if grep -q "monitors:" logs/yawl.log 2>/dev/null; then
+                echo "WARNING: Virtual thread pinning detected!"
+                grep "monitors:" logs/yawl.log
+                kill $APP_PID
+                exit 1
+              else
+                echo "No virtual thread pinning detected"
+                kill $APP_PID
+              fi
+            else
+              echo "Log file not found, skipping pinning check"
+              kill $APP_PID
+            fi
+          else
+            echo "Application JAR not found, skipping pinning test"
+          fi
+
+      - name: Upload Performance Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            target/performance-reports/
+            logs/
+          retention-days: 30
+
+  docker-build:
+    name: Docker Build (Java 25)
+    needs: [build, integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.java25
+          push: false
+          tags: yawl-engine:5.2-java25
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            JAVA_VERSION=25
+            VERSION=5.2
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Test Docker Image
+        run: |
+          docker run -d --name yawl-test \
+            -p 8080:8080 \
+            -e DB_HOST=localhost \
+            yawl-engine:5.2-java25
+
+          sleep 30
+
+          if curl -f http://localhost:8080/actuator/health; then
+            echo "Health check passed"
+            docker stop yawl-test
+            docker rm yawl-test
+          else
+            echo "Health check failed"
+            docker logs yawl-test
+            docker stop yawl-test
+            docker rm yawl-test
+            exit 1
+          fi
+
+      - name: Save Docker Image
+        run: |
+          docker save yawl-engine:5.2-java25 | gzip > yawl-java25-image.tar.gz
+
+      - name: Upload Docker Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-docker-image-java25
+          path: yawl-java25-image.tar.gz
+          retention-days: 7
+
+  publish-artifacts:
+    name: Publish Artifacts
+    needs: [build, integration-tests, security-scan, code-quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Configure Maven Settings
+        uses: s4u/maven-settings-action@v3.0.0
+        with:
+          servers: |
+            [{
+              "id": "github",
+              "username": "${{ github.actor }}",
+              "password": "${{ secrets.GITHUB_TOKEN }}"
+            }]
+
+      - name: Publish to GitHub Packages
+        run: |
+          mvn deploy \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -DskipTests=true \
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notification
+    needs: [build, integration-tests, security-scan, code-quality, docker-build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Job Summary
+        run: |
+          echo "# YAWL Maven CI/CD Pipeline - Java 25" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Status: ${{ steps.status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.docker-build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send Slack Notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "${{ steps.status.outputs.color }}",
+                "title": "YAWL Maven CI/CD (Java 25) - ${{ steps.status.outputs.status }}",
+                "text": "Build #${{ github.run_number }} - Branch: ${{ github.ref_name }}",
+                "fields": [
+                  {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                  {"title": "Author", "value": "${{ github.actor }}", "short": true},
+                  {"title": "Build", "value": "${{ needs.build.result }}", "short": true},
+                  {"title": "Tests", "value": "${{ needs.integration-tests.result }}", "short": true}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '"$(date +%s)"'
+              }]
+            }'

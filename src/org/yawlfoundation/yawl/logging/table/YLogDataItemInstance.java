@@ -110,8 +110,8 @@ public class YLogDataItemInstance {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogDataItemInstance) &&
-                (this.getDataItemID() == ((YLogDataItemInstance) other).getDataItemID());
+        return other instanceof YLogDataItemInstance instance &&
+                (this.getDataItemID() == instance.getDataItemID());
     }
 
     public int hashCode() {

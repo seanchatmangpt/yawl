@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusIsParent;
 
@@ -83,7 +84,7 @@ public class YEventLogger {
     private YEngine _engine;
     private HibernateEngine _db;
 
-    private static final Object TASK_INST_MUTEX = new Object();
+    private final ReentrantLock _taskInstLock = new ReentrantLock();
     private final YEventKeyCache _keyCache = new YEventKeyCache();
 
     private static final Class[] LOG_CLASSES = {
@@ -176,15 +177,12 @@ public class YEventLogger {
                                final YIdentifier caseID, final YLogDataItemList datalist,
                                final String serviceRef) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    long netInstanceID = YEventLogger.this.insertNetInstance(caseID,
-                            YEventLogger.this.getRootNetID(ySpecID), -1);
-                    long serviceID = YEventLogger.this.getServiceID(serviceRef);
-                    YEventLogger.this.logEvent(netInstanceID, CASE_START, datalist, serviceID, netInstanceID);
-                    _keyCache.netInstances.put(caseID, netInstanceID);
-                }
+            _executor.execute(() -> {
+                long netInstanceID = insertNetInstance(caseID,
+                        getRootNetID(ySpecID), -1);
+                long serviceID = getServiceID(serviceRef);
+                logEvent(netInstanceID, CASE_START, datalist, serviceID, netInstanceID);
+                _keyCache.netInstances.put(caseID, netInstanceID);
             });
         }
     }
@@ -548,13 +546,27 @@ public class YEventLogger {
     }
 
 
+    /**
+     * Gets or creates a task instance ID with thread-safe access.
+     * Uses ReentrantLock instead of synchronized to avoid virtual thread pinning.
+     *
+     * Virtual threads are pinned (blocked from unmounting) when executing inside
+     * synchronized blocks, which negates their scalability benefits. ReentrantLock
+     * allows virtual threads to unmount during lock contention.
+     *
+     * @param workItem the work item to get or create instance ID for
+     * @return the task instance ID
+     */
     private long getOrCreateTaskInstanceID(YWorkItem workItem) {
-        synchronized (TASK_INST_MUTEX) {
+        _taskInstLock.lock();
+        try {
             long taskInstanceID = getTaskInstanceID(workItem);
             if (taskInstanceID < 0) {
                 taskInstanceID = insertTaskInstance(workItem);
             }
             return taskInstanceID;
+        } finally {
+            _taskInstLock.unlock();
         }
     }
 

@@ -188,14 +188,12 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
 
 
     private static String getParamTypeStr(int type) {
-        String typeStr;
-        switch (type) {
-            case _INPUT_PARAM_TYPE : typeStr = "inputParam"; break;
-            case _OUTPUT_PARAM_TYPE : typeStr = "outputParam"; break;
-            case _ENABLEMENT_PARAM_TYPE : typeStr = "enablementParam"; break;
-            default : throw new IllegalArgumentException("Invalid parameter type");
-        }
-        return typeStr;
+        return switch (type) {
+            case _INPUT_PARAM_TYPE -> "inputParam";
+            case _OUTPUT_PARAM_TYPE -> "outputParam";
+            case _ENABLEMENT_PARAM_TYPE -> "enablementParam";
+            default -> throw new IllegalArgumentException("Invalid parameter type");
+        };
     }
 
     private static boolean isValidType(int type) {

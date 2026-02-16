@@ -109,11 +109,11 @@ public class YTimerParameters {
 
     public boolean triggerMatchesStatus(YWorkItemStatus status) {
         if (_timerType == TimerType.Nil) return false;
-        switch (_trigger) {
-            case OnEnabled: return status.equals(statusEnabled);
-            case OnExecuting: return status.equals(statusExecuting);
-        }
-        return false;
+        return switch (_trigger) {
+            case OnEnabled -> status.equals(statusEnabled);
+            case OnExecuting -> status.equals(statusExecuting);
+            default -> false;
+        };
     }
 
 
@@ -219,30 +219,24 @@ public class YTimerParameters {
 
         XNode node = new XNode("timer");
         switch (_timerType) {
-            case Duration: {
+            case Duration -> {
                 node.addChild("trigger", _trigger.name());
                 node.addChild("duration", _duration.toString());
                 if (_workDaysOnly) {
                     node.addChild("workdays", true);
                 }
-                break;
             }
-            case Expiry: {
+            case Expiry -> {
                 node.addChild("trigger", _trigger.name());
                 node.addChild("expiry", _expiryTime.toEpochMilli());
-                break;
             }
-            case Interval: {
+            case Interval -> {
                 node.addChild("trigger", _trigger.name());
                 XNode params = node.addChild("durationparams");
                 params.addChild("ticks", _ticks);
                 params.addChild("interval", _timeUnit.name());
-                break;
             }
-            case LateBound: {
-                node.addChild("netparam", _variableName);
-                break;
-            }
+            case LateBound -> node.addChild("netparam", _variableName);
         }
         return node.toString();
     }
@@ -250,16 +244,16 @@ public class YTimerParameters {
 
     public String toString() {
         if (_timerType == TimerType.Nil) return "Nil";
-        String s = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
+        String prefix = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy, h:mm a")
                 .withZone(ZoneId.systemDefault());
-        switch (_timerType) {
-            case Duration: s += _duration.toString(); break;
-            case Expiry: s += formatter.format(_expiryTime); break;
-            case Interval: s += _ticks + " " + _timeUnit.name(); break;
-            case LateBound: s = "Variable: " + _variableName; break;
-        }
-        return s;
+        return switch (_timerType) {
+            case Duration -> prefix + _duration.toString();
+            case Expiry -> prefix + formatter.format(_expiryTime);
+            case Interval -> prefix + _ticks + " " + _timeUnit.name();
+            case LateBound -> "Variable: " + _variableName;
+            default -> "Nil";
+        };
     }
 
 }

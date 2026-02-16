@@ -222,27 +222,29 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
     }
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder();
-        xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getMinInstancesQuery()), "minimum"));
-        xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getMaxInstancesQuery()), "maximum"));
-        xml.append(StringUtil.wrap(JDOMUtil.encodeEscapes(getThresholdQuery()), "threshold"));
-        xml.append("<creationMode code=\"" + _creationMode + "\"/>");
-        xml.append("<miDataInput>");
-        xml.append("<expression query=\"" + JDOMUtil.encodeEscapes(_task.getPreSplittingMIQuery()) + "\"/>");
-        xml.append("<splittingExpression query=\"" + JDOMUtil.encodeEscapes(_inputSplittingQuery) + "\"/>");
-        xml.append(StringUtil.wrap(_inputVarName, "formalInputParam"));
-        xml.append("</miDataInput>");
+        String outputXML = "";
         if (_remoteOutputQuery != null) {
-            xml.append("<miDataOutput>");
-            xml.append("<formalOutputExpression query=\"" + JDOMUtil.encodeEscapes(_remoteOutputQuery) + "\"/>");
-            xml.append("<outputJoiningExpression query=\"" + JDOMUtil.encodeEscapes(_outputProcessingQuery) + "\"/>");
-            xml.append("<resultAppliedToLocalVariable>" +
-                    getMIOutputAssignmentVar() +
-                    "</resultAppliedToLocalVariable>"
-            );
-            xml.append("</miDataOutput>");
+            outputXML = """
+                <miDataOutput><formalOutputExpression query="%s"/><outputJoiningExpression query="%s"/><resultAppliedToLocalVariable>%s</resultAppliedToLocalVariable></miDataOutput>
+                """.formatted(
+                    JDOMUtil.encodeEscapes(_remoteOutputQuery),
+                    JDOMUtil.encodeEscapes(_outputProcessingQuery),
+                    getMIOutputAssignmentVar()
+                );
         }
-        return xml.toString();
+
+        return """
+            %s%s%s<creationMode code="%s"/><miDataInput><expression query="%s"/><splittingExpression query="%s"/>%s</miDataInput>%s
+            """.formatted(
+                StringUtil.wrap(JDOMUtil.encodeEscapes(getMinInstancesQuery()), "minimum"),
+                StringUtil.wrap(JDOMUtil.encodeEscapes(getMaxInstancesQuery()), "maximum"),
+                StringUtil.wrap(JDOMUtil.encodeEscapes(getThresholdQuery()), "threshold"),
+                _creationMode,
+                JDOMUtil.encodeEscapes(_task.getPreSplittingMIQuery()),
+                JDOMUtil.encodeEscapes(_inputSplittingQuery),
+                StringUtil.wrap(_inputVarName, "formalInputParam"),
+                outputXML
+            );
     }
 
     public boolean isMultiInstance() {

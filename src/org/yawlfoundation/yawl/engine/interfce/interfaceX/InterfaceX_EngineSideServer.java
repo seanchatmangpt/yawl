@@ -105,10 +105,7 @@ public class InterfaceX_EngineSideServer extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         OutputStreamWriter outputWriter = ServletUtils.prepareResponse(response);
-        StringBuilder output = new StringBuilder();
-        output.append("<response>");
-        output.append(processPostQuery(request));
-        output.append("</response>");
+        String output = "<response>%s</response>".formatted(processPostQuery(request));
         if (_engine.enginePersistenceFailure())
         {
             logger.fatal("************************************************************");

@@ -27,10 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Periodically checks agent heartbeats and removes agents that have
  * not sent heartbeats within the timeout period (30 seconds).
  *
- * Runs every 10 seconds as a background daemon thread.
+ * Runs every 10 seconds as a virtual thread. Virtual threads are lightweight
+ * and ideal for this periodic I/O-bound monitoring task.
  *
  * @author YAWL Foundation
  * @version 5.2
+ * @updated 2026-02-16 Virtual thread migration (Java 25)
  */
 public final class AgentHealthMonitor implements Runnable {
 
@@ -55,14 +57,16 @@ public final class AgentHealthMonitor implements Runnable {
     }
 
     /**
-     * Start the health monitor in a daemon thread.
+     * Start the health monitor in a virtual thread.
+     * Virtual threads are more efficient than platform threads for this periodic
+     * monitoring task, using minimal memory and system resources.
      *
      * @return the started thread
      */
     public Thread start() {
-        Thread thread = new Thread(this, "AgentHealthMonitor");
-        thread.setDaemon(true);
-        thread.start();
+        Thread thread = Thread.ofVirtual()
+                .name("AgentHealthMonitor")
+                .start(this);
         logger.info("Agent health monitor started (check interval: {}ms, timeout: {}ms)",
                    CHECK_INTERVAL_MILLIS, HEARTBEAT_TIMEOUT_MILLIS);
         return thread;

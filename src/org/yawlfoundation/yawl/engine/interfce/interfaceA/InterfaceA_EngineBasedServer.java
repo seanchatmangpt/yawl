@@ -81,10 +81,7 @@ public class InterfaceA_EngineBasedServer extends YHttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         OutputStreamWriter outputWriter = ServletUtils.prepareResponse(response);
-        StringBuilder output = new StringBuilder();
-        output.append("<response>");
-        output.append(processPostQuery(request));
-        output.append("</response>");
+        String output = "<response>%s</response>".formatted(processPostQuery(request));
         if (_engine.enginePersistenceFailure())
         {
             logger.fatal("************************************************************");
@@ -221,8 +218,7 @@ public class InterfaceA_EngineBasedServer extends YHttpServlet {
             logger.error("Exception in Interface A with action: " + action, e);
         }
         if (msg.length() == 0) {
-            msg.append("<failure><reason>Invalid action or exception was thrown." +
-                       "</reason></failure>");
+            msg.append("<failure><reason>Invalid action or exception was thrown.</reason></failure>");
         }
         logger.debug("return = {}", msg);
 

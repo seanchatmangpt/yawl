@@ -142,9 +142,9 @@ public class YLaunchDelayer implements YTimedObject {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YLaunchDelayer) &&
+        return other instanceof YLaunchDelayer delayer &&
                 ((getOwnerID() != null) ?
-                 getOwnerID().equals(((YLaunchDelayer) other).getOwnerID()) :
+                 getOwnerID().equals(delayer.getOwnerID()) :
                  super.equals(other));
     }
 

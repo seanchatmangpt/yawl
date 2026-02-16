@@ -1,0 +1,1368 @@
+# YAWL RDF Ontology v4.0
+# Based on YAWL_Schema4.0.xsd
+#
+# This ontology formalizes the YAWL (Yet Another Workflow Language) specification
+# using OWL 2 DL semantics with Dublin Core alignments for metadata.
+#
+# Namespaces:
+#   yawls:  http://www.yawlfoundation.org/yawlschema#
+#   owl:    http://www.w3.org/2002/07/owl#
+#   rdfs:   http://www.w3.org/2000/01/rdf-schema#
+#   rdf:    http://www.w3.org/1999/02/22-rdf-syntax-ns#
+#   xsd:    http://www.w3.org/2001/XMLSchema#
+#   dc:     http://purl.org/dc/elements/1.1/
+#   dcterms: http://purl.org/dc/terms/
+#   petri:  http://example.org/petrinet# (placeholder for Petri Net alignment)
+
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix yawls: <http://www.yawlfoundation.org/yawlschema#> .
+@prefix : <http://www.yawlfoundation.org/yawlschema#> .
+
+<http://www.yawlfoundation.org/yawlschema> a owl:Ontology ;
+    rdfs:label "YAWL Ontology" ;
+    rdfs:comment "OWL 2 DL ontology for YAWL workflow specifications based on Petri net semantics" ;
+    owl:versionInfo "4.0" ;
+    owl:imports <http://purl.org/dc/terms/> ;
+    dcterms:created "2026-02-16"^^xsd:date ;
+    dcterms:creator "YAWL Foundation" ;
+    dcterms:license <https://www.gnu.org/licenses/lgpl-3.0.html> ;
+    dcterms:description """
+        This ontology captures the complete YAWL specification model including:
+        - Workflow specifications and nets (Petri Net based)
+        - Tasks with join/split control flow patterns (AND/XOR/OR)
+        - Conditions (input/output conditions)
+        - Decompositions (workflows, web service gateways)
+        - Resourcing (participants, roles, privileges)
+        - Data flow (parameters, variables, mappings)
+        - Timers and temporal constraints
+        - Configuration and layout information
+    """ .
+
+#################################################################
+# ANNOTATION PROPERTIES (Dublin Core Alignment)
+#################################################################
+
+dc:title a owl:AnnotationProperty .
+dc:creator a owl:AnnotationProperty .
+dc:subject a owl:AnnotationProperty .
+dc:description a owl:AnnotationProperty .
+dc:contributor a owl:AnnotationProperty .
+dc:coverage a owl:AnnotationProperty .
+dc:identifier a owl:AnnotationProperty .
+dcterms:valid a owl:AnnotationProperty .
+dcterms:created a owl:AnnotationProperty .
+dcterms:modified a owl:AnnotationProperty .
+
+#################################################################
+# CLASS HIERARCHY - Core Specification Model
+#################################################################
+
+# Root specification container
+yawls:SpecificationSet a owl:Class ;
+    rdfs:label "Specification Set" ;
+    rdfs:comment "Container for one or more YAWL specifications" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasSpecification ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Primary specification class - maps from YAWLSpecificationFactsType
+yawls:Specification a owl:Class ;
+    rdfs:label "YAWL Specification" ;
+    rdfs:comment "A complete YAWL workflow specification containing decompositions and metadata" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:uri ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasMetaData ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasDecomposition ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] ;
+    dcterms:relation <http://purl.org/dc/dcmitype/Software> .
+
+# Dublin Core metadata alignment
+yawls:MetaData a owl:Class ;
+    rdfs:label "Meta Data" ;
+    rdfs:comment "Dublin Core aligned metadata for YAWL specifications" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty dcterms:title ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty dcterms:created ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty dcterms:valid ;
+        owl:maxCardinality "2"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# DECOMPOSITION HIERARCHY
+#################################################################
+
+# Abstract base - maps from DecompositionFactsType
+yawls:Decomposition a owl:Class ;
+    rdfs:label "Decomposition" ;
+    rdfs:comment "Abstract base class for all decomposable workflow elements" ;
+    owl:hasKey ( yawls:id ) ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:id ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasInputParameter ;
+        owl:minCardinality "0"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasOutputParameter ;
+        owl:minCardinality "0"^^xsd:nonNegativeInteger
+    ] .
+
+# Workflow Net - maps from NetFactsType
+yawls:WorkflowNet a owl:Class ;
+    rdfs:label "Workflow Net" ;
+    rdfs:comment "A YAWL workflow net containing process control elements" ;
+    rdfs:subClassOf yawls:Decomposition , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasProcessControlElements ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasLocalVariable ;
+        owl:minCardinality "0"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:isRootNet ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] ;
+    skos:note "Corresponds to Petri Net workflow net with input and output conditions" .
+
+# Web Service Gateway - maps from WebServiceGatewayFactsType
+yawls:WebServiceGateway a owl:Class ;
+    rdfs:label "Web Service Gateway" ;
+    rdfs:comment "A decomposition that interfaces with external web services" ;
+    rdfs:subClassOf yawls:Decomposition , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasYawlService ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasCodelet ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:externalInteraction ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# NET ELEMENT HIERARCHY
+#################################################################
+
+# Abstract base for all net elements
+yawls:NetElement a owl:Class ;
+    rdfs:label "Net Element" ;
+    rdfs:comment "Abstract base class for elements in a workflow net" ;
+    owl:hasKey ( yawls:id ) ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:id ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasFlowInto ;
+        owl:minCardinality "0"^^xsd:nonNegativeInteger
+    ] .
+
+# Condition (places in Petri Net terms) - maps from ExternalConditionFactsType
+yawls:Condition a owl:Class ;
+    rdfs:label "Condition" ;
+    rdfs:comment "A condition node in the workflow (corresponds to Petri Net place)" ;
+    rdfs:subClassOf yawls:NetElement ;
+    skos:note "Used for input conditions, output conditions, and intermediate conditions" .
+
+# Input Condition - specific type of condition
+yawls:InputCondition a owl:Class ;
+    rdfs:label "Input Condition" ;
+    rdfs:comment "Entry point of a workflow net" ;
+    rdfs:subClassOf yawls:Condition ;
+    owl:disjointWith yawls:OutputCondition .
+
+# Output Condition - maps from OutputConditionFactsType
+yawls:OutputCondition a owl:Class ;
+    rdfs:label "Output Condition" ;
+    rdfs:comment "Exit point of a workflow net" ;
+    rdfs:subClassOf yawls:Condition .
+
+# Task - maps from ExternalTaskFactsType
+yawls:Task a owl:Class ;
+    rdfs:label "Task" ;
+    rdfs:comment "A work item in the workflow that may be executed by resources" ;
+    rdfs:subClassOf yawls:NetElement , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasJoin ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasSplit ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasResourcing ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasTimer ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:decomposesTo ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] ;
+    skos:note "Primary unit of work in YAWL workflows" .
+
+# Multiple Instance Task - maps from MultipleInstanceExternalTaskFactsType
+yawls:MultipleInstanceTask a owl:Class ;
+    rdfs:label "Multiple Instance Task" ;
+    rdfs:comment "A task that can have multiple concurrent instances" ;
+    rdfs:subClassOf yawls:Task , [
+        a owl:Restriction ;
+        owl:onProperty yawls:minimum ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:maximum ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:threshold ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:creationMode ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# CONTROL FLOW TYPES (AND/XOR/OR)
+#################################################################
+
+# Control Type - maps from ControlTypeType
+yawls:ControlType a owl:Class ;
+    rdfs:label "Control Type" ;
+    rdfs:comment "Specifies the control flow behavior (AND, XOR, OR)" .
+
+# Enumeration individuals for Control Type
+yawls:AND a yawls:ControlType ;
+    rdfs:label "AND" ;
+    rdfs:comment "Parallel execution - all branches must complete" .
+
+yawls:XOR a yawls:ControlType ;
+    rdfs:label "XOR" ;
+    rdfs:comment "Exclusive choice - exactly one branch executes" .
+
+yawls:OR a yawls:ControlType ;
+    rdfs:label "OR" ;
+    rdfs:comment "Multi-choice - one or more branches may execute" .
+
+# Join configuration
+yawls:Join a owl:Class ;
+    rdfs:label "Join" ;
+    rdfs:comment "Join behavior for a task (how multiple incoming flows are synchronized)" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:code ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Split configuration
+yawls:Split a owl:Class ;
+    rdfs:label "Split" ;
+    rdfs:comment "Split behavior for a task (how multiple outgoing flows are triggered)" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:code ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# FLOW AND CONNECTIVITY
+#################################################################
+
+# Flow Into - maps from FlowsIntoType
+yawls:FlowInto a owl:Class ;
+    rdfs:label "Flow Into" ;
+    rdfs:comment "Defines a flow from one element to another" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:nextElement ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasPredicate ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:isDefaultFlow ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Predicate - maps from PredicateType
+yawls:Predicate a owl:Class ;
+    rdfs:label "Predicate" ;
+    rdfs:comment "XPath predicate for conditional flow" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:ordering ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:xpathExpression ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# RESOURCING MODEL
+#################################################################
+
+# Resourcing - maps from ResourcingFactsType
+yawls:Resourcing a owl:Class ;
+    rdfs:label "Resourcing" ;
+    rdfs:comment "Resource allocation and management for tasks" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasOffer ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasAllocate ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasStart ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Offer - maps from ResourcingOfferFactsType
+yawls:Offer a owl:Class ;
+    rdfs:label "Offer" ;
+    rdfs:comment "Offer configuration for task distribution" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:initiator ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Allocate - maps from ResourcingAllocateFactsType
+yawls:Allocate a owl:Class ;
+    rdfs:label "Allocate" ;
+    rdfs:comment "Allocation configuration for task assignment" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:initiator ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Distribution Set - maps from ResourcingDistributionSetFactsType
+yawls:DistributionSet a owl:Class ;
+    rdfs:label "Distribution Set" ;
+    rdfs:comment "Set of resources for task distribution" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasInitialSet ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Resource Set - maps from ResourcingSetFactsType
+yawls:ResourceSet a owl:Class ;
+    rdfs:label "Resource Set" ;
+    rdfs:comment "Collection of participants and roles" .
+
+# Selector - maps from ResourcingSelectorFactsType
+yawls:Selector a owl:Class ;
+    rdfs:label "Selector" ;
+    rdfs:comment "A resource selection mechanism (filter, allocator, constraint)" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:selectorName ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Privileges - maps from ResourcingPrivilegesFactsType
+yawls:PrivilegeSet a owl:Class ;
+    rdfs:label "Privilege Set" ;
+    rdfs:comment "Set of resource privileges for a task" .
+
+# Privilege enumeration (7 types from ResourcingPrivilegeType)
+yawls:Privilege a owl:Class ;
+    rdfs:label "Privilege" ;
+    rdfs:comment "A resource management privilege" .
+
+yawls:canSuspend a yawls:Privilege ;
+    rdfs:label "Can Suspend" ;
+    rdfs:comment "Allows suspending a work item" .
+
+yawls:canReallocateStateless a yawls:Privilege ;
+    rdfs:label "Can Reallocate Stateless" ;
+    rdfs:comment "Allows stateless reallocation" .
+
+yawls:canReallocateStateful a yawls:Privilege ;
+    rdfs:label "Can Reallocate Stateful" ;
+    rdfs:comment "Allows stateful reallocation" .
+
+yawls:canDeallocate a yawls:Privilege ;
+    rdfs:label "Can Deallocate" ;
+    rdfs:comment "Allows deallocation" .
+
+yawls:canDelegate a yawls:Privilege ;
+    rdfs:label "Can Delegate" ;
+    rdfs:comment "Allows delegation to another resource" .
+
+yawls:canSkip a yawls:Privilege ;
+    rdfs:label "Can Skip" ;
+    rdfs:comment "Allows skipping the task" .
+
+yawls:canPile a yawls:Privilege ;
+    rdfs:label "Can Pile" ;
+    rdfs:comment "Allows piling work items" .
+
+# Initiator enumeration
+yawls:Initiator a owl:Class ;
+    rdfs:label "Initiator" ;
+    rdfs:comment "Who initiates a resourcing action" .
+
+yawls:systemInitiated a yawls:Initiator ;
+    rdfs:label "System" ;
+    rdfs:comment "System initiated action" .
+
+yawls:userInitiated a yawls:Initiator ;
+    rdfs:label "User" ;
+    rdfs:comment "User initiated action" .
+
+# Resource Type enumeration
+yawls:ResourceType a owl:Class ;
+    rdfs:label "Resource Type" ;
+    rdfs:comment "Type of resource (participant or role)" .
+
+yawls:Participant a yawls:ResourceType ;
+    rdfs:label "Participant" ;
+    rdfs:comment "Individual person resource" .
+
+yawls:Role a yawls:ResourceType ;
+    rdfs:label "Role" ;
+    rdfs:comment "Role-based resource grouping" .
+
+yawls:NonHumanResource a yawls:ResourceType ;
+    rdfs:label "Non-Human Resource" ;
+    rdfs:comment "Automated or system resource" .
+
+yawls:NonHumanCategory a yawls:ResourceType ;
+    rdfs:label "Non-Human Category" ;
+    rdfs:comment "Category of non-human resources" .
+
+# External Interaction enumeration
+yawls:ExternalInteraction a owl:Class ;
+    rdfs:label "External Interaction" ;
+    rdfs:comment "How a task interacts with external systems" .
+
+yawls:manual a yawls:ExternalInteraction ;
+    rdfs:label "Manual" ;
+    rdfs:comment "Manual interaction required" .
+
+yawls:automated a yawls:ExternalInteraction ;
+    rdfs:label "Automated" ;
+    rdfs:comment "Automated interaction" .
+
+#################################################################
+# TIMER AND TEMPORAL CONSTRAINTS
+#################################################################
+
+# Timer - maps from TimerType
+yawls:Timer a owl:Class ;
+    rdfs:label "Timer" ;
+    rdfs:comment "Timer configuration for tasks" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:useWorkdays ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Timer Trigger enumeration
+yawls:TimerTrigger a owl:Class ;
+    rdfs:label "Timer Trigger" ;
+    rdfs:comment "When the timer starts" .
+
+yawls:OnEnabled a yawls:TimerTrigger ;
+    rdfs:label "On Enabled" ;
+    rdfs:comment "Timer triggers when task is enabled" .
+
+yawls:OnExecuting a yawls:TimerTrigger ;
+    rdfs:label "On Executing" ;
+    rdfs:comment "Timer triggers when task starts executing" .
+
+# Timer Interval enumeration (8 time units)
+yawls:TimerInterval a owl:Class ;
+    rdfs:label "Timer Interval" ;
+    rdfs:comment "Time unit for timer duration" .
+
+yawls:YEAR a yawls:TimerInterval ;
+    rdfs:label "Year" .
+
+yawls:MONTH a yawls:TimerInterval ;
+    rdfs:label "Month" .
+
+yawls:WEEK a yawls:TimerInterval ;
+    rdfs:label "Week" .
+
+yawls:DAY a yawls:TimerInterval ;
+    rdfs:label "Day" .
+
+yawls:HOUR a yawls:TimerInterval ;
+    rdfs:label "Hour" .
+
+yawls:MIN a yawls:TimerInterval ;
+    rdfs:label "Minute" .
+
+yawls:SEC a yawls:TimerInterval ;
+    rdfs:label "Second" .
+
+yawls:MSEC a yawls:TimerInterval ;
+    rdfs:label "Millisecond" .
+
+# Timer Duration - maps from TimerDurationFactsType
+yawls:TimerDuration a owl:Class ;
+    rdfs:label "Timer Duration" ;
+    rdfs:comment "Duration specification for a timer" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:ticks ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:interval ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# DATA AND VARIABLES
+#################################################################
+
+# Variable - maps from VariableFactsType
+yawls:Variable a owl:Class ;
+    rdfs:label "Variable" ;
+    rdfs:comment "A variable in a workflow net" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:variableName ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:dataType ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:index ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Input Parameter - maps from InputParameterFactsType
+yawls:InputParameter a owl:Class ;
+    rdfs:label "Input Parameter" ;
+    rdfs:comment "Input parameter for a decomposition" ;
+    rdfs:subClassOf yawls:Variable .
+
+# Output Parameter - maps from OutputParameterFactsType
+yawls:OutputParameter a owl:Class ;
+    rdfs:label "Output Parameter" ;
+    rdfs:comment "Output parameter from a decomposition" ;
+    rdfs:subClassOf yawls:Variable , [
+        a owl:Restriction ;
+        owl:onProperty yawls:isMandatory ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:isCutThroughParam ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Variable Mapping - maps from VarMappingFactsType
+yawls:VariableMapping a owl:Class ;
+    rdfs:label "Variable Mapping" ;
+    rdfs:comment "Maps data between variables using XQuery expressions" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:expression ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:mapsTo ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Expression - maps from ExpressionType
+yawls:Expression a owl:Class ;
+    rdfs:label "Expression" ;
+    rdfs:comment "XQuery expression for data transformation" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:query ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Log Predicate - maps from LogPredicateFactsType
+yawls:LogPredicate a owl:Class ;
+    rdfs:label "Log Predicate" ;
+    rdfs:comment "Logging configuration for data changes" .
+
+#################################################################
+# CONFIGURATION
+#################################################################
+
+# Configuration - maps from ConfigurationType
+yawls:Configuration a owl:Class ;
+    rdfs:label "Configuration" ;
+    rdfs:comment "Configuration settings for variant management" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasJoinConfig ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasSplitConfig ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasNofiConfig ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasRemConfig ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+# Input Port Config - maps from InputPortConfigType
+yawls:InputPortConfig a owl:Class ;
+    rdfs:label "Input Port Configuration" ;
+    rdfs:comment "Configuration for input ports" .
+
+# Output Port Config - maps from OutputPortConfigType
+yawls:OutputPortConfig a owl:Class ;
+    rdfs:label "Output Port Configuration" ;
+    rdfs:comment "Configuration for output ports" .
+
+# Port Value enumeration
+yawls:InputPortValue a owl:Class ;
+    rdfs:label "Input Port Value" .
+
+yawls:activated a yawls:InputPortValue .
+yawls:blocked a yawls:InputPortValue .
+yawls:hidden a yawls:InputPortValue .
+
+yawls:OutputPortValue a owl:Class ;
+    rdfs:label "Output Port Value" .
+
+yawls:activatedOut a yawls:OutputPortValue .
+yawls:blockedOut a yawls:OutputPortValue .
+
+# Creation Mode enumeration
+yawls:CreationModeValue a owl:Class ;
+    rdfs:label "Creation Mode" .
+
+yawls:staticMode a yawls:CreationModeValue ;
+    rdfs:label "Static" .
+
+yawls:dynamicMode a yawls:CreationModeValue ;
+    rdfs:label "Dynamic" .
+
+yawls:restrictMode a yawls:CreationModeValue ;
+    rdfs:label "Restrict" .
+
+yawls:keepMode a yawls:CreationModeValue ;
+    rdfs:label "Keep" .
+
+#################################################################
+# LAYOUT AND VISUALIZATION
+#################################################################
+
+# Layout - maps from LayoutFactsType
+yawls:Layout a owl:Class ;
+    rdfs:label "Layout" ;
+    rdfs:comment "Visual layout information for specifications" .
+
+yawls:LayoutNet a owl:Class ;
+    rdfs:label "Layout Net" ;
+    rdfs:comment "Layout information for a workflow net" .
+
+yawls:LayoutVertex a owl:Class ;
+    rdfs:label "Layout Vertex" ;
+    rdfs:comment "Visual representation of a net element" .
+
+yawls:LayoutFlow a owl:Class ;
+    rdfs:label "Layout Flow" ;
+    rdfs:comment "Visual representation of a flow between elements" .
+
+yawls:LayoutContainer a owl:Class ;
+    rdfs:label "Layout Container" ;
+    rdfs:comment "Container for grouped layout elements" .
+
+yawls:LayoutAttributes a owl:Class ;
+    rdfs:label "Layout Attributes" ;
+    rdfs:comment "Visual attributes (colors, fonts, sizes)" .
+
+#################################################################
+# YAWL SERVICE
+#################################################################
+
+# YAWL Service - maps from yawlService element
+yawls:YawlService a owl:Class ;
+    rdfs:label "YAWL Service" ;
+    rdfs:comment "External service integration point" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:serviceId ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# PROCESS CONTROL ELEMENTS
+#################################################################
+
+yawls:ProcessControlElements a owl:Class ;
+    rdfs:label "Process Control Elements" ;
+    rdfs:comment "Container for all net elements in a workflow net" ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasInputCondition ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty yawls:hasOutputCondition ;
+        owl:cardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+#################################################################
+# OBJECT PROPERTIES
+#################################################################
+
+# Specification relationships
+yawls:hasSpecification a owl:ObjectProperty ;
+    rdfs:label "has specification" ;
+    rdfs:domain yawls:SpecificationSet ;
+    rdfs:range yawls:Specification .
+
+yawls:hasMetaData a owl:ObjectProperty ;
+    rdfs:label "has metadata" ;
+    rdfs:domain yawls:Specification ;
+    rdfs:range yawls:MetaData .
+
+yawls:hasDecomposition a owl:ObjectProperty ;
+    rdfs:label "has decomposition" ;
+    rdfs:domain yawls:Specification ;
+    rdfs:range yawls:Decomposition .
+
+yawls:hasRootNet a owl:ObjectProperty ;
+    rdfs:label "has root net" ;
+    rdfs:domain yawls:Specification ;
+    rdfs:range yawls:WorkflowNet ;
+    rdfs:subPropertyOf yawls:hasDecomposition .
+
+# Net structure
+yawls:hasProcessControlElements a owl:ObjectProperty ;
+    rdfs:label "has process control elements" ;
+    rdfs:domain yawls:WorkflowNet ;
+    rdfs:range yawls:ProcessControlElements .
+
+yawls:hasInputCondition a owl:ObjectProperty ;
+    rdfs:label "has input condition" ;
+    rdfs:domain yawls:ProcessControlElements ;
+    rdfs:range yawls:InputCondition .
+
+yawls:hasOutputCondition a owl:ObjectProperty ;
+    rdfs:label "has output condition" ;
+    rdfs:domain yawls:ProcessControlElements ;
+    rdfs:range yawls:OutputCondition .
+
+yawls:hasTask a owl:ObjectProperty ;
+    rdfs:label "has task" ;
+    rdfs:domain yawls:ProcessControlElements ;
+    rdfs:range yawls:Task .
+
+yawls:hasCondition a owl:ObjectProperty ;
+    rdfs:label "has condition" ;
+    rdfs:domain yawls:ProcessControlElements ;
+    rdfs:range yawls:Condition .
+
+# Control flow
+yawls:hasFlowInto a owl:ObjectProperty ;
+    rdfs:label "flows into" ;
+    rdfs:domain yawls:NetElement ;
+    rdfs:range yawls:FlowInto .
+
+yawls:nextElement a owl:ObjectProperty ;
+    rdfs:label "next element" ;
+    rdfs:domain yawls:FlowInto ;
+    rdfs:range yawls:NetElement .
+
+yawls:hasPredicate a owl:ObjectProperty ;
+    rdfs:label "has predicate" ;
+    rdfs:domain yawls:FlowInto ;
+    rdfs:range yawls:Predicate .
+
+yawls:decomposesTo a owl:ObjectProperty ;
+    rdfs:label "decomposes to" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Decomposition .
+
+# Join and Split
+yawls:hasJoin a owl:ObjectProperty ;
+    rdfs:label "has join" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Join .
+
+yawls:hasSplit a owl:ObjectProperty ;
+    rdfs:label "has split" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Split .
+
+# Control type reference
+yawls:code a owl:ObjectProperty ;
+    rdfs:label "control code" ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (yawls:Join yawls:Split) ] ;
+    rdfs:range yawls:ControlType .
+
+# Resourcing
+yawls:hasResourcing a owl:ObjectProperty ;
+    rdfs:label "has resourcing" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Resourcing .
+
+yawls:hasOffer a owl:ObjectProperty ;
+    rdfs:label "has offer" ;
+    rdfs:domain yawls:Resourcing ;
+    rdfs:range yawls:Offer .
+
+yawls:hasAllocate a owl:ObjectProperty ;
+    rdfs:label "has allocate" ;
+    rdfs:domain yawls:Resourcing ;
+    rdfs:range yawls:Allocate .
+
+yawls:hasStart a owl:ObjectProperty ;
+    rdfs:label "has start" ;
+    rdfs:domain yawls:Resourcing ;
+    rdfs:range yawls:Allocate .
+
+yawls:hasDistributionSet a owl:ObjectProperty ;
+    rdfs:label "has distribution set" ;
+    rdfs:domain yawls:Offer ;
+    rdfs:range yawls:DistributionSet .
+
+yawls:hasInitialSet a owl:ObjectProperty ;
+    rdfs:label "has initial set" ;
+    rdfs:domain yawls:DistributionSet ;
+    rdfs:range yawls:ResourceSet .
+
+yawls:hasPrivileges a owl:ObjectProperty ;
+    rdfs:label "has privileges" ;
+    rdfs:domain yawls:Resourcing ;
+    rdfs:range yawls:PrivilegeSet .
+
+yawls:hasPrivilege a owl:ObjectProperty ;
+    rdfs:label "has privilege" ;
+    rdfs:domain yawls:PrivilegeSet ;
+    rdfs:range yawls:Privilege .
+
+yawls:hasFilter a owl:ObjectProperty ;
+    rdfs:label "has filter" ;
+    rdfs:domain yawls:DistributionSet ;
+    rdfs:range yawls:Selector .
+
+yawls:hasConstraint a owl:ObjectProperty ;
+    rdfs:label "has constraint" ;
+    rdfs:domain yawls:DistributionSet ;
+    rdfs:range yawls:Selector .
+
+yawls:hasAllocator a owl:ObjectProperty ;
+    rdfs:label "has allocator" ;
+    rdfs:domain yawls:Allocate ;
+    rdfs:range yawls:Selector .
+
+yawls:hasSecondaryResources a owl:ObjectProperty ;
+    rdfs:label "has secondary resources" ;
+    rdfs:domain yawls:Resourcing ;
+    rdfs:range yawls:ResourceSet .
+
+# Timer
+yawls:hasTimer a owl:ObjectProperty ;
+    rdfs:label "has timer" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Timer .
+
+yawls:hasTrigger a owl:ObjectProperty ;
+    rdfs:label "has trigger" ;
+    rdfs:domain yawls:Timer ;
+    rdfs:range yawls:TimerTrigger .
+
+yawls:hasDuration a owl:ObjectProperty ;
+    rdfs:label "has duration" ;
+    rdfs:domain yawls:Timer ;
+    rdfs:range yawls:TimerDuration .
+
+yawls:interval a owl:ObjectProperty ;
+    rdfs:label "interval" ;
+    rdfs:domain yawls:TimerDuration ;
+    rdfs:range yawls:TimerInterval .
+
+# Data flow
+yawls:hasInputParameter a owl:ObjectProperty ;
+    rdfs:label "has input parameter" ;
+    rdfs:domain yawls:Decomposition ;
+    rdfs:range yawls:InputParameter .
+
+yawls:hasOutputParameter a owl:ObjectProperty ;
+    rdfs:label "has output parameter" ;
+    rdfs:domain yawls:Decomposition ;
+    rdfs:range yawls:OutputParameter .
+
+yawls:hasLocalVariable a owl:ObjectProperty ;
+    rdfs:label "has local variable" ;
+    rdfs:domain yawls:WorkflowNet ;
+    rdfs:range yawls:Variable .
+
+yawls:hasStartingMapping a owl:ObjectProperty ;
+    rdfs:label "has starting mapping" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:VariableMapping .
+
+yawls:hasCompletedMapping a owl:ObjectProperty ;
+    rdfs:label "has completed mapping" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:VariableMapping .
+
+yawls:hasEnablementMapping a owl:ObjectProperty ;
+    rdfs:label "has enablement mapping" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:VariableMapping .
+
+yawls:hasLogPredicate a owl:ObjectProperty ;
+    rdfs:label "has log predicate" ;
+    rdfs:range yawls:LogPredicate .
+
+# Web Service Gateway
+yawls:hasYawlService a owl:ObjectProperty ;
+    rdfs:label "has YAWL service" ;
+    rdfs:domain yawls:WebServiceGateway ;
+    rdfs:range yawls:YawlService .
+
+yawls:hasEnablementParam a owl:ObjectProperty ;
+    rdfs:label "has enablement parameter" ;
+    rdfs:domain yawls:WebServiceGateway ;
+    rdfs:range yawls:InputParameter .
+
+# Configuration
+yawls:hasConfiguration a owl:ObjectProperty ;
+    rdfs:label "has configuration" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Configuration .
+
+yawls:hasDefaultConfiguration a owl:ObjectProperty ;
+    rdfs:label "has default configuration" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:Configuration .
+
+yawls:hasJoinConfig a owl:ObjectProperty ;
+    rdfs:label "has join configuration" ;
+    rdfs:domain yawls:Configuration ;
+    rdfs:range yawls:InputPortConfig .
+
+yawls:hasSplitConfig a owl:ObjectProperty ;
+    rdfs:label "has split configuration" ;
+    rdfs:domain yawls:Configuration ;
+    rdfs:range yawls:OutputPortConfig .
+
+yawls:hasNofiConfig a owl:ObjectProperty ;
+    rdfs:label "has nofi configuration" ;
+    rdfs:range yawls:Configuration .
+
+yawls:hasRemConfig a owl:ObjectProperty ;
+    rdfs:label "has rem configuration" ;
+    rdfs:range yawls:Configuration .
+
+# Token removal
+yawls:removesTokens a owl:ObjectProperty ;
+    rdfs:label "removes tokens" ;
+    rdfs:domain yawls:Task ;
+    rdfs:range yawls:NetElement .
+
+# Layout
+yawls:hasLayout a owl:ObjectProperty ;
+    rdfs:label "has layout" ;
+    rdfs:domain yawls:SpecificationSet ;
+    rdfs:range yawls:Layout .
+
+yawls:hasLayoutNet a owl:ObjectProperty ;
+    rdfs:label "has layout net" ;
+    rdfs:domain yawls:Layout ;
+    rdfs:range yawls:LayoutNet .
+
+yawls:hasLayoutVertex a owl:ObjectProperty ;
+    rdfs:label "has layout vertex" ;
+    rdfs:range yawls:LayoutVertex .
+
+yawls:hasLayoutFlow a owl:ObjectProperty ;
+    rdfs:label "has layout flow" ;
+    rdfs:range yawls:LayoutFlow .
+
+yawls:hasLayoutAttributes a owl:ObjectProperty ;
+    rdfs:label "has layout attributes" ;
+    rdfs:range yawls:LayoutAttributes .
+
+yawls:hasLayoutContainer a owl:ObjectProperty ;
+    rdfs:label "has layout container" ;
+    rdfs:range yawls:LayoutContainer .
+
+# Initiator reference
+yawls:initiator a owl:ObjectProperty ;
+    rdfs:label "initiator" ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (yawls:Offer yawls:Allocate) ] ;
+    rdfs:range yawls:Initiator .
+
+# External interaction
+yawls:externalInteraction a owl:ObjectProperty ;
+    rdfs:label "external interaction" ;
+    rdfs:domain yawls:WebServiceGateway ;
+    rdfs:range yawls:ExternalInteraction .
+
+#################################################################
+# DATA PROPERTIES
+#################################################################
+
+# Identifiers
+yawls:id a owl:DatatypeProperty ;
+    rdfs:label "identifier" ;
+    rdfs:range xsd:NCName .
+
+yawls:uri a owl:DatatypeProperty ;
+    rdfs:label "URI" ;
+    rdfs:range xsd:anyURI .
+
+yawls:serviceId a owl:DatatypeProperty ;
+    rdfs:label "service identifier" ;
+    rdfs:range xsd:anyURI .
+
+# Names and labels
+yawls:name a owl:DatatypeProperty ;
+    rdfs:label "name" ;
+    rdfs:range xsd:string .
+
+yawls:label a owl:DatatypeProperty ;
+    rdfs:label "label" ;
+    rdfs:range xsd:string .
+
+yawls:variableName a owl:DatatypeProperty ;
+    rdfs:label "variable name" ;
+    rdfs:range xsd:NMTOKEN .
+
+yawls:selectorName a owl:DatatypeProperty ;
+    rdfs:label "selector name" ;
+    rdfs:range xsd:string .
+
+# Documentation
+yawls:documentation a owl:DatatypeProperty ;
+    rdfs:label "documentation" ;
+    rdfs:range xsd:string .
+
+# Expressions and queries
+yawls:query a owl:DatatypeProperty ;
+    rdfs:label "query" ;
+    rdfs:range xsd:string .
+
+yawls:xpathExpression a owl:DatatypeProperty ;
+    rdfs:label "XPath expression" ;
+    rdfs:range xsd:string .
+
+yawls:mapsTo a owl:DatatypeProperty ;
+    rdfs:label "maps to" ;
+    rdfs:range xsd:NMTOKEN .
+
+# Timer values
+yawls:ticks a owl:DatatypeProperty ;
+    rdfs:label "ticks" ;
+    rdfs:range xsd:long .
+
+yawls:expiry a owl:DatatypeProperty ;
+    rdfs:label "expiry" ;
+    rdfs:range xsd:long .
+
+yawls:duration a owl:DatatypeProperty ;
+    rdfs:label "duration" ;
+    rdfs:range xsd:duration .
+
+# Multiple instance bounds
+yawls:minimum a owl:DatatypeProperty ;
+    rdfs:label "minimum" ;
+    rdfs:range xsd:string .
+
+yawls:maximum a owl:DatatypeProperty ;
+    rdfs:label "maximum" ;
+    rdfs:range xsd:string .
+
+yawls:threshold a owl:DatatypeProperty ;
+    rdfs:label "threshold" ;
+    rdfs:range xsd:string .
+
+# Boolean flags
+yawls:isRootNet a owl:DatatypeProperty ;
+    rdfs:label "is root net" ;
+    rdfs:range xsd:boolean .
+
+yawls:isDefaultFlow a owl:DatatypeProperty ;
+    rdfs:label "is default flow" ;
+    rdfs:range xsd:boolean .
+
+yawls:isMandatory a owl:DatatypeProperty ;
+    rdfs:label "is mandatory" ;
+    rdfs:range xsd:boolean .
+
+yawls:isCutThroughParam a owl:DatatypeProperty ;
+    rdfs:label "is cut-through parameter" ;
+    rdfs:range xsd:boolean .
+
+yawls:useWorkdays a owl:DatatypeProperty ;
+    rdfs:label "use workdays" ;
+    rdfs:range xsd:boolean .
+
+yawls:isPersistent a owl:DatatypeProperty ;
+    rdfs:label "is persistent" ;
+    rdfs:range xsd:boolean .
+
+yawls:allowAll a owl:DatatypeProperty ;
+    rdfs:label "allow all" ;
+    rdfs:range xsd:boolean .
+
+# Data typing
+yawls:dataType a owl:DatatypeProperty ;
+    rdfs:label "data type" ;
+    rdfs:range xsd:NCName .
+
+yawls:namespace a owl:DatatypeProperty ;
+    rdfs:label "namespace" ;
+    rdfs:range xsd:anyURI .
+
+yawls:index a owl:DatatypeProperty ;
+    rdfs:label "index" ;
+    rdfs:range xsd:integer .
+
+yawls:ordering a owl:DatatypeProperty ;
+    rdfs:label "ordering" ;
+    rdfs:range xsd:integer .
+
+yawls:initialValue a owl:DatatypeProperty ;
+    rdfs:label "initial value" ;
+    rdfs:range xsd:string .
+
+yawls:defaultValue a owl:DatatypeProperty ;
+    rdfs:label "default value" ;
+    rdfs:range xsd:string .
+
+# Codelet
+yawls:hasCodelet a owl:DatatypeProperty ;
+    rdfs:label "codelet" ;
+    rdfs:range xsd:NCName .
+
+# Web service
+yawls:wsdlLocation a owl:DatatypeProperty ;
+    rdfs:label "WSDL location" ;
+    rdfs:range xsd:anyURI .
+
+yawls:operationName a owl:DatatypeProperty ;
+    rdfs:label "operation name" ;
+    rdfs:range xsd:NMTOKEN .
+
+# External data gateway
+yawls:externalDataGateway a owl:DatatypeProperty ;
+    rdfs:label "external data gateway" ;
+    rdfs:range xsd:string .
+
+# Custom form
+yawls:customForm a owl:DatatypeProperty ;
+    rdfs:label "custom form" ;
+    rdfs:range xsd:anyURI .
+
+# Imported nets
+yawls:importedNet a owl:DatatypeProperty ;
+    rdfs:label "imported net" ;
+    rdfs:range xsd:anyURI .
+
+# Version
+yawls:version a owl:DatatypeProperty ;
+    rdfs:label "version" ;
+    rdfs:range xsd:decimal .
+
+yawls:specificationVersion a owl:DatatypeProperty ;
+    rdfs:label "specification version" ;
+    rdfs:range xsd:string .
+
+# Status
+yawls:status a owl:DatatypeProperty ;
+    rdfs:label "status" ;
+    rdfs:range xsd:string .
+
+# Layout data properties
+yawls:x a owl:DatatypeProperty ;
+    rdfs:label "x coordinate" ;
+    rdfs:range xsd:integer .
+
+yawls:y a owl:DatatypeProperty ;
+    rdfs:label "y coordinate" ;
+    rdfs:range xsd:integer .
+
+yawls:width a owl:DatatypeProperty ;
+    rdfs:label "width" ;
+    rdfs:range xsd:integer .
+
+yawls:height a owl:DatatypeProperty ;
+    rdfs:label "height" ;
+    rdfs:range xsd:integer .
+
+yawls:bgColor a owl:DatatypeProperty ;
+    rdfs:label "background color" ;
+    rdfs:range xsd:integer .
+
+yawls:foregroundColor a owl:DatatypeProperty ;
+    rdfs:label "foreground color" ;
+    rdfs:range xsd:integer .
+
+yawls:lineColor a owl:DatatypeProperty ;
+    rdfs:label "line color" ;
+    rdfs:range xsd:integer .
+
+yawls:fontName a owl:DatatypeProperty ;
+    rdfs:label "font name" ;
+    rdfs:range xsd:string .
+
+yawls:fontSize a owl:DatatypeProperty ;
+    rdfs:label "font size" ;
+    rdfs:range xsd:integer .
+
+yawls:fontStyle a owl:DatatypeProperty ;
+    rdfs:label "font style" ;
+    rdfs:range xsd:integer .
+
+yawls:language a owl:DatatypeProperty ;
+    rdfs:label "language" ;
+    rdfs:range xsd:string .
+
+yawls:country a owl:DatatypeProperty ;
+    rdfs:label "country" ;
+    rdfs:range xsd:string .
+
+# Dublin Core data properties (redeclared for YAWL context)
+dcterms:title a owl:DatatypeProperty ;
+    rdfs:label "title" ;
+    rdfs:range xsd:normalizedString .
+
+dcterms:creator a owl:DatatypeProperty ;
+    rdfs:label "creator" ;
+    rdfs:range xsd:string .
+
+dcterms:subject a owl:DatatypeProperty ;
+    rdfs:label "subject" ;
+    rdfs:range xsd:string .
+
+dcterms:description a owl:DatatypeProperty ;
+    rdfs:label "description" ;
+    rdfs:range xsd:normalizedString .
+
+dcterms:contributor a owl:DatatypeProperty ;
+    rdfs:label "contributor" ;
+    rdfs:range xsd:string .
+
+dcterms:coverage a owl:DatatypeProperty ;
+    rdfs:label "coverage" ;
+    rdfs:range xsd:string .
+
+dcterms:valid a owl:DatatypeProperty ;
+    rdfs:label "valid" ;
+    rdfs:range xsd:date .
+
+dcterms:created a owl:DatatypeProperty ;
+    rdfs:label "created" ;
+    rdfs:range xsd:date .
+
+dcterms:identifier a owl:DatatypeProperty ;
+    rdfs:label "identifier" ;
+    rdfs:range xsd:NCName .
+
+#################################################################
+# VALIDITY CONSTRAINTS
+#################################################################
+
+# Every specification must have exactly one root net
+yawls:Specification owl:hasKey ( yawls:uri ) .
+
+# Tasks must have unique IDs within their net
+yawls:Task owl:hasKey ( yawls:id ) .
+
+# Conditions must have unique IDs within their net
+yawls:Condition owl:hasKey ( yawls:id ) .
+
+# Decompositions must have unique IDs
+yawls:Decomposition owl:hasKey ( yawls:id ) .
+
+# Variables must have unique names within their scope
+yawls:Variable owl:hasKey ( yawls:variableName ) .
+
+# FlowInto instances must reference valid next elements
+yawls:FlowConnectsToValidElement a owl:Class ;
+    owl:equivalentClass [
+        a owl:Restriction ;
+        owl:onProperty yawls:nextElement ;
+        owl:someValuesFrom yawls:NetElement
+    ] .
+
+# Tasks with XOR/OR split must have predicates on outgoing flows
+yawls:ConditionalSplitRequiresPredicates a owl:Class ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty [ owl:inverseOf yawls:hasFlowInto ] ;
+        owl:someValuesFrom [
+            a owl:Restriction ;
+            owl:onProperty yawls:hasPredicate ;
+            owl:someValuesFrom yawls:Predicate
+        ]
+    ] .
+
+#################################################################
+# PETRI NET ALIGNMENT NOTES
+#################################################################
+
+# The YAWL ontology is based on Petri Net semantics:
+#
+# yawls:Condition corresponds to Petri Net places
+# yawls:Task corresponds to Petri Net transitions
+# yawls:FlowInto corresponds to Petri Net arcs
+#
+# YAWL extends Petri Nets with:
+# - Multiple instance tasks
+# - Cancellation regions
+# - OR-joins (non-local semantics)
+# - Decomposition hierarchy
+# - Resourcing model
+# - Data flow
+
+# End of YAWL Ontology

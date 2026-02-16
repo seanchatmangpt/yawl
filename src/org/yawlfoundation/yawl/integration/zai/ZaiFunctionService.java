@@ -442,7 +442,7 @@ public class ZaiFunctionService {
         if (data.trim().startsWith("<")) {
             return data;
         }
-        return "<data>" + data + "</data>";
+        return "<data>%s</data>".formatted(data);
     }
 
     private List<String> extractSpecificationNames(String specsXML) {

@@ -109,8 +109,9 @@ public class AgentRegistry {
         this.heartbeatIntervalSeconds = heartbeatIntervalSeconds;
         this.agentTimeoutSeconds = agentTimeoutSeconds;
         this.heartbeatMonitor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "AgentRegistry-HeartbeatMonitor");
-            t.setDaemon(true);
+            Thread t = Thread.ofVirtual()
+                .name("AgentRegistry-HeartbeatMonitor")
+                .unstarted(r);
             return t;
         });
 

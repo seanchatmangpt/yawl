@@ -2,8 +2,8 @@
 #
 # Features:
 # - Multi-stage build (build stage + runtime stage)
-# - JDK 21 for build, JRE 21 for runtime (smaller image)
-# - Virtual threads support (Java 21+)
+# - JDK 25 for build, JRE 25 for runtime (smaller image)
+# - Virtual threads support (Java 25 native)
 # - Health checks for container orchestration
 # - Non-root user for security
 # - Optimized JVM settings for containers
@@ -87,6 +87,7 @@ HEALTHCHECK --interval=30s \
             --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
+<<<<<<< HEAD
 # JVM options optimized for containers and Java 25+
 ENV JAVA_OPTS="\
     -XX:+UseContainerSupport \
@@ -100,6 +101,7 @@ ENV JAVA_OPTS="\
     -Djava.security.egd=file:/dev/./urandom \
     -Djava.io.tmpdir=/app/temp"
 
+<<<<<<< HEAD
 # Virtual Threads configuration (Java 25+)
 ENV JAVA_OPTS="${JAVA_OPTS} \
     -Djdk.virtualThreadScheduler.parallelism=200 \

@@ -97,54 +97,54 @@ public class XSDType {
 
 
     public static String getString(int type) {
-        switch (type) {
-            case ANY_TYPE:             return "anyType";
-            case INTEGER:              return "integer";
-            case POSITIVE_INTEGER:     return "positiveInteger";
-            case NEGATIVE_INTEGER:     return "negativeInteger";
-            case NON_POSITIVE_INTEGER: return "nonPositiveInteger";
-            case NON_NEGATIVE_INTEGER: return "nonNegativeInteger";
-            case INT:                  return "int";
-            case LONG:                 return "long";
-            case SHORT:                return "short";
-            case BYTE:                 return "byte";
-            case UNSIGNED_LONG:        return "unsignedLong";
-            case UNSIGNED_INT:         return "unsignedInt";
-            case UNSIGNED_SHORT:       return "unsignedShort";
-            case UNSIGNED_BYTE:        return "unsignedByte";
-            case DOUBLE:               return "double";
-            case FLOAT:                return "float";
-            case DECIMAL:              return "decimal";
-            case STRING:               return "string";
-            case NORMALIZED_STRING:    return "normalizedString";
-            case TOKEN:                return "token";
-            case LANGUAGE:             return "language";
-            case NMTOKEN:              return "NMTOKEN";
-            case NMTOKENS:             return "NMTOKENS";
-            case NAME:                 return "Name";
-            case NCNAME:               return "NCName";
-            case DATE:                 return "date";
-            case TIME:                 return "time";
-            case DATETIME:             return "dateTime";
-            case DURATION:             return "duration";
-            case GDAY:                 return "gDay";
-            case GMONTH:               return "gMonth";
-            case GYEAR:                return "gYear";
-            case GMONTHDAY:            return "gMonthDay";
-            case GYEARMONTH:           return "gYearMonth";
-            case ID:                   return "ID";
-            case IDREF:                return "IDREF";
-            case IDREFS:               return "IDREFS";
-            case ENTITY:               return "ENTITY";
-            case ENTITIES:             return "ENTITIES";
-            case QNAME:                return "QName";
-            case BOOLEAN:              return "boolean";
-            case HEX_BINARY:           return "hexBinary";
-            case BASE64_BINARY:        return "base64Binary";
-            case NOTATION:             return "notation";
-            case ANY_URI:              return "anyURI";
-        }
-        return "invalid_type" ;
+        return switch (type) {
+            case ANY_TYPE -> "anyType";
+            case INTEGER -> "integer";
+            case POSITIVE_INTEGER -> "positiveInteger";
+            case NEGATIVE_INTEGER -> "negativeInteger";
+            case NON_POSITIVE_INTEGER -> "nonPositiveInteger";
+            case NON_NEGATIVE_INTEGER -> "nonNegativeInteger";
+            case INT -> "int";
+            case LONG -> "long";
+            case SHORT -> "short";
+            case BYTE -> "byte";
+            case UNSIGNED_LONG -> "unsignedLong";
+            case UNSIGNED_INT -> "unsignedInt";
+            case UNSIGNED_SHORT -> "unsignedShort";
+            case UNSIGNED_BYTE -> "unsignedByte";
+            case DOUBLE -> "double";
+            case FLOAT -> "float";
+            case DECIMAL -> "decimal";
+            case STRING -> "string";
+            case NORMALIZED_STRING -> "normalizedString";
+            case TOKEN -> "token";
+            case LANGUAGE -> "language";
+            case NMTOKEN -> "NMTOKEN";
+            case NMTOKENS -> "NMTOKENS";
+            case NAME -> "Name";
+            case NCNAME -> "NCName";
+            case DATE -> "date";
+            case TIME -> "time";
+            case DATETIME -> "dateTime";
+            case DURATION -> "duration";
+            case GDAY -> "gDay";
+            case GMONTH -> "gMonth";
+            case GYEAR -> "gYear";
+            case GMONTHDAY -> "gMonthDay";
+            case GYEARMONTH -> "gYearMonth";
+            case ID -> "ID";
+            case IDREF -> "IDREF";
+            case IDREFS -> "IDREFS";
+            case ENTITY -> "ENTITY";
+            case ENTITIES -> "ENTITIES";
+            case QNAME -> "QName";
+            case BOOLEAN -> "boolean";
+            case HEX_BINARY -> "hexBinary";
+            case BASE64_BINARY -> "base64Binary";
+            case NOTATION -> "notation";
+            case ANY_URI -> "anyURI";
+            default -> "invalid_type";
+        };
     }
 
 
@@ -210,108 +210,49 @@ public class XSDType {
 
 
     public static String getSampleValue(String type) {
-        switch (getOrdinal(type)) {
-            case INTEGER:
-            case POSITIVE_INTEGER:
-            case INT:
-            case LONG:
-            case SHORT:
-            case UNSIGNED_LONG:
-            case UNSIGNED_INT:
-            case UNSIGNED_SHORT:
-            case UNSIGNED_BYTE:
-            case NON_NEGATIVE_INTEGER:
-            case GYEAR:
-            case BYTE:
-            case DECIMAL:               return "100";
-            case NEGATIVE_INTEGER:
-            case NON_POSITIVE_INTEGER:  return "-100";
-            case STRING:
-            case NORMALIZED_STRING:     return "a string";
-            case TOKEN:
-            case NMTOKEN:
-            case NMTOKENS:              return "token";
-            case NAME:
-            case NCNAME:
-            case ID:
-            case IDREF:
-            case IDREFS:
-            case ENTITY:
-            case ENTITIES:
-            case BASE64_BINARY:
-            case NOTATION:
-            case ANY_URI:
-            case ANY_TYPE:    return "name";
-            case BOOLEAN:     return "false";
-            case LANGUAGE:    return "en";
-            case QNAME:       return "xs:name";
-            case HEX_BINARY:  return "FF";
-            case DOUBLE:
-            case FLOAT:       return "3.142";
-            case DATE:        return getDateTimeValue("yyyy-MM-dd");    // "2013-01-01"
-            case TIME:        return getDateTimeValue("HH:mm:ss");      // "12:12:12";
-            case DATETIME:    return getDateTimeValue("yyyy-MM-dd'T'HH:mm:ss");
-            case DURATION:    return "P2Y";
-            case GDAY:        return getDateTimeValue("'---'dd");
-            case GMONTH:      return getDateTimeValue("'--'MM");
-            case GMONTHDAY:   return getDateTimeValue("'--'MM-dd");
-            case GYEARMONTH:  return getDateTimeValue("yyyy-MM");
-        }
-        return "name";
+        return switch (getOrdinal(type)) {
+            case INTEGER, POSITIVE_INTEGER, INT, LONG, SHORT, UNSIGNED_LONG, UNSIGNED_INT,
+                 UNSIGNED_SHORT, UNSIGNED_BYTE, NON_NEGATIVE_INTEGER, GYEAR, BYTE, DECIMAL -> "100";
+            case NEGATIVE_INTEGER, NON_POSITIVE_INTEGER -> "-100";
+            case STRING, NORMALIZED_STRING -> "a string";
+            case TOKEN, NMTOKEN, NMTOKENS -> "token";
+            case NAME, NCNAME, ID, IDREF, IDREFS, ENTITY, ENTITIES, BASE64_BINARY,
+                 NOTATION, ANY_URI, ANY_TYPE -> "name";
+            case BOOLEAN -> "false";
+            case LANGUAGE -> "en";
+            case QNAME -> "xs:name";
+            case HEX_BINARY -> "FF";
+            case DOUBLE, FLOAT -> "3.142";
+            case DATE -> getDateTimeValue("yyyy-MM-dd");
+            case TIME -> getDateTimeValue("HH:mm:ss");
+            case DATETIME -> getDateTimeValue("yyyy-MM-dd'T'HH:mm:ss");
+            case DURATION -> "P2Y";
+            case GDAY -> getDateTimeValue("'---'dd");
+            case GMONTH -> getDateTimeValue("'--'MM");
+            case GMONTHDAY -> getDateTimeValue("'--'MM-dd");
+            case GYEARMONTH -> getDateTimeValue("yyyy-MM");
+            default -> "name";
+        };
     }
 
 
     public static char[] getConstrainingFacetMap(String type) {
-        String vMap;
-        switch (getOrdinal(type)) {
-            case INTEGER:
-            case POSITIVE_INTEGER:
-            case NEGATIVE_INTEGER:
-            case NON_POSITIVE_INTEGER:
-            case NON_NEGATIVE_INTEGER:
-            case INT:
-            case LONG:                 
-            case SHORT:
-            case UNSIGNED_LONG:
-            case UNSIGNED_INT:
-            case UNSIGNED_SHORT:
-            case UNSIGNED_BYTE:        vMap = "111100010111"; break;
-            case STRING:
-            case NORMALIZED_STRING:
-            case TOKEN:
-            case LANGUAGE:
-            case NMTOKEN:
-            case NMTOKENS:
-            case NAME:                 
-            case NCNAME:
-            case ID:
-            case IDREF:                
-            case IDREFS:
-            case ENTITY:               
-            case ENTITIES:
-            case QNAME:
-            case HEX_BINARY:
-            case BASE64_BINARY:
-            case NOTATION:
-            case ANY_URI:              vMap = "000011100111"; break;
-            case DOUBLE:
-            case FLOAT:
-            case DATE:
-            case TIME:                 
-            case DATETIME:
-            case DURATION:           
-            case GDAY:
-            case GMONTH:
-            case GYEAR:
-            case GMONTHDAY:
-            case GYEARMONTH:           vMap = "111100000111"; break;
-            case BOOLEAN:              vMap = "000000000110"; break;
-            case BYTE:                 vMap = "111100110111"; break;
-            case DECIMAL:              vMap = "111100011111"; break;
-            case ANY_TYPE:
-            default:                   vMap = "000000000000"; break;
-        }
-        return vMap.toCharArray() ;
+        String vMap = switch (getOrdinal(type)) {
+            case INTEGER, POSITIVE_INTEGER, NEGATIVE_INTEGER, NON_POSITIVE_INTEGER,
+                 NON_NEGATIVE_INTEGER, INT, LONG, SHORT, UNSIGNED_LONG, UNSIGNED_INT,
+                 UNSIGNED_SHORT, UNSIGNED_BYTE -> "111100010111";
+            case STRING, NORMALIZED_STRING, TOKEN, LANGUAGE, NMTOKEN, NMTOKENS, NAME,
+                 NCNAME, ID, IDREF, IDREFS, ENTITY, ENTITIES, QNAME, HEX_BINARY,
+                 BASE64_BINARY, NOTATION, ANY_URI -> "000011100111";
+            case DOUBLE, FLOAT, DATE, TIME, DATETIME, DURATION, GDAY, GMONTH, GYEAR,
+                 GMONTHDAY, GYEARMONTH -> "111100000111";
+            case BOOLEAN -> "000000000110";
+            case BYTE -> "111100110111";
+            case DECIMAL -> "111100011111";
+            case ANY_TYPE -> "000000000000";
+            default -> "000000000000";
+        };
+        return vMap.toCharArray();
     }
 
 

@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.util;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Security tests for HibernateEngine to verify HQL injection protection
@@ -160,16 +160,18 @@ public class HibernateEngineSecurityTest {
     /**
      * Test that deprecated unsafe method throws UnsupportedOperationException
      */
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testDeprecatedGetObjectsForClassWhereThrows() throws Exception {
         // This test requires a valid HibernateEngine instance
         // For now, we verify the method signature exists and is deprecated
         Method method = HibernateEngine.class.getMethod("getObjectsForClassWhere", String.class, String.class);
-        assertTrue("Method should be deprecated", method.isAnnotationPresent(Deprecated.class));
+        assertTrue(method.isAnnotationPresent(Deprecated.class), "Method should be deprecated");
 
         // Attempting to call it should throw UnsupportedOperationException
         // This would require a properly initialized HibernateEngine instance
-        throw new UnsupportedOperationException("Method is deprecated");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            throw new UnsupportedOperationException("Method is deprecated");
+        });
     }
 
     /**

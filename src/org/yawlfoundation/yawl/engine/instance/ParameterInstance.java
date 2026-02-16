@@ -143,18 +143,28 @@ public class ParameterInstance implements YInstance {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<parameterInstance>");
-        xml.append(StringUtil.wrap(name, "name"));
-        xml.append(StringUtil.wrap(dataType, "dataType"));
-        xml.append(StringUtil.wrapEscaped(dataSchema, "dataSchema"));
-        xml.append(StringUtil.wrap(usage.name(), "usage"));
-        xml.append(StringUtil.wrapEscaped(inputPredicate, "inputPredicate"));
-        xml.append(StringUtil.wrapEscaped(outputPredicate, "outputPredicate"));
-        xml.append(StringUtil.wrapEscaped(originalValue, "originalValue"));
-        xml.append(StringUtil.wrapEscaped(defaultValue, "defaultValue"));
-        xml.append(StringUtil.wrapEscaped(value, "value"));
-        xml.append("</parameterInstance>");
-        return xml.toString();
+        return """
+            <parameterInstance>\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            </parameterInstance>""".formatted(
+                StringUtil.wrap(name, "name"),
+                StringUtil.wrap(dataType, "dataType"),
+                StringUtil.wrapEscaped(dataSchema, "dataSchema"),
+                StringUtil.wrap(usage.name(), "usage"),
+                StringUtil.wrapEscaped(inputPredicate, "inputPredicate"),
+                StringUtil.wrapEscaped(outputPredicate, "outputPredicate"),
+                StringUtil.wrapEscaped(originalValue, "originalValue"),
+                StringUtil.wrapEscaped(defaultValue, "defaultValue"),
+                StringUtil.wrapEscaped(value, "value")
+        );
     }
         
     public void fromXML(String xml) {

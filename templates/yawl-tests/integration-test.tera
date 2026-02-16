@@ -1,0 +1,610 @@
+{#
+ # Integration Test Generator Template
+ # Generates database and external system integration tests
+ # Chicago TDD style - Tests with real databases (H2, PostgreSQL, MySQL)
+ #
+ # Usage: tera --template integration-test.tera --spec integration.json --output IntegrationTest.java
+ #
+ # Input JSON Schema:
+ # {
+ #   "package": "org.yawlfoundation.yawl.integration",
+ #   "test_class": "DatabaseIntegrationTest",
+ #   "class_under_test": "YEngine",
+ #   "junit_version": "5",
+ #   "database_type": "postgresql",  // "h2", "postgresql", "mysql"
+ #   "use_testcontainers": true,
+ #   "test_scenarios": [
+ #     {
+ #       "name": "ConnectionEstablished",
+ #       "description": "Verifies database connection works",
+ #       "operation": "getConnection",
+ #       "assertions": ["connectionNotNull", "connectionIsValid"]
+ #     },
+ #     {
+ #       "name": "TableCreation",
+ #       "description": "Tests creating workflow tables",
+ #       "operation": "createTable",
+ #       "table_name": "yawl_case",
+ #       "assertions": ["tableExists", "columnsCorrect"]
+ #     },
+ #     {
+ #       "name": "TransactionRollback",
+ #       "description": "Tests transaction rollback on error",
+ #       "operation": "transaction",
+ #       "assertions": ["rollbackWorks", "noPartialData"]
+ #     }
+ #   ],
+ #   "tables": [
+ #     {"name": "yawl_case", "columns": ["id", "case_id", "spec_id", "status", "created_at"]}
+ #   ],
+ #   "cleanup_strategy": "rollback",  // "rollback", "truncate", "drop"
+ #   "author": "YAWL Foundation",
+ #   "version": "5.2"
+ # }
+ #}
+/*
+ * Copyright (c) 2004-{{ "now" | date(format="%Y") }} The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * Generated integration test: {{ test_class }}
+ * Database: {{ database_type }}
+ * Test scenarios: {{ test_scenarios | length }}
+ */
+
+package {{ package }};
+
+{% if junit_version == "5" %}
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import static org.junit.jupiter.api.Assertions.*;
+{% else %}
+import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+{% endif %}
+
+{% if use_testcontainers %}
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+{% endif %}
+
+import java.sql.*;
+import java.time.Instant;
+import java.util.*;
+
+/**
+ * Database integration tests for {{ class_under_test }}.
+ * Chicago TDD style - tests with real database connections.
+ *
+ * Database type: {{ database_type }}
+ * Use testcontainers: {{ use_testcontainers }}
+ *
+ * Test scenarios:
+ * {% for scenario in test_scenarios %}
+ * - {{ scenario.name }}: {{ scenario.description }}
+ * {% endfor %}
+ *
+ * Tables:
+ * {% for table in tables %}
+ * - {{ table.name }}: {{ table.columns | join(", ") }}
+ * {% endfor %}
+ *
+ * @author {{ author }}
+ * @version {{ version }}
+ * @see {{ class_under_test }}
+ */
+{% if junit_version == "5" %}
+@DisplayName("{{ class_under_test }} Database Integration Tests")
+@Tag("integration")
+@Tag("database")
+{% if use_testcontainers %}
+@Testcontainers
+{% endif %}
+public class {{ test_class }} {
+{% else %}
+public class {{ test_class }} extends TestCase {
+
+    public {{ test_class }}(String name) {
+        super(name);
+    }
+{% endif %}
+
+    private Connection connection;
+
+    {% if use_testcontainers %}
+    {% if database_type == "postgresql" %}
+    {% if junit_version == "5" %}
+    @Container
+    {% else %}
+    @org.junit.ClassRule
+    public static
+    {% endif %}
+    public static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+        .withDatabaseName("yawl_test")
+        .withUsername("test")
+        .withPassword("test");
+    {% elif database_type == "mysql" %}
+    {% if junit_version == "5" %}
+    @Container
+    {% else %}
+    @org.junit.ClassRule
+    public static
+    {% endif %}
+    public static MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.0")
+        .withDatabaseName("yawl_test")
+        .withUsername("test")
+        .withPassword("test");
+    {% endif %}
+    {% endif %}
+
+    {% if junit_version == "5" %}
+    @BeforeEach
+    {% else %}
+    @Override
+    @Before
+    {% endif %}
+    public void setUp() throws SQLException {
+        {% if use_testcontainers %}
+        {% if database_type == "postgresql" %}
+        String jdbcUrl = postgresContainer.getJdbcUrl();
+        String username = postgresContainer.getUsername();
+        String password = postgresContainer.getPassword();
+        {% elif database_type == "mysql" %}
+        String jdbcUrl = mysqlContainer.getJdbcUrl();
+        String username = mysqlContainer.getUsername();
+        String password = mysqlContainer.getPassword();
+        {% endif %}
+        {% else %}
+        // Use H2 in-memory database
+        String jdbcUrl = "jdbc:h2:mem:yawl_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL";
+        String username = "sa";
+        String password = "";
+        {% endif %}
+
+        connection = DriverManager.getConnection(jdbcUrl, username, password);
+        assertNotNull("Connection should be established", connection);
+
+        // Create tables for testing
+        createTestTables();
+    }
+
+    {% if junit_version == "5" %}
+    @AfterEach
+    {% else %}
+    @Override
+    @After
+    {% endif %}
+    public void tearDown() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            {% if cleanup_strategy == "rollback" %}
+            // Rollback any uncommitted changes
+            if (!connection.getAutoCommit()) {
+                connection.rollback();
+            }
+            {% elif cleanup_strategy == "truncate" %}
+            // Truncate test tables
+            truncateTestTables();
+            {% elif cleanup_strategy == "drop" %}
+            // Drop test tables
+            dropTestTables();
+            {% endif %}
+            connection.close();
+        }
+    }
+
+    // ============================================================
+    // Table Setup Methods
+    // ============================================================
+
+    private void createTestTables() throws SQLException {
+        {% for table in tables %}
+        String create{{ table.name | pascal_case }}SQL = "CREATE TABLE IF NOT EXISTS {{ table.name }} (" +
+            {% for col in table.columns %}
+            "{{ col }} VARCHAR(255)"{% if not loop.last %} + ", " +{% else %} +{% endif %}
+
+            {% endfor %}
+            ")";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(create{{ table.name | pascal_case }}SQL);
+        }
+        {% endfor %}
+    }
+
+    {% if cleanup_strategy == "truncate" %}
+    private void truncateTestTables() throws SQLException {
+        {% for table in tables %}
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("TRUNCATE TABLE {{ table.name }}");
+        }
+        {% endfor %}
+    }
+    {% endif %}
+
+    {% if cleanup_strategy == "drop" %}
+    private void dropTestTables() throws SQLException {
+        {% for table in tables %}
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("DROP TABLE IF EXISTS {{ table.name }}");
+        }
+        {% endfor %}
+    }
+    {% endif %}
+
+    // ============================================================
+    // Connection Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Connection Tests")
+    class ConnectionTests {
+    {% endif %}
+
+    /**
+     * Test database connection is established.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Connection should be established")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testConnectionEstablished() throws SQLException {
+        assertNotNull("Connection should not be null", connection);
+        assertFalse("Connection should be open", connection.isClosed());
+        assertTrue("Connection should be valid", connection.isValid(5));
+    }
+
+    /**
+     * Test database metadata is accessible.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Database metadata should be accessible")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testDatabaseMetadata() throws SQLException {
+        DatabaseMetaData metadata = connection.getMetaData();
+        assertNotNull("Metadata should be available", metadata);
+
+        String dbName = metadata.getDatabaseProductName();
+        assertNotNull("Database name should be available", dbName);
+        {% if database_type == "postgresql" %}
+        assertTrue("Should be PostgreSQL",
+            dbName.toLowerCase().contains("postgresql"));
+        {% elif database_type == "mysql" %}
+        assertTrue("Should be MySQL",
+            dbName.toLowerCase().contains("mysql"));
+        {% elif database_type == "h2" %}
+        assertTrue("Should be H2",
+            dbName.toLowerCase().contains("h2"));
+        {% endif %}
+    }
+
+    {% if junit_version == "5" %}
+    } // End ConnectionTests
+    {% endif %}
+
+    // ============================================================
+    // Scenario-Based Tests
+    // ============================================================
+
+    {% for scenario in test_scenarios %}
+    {% if junit_version == "5" %}
+    /**
+     * Test {{ scenario.name }} scenario.
+     * {{ scenario.description }}
+     */
+    @Test
+    @DisplayName("{{ scenario.name }}: {{ scenario.description }}")
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void test{{ scenario.name | pascal_case }}() throws SQLException {
+        {% if scenario.operation == "getConnection" %}
+        // Test connection is valid
+        {% if "connectionNotNull" in scenario.assertions %}
+        assertNotNull("Connection should not be null", connection);
+        {% endif %}
+        {% if "connectionIsValid" in scenario.assertions %}
+        assertTrue("Connection should be valid", connection.isValid(5));
+        {% endif %}
+
+        {% elif scenario.operation == "createTable" %}
+        // Create table {{ scenario.table_name }}
+        String createSQL = "CREATE TABLE IF NOT EXISTS {{ scenario.table_name }} (" +
+            "id SERIAL PRIMARY KEY, " +
+            "name VARCHAR(255) NOT NULL, " +
+            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createSQL);
+        }
+
+        {% if "tableExists" in scenario.assertions %}
+        // Verify table exists
+        DatabaseMetaData metadata = connection.getMetaData();
+        ResultSet tables = metadata.getTables(null, null, "{{ scenario.table_name }}", new String[]{"TABLE"});
+        assertTrue("Table {{ scenario.table_name }} should exist", tables.next());
+        {% endif %}
+        {% if "columnsCorrect" in scenario.assertions %}
+        // Verify columns
+        ResultSet columns = metadata.getColumns(null, null, "{{ scenario.table_name }}", null);
+        assertTrue("Table should have columns", columns.next());
+        {% endif %}
+
+        {% elif scenario.operation == "transaction" %}
+        // Test transaction with rollback
+        connection.setAutoCommit(false);
+
+        try {
+            // Insert test data
+            String insertSQL = "INSERT INTO yawl_case (case_id, spec_id, status) VALUES (?, ?, ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(insertSQL)) {
+                stmt.setString(1, "test-case-123");
+                stmt.setString(2, "test-spec");
+                stmt.setString(3, "running");
+                stmt.executeUpdate();
+            }
+
+            {% if "noPartialData" in scenario.assertions %}
+            // Simulate error and rollback
+            throw new RuntimeException("Simulated error");
+            {% endif %}
+        } catch (RuntimeException e) {
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
+        }
+
+        {% if "rollbackWorks" in scenario.assertions %}
+        // Verify rollback worked
+        String selectSQL = "SELECT COUNT(*) FROM yawl_case WHERE case_id = 'test-case-123'";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(selectSQL)) {
+            rs.next();
+            assertEquals("Insert should be rolled back", 0, rs.getInt(1));
+        }
+        {% endif %}
+
+        {% else %}
+        // Generic integration test for {{ scenario.name }}
+        // {{ scenario.description }}
+        // TODO: Implement {{ scenario.operation }} test
+        {% endif %}
+    }
+
+    {% endfor %}
+    // ============================================================
+    // CRUD Operations Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("CRUD Operations")
+    class CrudOperationTests {
+    {% endif %}
+
+    /**
+     * Test insert operation.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Insert should create record")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testInsert() throws SQLException {
+        createCaseTable();
+
+        String insertSQL = "INSERT INTO yawl_case (case_id, spec_id, status) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(insertSQL)) {
+            stmt.setString(1, "test-case-001");
+            stmt.setString(2, "test-spec-001");
+            stmt.setString(3, "running");
+            int rows = stmt.executeUpdate();
+            assertEquals("One row should be inserted", 1, rows);
+        }
+    }
+
+    /**
+     * Test select operation.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Select should retrieve record")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSelect() throws SQLException {
+        createCaseTable();
+        insertTestCase("test-case-002", "test-spec-001", "running");
+
+        String selectSQL = "SELECT * FROM yawl_case WHERE case_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(selectSQL)) {
+            stmt.setString(1, "test-case-002");
+            ResultSet rs = stmt.executeQuery();
+            assertTrue("Record should be found", rs.next());
+            assertEquals("Case ID should match", "test-case-002", rs.getString("case_id"));
+        }
+    }
+
+    /**
+     * Test update operation.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Update should modify record")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testUpdate() throws SQLException {
+        createCaseTable();
+        insertTestCase("test-case-003", "test-spec-001", "running");
+
+        String updateSQL = "UPDATE yawl_case SET status = ? WHERE case_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(updateSQL)) {
+            stmt.setString(1, "completed");
+            stmt.setString(2, "test-case-003");
+            int rows = stmt.executeUpdate();
+            assertEquals("One row should be updated", 1, rows);
+        }
+    }
+
+    /**
+     * Test delete operation.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Delete should remove record")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testDelete() throws SQLException {
+        createCaseTable();
+        insertTestCase("test-case-004", "test-spec-001", "running");
+
+        String deleteSQL = "DELETE FROM yawl_case WHERE case_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(deleteSQL)) {
+            stmt.setString(1, "test-case-004");
+            int rows = stmt.executeUpdate();
+            assertEquals("One row should be deleted", 1, rows);
+        }
+    }
+
+    {% if junit_version == "5" %}
+    } // End CrudOperationTests
+    {% endif %}
+
+    // ============================================================
+    // Batch Operations Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Batch Operations")
+    class BatchOperationTests {
+    {% endif %}
+
+    /**
+     * Test batch insert.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Batch insert should create multiple records")
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testBatchInsert() throws SQLException {
+        createCaseTable();
+
+        String insertSQL = "INSERT INTO yawl_case (case_id, spec_id, status) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(insertSQL)) {
+            for (int i = 0; i < 100; i++) {
+                stmt.setString(1, "batch-case-" + i);
+                stmt.setString(2, "batch-spec");
+                stmt.setString(3, "running");
+                stmt.addBatch();
+            }
+            int[] results = stmt.executeBatch();
+            assertEquals("100 rows should be inserted", 100, results.length);
+        }
+
+        String countSQL = "SELECT COUNT(*) FROM yawl_case";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(countSQL)) {
+            rs.next();
+            assertEquals("Should have 100 records", 100, rs.getInt(1));
+        }
+    }
+
+    {% if junit_version == "5" %}
+    } // End BatchOperationTests
+    {% endif %}
+
+    // ============================================================
+    // Connection Pooling Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Connection Pooling")
+    class ConnectionPoolingTests {
+    {% endif %}
+
+    /**
+     * Test connection pool reuse.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Connection should be reusable")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testConnectionReuse() throws SQLException {
+        for (int i = 0; i < 10; i++) {
+            assertFalse("Connection should remain open", connection.isClosed());
+            assertTrue("Connection should remain valid", connection.isValid(5));
+        }
+    }
+
+    {% if junit_version == "5" %}
+    } // End ConnectionPoolingTests
+    {% endif %}
+
+    // ============================================================
+    // Helper Methods
+    // ============================================================
+
+    private void createCaseTable() throws SQLException {
+        String createSQL = "CREATE TABLE IF NOT EXISTS yawl_case (" +
+            "id SERIAL PRIMARY KEY, " +
+            "case_id VARCHAR(255) NOT NULL, " +
+            "spec_id VARCHAR(255) NOT NULL, " +
+            "status VARCHAR(50) NOT NULL, " +
+            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createSQL);
+        }
+    }
+
+    private void insertTestCase(String caseId, String specId, String status) throws SQLException {
+        String insertSQL = "INSERT INTO yawl_case (case_id, spec_id, status) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(insertSQL)) {
+            stmt.setString(1, caseId);
+            stmt.setString(2, specId);
+            stmt.setString(3, status);
+            stmt.executeUpdate();
+        }
+    }
+}

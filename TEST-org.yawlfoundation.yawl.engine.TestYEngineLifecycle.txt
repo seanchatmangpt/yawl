@@ -1,0 +1,30 @@
+Testsuite: org.yawlfoundation.yawl.engine.TestYEngineLifecycle
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.026 sec
+------------- Standard Output ---------------
+2026-02-15 18:02:35,436 [WARN ] YEventLogger         :- Process logging disabled because Engine persistence is disabled.
+2026-02-15 18:02:35,441 [WARN ] YDefClientsLoader    :- Error opening file 'defaultClients.properties'.
+------------- ---------------- ---------------
+------------- Standard Error -----------------
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+------------- ---------------- ---------------
+
+Testcase: testEngineGetInstance took 1.021 sec
+Testcase: testEngineIsRunning took 0 sec
+Testcase: testEngineRunningCaseMapEmptyInitially took 0 sec
+Testcase: testEngineClearsStateBetweenTests took 0 sec
+Testcase: testEngineShutdown took 0.001 sec
+Testcase: testEngineCheckRunningDoesNotThrowWhenRunning took 0 sec
+Testcase: testEngineSetEngineStatus took 0 sec
+Testcase: testEngineSessionCacheNotNull took 0 sec
+Testcase: testEngineGetInstanceReturnsSameInstance took 0 sec
+Testcase: testEngineWorkItemRepositoryNotNull took 0 sec
+Testcase: testEngineNetRunnerRepositoryNotNull took 0 sec
+Testcase: testEngineAnnouncerNotNull took 0 sec
+Testcase: testEngineAnnouncementContextNotNull took 0 sec
+Testcase: testEngineStatusIsRunning took 0 sec
+Testcase: testEngineInitialCaseCountIsZero took 0 sec
+Testcase: testEngineGenerateUIMetaData took 0 sec
+Testcase: testEngineSpecRepositoryInitialIsEmpty took 0 sec
+Testcase: testEngineInstanceCacheNotNull took 0 sec

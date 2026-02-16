@@ -87,23 +87,22 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<");
         String type = getParamTypeStr(_paramType);
-        xml.append(type);
-        if (getAttributes() != null) xml.append(getAttributes().toXML());
-        xml.append(">");
+        String attrs = getAttributes() != null ? getAttributes().toXML() : "";
+        String mandatory = super.isMandatory() ? "<mandatory/>" : "";
+        String bypass = _cutsThroughDecompositionStateSpace ?
+            "<bypassesStatespaceForDecomposition/>" : "";
 
-        xml.append(toXMLGuts());
-       
-        if (super.isMandatory()) {
-            xml.append("<mandatory/>");
-        }
-        if (_cutsThroughDecompositionStateSpace) {
-            xml.append("<bypassesStatespaceForDecomposition/>");
-        }
-
-        xml.append("</").append(type).append(">");
-        return xml.toString();
+        return """
+            <%s%s>%s%s%s</%s>
+            """.formatted(
+                type,
+                attrs,
+                toXMLGuts(),
+                mandatory,
+                bypass,
+                type
+            );
     }
 
 
@@ -188,14 +187,12 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
 
 
     private static String getParamTypeStr(int type) {
-        String typeStr;
-        switch (type) {
-            case _INPUT_PARAM_TYPE : typeStr = "inputParam"; break;
-            case _OUTPUT_PARAM_TYPE : typeStr = "outputParam"; break;
-            case _ENABLEMENT_PARAM_TYPE : typeStr = "enablementParam"; break;
-            default : throw new IllegalArgumentException("Invalid parameter type");
-        }
-        return typeStr;
+        return switch (type) {
+            case _INPUT_PARAM_TYPE -> "inputParam";
+            case _OUTPUT_PARAM_TYPE -> "outputParam";
+            case _ENABLEMENT_PARAM_TYPE -> "enablementParam";
+            default -> throw new IllegalArgumentException("Invalid parameter type");
+        };
     }
 
     private static boolean isValidType(int type) {

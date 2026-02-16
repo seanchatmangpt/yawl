@@ -359,24 +359,18 @@ public class YEngine {
 
         try {
             switch (workItem.getStatus()) {
-                case statusEnabled:
+                case statusEnabled -> {
                     netRunner = caseRunner.getRunnerWithID(workItem.getCaseID());
                     startedItem = startEnabledWorkItem(netRunner, workItem);
-                    break;
-
-                case statusFired:
+                }
+                case statusFired -> {
                     netRunner = caseRunner.getRunnerWithID(workItem.getCaseID().getParent());
                     startedItem = startFiredWorkItem(netRunner, workItem);
-                    break;
-
-                case statusDeadlocked:
-                    startedItem = workItem;
-                    break;
-
-                default: // this work item is likely already executing.
-                    throw new YStateException(String.format(
-                            "Item [%s]: status [%s] does not permit starting.",
-                            workItem.getIDString(), workItem.getStatus()));
+                }
+                case statusDeadlocked -> startedItem = workItem;
+                default -> throw new YStateException(String.format(
+                        "Item [%s]: status [%s] does not permit starting.",
+                        workItem.getIDString(), workItem.getStatus()));
             }
             announceItemStarted(startedItem);
             if (netRunner != null) announceEvents(netRunner);

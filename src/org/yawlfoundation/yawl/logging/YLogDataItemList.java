@@ -50,12 +50,11 @@ public class YLogDataItemList extends ArrayList<YLogDataItem> {
     
 
     public String toXML() {
-        StringBuilder s = new StringBuilder("<logdataitemlist>");
-        for (YLogDataItem item : this) {
-            s.append(item.toXML());
-        }
-        s.append("</logdataitemlist>");
-        return s.toString();
+        String items = this.stream()
+            .map(YLogDataItem::toXML)
+            .collect(java.util.stream.Collectors.joining());
+        return """
+            <logdataitemlist>%s</logdataitemlist>""".formatted(items);
     }
 
 

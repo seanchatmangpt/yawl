@@ -41,8 +41,20 @@ public class Sessions {
     private Map<String, ScheduledFuture> handleToTimer; // sessionhandle <-> activity timer
     private InterfaceAClient iaClient;
 
+    /**
+     * Virtual thread scheduler for session timeout management.
+     * Before: Single platform thread for all session timers
+     * After: Virtual threads (each session timeout runs on its own virtual thread)
+     *
+     * Session timeout is an I/O-bound operation (database cleanup), making it ideal
+     * for virtual threads. Virtual threads eliminate the need for a shared platform
+     * thread pool and reduce memory usage.
+     */
     private static final ScheduledExecutorService scheduler =
-            Executors.newScheduledThreadPool(1);
+            Executors.newScheduledThreadPool(
+                1,
+                runnable -> Thread.ofVirtual().unstarted(runnable)
+            );
 
     private static final String INVALID_CREDENTIALS = "Invalid credentials";
 

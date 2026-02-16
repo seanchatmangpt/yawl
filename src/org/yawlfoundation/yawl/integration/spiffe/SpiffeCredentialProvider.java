@@ -180,38 +180,25 @@ public class SpiffeCredentialProvider {
      * Map service name to audience (for JWT SVIDs)
      */
     private String mapServiceToAudience(String serviceName) {
-        switch (serviceName.toLowerCase()) {
-            case "zai-api":
-            case "zai":
-                return "api.z.ai";
-            case "yawl-engine":
-            case "yawl":
-                return "yawl.engine";
-            case "mcp-server":
-                return "mcp.server";
-            case "a2a-server":
-                return "a2a.server";
-            default:
-                return serviceName;
-        }
+        return switch (serviceName.toLowerCase()) {
+            case "zai-api", "zai" -> "api.z.ai";
+            case "yawl-engine", "yawl" -> "yawl.engine";
+            case "mcp-server" -> "mcp.server";
+            case "a2a-server" -> "a2a.server";
+            default -> serviceName;
+        };
     }
 
     /**
      * Map service name to environment variable name
      */
     private String mapServiceToEnvVar(String serviceName) {
-        switch (serviceName.toLowerCase()) {
-            case "zai-api":
-            case "zai":
-                return "ZAI_API_KEY";
-            case "yawl-engine":
-            case "yawl":
-                return "YAWL_PASSWORD";
-            case "yawl-username":
-                return "YAWL_USERNAME";
-            default:
-                return serviceName.toUpperCase().replace("-", "_") + "_API_KEY";
-        }
+        return switch (serviceName.toLowerCase()) {
+            case "zai-api", "zai" -> "ZAI_API_KEY";
+            case "yawl-engine", "yawl" -> "YAWL_PASSWORD";
+            case "yawl-username" -> "YAWL_USERNAME";
+            default -> serviceName.toUpperCase().replace("-", "_") + "_API_KEY";
+        };
     }
 
     /**

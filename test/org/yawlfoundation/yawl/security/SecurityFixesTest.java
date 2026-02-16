@@ -18,8 +18,8 @@
 
 package org.yawlfoundation.yawl.security;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.cost.interfce.ModelUpload;
 import org.yawlfoundation.yawl.resourcing.datastore.orgdata.jdbcImpl;
 import org.yawlfoundation.yawl.util.HibernateEngine;
@@ -30,7 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive tests for security fixes addressing:
@@ -45,7 +45,7 @@ public class SecurityFixesTest {
 
     private static final String SRC_PATH = "src/org/yawlfoundation/yawl/";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Clear any existing environment variables for clean test state
         clearTestEnvironment();
@@ -78,11 +78,13 @@ public class SecurityFixesTest {
     /**
      * Task 1: Verify ModelUpload throws exception when credentials are missing
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testModelUploadRequiresEnvironmentVariables() {
-        // This should throw IllegalStateException since env vars are not set
-        ModelUpload upload = new ModelUpload();
-        upload.getLog("test", "1.0", "test.yawl");
+        assertThrows(IllegalStateException.class, () -> {
+            // This should throw IllegalStateException since env vars are not set
+            ModelUpload upload = new ModelUpload();
+            upload.getLog("test", "1.0", "test.yawl");
+        });
     }
 
     /**
