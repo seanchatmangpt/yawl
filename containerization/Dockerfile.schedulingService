@@ -13,24 +13,21 @@ ARG YAWL_VERSION=5.2
 
 LABEL org.opencontainers.image.title="YAWL Scheduling Service Builder"
 
-RUN apk add --no-cache ant bash curl shadow
+RUN apk add --no-cache maven bash curl shadow
 
 RUN groupadd -r yawl && useradd -r -g yawl -d /yawl yawl
 
 WORKDIR /build
 
-# Copy source files (layered for caching)
-COPY build/3rdParty/ ./build/3rdParty/
-COPY build/build.xml ./build/
-COPY build/build.properties ./build/
-COPY build/properties/ ./build/properties/
-COPY build/schedulingService/ ./build/schedulingService/
-
-COPY schema/ ./schema/
+# Copy Maven configuration and source files
+COPY pom.xml ./
 COPY src/ ./src/
+COPY test/ ./test/
+COPY build/ ./build/
+COPY schema/ ./schema/
 
-# Build scheduling service WAR
-RUN cd build && ant war_schedulingService
+# Build scheduling service WAR with Maven
+RUN mvn clean package -DskipTests -B
 
 # =============================================================================
 # Runtime stage
@@ -65,15 +62,8 @@ RUN curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSIO
     /opt/tomcat/conf/server.xml && \
     chown -R yawl:yawl /opt/tomcat
 
-# Copy built WAR from builder
-COPY --from=builder --chown=yawl:yawl /build/output/wars/schedulingService.war /opt/tomcat/webapps/ROOT.war
-
-# Copy shared libraries
-COPY --from=builder --chown=yawl:yawl /build/build/3rdParty/lib/*.jar /opt/tomcat/lib/
-
-# Copy scheduling resources and SQL
-COPY --from=builder --chown=yawl:yawl /build/build/schedulingService/resources/ /yawl/resources/
-COPY --from=builder --chown=yawl:yawl /build/build/schedulingService/sql/ /yawl/sql/
+# Copy built WAR from builder (Maven packages to target/)
+COPY --from=builder --chown=yawl:yawl /build/target/*.war /opt/tomcat/webapps/ROOT.war
 
 # Environment configuration
 ENV CATALINA_HOME=/opt/tomcat \

@@ -22,7 +22,7 @@ LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
 
 # Install build dependencies
 RUN apk add --no-cache \
-    ant \
+    maven \
     git \
     curl \
     bash \
@@ -35,18 +35,18 @@ RUN groupadd -r yawl && useradd -r -g yawl -d /yawl -s /sbin/nologin yawl
 # Set working directory
 WORKDIR /build
 
-# Copy build files
-COPY build/ ./build/
+# Copy Maven configuration and source files
+COPY pom.xml ./
 COPY src/ ./src/
-COPY schema/ ./schema/
 COPY test/ ./test/
-COPY exampleSpecs/ ./exampleSpecs/
+COPY build/ ./build/
+COPY schema/ ./schema/
 
 # Set ownership
 RUN chown -R yawl:yawl /build
 
-# Build YAWL WARs
-RUN cd build && ant buildWebApps
+# Build YAWL with Maven
+RUN mvn clean package -DskipTests -B
 
 # =============================================================================
 # Runtime Base Image
