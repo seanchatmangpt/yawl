@@ -1,34 +1,29 @@
 # YAWL v5.2 | A = μ(O)
 
 O = {engine, elements, stateless, integration, schema, test}
-Σ = Java25 + Maven + JUnit5 + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy
+Σ = Java25 + Maven + JUnit + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy
 **Yet Another Workflow Language** - Enterprise BPM/Workflow system based on rigorous Petri net semantics.
 
 ## Quick Commands
 
 ```bash
-# Build (Maven - Primary)
-mvn clean install              # Full build with tests
-mvn compile                    # Compile source code only
-mvn test                       # Run test suite (JUnit5)
-mvn clean                      # Clean build artifacts
+# Build
+mvn clean compile                        # Compile source code
+mvn clean package                        # Full build (compile + test + package)
+mvn clean                                # Clean build artifacts
 
-# Build (Ant - Legacy/Deprecated)
-ant compile                    # Legacy compile (use Maven instead)
-ant buildAll                   # Legacy full build
-ant unitTest                   # Legacy JUnit4 tests
-
-# Validate
+# Test & Validate
+mvn clean test                           # Run JUnit test suite (required before commit)
 xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml  # Validate specifications
 
 # Before Committing
-mvn clean install              # Build + test (must pass)
+mvn clean compile && mvn clean test      # Build + test (must pass)
 ```
 
 ## System Specification
 
 **O** = {engine, elements, stateless, integration, schema, test}
-**Σ** = Java25 + Maven + JUnit5 + XML/XSD
+**Σ** = Java25 + Maven + JUnit + XML/XSD
 **Λ** = compile ≺ test ≺ validate ≺ deploy
 
 ## μ(O) → A (Agents)
@@ -83,13 +78,13 @@ If ANY guard is detected, the operation is **blocked** (exit 2) with violation d
 
 ## Δ (Build System)
 
-**Δ_build** = ant -f build/build.xml {compile | buildWebApps | buildAll | clean}
-**Δ_test** = ant unitTest
+**Δ_build** = mvn {clean compile | clean package | clean | clean test}
+**Δ_test** = mvn clean test
 **Δ_validate** = xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml
 
 **Build sequence**: clean → compile → test → validate → deploy
-**Fast verification**: `ant compile` (~18 seconds)
-**Full verification**: `ant buildAll` (~2 minutes)
+**Fast verification**: `mvn clean compile` (~45 seconds)
+**Full verification**: `mvn clean package` (~90 seconds)
 
 ## Γ (Architecture)
 
@@ -131,8 +126,8 @@ topology = hierarchical(μ) | mesh(integration)
 
 **CRITICAL**: Before every commit, you MUST:
 
-1. **Compile**: `ant compile` (must succeed)
-2. **Test**: `ant unitTest` (must pass 100%)
+1. **Compile**: `mvn clean compile` (must succeed)
+2. **Test**: `mvn clean test` (must pass 100%)
 3. **Stage Specific Files**: `git add <files>` (no `git add .`)
 4. **Commit with Message**: Include session URL
 5. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`
@@ -156,6 +151,6 @@ topology = hierarchical(μ) | mesh(integration)
 
 **A** = μ(O) | O ⊨ Java+BPM+PetriNet | μ∘μ = μ | drift(A) → 0
 
-**Verification**: Session setup via `.claude/hooks/session-start.sh` (Ant + H2 database)
+**Verification**: Session setup via `.claude/hooks/session-start.sh` (Maven + H2 database)
 **Validation**: PostToolUse guards enforce H automatically
 **Quality**: Stop hook ensures clean state before completion

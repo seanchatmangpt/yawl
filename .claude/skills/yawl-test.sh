@@ -1,137 +1,80 @@
 #!/bin/bash
-# YAWL Test Skill - Claude Code 2026 Best Practices
-# Usage: /yawl-test [--module=name] [--coverage]
-
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-BUILD_FILE="${PROJECT_ROOT}/build/build.xml"
+# YAWL Maven Test Skill
+# Provides convenient shortcuts for test execution and coverage analysis
+# Usage: /yawl-test [--module=MODULE] [--coverage] [--verbose]
 
-# Colors
+MODULE="${MODULE:-}"
+COVERAGE="${COVERAGE:-false}"
+VERBOSE="${VERBOSE:-false}"
+
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-print_usage() {
-    cat << 'EOF'
-YAWL Test Skill - Run JUnit test suites
-
-Usage: /yawl-test [options]
-
-Options:
-  --module=NAME    Run tests for specific module
-  --coverage       Generate coverage report
-  --verbose        Show detailed test output
-  -h, --help       Show this help message
-
-Available Modules:
-  elements       YAWL element tests
-  engine         Engine core tests
-  state          State management tests
-  exceptions     Exception handling tests
-  logging        Logging tests
-  schema         Schema validation tests
-  unmarshaller   XML unmarshalling tests
-  util           Utility tests
-  worklist       Worklist tests
-  authentication Authentication tests
-
-Examples:
-  /yawl-test                     # Run all tests
-  /yawl-test --module=engine     # Run engine tests only
-  /yawl-test --coverage          # Run with coverage
-EOF
-}
+# Function to print status messages
+log_info() { echo -e "${GREEN}ℹ️${NC} $*"; }
+log_warn() { echo -e "${YELLOW}⚠️${NC} $*"; }
+log_error() { echo -e "${RED}❌${NC} $*"; exit 1; }
+log_test() { echo -e "${BLUE}🧪${NC} $*"; }
 
 # Parse arguments
-MODULE=""
-COVERAGE=false
-VERBOSE=""
-
 while [[ $# -gt 0 ]]; do
-    case $1 in
-        -h|--help)
-            print_usage
-            exit 0
-            ;;
-        --module=*)
-            MODULE="${1#*=}"
-            shift
-            ;;
-        --coverage)
-            COVERAGE=true
-            shift
-            ;;
-        --verbose)
-            VERBOSE="-verbose"
-            shift
-            ;;
-        *)
-            echo -e "${RED}Unknown option: $1${NC}"
-            print_usage
-            exit 1
-            ;;
-    esac
+  case "$1" in
+    --module=*) MODULE="${1#--module=}"; shift ;;
+    --module) MODULE="$2"; shift 2 ;;
+    --coverage) COVERAGE=true; shift ;;
+    --verbose) VERBOSE=true; shift ;;
+    *) shift ;;
+  esac
 done
 
-# Check if compiled
-if [[ ! -d "${PROJECT_ROOT}/classes" ]]; then
-    echo -e "${YELLOW}[yawl-test] Classes not found, compiling first...${NC}"
-    ant -f "${BUILD_FILE}" compile
+# Build Maven command
+TEST_CMD="mvn clean test"
+
+# Add module flag if specified
+if [ -n "$MODULE" ]; then
+  TEST_CMD="$TEST_CMD -pl $MODULE"
 fi
 
-cd "${PROJECT_ROOT}"
+# Add verbose flag
+if [ "$VERBOSE" = "false" ]; then
+  TEST_CMD="$TEST_CMD -q"
+fi
 
-# Module name to test class mapping
-declare -A MODULE_MAP=(
-    ["elements"]="org.yawlfoundation.yawl.elements.TestElementsSuite"
-    ["engine"]="org.yawlfoundation.yawl.engine.TestEngineSuite"
-    ["state"]="org.yawlfoundation.yawl.state.TestStateSuite"
-    ["exceptions"]="org.yawlfoundation.yawl.exceptions.TestExceptionsSuite"
-    ["logging"]="org.yawlfoundation.yawl.logging.TestLoggingSuite"
-    ["schema"]="org.yawlfoundation.yawl.schema.TestSchemaSuite"
-    ["unmarshaller"]="org.yawlfoundation.yawl.unmarshaller.TestUnmarshallerSuite"
-    ["util"]="org.yawlfoundation.yawl.util.TestUtilSuite"
-    ["worklist"]="org.yawlfoundation.yawl.worklist.TestWorklistSuite"
-    ["authentication"]="org.yawlfoundation.yawl.authentication.TestAuthenticationSuite"
-)
+log_test "Test Suite Execution"
+log_info "Running: $TEST_CMD"
 
-# Run tests based on module or all
-if [[ -n "${MODULE}" ]]; then
-    if [[ -z "${MODULE_MAP[$MODULE]:-}" ]]; then
-        echo -e "${RED}[yawl-test] Unknown module: ${MODULE}${NC}"
-        echo "Available modules: ${!MODULE_MAP[*]}"
-        exit 1
-    fi
-
-    TEST_CLASS="${MODULE_MAP[$MODULE]}"
-    echo -e "${BLUE}[yawl-test] Running tests for module: ${MODULE}${NC}"
-    echo -e "${BLUE}[yawl-test] Test class: ${TEST_CLASS}${NC}"
-    echo ""
-
-    java -cp "classes:build/3rdParty/lib/*" junit.textui.TestRunner "${TEST_CLASS}"
+# Execute tests
+if eval "$TEST_CMD"; then
+  TEST_PASSED=true
+  log_info "✅ All tests passed"
 else
-    echo -e "${BLUE}[yawl-test] Running all test suites...${NC}"
-    echo ""
+  TEST_PASSED=false
+  log_error "❌ Tests failed"
+fi
 
-    if [[ "${COVERAGE}" == "true" ]]; then
-        echo -e "${YELLOW}[yawl-test] Running with coverage via Ant...${NC}"
-        ant -f "${BUILD_FILE}" ${VERBOSE} unitTest
-    else
-        java -cp "classes:build/3rdParty/lib/*" junit.textui.TestRunner org.yawlfoundation.yawl.TestAllYAWLSuites
+# Generate coverage report if requested
+if [ "$COVERAGE" = "true" ] && [ "$TEST_PASSED" = "true" ]; then
+  log_info "Generating JaCoCo coverage report..."
+
+  COVERAGE_CMD="mvn jacoco:report"
+  if [ -n "$MODULE" ]; then
+    COVERAGE_CMD="$COVERAGE_CMD -pl $MODULE"
+  fi
+
+  if eval "$COVERAGE_CMD"; then
+    log_info "Coverage report generated"
+    if [ -f "target/site/jacoco/index.html" ]; then
+      log_warn "View coverage report at: target/site/jacoco/index.html"
     fi
+  else
+    log_warn "Coverage report generation skipped (JaCoCo not configured)"
+  fi
 fi
 
-EXIT_CODE=$?
-
-echo ""
-if [[ ${EXIT_CODE} -eq 0 ]]; then
-    echo -e "${GREEN}[yawl-test] All tests passed${NC}"
-else
-    echo -e "${RED}[yawl-test] Some tests failed (exit code: ${EXIT_CODE})${NC}"
-fi
-
-exit ${EXIT_CODE}
+exit 0

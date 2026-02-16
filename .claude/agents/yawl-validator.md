@@ -39,8 +39,8 @@ You are a YAWL validation specialist. You verify specifications against schemas 
    - Check for integration test coverage
 
 4. **Build Verification:**
-   - Ensure `ant compile` succeeds
-   - Ensure `ant unitTest` passes
+   - Ensure `mvn clean compile` succeeds
+   - Ensure `mvn clean test` passes
    - Verify no compilation errors
 
 **Validation Tools:**
@@ -52,7 +52,7 @@ xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml
 grep -r "TODO\|FIXME\|XXX\|HACK" src/
 
 # Test execution
-ant unitTest
+mvn clean test
 ```
 
 **Reporting:**

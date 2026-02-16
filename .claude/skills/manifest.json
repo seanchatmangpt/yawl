@@ -6,20 +6,20 @@
     {
       "name": "yawl-build",
       "command": "/yawl-build",
-      "description": "Build Java 25 projects with Maven (primary) or Ant (deprecated)",
+      "description": "Build YAWL modules with Maven (Java 25)",
       "script": ".claude/skills/yawl-build.sh",
       "agent": "yawl-engineer",
       "examples": [
         "/yawl-build compile",
-        "/yawl-build buildWebApps",
-        "/yawl-build buildAll",
-        "/yawl-build clean"
+        "/yawl-build test",
+        "/yawl-build package",
+        "/yawl-build --module=yawl-engine compile"
       ],
       "metadata": {
         "priority": 1,
         "category": "build",
         "javaVersions": ["25"],
-        "buildSystems": ["maven", "ant"],
+        "buildSystems": ["maven"],
         "preferredBuildSystem": "maven"
       },
       "parameters": {
@@ -27,14 +27,18 @@
         "properties": {
           "target": {
             "type": "string",
-            "enum": ["compile", "buildWebApps", "buildAll", "build_Standalone", "clean", "javadoc", "unitTest"],
-            "default": "buildWebApps",
-            "description": "Ant build target"
+            "enum": ["compile", "test", "package", "clean", "install", "javadoc", "verify"],
+            "default": "compile",
+            "description": "Maven build target"
+          },
+          "module": {
+            "type": "string",
+            "description": "Specific Maven module to build"
           },
           "verbose": {
             "type": "boolean",
             "default": false,
-            "description": "Enable verbose output"
+            "description": "Enable verbose output (-X)"
           },
           "enablePreview": {
             "type": "boolean",
@@ -47,12 +51,12 @@
     {
       "name": "yawl-test",
       "command": "/yawl-test",
-      "description": "Run YAWL JUnit test suites with coverage analysis",
+      "description": "Run YAWL test suites with Maven",
       "script": ".claude/skills/yawl-test.sh",
       "agent": "yawl-tester",
       "examples": [
         "/yawl-test",
-        "/yawl-test --module=engine",
+        "/yawl-test --module=yawl-engine",
         "/yawl-test --coverage"
       ],
       "parameters": {
@@ -60,13 +64,17 @@
         "properties": {
           "module": {
             "type": "string",
-            "enum": ["elements", "engine", "state", "exceptions", "logging", "schema", "unmarshaller", "util", "worklist", "authentication"],
             "description": "Run tests for specific module"
           },
           "coverage": {
             "type": "boolean",
             "default": false,
-            "description": "Generate coverage report"
+            "description": "Generate JaCoCo coverage report"
+          },
+          "verbose": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable verbose output"
           }
         }
       }
