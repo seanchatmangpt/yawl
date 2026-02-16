@@ -36,19 +36,46 @@ import java.util.Set;
 public class ExampleAdapter extends ResourceGatewayClientAdapter {
 
     private String _handle ;
-    private String _userName = "admin" ;
-    private String _password = "YAWL" ;
+    private String _userName ;
+    private String _password ;
     private String _defURI = "http://localhost:8080/resourceService/gateway" ;
 
     public ExampleAdapter() {
         super();
+        loadCredentials();
         setClientURI(_defURI) ;
         _handle = connect(_userName, _password) ;
     }
 
     public ExampleAdapter(String uri) {
         super(uri) ;
+        loadCredentials();
         _handle = connect(_userName, _password) ;
+    }
+
+    /**
+     * Loads credentials from environment variables.
+     * SECURITY: Never hardcode credentials. Use environment variables.
+     *
+     * Required environment variables:
+     * - YAWL_USERNAME: YAWL admin username (default: admin)
+     * - YAWL_PASSWORD: YAWL admin password (REQUIRED - no default)
+     *
+     * @throws IllegalStateException if YAWL_PASSWORD is not set
+     */
+    private void loadCredentials() {
+        _userName = System.getenv("YAWL_USERNAME");
+        if (_userName == null || _userName.isEmpty()) {
+            _userName = "admin";
+        }
+
+        _password = System.getenv("YAWL_PASSWORD");
+        if (_password == null || _password.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable must be set. " +
+                "See deployment runbook for credential configuration."
+            );
+        }
     }
 
     // attempts a connection if not already connected

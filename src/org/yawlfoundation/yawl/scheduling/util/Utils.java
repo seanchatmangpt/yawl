@@ -751,12 +751,15 @@ public class Utils implements Constants {
 
 	/**
 	 * creates deep copy of serializable object
-	 * 
+	 *
+	 * SECURITY: Uses allowlist-based ObjectInputFilter to prevent gadget chain attacks.
+	 * Only YAWL classes and safe Java classes can be deserialized.
+	 *
 	 * see http://www.tutego.de/java/articles/Tiefe-Objektkopien-Java.html
-	 * 
-	 * @param o
-	 * @return
-	 * @throws Exception
+	 *
+	 * @param o object to deep copy (must be Serializable and on YAWL allowlist)
+	 * @return deep copy of the object
+	 * @throws Exception if serialization fails or object class is not on allowlist
 	 */
 	public static Object deepCopy(Object o) throws Exception
 	{
@@ -764,7 +767,11 @@ public class Utils implements Constants {
 		new ObjectOutputStream(baos).writeObject(o);
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+		ObjectInputStream ois = new ObjectInputStream(bais);
 
-		return new ObjectInputStream(bais).readObject();
+		// SECURITY: Apply allowlist filter to prevent gadget chain attacks (CWE-502)
+		ois.setObjectInputFilter(org.yawlfoundation.yawl.security.ObjectInputStreamConfig.createDeepCopyFilter());
+
+		return ois.readObject();
 	}
 }

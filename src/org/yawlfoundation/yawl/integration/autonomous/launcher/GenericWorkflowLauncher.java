@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.launcher;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -146,11 +149,13 @@ public final class GenericWorkflowLauncher {
         } finally {
             try {
                 iaClient.disconnect(sessionA);
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect client: " + e.getMessage(), e);
             }
             try {
                 ibClient.disconnect(sessionB);
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect client: " + e.getMessage(), e);
             }
         }
     }
@@ -312,7 +317,12 @@ public final class GenericWorkflowLauncher {
             if (username == null) username = "admin";
 
             if (password == null) password = System.getenv("YAWL_PASSWORD");
-            if (password == null) password = "YAWL";
+            if (password == null || password.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "YAWL_PASSWORD must be set via --password argument or YAWL_PASSWORD environment variable. " +
+                    "Never use hardcoded credentials in production."
+                );
+            }
 
             if (specId == null) specId = System.getenv("SPEC_ID");
             if (specUri == null) specUri = System.getenv("SPEC_URI");
@@ -324,7 +334,8 @@ public final class GenericWorkflowLauncher {
             if (timeoutStr != null && !timeoutStr.isEmpty()) {
                 try {
                     timeoutSec = Long.parseLong(timeoutStr);
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid number format in parameter: " + e.getMessage(), e);
                 }
             }
 
@@ -377,7 +388,7 @@ public final class GenericWorkflowLauncher {
         System.out.println("  --case-data <json>      Case input data as JSON string or @file.json (optional)");
         System.out.println("  --engine-url <url>      YAWL Engine URL (default: http://localhost:8080/yawl)");
         System.out.println("  --username <user>       Engine username (default: admin)");
-        System.out.println("  --password <pass>       Engine password (default: YAWL)");
+        System.out.println("  --password <pass>       Engine password (REQUIRED - no default)");
         System.out.println("  --timeout-sec <sec>     Timeout in seconds (default: 600)");
         System.out.println("  --upload-spec <bool>    Upload spec before launch (default: true)");
         System.out.println("  --help                  Show this help message");
@@ -385,7 +396,7 @@ public final class GenericWorkflowLauncher {
         System.out.println("ENVIRONMENT VARIABLES:");
         System.out.println("  YAWL_ENGINE_URL         Engine URL");
         System.out.println("  YAWL_USERNAME           Engine username");
-        System.out.println("  YAWL_PASSWORD           Engine password");
+        System.out.println("  YAWL_PASSWORD           Engine password (REQUIRED)");
         System.out.println("  SPEC_ID                 Specification identifier");
         System.out.println("  SPEC_URI                Specification URI");
         System.out.println("  SPEC_VERSION            Specification version");

@@ -49,14 +49,17 @@ public class YawlMcpProperties {
     /**
      * YAWL admin username (required).
      * Default: admin
+     * Environment variable: YAWL_USERNAME
      */
     private String username = "admin";
 
     /**
      * YAWL admin password (required).
-     * Default: YAWL
+     * SECURITY: Must be set via environment variable YAWL_PASSWORD.
+     * No default value provided for security reasons.
+     * Environment variable: YAWL_PASSWORD
      */
-    private String password = "YAWL";
+    private String password;
 
     /**
      * MCP transport type: stdio or http.

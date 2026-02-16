@@ -150,14 +150,15 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
 
 
     /*
-     *performs a sned of an sms message
+     * performs a send of an sms message
+     * SECURITY: Credentials loaded from environment variables, never logged
      */
     private String performSMSSend(String message, String toPhone) throws IOException {
         toPhone = '+' + toPhone;
         System.out.println("performSMSSend::message = " + message);
         System.out.println("performSMSSend::toPhone = " + toPhone);
         System.out.println("performSMSSend::username = " + _smsUsername);
-        System.out.println("performSMSSend::password = " + _smsPassword);
+        // SECURITY: Never log passwords or API keys
 
         Map<String, String> params = new HashMap<String, String>();
         params.put("u", _smsUsername);
@@ -291,7 +292,8 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                logger.warn("SMS sender thread interrupted: " + e.getMessage(), e);
             }
         }
         _running = false;

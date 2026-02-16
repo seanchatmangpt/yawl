@@ -296,13 +296,14 @@ public class YawlMcpConfiguration {
         if (properties.getUsername() == null || properties.getUsername().isEmpty()) {
             throw new IllegalArgumentException(
                 "yawl.mcp.username is required. " +
-                "Set it in application.yml or use default 'admin'.");
+                "Set it in application.yml or via YAWL_USERNAME environment variable (default: admin).");
         }
 
         if (properties.getPassword() == null || properties.getPassword().isEmpty()) {
             throw new IllegalArgumentException(
                 "yawl.mcp.password is required. " +
-                "Set it in application.yml or use default 'YAWL'.");
+                "SECURITY: Set via YAWL_PASSWORD environment variable. Never hardcode credentials. " +
+                "See deployment runbook for credential management.");
         }
 
         LOGGER.info("YAWL MCP configuration validated: " + properties.getEngineUrl());

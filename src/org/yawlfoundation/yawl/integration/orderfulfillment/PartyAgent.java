@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -153,7 +156,8 @@ public final class PartyAgent {
         }
         try {
             interfaceBClient.disconnect(sessionHandle);
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            logger.warn("Failed to disconnect: " + e.getMessage(), e);
         }
         System.out.println("Party Agent [" + capability.getDomainName() + "] stopped");
     }
@@ -326,7 +330,10 @@ public final class PartyAgent {
 
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
-            password = "YAWL";
+            throw new IllegalArgumentException(
+                "YAWL_PASSWORD environment variable must be set. " +
+                "See deployment runbook for credential configuration."
+            );
         }
 
         int port = 8091;
@@ -334,7 +341,8 @@ public final class PartyAgent {
         if (portStr != null && !portStr.isEmpty()) {
             try {
                 port = Integer.parseInt(portStr);
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid number in trace attribute: " + e.getMessage(), e);
             }
         }
 
