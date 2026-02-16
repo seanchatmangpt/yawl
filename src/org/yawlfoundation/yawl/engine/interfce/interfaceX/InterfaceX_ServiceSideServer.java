@@ -95,11 +95,8 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/xml; charset=UTF-8");
         PrintWriter outputWriter = response.getWriter();
-        StringBuilder output = new StringBuilder();
-        output.append("<response>");
-        output.append(processPostQuery(request));
-        output.append("</response>");
-        outputWriter.write(output.toString());
+        String output = "<response>%s</response>".formatted(processPostQuery(request));
+        outputWriter.write(output);
         outputWriter.flush();
         outputWriter.close();
     }
