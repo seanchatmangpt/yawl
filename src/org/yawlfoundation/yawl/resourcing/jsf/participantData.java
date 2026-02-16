@@ -24,8 +24,8 @@ import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.resourcing.resource.UserPrivileges;
 import org.yawlfoundation.yawl.resourcing.rsInterface.ResourceGatewayException;
 
-import javax.faces.FacesException;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.event.ValueChangeEvent;
 
 /**
  *  Backing bean for the participant data or 'User Mgt' form.

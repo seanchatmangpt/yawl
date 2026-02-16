@@ -33,7 +33,7 @@ import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;

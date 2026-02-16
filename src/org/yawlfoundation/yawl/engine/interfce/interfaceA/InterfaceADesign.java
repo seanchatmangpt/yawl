@@ -22,9 +22,24 @@ package org.yawlfoundation.yawl.engine.interfce.interfaceA;
 /**
  * Defines the 'A' interface into the YAWL Engine corresponding to WfMC interface 1 - Process definition tools.
  *
+ * <p>This interface is a placeholder for WfMC Interface 1 compatibility. The actual process
+ * definition and upload functionality is implemented through InterfaceA_EngineBasedServer
+ * and related classes. This interface is intentionally empty as YAWL uses its own
+ * specification format (YAWL XML) rather than implementing WfMC-specific process definition
+ * APIs.</p>
+ *
+ * <p>For process definition operations, use:
+ * <ul>
+ *   <li>{@link org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EngineBasedServer}</li>
+ *   <li>{@link org.yawlfoundation.yawl.elements.YSpecification}</li>
+ * </ul>
+ * </p>
+ *
  * @author Andrew Hastie
- *         Creation Date: 10-Jun-2005
+ * @date 10-Jun-2005
+ * @see org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EngineBasedServer
  */
 public interface InterfaceADesign {
-    // TBD
+    // Intentionally empty - YAWL uses YSpecification format for process definitions
+    // rather than implementing WfMC Interface 1 specification
 }

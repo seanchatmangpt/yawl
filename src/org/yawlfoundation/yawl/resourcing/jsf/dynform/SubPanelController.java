@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.resourcing.jsf.dynform;
 
-import javax.faces.component.UIComponent;
+import jakarta.faces.component.UIComponent;
 import java.util.ArrayList;
 import java.util.List;
 

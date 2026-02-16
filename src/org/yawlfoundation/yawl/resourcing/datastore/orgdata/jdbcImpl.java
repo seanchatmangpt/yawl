@@ -36,10 +36,10 @@ import java.util.*;
 public class jdbcImpl extends DataSource {
 
     // var's required to connect to the appropriate database
-    private final String dbDriver = "org.postgresql.Driver";
-    private final String dbUrl = "jdbc:postgresql:yawl";
-    private final String dbUser = "postgres";
-    private final String dbPassword = "yawl";
+    private final String dbDriver;
+    private final String dbUrl;
+    private final String dbUser;
+    private final String dbPassword;
 
     private Connection connection = null;
     private static final Logger _log = LogManager.getLogger(jdbcImpl.class);
@@ -48,7 +48,27 @@ public class jdbcImpl extends DataSource {
     // the constructor - loads the driver and creates tables if they don't already exist
     public jdbcImpl() {
         super();
+
+        // Load database configuration from environment variables
+        dbDriver = getEnvOrDefault("YAWL_JDBC_DRIVER", "org.postgresql.Driver");
+        dbUrl = getEnvOrDefault("YAWL_JDBC_URL", "jdbc:postgresql:yawl");
+        dbUser = getEnvOrThrow("YAWL_JDBC_USER");
+        dbPassword = getEnvOrThrow("YAWL_JDBC_PASSWORD");
+
         if (loadDriver(dbDriver)) checkTables();
+    }
+
+    private String getEnvOrThrow(String varName) {
+        String value = System.getenv(varName);
+        if (value == null) {
+            throw new IllegalStateException(varName + " environment variable is required");
+        }
+        return value;
+    }
+
+    private String getEnvOrDefault(String varName, String defaultValue) {
+        String value = System.getenv(varName);
+        return value != null ? value : defaultValue;
     }
 
     /******************************************************************************/
@@ -310,19 +330,37 @@ public class jdbcImpl extends DataSource {
      * @param table the table to select from
      * @param field the [field] in 'WHERE [field] = [value]'
      * @param value the [value] in the above
-     * @return a constructed select statement String
+     * @return a ResultSet with the query results
      */
-    private String selectWhere(String table, String field, String value) {
-        return String.format("SELECT * FROM %s WHERE %s = '%s'", table, field, value) ;
+    private ResultSet selectWhere(String table, String field, String value) {
+        try {
+            if (openConnection()) {
+                String sql = "SELECT * FROM " + table + " WHERE " + field + " = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, value);
+                return pstmt.executeQuery();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem executing parameterized query", e);
+        }
+        return null;
     }
 
     /**
      * constructs a 'select *' statement
      * @param table the table to select from
-     * @return a constructed select statement String
+     * @return a ResultSet with all rows from the table
      */
-    private String selectAll(String table) {
-        return String.format("SELECT * FROM %s", table) ;
+    private ResultSet selectAll(String table) {
+        try {
+            if (openConnection()) {
+                Statement stmt = connection.createStatement();
+                return stmt.executeQuery("SELECT * FROM " + table);
+            }
+        } catch (SQLException e) {
+            _log.error("Problem executing select all query", e);
+        }
+        return null;
     }
 
 
@@ -348,11 +386,9 @@ public class jdbcImpl extends DataSource {
     private List select(tbl table, String field, String value) {
         List result = new ArrayList() ;
 
-        // create the query string - if field is null then its a simple 'SELECT *'
-        String qry = (field != null)? selectWhere(table.name(), field, value) :
-                                      selectAll(table.name()) ;
-        // execute the selection
-        ResultSet rs = execSelect(qry) ;
+        // execute the selection using parameterized queries
+        ResultSet rs = (field != null) ? selectWhere(table.name(), field, value) :
+                                         selectAll(table.name());
 
         if (rs != null) {
             try {
@@ -389,8 +425,8 @@ public class jdbcImpl extends DataSource {
      */
     private Object selectScalar(tbl table, String field, String value) {
 
-        // execute the select statement
-        ResultSet rs = execSelect(selectWhere(table.name(), field, value)) ;
+        // execute the select statement using parameterized query
+        ResultSet rs = selectWhere(table.name(), field, value);
 
         if (rs != null) {
             try {
@@ -517,8 +553,8 @@ public class jdbcImpl extends DataSource {
      * @return a List of object ids associated with the participant
      */
     private List<String> selectParticipantAttributeIDs(tbl table, String pid) {
-        List<String> ids = new ArrayList<String>() ;
-        ResultSet rs = execSelect(selectWhere(table.name(), "ParticipantID", pid));
+        List<String> ids = new ArrayList<String>();
+        ResultSet rs = selectWhere(table.name(), "ParticipantID", pid);
 
         if (rs != null) {
             try {
@@ -549,7 +585,7 @@ public class jdbcImpl extends DataSource {
      * @return a List of participant ids associated with the object
      */
     private List<String> selectAttributeParticipantIDs(tbl table, String id) {
-        List<String> ids = new ArrayList<String>() ;
+        List<String> ids = new ArrayList<String>();
         String field = null;
 
         switch (table) {
@@ -558,7 +594,7 @@ public class jdbcImpl extends DataSource {
             case rsj_participant_capability: field = "CapabilityID" ; break ;
         }
 
-        ResultSet rs = execSelect(selectWhere(table.name(), field, id));
+        ResultSet rs = selectWhere(table.name(), field, id);
 
         if (rs != null) {
             try {
@@ -710,15 +746,27 @@ public class jdbcImpl extends DataSource {
     // Participant //
 
     private void updateParticipant(Participant p) {
-        
-        String qry = String.format(
-                   "UPDATE rsj_participant SET description = '%s', notes = '%s'," +
-                   " available = %b, lastname = '%s', firstname = '%s', userid = '%s'," +
-                   " pword = '%s', administrator = %b WHERE participantID = '%s'",
-                   p.getDescription(), p.getNotes(), p.isAvailable(), p.getLastName(),
-                   p.getFirstName(), p.getUserID(), p.getPassword(), p.isAdministrator(),
-                   p.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "UPDATE rsj_participant SET description = ?, notes = ?, " +
+                           "available = ?, lastname = ?, firstname = ?, userid = ?, " +
+                           "pword = ?, administrator = ? WHERE participantID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, p.getDescription());
+                pstmt.setString(2, p.getNotes());
+                pstmt.setBoolean(3, p.isAvailable());
+                pstmt.setString(4, p.getLastName());
+                pstmt.setString(5, p.getFirstName());
+                pstmt.setString(6, p.getUserID());
+                pstmt.setString(7, p.getPassword());
+                pstmt.setBoolean(8, p.isAdministrator());
+                pstmt.setString(9, p.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem updating participant", e);
+        }
 
         // remove and re-add many-to-many relations (in case they've changed)
         deleteParticipantAttributeRows(p.getID()) ;
@@ -727,60 +775,107 @@ public class jdbcImpl extends DataSource {
 
 
     private String insertParticipant(Participant p) {
-        String id = getNextID("PA") ;
-        String qry = String.format(
-               "INSERT INTO rsj_participant VALUES " +
-               "('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%b')",
-               id, p.getDescription(), p.getNotes(), p.isAvailable(),
-               p.getLastName(), p.getFirstName(), p.getUserID(), p.getPassword(),
-               p.isAdministrator());
-        if (qry != null) execUpdate(qry);
+        String id = getNextID("PA");
+        try {
+            if (openConnection()) {
+                String sql = "INSERT INTO rsj_participant VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, id);
+                pstmt.setString(2, p.getDescription());
+                pstmt.setString(3, p.getNotes());
+                pstmt.setBoolean(4, p.isAvailable());
+                pstmt.setString(5, p.getLastName());
+                pstmt.setString(6, p.getFirstName());
+                pstmt.setString(7, p.getUserID());
+                pstmt.setString(8, p.getPassword());
+                pstmt.setBoolean(9, p.isAdministrator());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting participant", e);
+        }
 
         insertParticpantAttributeRows(p, id);                // cascade to joined tables
-        return id ;
+        return id;
     }
 
 
     private void deleteParticipant(Participant p) {
-        String qry = String.format(
-                    "DELETE FROM rsj_participant WHERE participantID = '%s'", p.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "DELETE FROM rsj_participant WHERE participantID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, p.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting participant", e);
+        }
         deleteParticipantAttributeRows(p.getID());           // cascade to joined tables
     }
 
 
     private void deleteParticipantAttributeRows(String pid) {
-        String qry = String.format(
-               "DELETE FROM rsj_participant_capability WHERE participantID = '%s'", pid);
-        execUpdate(qry);
-        qry = String.format(
-                 "DELETE FROM rsj_participant_position WHERE participantID = '%s'", pid);
-        execUpdate(qry);
-        qry = String.format(
-                     "DELETE FROM rsj_participant_role WHERE participantID = '%s'", pid);
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String[] tables = {
+                    "rsj_participant_capability",
+                    "rsj_participant_position",
+                    "rsj_participant_role"
+                };
+                for (String table : tables) {
+                    String sql = "DELETE FROM " + table + " WHERE participantID = ?";
+                    PreparedStatement pstmt = connection.prepareStatement(sql);
+                    pstmt.setString(1, pid);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                }
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting participant attribute rows", e);
+        }
     }
 
 
     private void insertParticpantAttributeRows(Participant p, String id) {
-        String qry ;
-        for (Role r : p.getRoles()) {
-            qry = String.format(
-                    "INSERT INTO rsj_participant_role VALUES ('%s', '%s')",
-                    id, r.getID()) ;
-            if (qry != null) execUpdate(qry);
-        }
-        for (Capability c : p.getCapabilities()) {
-            qry = String.format(
-                    "INSERT INTO rsj_participant_capability VALUES ('%s', '%s')",
-                    id, c.getID()) ;
-            if (qry != null) execUpdate(qry);
-        }
-        for (Position po : p.getPositions()) {
-            qry = String.format(
-                    "INSERT INTO rsj_participant_position VALUES ('%s', '%s')",
-                    id, po.getID()) ;
-            if (qry != null) execUpdate(qry);
+        try {
+            if (openConnection()) {
+                PreparedStatement pstmt;
+
+                // Insert roles
+                String sql = "INSERT INTO rsj_participant_role VALUES (?, ?)";
+                pstmt = connection.prepareStatement(sql);
+                for (Role r : p.getRoles()) {
+                    pstmt.setString(1, id);
+                    pstmt.setString(2, r.getID());
+                    pstmt.executeUpdate();
+                }
+                pstmt.close();
+
+                // Insert capabilities
+                sql = "INSERT INTO rsj_participant_capability VALUES (?, ?)";
+                pstmt = connection.prepareStatement(sql);
+                for (Capability c : p.getCapabilities()) {
+                    pstmt.setString(1, id);
+                    pstmt.setString(2, c.getID());
+                    pstmt.executeUpdate();
+                }
+                pstmt.close();
+
+                // Insert positions
+                sql = "INSERT INTO rsj_participant_position VALUES (?, ?)";
+                pstmt = connection.prepareStatement(sql);
+                for (Position po : p.getPositions()) {
+                    pstmt.setString(1, id);
+                    pstmt.setString(2, po.getID());
+                    pstmt.executeUpdate();
+                }
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting participant attribute rows", e);
         }
     }
 
@@ -789,125 +884,234 @@ public class jdbcImpl extends DataSource {
     // Role //
 
     private void updateRole(Role r) {
-        String ownerRole = (r.getOwnerRole() != null) ? r.getOwnerRole().getID() : null ;
-        String qry = String.format(
-                   "UPDATE rsj_Role SET rolename = '%s', description = '%s', " +
-                   "belongsTo = '%s' WHERE roleID = '%s'",
-                   r.getName(), r.getDescription(), ownerRole, r.getID());
-        execUpdate(qry);          
+        try {
+            if (openConnection()) {
+                String ownerRole = (r.getOwnerRole() != null) ? r.getOwnerRole().getID() : null;
+                String sql = "UPDATE rsj_Role SET rolename = ?, description = ?, belongsTo = ? WHERE roleID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, r.getName());
+                pstmt.setString(2, r.getDescription());
+                pstmt.setString(3, ownerRole);
+                pstmt.setString(4, r.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem updating role", e);
+        }
     }
 
 
     private String insertRole(Role r) {
-        String id = getNextID("RO") ;
-        String ownerRole = (r.getOwnerRole() != null) ? r.getOwnerRole().getID() : null ;
-        String qry = String.format(
-                   "INSERT INTO rsj_role VALUES ('%s', '%s', '%s', '%s')",
-                    id, r.getName(), r.getDescription(), ownerRole);
-        if (qry != null) execUpdate(qry);
+        String id = getNextID("RO");
+        try {
+            if (openConnection()) {
+                String ownerRole = (r.getOwnerRole() != null) ? r.getOwnerRole().getID() : null;
+                String sql = "INSERT INTO rsj_role VALUES (?, ?, ?, ?)";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, id);
+                pstmt.setString(2, r.getName());
+                pstmt.setString(3, r.getDescription());
+                pstmt.setString(4, ownerRole);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting role", e);
+        }
         return id;
     }
 
 
     private void deleteRole(Role r) {
-        String qry = String.format(
-                   "DELETE FROM rsj_Role WHERE roleID = '%s'", r.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "DELETE FROM rsj_Role WHERE roleID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, r.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting role", e);
+        }
     }
 
 
     // Capability //
 
     private void updateCapability(Capability c) {
-        String qry = String.format(
-                    "UPDATE rsj_Capability SET capability = '%s', description = '%s' " +
-                    "WHERE capabilityID = '%s'",
-                     c.getCapability(), c.getDescription(), c.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "UPDATE rsj_Capability SET capability = ?, description = ? WHERE capabilityID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, c.getCapability());
+                pstmt.setString(2, c.getDescription());
+                pstmt.setString(3, c.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem updating capability", e);
+        }
     }
 
 
     private String insertCapability(Capability c) {
-        String id = getNextID("CA") ;
-        String qry = String.format(
-                   "INSERT INTO rsj_capability VALUES ('%s', '%s', '%s')",
-                    id, c.getCapability(), c.getDescription());
-        if (qry != null) execUpdate(qry);
+        String id = getNextID("CA");
+        try {
+            if (openConnection()) {
+                String sql = "INSERT INTO rsj_capability VALUES (?, ?, ?)";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, id);
+                pstmt.setString(2, c.getCapability());
+                pstmt.setString(3, c.getDescription());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting capability", e);
+        }
         return id;
     }
 
 
     private void deleteCapability(Capability c) {
-        String qry = String.format(
-                   "DELETE FROM rsj_Capability WHERE CapabilityID = '%s'", c.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "DELETE FROM rsj_Capability WHERE CapabilityID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, c.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting capability", e);
+        }
     }
 
 
     // Position //
 
     private void updatePosition(Position p) {
-        String belongsTo = (p.getOrgGroup() != null) ? p.getOrgGroup().getID() : null ;
-        String reportsTo = (p.getReportsTo() != null) ? p.getReportsTo().getID() : null ;
-        String qry = String.format(
-                  "UPDATE rsj_Position SET positionID = '%s', title = '%s', " +
-                  "description = '%s', orgGroup = '%s', reportsTo = '%s' WHERE P_ID = '%s'",
-                   p.getPositionID(), p.getTitle(), p.getDescription(),
-                   belongsTo, reportsTo, p.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String belongsTo = (p.getOrgGroup() != null) ? p.getOrgGroup().getID() : null;
+                String reportsTo = (p.getReportsTo() != null) ? p.getReportsTo().getID() : null;
+                String sql = "UPDATE rsj_Position SET positionID = ?, title = ?, " +
+                           "description = ?, orgGroup = ?, reportsTo = ? WHERE P_ID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, p.getPositionID());
+                pstmt.setString(2, p.getTitle());
+                pstmt.setString(3, p.getDescription());
+                pstmt.setString(4, belongsTo);
+                pstmt.setString(5, reportsTo);
+                pstmt.setString(6, p.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem updating position", e);
+        }
     }
 
 
     private String insertPosition(Position p) {
-        String id = getNextID("PO") ;
-        String belongsTo = (p.getOrgGroup() != null) ? p.getOrgGroup().getID() : null ;
-        String reportsTo = (p.getReportsTo() != null) ? p.getReportsTo().getID() : null ;
-        String qry = String.format(
-               "INSERT INTO rsj_position VALUES ('%s', '%s', '%s', '%s', '%s', '%s')",
-                id, p.getPositionID(), p.getTitle(), p.getDescription(),
-                belongsTo, reportsTo);
-        if (qry != null) execUpdate(qry);
+        String id = getNextID("PO");
+        try {
+            if (openConnection()) {
+                String belongsTo = (p.getOrgGroup() != null) ? p.getOrgGroup().getID() : null;
+                String reportsTo = (p.getReportsTo() != null) ? p.getReportsTo().getID() : null;
+                String sql = "INSERT INTO rsj_position VALUES (?, ?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, id);
+                pstmt.setString(2, p.getPositionID());
+                pstmt.setString(3, p.getTitle());
+                pstmt.setString(4, p.getDescription());
+                pstmt.setString(5, belongsTo);
+                pstmt.setString(6, reportsTo);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting position", e);
+        }
         return id;
     }
 
 
     private void deletePosition(Position p) {
-        String qry = String.format(
-                   "DELETE FROM rsj_Position WHERE P_ID = '%s'",p.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "DELETE FROM rsj_Position WHERE P_ID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, p.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting position", e);
+        }
     }
 
 
     // OrgGroup //
 
     private String insertOrgGroup(OrgGroup o) {
-        String id = getNextID("OG") ;
-        String belongsTo = (o.getBelongsTo() != null) ? o.getBelongsTo().getID() : null ;
-        String qry = String.format(
-                   "INSERT INTO rsj_orggroup VALUES ('%s', '%s', '%s', '%s', '%s')",
-                    id, o.getGroupName(), o.get_groupType(),
-                    o.getDescription(), belongsTo);
-
-        if (qry != null) execUpdate(qry);
+        String id = getNextID("OG");
+        try {
+            if (openConnection()) {
+                String belongsTo = (o.getBelongsTo() != null) ? o.getBelongsTo().getID() : null;
+                String sql = "INSERT INTO rsj_orggroup VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, id);
+                pstmt.setString(2, o.getGroupName());
+                pstmt.setString(3, o.get_groupType());
+                pstmt.setString(4, o.getDescription());
+                pstmt.setString(5, belongsTo);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem inserting org group", e);
+        }
         return id;
     }
 
 
     private void updateOrgGroup(OrgGroup o) {
-        String belongsTo = (o.getBelongsTo() != null) ? o.getBelongsTo().getID() : null ;
-        String qry = String.format(
-                    "UPDATE rsj_orggroup SET GroupName = '%s', GroupType = '%s', " +
-                    "description = '%s', belongsTo = '%s' WHERE GroupID = '%s'",
-                     o.getGroupName(), o.get_groupType(), o.getDescription(),
-                     belongsTo, o.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String belongsTo = (o.getBelongsTo() != null) ? o.getBelongsTo().getID() : null;
+                String sql = "UPDATE rsj_orggroup SET GroupName = ?, GroupType = ?, " +
+                           "description = ?, belongsTo = ? WHERE GroupID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, o.getGroupName());
+                pstmt.setString(2, o.get_groupType());
+                pstmt.setString(3, o.getDescription());
+                pstmt.setString(4, belongsTo);
+                pstmt.setString(5, o.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem updating org group", e);
+        }
     }
 
 
     private void deleteOrgGroup(OrgGroup o) {
-        String qry = String.format(
-                   "DELETE FROM rsj_orggroup WHERE groupID = '%s'", o.getID());
-        execUpdate(qry);
+        try {
+            if (openConnection()) {
+                String sql = "DELETE FROM rsj_orggroup WHERE groupID = ?";
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                pstmt.setString(1, o.getID());
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            _log.error("Problem deleting org group", e);
+        }
     }
 
 

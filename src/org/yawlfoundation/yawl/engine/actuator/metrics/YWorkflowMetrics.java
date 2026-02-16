@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.engine.YNetRunnerRepository;
 import org.yawlfoundation.yawl.engine.YSpecificationTable;
 import org.yawlfoundation.yawl.engine.YWorkItemRepository;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 

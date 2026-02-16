@@ -1,6 +1,6 @@
-# YAWL Azure DevOps Pipeline
+# YAWL Azure DevOps Enterprise Pipeline
 # Build, test, and deploy YAWL workflow engine to Azure Kubernetes Service
-# Version: 5.2
+# Version: 5.2 - Multi-platform builds with comprehensive security scanning
 
 trigger:
   branches:
@@ -12,6 +12,7 @@ trigger:
     exclude:
       - README.md
       - docs/
+      - '*.md'
 
 pr:
   branches:
@@ -25,12 +26,6 @@ resources:
       type: git
       ref: $(Build.SourceBranch)
 
-# Variable groups - configure these in Azure DevOps Library
-# - yawl-build-variables: Contains build-specific variables
-# - yawl-deploy-variables: Contains deployment configuration
-# - yawl-dev-variables: Development environment variables
-# - yawl-qa-variables: QA environment variables
-# - yawl-prod-variables: Production environment variables
 variables:
   - group: yawl-build-variables
   - group: yawl-deploy-variables
@@ -40,16 +35,18 @@ variables:
     value: '5.2'
   - name: dockerRegistry
     value: '$(acrName).azurecr.io'
-  - name: antVersion
-    value: '1.10.14'
-  - name: javaVersion
-    value: '25'
+  - name: mavenVersion
+    value: '3.9.6'
+  - name: mavenOpts
+    value: '-Xmx2048m -Djava.awt.headless=true'
   - name: buildNumber
     value: '$(Build.BuildId)'
   - name: imageTag
     value: '$(appVersion)-$(buildNumber)'
   - name: vmImageName
     value: 'ubuntu-latest'
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
 
 stages:
   # ============================================

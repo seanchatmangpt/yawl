@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.resourcing.jsf.dynform;
 
 import com.sun.rave.web.ui.component.*;
 
-import javax.faces.component.UIComponent;
+import jakarta.faces.component.UIComponent;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;

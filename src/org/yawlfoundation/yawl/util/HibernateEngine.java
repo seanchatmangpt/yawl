@@ -355,6 +355,35 @@ public class HibernateEngine {
         return result;
     }
 
+    /**
+     * Executes a parameterized HQL update query.
+     * @param queryString the HQL query with named parameters (e.g., "delete from Entity where id = :id")
+     * @param paramValue the value for the named parameter
+     * @param commit whether to commit the transaction
+     * @return the number of rows affected
+     */
+    public int execUpdate(String queryString, String paramValue, boolean commit) {
+        int result = -1;
+        Transaction tx = null;
+        try {
+            tx = getOrBeginTransaction();
+            result = getSession().createQuery(queryString)
+                    .setParameter("caseId", paramValue)
+                    .executeUpdate();
+            if (commit) commit();
+        }
+        catch (JDBCConnectionException jce) {
+            _log.error("Caught Exception: Couldn't connect to datasource - " +
+                    "starting with an empty dataset");
+        }
+        catch (HibernateException he) {
+            _log.error("Caught Exception: Error executing parameterized query: " + queryString, he);
+            if (tx != null) tx.rollback();
+        }
+
+        return result;
+    }
+
 
     public Query createQuery(String queryString) {
         Transaction tx = null;

@@ -21,7 +21,7 @@ package org.yawlfoundation.yawl.engine.time;
 import org.yawlfoundation.yawl.engine.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.util.Date;
 import java.util.Set;
 

@@ -25,7 +25,7 @@ import com.sun.rave.web.ui.component.Listbox;
 import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.resourcing.rsInterface.ResourceGatewayException;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 
 /*
  * Fragment bean inserted into the participant data form

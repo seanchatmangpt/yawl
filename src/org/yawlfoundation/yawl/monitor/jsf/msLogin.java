@@ -24,7 +24,7 @@ import org.yawlfoundation.yawl.monitor.MonitorClient;
 import org.yawlfoundation.yawl.resourcing.jsf.MessagePanel;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 

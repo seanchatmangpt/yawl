@@ -30,7 +30,7 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.util.Date;
 import java.util.Set;
 

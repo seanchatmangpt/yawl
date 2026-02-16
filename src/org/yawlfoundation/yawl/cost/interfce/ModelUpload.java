@@ -78,8 +78,19 @@ public class ModelUpload {
     private String getSession() {
         params.clear();
         params.put("action", "connect");
-        params.put("userid", "admin");
-        params.put("password", "Se4tMaQCi9gr0Q2usp7P56Sk5vM=");
+
+        String userid = System.getenv("MODEL_UPLOAD_USERID");
+        if (userid == null) {
+            throw new IllegalStateException("MODEL_UPLOAD_USERID environment variable required");
+        }
+
+        String password = System.getenv("MODEL_UPLOAD_PASSWORD");
+        if (password == null) {
+            throw new IllegalStateException("MODEL_UPLOAD_PASSWORD environment variable required");
+        }
+
+        params.put("userid", userid);
+        params.put("password", password);
         return post();
     }
 

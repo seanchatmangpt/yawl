@@ -33,8 +33,8 @@ import org.yawlfoundation.yawl.scheduling.util.PropertyReader;
 import org.yawlfoundation.yawl.scheduling.util.Utils;
 import org.yawlfoundation.yawl.scheduling.util.XMLUtils;
 
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.DatatypeConfigurationException;
+import jakarta.xml.datatype.Duration;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;

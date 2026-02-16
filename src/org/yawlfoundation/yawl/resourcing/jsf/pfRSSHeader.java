@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.resourcing.jsf;
 
 import com.sun.rave.web.ui.appbase.AbstractFragmentBean;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 
 /**
  * Fragment bean that inserts header on each page

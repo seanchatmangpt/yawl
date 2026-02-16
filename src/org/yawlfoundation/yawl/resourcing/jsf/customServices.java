@@ -23,10 +23,10 @@ import com.sun.rave.web.ui.component.*;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.util.HttpURLValidator;
 
-import javax.faces.FacesException;
-import javax.faces.component.UIColumn;
-import javax.faces.component.html.HtmlDataTable;
-import javax.faces.component.html.HtmlOutputText;
+import jakarta.faces.FacesException;
+import jakarta.faces.component.UIColumn;
+import jakarta.faces.component.html.HtmlDataTable;
+import jakarta.faces.component.html.HtmlOutputText;
 import java.util.List;
 
 /**

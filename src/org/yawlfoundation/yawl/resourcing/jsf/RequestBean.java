@@ -17,7 +17,7 @@
  */package org.yawlfoundation.yawl.resourcing.jsf;
 
 import com.sun.rave.web.ui.appbase.AbstractRequestBean;
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 
 /**
  * <p>Request scope data bean for your application.  Create properties

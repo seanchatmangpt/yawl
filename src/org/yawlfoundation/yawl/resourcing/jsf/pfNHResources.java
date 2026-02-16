@@ -28,8 +28,8 @@ import org.yawlfoundation.yawl.resourcing.resource.nonhuman.NonHumanCategory;
 import org.yawlfoundation.yawl.resourcing.resource.nonhuman.NonHumanResource;
 import org.yawlfoundation.yawl.resourcing.resource.nonhuman.NonHumanSubCategory;
 
-import javax.faces.FacesException;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.event.ValueChangeEvent;
 import java.util.Arrays;
 
 /*

@@ -24,11 +24,11 @@ import org.yawlfoundation.yawl.util.HibernateEngine;
 import org.yawlfoundation.yawl.util.Sessions;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.sql.*;
 import java.util.HashSet;
@@ -255,10 +255,11 @@ public class DocumentStore extends YHttpServlet {
      * @return a message indicating success or otherwise
      */
     private String clearCase(String id) {
+        // Use parameterized HQL query to prevent SQL injection
+        String hql = "delete from YDocument as yd where yd.caseId = :caseId";
+        int rowsDeleted = _db.execUpdate(hql, id, true);
+
         StringBuilder sb = new StringBuilder(64);
-        sb.append("delete from YDocument as yd where yd.caseId='").append(id).append("'");
-        int rowsDeleted = _db.execUpdate(sb.toString(), true);
-        sb.delete(0, sb.length());
         if (rowsDeleted > -1) {
             sb.append(rowsDeleted).append(" document")
                     .append(rowsDeleted > 1 ? "s " : " ")

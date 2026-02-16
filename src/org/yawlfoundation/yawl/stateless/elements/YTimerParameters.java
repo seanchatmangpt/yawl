@@ -28,7 +28,7 @@ import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
 
 import jakarta.xml.bind.DatatypeConverter;
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;

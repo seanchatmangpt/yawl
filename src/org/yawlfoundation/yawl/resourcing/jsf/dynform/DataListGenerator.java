@@ -22,7 +22,7 @@ import com.sun.rave.web.ui.component.*;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.faces.component.UIComponent;
+import jakarta.faces.component.UIComponent;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
