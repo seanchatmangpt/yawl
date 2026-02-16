@@ -444,6 +444,7 @@ public class YWorkItem {
                             _timerParameters.getWorkDayDuration(), (pmgr != null));
                     case Interval -> new YWorkItemTimer(_workItemID.toString(),
                             _timerParameters.getTicks(), _timerParameters.getTimeUnit(), (pmgr != null));
+                    case LateBound, Nil -> null;
                 };
                 if (timer != null) {
                     _timerExpiry = timer.getEndTime();
@@ -573,6 +574,7 @@ public class YWorkItem {
             case Normal -> statusComplete;
             case Force -> statusForcedComplete;
             case Fail -> statusFailed;
+            case Invalid -> statusComplete;  // default to complete for invalid
         };
         completePersistence(pmgr, completionStatus);
     }

@@ -1441,16 +1441,18 @@ public class YEngine implements InterfaceADesign,
         synchronized(_pmgr) {
             startTransaction();
             try {
+                YNetRunner netRunner = null;
                 if (workItem != null) {
+                    netRunner = switch (workItem.getStatus()) {
+                        case statusEnabled -> getNetRunner(workItem.getCaseID());
+                        case statusFired -> getNetRunner(workItem.getCaseID().getParent());
+                        case statusDeadlocked -> null;
+                        default -> null;
+                    };
+
                     startedItem = switch (workItem.getStatus()) {
-                        case statusEnabled -> {
-                            YNetRunner netRunner = getNetRunner(workItem.getCaseID());
-                            yield startEnabledWorkItem(netRunner, workItem, client);
-                        }
-                        case statusFired -> {
-                            YNetRunner netRunner = getNetRunner(workItem.getCaseID().getParent());
-                            yield startFiredWorkItem(netRunner, workItem, client);
-                        }
+                        case statusEnabled -> startEnabledWorkItem(netRunner, workItem, client);
+                        case statusFired -> startFiredWorkItem(netRunner, workItem, client);
                         case statusDeadlocked -> workItem;
                         default -> { // this work item is likely already executing.
                             rollbackTransaction();
