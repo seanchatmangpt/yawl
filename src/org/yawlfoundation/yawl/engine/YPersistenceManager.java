@@ -28,6 +28,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.tool.schema.internal.SchemaUpdateImpl;
 import org.hibernate.tool.schema.TargetType;
+import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;

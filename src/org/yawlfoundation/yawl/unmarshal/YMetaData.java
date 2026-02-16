@@ -21,10 +21,11 @@ package org.yawlfoundation.yawl.unmarshal;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -39,17 +40,18 @@ import java.util.List;
 public class YMetaData {
 
   	static final String INITIAL_VERSION = "0.1";
-    public static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    
+    public static final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
+
     private String title;
     private List<String> creators = new ArrayList<String>();
     private List<String> subjects = new ArrayList<String>();
     private String description;
     private List<String> contributors = new ArrayList<String>();
     private String coverage;
-    private Date validFrom;
-    private Date validUntil;
-    private Date created;
+    private LocalDate validFrom;
+    private LocalDate validUntil;
+    private LocalDate created;
     private YSpecVersion version = new YSpecVersion(INITIAL_VERSION);
     private String status;
 	  private boolean persistent;
@@ -82,27 +84,27 @@ public class YMetaData {
         this.coverage = coverage;
     }
 
-    public Date getValidFrom() {
+    public LocalDate getValidFrom() {
         return validFrom;
     }
 
-    public void setValidFrom(Date validFrom) {
+    public void setValidFrom(LocalDate validFrom) {
         this.validFrom = validFrom;
     }
 
-    public Date getValidUntil() {
+    public LocalDate getValidUntil() {
         return validUntil;
     }
 
-    public void setValidUntil(Date validUntil) {
+    public void setValidUntil(LocalDate validUntil) {
         this.validUntil = validUntil;
     }
 
-    public Date getCreated() {
+    public LocalDate getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(LocalDate created) {
         this.created = created;
     }
 

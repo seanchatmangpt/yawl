@@ -351,20 +351,6 @@ public class HibernateEngine {
     }
 
 
-    public List getByCriteria(Class claz, Criterion... criteria) {
-        return getByCriteria(claz, true, criteria);
-    }
-
-    public List getByCriteria(Class claz, boolean commit, Criterion... criteria) {
-        getOrBeginTransaction();
-        Criteria c = getSession().createCriteria(claz);
-        for (Criterion criterion : criteria) {
-            c.add(criterion);
-        }
-        List result = c.list();
-        if (commit) commit();
-        return result;
-    }
 
 
     public void commit() {

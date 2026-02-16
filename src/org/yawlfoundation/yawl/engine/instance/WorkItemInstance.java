@@ -312,8 +312,8 @@ public class WorkItemInstance implements YInstance {
     }
 
 
-    private long getDateAsLong(Date date) {
-        if (date != null) return date.getTime();
+    private long getDateAsLong(Instant instant) {
+        if (instant != null) return instant.toEpochMilli();
         return 0;
     }
 
