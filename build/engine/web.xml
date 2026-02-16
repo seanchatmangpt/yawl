@@ -204,6 +204,17 @@
        <filter-name>CharsetFilter</filter-name>
        <url-pattern>/*</url-pattern>
      </filter-mapping>
+
+    <!-- CORS Filter for REST API -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
         
 
     <!-- Servlet definitions for the servlets that make up
@@ -266,6 +277,25 @@
         <load-on-startup>4</load-on-startup>
     </servlet>
 
+    <!-- JAX-RS REST API Configuration -->
+    <servlet>
+        <servlet-name>JerseyServlet</servlet-name>
+        <description>
+            JAX-RS servlet for modern REST API endpoints.
+            Provides JSON-based REST APIs for all YAWL interfaces (A, B, E, X).
+        </description>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jakarta.ws.rs.Application</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+        </init-param>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+
     <!-- Define mappings that are used by the servlet container to
          translate a particular request URI (context-relative) to a
          particular servlet.
@@ -294,6 +324,11 @@
         <servlet-name>InterfaceEGateway</servlet-name>
         <url-pattern>/logGateway</url-pattern>
     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>JerseyServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
     <!-- Define the default session timeout for your application,
          in minutes. -->
 	<session-config>
