@@ -8,7 +8,7 @@
 			</inputParam>
 			<localVariable name="stubList">
 				<type>stub:StubListType</type>
-				<initialValue>&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;&lt;stub/&gt;</initialValue>
+				<initialValue>&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;&lt;stub&gt;test&lt;/stub&gt;</initialValue>
 			</localVariable>
 			<processControlElements>
 				<inputCondition id="0">
