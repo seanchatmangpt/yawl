@@ -17,7 +17,8 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.ResourceAttributes;
+import io.opentelemetry.semconv.SchemaUrls;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -91,10 +92,10 @@ public class OpenTelemetryConfig {
         return Resource.getDefault().merge(
             Resource.create(
                 Attributes.builder()
-                    .put(ResourceAttributes.SERVICE_NAME, SERVICE_NAME)
-                    .put(ResourceAttributes.SERVICE_VERSION, SERVICE_VERSION)
-                    .put(ResourceAttributes.SERVICE_NAMESPACE, "yawl")
-                    .put(ResourceAttributes.DEPLOYMENT_ENVIRONMENT,
+                    .put(ServiceAttributes.SERVICE_NAME, SERVICE_NAME)
+                    .put(ServiceAttributes.SERVICE_VERSION, SERVICE_VERSION)
+                    .put("service.namespace", "yawl")
+                    .put("deployment.environment",
                          System.getenv().getOrDefault("ENVIRONMENT", "development"))
                     .build()
             )

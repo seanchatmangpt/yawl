@@ -41,8 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class YSessionCache extends ConcurrentHashMap<String, YSession>
                            implements ISessionCache {
 
-    private YSessionTimer _timer;
-    private HibernateEngine _db;                         // writes audit log
+    private static final long serialVersionUID = 1L;
+    private transient YSessionTimer _timer;
+    private transient HibernateEngine _db;                         // writes audit log
 
     public YSessionCache() {
         super();
@@ -55,6 +56,8 @@ public class YSessionCache extends ConcurrentHashMap<String, YSession>
     // PUBLIC METHODS //
 
     /**
+     * Creates and stores a new session between the the Engine and a custom service
+     * or external application.
      * Creates and stores a new session between the the Engine and a custom service
      * or external application.
      * @param name the username of the external client

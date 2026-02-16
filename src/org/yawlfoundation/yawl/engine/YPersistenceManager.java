@@ -62,7 +62,7 @@ public class YPersistenceManager {
     public static final int DB_DELETE = 1;
     public static final int DB_INSERT = 2;
 
-    private static final Class[] persistedClasses = {
+    private static final Class<?>[] persistedClasses = {
             YSpecification.class, YNetRunner.class, YWorkItem.class, YIdentifier.class,
             YNetData.class, YAWLServiceReference.class, YExternalClient.class,
             YWorkItemTimer.class, YLaunchDelayer.class, YCaseNbrStore.class, Problem.class,
@@ -95,7 +95,7 @@ public class YPersistenceManager {
                         new StandardServiceRegistryBuilder().configure().build();
 
                 MetadataSources metadataSources = new MetadataSources(standardRegistry);
-                for (Class clazz : persistedClasses) {
+                for (Class<?> clazz : persistedClasses) {
                     metadataSources.addAnnotatedClass(clazz);
                 }
 
@@ -384,7 +384,7 @@ public class YPersistenceManager {
     }
 
 
-    public List execQuery(String queryString) throws YPersistenceException {
+    public List<?> execQuery(String queryString) throws YPersistenceException {
         return execQuery(createQuery(queryString));
     }
 
@@ -396,7 +396,7 @@ public class YPersistenceManager {
      * @return the List of objects returned
      * @throws YPersistenceException if there's a problem reading the db
      */
-    public List execQuery(Query query) throws YPersistenceException {
+    public List<?> execQuery(Query query) throws YPersistenceException {
         try {
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
@@ -412,7 +412,7 @@ public class YPersistenceManager {
      * @return a List of the instances retrieved
      * @throws YPersistenceException if there's a problem reading the db
      */
-    public List getObjectsForClass(String className) throws YPersistenceException {
+    public List<?> getObjectsForClass(String className) throws YPersistenceException {
         return execQuery("from " + className);
     }
 
@@ -426,7 +426,7 @@ public class YPersistenceManager {
      * @return a List of the instances retrieved
      * @throws YPersistenceException if there's a problem reading the db
      */
-    public List getObjectsForClassWhere(String className, String whereClause)
+    public List<?> getObjectsForClassWhere(String className, String whereClause)
             throws YPersistenceException {
         try {
             String qry = String.format("from %s as tbl where tbl.%s",
@@ -451,8 +451,8 @@ public class YPersistenceManager {
             throws YPersistenceException {
         String qryStr = String.format("select distinct t from %s as t where t.%s=%s",
                 className, field, value);
-        List results = createQuery(qryStr).getResultList();
-        Iterator itr = results.iterator();
+        List<?> results = createQuery(qryStr).getResultList();
+        Iterator<?> itr = results.iterator();
         if (itr.hasNext()) return itr.next();
         else return null;
     }

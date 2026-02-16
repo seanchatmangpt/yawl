@@ -8,6 +8,8 @@ package org.yawlfoundation.yawl.integration.spiffe;
  */
 public class SpiffeException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     public SpiffeException(String message) {
         super(message);
     }

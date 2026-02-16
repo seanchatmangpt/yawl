@@ -413,14 +413,14 @@
     <property name="postgres8" value="postgresql-42.7.2.jar"/>
     <!-- dbd - SECURITY UPDATE 2026-02-15 -->
     <property name="saaj" value="saaj.jar"/>
-    <!-- wsi -->
-    <property name="saxon" value="saxon9.jar"/>
+    <!-- wsi - UPDATED 2026-02-16: Saxon-HE 12.4 -> 12.9 (unified JAR) -->
+    <property name="saxon" value="Saxon-HE-12.9.jar"/>
+    <!-- mul - DEPRECATED: saxonapi, saxondom, saxonjdom merged into Saxon-HE in v10+ -->
+    <property name="saxonapi" value=""/>
     <!-- mul -->
-    <property name="saxonapi" value="saxon9-s9api.jar"/>
+    <property name="saxondom" value=""/>
     <!-- mul -->
-    <property name="saxondom" value="saxon9-dom.jar"/>
-    <!-- mul -->
-    <property name="saxonjdom" value="saxon9-jdom.jar"/>
+    <property name="saxonjdom" value=""/>
     <!-- mul -->
     <property name="servlet" value="servlet-api.jar"/>
     <property name="jakarta-servlet-api" value="jakarta.servlet-api-6.0.0.jar"/>

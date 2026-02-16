@@ -26,6 +26,8 @@ package org.yawlfoundation.yawl.exceptions;
  * 
  */
 public class YStateException extends YAWLException {
+    private static final long serialVersionUID = 1L;
+
     public YStateException(String msg) {
         super(msg);
     }

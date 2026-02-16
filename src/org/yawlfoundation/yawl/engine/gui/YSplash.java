@@ -33,6 +33,7 @@ import java.awt.event.MouseEvent;
  */
 
 public class YSplash extends JWindow {
+    private static final long serialVersionUID = 1L;
     final JProgressBar progressBar = new JProgressBar(0, 100);
 
     public YSplash(String filename, JFrame f, int waitTime) {

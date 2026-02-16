@@ -33,6 +33,8 @@ package org.yawlfoundation.yawl.exceptions;
  *        terminate the engine without processing any other work.
  */
 public class YPersistenceException extends YAWLException {
+    private static final long serialVersionUID = 1L;
+
     public YPersistenceException(String message) {
         super(message);
     }

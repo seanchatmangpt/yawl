@@ -27,6 +27,8 @@ import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
  */
 public class YSyntaxException extends YAWLException {
+    private static final long serialVersionUID = 1L;
+
     public YSyntaxException(String msg) {
         super(msg);
     }

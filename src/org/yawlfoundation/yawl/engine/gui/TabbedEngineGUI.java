@@ -35,6 +35,7 @@ import java.net.URL;
  */
 
 public class TabbedEngineGUI extends JPanel {
+    private static final long serialVersionUID = 1L;
     static JFrame _frame;
     private static YSplash _splash;
     private JTabbedPane _tabbedPane;

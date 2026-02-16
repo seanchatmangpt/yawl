@@ -140,9 +140,7 @@ public class Marshaller {
                 taskDocumentation,
                 decompositionID);
 
-        taskInformation.setAttributes(attributemap);
-
-        return taskInformation;
+        return taskInformation.withAttributes(attributemap);
     }
 
 

@@ -32,6 +32,7 @@ import java.util.*;
  *  A Reset net formalisation of a YAWL net.
  *
  **/
+@SuppressWarnings({"rawtypes", "unchecked"})
 public final class E2WFOJNet {
     private Map _Transitions = new HashMap(100);
     private Map _Places = new HashMap(100);
@@ -91,7 +92,7 @@ public final class E2WFOJNet {
             if (next instanceof YTask){
                YTask nextElement = (YTask) next;
            //  keepTrackOfTaskTypes(nextElement);
-             if (nextElement.getJoinType() == nextElement._AND) 
+             if (nextElement.getJoinType() == YTask._AND) 
             {    RTransition t = new RTransition(nextElement.getID()+"_start");
             	 _StartTransitions.put(t.getID(),t);
             	
@@ -109,7 +110,7 @@ public final class E2WFOJNet {
             	} 
             	 
             }
-            else if (nextElement.getJoinType() == nextElement._XOR) {
+            else if (nextElement.getJoinType() == YTask._XOR) {
             	
                	Set pre = nextElement.getPresetElements();
             	Iterator preEls = pre.iterator();
@@ -127,7 +128,7 @@ public final class E2WFOJNet {
                
                	}
             }	
-            else if ( nextElement.getJoinType() == nextElement._OR) {
+            else if ( nextElement.getJoinType() == YTask._OR) {
             	RTransition t = new RTransition(nextElement.getID() +"_start");
             	_StartTransitions.put(t.getID(),t);
             	_OJ.put(t.getID(),t);
@@ -135,7 +136,7 @@ public final class E2WFOJNet {
             }
                  
             //T_end            	
-            if (nextElement.getSplitType() == nextElement._AND) {
+            if (nextElement.getSplitType() == YTask._AND) {
             	RTransition t = new RTransition(nextElement.getID()+"_end");
             	_EndTransitions.put(t.getID(),t);
             	
@@ -159,7 +160,7 @@ public final class E2WFOJNet {
          	
             }
                        
-            else if (nextElement.getSplitType() == nextElement._XOR) {
+            else if (nextElement.getSplitType() == YTask._XOR) {
             	Set post = nextElement.getPostsetElements();
             	Iterator postEls = post.iterator();
             	while (postEls.hasNext()) {
@@ -182,7 +183,7 @@ public final class E2WFOJNet {
                        	
         	}
         	
-        	 else if (nextElement.getSplitType() == nextElement._OR) {
+        	 else if (nextElement.getSplitType() == YTask._OR) {
             	
 	           	 Set xSubSet = new HashSet();
 	        	 Set post = nextElement.getPostsetElements();

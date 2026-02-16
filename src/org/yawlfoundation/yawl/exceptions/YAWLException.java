@@ -34,6 +34,7 @@ import java.util.Map;
  * Time: 15:26:54
  */
 public class YAWLException extends Exception {
+    private static final long serialVersionUID = 1L;
     protected static SAXBuilder _builder = new SAXBuilder();
     protected String _message;
     public static final String MESSAGE_NM = "message";

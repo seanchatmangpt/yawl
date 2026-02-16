@@ -345,7 +345,7 @@ public abstract class InterfaceBWebsideController {
      * @throws JDOMException if there is a problem parsing XML of input or output data
      */
     public String checkInWorkItem(String workItemID, String inputData, String outputData,
-                                  String sessionHandle) throws IOException, JDOMException {
+                                  String sessionHandle) throws IOException, JDOMException, YAWLException {
         Element inputDataEl = JDOMUtil.stringToElement(inputData);
         Element outputDataEl = JDOMUtil.stringToElement(outputData);
         return checkInWorkItem(workItemID, inputDataEl, outputDataEl, null, sessionHandle);
@@ -365,7 +365,7 @@ public abstract class InterfaceBWebsideController {
      */
     public String checkInWorkItem(String workItemID, Element inputData,
                                   Element outputData, String sessionHandle)
-            throws IOException, JDOMException {
+            throws IOException, JDOMException, YAWLException {
         return checkInWorkItem(workItemID, inputData, outputData, null, sessionHandle);
     }
 
@@ -383,7 +383,7 @@ public abstract class InterfaceBWebsideController {
      */
     public String checkInWorkItem(String workItemID, Element inputData,
                                   Element outputData, String logPredicate, String sessionHandle)
-            throws IOException, JDOMException {
+            throws IOException, JDOMException, YAWLException {
 
         // first, get workitem record from local cache; if not there, check the engine
         // for it; if not there, fail

@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.engine.observability;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.exporter.logging.LoggingMetricExporter;
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
@@ -34,7 +35,6 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.ResourceAttributes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -104,14 +104,14 @@ public class OpenTelemetryConfig {
 
         Resource resource = Resource.getDefault()
             .merge(Resource.create(Attributes.builder()
-                .put(ResourceAttributes.SERVICE_NAME, serviceName)
-                .put(ResourceAttributes.SERVICE_VERSION, serviceVersion)
-                .put(ResourceAttributes.SERVICE_NAMESPACE, serviceNamespace)
-                .put(ResourceAttributes.DEPLOYMENT_ENVIRONMENT, deploymentEnvironment)
-                .put(ResourceAttributes.SERVICE_INSTANCE_ID, hostname)
-                .put(ResourceAttributes.TELEMETRY_SDK_NAME, "opentelemetry")
-                .put(ResourceAttributes.TELEMETRY_SDK_LANGUAGE, "java")
-                .put(ResourceAttributes.TELEMETRY_SDK_VERSION, "1.36.0")
+                .put(AttributeKey.stringKey("service.name"), serviceName)
+                .put(AttributeKey.stringKey("service.version"), serviceVersion)
+                .put(AttributeKey.stringKey("service.namespace"), serviceNamespace)
+                .put(AttributeKey.stringKey("deployment.environment"), deploymentEnvironment)
+                .put(AttributeKey.stringKey("service.instance.id"), hostname)
+                .put(AttributeKey.stringKey("telemetry.sdk.name"), "opentelemetry")
+                .put(AttributeKey.stringKey("telemetry.sdk.language"), "java")
+                .put(AttributeKey.stringKey("telemetry.sdk.version"), "1.59.0")
                 .build()));
 
         _logger.info("OpenTelemetry Resource created for service: {}", serviceName);

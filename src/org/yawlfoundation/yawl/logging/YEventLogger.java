@@ -884,9 +884,10 @@ public class YEventLogger {
             if (! _keyCache.dataSchema.contains(specID)) {
                 _keyCache.dataSchema.add(specID);
             }
-            for (YLogDataItem item : datalist) {
+            for (int i = 0; i < datalist.size(); i++) {
+                YLogDataItem item = datalist.get(i);
                 String dataTypeName = item.getDataTypeName();
-                item.setDataTypeDefinition(getDataSchema(specID, dataTypeName));
+                datalist.set(i, item.withDataTypeDefinition(getDataSchema(specID, dataTypeName)));
             }
         }
     }

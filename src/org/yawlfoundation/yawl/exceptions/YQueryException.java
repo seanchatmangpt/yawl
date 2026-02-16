@@ -26,6 +26,8 @@ package org.yawlfoundation.yawl.exceptions;
  * 
  */
 public class YQueryException extends YAWLException {
+    private static final long serialVersionUID = 1L;
+
     public YQueryException(String message) {
         super(message);
     }
