@@ -4,62 +4,6 @@
   "namespace": "yawl",
   "skills": [
     {
-      "name": "yawl-build",
-      "command": "/yawl-build",
-      "description": "Build YAWL WARs and JARs with Ant build system",
-      "script": ".claude/skills/yawl-build.sh",
-      "agent": "yawl-engineer",
-      "examples": [
-        "/yawl-build compile",
-        "/yawl-build buildWebApps",
-        "/yawl-build buildAll",
-        "/yawl-build clean"
-      ],
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "target": {
-            "type": "string",
-            "enum": ["compile", "buildWebApps", "buildAll", "build_Standalone", "clean", "javadoc", "unitTest"],
-            "default": "buildWebApps",
-            "description": "Ant build target"
-          },
-          "verbose": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enable verbose output"
-          }
-        }
-      }
-    },
-    {
-      "name": "yawl-test",
-      "command": "/yawl-test",
-      "description": "Run YAWL JUnit test suites with coverage analysis",
-      "script": ".claude/skills/yawl-test.sh",
-      "agent": "yawl-tester",
-      "examples": [
-        "/yawl-test",
-        "/yawl-test --module=engine",
-        "/yawl-test --coverage"
-      ],
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "module": {
-            "type": "string",
-            "enum": ["elements", "engine", "state", "exceptions", "logging", "schema", "unmarshaller", "util", "worklist", "authentication"],
-            "description": "Run tests for specific module"
-          },
-          "coverage": {
-            "type": "boolean",
-            "default": false,
-            "description": "Generate coverage report"
-          }
-        }
-      }
-    },
-    {
       "name": "yawl-validate",
       "command": "/yawl-validate",
       "description": "Validate YAWL specifications against XSD schemas",
