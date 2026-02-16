@@ -390,6 +390,7 @@
     <property name="saxonjdom" value="saxon9-jdom.jar"/>
     <!-- mul -->
     <property name="servlet" value="servlet-api.jar"/>
+    <property name="jakarta-servlet-api" value="jakarta.servlet-api-6.0.0.jar"/>
     <!-- mul -->
     <property name="simplemail" value="simple-java-mail-5.5.1.jar"/>
     <!-- sml -->
@@ -683,6 +684,7 @@
         <pathelement location="${lib.dir}/${saxonjdom}"/>
         <pathelement location="${lib.dir}/${jdom}"/>
         <pathelement location="${lib.dir}/${servlet}"/>
+        <pathelement location="${lib.dir}/${jakarta-servlet-api}"/>
         <pathelement location="${lib.dir}/${log4j-api}"/>
         <pathelement location="${lib.dir}/${log4j-core}"/>
         <pathelement location="${lib.dir}/${log4j-slf4j2}"/>
@@ -747,11 +749,11 @@
         <pathelement location="${lib.dir}/${antlr}"/>
         <pathelement location="${lib.dir}/${commonsCollections}"/>
         <pathelement location="${lib.dir}/${ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-c3p0}"/>
+        <pathelement location="${lib.dir}/${hibernate-hikaricp}"/>
         <pathelement location="${lib.dir}/${hibernate-core}"/>
         <pathelement location="${lib.dir}/${hibernate-commons}"/>
-        <pathelement location="${lib.dir}/${hibernate-ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-jpa}"/>
+        <pathelement location="${lib.dir}/${hibernate-jcache}"/>
+        <pathelement location="${lib.dir}/${jakarta-persistence}"/>
         <pathelement location="${lib.dir}/${jandex}"/>
         <pathelement location="${lib.dir}/${mchange}"/>
         <pathelement location="${lib.dir}/${jboss-logging}"/>
@@ -759,9 +761,9 @@
         <pathelement location="${lib.dir}/${byte-buddy}"/>
         <pathelement location="${lib.dir}/${classmate}"/>
         <pathelement location="${lib.dir}/${istack}"/>
-        <pathelement location="${lib.dir}/${javax-activation}"/>
-        <pathelement location="${lib.dir}/${javax-persistence}"/>
-        <pathelement location="${lib.dir}/${jaxb-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-activation}"/>
+        <pathelement location="${lib.dir}/${jakarta-persistence}"/>
+        <pathelement location="${lib.dir}/${jakarta-xml}"/>
         <pathelement location="${lib.dir}/${jaxb-runtime}"/>
         <pathelement location="${lib.dir}/${c3p0}"/>
         <pathelement location="${lib.dir}/${slf4j}"/>
