@@ -36,7 +36,7 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
             "timeout": 120,
-            "statusMessage": "Setting up YAWL for Claude Code Web..."
+            "statusMessage": "Setting up YAWL environment..."
           }
         ]
       }
@@ -49,7 +49,7 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hyper-validate.sh",
             "timeout": 30,
-            "statusMessage": "Validating Fortune 5 standards..."
+            "statusMessage": "Validating H (Guards) - checking for anti-patterns..."
           }
         ]
       }
@@ -59,12 +59,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/validate-no-mocks.sh",
-            "timeout": 60,
-            "statusMessage": "Final quality gate check..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-hook-git-check.sh",
+            "timeout": 10,
+            "statusMessage": "Verifying git state..."
           }
         ]
       }
     ]
+  },
+  "documentation": {
+    "mainGuide": ".claude/BEST-PRACTICES-2026.md",
+    "quickStart": ".claude/README-QUICK.md",
+    "standards": ".claude/HYPER_STANDARDS.md",
+    "packageDocs": "All 89 packages have package-info.java files"
+  },
+  "bestPractices": {
+    "guards": "14 anti-patterns blocked by hyper-validate.sh",
+    "verification": "ant compile after each batch",
+    "commits": "Include session URL in commit messages",
+    "branching": "claude/<description>-<sessionId> format",
+    "documentation": "AI-first: entry points + boundaries + purpose"
   }
 }
