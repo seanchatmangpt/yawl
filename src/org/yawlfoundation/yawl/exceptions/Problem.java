@@ -18,8 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-import java.util.Date;
 import java.io.Serializable;
+import java.time.Instant;
 
 /**
  * 
@@ -30,7 +30,7 @@ import java.io.Serializable;
  */
 public class Problem implements Serializable {
     private String _source;
-    private Date _problemTime;
+    private Instant _problemTime;
     private String _messageType;
     private String _message;
     public static final String EMPTY_RESOURCE_SET_MESSAGETYPE = "EmptyResourceSetType";
@@ -43,11 +43,11 @@ public class Problem implements Serializable {
         this._source = source;
     }
 
-    public Date getProblemTime() {
+    public Instant getProblemTime() {
         return _problemTime;
     }
 
-    public void setProblemTime(Date timeStamp) {
+    public void setProblemTime(Instant timeStamp) {
         this._problemTime = timeStamp;
     }
 

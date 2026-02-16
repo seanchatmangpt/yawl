@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.exceptions.Problem;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
-import java.util.Date;
+import java.time.Instant;
 
 
 /**
@@ -87,7 +87,7 @@ public class YProblemEvent {
         Problem error = new Problem();
         error.setMessage(_message);
         error.setMessageType(EXECUTION_ERROR_STR);
-        error.setProblemTime(new Date());
+        error.setProblemTime(Instant.now());
         error.setSource(_source.toString());
 
         /**

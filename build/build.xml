@@ -72,6 +72,8 @@
     <property name="jdom.version" value="2.0.6.1"/>
     <property name="saxon.version" value="12.4"/>
     <property name="log4j.version" value="2.23.1"/>
+    <property name="owasp.encoder.version" value="1.2.3"/>
+    <property name="jjwt.version" value="0.12.5"/>
 
     <!--
         Tomcat root (environment setting takes priority over build.properties value)
@@ -584,7 +586,7 @@
                      ${hibernate-jcache} ${hibernate-dialects} ${jakarta-persistence} hibernate.cfg.xml
                      ${istack} ${jandex} ${jboss-logging} ${jboss-transaction}
                      ${javax-activation} ${javax-persistence} ${jaxb-api} ${jaxb-runtime}
-                     ${slf4j} ${mchange}"/>
+                     ${slf4j}"/>
 
     <property name="xsd.libs"
               value="${common} ${ecore}"/>
@@ -769,6 +771,13 @@
         <pathelement location="${lib.dir}/${hk2.api}"/>
         <pathelement location="${lib.dir}/${hk2.utils}"/>
 
+        <!-- Security Libraries (OWASP Encoder + JJWT) -->
+        <pathelement location="${lib.dir}/encoder-${owasp.encoder.version}.jar"/>
+        <pathelement location="${lib.dir}/encoder-jsp-${owasp.encoder.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-api-${jjwt.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-impl-${jjwt.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-jackson-${jjwt.version}.jar"/>
+
         <!-- Include all elements that Tomcat exposes to applications -->
         <pathelement location="${CATALINA_HOME}/lib"/>
     </path>
@@ -813,7 +822,7 @@
         <!-- Jakarta Persistence 3.1 (required for Hibernate 6.x) -->
         <pathelement location="${lib.dir}/${jakarta-persistence}"/>
         <pathelement location="${lib.dir}/${jandex}"/>
-        <pathelement location="${lib.dir}/${mchange}"/>
+        <!-- REMOVED: mchange-commons-java (legacy C3P0 dependency) -->
         <pathelement location="${lib.dir}/${jboss-logging}"/>
         <pathelement location="${lib.dir}/${jboss-transaction}"/>
         <pathelement location="${lib.dir}/${byte-buddy}"/>
@@ -1236,6 +1245,49 @@
     </target>
 
     <!--
+        Validate that all JAR versions referenced in properties match actual JARs
+    -->
+
+    <target name="validateVersions" description="Validate all JAR versions match actual files">
+        <echo message="Validating Jakarta Faces API..."/>
+        <available file="${lib.dir}/${jsf-api}" property="faces.api.present"/>
+        <fail unless="faces.api.present"
+              message="Missing ${jsf-api} - expected jakarta.faces-api-${jakarta.faces.api.version}.jar"/>
+
+        <echo message="Validating Jakarta Faces Implementation..."/>
+        <available file="${lib.dir}/${jsf-impl}" property="faces.impl.present"/>
+        <fail unless="faces.impl.present"
+              message="Missing ${jsf-impl} - expected jakarta.faces-${jakarta.faces.impl.version}.jar"/>
+
+        <echo message="Validating Hibernate Core..."/>
+        <available file="${lib.dir}/${hibernate-core}" property="hibernate.core.present"/>
+        <fail unless="hibernate.core.present"
+              message="Missing ${hibernate-core} - expected hibernate-core-${hibernate.version}.jar"/>
+
+        <echo message="Validating Hibernate Commons Annotations..."/>
+        <available file="${lib.dir}/${hibernate-commons}" property="hibernate.commons.present"/>
+        <fail unless="hibernate.commons.present"
+              message="Missing ${hibernate-commons} - expected hibernate-commons-annotations-${hibernate.commons.annotations.version}.jar"/>
+
+        <echo message="Validating H2 Database..."/>
+        <available file="${lib.dir}/${h2}" property="h2.present"/>
+        <fail unless="h2.present"
+              message="Missing ${h2} - expected h2-${h2.version}.jar"/>
+
+        <echo message="Validating PostgreSQL Driver..."/>
+        <available file="${lib.dir}/${postgres8}" property="postgresql.present"/>
+        <fail unless="postgresql.present"
+              message="Missing ${postgres8} - expected postgresql-${postgresql.version}.jar"/>
+
+        <echo message="Validating MySQL Driver..."/>
+        <available file="${lib.dir}/${mysql}" property="mysql.present"/>
+        <fail unless="mysql.present"
+              message="Missing ${mysql} - expected mysql-connector-j-${mysql.version}.jar"/>
+
+        <echo message="✓ All version validations passed"/>
+    </target>
+
+    <!--
         Compile main project source into ${classes.dir}, and produce
         library JAR of all non-GUI Java source (for use by Editor builds).
         This also prepares the Log4J properties file in the classes area,
@@ -1243,7 +1295,7 @@
         filtered version will then be used to build all webapps)
     -->
 
-    <target name="compile" depends="init, configureDatabaseAccess">
+    <target name="compile" depends="init, configureDatabaseAccess, validateVersions">
         <javac srcdir="${src.dir}" debug="true" destdir="${classes.dir}"
                deprecation="true" verbose="false" includeantruntime="true"
                encoding="UTF-8">

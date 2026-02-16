@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.resourcing.jsf;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;

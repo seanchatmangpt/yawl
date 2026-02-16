@@ -28,9 +28,10 @@ import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,11 +53,12 @@ public class WorkItemInstance implements YInstance {
     private long startTime;
     private long completionTime;
     private long timerExpiry;
-    private SimpleDateFormat dateFormatter;
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm:ss:SSS")
+                    .withZone(ZoneId.systemDefault());
     private Map<String, ParameterInstance> parameters;
 
     public WorkItemInstance() {
-        dateFormatter = new SimpleDateFormat("yyyy-MM-dd H:mm:ss:SSS");
         parameters = new HashMap<>();
     }
 
@@ -168,7 +170,7 @@ public class WorkItemInstance implements YInstance {
     public String getEnabledTimeAsDateString() {
         long time = getEnabledTime();
         if (time == 0) return null;  // No enablement time set yet
-        return dateFormatter.format(time);
+        return DATE_FORMATTER.format(Instant.ofEpochMilli(time));
     }
 
     public void setEnabledTime(long time) { enabledTime = time; }
@@ -182,7 +184,7 @@ public class WorkItemInstance implements YInstance {
     public String getStartTimeAsDateString() {
         long time = getStartTime();
         if (time == 0) return null;  // No start time set yet
-        return dateFormatter.format(time);
+        return DATE_FORMATTER.format(Instant.ofEpochMilli(time));
     }
 
     public void setStartTime(long time) { startTime = time; }
@@ -193,7 +195,7 @@ public class WorkItemInstance implements YInstance {
     public String getCompletionTimeAsDateString() {
         long time = getCompletionTime();
         if (time == 0) return null;  // No completion time set yet
-        return dateFormatter.format(time);
+        return DATE_FORMATTER.format(Instant.ofEpochMilli(time));
     }
 
     public void setCompletionTime(long time) { completionTime = time; }

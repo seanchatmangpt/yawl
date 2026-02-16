@@ -102,6 +102,16 @@
        <url-pattern>/*</url-pattern>
      </filter-mapping>
 
+    <!-- CORS Filter for REST API -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
     <servlet>
         <servlet-name>costGateway</servlet-name>
@@ -131,5 +141,33 @@
         <servlet-name>InterfaceX_Servlet</servlet-name>
         <url-pattern>/ix</url-pattern>
     </servlet-mapping>
+
+    <!-- JAX-RS REST API Configuration -->
+    <servlet>
+        <servlet-name>JerseyServlet</servlet-name>
+        <description>
+            JAX-RS servlet for modern REST API endpoints.
+            Provides JSON-based REST APIs for Cost Service operations.
+        </description>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jakarta.ws.rs.Application</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+        </init-param>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>JerseyServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
 
 </web-app>

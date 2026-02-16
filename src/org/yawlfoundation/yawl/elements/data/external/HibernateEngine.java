@@ -27,7 +27,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.schema.internal.SchemaUpdateImpl;
 import org.hibernate.tool.schema.TargetType;
 
 import java.util.EnumSet;
