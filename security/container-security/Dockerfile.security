@@ -9,7 +9,7 @@ FROM eclipse-temurin:25-jdk-alpine AS builder
 
 # Security: Pin package versions for reproducibility
 RUN apk add --no-cache --virtual .build-deps \
-    apache-ant=1.10.14-r0 \
+    maven=3.9.5-r0 \
     git=2.43.0-r0 \
     && rm -rf /var/cache/apk/*
 
@@ -19,12 +19,16 @@ RUN addgroup -S buildgroup -g 1000 && \
 
 WORKDIR /build
 
-# Copy build files with proper ownership
-COPY --chown=builder:buildgroup . .
+# Copy Maven configuration and source files with proper ownership
+COPY --chown=builder:buildgroup pom.xml ./
+COPY --chown=builder:buildgroup src ./src
+COPY --chown=builder:buildgroup test ./test
+COPY --chown=builder:buildgroup build ./build
+COPY --chown=builder:buildgroup schema ./schema
 
 # Build as non-root user
 USER builder
-RUN ant -f build/build.xml compile
+RUN mvn clean package -DskipTests -B
 
 # ============================================
 # Stage 2: Runtime Stage
