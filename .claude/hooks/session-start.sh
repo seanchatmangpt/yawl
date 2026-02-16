@@ -24,6 +24,31 @@ else
   echo "✅ Maven available: $(mvn --version 2>/dev/null | head -n1)"
 fi
 
+# Setup Maven cache directory
+echo "📦 Configuring Maven dependency cache..."
+M2_CACHE_DIR="${HOME}/.m2/repository"
+
+if [ ! -d "${HOME}/.m2" ]; then
+  mkdir -p "${HOME}/.m2"
+  echo "✅ Created Maven directory: ${HOME}/.m2"
+fi
+
+if [ ! -d "${M2_CACHE_DIR}" ]; then
+  mkdir -p "${M2_CACHE_DIR}"
+  echo "✅ Created Maven cache directory: ${M2_CACHE_DIR}"
+else
+  CACHE_SIZE=$(du -sh "${M2_CACHE_DIR}" 2>/dev/null | cut -f1 || echo "0B")
+  echo "✅ Maven cache directory exists: ${M2_CACHE_DIR} (${CACHE_SIZE})"
+fi
+
+# Verify cache is writable
+if [ -w "${M2_CACHE_DIR}" ]; then
+  echo "✅ Maven cache is writable"
+else
+  echo "⚠️  Maven cache directory is not writable"
+  echo "   Dependencies will be re-downloaded on each build"
+fi
+
 # Configure H2 database for ephemeral testing via environment variables
 echo "🗄️  Configuring H2 database for remote environment..."
 
@@ -47,6 +72,7 @@ echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
 echo "   • Build System: Maven 3.x"
+echo "   • Maven Cache: ${M2_CACHE_DIR}"
 echo "   • Database: H2 (in-memory)"
 echo "   • Test Command: mvn clean test"
 echo "   • Environment: Remote/Ephemeral"
