@@ -184,10 +184,10 @@ public class YMarking {
 
 
     public boolean equals(Object marking) {
-        if (!(marking instanceof YMarking)) {
+        if (!(marking instanceof YMarking otherMarking)) {
             return false;
         }
-        List otherMarkingsLocations = new Vector(((YMarking) marking).getLocations());
+        List otherMarkingsLocations = new Vector(otherMarking.getLocations());
         List myLocations = new Vector(_locations);
         for (Iterator iterator = myLocations.iterator(); iterator.hasNext();) {
             YExternalNetElement netElement = (YExternalNetElement) iterator.next();

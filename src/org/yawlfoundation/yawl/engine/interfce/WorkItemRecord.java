@@ -483,8 +483,7 @@ public class WorkItemRecord implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof WorkItemRecord) {
-            WorkItemRecord other = (WorkItemRecord) o;
+        if (o instanceof WorkItemRecord other) {
             return getID().equals(other.getID()) &&
                  _status.equals(other.getStatus()) &&
                  _uniqueID != null ? _uniqueID.equals(other._uniqueID) :

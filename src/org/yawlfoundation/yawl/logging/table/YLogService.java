@@ -62,8 +62,8 @@ public class YLogService {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogService) &&
-                (this.getServiceID() == ((YLogService) other).getServiceID());
+        return other instanceof YLogService service &&
+                (this.getServiceID() == service.getServiceID());
     }
 
     public int hashCode() {

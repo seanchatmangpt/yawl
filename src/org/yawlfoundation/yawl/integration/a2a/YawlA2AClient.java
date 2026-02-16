@@ -87,16 +87,16 @@ public class YawlA2AClient implements AutoCloseable {
 
         a2aClient.sendMessage(userMessage,
             List.of((event, card) -> {
-                if (event instanceof TaskEvent) {
-                    Task task = ((TaskEvent) event).getTask();
+                if (event instanceof TaskEvent taskEvent) {
+                    Task task = taskEvent.getTask();
                     if (task.status() != null && task.status().state().isFinal()) {
                         if (task.status().message() != null) {
                             result.set(extractTextFromMessage(task.status().message()));
                         }
                         latch.countDown();
                     }
-                } else if (event instanceof MessageEvent) {
-                    Message msg = ((MessageEvent) event).getMessage();
+                } else if (event instanceof MessageEvent msgEvent) {
+                    Message msg = msgEvent.getMessage();
                     result.set(extractTextFromMessage(msg));
                     latch.countDown();
                 }
@@ -219,8 +219,8 @@ public class YawlA2AClient implements AutoCloseable {
         }
         StringBuilder text = new StringBuilder();
         for (Part<?> part : message.parts()) {
-            if (part instanceof TextPart) {
-                text.append(((TextPart) part).text());
+            if (part instanceof TextPart textPart) {
+                text.append(textPart.text());
             }
         }
         if (text.length() == 0) {

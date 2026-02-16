@@ -112,9 +112,9 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
     }
 
     public boolean equals(Object other) {
-        return (other instanceof InterfaceX_EngineSideClient) &&
+        return other instanceof InterfaceX_EngineSideClient client &&
                (getURI() != null) &&
-                getURI().equals(((InterfaceX_EngineSideClient) other).getURI());
+                getURI().equals(client.getURI());
     }
 
     public int hashCode() {

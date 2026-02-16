@@ -133,15 +133,14 @@ public class Performative {
 	}
 	
 	public boolean equalContent (Object o) {
-		if (o instanceof Performative) {
-			Performative other = (Performative) o;
+		if (o instanceof Performative other) {
 			if (this.getTime().equals(other.getTime()) &&
-					this.getChannel().equals(other.getChannel()) && 
-					this.getSender().equals(other.getSender()) && 
+					this.getChannel().equals(other.getChannel()) &&
+					this.getSender().equals(other.getSender()) &&
 					this.getAction().equals(other.getAction()) &&
-					this.getContent().equals(other.getContent()) && 
+					this.getContent().equals(other.getContent()) &&
 					this.getScope().equals(other.getScope()) &&
-					this.getDirection().toString().equals(other.getDirection().toString()) && 
+					this.getDirection().toString().equals(other.getDirection().toString()) &&
 					this.getEntityIDs().size() == other.getEntityIDs().size()) {
 					// check eids
 				boolean checkOveral = true;

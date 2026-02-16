@@ -524,8 +524,7 @@ public class YWorkItem {
 
     public boolean equals(Object other) {
         if (this == other) return true;
-        if (other instanceof YWorkItem) {         // instanceof = false if other is null
-            YWorkItem otherItem = (YWorkItem) other;
+        if (other instanceof YWorkItem otherItem) {         // instanceof = false if other is null
             if (this.get_thisID() != null) {
                 return this.get_thisID().equals(otherItem.get_thisID());
             }

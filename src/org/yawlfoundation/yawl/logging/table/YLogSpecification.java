@@ -98,8 +98,8 @@ public class YLogSpecification {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YLogSpecification) &&
-                (this.getRowKey() == ((YLogSpecification) other).getRowKey());
+        return other instanceof YLogSpecification spec &&
+                (this.getRowKey() == spec.getRowKey());
     }
 
     public int hashCode() {

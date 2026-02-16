@@ -98,7 +98,9 @@ public class YLogPredicate {
     }
 
     public String toXML() {
-        if ((_startPredicate == null) && (_completionPredicate == null)) return "";
+        if ((_startPredicate == null) && (_completionPredicate == null)) {
+            return "<logPredicate/>";
+        }
 
         StringBuilder xml = new StringBuilder("<logPredicate>");
         if (_startPredicate != null)
@@ -111,8 +113,7 @@ public class YLogPredicate {
 
 
     public boolean equals(Object o) {
-        if (o instanceof YLogPredicate) {
-            YLogPredicate other = (YLogPredicate) o;
+        if (o instanceof YLogPredicate other) {
             return ((_startPredicate == null && other._startPredicate == null) ||
                     (_startPredicate != null &&
                             _startPredicate.equals(other._startPredicate)) &&

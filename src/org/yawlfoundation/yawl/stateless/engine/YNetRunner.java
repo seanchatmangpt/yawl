@@ -198,8 +198,8 @@ public class YNetRunner {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YNetRunner) &&   // instanceof = false if other is null
-                ((getCaseID() != null) ? getCaseID().equals(((YNetRunner) other).getCaseID())
+        return other instanceof YNetRunner runner &&   // instanceof = false if other is null
+                ((getCaseID() != null) ? getCaseID().equals(runner.getCaseID())
                 : super.equals(other));
     }
 

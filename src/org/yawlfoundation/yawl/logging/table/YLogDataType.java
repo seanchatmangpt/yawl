@@ -64,8 +64,8 @@ public class YLogDataType {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogDataType) &&
-                (this.getDataTypeID() == ((YLogDataType) other).getDataTypeID());
+        return other instanceof YLogDataType type &&
+                (this.getDataTypeID() == type.getDataTypeID());
     }
 
     public int hashCode() {

@@ -497,8 +497,8 @@ public class YawlA2AServer {
             }
             StringBuilder text = new StringBuilder();
             for (Part<?> part : message.parts()) {
-                if (part instanceof TextPart) {
-                    text.append(((TextPart) part).text());
+                if (part instanceof TextPart textPart) {
+                    text.append(textPart.text());
                 }
             }
             if (text.length() == 0) {

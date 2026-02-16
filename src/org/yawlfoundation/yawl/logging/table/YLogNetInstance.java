@@ -76,8 +76,8 @@ public class YLogNetInstance {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YLogNetInstance) &&
-                (this.getNetInstanceID() == ((YLogNetInstance) other).getNetInstanceID());
+        return other instanceof YLogNetInstance instance &&
+                (this.getNetInstanceID() == instance.getNetInstanceID());
     }
 
     public int hashCode() {

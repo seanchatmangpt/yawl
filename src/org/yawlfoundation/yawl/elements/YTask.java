@@ -321,12 +321,12 @@ public abstract class YTask extends YExternalNetElement {
                 //if there was a problem firing the task then roll back the case.
                 rollbackFired(childID, pmgr);
 
-                if (e instanceof YDataStateException)
-                    throw (YDataStateException) e;
-                else if (e instanceof YStateException)
-                    throw (YStateException) e;
-                else if (e instanceof YQueryException)
-                    throw (YQueryException) e;
+                if (e instanceof YDataStateException dataEx)
+                    throw dataEx;
+                else if (e instanceof YStateException stateEx)
+                    throw stateEx;
+                else if (e instanceof YQueryException queryEx)
+                    throw queryEx;
             }
 
             childIdentifiers.add(childID);

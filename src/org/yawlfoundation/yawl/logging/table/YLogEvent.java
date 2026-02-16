@@ -114,8 +114,8 @@ public class YLogEvent {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogEvent) &&
-                (this.getEventID() == ((YLogEvent) other).getEventID());
+        return other instanceof YLogEvent event &&
+                (this.getEventID() == event.getEventID());
     }
 
     public int hashCode() {

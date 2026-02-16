@@ -376,7 +376,7 @@ public class EngineGatewayImpl implements EngineGateway {
                 return failureMessage("WorkItem with ID [" + workItemID + "] not found.");
         }
         catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException persistEx) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -402,7 +402,7 @@ public class EngineGatewayImpl implements EngineGateway {
                 return failureMessage("WorkItem with ID [" + workItemID + "] not found.");
         }
         catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException persistEx) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -485,7 +485,7 @@ public class EngineGatewayImpl implements EngineGateway {
             return successMessage(child.toXML());
         }
         catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException persistEx) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -1004,38 +1004,45 @@ public class EngineGatewayImpl implements EngineGateway {
         YWorkItem workItem = _engine.getWorkItem(workItemID);
         if (workItem != null) {
             if (workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
-                options.append("<option operation=\"suspend\">" +
-                        "<documentation>Suspend the currently active workItem</documentation>" +
-                        "<style>post</style>" +
-                        "<url>").append(thisURL).append("?action=suspend</url></option>");
-                options.append("<option operation=\"complete\">" +
-                        "<documentation>Notify the engine that the work item is complete</documentation>" +
-                        "<style>post</style>" + "<url>").append(thisURL).append("?action=complete</url>" +
-                        "<bodyContent>Any return data needed for this work item.</bodyContent>" +
-                        "</option>");
+                options.append("""
+                        <option operation="suspend">
+                          <documentation>Suspend the currently active workItem</documentation>
+                          <style>post</style>
+                          <url>%s?action=suspend</url>
+                        </option>
+                        """.formatted(thisURL));
+                options.append("""
+                        <option operation="complete">
+                          <documentation>Notify the engine that the work item is complete</documentation>
+                          <style>post</style>
+                          <url>%s?action=complete</url>
+                          <bodyContent>Any return data needed for this work item.</bodyContent>
+                        </option>
+                        """.formatted(thisURL));
             }
             try {
                 _engine.checkElegibilityToAddInstances(workItemID);
-                options.append("<option operation=\"addNewInstance\">" +
-                        "<documentation>Add a new Instance similar to this work item</documentation>" +
-                        "<style>post</style>" + "<url>").
-                        append(thisURL).
-                        append("?action=createInstance</url>" +
-                                "<bodyContent>The data for the new instance.</bodyContent>" +
-                                "</option>");
+                options.append("""
+                        <option operation="addNewInstance">
+                          <documentation>Add a new Instance similar to this work item</documentation>
+                          <style>post</style>
+                          <url>%s?action=createInstance</url>
+                          <bodyContent>The data for the new instance.</bodyContent>
+                        </option>
+                        """.formatted(thisURL));
             } catch (YAWLException e) {
                 //just don't provide that option.
             }
             if (workItem.getStatus().equals(YWorkItemStatus.statusEnabled)
                     || workItem.getStatus().equals(YWorkItemStatus.statusFired)) {
-                options.append("<option operation=\"start\">" +
-                        "<documentation>Starts a work item</documentation>" +
-                        "<style>post</style>" + "<url>").
-                        append(thisURL).
-                        append("?action=startOne&amp;user=[userID]</url>" +
-                                "<returns>The data provided by the engine for " +
-                                "processing the work item.</returns>" +
-                                "</option>");
+                options.append("""
+                        <option operation="start">
+                          <documentation>Starts a work item</documentation>
+                          <style>post</style>
+                          <url>%s?action=startOne&amp;user=[userID]</url>
+                          <returns>The data provided by the engine for processing the work item.</returns>
+                        </option>
+                        """.formatted(thisURL));
             }
         }
         return options.toString();
@@ -1061,7 +1068,7 @@ public class EngineGatewayImpl implements EngineGateway {
                     verificationHandler);
         }
         catch (Exception e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException persistEx) {
                 enginePersistenceFailure = true;
             }
             e.printStackTrace();

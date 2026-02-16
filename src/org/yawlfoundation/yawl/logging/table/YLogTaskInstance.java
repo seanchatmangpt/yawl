@@ -85,8 +85,8 @@ public class YLogTaskInstance {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogTaskInstance) &&
-                (this.getTaskInstanceID() == ((YLogTaskInstance) other).getTaskInstanceID());
+        return other instanceof YLogTaskInstance instance &&
+                (this.getTaskInstanceID() == instance.getTaskInstanceID());
     }
 
     public int hashCode() {
