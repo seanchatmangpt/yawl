@@ -264,7 +264,7 @@ public class StringUtil {
         string = string.replace("&", "&amp;")
                        .replace("<", "&lt;")
                        .replace(">", "&gt;")
-                       .replace(""", "&quot;")
+                       .replace("\"", "&quot;")
                        .replace("'", "&#x27;");
         string = string.replaceAll("\n", "<br>");
         string = string.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");

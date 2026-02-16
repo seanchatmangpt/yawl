@@ -35,7 +35,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import javax.xml.datatype.Duration;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.time.Instant;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
