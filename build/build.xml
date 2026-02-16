@@ -177,10 +177,12 @@
     <!-- wsi -->
     <property name="axis" value="axis-1.1RC2.jar"/>
     <!-- wsi -->
-    <property name="bcmail" value="bcmail-jdk15-139.jar"/>
-    <!-- dss -->
-    <property name="bcprov" value="bcprov-jdk15-139.jar"/>
-    <!-- dss -->
+    <property name="bcmail" value="bcmail-jdk18on-1.77.jar"/>
+    <!-- dss - SECURITY UPDATE 2026-02-15 (JDK 18+ compatibility, CVE fixes) -->
+    <property name="bcprov" value="bcprov-jdk18on-1.77.jar"/>
+    <!-- dss - SECURITY UPDATE 2026-02-15 (JDK 18+ compatibility, CVE fixes) -->
+    <property name="bcpkix" value="bcpkix-jdk18on-1.77.jar"/>
+    <!-- dss - SECURITY UPDATE 2026-02-15 (JDK 18+ compatibility, CMSSignedData support) -->
     <property name="byte-buddy" value="byte-buddy-1.14.12.jar"/>
     <!-- hbn -->
     <property name="hikaricp" value="HikariCP-5.1.0.jar"/>
@@ -277,12 +279,22 @@
     <!--off-->
     <property name="jaxb-api" value="jaxb-api-2.3.1.jar"/>
     <!--off,hbn-->
+    <property name="jaxb-core" value="jaxb-core-4.0.4.jar"/>
+    <!-- mul - Jakarta XML Binding core (required by jakarta.xml.bind-api) -->
     <property name="jaxb-impl" value="jaxb-impl.jar"/>
     <!--off-->
     <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar"/>
     <!--off,hbn-->
+    <property name="jaxb-runtime4" value="jaxb-runtime-4.0.4.jar"/>
+    <!-- mul - Jakarta XML Binding runtime 4.x (compatible with jakarta.xml.bind-api 3.0+) -->
     <property name="jaxb-xjc" value="jaxb-xjc.jar"/>
     <!-- hbn -->
+    <property name="jjwt-api" value="jjwt-api-0.12.5.jar"/>
+    <!-- mul - JWT API -->
+    <property name="jjwt-impl" value="jjwt-impl-0.12.5.jar"/>
+    <!-- mul - JWT implementation -->
+    <property name="jjwt-jackson" value="jjwt-jackson-0.12.5.jar"/>
+    <!-- mul - JWT Jackson JSON processor -->
     <property name="jaxen" value="jaxen-1.1.6.jar"/>
     <!-- eng, sch -->
     <property name="jaxrpc" value="jaxrpc.jar"/>
@@ -307,6 +319,10 @@
     <!-- jsf -->
     <property name="jsf-impl" value="jsf-impl.jar"/>
     <!-- jsf -->
+    <property name="jakarta-faces-api" value="jakarta.faces-api-4.0.1.jar"/>
+    <!-- Jakarta Faces API -->
+    <property name="jakarta-faces" value="jakarta.faces-4.0.5.jar"/>
+    <!-- Jakarta Faces Implementation -->
     <property name="jsf-rowset" value="rowset.jar"/>
     <!-- jsf -->
     <property name="jsf-standard" value="standard.jar"/>
@@ -428,6 +444,7 @@
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
     <property name="jakarta-annotation" value="jakarta.annotation-api-3.0.0.jar"/>
+    <property name="jakarta-ws-rs-api" value="jakarta.ws.rs-api-3.1.0.jar"/>
     <property name="microsoft-graph" value="microsoft-graph-6.55.0.jar"/>
     <property name="microsoft-graph-core" value="microsoft-graph-core-3.6.5.jar"/>
     <property name="kiota-authentication-azure"
@@ -694,6 +711,32 @@
         <pathelement location="${lib.dir}/${jackson-core}"/>
         <pathelement location="${lib.dir}/${jackson-databind}"/>
 
+        <!-- JJWT (JWT authentication library) -->
+        <pathelement location="${lib.dir}/${jjwt-api}"/>
+        <pathelement location="${lib.dir}/${jjwt-impl}"/>
+        <pathelement location="${lib.dir}/${jjwt-jackson}"/>
+
+        <!-- Jakarta XML Binding (JAXB) -->
+        <pathelement location="${lib.dir}/${jakarta-xml}"/>
+        <pathelement location="${lib.dir}/${jaxb-core}"/>
+        <pathelement location="${lib.dir}/${jaxb-runtime4}"/>
+
+        <!-- Jakarta Annotation API (PostConstruct, PreDestroy, etc.) -->
+        <pathelement location="${lib.dir}/${jakarta-annotation}"/>
+
+        <!-- Jakarta Mail API (email functionality) -->
+        <pathelement location="${lib.dir}/${jakarta-mail}"/>
+        <pathelement location="${lib.dir}/${jakarta-activation}"/>
+
+        <!-- OkHttp (HTTP client library) -->
+        <pathelement location="${lib.dir}/${okhttp}"/>
+        <pathelement location="${lib.dir}/${okhttp3}"/>
+        <pathelement location="${lib.dir}/${okio}"/>
+        <pathelement location="${lib.dir}/${okio-jvm}"/>
+
+        <!-- Jakarta REST API (JAX-RS) -->
+        <pathelement location="${lib.dir}/${jakarta-ws-rs-api}"/>
+
         <!-- JSpecify (required by MCP/A2A SDK) -->
         <pathelement location="${lib.dir}/${jspecify}"/>
 
@@ -749,6 +792,7 @@
         <pathelement location="${lib.dir}/${antlr}"/>
         <pathelement location="${lib.dir}/${commonsCollections}"/>
         <pathelement location="${lib.dir}/${ehcache}"/>
+        <pathelement location="${lib.dir}/${hikaricp}"/>
         <pathelement location="${lib.dir}/${hibernate-hikaricp}"/>
         <pathelement location="${lib.dir}/${hibernate-core}"/>
         <pathelement location="${lib.dir}/${hibernate-commons}"/>
@@ -764,7 +808,9 @@
         <pathelement location="${lib.dir}/${jakarta-activation}"/>
         <pathelement location="${lib.dir}/${jakarta-persistence}"/>
         <pathelement location="${lib.dir}/${jakarta-xml}"/>
+        <pathelement location="${lib.dir}/${jaxb-core}"/>
         <pathelement location="${lib.dir}/${jaxb-runtime}"/>
+        <pathelement location="${lib.dir}/${jaxb-runtime4}"/>
         <pathelement location="${lib.dir}/${c3p0}"/>
         <pathelement location="${lib.dir}/${slf4j}"/>
     </path>
@@ -778,9 +824,14 @@
         <pathelement location="${lib.dir}/${commonsLang}"/>
         <pathelement location="${lib.dir}/${commonsIO}"/>
         <pathelement location="${lib.dir}/${commonsPool}"/>
+        <pathelement location="${lib.dir}/${commonsText}"/>
     </path>
 
     <path id="cp.jsf">
+        <!-- Jakarta Faces (JSF) API and Implementation -->
+        <pathelement location="${lib.dir}/${jakarta-faces-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-faces}"/>
+        <!-- Legacy JSF components (still used by some modules) -->
         <pathelement location="${lib.dir}/${jsf-appbase}"/>
         <pathelement location="${lib.dir}/${jsf-api}"/>
         <pathelement location="${lib.dir}/${jsf-cl}"/>
@@ -797,6 +848,7 @@
     <path id="cp.ds">
         <pathelement location="${lib.dir}/${bcmail}"/>
         <pathelement location="${lib.dir}/${bcprov}"/>
+        <pathelement location="${lib.dir}/${bcpkix}"/>
     </path>
 
     <path id="cp.mail">
@@ -866,7 +918,7 @@
     <path id="cp.balancer">
         <pathelement location="${lib.dir}/${commonsLang3}"/>
         <pathelement location="${lib.dir}/${commonsMath3}"/>
-        <pathelement location="${lib.dir}/${commonsVfs}"/>
+        <pathelement location="${lib.dir}/${commonsVfs2}"/>
         <pathelement location="${lib.dir}/${guava}"/>
         <pathelement location="${lib.dir}/${hawkular}"/>
         <pathelement location="${lib.dir}/${openforecast}"/>
@@ -1163,6 +1215,11 @@
         <javac srcdir="${src.dir}" debug="true" destdir="${classes.dir}"
                deprecation="true" verbose="false" includeantruntime="true"
                encoding="UTF-8">
+            <!-- Exclude optional components that require Spring Boot / OpenTelemetry / Resilience4j -->
+            <exclude name="**/engine/actuator/**"/>
+            <exclude name="**/engine/observability/**"/>
+            <exclude name="**/integration/observability/**"/>
+            <exclude name="**/resilience/**"/>
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
             <classpath refid="cp.wsif"/>

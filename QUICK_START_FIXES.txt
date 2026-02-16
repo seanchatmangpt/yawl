@@ -1,0 +1,256 @@
+================================================================================
+QUICK START: COMPILATION FIXES
+2026-02-16 | YAWL v5.2 Build System
+================================================================================
+
+ISSUE: 1,206 compilation errors due to missing classpath entries
+
+ROOT CAUSE: Dependencies are defined in build.xml but not included in 
+the cp.compile classpath used by the javac task.
+
+COMPLEXITY: LOW (configuration changes only, no code changes)
+ESTIMATED TIME: 15-30 minutes
+
+================================================================================
+CRITICAL ACTIONS (MUST DO)
+================================================================================
+
+1. OPEN FILE FOR EDITING
+   File: /home/user/yawl/build/build.xml
+   Find: <path id="cp.compile">
+   Line: ~700 (check with: grep -n "path id=\"cp.compile\"")
+
+2. LOCATE THE COMPILE CLASSPATH SECTION
+   This section includes JWT, LOG4J, Jackson, MCP/A2A SDK references.
+   
+   Look for the end of the section before: </path>
+
+3. ADD JWT JAR REFERENCES
+   Insert these lines into cp.compile (before the closing </path>):
+   
+   <!--JwtManager authentication-->
+   <pathelement location="${lib.dir}/${jjwt-api}"/>
+   <pathelement location="${lib.dir}/${jjwt-impl}"/>
+   <pathelement location="${lib.dir}/${jjwt-jackson}"/>
+
+4. ADD JAKARTA XML PACKAGES
+   Insert these lines into cp.compile (before the closing </path>):
+   
+   <!-- Jakarta XML packages (timer, schema, signature) -->
+   <pathelement location="${lib.dir}/jakarta.xml.bind-api-4.0.1.jar"/>
+
+5. ADD BOUNCYCASTLE REFERENCES (if exists in lib)
+   First, verify JARs exist:
+   $ ls /home/user/yawl/build/3rdParty/lib/ | grep bouncycastle
+   
+   If you see:
+   - bcprov-jdk18on-1.77.jar
+   - bcmail-jdk18on-1.77.jar
+   
+   Add to cp.compile:
+   <!-- BouncyCastle for digital signatures -->
+   <pathelement location="${lib.dir}/bcprov-jdk18on-1.77.jar"/>
+   <pathelement location="${lib.dir}/bcmail-jdk18on-1.77.jar"/>
+
+6. ADD COMMONS VFS2 REFERENCE
+   Insert into cp.compile:
+   
+   <!-- Commons VFS2 for balancer file operations -->
+   <pathelement location="${lib.dir}/${commonsVfs2}"/>
+
+7. OPTIONAL: JAKARTA ANNOTATION API
+   For Spring metrics, add:
+   
+   <!-- Jakarta annotations (optional for Spring) -->
+   <pathelement location="${lib.dir}/jakarta.annotation-api-3.0.0.jar"/>
+
+================================================================================
+SECONDARY ACTION (OPTIONAL)
+================================================================================
+
+INVESTIGATE SPRING BOOT IN CORE ENGINE
+File: /home/user/yawl/src/org/yawlfoundation/yawl/engine/actuator/
+
+Files using Spring annotations:
+- YActuatorApplication.java
+- YAgentPerformanceMetrics.java
+- YResourceMetrics.java
+- YWorkflowMetrics.java
+
+Decision: Does core engine need Spring Boot?
+
+Options:
+a) REMOVE Spring annotations (recommended for core engine)
+   - Edit files and remove @SpringBootApplication, @Component, etc.
+   - Simplifies dependencies
+   
+b) MOVE to separate module (if Spring intentional)
+   - Move to separate spring-actuator/ module
+   - Keep core engine Spring-free
+   
+c) ADD Spring libraries (if intentional but needed)
+   - Requires Spring Boot JARs in lib/ 
+   - Requires Spring Maven coordinates
+   - Increases complexity
+
+RECOMMENDATION: Option A (remove Spring from core)
+- Core BPM engine shouldn't depend on Spring
+- Metrics can use simple Java instead
+- Simpler deployment and testing
+
+================================================================================
+MISSING JAKARTA XML PACKAGES (SPECIAL CASE)
+================================================================================
+
+The compiler reports missing:
+- jakarta.xml.datatype
+- jakarta.xml.parsers
+- jakarta.xml.transform
+- jakarta.xml.validation
+
+These may not exist in /home/user/yawl/build/3rdParty/lib/
+
+OPTIONS:
+1. Check JDK 21 - these are often included
+   Use: XMLGregorianCalendar (from javax.xml.datatype in JDK)
+   
+2. Add from Maven:
+   <dependency>
+     <groupId>jakarta.xml</groupId>
+     <artifactId>jakarta.xml.bind-api</artifactId>
+     <version>4.0.1</version>
+   </dependency>
+
+3. Use javax.xml instead of jakarta.xml (backward compat)
+   Change imports from jakarta.xml to javax.xml in:
+   - YTimerParameters.java
+   - YTimer.java
+   - YWorkItemTimer.java
+   - SchemaHandler.java
+   - DigitalSignature.java
+
+RECOMMENDATION: Try option 1 first (check JDK)
+Then option 3 if needed (use javax.xml)
+
+================================================================================
+VERIFICATION STEPS
+================================================================================
+
+After editing build.xml:
+
+1. SYNTAX CHECK (no compilation yet)
+   $ cd /home/user/yawl
+   $ ant -f build/build.xml clean
+   
+   Should show: BUILD SUCCESSFUL (or fail with parse errors)
+
+2. TEST COMPILATION
+   $ ant -f build/build.xml compile 2>&1 | tail -50
+   
+   Look for:
+   - Reduced error count (should be much less than 1,206)
+   - Build SUCCESSFUL (exit code 0) = complete success
+   - New errors = more fixes needed
+
+3. IF BUILD SUCCESSFUL
+   $ ant unitTest
+   
+   Then:
+   $ ant -f build/build.xml buildAll
+
+4. VALIDATION SEQUENCE
+   $ cd /home/user/yawl
+   $ xmllint --schema schema/YAWL_Schema4.0.xsd schema/*.xml
+
+================================================================================
+QUICK REFERENCE: WHERE TO EDIT
+================================================================================
+
+File: /home/user/yawl/build/build.xml
+
+Find these sections:
+- Line ~150-200: Property definitions (jjwt-api, etc.)
+- Line ~700: <path id="cp.compile"> section start
+- Line ~740: <path id="cp.compile"> section end (before </path>)
+
+Add pathelement entries BEFORE the closing </path> tag
+
+Current cp.compile includes:
+✓ junit, hamcrest
+✓ xerces, saxon
+✓ jakarta-servlet-api
+✓ log4j, slf4j
+✓ Jackson JSON libs
+✓ JSpecify, Jakarta CDI API
+✓ MCP SDK libraries
+✓ A2A SDK libraries
+✓ Tomcat libs
+
+Missing from cp.compile:
+✗ jjwt-api, jjwt-impl, jjwt-jackson
+✗ jakarta.xml.* packages (transform, datatype, etc.)
+✗ commonsVfs2
+✗ BouncyCastle (bcprov, bcmail)
+✗ jakarta.annotation-api
+
+================================================================================
+COMMON MISTAKES TO AVOID
+================================================================================
+
+1. DON'T use relative paths in build.xml
+   WRONG: <pathelement location="lib/jwt.jar"/>
+   RIGHT: <pathelement location="${lib.dir}/${jjwt-api}"/>
+
+2. DON'T edit cp.persist instead of cp.compile
+   Only cp.compile is used by the compile target
+
+3. DON'T add JARs that don't exist
+   Check: ls /home/user/yawl/build/3rdParty/lib/ | grep pattern
+
+4. DON'T forget closing tags
+   Every <pathelement> goes inside <path id="cp.compile">
+   Don't add after the closing </path>
+
+5. DON'T remove existing entries
+   Only ADD new ones, don't delete anything
+
+================================================================================
+IF STUCK
+================================================================================
+
+1. Check current status:
+   $ ant -f build/build.xml compile 2>&1 | grep "error:" | wc -l
+   
+2. Compare to baseline (1,206 errors):
+   If count goes down → fixes working
+   If count same → changes not applied
+   If count increases → incorrect change
+
+3. Review generated reports:
+   - /home/user/yawl/VALIDATION_REPORT_2026-02-16.md
+   - /home/user/yawl/COMPILATION_ERROR_DETAILS_2026-02-16.txt
+
+4. Roll back if needed:
+   $ git diff build/build.xml
+   $ git checkout build/build.xml
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+Build is FIXED when:
+[ ] ant -f build/build.xml compile succeeds (exit code 0)
+[ ] No compilation errors shown
+[ ] JAR file created: /home/user/yawl/output/yawl-lib-5.2.jar
+[ ] ant unitTest runs (may have test failures, but compiles)
+
+Then proceed to:
+[ ] Unit test verification
+[ ] Schema validation
+[ ] Full build: ant -f build/build.xml buildAll
+
+================================================================================
+Time Estimate: 15-30 minutes from reading this to successful compilation
+Support: Review validation reports for detailed error information
+
+================================================================================

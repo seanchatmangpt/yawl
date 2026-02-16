@@ -48,7 +48,7 @@ import jakarta.faces.component.html.HtmlOutputText;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.ValueChangeEvent;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;

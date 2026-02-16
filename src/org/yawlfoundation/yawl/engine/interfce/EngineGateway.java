@@ -23,7 +23,7 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.io.InputStream;
 import java.net.URI;
 import java.rmi.Remote;

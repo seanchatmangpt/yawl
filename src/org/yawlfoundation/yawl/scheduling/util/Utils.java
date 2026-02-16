@@ -40,9 +40,9 @@ import org.yawlfoundation.yawl.scheduling.Constants;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import jakarta.servlet.http.HttpSession;
-import jakarta.xml.datatype.DatatypeConfigurationException;
-import jakarta.xml.datatype.DatatypeFactory;
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;

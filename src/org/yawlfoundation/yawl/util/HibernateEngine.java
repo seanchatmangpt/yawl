@@ -25,6 +25,7 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.query.Query;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.exception.JDBCConnectionException;
 import org.hibernate.tool.schema.TargetType;

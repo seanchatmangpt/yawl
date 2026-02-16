@@ -28,7 +28,7 @@ import org.yawlfoundation.yawl.scheduling.util.PropertyReader;
 import org.yawlfoundation.yawl.scheduling.util.Utils;
 import org.yawlfoundation.yawl.scheduling.util.XMLUtils;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.util.*;
 
 

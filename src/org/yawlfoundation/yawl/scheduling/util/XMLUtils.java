@@ -37,13 +37,13 @@ import org.yawlfoundation.yawl.scheduling.Constants;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.datatype.DatatypeConfigurationException;
-import jakarta.xml.datatype.DatatypeFactory;
-import jakarta.xml.datatype.Duration;
-import jakarta.xml.transform.stream.StreamSource;
-import jakarta.xml.validation.Schema;
-import jakarta.xml.validation.SchemaFactory;
-import jakarta.xml.validation.Validator;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.*;
 import java.util.*;
 

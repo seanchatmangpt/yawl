@@ -23,11 +23,11 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.transform.Source;
-import jakarta.xml.transform.stream.StreamSource;
-import jakarta.xml.validation.Schema;
-import jakarta.xml.validation.SchemaFactory;
-import jakarta.xml.validation.Validator;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.*;
 import java.net.URL;
 import java.util.Hashtable;

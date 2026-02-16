@@ -28,11 +28,11 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import jakarta.faces.component.UIComponent;
 import javax.xml.XMLConstants;
-import jakarta.xml.datatype.DatatypeFactory;
-import jakarta.xml.transform.sax.SAXSource;
-import jakarta.xml.validation.Schema;
-import jakarta.xml.validation.SchemaFactory;
-import jakarta.xml.validation.Validator;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;

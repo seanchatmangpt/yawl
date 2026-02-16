@@ -64,7 +64,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;

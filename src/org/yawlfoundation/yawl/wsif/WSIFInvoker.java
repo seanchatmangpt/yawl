@@ -29,7 +29,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 import javax.wsdl.*;
-import jakarta.xml.namespace.QName;
+import javax.xml.namespace.QName;
 import java.util.*;
 
 

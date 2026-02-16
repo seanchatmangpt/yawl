@@ -32,7 +32,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_Environment
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Date;

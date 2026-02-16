@@ -22,7 +22,7 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.resourcing.datastore.eventlog.EventLogger;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.util.Date;
 
 /**

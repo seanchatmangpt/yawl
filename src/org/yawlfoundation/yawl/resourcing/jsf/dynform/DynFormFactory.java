@@ -51,7 +51,7 @@ import org.yawlfoundation.yawl.util.XNodeParser;
 import jakarta.faces.application.Application;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.context.FacesContext;
-import jakarta.faces.el.MethodBinding;
+import jakarta.el.MethodExpression;
 import jakarta.faces.event.ActionEvent;
 import java.awt.*;
 import java.util.ArrayList;

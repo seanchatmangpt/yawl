@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.util;
 
-import jakarta.xml.soap.*;
+import javax.xml.soap.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

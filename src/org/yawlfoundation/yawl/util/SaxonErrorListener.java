@@ -18,8 +18,8 @@
 
 package org.yawlfoundation.yawl.util;
 
-import jakarta.xml.transform.ErrorListener;
-import jakarta.xml.transform.TransformerException;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 import java.util.ArrayList;
 import java.util.List;
 

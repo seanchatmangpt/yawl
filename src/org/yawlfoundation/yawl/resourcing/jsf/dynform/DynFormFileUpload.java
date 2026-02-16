@@ -25,7 +25,7 @@ import com.sun.rave.web.ui.component.Upload;
 
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
-import jakarta.faces.el.MethodBinding;
+import jakarta.el.MethodExpression;
 import jakarta.faces.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;

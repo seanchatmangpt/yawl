@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.engine.time.workdays;
 
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.GregorianCalendar;

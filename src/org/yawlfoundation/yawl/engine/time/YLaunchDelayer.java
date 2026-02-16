@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;

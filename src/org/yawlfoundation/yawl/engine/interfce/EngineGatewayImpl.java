@@ -41,7 +41,7 @@ import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.unmarshal.YMetaData;
 import org.yawlfoundation.yawl.util.*;
 
-import jakarta.xml.datatype.Duration;
+import javax.xml.datatype.Duration;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URI;

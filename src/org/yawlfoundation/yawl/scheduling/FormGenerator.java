@@ -33,7 +33,7 @@ import org.yawlfoundation.yawl.scheduling.util.XMLUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import jakarta.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeConfigurationException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
