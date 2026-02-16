@@ -27,6 +27,13 @@ import java.security.NoSuchAlgorithmException;
 
 
 /**
+ * File integrity checksum utility. MD5 is used for speed and compatibility
+ * in non-cryptographic contexts (file change detection, content comparison).
+ * 
+ * WARNING: Do NOT use MD5 for security-sensitive operations such as password
+ * hashing, digital signatures, or cryptographic verification. MD5 is considered
+ * cryptographically broken and should only be used for non-security checksums.
+ * 
  * @author Michael Adams
  * @date 5/07/2014
  */
@@ -58,8 +65,18 @@ public class CheckSummer {
     }
 
 
+    /**
+     * Computes MD5 checksum for file content verification (non-cryptographic use).
+     * MD5 is acceptable here because this is used only for file integrity checking,
+     * not for security-sensitive operations.
+     * 
+     * @param fis file input stream to checksum
+     * @return MD5 hash as hex string
+     * @throws IOException if file cannot be read
+     */
     public static String getMD5Hex(FileInputStream fis) throws IOException {
         try {
+            // MD5 used for non-cryptographic file integrity checking only
             MessageDigest md = MessageDigest.getInstance("MD5");
 
             byte[] buffer = new byte[8192];
@@ -76,8 +93,18 @@ public class CheckSummer {
     }
 
 
+    /**
+     * Computes MD5 checksum for byte array content verification (non-cryptographic use).
+     * MD5 is acceptable here because this is used only for data integrity checking,
+     * not for security-sensitive operations.
+     * 
+     * @param bytes byte array to checksum
+     * @return MD5 hash as hex string
+     * @throws IOException if checksum cannot be computed
+     */
     public static String getMD5Hex(byte[] bytes) throws IOException {
         try {
+            // MD5 used for non-cryptographic data integrity checking only
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(bytes);
             byte[] hash = md.digest();

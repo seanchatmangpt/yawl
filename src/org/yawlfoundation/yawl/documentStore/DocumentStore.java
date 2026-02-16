@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.documentStore;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.ObjectNotFoundException;
 import org.yawlfoundation.yawl.engine.interfce.YHttpServlet;
 import org.yawlfoundation.yawl.util.HibernateEngine;
@@ -42,6 +44,8 @@ import java.util.Set;
  * @date 18/11/11
  */
 public class DocumentStore extends YHttpServlet {
+
+    private static final Logger logger = LogManager.getLogger(DocumentStore.class);
 
     private Sessions _sessions;            // maintains sessions with external services
     private HibernateEngine _db;           // communicates with underlying database
@@ -314,18 +318,30 @@ public class DocumentStore extends YHttpServlet {
                 }
             }
         } catch (Exception e) {
-            // can't update
+            // H2 database column resize failed - not critical for operation
+            // This is a one-time optimization that can fail if database is not H2
+            // or column is already correctly sized
+            logger.warn("Failed to resize H2 binary column (non-critical - may not be H2 database): {}", 
+                    e.getMessage());
         }
         if (connection != null) {
             try {
                 connection.close();
             } catch (SQLException sqle) {
-                //
+                logger.warn("Failed to close database connection after H2 column resize attempt: {}", 
+                        sqle.getMessage());
             }
         }
     }
 
 
+    /**
+     * Loads Hibernate configuration properties from servlet context.
+     * Returns null if properties cannot be loaded (non-critical - servlet may not use Hibernate).
+     * 
+     * @param context the servlet context
+     * @return Properties object if found, null otherwise
+     */
     private Properties loadHibernateProperties(ServletContext context) {
         try {
 
@@ -346,7 +362,12 @@ public class DocumentStore extends YHttpServlet {
                 return p;
             }
         }
-        catch (Exception fallthough) { }
+        catch (Exception e) {
+            // Non-critical failure: Properties loading is optional fallback configuration
+            // Servlet can function without hibernate.properties in some deployment scenarios
+            logger.info("Could not load hibernate.properties (deployment may not require it): {}", 
+                    e.getMessage());
+        }
 
         return null;
     }

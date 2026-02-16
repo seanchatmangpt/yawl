@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.elements;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * This class collects the set of all currently enabled transitions (ie. tasks) of a net.
@@ -230,7 +231,7 @@ public class YEnabledTransitionSet {
             switch (taskList.size()) {
                 case 0 : return null;
                 case 1 : return taskList.get(0);
-                default: return taskList.get(new Random().nextInt(taskList.size())) ;
+                default: return taskList.get(ThreadLocalRandom.current().nextInt(taskList.size())) ;
             }
         }
 

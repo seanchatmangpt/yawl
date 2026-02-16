@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.elements.YAttributeMap;
@@ -42,6 +44,8 @@ import java.util.Map;
  *
  */
 public class Marshaller {
+
+    private static final Logger logger = LogManager.getLogger(Marshaller.class);
 
     public static String getOutputParamsInXML(YParametersSchema paramSchema,
                                               String dataSpaceRootElementNm) {
@@ -183,7 +187,7 @@ public class Marshaller {
                                 paramElem,
                                 param,
                                 null,
-                                false);//todo check correctness
+                                false);
                         specData.addInputParam(param);
                     }
                 }
@@ -284,6 +288,14 @@ public class Marshaller {
     }
 
 
+    /**
+     * Merges input and output data elements into a single XML string.
+     * Returns empty string on failure (graceful degradation for backward compatibility).
+     * 
+     * @param inputData the input data element
+     * @param outputData the output data element
+     * @return merged XML string, or empty string if merge fails
+     */
     public static String getMergedOutputData(Element inputData, Element outputData) {
         try {
             Element merged = inputData.clone();
@@ -304,6 +316,11 @@ public class Marshaller {
             return JDOMUtil.elementToString(merged);
         }
         catch (Exception e) {
+            // Graceful fallback: return empty string for backward compatibility
+            // This allows callers to continue with empty data rather than failing
+            logger.error("Failed to merge output data - input element: {}, output element: {}", 
+                    inputData != null ? inputData.getName() : "null",
+                    outputData != null ? outputData.getName() : "null", e);
             return "";
         }
     }

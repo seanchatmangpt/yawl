@@ -48,8 +48,38 @@ public class MonitorClient {
     private InterfaceB_EnvironmentBasedClient _interfaceBClient;
     private long _startupTime ;                         // time the engine started
 
-    private static final String _engineUser = "monitorService";
-    private static final String _enginePassword = "yMonitor";
+    private static final String _engineUser = getEnvOrDefault("YAWL_MONITOR_USER", "monitorService");
+    private static final String _enginePassword = getRequiredEnv("YAWL_MONITOR_PASSWORD");
+
+    /**
+     * Retrieves an environment variable with a default fallback.
+     * @param key the environment variable name
+     * @param defaultValue the default value if not set
+     * @return the environment variable value or default
+     */
+    private static String getEnvOrDefault(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
+    /**
+     * Retrieves a required environment variable, throwing if not set.
+     * SECURITY: All production passwords must be set via environment variables.
+     * @param key the environment variable name
+     * @return the environment variable value
+     * @throws IllegalStateException if the environment variable is not set
+     */
+    private static String getRequiredEnv(String key) {
+        String value = System.getenv(key);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalStateException(
+                "SECURITY: Required environment variable '" + key + "' is not set. " +
+                "Production deployments must configure credentials via environment variables. " +
+                "See .env.example for configuration template."
+            );
+        }
+        return value;
+    }
 
     public static MonitorClient getInstance() {
         if (_me == null) _me = new MonitorClient();
