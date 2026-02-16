@@ -406,7 +406,7 @@ public class DynFormField implements Cloneable {
                 result = Long.MAX_VALUE ;
             else {
                 try {
-                    result = new Long(occurs) ;
+                    result = Long.valueOf(occurs) ;
                 }
                 catch (Exception e) {
                     // nothing to do - default 1 will be returned

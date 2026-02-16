@@ -1,5 +1,7 @@
 # YAWL v5.2 | A = μ(O)
 
+O = {engine, elements, stateless, integration, schema, test}
+Σ = Java25 + Ant + JUnit + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy
 **Yet Another Workflow Language** - Enterprise BPM/Workflow system based on rigorous Petri net semantics.
 
 ## Quick Commands

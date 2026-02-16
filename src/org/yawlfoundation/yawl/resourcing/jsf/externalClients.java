@@ -359,7 +359,7 @@ public class externalClients extends AbstractPageBean {
     // remove the selected service from the engine
     public String btnRemove_action() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             String result = _appbean.removeExternalClient(selectedRowIndex);
             if (result.startsWith("<fail")) {
                 msgPanel.error(result);
@@ -404,7 +404,7 @@ public class externalClients extends AbstractPageBean {
 
     public String btnEdit_action() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             YExternalClient client = _appbean.getSelectedExternalClient(selectedRowIndex);
             if (client != null) {
                 addPanelHeading = "Edit Client Application Account";

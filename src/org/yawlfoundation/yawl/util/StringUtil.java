@@ -515,7 +515,7 @@ public class StringUtil {
     public static int strToInt(String s, int def) {
         if (isNullOrEmpty(s)) return def;      // short circuit
         try {
-            return new Integer(s);
+            return Integer.valueOf(s);
         } catch (NumberFormatException e) {
             return def;
         }
@@ -525,7 +525,7 @@ public class StringUtil {
     public static long strToLong(String s, long def) {
         if (isNullOrEmpty(s)) return def;      // short circuit
         try {
-            return new Long(s);
+            return Long.valueOf(s);
         } catch (NumberFormatException e) {
             return def;
         }
@@ -535,7 +535,7 @@ public class StringUtil {
     public static double strToDouble(String s, double def) {
         if (isNullOrEmpty(s)) return def;      // short circuit
         try {
-            return new Double(s);
+            return Double.valueOf(s);
         } catch (NumberFormatException e) {
             return def;
         }

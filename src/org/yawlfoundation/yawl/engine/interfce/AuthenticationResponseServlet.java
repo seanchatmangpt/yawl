@@ -52,7 +52,7 @@ public class AuthenticationResponseServlet extends HttpServlet {
         String proxyPort = context.getInitParameter("ProxyPort");
         try {
             Class controllerClass = Class.forName(controllerClassName);
-            _controller = (InterfaceBWebsideController) controllerClass.newInstance();
+            _controller = (InterfaceBWebsideController) controllerClass.getDeclaredConstructor().newInstance();
             //here the URL of the YAWL Engine get retrieved from the web.xml file.
             _controller.setUpInterfaceBClient(context.getInitParameter("InterfaceB_BackEnd"));
             _controller.setRemoteAuthenticationDetails(

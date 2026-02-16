@@ -355,7 +355,7 @@ public class LogMiner {
 
     public String getSpecificationIdentifiers(String keyStr) {
         try {
-            long key = new Long(keyStr);
+            long key = Long.valueOf(keyStr);
             SpecLog spec = getSpecLogRecord(key);
             return (spec != null) ? spec.getSpecID().toXML() : _noRowsStr;
         }

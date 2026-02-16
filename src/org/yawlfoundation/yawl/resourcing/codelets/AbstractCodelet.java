@@ -93,11 +93,11 @@ public abstract class AbstractCodelet {
             else if (dataType.endsWith("date"))
                 result = xmlDateToJavaDate(value);
             else if (dataType.endsWith("double"))
-                result = new Double(value);
+                result = Double.valueOf(value);
             else if (dataType.endsWith("integer"))
-                result = new Integer(value);
+                result = Integer.valueOf(value);
             else if (dataType.endsWith("long"))
-                result = new Long(value);
+                result = Long.valueOf(value);
             else if (dataType.endsWith("duration"))
                 result = DatatypeFactory.newInstance().newDuration(value);
             else

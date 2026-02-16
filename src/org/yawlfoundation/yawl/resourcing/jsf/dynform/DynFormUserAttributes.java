@@ -77,7 +77,7 @@ public class DynFormUserAttributes {
         int intValue = -1;                                        // default
         if (value != null) {
             try {
-                intValue = new Integer(value);
+                intValue = Integer.valueOf(value);
             }
             catch (NumberFormatException nfe) {
                 // nothing to do

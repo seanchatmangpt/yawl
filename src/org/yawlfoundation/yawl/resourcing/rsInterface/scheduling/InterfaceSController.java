@@ -49,7 +49,7 @@ public class InterfaceSController extends HttpServlet {
         String controllerClassName = context.getInitParameter("InterfaceS_Service");
         try {
             Class controllerClass = Class.forName(controllerClassName);
-            _controller = (InterfaceS_Service) controllerClass.newInstance();
+            _controller = (InterfaceS_Service) controllerClass.getDeclaredConstructor().newInstance();
             context.setAttribute("controller", _controller);
         }
         catch (Exception e) {
@@ -108,7 +108,7 @@ public class InterfaceSController extends HttpServlet {
     private long strToLong(String s) {
         if (s == null) return -1;
         try {
-            return new Long(s);
+            return Long.valueOf(s);
         }
         catch (NumberFormatException nfe) {
             return -1;

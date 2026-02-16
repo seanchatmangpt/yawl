@@ -7,7 +7,7 @@ parameters:
     default: 'yawl'
   - name: javaVersion
     type: string
-    default: '11'
+    default: '25'
 
 jobs:
   - job: UnitTests

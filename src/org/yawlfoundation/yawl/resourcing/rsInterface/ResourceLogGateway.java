@@ -238,7 +238,7 @@ public class ResourceLogGateway extends HttpServlet {
 
     private long getLong(String s) {
         try {
-            return new Long(s);
+            return Long.valueOf(s);
         }
         catch (NumberFormatException nfe) {
             return -1;

@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -77,7 +78,7 @@ public final class Pm4PyClient {
             + escapeJson(payload.toString()) + "}]}}}";
 
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(agentUrl).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) URI.create(agentUrl).toURL().openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);

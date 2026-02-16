@@ -201,9 +201,7 @@ public class RetryPolicyTest extends TestCase {
         RetryPolicy policy = new RetryPolicy(4, 100);
         AtomicInteger attempts = new AtomicInteger(0);
         long[] backoffTimes = new long[3];
-
-        long startTime = System.currentTimeMillis();
-        long lastAttemptTime = startTime;
+        long[] lastAttemptTimeHolder = {System.currentTimeMillis()};
 
         try {
             policy.executeWithRetry(() -> {
@@ -211,9 +209,9 @@ public class RetryPolicyTest extends TestCase {
                 long now = System.currentTimeMillis();
 
                 if (count > 1) {
-                    backoffTimes[count - 2] = now - lastAttemptTime;
+                    backoffTimes[count - 2] = now - lastAttemptTimeHolder[0];
                 }
-                lastAttemptTime = now;
+                lastAttemptTimeHolder[0] = now;
 
                 throw new RuntimeException("Fail");
             });

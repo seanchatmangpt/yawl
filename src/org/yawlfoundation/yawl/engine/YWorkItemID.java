@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.engine;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -75,8 +76,8 @@ public class YWorkItemID {
     }
 
     private static int compare(char[] first, char[] second) {
-        BigInteger bigInt1 = new BigInteger(String.valueOf(first).getBytes());
-        BigInteger bigInt2 = new BigInteger(String.valueOf(second).getBytes());
+        BigInteger bigInt1 = new BigInteger(String.valueOf(first).getBytes(StandardCharsets.UTF_8));
+        BigInteger bigInt2 = new BigInteger(String.valueOf(second).getBytes(StandardCharsets.UTF_8));
 
         return bigInt2.compareTo(bigInt1);
     }
