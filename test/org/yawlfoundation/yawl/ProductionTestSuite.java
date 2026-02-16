@@ -9,10 +9,6 @@ import org.yawlfoundation.yawl.database.DatabaseCompatibilityTest;
 import org.yawlfoundation.yawl.deployment.DeploymentReadinessTest;
 import org.yawlfoundation.yawl.engine.EngineIntegrationTest;
 import org.yawlfoundation.yawl.integration.JakartaEEMigrationTest;
-import org.yawlfoundation.yawl.integration.DatabaseIntegrationTest;
-import org.yawlfoundation.yawl.integration.VirtualThreadIntegrationTest;
-import org.yawlfoundation.yawl.integration.SecurityIntegrationTest;
-import org.yawlfoundation.yawl.integration.cloud.CloudModernizationTestSuite;
 import org.yawlfoundation.yawl.performance.PerformanceTest;
 
 /**

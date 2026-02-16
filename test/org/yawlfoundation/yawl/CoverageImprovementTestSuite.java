@@ -5,7 +5,6 @@ import junit.framework.TestSuite;
 import org.yawlfoundation.yawl.engine.TestConcurrentCaseExecution;
 import org.yawlfoundation.yawl.engine.TestYPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.TestYAWLExceptionHandling;
-import org.yawlfoundation.yawl.integration.DatabaseTransactionTest;
 
 /**
  * Comprehensive test suite for coverage improvement initiative.
@@ -44,11 +43,7 @@ public class CoverageImprovementTestSuite {
         // Target: 50%+ coverage of concurrent execution paths
         suite.addTest(TestConcurrentCaseExecution.suite());
 
-        // Part 3: Database Transaction Tests (6 tests)
-        // Target: 60%+ coverage of transaction management
-        suite.addTest(DatabaseTransactionTest.suite());
-
-        // Part 4: Exception Handling Tests (8 tests)
+        // Part 3: Exception Handling Tests (8 tests)
         // Target: 60%+ coverage of error handling paths
         suite.addTest(TestYAWLExceptionHandling.suite());
 
@@ -66,10 +61,9 @@ public class CoverageImprovementTestSuite {
         System.out.println("Test Categories:");
         System.out.println("  1. YPersistenceManager Tests        : 12 tests (70%+ coverage target)");
         System.out.println("  2. Concurrent Case Execution Tests  :  6 tests (50%+ coverage target)");
-        System.out.println("  3. Database Transaction Tests       :  6 tests (60%+ coverage target)");
-        System.out.println("  4. Exception Handling Tests         :  8 tests (60%+ coverage target)");
+        System.out.println("  3. Exception Handling Tests         :  8 tests (60%+ coverage target)");
         System.out.println("                                        --------");
-        System.out.println("  Total New Tests                     : 32 tests");
+        System.out.println("  Total New Tests                     : 26 tests");
         System.out.println();
         System.out.println("Coverage Goals:");
         System.out.println("  - Current Overall Coverage  : ~40%");

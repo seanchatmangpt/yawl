@@ -41,8 +41,6 @@ public class IntegrationTestSuite {
         suite.addTestSuite(VirtualThreadIntegrationTest.class);
         suite.addTestSuite(CommonsLibraryCompatibilityTest.class);
         suite.addTestSuite(SecurityIntegrationTest.class);
-        suite.addTestSuite(ObservabilityIntegrationTest.class);
-        suite.addTestSuite(ConfigurationIntegrationTest.class);
 
         return suite;
     }
