@@ -157,10 +157,10 @@ public final class YSpecification implements Cloneable, YVerifiable {
         List<YDecomposition> sortedDecompositions = new ArrayList<>(_decompositions.values());
         Collections.sort(sortedDecompositions, new Comparator<YDecomposition>() {
             public int compare(YDecomposition d1, YDecomposition d2) {
-                    if (d1 instanceof YNet) {
+                    if (d1 instanceof YNet net1) {
                         if (! (d2 instanceof YNet)) return -1;   // d1 is YNet, d2 is not
                     }
-                    else if (d2 instanceof YNet) return 1;       // d2 is YNet, d1 is not
+                    else if (d2 instanceof YNet net2) return 1;       // d2 is YNet, d1 is not
 
                     if (d1.getID() == null) return -1;           // either both are YNets
                     if (d2.getID() == null) return 1;            // or both are not
@@ -170,7 +170,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
         for (YDecomposition decomposition : sortedDecompositions) {
             if (! decomposition.getID().equals(_rootNet.getID())) {
-                String factsType = (decomposition instanceof YNet) ? "NetFactsType" :
+                String factsType = (decomposition instanceof YNet net) ? "NetFactsType" :
                                                         "WebServiceGatewayFactsType";
                 xml.append(String.format("<decomposition id=\"%s\" xsi:type=\"%s\"%s>",
                                decomposition.getID(), factsType,
@@ -179,7 +179,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
                 xml.append(decomposition.toXML());
 
                 // set flag for resourcing requirements on task decompositions
-                if (! (decomposition instanceof YNet)) {
+                if (! (decomposition instanceof YNet net)) {
                     if (decomposition.getCodelet() != null) {
                         xml.append(StringUtil.wrap(decomposition.getCodelet(), "codelet"));
                     }
@@ -261,8 +261,8 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YSpecification) ?  // instanceof = false if other is null
-                getSpecificationID().equals(((YSpecification) other).getSpecificationID())
+        return (other instanceof YSpecification spec) ?  // instanceof = false if other is null
+                getSpecificationID().equals(spec.getSpecificationID())
                 : super.equals(other);
     }
 
@@ -304,13 +304,13 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
     private void checkForEmptyExecutionPaths(YVerificationHandler handler) {
         for (YDecomposition decomposition : _decompositions.values()) {
-            if (decomposition instanceof YNet) {
+            if (decomposition instanceof YNet net) {
                 Set<YExternalNetElement> visited = new HashSet<>();
-                visited.add(((YNet) decomposition).getInputCondition());
+                visited.add(net.getInputCondition());
 
                 Set<YExternalNetElement> visiting = getEmptyPostsetAtThisLevel(visited);
                 while (visiting.size() > 0) {
-                    if (visiting.contains(((YNet) decomposition).getOutputCondition())) {
+                    if (visiting.contains(net.getOutputCondition())) {
                         handler.warn(decomposition,
                                 "It may be possible for the net [" + decomposition +
                                 "] to complete without any generated work. " +
@@ -329,8 +329,8 @@ public final class YSpecification implements Cloneable, YVerifiable {
         Set<YExternalNetElement> elements = YNet.getPostset(aSet);
         Set<YExternalNetElement> resultSet = new HashSet<>();
         for (YExternalNetElement element : elements) {
-            if ((element instanceof YCondition) || ((element instanceof YTask) &&
-                    (((YTask) element).getDecompositionPrototype() == null))) {
+            if ((element instanceof YCondition cond) || ((element instanceof YTask task) &&
+                    (task.getDecompositionPrototype() == null))) {
                 resultSet.add(element);
             }
         }
@@ -411,13 +411,13 @@ public final class YSpecification implements Cloneable, YVerifiable {
         Set<YExternalNetElement> resultSet = new HashSet<>();
         for (YExternalNetElement element : set) {
             YTask task = (YTask) element;
-            if (task.getDecompositionPrototype() instanceof YNet) {
-                YInputCondition input = ((YNet) task.getDecompositionPrototype()).getInputCondition();
+            if (task.getDecompositionPrototype() instanceof YNet net) {
+                YInputCondition input = net.getInputCondition();
                 Set<YExternalNetElement> tasks = input.getPostsetElements();
                 for (YExternalNetElement otherElement : tasks) {
                     YTask otherTask = (YTask) otherElement;
                     if (otherTask.getDecompositionPrototype() == null ||
-                        otherTask.getDecompositionPrototype() instanceof YNet) {
+                        otherTask.getDecompositionPrototype() instanceof YNet netDecomp) {
                         resultSet.add(otherTask);
                     }
                 }
@@ -445,7 +445,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
         for (YDecomposition decomp : specifiedDecompositions) {
             handler.warn(decomp, "The " +
-                    (decomp instanceof YNet ? "net" : "decomposition") +
+                    (decomp instanceof YNet net ? "net" : "decomposition") +
                     " [" + decomp.getID() +
                     "] is not being used in this specification.");
         }
@@ -456,7 +456,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
                                                        Set<YDecomposition> netsAlreadyExplored, String criterion) {
         Set<YExternalNetElement> resultSet = new HashSet<>();
         netsAlreadyExplored.add(decomposition);
-        if (decomposition instanceof YAWLServiceGateway) {
+        if (decomposition instanceof YAWLServiceGateway gateway) {
             return resultSet;
         }
         Set<YExternalNetElement> visited = new HashSet<>();
@@ -467,10 +467,10 @@ public final class YSpecification implements Cloneable, YVerifiable {
             visiting = YNet.getPostset(visiting);
             visiting.removeAll(visited);
             for (YExternalNetElement element : visiting) {
-                if (element instanceof YTask) {
-                    YDecomposition decomp = ((YTask) element).getDecompositionPrototype();
+                if (element instanceof YTask task) {
+                    YDecomposition decomp = task.getDecompositionPrototype();
                     if (decomp != null) {
-                        if (decomp instanceof YNet) {
+                        if (decomp instanceof YNet net) {
                             if ("decomposedTasks".equals(criterion)) {
                                 resultSet.add(element);
                             }
@@ -483,7 +483,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
                         resultSet.add(element);
                     }
                 }
-                else if (element instanceof YCondition) {
+                else if (element instanceof YCondition cond) {
                     if ("allConditions".equals(criterion)) {
                         resultSet.add(element);
                     }

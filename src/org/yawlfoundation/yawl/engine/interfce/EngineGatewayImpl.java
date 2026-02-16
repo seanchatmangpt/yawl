@@ -425,7 +425,7 @@ public class EngineGatewayImpl implements EngineGateway {
             _engine.rollbackWorkItem(workItemID);
             return SUCCESS;
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -460,7 +460,7 @@ public class EngineGatewayImpl implements EngineGateway {
                 return failureMessage("WorkItem with ID [" + workItemID + "] not found.");
             }
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -533,7 +533,7 @@ public class EngineGatewayImpl implements EngineGateway {
             }
             return failureMessage("No work item with id = " + workItemID);
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -565,7 +565,7 @@ public class EngineGatewayImpl implements EngineGateway {
             YWorkItem newItem = _engine.createNewInstance(existingItem, paramValueForMICreation);
             return successMessage(newItem.toXML());
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -742,7 +742,7 @@ public class EngineGatewayImpl implements EngineGateway {
             return _engine.launchCase(specID, caseParams, caseCompletionURI, caseID,
                                       logData, sessionHandle, false);
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -768,7 +768,7 @@ public class EngineGatewayImpl implements EngineGateway {
             return _engine.launchCase(specID, caseParams, caseCompletionURI, logData,
                     sessionHandle);
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -1101,7 +1101,7 @@ public class EngineGatewayImpl implements EngineGateway {
             _engine.unloadSpecification(specID);
             return SUCCESS;
         } catch (YAWLException e) {
-            if (e instanceof YPersistenceException) {
+            if (e instanceof YPersistenceException ype) {
                 enginePersistenceFailure = true;
             }
             return failureMessage(e.getMessage());
@@ -1286,7 +1286,7 @@ public class EngineGatewayImpl implements EngineGateway {
     public String deleteAccount(String client, String sessionHandle) throws RemoteException {
         YSession session = _sessionCache.getSession(sessionHandle);
         if (session != null) {
-            if ((session instanceof YExternalSession) &&
+            if ((session instanceof YExternalSession extSession) &&
                     session.getClient().getUserName().equals(client)) {
                 return failureMessage("Deletion of own account not allowed");
             }

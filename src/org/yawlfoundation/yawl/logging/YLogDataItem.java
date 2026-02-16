@@ -108,22 +108,21 @@ public class YLogDataItem {
     }
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(250);
-        xml.append("<logdataitem>");
-        xml.append(toXMLShort());
-        xml.append(StringUtil.wrapEscaped(dataTypeName, "datatype"));
-        xml.append(StringUtil.wrapEscaped(dataTypeDefinition, "datatypedefinition"));
-        xml.append("</logdataitem>");
-        return xml.toString();
+        return """
+            <logdataitem>%s%s%s</logdataitem>""".formatted(
+                toXMLShort(),
+                StringUtil.wrapEscaped(dataTypeName, "datatype"),
+                StringUtil.wrapEscaped(dataTypeDefinition, "datatypedefinition")
+        );
     }
 
     
     public String toXMLShort() {
-        StringBuilder xml = new StringBuilder(250);
-        xml.append(StringUtil.wrapEscaped(name, "name"))
-           .append(StringUtil.wrapEscaped(value, "value"))
-           .append(StringUtil.wrapEscaped(descriptor, "descriptor"));
-        return xml.toString();
+        return "%s%s%s".formatted(
+            StringUtil.wrapEscaped(name, "name"),
+            StringUtil.wrapEscaped(value, "value"),
+            StringUtil.wrapEscaped(descriptor, "descriptor")
+        );
     }
 
 

@@ -72,11 +72,14 @@ public class YLogService {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(100);
-        xml.append(String.format("<service key=\"%d\">", serviceID));
-        xml.append(StringUtil.wrap(name, "name"));
-        xml.append(StringUtil.wrap(url, "url"));
-        xml.append("</service>");
-        return xml.toString();
+        return """
+            <service key="%d">\
+            %s\
+            %s\
+            </service>""".formatted(
+                serviceID,
+                StringUtil.wrap(name, "name"),
+                StringUtil.wrap(url, "url")
+        );
     }
 }

@@ -67,15 +67,13 @@ public class YMarking {
         Set<YExternalNetElement> postset = task.getPostsetElements();
 
         switch (task.getSplitType()) {
-            case YTask._AND:
-            case YTask._OR: {
+            case YTask._AND, YTask._OR -> {
                 for (YMarking marking : iterableHalfBakedSet) {
                     marking._locations.addAll(postset);
                     finishedSet.addMarking(marking);
                 }
-                break;
             }
-            case YTask._XOR: {
+            case YTask._XOR -> {
                 for (YMarking halfbakedMarking : iterableHalfBakedSet) {
                     for (YExternalNetElement element : postset) {
                         YMarking aFinalMarking = new YMarking(halfbakedMarking.getLocations());
@@ -83,7 +81,6 @@ public class YMarking {
                         finishedSet.addMarking(aFinalMarking);
                     }
                 }
-                break;
             }
         }
         return finishedSet;
@@ -111,8 +108,7 @@ public class YMarking {
         YSetOfMarkings markingSet = new YSetOfMarkings();
         int joinType = task.getJoinType();
         switch (joinType) {
-            case YTask._AND:
-            {
+            case YTask._AND -> {
                 if (!nonOrJoinEnabled(task)) {
                     return null;
                 } else {
@@ -123,14 +119,10 @@ public class YMarking {
                     }
                     markingSet.addMarking(returnedMarking);
                 }
-                break;
             }
-            case YTask._OR:
-            {
+            case YTask._OR ->
                 throw new RuntimeException("This method should never be called on an OR-Join");
-            }
-            case YTask._XOR:
-            {
+            case YTask._XOR -> {
                 if (!nonOrJoinEnabled(task)) {
                     return null;
                 }
@@ -142,7 +134,6 @@ public class YMarking {
                         markingSet.addMarking(returnedMarking);
                     }
                 }
-                break;
             }
         }
         return markingSet;
@@ -161,27 +152,20 @@ public class YMarking {
         }
         Set preset = task.getPresetElements();
         int joinType = task.getJoinType();
-        switch (joinType) {
-            case YTask._AND:
-            {
-                return _locations.containsAll(preset);
-            }
-            case YTask._OR:
-            {
-                throw new RuntimeException("This method should never be called on an OR-Join");
-            }
-            case YTask._XOR:
-            {
+        return switch (joinType) {
+            case YTask._AND -> _locations.containsAll(preset);
+            case YTask._OR -> throw new RuntimeException("This method should never be called on an OR-Join");
+            case YTask._XOR -> {
                 for (Iterator iterator = preset.iterator(); iterator.hasNext();) {
                     YCondition condition = (YCondition) iterator.next();
                     if (_locations.contains(condition)) {
-                        return true;
+                        yield true;
                     }
                 }
-                return false;
+                yield false;
             }
-        }
-        return false;
+            default -> false;
+        };
     }
 
 

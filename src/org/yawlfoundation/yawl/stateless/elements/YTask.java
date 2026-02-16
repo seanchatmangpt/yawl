@@ -317,18 +317,18 @@ public abstract class YTask extends YExternalNetElement {
 
         // contract: all task presetElements are conditions
         switch (_joinType) {
-            case YTask._AND:
+            case YTask._AND -> {
                 for (YExternalNetElement preSetElement : getPresetElements()) {
                     ((YConditionInterface) preSetElement).removeOne();
                 }
-                break;
-            case YTask._OR:
+            }
+            case YTask._OR -> {
                 for (YExternalNetElement preSetElement : getPresetElements()) {
                     YConditionInterface condition = ((YConditionInterface) preSetElement);
                     if (condition.containsIdentifier()) condition.removeOne();
                 }
-                break;
-            case YTask._XOR:
+            }
+            case YTask._XOR -> {
                 List<YExternalNetElement> conditions = new ArrayList<>(getPresetElements());
                 boolean done = false;
                 do {
@@ -339,7 +339,7 @@ public abstract class YTask extends YExternalNetElement {
                         done = true;
                     }
                 } while (!done);
-                break;
+            }
         }
         return childIdentifiers;
     }
@@ -699,15 +699,9 @@ public abstract class YTask extends YExternalNetElement {
         }
         purgeLocations();
         switch (_splitType) {
-            case YTask._AND:
-                doAndSplit(i);
-                break;
-            case YTask._OR:
-                doOrSplit(i);
-                break;
-            case YTask._XOR:
-                doXORSplit(i);
-                break;
+            case YTask._AND -> doAndSplit(i);
+            case YTask._OR -> doOrSplit(i);
+            case YTask._XOR -> doXORSplit(i);
         }
         i.removeLocation(this);
         _executingData = null;
@@ -918,26 +912,26 @@ public abstract class YTask extends YExternalNetElement {
 
         if (_i != null) return false;     // busy tasks are never enabled
 
-        switch (_joinType) {
-            case YTask._AND:
+        return switch (_joinType) {
+            case YTask._AND -> {
                 for (YExternalNetElement condition : getPresetElements()) {
                     if (!((YCondition) condition).containsIdentifier()) {
-                        return false;
+                        yield false;
                     }
                 }
-                return true;
-            case YTask._OR:
-                return _net.orJoinEnabled(this, id);
-            case YTask._XOR:
+                yield true;
+            }
+            case YTask._OR -> _net.orJoinEnabled(this, id);
+            case YTask._XOR -> {
                 for (YExternalNetElement condition : getPresetElements()) {
                     if (((YCondition) condition).containsIdentifier()) {
-                        return true;
+                        yield true;
                     }
                 }
-                return false;
-            default:
-                return false;
-        }
+                yield false;
+            }
+            default -> false;
+        };
     }
 
 
@@ -1356,15 +1350,12 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private String decoratorTypeToString(int decType) {
-        switch (decType) {
-            case _AND:
-                return "and";
-            case _OR:
-                return "or";
-            case _XOR:
-                return "xor";
-        }
-        return "invalid";
+        return switch (decType) {
+            case _AND -> "and";
+            case _OR -> "or";
+            case _XOR -> "xor";
+            default -> "invalid";
+        };
     }
 
     private String writeExpressionMapping(String expression, String mapsTo) {

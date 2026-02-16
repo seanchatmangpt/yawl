@@ -428,22 +428,13 @@ public class YWorkItem {
 
             // if current workitem status equals trigger status, start the timer
             if (_timerParameters.triggerMatchesStatus(_status)) {
-                switch (_timerParameters.getTimerType()) {
-                    case Expiry: {
-                        _timer = new YWorkItemTimer(this,
-                                _timerParameters.getDate()) ;
-                        break;
-                    }
-                    case Duration: {
-                        _timer = new YWorkItemTimer(this,
-                                _timerParameters.getWorkDayDuration());
-                        break;
-                    }
-                    case Interval: {
-                        _timer = new YWorkItemTimer(this,
-                                _timerParameters.getTicks(), _timerParameters.getTimeUnit()) ;
-                    }
-                }
+                _timer = switch (_timerParameters.getTimerType()) {
+                    case Expiry -> new YWorkItemTimer(this, _timerParameters.getDate());
+                    case Duration -> new YWorkItemTimer(this, _timerParameters.getWorkDayDuration());
+                    case Interval -> new YWorkItemTimer(this,
+                            _timerParameters.getTicks(), _timerParameters.getTimeUnit());
+                    default -> null;
+                };
                 if (_timer != null) {
                     _timerExpiry = _timer.getEndTime();
                     setTimerActive();
@@ -568,13 +559,12 @@ public class YWorkItem {
 
 
     public void setStatusToComplete(WorkItemCompletion completionFlag) {
-        YWorkItemStatus completionStatus;
-        switch (completionFlag) {
-            case Force  : completionStatus = statusForcedComplete; break;
-            case Fail   : completionStatus = statusFailed; break;
-            default     : completionStatus = statusComplete;
-        }
-        completePersistence(completionStatus) ;
+        YWorkItemStatus completionStatus = switch (completionFlag) {
+            case Force -> statusForcedComplete;
+            case Fail -> statusFailed;
+            default -> statusComplete;
+        };
+        completePersistence(completionStatus);
     }
 
 
@@ -661,20 +651,26 @@ public class YWorkItem {
 
 
     public void set_specIdentifier(String id) {
-        if (_specID == null) _specID = new YSpecificationID((String) null);
-        _specID.setIdentifier(id);
+        if (_specID == null) {
+            _specID = new YSpecificationID((String) null);
+        }
+        _specID = _specID.withIdentifier(id);
     }
 
     public void set_specUri(String uri) {
-        if (_specID != null)
-            _specID.setUri(uri);
-        else
-           _specID = new YSpecificationID(uri);
+        if (_specID != null) {
+            _specID = _specID.withUri(uri);
+        }
+        else {
+            _specID = new YSpecificationID(uri);
+        }
     }
 
     public void set_specVersion(String version) {
-        if (_specID == null) _specID = new YSpecificationID((String) null);
-        _specID.setVersion(version);
+        if (_specID == null) {
+            _specID = new YSpecificationID((String) null);
+        }
+        _specID = _specID.withVersion(version);
     }
     
 

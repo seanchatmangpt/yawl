@@ -91,12 +91,16 @@ public class YLogTask {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(130);
-        xml.append(String.format("<task key=\"%d\">", taskID));
-        xml.append(StringUtil.wrap(name, "name"));
-        xml.append(StringUtil.wrap(String.valueOf(parentNetID), "parentNetKey"));
-        xml.append(StringUtil.wrap(String.valueOf(childNetID), "childNetKey"));
-        xml.append("</task>");
-        return xml.toString();
+        return """
+            <task key="%d">\
+            %s\
+            %s\
+            %s\
+            </task>""".formatted(
+                taskID,
+                StringUtil.wrap(name, "name"),
+                StringUtil.wrap(String.valueOf(parentNetID), "parentNetKey"),
+                StringUtil.wrap(String.valueOf(childNetID), "childNetKey")
+        );
     }
 }

@@ -86,13 +86,17 @@ public class YLogNetInstance {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(140);
-        xml.append(String.format("<netInstance key=\"%d\">", netInstanceID));
-        xml.append(StringUtil.wrap(engineInstanceID, "caseid"));
-        xml.append(StringUtil.wrap(String.valueOf(netID), "netKey"));
-        xml.append(StringUtil.wrap(String.valueOf(parentTaskInstanceID), "parentTaskInstanceKey"));
-        xml.append("</netInstance>");
-        return xml.toString();
+        return """
+            <netInstance key="%d">\
+            %s\
+            %s\
+            %s\
+            </netInstance>""".formatted(
+                netInstanceID,
+                StringUtil.wrap(engineInstanceID, "caseid"),
+                StringUtil.wrap(String.valueOf(netID), "netKey"),
+                StringUtil.wrap(String.valueOf(parentTaskInstanceID), "parentTaskInstanceKey")
+        );
     }
 
 }

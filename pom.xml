@@ -28,8 +28,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
 
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.2.5</spring-boot.version>
@@ -38,6 +38,7 @@
         <opentelemetry-instrumentation.version>2.6.0</opentelemetry-instrumentation.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.19.7</testcontainers.version>
+        <jmh.version>1.37</jmh.version>
 
         <!-- Jakarta EE & Framework -->
         <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
@@ -553,6 +554,18 @@
                 <artifactId>xmlunit</artifactId>
                 <version>${xmlunit.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -967,6 +980,16 @@
             <version>${xmlunit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -1128,15 +1151,15 @@
     </build>
 
     <profiles>
-        <!-- Java 21 (LTS - Default Production Profile) -->
+        <!-- Java 25 (Current Default Production Profile) -->
         <profile>
-            <id>java21</id>
+            <id>java25</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.source>21</maven.compiler.source>
-                <maven.compiler.target>21</maven.compiler.target>
+                <maven.compiler.source>25</maven.compiler.source>
+                <maven.compiler.target>25</maven.compiler.target>
             </properties>
             <build>
                 <plugins>
@@ -1146,6 +1169,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.incubator.concurrent</arg>
                                 <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
@@ -1184,37 +1209,6 @@
             </build>
         </profile>
 
-        <!-- Java 25 (Preview Features Evaluation) -->
-        <profile>
-            <id>java25</id>
-            <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>--add-modules</arg>
-                                <arg>jdk.incubator.concurrent</arg>
-                                <arg>-Xlint:all</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>--enable-preview --add-modules jdk.incubator.concurrent</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <!-- Production Profile - Security Scanning with OWASP Dependency Check -->
         <profile>

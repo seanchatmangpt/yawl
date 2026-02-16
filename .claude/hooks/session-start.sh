@@ -4,8 +4,9 @@ set -euo pipefail
 # SessionStart hook for YAWL in Claude Code Web
 # This hook:
 # 1. Installs Ant (build system)
-# 2. Configures H2 database for ephemeral testing
-# 3. Only runs in remote Claude Code Web environment
+# 2. Validates Java 25 requirement (YAWL v5.2)
+# 3. Configures H2 database for ephemeral testing
+# 4. Only runs in remote Claude Code Web environment
 
 # Exit early if not in Claude Code Web
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -30,6 +31,30 @@ if ! command -v ant &> /dev/null; then
 else
   echo "✅ Ant already installed: $(ant -version | head -n1)"
 fi
+
+# ============================================================================
+# JAVA 25 VALIDATION (Required for YAWL v5.2)
+# ============================================================================
+
+echo "☕ Validating Java 25 requirement..."
+
+JAVA_VERSION=$(java -version 2>&1 | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+
+if [ "$JAVA_VERSION" != "25" ]; then
+    echo "❌ ERROR: Java 25 required, found Java $JAVA_VERSION"
+    echo "   YAWL v5.2 requires Java 25 specifically"
+    echo "   Install: https://jdk.java.net/25/"
+    echo ""
+    echo "   Current: Java $JAVA_VERSION"
+    echo "   Required: Java 25"
+    exit 1
+fi
+
+echo "   ✅ Java 25 detected"
+
+# Enable Java 25 preview features
+export MAVEN_OPTS="--enable-preview --add-modules jdk.incubator.concurrent -Xmx2g"
+echo "   ✅ Maven configured for Java 25 preview features"
 
 # Configure H2 database for ephemeral testing
 echo "🗄️  Configuring H2 database for remote environment..."
@@ -91,6 +116,7 @@ fi
 echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
+echo "   • Java Version: Java $JAVA_VERSION (required)"
 echo "   • Build System: Ant $(ant -version 2>/dev/null | head -n1 | cut -d' ' -f4)"
 echo "   • Database: H2 (in-memory)"
 echo "   • Test Command: ant -f build/build.xml unitTest"

@@ -50,7 +50,6 @@ public final class AgentRegistry {
     private static final Logger logger = LogManager.getLogger(AgentRegistry.class);
 
     private static final int DEFAULT_PORT = 9090;
-    private static final int THREAD_POOL_SIZE = 10;
 
     private final ConcurrentHashMap<String, AgentInfo> agents;
     private final HttpServer server;
@@ -68,6 +67,10 @@ public final class AgentRegistry {
     /**
      * Create agent registry on specified port.
      *
+     * Uses virtual threads for HTTP request handling. Virtual threads provide
+     * better scalability for I/O-bound operations like agent registration,
+     * heartbeat updates, and discovery queries.
+     *
      * @param port server port
      * @throws IOException if server cannot be created
      */
@@ -81,7 +84,7 @@ public final class AgentRegistry {
         this.healthMonitor = new AgentHealthMonitor(agents);
 
         setupEndpoints();
-        server.setExecutor(Executors.newFixedThreadPool(THREAD_POOL_SIZE));
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         logger.info("Agent registry created on port {}", port);
     }

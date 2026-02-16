@@ -32,20 +32,20 @@ public class MailSettings {
 
 
     public String getSetting(String name) {
-        switch (name) {
-            case "host": return host;
-            case "user": return user;
-            case "password": return password;
-            case "senderName": return fromName;
-            case "senderAddress": return fromAddress;
-            case "recipientName": return toName;
-            case "recipientAddress": return toAddress;
-            case "CC": return ccAddress;
-            case "BCC": return bccAddress;
-            case "subject": return subject;
-            case "content": return content;
-        }
-        return null;
+        return switch (name) {
+            case "host" -> host;
+            case "user" -> user;
+            case "password" -> password;
+            case "senderName" -> fromName;
+            case "senderAddress" -> fromAddress;
+            case "recipientName" -> toName;
+            case "recipientAddress" -> toAddress;
+            case "CC" -> ccAddress;
+            case "BCC" -> bccAddress;
+            case "subject" -> subject;
+            case "content" -> content;
+            default -> null;
+        };
     }
 
 

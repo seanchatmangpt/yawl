@@ -222,11 +222,9 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder();
-        xml.append("<localVariable>");
-        xml.append(toXMLGuts());
-        xml.append("</localVariable>");
-        return xml.toString();
+        return """
+            <localVariable>%s</localVariable>
+            """.formatted(toXMLGuts());
     }
 
 
@@ -237,41 +235,37 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
     }
 
     protected String toXMLGuts() {
-        StringBuilder xml = new StringBuilder();
+        String indexXML = isSchemaVersionAtLeast2_1() ?
+            StringUtil.wrap(String.valueOf(_ordering), "index") : "";
+        String docsXML = _documentation != null ?
+            StringUtil.wrap(_documentation, "documentation") : "";
 
-        // only 2.1 or later specs get an index element
-        if (isSchemaVersionAtLeast2_1()) {
-            xml.append(StringUtil.wrap(String.valueOf(_ordering), "index"));
-        }
-
-        if (null != _documentation) {
-            xml.append(StringUtil.wrap(_documentation, "documentation"));
-        }
+        String nameOrElementXML = "";
         if (_isUntyped || null != _name) {
             if (null != _name) {
-                xml.append(StringUtil.wrap(_name, "name"));
+                String nameXML = StringUtil.wrap(_name, "name");
                 if (_isUntyped) {
-                    xml.append("<isUntyped/>");
+                    nameOrElementXML = nameXML + "<isUntyped/>";
                 } else {
-                    xml.append(StringUtil.wrap(_dataTypeName, "type"));
-                    if (null != _namespaceURI) {
-                        xml.append(StringUtil.wrap(_namespaceURI, "namespace"));
-                    }
+                    String typeXML = StringUtil.wrap(_dataTypeName, "type");
+                    String nsXML = _namespaceURI != null ?
+                        StringUtil.wrap(_namespaceURI, "namespace") : "";
+                    nameOrElementXML = nameXML + typeXML + nsXML;
                 }
             }
         } else if (null != _elementName) {
-            xml.append(StringUtil.wrap(_elementName, "element"));
+            nameOrElementXML = StringUtil.wrap(_elementName, "element");
         }
-        if (_initialValue != null) {
-            xml.append(StringUtil.wrapEscaped(_initialValue, "initialValue"));
-        }
-        if (_defaultValue != null) {
-            xml.append(StringUtil.wrapEscaped(_defaultValue, "defaultValue"));
-        }
-        if (_logPredicate != null) {
-            xml.append(_logPredicate.toXML());
-        }
-        return xml.toString();
+
+        String initialXML = _initialValue != null ?
+            StringUtil.wrapEscaped(_initialValue, "initialValue") : "";
+        String defaultXML = _defaultValue != null ?
+            StringUtil.wrapEscaped(_defaultValue, "defaultValue") : "";
+        String logPredicateXML = _logPredicate != null ? _logPredicate.toXML() : "";
+
+        return "%s%s%s%s%s%s".formatted(
+            indexXML, docsXML, nameOrElementXML, initialXML, defaultXML, logPredicateXML
+        );
     }
 
 

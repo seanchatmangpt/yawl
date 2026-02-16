@@ -753,15 +753,15 @@ public abstract class YTask extends YExternalNetElement {
         }
 
         YIdentifier i = _i;
-        if (this instanceof YCompositeTask) {
+        if (this instanceof YCompositeTask compositeTask) {
             cancel(pmgr);
         }
         //remove tokens from cancellation set
         for (YExternalNetElement netElement : _removeSet) {
-            if (netElement instanceof YTask) {
-                ((YTask) netElement).cancel(pmgr);
-            } else if (netElement instanceof YCondition) {
-                ((YCondition) netElement).removeAll(pmgr);
+            if (netElement instanceof YTask task) {
+                task.cancel(pmgr);
+            } else if (netElement instanceof YCondition cond) {
+                cond.removeAll(pmgr);
             }
         }
         purgeLocations(pmgr);
@@ -1365,8 +1365,7 @@ public abstract class YTask extends YExternalNetElement {
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
-            if (netElement instanceof YCondition) {
-                YCondition maybeImplicit = (YCondition) netElement;
+            if (netElement instanceof YCondition maybeImplicit) {
                 if (maybeImplicit.isImplicit()) {
                     removeTokensFromFlow.append("<removesTokensFromFlow>");
                     YExternalNetElement pre = maybeImplicit.
@@ -1471,13 +1470,12 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private String writeExpressionMapping(String expression, String mapsTo) {
-        StringBuilder xml = new StringBuilder("<mapping><expression query=\"");
-        xml.append(JDOMUtil.encodeEscapes(expression).replace("\n", "&#xA;"))
-                .append("\"/>")
-                .append("<mapsTo>")
-                .append(mapsTo)
-                .append("</mapsTo></mapping>");
-        return xml.toString();
+        return """
+            <mapping><expression query="%s"/><mapsTo>%s</mapsTo></mapping>
+            """.formatted(
+                JDOMUtil.encodeEscapes(expression).replace("\n", "&#xA;"),
+                mapsTo
+            );
     }
 
 

@@ -124,15 +124,21 @@ public class YLogEvent {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(240);
-        xml.append(String.format("<event key=\"%s\">", eventID));
-        xml.append(StringUtil.wrap(String.valueOf(instanceID), "instanceKey"));
-        xml.append(StringUtil.wrap(descriptor, "descriptor"));
-        xml.append(StringUtil.wrap(String.valueOf(timestamp), "timestamp"));
-        xml.append(StringUtil.wrap(String.valueOf(serviceID), "serviceKey"));
-        xml.append(StringUtil.wrap(String.valueOf(rootNetInstanceID), "rootNetInstanceKey"));
-        xml.append("</event>");
-        return xml.toString();
+        return """
+            <event key="%s">\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            </event>""".formatted(
+                eventID,
+                StringUtil.wrap(String.valueOf(instanceID), "instanceKey"),
+                StringUtil.wrap(descriptor, "descriptor"),
+                StringUtil.wrap(String.valueOf(timestamp), "timestamp"),
+                StringUtil.wrap(String.valueOf(serviceID), "serviceKey"),
+                StringUtil.wrap(String.valueOf(rootNetInstanceID), "rootNetInstanceKey")
+        );
     }
 
 

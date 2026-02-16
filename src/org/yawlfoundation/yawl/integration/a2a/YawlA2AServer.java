@@ -113,11 +113,15 @@ public class YawlA2AServer {
     /**
      * Build and start the A2A server on the configured port.
      *
+     * Uses virtual threads for HTTP request handling and A2A message processing.
+     * Virtual threads provide better scalability for I/O-bound operations like
+     * HTTP requests, YAWL engine calls, and agent message processing.
+     *
      * @throws IOException if the HTTP server cannot bind to the port
      */
     public void start() throws IOException {
         AgentCard agentCard = buildAgentCard();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = Executors.newVirtualThreadPerTaskExecutor();
 
         InMemoryTaskStore taskStore = new InMemoryTaskStore();
         MainEventBus mainEventBus = new MainEventBus();

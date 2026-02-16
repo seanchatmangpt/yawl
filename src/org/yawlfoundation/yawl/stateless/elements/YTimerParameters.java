@@ -108,11 +108,10 @@ public class YTimerParameters {
 
     public boolean triggerMatchesStatus(YWorkItemStatus status) {
         if (_timerType == TimerType.Nil) return false;
-        switch (_trigger) {
-            case OnEnabled: return status.equals(statusEnabled);
-            case OnExecuting: return status.equals(statusExecuting);
-        }
-        return false;
+        return switch (_trigger) {
+            case OnEnabled -> status.equals(statusEnabled);
+            case OnExecuting -> status.equals(statusExecuting);
+        };
     }
 
 
@@ -212,36 +211,37 @@ public class YTimerParameters {
 
 
     public String toXML() {
-        if (_timerType == TimerType.Nil) return "";
-
-        XNode node = new XNode("timer");
-        switch (_timerType) {
-            case Duration: {
+        return switch (_timerType) {
+            case Nil -> "<timer/>"; // Empty timer element for Nil type
+            case Duration -> {
+                XNode node = new XNode("timer");
                 node.addChild("trigger", _trigger.name());
                 node.addChild("duration", _duration.toString());
                 if (_workDaysOnly) {
                     node.addChild("workdays", true);
                 }
-                break;
+                yield node.toString();
             }
-            case Expiry: {
+            case Expiry -> {
+                XNode node = new XNode("timer");
                 node.addChild("trigger", _trigger.name());
                 node.addChild("expiry", _expiryTime.getTime());
-                break;
+                yield node.toString();
             }
-            case Interval: {
+            case Interval -> {
+                XNode node = new XNode("timer");
                 node.addChild("trigger", _trigger.name());
                 XNode params = node.addChild("durationparams");
                 params.addChild("ticks", _ticks);
                 params.addChild("interval", _timeUnit.name());
-                break;
+                yield node.toString();
             }
-            case LateBound: {
+            case LateBound -> {
+                XNode node = new XNode("timer");
                 node.addChild("netparam", _variableName);
-                break;
+                yield node.toString();
             }
-        }
-        return node.toString();
+        };
     }
 
 
@@ -295,15 +295,16 @@ public class YTimerParameters {
     }
 
     public String toString() {
-        if (_timerType == TimerType.Nil) return "Nil";
-        String s = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
-        switch (_timerType) {
-            case Duration: s += _duration.toString(); break;
-            case Expiry: s += new SimpleDateFormat().format(_expiryTime); break;
-            case Interval: s += _ticks + " " + _timeUnit.name(); break;
-            case LateBound: s = "Variable: " + _variableName; break;
-        }
-        return s;
+        return switch (_timerType) {
+            case Nil -> "Nil";
+            case Duration -> (_trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ")
+                    + _duration.toString();
+            case Expiry -> (_trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ")
+                    + new SimpleDateFormat().format(_expiryTime);
+            case Interval -> (_trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ")
+                    + _ticks + " " + _timeUnit.name();
+            case LateBound -> "Variable: " + _variableName;
+        };
     }
 
 }

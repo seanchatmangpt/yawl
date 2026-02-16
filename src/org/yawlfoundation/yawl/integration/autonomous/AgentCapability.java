@@ -16,33 +16,31 @@ package org.yawlfoundation.yawl.integration.autonomous;
 /**
  * Domain capability description for an autonomous agent.
  *
- * Agents use this (with reasoning engines) to determine eligibility for work items.
- * The capability is a natural-language domain description that the agent reasons over.
+ * <p>Agents use this (with reasoning engines) to determine eligibility for work items.
+ * The capability is a natural-language domain description that the agent reasons over.</p>
  *
+ * <p>Converted to Java 25 record for immutability, automatic equals/hashCode, and
+ * reduced boilerplate (eliminated 30+ lines of getters/constructor/equals/hashCode).</p>
+ *
+ * @param domainName short name (e.g. "Ordering", "Carrier")
+ * @param description domain description for reasoning (e.g. "procurement, purchase orders")
  * @author YAWL Foundation
  * @version 5.2
  */
-public final class AgentCapability {
-
-    private final String domainName;
-    private final String description;
+public record AgentCapability(String domainName, String description) {
 
     /**
-     * Create a capability from a domain description.
-     *
-     * @param domainName short name (e.g. "Ordering", "Carrier")
-     * @param description domain description for reasoning (e.g. "procurement,
-     *        purchase orders, approvals, order lifecycle")
+     * Canonical constructor with validation.
      */
-    public AgentCapability(String domainName, String description) {
+    public AgentCapability {
         if (domainName == null || domainName.trim().isEmpty()) {
             throw new IllegalArgumentException("domainName is required");
         }
         if (description == null || description.trim().isEmpty()) {
             throw new IllegalArgumentException("description is required");
         }
-        this.domainName = domainName.trim();
-        this.description = description.trim();
+        domainName = domainName.trim();
+        description = description.trim();
     }
 
     /**
@@ -65,14 +63,6 @@ public final class AgentCapability {
         }
         String domain = s.split("\\s+")[0];
         return new AgentCapability(domain, s);
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     @Override
