@@ -533,7 +533,7 @@ public abstract class AbstractEngineClient {
                 }
             }
         }
-        return "";
+        return null;  // No parameters found
     }
 
     public boolean canAddNewInstance(WorkItemRecord wir) {

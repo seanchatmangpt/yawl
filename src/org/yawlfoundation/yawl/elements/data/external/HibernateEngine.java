@@ -27,7 +27,9 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.tool.schema.internal.SchemaUpdateImpl;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.tool.schema.spi.SchemaMigrator;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.TargetType;
 
 import java.util.EnumSet;
@@ -141,8 +143,13 @@ public class HibernateEngine {
         Metadata metadata = metadataSources.buildMetadata();
         _factory = metadata.buildSessionFactory();
 
-        EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-        new SchemaUpdate().execute(targetTypes, metadata);
+        // Hibernate 6: Use SchemaMigrator for schema updates
+        SchemaManagementTool tool = _factory.getSessionFactoryOptions()
+            .getServiceRegistry()
+            .getService(SchemaManagementTool.class);
+        SchemaMigrator migrator = tool.getSchemaMigrator(null);
+        ExecutionOptions execOptions = () -> null;
+        migrator.doMigration(metadata, execOptions, (contributed) -> true);
     }
 
     /******************************************************************************/

@@ -19,7 +19,6 @@
 package org.yawlfoundation.yawl.util;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -261,7 +260,12 @@ public class StringUtil {
      * @return escaped string
      */
     public static String formatForHTML(String string) {
-        string = StringEscapeUtils.escapeHtml(string);
+        // Simple HTML escaping (replaces StringEscapeUtils.escapeHtml)
+        string = string.replace("&", "&amp;")
+                       .replace("<", "&lt;")
+                       .replace(">", "&gt;")
+                       .replace(""", "&quot;")
+                       .replace("'", "&#x27;");
         string = string.replaceAll("\n", "<br>");
         string = string.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
         string = string.replaceAll(" ", "&nbsp;");
