@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
  *
  * @author Michael Adams
  * @date 18/1/2023
- * @updated 2026-02-16 Virtual thread migration (Java 21)
+ * @updated 2026-02-16 Virtual thread migration (Java 25)
  */
 public class MultiThreadEventNotifier implements EventNotifier {
 

@@ -149,15 +149,10 @@ public enum YSchemaVersion {
 
 
     public boolean isBetaVersion() {
-        switch(this) {
-            case FourPointZero:
-            case ThreePointZero:
-            case TwoPointTwo:
-            case TwoPointOne:
-            case TwoPointZero: return false;
-
-            default : return true;
-        }
+        return switch (this) {
+            case FourPointZero, ThreePointZero, TwoPointTwo, TwoPointOne, TwoPointZero -> false;
+            default -> true;
+        };
     }
 
 

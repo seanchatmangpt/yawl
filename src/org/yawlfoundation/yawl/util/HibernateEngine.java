@@ -564,13 +564,12 @@ public class HibernateEngine {
      * @return the string equivalent
      */
     private String actionToString(int action) {
-        String result = null ;
-        switch (action) {
-            case DB_UPDATE: result = "update"; break;
-            case DB_DELETE: result = "delete"; break;
-            case DB_INSERT: result = "insert"; break;
-        }
-        return result ;
+        return switch (action) {
+            case DB_UPDATE -> "update";
+            case DB_DELETE -> "delete";
+            case DB_INSERT -> "insert";
+            default -> null;
+        };
     }
     
     

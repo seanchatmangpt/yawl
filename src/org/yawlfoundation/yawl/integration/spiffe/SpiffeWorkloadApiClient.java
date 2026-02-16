@@ -173,7 +173,9 @@ public class SpiffeWorkloadApiClient {
         }
 
         autoRotationEnabled = true;
-        rotationThread = new Thread(() -> {
+        rotationThread = Thread.ofVirtual()
+            .name("spiffe-auto-rotation")
+            .start(() -> {
             while (autoRotationEnabled && !Thread.currentThread().isInterrupted()) {
                 try {
                     Thread.sleep(5000);
@@ -192,9 +194,7 @@ public class SpiffeWorkloadApiClient {
                     break;
                 }
             }
-        }, "spiffe-auto-rotation");
-        rotationThread.setDaemon(true);
-        rotationThread.start();
+        });
     }
 
     /**

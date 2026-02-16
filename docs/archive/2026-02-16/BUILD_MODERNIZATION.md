@@ -114,16 +114,16 @@ ant unitTest
 #### Multi-Stage Build
 
 ```dockerfile
-# Build stage - JDK 21
-FROM eclipse-temurin:21-jdk-alpine AS builder
+# Build stage - JDK 25
+FROM eclipse-temurin:25-jdk-alpine AS builder
 RUN mvn clean package
 
-# Runtime stage - JRE 21 (40% smaller)
-FROM eclipse-temurin:21-jre-alpine
+# Runtime stage - JRE 25 (40% smaller)
+FROM eclipse-temurin:25-jre-alpine
 COPY --from=builder /build/target/*.jar /app/yawl.jar
 ```
 
-#### Java 21 Optimizations
+#### Java 25 Optimizations
 
 ```bash
 # ZGC for low-latency
@@ -184,7 +184,7 @@ See **[docs/BUILD_SYSTEM_MIGRATION_GUIDE.md](docs/BUILD_SYSTEM_MIGRATION_GUIDE.m
 ├── pom.xml                          # Original POM (keep for reference)
 ├── pom-modernized.xml               # NEW: Production-ready Maven build
 ├── Dockerfile                       # Original Dockerfile
-├── Dockerfile.modernized            # NEW: Multi-stage, Java 21+
+├── Dockerfile.modernized            # NEW: Multi-stage, Java 25+
 ├── owasp-suppressions.xml           # NEW: Security scan suppressions
 ├── BUILD_MODERNIZATION.md           # This file
 ├── build/
@@ -266,11 +266,11 @@ open target/dependency-check-report.html
 
 | Version | Status | Recommended For |
 |---------|--------|-----------------|
-| **Java 21** | ✅ LTS | Production |
-| **Java 24** | ✅ Testing | Future compatibility |
-| **Java 25** | ⚠️ Preview | Feature evaluation |
+| **Java 25** | ✅ Current | Production |
+| **Java 21** | ✅ LTS | Legacy support |
+| **Java 24** | ✅ Testing | Compatibility testing |
 
-### Java 21 Features Used
+### Java 25 Features Used
 
 - **Virtual Threads:** High-concurrency workflow execution
 - **ZGC:** Low-latency garbage collection
@@ -291,8 +291,8 @@ mvn clean install -Pprod
 # Java 24 testing
 mvn clean install -Pjava24
 
-# Java 25 preview
-mvn clean install -Pjava25
+# Java 21 LTS testing
+mvn clean install -Pjava21
 ```
 
 ## Performance
@@ -343,14 +343,14 @@ mvn verify -Pfailsafe
 ### Multi-Version Testing
 
 ```bash
-# Test on Java 21
+# Test on Java 25 (current)
 mvn clean test
 
 # Test on Java 24
 mvn clean test -Pjava24
 
-# Test on Java 25 (preview features)
-mvn clean test -Pjava25 --enable-preview
+# Test on Java 21 LTS
+mvn clean test -Pjava21
 ```
 
 ## Continuous Integration
@@ -358,7 +358,7 @@ mvn clean test -Pjava25 --enable-preview
 ### GitHub Actions Workflows
 
 **New:** `.github/workflows/build-maven.yaml`
-- Multi-version Java testing (21, 24)
+- Multi-version Java testing (25, 24, 21)
 - Parallel job execution
 - Code coverage (JaCoCo → Codecov)
 - Security scanning (OWASP + Trivy)
@@ -474,7 +474,7 @@ docker run -p 8080:8080 yawl:5.2
 - [ ] Configure Maven caching
 - [ ] Enable security scanning (OWASP)
 - [ ] Update Docker builds to use Dockerfile.modernized
-- [ ] Configure multi-version testing (Java 21, 24)
+- [ ] Configure multi-version testing (Java 25, 24, 21)
 - [ ] Set up dependency update alerts
 
 ### Project Leads
@@ -493,11 +493,11 @@ The YAWL build system modernization brings:
 ✅ **40% smaller Docker images** via multi-stage builds
 ✅ **35% faster builds** with caching and parallel execution
 ✅ **Security scanning** integrated (OWASP + Trivy)
-✅ **Multi-version testing** (Java 21 LTS, 24, 25)
+✅ **Multi-version testing** (Java 25, 24, 21 LTS)
 ✅ **Removed 17 obsolete dependencies** (SOAP, pre-Java 5)
 ✅ **Consolidated duplicates** (commons-lang, okhttp, jdom, CDI)
 ✅ **Upgraded vulnerable libraries** (Log4j, OpenTelemetry)
-✅ **Java 21+ optimizations** (virtual threads, ZGC)
+✅ **Java 25+ optimizations** (virtual threads, ZGC)
 ✅ **Complete migration guide** and automated cleanup scripts
 
 **Next Steps:** Copy pom-modernized.xml to pom.xml and run `mvn clean install`

@@ -6,7 +6,7 @@
     {
       "name": "yawl-build",
       "command": "/yawl-build",
-      "description": "Build YAWL WARs and JARs with Ant build system",
+      "description": "Build Java 25 projects with Maven (primary) or Ant (deprecated)",
       "script": ".claude/skills/yawl-build.sh",
       "agent": "yawl-engineer",
       "examples": [
@@ -15,6 +15,13 @@
         "/yawl-build buildAll",
         "/yawl-build clean"
       ],
+      "metadata": {
+        "priority": 1,
+        "category": "build",
+        "javaVersions": ["25"],
+        "buildSystems": ["maven", "ant"],
+        "preferredBuildSystem": "maven"
+      },
       "parameters": {
         "type": "object",
         "properties": {
@@ -28,6 +35,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enable verbose output"
+          },
+          "enablePreview": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable Java 25 preview features (--enable-preview)"
           }
         }
       }

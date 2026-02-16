@@ -1,15 +1,15 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Virtual Thread Integration Tests - Verifies thread pool migration and scalability
@@ -20,13 +20,13 @@ public class VirtualThreadIntegrationTest {
     private ExecutorService virtualThreadExecutor;
     private ExecutorService platformThreadExecutor;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
         platformThreadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws InterruptedException {
         virtualThreadExecutor.shutdownNow();
         platformThreadExecutor.shutdownNow();

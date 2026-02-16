@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.engine.actuator.health;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.yawlfoundation.yawl.engine.YEngine;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for YEngineHealthIndicator.
@@ -37,7 +37,7 @@ public class YEngineHealthIndicatorTest {
     private YEngineHealthIndicator healthIndicator;
     private YEngine engine;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         engine = YEngine.getInstance();
         healthIndicator = new YEngineHealthIndicator();

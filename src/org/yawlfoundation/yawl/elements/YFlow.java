@@ -107,8 +107,7 @@ public class YFlow implements Comparable<YFlow> {
                     _priorElement + "] to any Element [" + _nextElement + "] " +
                     "must occur with the bounds of the same net.");
         }
-        if (_priorElement instanceof YTask) {
-            YTask priorElement = (YTask) _priorElement;
+        if (_priorElement instanceof YTask priorElement) {
             int priorElementSplitType = priorElement.getSplitType();
             if (priorElementSplitType == YTask._AND) {
                 if (_xpathPredicate != null) {
@@ -215,28 +214,27 @@ public class YFlow implements Comparable<YFlow> {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<flowsInto>");
-        xml.append("<nextElementRef id=\"")
-           .append(_nextElement.getID())
-           .append("\"/>");
-
+        String predicateXML = "";
         if (_xpathPredicate != null) {
-            xml.append("<predicate");
-            if (_evalOrdering != null) {
-                xml.append(" ordering=\"")
-                   .append(_evalOrdering)
-                   .append("\"");
-            }
-            xml.append(">")
-               .append(JDOMUtil.encodeEscapes(_xpathPredicate))
-               .append("</predicate>");
+            String ordering = _evalOrdering != null ?
+                " ordering=\"%s\"".formatted(_evalOrdering) : "";
+            predicateXML = "<predicate%s>%s</predicate>".formatted(
+                ordering,
+                JDOMUtil.encodeEscapes(_xpathPredicate)
+            );
         }
-        if (_isDefaultFlow) xml.append("<isDefaultFlow/>");
-        if (_documentation != null)
-            xml.append(StringUtil.wrap(_documentation, "documentation"));
+        String defaultFlow = _isDefaultFlow ? "<isDefaultFlow/>" : "";
+        String docsXML = _documentation != null ?
+            StringUtil.wrap(_documentation, "documentation") : "";
 
-        xml.append("</flowsInto>");
-        return xml.toString();
+        return """
+            <flowsInto><nextElementRef id="%s"/>%s%s%s</flowsInto>
+            """.formatted(
+                _nextElement.getID(),
+                predicateXML,
+                defaultFlow,
+                docsXML
+            );
     }
 
 

@@ -117,8 +117,9 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
         }
         if (!_running) {
             //this thread polls for a reply while running
-            Thread replyPoller = new Thread(this, "ReplyPoller");
-            replyPoller.start();
+            Thread replyPoller = Thread.ofVirtual()
+                .name("ReplyPoller")
+                .start(this);
         }
     }
 

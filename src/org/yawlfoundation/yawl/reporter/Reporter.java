@@ -50,7 +50,7 @@ public class Reporter extends YHttpServlet {
             }
         }
         catch (Exception e) {
-            result = "<error>" + e.getMessage() + "</error>";
+            result = "<error>%s</error>".formatted(e.getMessage());
         }
         res.setContentType("text/xml; charset=UTF-8");
         PrintWriter out = res.getWriter();

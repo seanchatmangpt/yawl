@@ -164,27 +164,34 @@ public class CaseInstance implements YInstance {
 
 
     public String marshalWorkitems() {
-        StringBuilder result = new StringBuilder("<workitemInstances>");
-        for (WorkItemInstance item : workitems.values()) {
-            result.append(item.toXML());
-        }
-        result.append("</workitemInstances>");
-        return result.toString();
+        String items = workitems.values().stream()
+            .map(WorkItemInstance::toXML)
+            .collect(java.util.stream.Collectors.joining());
+        return """
+            <workitemInstances>%s</workitemInstances>""".formatted(items);
     }
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<caseInstance>");
-        xml.append(StringUtil.wrap(caseID, "caseid"));
-        xml.append(StringUtil.wrapEscaped(caseParams, "caseparams"));
-        xml.append(StringUtil.wrap(specID.getIdentifier(), "specidentifier"));
-        xml.append(StringUtil.wrap(specID.getVersionAsString(), "specversion"));
-        xml.append(StringUtil.wrap(specID.getUri(), "specuri"));
-        xml.append(StringUtil.wrap(String.valueOf(startTime), "starttime"));
-        if (logData != null) xml.append(logData.toXML());
-
-        xml.append("</caseInstance>");
-        return xml.toString();
+        String logDataXml = (logData != null) ? logData.toXML() : "";
+        return """
+            <caseInstance>\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            </caseInstance>""".formatted(
+                StringUtil.wrap(caseID, "caseid"),
+                StringUtil.wrapEscaped(caseParams, "caseparams"),
+                StringUtil.wrap(specID.getIdentifier(), "specidentifier"),
+                StringUtil.wrap(specID.getVersionAsString(), "specversion"),
+                StringUtil.wrap(specID.getUri(), "specuri"),
+                StringUtil.wrap(String.valueOf(startTime), "starttime"),
+                logDataXml
+        );
     }
 
     public void fromXML(String xml) {

@@ -1,0 +1,387 @@
+Buildfile: /home/user/yawl/build/build.xml
+
+copy:
+
+clean:
+   [delete] Deleting directory /home/user/yawl/classes
+   [delete] Deleting directory /home/user/yawl/output
+   [delete] Deleting directory /home/user/yawl/temp/yawl
+
+init:
+    [mkdir] Created dir: /home/user/yawl/classes
+    [mkdir] Created dir: /home/user/yawl/output
+
+hibernate_postgres8:
+
+hibernate_mysql:
+
+hibernate_derby:
+
+hibernate_h2:
+     [copy] Copying 1 file to /home/user/yawl/classes
+
+hibernate_hypersonic:
+
+hibernate_oracle:
+
+configureDatabaseAccess:
+     [echo] Set up Hibernate properties for h2
+
+compile:
+    [javac] Compiling 533 source files to /home/user/yawl/classes
+    [javac] Note: Annotation processing is enabled because one or more processors were found
+    [javac]   on the class path. A future release of javac may disable annotation processing
+    [javac]   unless at least one processor is specified by name (-processor), or a search
+    [javac]   path is specified (--processor-path, --processor-module-path), or annotation
+    [javac]   processing is enabled explicitly (-proc:only, -proc:full).
+    [javac]   Use -Xlint:-options to suppress this message.
+    [javac]   Use -proc:none to disable annotation processing.
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAWLServiceGateway.java:140: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public Map<String, YParameter> getEnablementParameters() {
+    [javac]                                    ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAWLServiceGateway.java:149: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     protected Set<String> getEnablementParameterNames() {
+    [javac]                           ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAWLServiceGateway.java:158: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public void setEnablementParameter(YParameter parameter) {
+    [javac]                 ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/data/YVariable.java:72: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public YVariable(YDecomposition dec, String dataType, String name,
+    [javac]            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:79: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getBetaVersion() {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:108: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public void setBetaVersion(String version) { setVersion(version) ; }
+    [javac]                 ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/WorkItemRecord.java:194: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public void setAssignedTo(String whoStartedMe) { setStartedBy(whoStartedMe) ; }
+    [javac]                 ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/WorkItemRecord.java:288: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getAssignedTo() { return getStartedBy(); }
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/WorkItemRecord.java:291: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getWhoStartedMe() { return getStartedBy(); }
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/WorkItemRecord.java:299: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public Element getWorkItemData() { return getDataList(); }
+    [javac]                    ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:244: warning: [deprecation] delete(Object) in Session has been deprecated
+    [javac]             getSession().delete(obj);
+    [javac]                         ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:260: warning: [deprecation] saveOrUpdate(Object) in Session has been deprecated
+    [javac]             getSession().saveOrUpdate(obj);
+    [javac]                         ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:320: warning: [deprecation] save(Object) in Session has been deprecated
+    [javac]                 getSession().save(obj);
+    [javac]                             ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:378: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]                 return getSession().createQuery(queryString);
+    [javac]                                    ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java:756: warning: [deprecation] getDataMappingsForEnablement() in YAtomicTask has been deprecated
+    [javac]         if (atomicTask.getDataMappingsForEnablement().size() > 0) {
+    [javac]                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java:757: warning: [deprecation] prepareEnablementData() in YAtomicTask has been deprecated
+    [javac]             Element data = atomicTask.prepareEnablementData();            
+    [javac]                                      ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:682: error: cannot find symbol
+    [javac]         _specID.setIdentifier(id);
+    [javac]                ^
+    [javac]   symbol:   method setIdentifier(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:687: error: cannot find symbol
+    [javac]             _specID.setUri(uri);
+    [javac]                    ^
+    [javac]   symbol:   method setUri(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:694: error: cannot find symbol
+    [javac]         _specID.setVersion(version);
+    [javac]                ^
+    [javac]   symbol:   method setVersion(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:895: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public void cancelCase(YIdentifier id) throws YPersistenceException, YEngineStateException {
+    [javac]                 ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:2223: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]                     _pmgr.getSession().createQuery(query).executeUpdate();
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:170: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             Query query = getSession().createQuery("from " + tableName).setMaxResults(1);
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:287: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             Query query = getSession().createQuery(queryString);
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:314: warning: [deprecation] createNativeQuery(String) in QueryProducer has been deprecated
+    [javac]             Query query = getSession().createNativeQuery(queryString);
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:342: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             result = getSession().createQuery(queryString).executeUpdate();
+    [javac]                                  ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:369: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             result = getSession().createQuery(queryString)
+    [javac]                                  ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:391: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             return getSession().createQuery(queryString);
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/util/HibernateEngine.java:412: warning: [deprecation] <T>load(Class<T>,Object) in Session has been deprecated
+    [javac]         Object result = getSession().load(claz, key);
+    [javac]                                     ^
+    [javac]   where T is a type-variable:
+    [javac]     T extends Object declared in method <T>load(Class<T>,Object)
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:62: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public void setDataMappingsForEnablement(Map<String, String> map) {
+    [javac]                 ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:181: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public Map getDataMappingsForEnablement() {
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:196: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public Element prepareEnablementData() throws YQueryException, YDataStateException {
+    [javac]                    ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:245: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     private void checkEnablementParameterMappings(YVerificationHandler handler) {
+    [javac]                  ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceBWebsideController.java:347: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String checkInWorkItem(String workItemID, String inputData, String outputData,
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceBWebsideController.java:366: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String checkInWorkItem(String workItemID, Element inputData,
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceBWebsideController.java:461: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public TaskInformation getTaskInformation(String specID, String taskID,
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceBWebsideController.java:493: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public IBControllerCache getModel() {
+    [javac]                              ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceBWebsideController.java:573: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public SpecificationData getSpecificationData(String specID, String sessionHandle)
+    [javac]                              ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:287: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getSpecification(String specID, String sessionHandle) throws IOException {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:362: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getSpecificationDataSchema(String specID, String sessionHandle)
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:452: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getTaskInformationStr(String specID, String taskID,
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:521: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String checkInWorkItem(String workItemID, String data, String sessionHandle)
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:647: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String launchCase(String specID, String caseParams, String sessionHandle)
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:706: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String launchCase(String specID, String caseParams, 
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:927: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getCases(String specID, String sessionHandle) throws IOException {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java:1079: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String getMITaskAttributes(String specID, String taskID,
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/SpecificationData.java:192: error: cannot find symbol
+    [javac]          _specificationID.setVersion(version);
+    [javac]                          ^
+    [javac]   symbol:   method setVersion(String)
+    [javac]   location: variable _specificationID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceA/InterfaceA_EnvironmentBasedClient.java:215: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String uploadSpecification(String specification, String filename,
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/interfaceA/InterfaceA_EnvironmentBasedClient.java:245: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String unloadSpecification(String specID, String sessionHandle) throws IOException {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/data/external/HibernateEngine.java:163: warning: [deprecation] createNativeQuery(String) in QueryProducer has been deprecated
+    [javac]         NativeQuery query = session.createNativeQuery(queryString);
+    [javac]                                    ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/data/external/HibernateEngine.java:175: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             Query query = session.createQuery(queryString);
+    [javac]                                  ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/data/external/HibernateEngine.java:194: warning: [deprecation] getNamedQuery(String) in QueryProducer has been deprecated
+    [javac]         return session.getNamedQuery(namedQuery).setParameter("key", key).getResultList();
+    [javac]                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/elements/data/external/HibernateEngine.java:204: warning: [deprecation] createQuery(String) in Session has been deprecated
+    [javac]             result = session.createQuery(queryString).executeUpdate();
+    [javac]                             ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/EngineGatewayImpl.java:647: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String checkConnectionForAdmin(String sessionHandle) {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/engine/interfce/EngineGatewayImpl.java:1286: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    [javac]     public String deleteAccount(String client, String sessionHandle) throws RemoteException {
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/zai/ZaiFunctionService.java:399: warning: [deprecation] checkInWorkItem(String,String,String) in InterfaceB_EnvironmentBasedClient has been deprecated
+    [javac]         String checkinResult = interfaceBClient.checkInWorkItem(workItemID, dataToSend, sessionHandle);
+    [javac]                                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/a2a/YawlEngineAdapter.java:363: warning: [deprecation] checkInWorkItem(String,String,String) in InterfaceB_EnvironmentBasedClient has been deprecated
+    [javac]             String result = interfaceBClient.checkInWorkItem(workItemId, data, sessionHandleB);
+    [javac]                                             ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/logging/McpLoggingHandler.java:92: warning: [deprecation] loggingNotification(LoggingMessageNotification) in McpSyncServer has been deprecated
+    [javac]             server.loggingNotification(notification);
+    [javac]                   ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/resource/YawlResourceProvider.java:106: warning: [deprecation] Resource(String,String,String,String,Annotations) in Resource has been deprecated
+    [javac]         McpSchema.Resource resource = new McpSchema.Resource(
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/resource/YawlResourceProvider.java:156: warning: [deprecation] Resource(String,String,String,String,Annotations) in Resource has been deprecated
+    [javac]         McpSchema.Resource resource = new McpSchema.Resource(
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/resource/YawlResourceProvider.java:191: warning: [deprecation] Resource(String,String,String,String,Annotations) in Resource has been deprecated
+    [javac]         McpSchema.Resource resource = new McpSchema.Resource(
+    [javac]                                       ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:121: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:132: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(result, false);
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:134: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:166: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:187: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:191: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:197: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:221: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:233: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:238: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:241: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:265: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:278: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:282: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:286: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:306: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:320: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:349: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(sb.toString().trim(), false);
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:351: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:381: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:400: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:404: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:408: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:432: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:447: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:451: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:455: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:475: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:489: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:510: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(sb.toString().trim(), false);
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:512: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:536: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:550: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:567: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(sb.toString().trim(), false);
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:569: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:593: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:608: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:613: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:617: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:645: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:661: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                         return new McpSchema.CallToolResult(
+    [javac]                                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:666: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:670: warning: [deprecation] CallToolResult(String,Boolean) in CallToolResult has been deprecated
+    [javac]                     return new McpSchema.CallToolResult(
+    [javac]                            ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlToolSpecifications.java:690: warning: [deprecation] SyncToolSpecification(Tool,BiFunction<McpSyncServerExchange,Map<String,Object>,CallToolResult>) in SyncToolSpecification has been deprecated
+    [javac]         return new McpServerFeatures.SyncToolSpecification(
+    [javac]                ^
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/stateless/engine/YWorkItem.java:665: error: cannot find symbol
+    [javac]         _specID.setIdentifier(id);
+    [javac]                ^
+    [javac]   symbol:   method setIdentifier(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/stateless/engine/YWorkItem.java:670: error: cannot find symbol
+    [javac]             _specID.setUri(uri);
+    [javac]                    ^
+    [javac]   symbol:   method setUri(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] /home/user/yawl/src/org/yawlfoundation/yawl/stateless/engine/YWorkItem.java:677: error: cannot find symbol
+    [javac]         _specID.setVersion(version);
+    [javac]                ^
+    [javac]   symbol:   method setVersion(String)
+    [javac]   location: variable _specID of type YSpecificationID
+    [javac] Note: Some input files additionally use or override a deprecated API.
+    [javac] Note: Some input files additionally use or override a deprecated API that is marked for removal.
+    [javac] Note: Some input files use unchecked or unsafe operations.
+    [javac] Note: Recompile with -Xlint:unchecked for details.
+    [javac] 7 errors
+    [javac] 100 warnings
+    [javac] only showing the first 100 warnings, of 105 total; use -Xmaxwarns if you would like to see more
+
+BUILD FAILED
+/home/user/yawl/build/build.xml:1255: Compile failed; see the compiler error output for details.
+
+Total time: 8 seconds

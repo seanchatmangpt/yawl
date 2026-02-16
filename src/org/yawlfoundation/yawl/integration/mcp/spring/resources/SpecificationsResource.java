@@ -210,16 +210,16 @@ public class SpecificationsResource implements YawlMcpResource {
     private void appendJsonValue(StringBuilder sb, Object value) {
         if (value == null) {
             sb.append("null");
-        } else if (value instanceof String) {
-            sb.append('"').append(escapeJson((String) value)).append('"');
-        } else if (value instanceof Number) {
-            sb.append(value);
-        } else if (value instanceof Boolean) {
-            sb.append(value);
-        } else if (value instanceof List) {
+        } else if (value instanceof String str) {
+            sb.append('"').append(escapeJson(str)).append('"');
+        } else if (value instanceof Number num) {
+            sb.append(num);
+        } else if (value instanceof Boolean bool) {
+            sb.append(bool);
+        } else if (value instanceof List<?> list) {
             sb.append('[');
             boolean first = true;
-            for (Object item : (List<?>) value) {
+            for (Object item : list) {
                 if (!first) {
                     sb.append(',');
                 }
@@ -227,8 +227,8 @@ public class SpecificationsResource implements YawlMcpResource {
                 appendJsonValue(sb, item);
             }
             sb.append(']');
-        } else if (value instanceof Map) {
-            sb.append(toJson((Map<String, Object>) value));
+        } else if (value instanceof Map<?, ?> map) {
+            sb.append(toJson((Map<String, Object>) map));
         } else {
             sb.append('"').append(escapeJson(value.toString())).append('"');
         }
@@ -244,21 +244,16 @@ public class SpecificationsResource implements YawlMcpResource {
         StringBuilder sb = new StringBuilder(text.length());
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            switch (c) {
-                case '"':  sb.append("\\\""); break;
-                case '\\': sb.append("\\\\"); break;
-                case '\b': sb.append("\\b");  break;
-                case '\f': sb.append("\\f");  break;
-                case '\n': sb.append("\\n");  break;
-                case '\r': sb.append("\\r");  break;
-                case '\t': sb.append("\\t");  break;
-                default:
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-            }
+            sb.append(switch (c) {
+                case '"' -> "\\\"";
+                case '\\' -> "\\\\";
+                case '\b' -> "\\b";
+                case '\f' -> "\\f";
+                case '\n' -> "\\n";
+                case '\r' -> "\\r";
+                case '\t' -> "\\t";
+                default -> c < 0x20 ? String.format("\\u%04x", (int) c) : String.valueOf(c);
+            });
         }
         return sb.toString();
     }

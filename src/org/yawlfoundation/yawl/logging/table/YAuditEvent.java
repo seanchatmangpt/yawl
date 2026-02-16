@@ -56,8 +56,8 @@ public class YAuditEvent {
     public void set_timeStamp(long timeStamp) {_timeStamp = timeStamp; }
 
     public boolean equals(Object other) {
-        return (other instanceof YAuditEvent) &&
-                (this.get_id() == ((YAuditEvent) other).get_id());
+        return other instanceof YAuditEvent event &&
+                (this.get_id() == event.get_id());
     }
 
     public int hashCode() {

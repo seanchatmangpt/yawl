@@ -816,13 +816,19 @@ public class YLogServer {
 
 
     private String getFullyPopulatedDataItem(YLogDataItemInstance instance) {
-        StringBuilder xml = new StringBuilder(150);
-        xml.append(String.format("<dataitem key=\"%d\">", instance.getDataItemID()));
-        xml.append(instance.getDataItem().toXMLShort());
+        String dataTypeXML = "";
         YLogDataType dataType = getDataType(instance.getDataTypeID());
-        if (dataType != null) xml.append(dataType.toXML());
-        xml.append("</dataitem>");
-        return xml.toString();
+        if (dataType != null) {
+            dataTypeXML = dataType.toXML();
+        }
+
+        return """
+                <dataitem key="%d">%s%s</dataitem>
+                """.formatted(
+                    instance.getDataItemID(),
+                    instance.getDataItem().toXMLShort(),
+                    dataTypeXML
+                ).trim();
     }
 
 

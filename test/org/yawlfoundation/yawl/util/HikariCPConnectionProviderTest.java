@@ -19,9 +19,9 @@
 package org.yawlfoundation.yawl.util;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for HikariCP Connection Provider.
@@ -49,7 +49,7 @@ public class HikariCPConnectionProviderTest {
     private HikariCPConnectionProvider provider;
     private Map<String, Object> config;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         provider = new HikariCPConnectionProvider();
         config = new HashMap<>();
@@ -66,7 +66,7 @@ public class HikariCPConnectionProviderTest {
         config.put("hibernate.hikari.maxLifetime", "1800000");
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (provider != null) {
             provider.stop();
@@ -305,19 +305,23 @@ public class HikariCPConnectionProviderTest {
         }
     }
 
-    @Test(expected = SQLException.class)
-    public void testConnectionBeforeConfiguration() throws SQLException {
-        HikariCPConnectionProvider unconfiguredProvider = new HikariCPConnectionProvider();
-        unconfiguredProvider.getConnection();
+    @Test
+    public void testConnectionBeforeConfiguration() {
+        assertThrows(SQLException.class, () -> {
+            HikariCPConnectionProvider unconfiguredProvider = new HikariCPConnectionProvider();
+            unconfiguredProvider.getConnection();
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConfigurationWithoutUrl() {
-        Map<String, Object> invalidConfig = new HashMap<>();
-        invalidConfig.put("hibernate.connection.username", "sa");
-        invalidConfig.put("hibernate.connection.password", "");
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, Object> invalidConfig = new HashMap<>();
+            invalidConfig.put("hibernate.connection.username", "sa");
+            invalidConfig.put("hibernate.connection.password", "");
 
-        provider.configure(invalidConfig);
+            provider.configure(invalidConfig);
+        });
     }
 
     @Test

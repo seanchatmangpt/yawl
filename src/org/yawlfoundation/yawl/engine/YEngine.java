@@ -976,14 +976,13 @@ public class YEngine implements InterfaceADesign,
                  .append(cr).append(hashLine).append(cr);
         for (YNetElement element : getCaseLocations(caseID)) {
             stateText.append("CaseIDs in: ").append(element.toString()).append(cr);
-            if (element instanceof YCondition) {
+            if (element instanceof YCondition condition) {
                 stateText.append("\thashcode: ").append(element.hashCode()).append(cr);
-                for (YIdentifier identifier : ((YConditionInterface) element).getIdentifiers()) {
+                for (YIdentifier identifier : condition.getIdentifiers()) {
                     stateText.append('\t').append(identifier.toString()).append(cr);
                 }
             }
-            else if (element instanceof YTask) {
-                YTask task = (YTask) element;
+            else if (element instanceof YTask task) {
                 for (YInternalCondition internalCondition : task.getAllInternalConditions()) {
                     if (internalCondition.containsIdentifier()) {
                         stateText.append('\t').append(internalCondition.toString())
@@ -1009,8 +1008,7 @@ public class YEngine implements InterfaceADesign,
         stateNode.addAttribute("caseID", caseID);
         stateNode.addAttribute("specID", spec.getSpecificationID().toString());
         for (YNetElement element : getCaseLocations(caseID)) {
-            if (element instanceof YCondition) {
-                YCondition condition = (YCondition) element; 
+            if (element instanceof YCondition condition) {
                 XNode conditionNode = stateNode.addChild("condition");
                 conditionNode.addAttribute("id", condition.toString());
                 conditionNode.addAttribute("name", condition.getName());
@@ -1027,8 +1025,7 @@ public class YEngine implements InterfaceADesign,
                     nextRefNode.addAttribute("documentation", doc);
                 }
             }
-            else if (element instanceof YTask) {
-                YTask task = (YTask) element;
+            else if (element instanceof YTask task) {
                 XNode taskNode = stateNode.addChild("task");
                 taskNode.addAttribute("id", task.toString());
                 taskNode.addAttribute("name", task.getDecompositionPrototype().getID());
@@ -1246,7 +1243,7 @@ public class YEngine implements InterfaceADesign,
 
             // Go thru busy and executing tasks and see if we have any atomic tasks
             for (YTask task : runner.getActiveTasks()) {
-                if (task instanceof YAtomicTask) {
+                if (task instanceof YAtomicTask atomicTask) {
                     _logger.debug("One or more executing atomic tasks found for case - " +
                             " Cannot fully suspend at this time");
                     executingTasks = true;
@@ -1344,11 +1341,10 @@ public class YEngine implements InterfaceADesign,
         if (spec != null) {
             Set<YDecomposition> decompositions = spec.getDecompositions();
             for (YDecomposition decomposition : decompositions) {
-                if (decomposition instanceof YNet) {
-                    YNet net = (YNet) decomposition;
+                if (decomposition instanceof YNet net) {
                     YExternalNetElement element = net.getNetElement(taskID);
-                    if ((element != null) && (element instanceof YTask)) {
-                        task = (YTask) element;
+                    if ((element != null) && (element instanceof YTask taskElement)) {
+                        task = taskElement;
                         break;                                               // found it
                     }
                 }
@@ -1447,27 +1443,24 @@ public class YEngine implements InterfaceADesign,
             try {
                 YNetRunner netRunner = null;
                 if (workItem != null) {
-                    switch (workItem.getStatus()) {
-                        case statusEnabled:
-                            netRunner = getNetRunner(workItem.getCaseID());
-                            startedItem = startEnabledWorkItem(netRunner, workItem, client);
-                            break;
+                    netRunner = switch (workItem.getStatus()) {
+                        case statusEnabled -> getNetRunner(workItem.getCaseID());
+                        case statusFired -> getNetRunner(workItem.getCaseID().getParent());
+                        case statusDeadlocked -> null;
+                        default -> null;
+                    };
 
-                        case statusFired:
-                            netRunner = getNetRunner(workItem.getCaseID().getParent());
-                            startedItem = startFiredWorkItem(netRunner, workItem, client);
-                            break;
-
-                        case statusDeadlocked:
-                            startedItem = workItem;
-                            break;
-
-                        default: // this work item is likely already executing.
+                    startedItem = switch (workItem.getStatus()) {
+                        case statusEnabled -> startEnabledWorkItem(netRunner, workItem, client);
+                        case statusFired -> startFiredWorkItem(netRunner, workItem, client);
+                        case statusDeadlocked -> workItem;
+                        default -> { // this work item is likely already executing.
                             rollbackTransaction();
                             throw new YStateException(String.format(
                                     "Item [%s]: status [%s] does not permit starting.",
                                      workItem.getIDString(), workItem.getStatus()));
-                    }
+                        }
+                    };
                 }
                 else {
                     rollbackTransaction();
@@ -2183,9 +2176,9 @@ public class YEngine implements InterfaceADesign,
             synchronized(_pmgr) {
                 boolean isLocalTransaction = startTransaction();
                 switch (action) {
-                    case YPersistenceManager.DB_UPDATE : _pmgr.updateObject(obj); break;
-                    case YPersistenceManager.DB_DELETE : _pmgr.deleteObject(obj); break;
-                    case YPersistenceManager.DB_INSERT : _pmgr.storeObject(obj); break;
+                    case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
+                    case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
+                    case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
                 }
                 if (isLocalTransaction) commitTransaction();
             }

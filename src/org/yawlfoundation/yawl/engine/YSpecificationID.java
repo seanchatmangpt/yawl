@@ -25,6 +25,7 @@ import org.yawlfoundation.yawl.util.XNode;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The unique identifier of a specification.
@@ -47,108 +48,183 @@ import java.util.Map;
  * @author Mike Fowler
  *         Date: 05-Sep-2006
  * @author Michael Adams 08-09 heavily modified for versions 2.0 - 2.1
+ * @author Claude Code 2026-02 converted to Java 25 record
  */
 
-public class YSpecificationID implements Comparable<YSpecificationID> {
+public record YSpecificationID(
+        String identifier,
+        YSpecVersion version,
+        String uri
+) implements Comparable<YSpecificationID> {
 
-    private String identifier;                         // a system generated UUID string
-    private YSpecVersion version;
-    private String uri;                                // the user-defined name
-
-
-    public YSpecificationID() { }                      // for persistence
-
-    public YSpecificationID(String identifier, YSpecVersion version, String uri) {
-        this.identifier = identifier;
-        this.version = (version != null) ? version : new YSpecVersion("0.1");
-        this.uri = uri;
+    /**
+     * Compact constructor with validation and normalization.
+     * Ensures version is never null (defaults to "0.1" for pre-2.0 specs).
+     */
+    public YSpecificationID {
+        version = (version != null) ? version : new YSpecVersion("0.1");
     }
 
+    /**
+     * Constructor with String version.
+     */
     public YSpecificationID(String identifier, String version, String uri) {
         this(identifier, new YSpecVersion(version), uri);
     }
 
+    /**
+     * Constructor from WorkItemRecord.
+     */
     public YSpecificationID(WorkItemRecord wir) {
         this(wir.getSpecIdentifier(), wir.getSpecVersion(), wir.getSpecURI());
     }
 
-    // default constructor for pre-2.0 specs
+    /**
+     * Default constructor for pre-2.0 specs (uri-based identification).
+     */
     public YSpecificationID(String uri) {
         this(null, new YSpecVersion("0.1"), uri);
     }
 
+    /**
+     * Constructor from XNode.
+     */
     public YSpecificationID(XNode node) {
-        fromXNode(node);
+        this(fromXNode(node));
     }
 
+    /**
+     * Copy constructor for creating modified instances.
+     */
+    private YSpecificationID(YSpecificationID other) {
+        this(other.identifier, other.version, other.uri);
+    }
 
-    public String getIdentifier() { return identifier; }
+    /**
+     * Factory method to create from XNode.
+     */
+    public static YSpecificationID fromXNode(XNode node) {
+        String identifier = node.getChildText("identifier");
+        YSpecVersion version = new YSpecVersion(node.getChildText("version"));
+        String uri = node.getChildText("uri");
+        return new YSpecificationID(identifier, version, uri);
+    }
 
-    public String getVersionAsString() { return version.toString(); }
+    /**
+     * Factory method to parse from full string format.
+     * Format: "identifier:version:uri" or "uri" for pre-2.0 specs.
+     */
+    public static YSpecificationID fromFullString(String s) throws IllegalArgumentException {
+        String[] parts = s.split(":");
+        if (parts.length == 1) {            // pre release 2: uri only
+            return new YSpecificationID(null, new YSpecVersion("0.1"), parts[0]);
+        }
+        else if (parts.length == 3) {
+            String identifier = !StringUtil.isNullOrEmpty(parts[0]) ? parts[0] : null;
+            YSpecVersion version = new YSpecVersion(parts[1]);
+            String uri = parts[2];
+            return new YSpecificationID(identifier, version, uri);
+        }
+        else {
+            throw new IllegalArgumentException("Invalid specification ID string: " + s);
+        }
+    }
 
-    public YSpecVersion getVersion() { return version; }
+    /**
+     * Get version as string.
+     */
+    public String getVersionAsString() {
+        return version.toString();
+    }
 
-    public String getUri() { return uri; }
+    /**
+     * Get the key used for unique identification.
+     * Returns identifier if non-null, otherwise uri (for pre-2.0 specs).
+     */
+    public String getKey() {
+        return (identifier != null) ? identifier : uri;
+    }
 
-    public String getKey() { return (identifier != null) ? identifier : uri; }
+    /**
+     * Create a new instance with updated identifier.
+     */
+    public YSpecificationID withIdentifier(String identifier) {
+        return new YSpecificationID(identifier, this.version, this.uri);
+    }
 
+    /**
+     * Create a new instance with updated version.
+     */
+    public YSpecificationID withVersion(String version) {
+        return new YSpecificationID(this.identifier, new YSpecVersion(version), this.uri);
+    }
 
-    public void setIdentifier(String identifier) { this.identifier = identifier; }
+    /**
+     * Create a new instance with updated version.
+     */
+    public YSpecificationID withVersion(YSpecVersion version) {
+        return new YSpecificationID(this.identifier, version, this.uri);
+    }
 
-    public void setVersion(String ver) { version.setVersion(ver); }
+    /**
+     * Create a new instance with updated uri.
+     */
+    public YSpecificationID withUri(String uri) {
+        return new YSpecificationID(this.identifier, this.version, uri);
+    }
 
-    public void setVersion(YSpecVersion ver) { version = ver; }
-
-    public void setUri(String n) { uri = n; }
-
-
+    /**
+     * Validate specification ID.
+     * Only 2.0 or later ids (with non-null identifier) can have a version other than 0.1.
+     */
     public boolean isValid() {
-
-        // only 2.0 or later ids (i.e. with a non-null identifier) can have a version
-        // other than the default 0.1
         return (identifier != null) || version.getVersion().equals("0.1");
     }
 
-
+    /**
+     * Check if this is a previous version of another specification.
+     */
     public boolean isPreviousVersionOf(YSpecificationID other) {
-
-        // a null identifier means pre-2.0, which only have one version
-        return hasMatchingIdentifier(other) && (version.compareTo(other.getVersion()) < 0);
+        return hasMatchingIdentifier(other) && (version.compareTo(other.version()) < 0);
     }
 
-
+    /**
+     * Check if this has the same identifier as another specification.
+     * A null identifier means pre-2.0, which only have one version.
+     */
     public boolean hasMatchingIdentifier(YSpecificationID other) {
-        return (identifier != null) && identifier.equals(other.getIdentifier());
+        return (identifier != null) && identifier.equals(other.identifier());
     }
 
-
+    /**
+     * Custom equals implementation for backward compatibility.
+     * Handles pre-2.0 specs (null identifier) specially.
+     */
     @Override
     public boolean equals(Object obj) {
-        boolean equalYIDs = false;
-        if (obj instanceof YSpecificationID) {
-            YSpecificationID other = (YSpecificationID) obj;
+        if (this == obj) return true;
+        if (!(obj instanceof YSpecificationID other)) return false;
 
-            if ((other.getIdentifier() == null) && (getIdentifier() == null)) {  // both pre-2.0
-                equalYIDs = (other.getUri() != null) && (getUri() != null) &&
-                        other.getUri().equals(getUri()) &&
-                        other.getVersion().equals(getVersion());
-            } else {
-
-                // if only one identifier is non-null it's no match
-                equalYIDs = (other.getIdentifier() != null) && (getIdentifier() != null) &&
-                        other.getIdentifier().equals(getIdentifier()) &&
-                        other.getVersion().equals(getVersion());
-            }
+        // Both pre-2.0 (null identifiers) - compare uri and version
+        if (other.identifier() == null && identifier == null) {
+            return Objects.equals(uri, other.uri()) &&
+                   Objects.equals(version, other.version());
         }
-        return equalYIDs;
+
+        // Post-2.0 - compare identifier and version
+        return Objects.equals(identifier, other.identifier()) &&
+               Objects.equals(version, other.version());
     }
 
+    /**
+     * Custom hashCode implementation for backward compatibility.
+     */
+    @Override
     public int hashCode() {
         String key = getKey();
         int subCode = key != null ? key.hashCode() : 31;
         return 17 * subCode * version.hashCode();
     }
-
 
     @Override
     public String toString() {
@@ -160,34 +236,11 @@ public class YSpecificationID implements Comparable<YSpecificationID> {
     }
 
     public String toFullString() {
-        StringBuilder s = new StringBuilder();
-        if (identifier != null) s.append(identifier);
-        s.append(":");
-        s.append(getVersionAsString());
-        s.append(":");
-        s.append(uri);
-        return s.toString();
+        String id = identifier != null ? identifier : "";
+        return "%s:%s:%s".formatted(id, getVersionAsString(), uri);
     }
 
-
-    public YSpecificationID fromFullString(String s) throws IllegalArgumentException {
-        String[] parts = s.split(":");
-        if (parts.length == 1) {            // pre release 2: uri only
-            setVersion(new YSpecVersion("0.1"));
-            setUri(parts[0]);
-        }
-        else if (parts.length == 3) {
-            if (!StringUtil.isNullOrEmpty(parts[0])) setIdentifier(parts[0]);
-            setVersion(new YSpecVersion(parts[1]));
-            setUri(parts[2]);
-        }
-        else {
-            throw new IllegalArgumentException("Invalid specification ID string: " + s);
-        }
-        return this;
-    }
-
-
+    @Override
     public int compareTo(YSpecificationID other) {
         String key = getKey();
         String otherKey = other.getKey();
@@ -196,21 +249,24 @@ public class YSpecificationID implements Comparable<YSpecificationID> {
         } else if (otherKey == null) {
             return 1;
         } else if (key.equals(otherKey)) {
-            return version.compareTo(other.getVersion());
+            return version.compareTo(other.version());
         } else return otherKey.compareTo(key);
     }
 
-
-    // utility method for bundling up specIDs for passing across the interfaces
+    /**
+     * Utility method for bundling up specIDs for passing across the interfaces.
+     */
     public Map<String, String> toMap() {
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         if (identifier != null) result.put("specidentifier", identifier);
         result.put("specversion", version.getVersion());
         result.put("specuri", uri);
         return result;
     }
 
-
+    /**
+     * Convert to XNode representation.
+     */
     public XNode toXNode() {
         XNode node = new XNode("specificationid");
         if (identifier != null) {
@@ -221,17 +277,18 @@ public class YSpecificationID implements Comparable<YSpecificationID> {
         return node;
     }
 
-
-    public YSpecificationID fromXNode(XNode node) {
-        identifier = node.getChildText("identifier");
-        version = new YSpecVersion(node.getChildText("version"));
-        uri = node.getChildText("uri");
-        return this;
-    }
-
-
+    /**
+     * Convert to XML string.
+     */
     public String toXML() {
         return toXNode().toPrettyString();
     }
 
+    /**
+     * Accessor methods for backward compatibility with getter naming convention.
+     * Records generate accessors without "get" prefix, but legacy code may expect them.
+     */
+    public String getIdentifier() { return identifier; }
+    public YSpecVersion getVersion() { return version; }
+    public String getUri() { return uri; }
 }

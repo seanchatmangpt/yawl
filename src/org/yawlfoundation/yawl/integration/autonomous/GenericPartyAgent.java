@@ -98,7 +98,9 @@ public final class GenericPartyAgent implements AutonomousAgent {
     }
 
     private void startDiscoveryLoop() {
-        discoveryThread = new Thread(() -> {
+        discoveryThread = Thread.ofVirtual()
+            .name("GenericPartyAgent-Discovery")
+            .start(() -> {
             while (running.get()) {
                 try {
                     runDiscoveryCycle();
@@ -185,7 +187,7 @@ public final class GenericPartyAgent implements AutonomousAgent {
         String agentCard = buildAgentCardJson();
 
         httpServer = HttpServer.create(new InetSocketAddress(config.getPort()), 0);
-        httpServer.setExecutor(Executors.newSingleThreadExecutor());
+        httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         httpServer.createContext("/.well-known/agent.json", exchange -> {
             if (!"GET".equals(exchange.getRequestMethod())) {

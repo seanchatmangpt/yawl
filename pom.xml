@@ -30,8 +30,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
 
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.2.5</spring-boot.version>
@@ -40,6 +40,8 @@
         <opentelemetry-instrumentation.version>2.6.0</opentelemetry-instrumentation.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.19.7</testcontainers.version>
+        <jmh.version>1.37</jmh.version>
+        <jacoco.version>0.8.11</jacoco.version>
 
         <!-- Jakarta EE & Framework -->
         <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
@@ -723,6 +725,18 @@
                 <artifactId>xmlunit</artifactId>
                 <version>${xmlunit.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1305,6 +1319,16 @@
             <version>${xmlunit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -1393,18 +1417,21 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Code Coverage -->
+            <!-- JaCoCo Code Coverage Plugin -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
                 <executions>
+                    <!-- Prepare agent for test execution -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+
+                    <!-- Generate coverage report after tests -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
@@ -1412,6 +1439,17 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+
+                    <!-- Aggregate reports across all modules -->
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- Enforce minimum coverage thresholds -->
                     <execution>
                         <id>check</id>
                         <phase>verify</phase>
@@ -1420,6 +1458,7 @@
                         </goals>
                         <configuration>
                             <rules>
+                                <!-- Overall project coverage must be >= 70% (instructions) -->
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
@@ -1428,12 +1467,67 @@
                                             <value>COVEREDRATIO</value>
                                             <minimum>0.70</minimum>
                                         </limit>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.65</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Package-level coverage (excluding tests) -->
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                        <exclude>*.test.*</exclude>
+                                        <exclude>*.tests.*</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Class-level coverage -->
+                                <rule>
+                                    <element>CLASS</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                        <exclude>*TestCase</exclude>
+                                        <exclude>*TestSuite</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.50</minimum>
+                                        </limit>
                                     </limits>
                                 </rule>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <!-- Exclude patterns -->
+                    <excludes>
+                        <exclude>**/*Test.class</exclude>
+                        <exclude>**/*Tests.class</exclude>
+                        <exclude>**/*TestCase.class</exclude>
+                        <exclude>**/*TestSuite.class</exclude>
+                        <exclude>**/test/**</exclude>
+                        <exclude>**/package-info.class</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
             <!-- Dependency Plugin for analyzing dependencies -->
@@ -1523,15 +1617,15 @@
     </build>
 
     <profiles>
-        <!-- Java 21 (LTS - Default Production Profile) -->
+        <!-- Java 25 (Current Default Production Profile) -->
         <profile>
-            <id>java21</id>
+            <id>java25</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.source>21</maven.compiler.source>
-                <maven.compiler.target>21</maven.compiler.target>
+                <maven.compiler.source>25</maven.compiler.source>
+                <maven.compiler.target>25</maven.compiler.target>
             </properties>
             <build>
                 <plugins>
@@ -1541,6 +1635,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.incubator.concurrent</arg>
                                 <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
@@ -1562,37 +1658,6 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>--enable-preview</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- Java 25 (Preview Features Evaluation) -->
-        <profile>
-            <id>java25</id>
-            <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <release>25</release>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
