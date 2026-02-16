@@ -6,7 +6,7 @@ class TestPersistence {
 //    private YSpecification specification;
 //
 //    @BeforeEach
-    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YStateException, YPersistenceException {
+//    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YStateException, YPersistenceException {
 //        URL fileURL = getClass().getResource("test.xml");
 //        File yawlXMLFile = new File(fileURL.getFile());
 //        specification = (YSpecification) YMarshal.
@@ -17,7 +17,7 @@ class TestPersistence {
 //    }
 //
 //    @Test
-    void testStore() throws InterruptedException, YDataStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+//    void testStore() throws InterruptedException, YDataStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
 //        YPersistenceManager pmgr = new YPersistenceManager(YEngine.getPMSessionFactory());
 //        pmgr.startTransaction();
 //        pmgr.storeObject(specification);

@@ -62,13 +62,13 @@ class TestYExternalCondition {
         assertTrue(id.getLocations().size() == 0);
         assertFalse(id.getLocations().contains(_condition));
         _condition.add(null, id);
-        assertTrue(id.getLocations(, "locations should contain C1 ").contains(_condition) && id.getLocations().size() == 1);
+        assertTrue(id.getLocations().contains(_condition) && id.getLocations().size() == 1, "locations should contain C1");
         assertTrue(id.getLocations().contains(_condition));
         assertTrue(_aTask.t_enabled(id));
         YIdentifier childID = null;
         childID = (YIdentifier) _aTask.t_fire(null).get(0);
 
-        assertTrue(id.getLocations(, "locations should be empty ").size() == 1);
+        assertTrue(id.getLocations().size() == 1, "locations should be empty");
         assertTrue(id.getLocations().iterator().next().equals(_aTask));
         assertFalse(id.getLocations().contains(_condition));
         _aTask.t_start(null, childID);
