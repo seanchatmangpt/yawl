@@ -87,13 +87,13 @@ HEALTHCHECK --interval=30s \
             --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
-<<<<<<< HEAD
-# JVM options optimized for containers and Java 25+
+# JVM options optimized for containers and Java 25
 ENV JAVA_OPTS="\
     -XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=75.0 \
     -XX:InitialRAMPercentage=50.0 \
-    -XX:+UseG1GC \
+    -XX:+UseZGC \
+    -XX:+ZGenerational \
     -XX:+UseStringDeduplication \
     -XX:+ExitOnOutOfMemoryError \
     -XX:+HeapDumpOnOutOfMemoryError \
@@ -101,8 +101,7 @@ ENV JAVA_OPTS="\
     -Djava.security.egd=file:/dev/./urandom \
     -Djava.io.tmpdir=/app/temp"
 
-<<<<<<< HEAD
-# Virtual Threads configuration (Java 25+)
+# Virtual Threads configuration (Java 25)
 ENV JAVA_OPTS="${JAVA_OPTS} \
     -Djdk.virtualThreadScheduler.parallelism=200 \
     -Djdk.virtualThreadScheduler.maxPoolSize=256"

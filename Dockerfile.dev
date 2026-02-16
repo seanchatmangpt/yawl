@@ -2,7 +2,7 @@ FROM eclipse-temurin:25-jdk
 
 # Install required tools
 RUN apt-get update && apt-get install -y \
-    maven \
+    ant \
     git \
     wget \
     curl \
@@ -12,11 +12,11 @@ RUN apt-get update && apt-get install -y \
 
 # Set environment variables
 ENV JAVA_HOME=/opt/java/openjdk
-ENV MAVEN_HOME=/usr/share/maven
-ENV PATH=$MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+ENV ANT_HOME=/usr/share/ant
+ENV PATH=$ANT_HOME/bin:$JAVA_HOME/bin:$PATH
 
 # Verify installations
-RUN java -version && mvn -version
+RUN java -version && ant -version
 
 # Create workspace
 WORKDIR /workspace
