@@ -25,6 +25,8 @@ import com.sun.rave.web.ui.component.Label;
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
 import jakarta.el.MethodExpression;
+import jakarta.el.ELContext;
+import jakarta.el.ExpressionFactory;
 import jakarta.faces.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -291,10 +293,13 @@ public class MessagePanel extends PanelLayout {
     }
 
 
-    private MethodBinding bindButtonListener() {
+    private MethodExpression bindButtonListener() {
         Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding("#{SessionBean.messagePanelOKBtnAction}",
-                                         new Class[]{ActionEvent.class});
+        return app.getExpressionFactory().createMethodExpression(
+                FacesContext.getCurrentInstance().getELContext(),
+                "#{SessionBean.messagePanelOKBtnAction}",
+                null,
+                new Class[]{ActionEvent.class});
     }
 
 

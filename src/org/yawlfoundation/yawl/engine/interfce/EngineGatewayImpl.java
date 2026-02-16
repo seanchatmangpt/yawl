@@ -802,7 +802,7 @@ public class EngineGatewayImpl implements EngineGateway {
         String sessionMessage = checkSession(sessionHandle);
         if (isFailureMessage(sessionMessage)) return sessionMessage;
         new YLaunchDelayer(specID, caseParams, caseCompletionURI, null,
-                new YLogDataItemList(logDataStr), sessionHandle, expiry, true);
+                new YLogDataItemList(logDataStr), sessionHandle, expiry.toInstant(), true);
         return successMessage("Case scheduled to start at " + expiry.toString());
     }
 

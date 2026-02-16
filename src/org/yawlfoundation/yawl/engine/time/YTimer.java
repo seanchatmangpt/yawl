@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.engine.time;
 
 import javax.xml.datatype.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -105,7 +106,13 @@ public class YTimer extends Timer {
         schedule(new TimeKeeper(timee), expiryTime) ;
         return expiryTime.getTime();
     }
-    
+
+    public long schedule(YTimedObject timee, Instant expiryTime) {
+        Date date = Date.from(expiryTime);
+        schedule(new TimeKeeper(timee), date);
+        return expiryTime.toEpochMilli();
+    }
+
 
     public long schedule(YTimedObject timee, Duration duration) {
         long durationAsMilliseconds = duration.getTimeInMillis(new Date());

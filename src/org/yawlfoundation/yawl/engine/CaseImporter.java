@@ -28,6 +28,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -280,11 +281,11 @@ public class CaseImporter {
 
 
     private void setTimestamps(YWorkItem item, XNode nItem) {
-        Date timestamp = makeDate(nItem.getChildText("enablement"));
+        Instant timestamp = makeInstant(nItem.getChildText("enablement"));
         if (timestamp != null) item.set_enablementTime(timestamp);
-        timestamp = makeDate(nItem.getChildText("firing"));
+        timestamp = makeInstant(nItem.getChildText("firing"));
         if (timestamp != null) item.set_firingTime(timestamp);
-        timestamp = makeDate(nItem.getChildText("start"));
+        timestamp = makeInstant(nItem.getChildText("start"));
         if (timestamp != null) item.set_startTime(timestamp);
     }
 
@@ -296,6 +297,11 @@ public class CaseImporter {
         }
     }
 
+
+    private Instant makeInstant(String timeStr) {
+        return ! (timeStr == null || "0".equals(timeStr)) ?
+                Instant.ofEpochMilli(StringUtil.strToLong(timeStr, 0)) : null;
+    }
 
     private Date makeDate(String timeStr) {
         return ! (timeStr == null || "0".equals(timeStr)) ?

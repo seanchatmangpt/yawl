@@ -27,10 +27,12 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.exception.JDBCConnectionException;
+import org.hibernate.query.Query;
 import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import org.hibernate.query.NativeQuery;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
@@ -136,7 +138,7 @@ public class HibernateEngine {
         MetadataSources metadataSources = new MetadataSources(standardRegistry);
         if (classes != null) {
             for (Class clazz : classes) {
-                metadataSources.addClass(clazz);
+                metadataSources.addAnnotatedClass(clazz);
             }
         }
 
@@ -146,7 +148,7 @@ public class HibernateEngine {
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
         SchemaManagementTool schemaManagementTool = standardRegistry
                 .getService(SchemaManagementTool.class);
-        schemaManagementTool.getSchemaUpdater(null)
+        schemaManagementTool.getSchemaUpdater(Collections.emptyMap())
                 .doUpdate(metadata, targetTypes, false);
     }
 

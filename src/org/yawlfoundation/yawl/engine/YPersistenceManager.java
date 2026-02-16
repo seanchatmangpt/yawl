@@ -28,7 +28,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import jakarta.persistence.Query;
+import org.hibernate.query.Query;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.exceptions.Problem;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.HibernateStatistics;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -96,7 +97,7 @@ public class YPersistenceManager {
 
                 MetadataSources metadataSources = new MetadataSources(standardRegistry);
                 for (Class clazz : persistedClasses) {
-                    metadataSources.addClass(clazz);
+                    metadataSources.addAnnotatedClass(clazz);
                 }
 
                 Metadata metadata = metadataSources.buildMetadata();
@@ -105,7 +106,7 @@ public class YPersistenceManager {
                 EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
                 SchemaManagementTool schemaManagementTool = standardRegistry
                         .getService(SchemaManagementTool.class);
-                schemaManagementTool.getSchemaUpdater(null)
+                schemaManagementTool.getSchemaUpdater(new HashMap<>())
                         .doUpdate(metadata, targetTypes, false);
                 setEnabled(true);
             }

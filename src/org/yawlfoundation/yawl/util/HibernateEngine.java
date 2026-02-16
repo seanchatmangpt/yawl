@@ -36,6 +36,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
@@ -95,7 +96,7 @@ public class HibernateEngine {
 
         MetadataSources metadataSources = new MetadataSources(standardRegistry);
         for (Class clazz : classes) {
-            metadataSources.addClass(clazz);
+            metadataSources.addAnnotatedClass(clazz);
         }
 
         Metadata metadata = metadataSources.buildMetadata();
@@ -104,7 +105,7 @@ public class HibernateEngine {
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
         SchemaManagementTool schemaManagementTool = standardRegistry
                 .getService(SchemaManagementTool.class);
-        schemaManagementTool.getSchemaUpdater(null)
+        schemaManagementTool.getSchemaUpdater(Collections.emptyMap())
                 .doUpdate(metadata, targetTypes, false);
     }
 
@@ -313,7 +314,7 @@ public class HibernateEngine {
         Transaction tx = null;
         try {
             tx = getOrBeginTransaction();
-            Query query = getSession().createSQLQuery(queryString);
+            Query query = getSession().createNativeQuery(queryString);
             if (query != null) result = query.list();
             commit();
         }
