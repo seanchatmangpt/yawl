@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  YAWL v5.2 - Maven Module Template
+
+  This template provides a consistent structure for YAWL modules.
+
+  Usage:
+    1. Copy this file to your module directory as pom.xml
+    2. Update <artifactId>, <name>, and <description>
+    3. Add module-specific dependencies (versions managed by parent)
+    4. Follow BOM-managed dependencies where possible
+
+  Key principles:
+    - Use parent POM version management (no hardcoded versions)
+    - Apply proper scopes (compile, provided, runtime, test)
+    - Leverage BOMs for Jakarta, Spring, OpenTelemetry, Resilience4j
+    - Include only necessary dependencies (avoid transitive bloat)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent POM - inherits BOMs and version management -->
+    <parent>
+        <groupId>org.yawlfoundation</groupId>
+        <artifactId>yawl</artifactId>
+        <version>5.2</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <!-- Module Identification -->
+    <artifactId>yawl-module-name</artifactId>
+    <packaging>jar</packaging>
+
+    <name>YAWL Module Name</name>
+    <description>Brief module description</description>
+
+    <!-- Module-Specific Properties (override parent if needed) -->
+    <properties>
+        <!-- Add module-specific properties here -->
+    </properties>
+
+    <dependencies>
+        <!-- ========================================== -->
+        <!-- CORE DEPENDENCIES (compile scope)         -->
+        <!-- ========================================== -->
+
+        <!-- Jakarta APIs (versions managed by Jakarta EE BOM) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+
+        <!-- Commons Libraries (versions from parent) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!-- Logging (Log4j2 with SLF4J bridge) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- ========================================== -->
+        <!-- OBSERVABILITY (runtime scope)             -->
+        <!-- ========================================== -->
+
+        <!-- OpenTelemetry (versions managed by OpenTelemetry BOM) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ========================================== -->
+        <!-- RESILIENCE (if module needs fault tolerance) -->
+        <!-- ========================================== -->
+
+        <!-- Resilience4j (versions managed by Resilience4j BOM) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+
+        <!-- ========================================== -->
+        <!-- TEST DEPENDENCIES (test scope)            -->
+        <!-- ========================================== -->
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- H2 Database for in-memory testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- TestContainers (if integration tests needed) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- Use standard Maven directory layout or customize -->
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
+
+        <plugins>
+            <!-- Compiler plugin (inherits from parent) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Surefire for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <!-- Failsafe for integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JaCoCo code coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
