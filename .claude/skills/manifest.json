@@ -4,6 +4,70 @@
   "namespace": "yawl",
   "skills": [
     {
+      "name": "yawl-build",
+      "command": "/yawl-build",
+      "description": "Build YAWL modules with Maven",
+      "script": ".claude/skills/yawl-build.sh",
+      "agent": "yawl-engineer",
+      "examples": [
+        "/yawl-build compile",
+        "/yawl-build test",
+        "/yawl-build package",
+        "/yawl-build --module=yawl-engine compile"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": ["compile", "test", "package", "buildAll", "buildWebApps", "clean", "install", "javadoc", "verify"],
+            "default": "compile",
+            "description": "Maven build target"
+          },
+          "module": {
+            "type": "string",
+            "description": "Specific Maven module to build"
+          },
+          "verbose": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable verbose output (-X)"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-test",
+      "command": "/yawl-test",
+      "description": "Run YAWL test suites with Maven",
+      "script": ".claude/skills/yawl-test.sh",
+      "agent": "yawl-tester",
+      "examples": [
+        "/yawl-test",
+        "/yawl-test --module=yawl-engine",
+        "/yawl-test --coverage"
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "Run tests for specific module"
+          },
+          "coverage": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate JaCoCo coverage report"
+          },
+          "verbose": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable verbose output"
+          }
+        }
+      }
+    },
+    {
       "name": "yawl-validate",
       "command": "/yawl-validate",
       "description": "Validate YAWL specifications against XSD schemas",
