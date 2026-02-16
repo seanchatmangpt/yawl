@@ -134,9 +134,13 @@ public class DynFormFileUpload {
     }
 
 
-    private MethodBinding bindListener(String binding) {
+    private MethodExpression bindListener(String binding) {
         Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding(binding, new Class[]{ActionEvent.class});
+        return app.getExpressionFactory().createMethodExpression(
+                FacesContext.getCurrentInstance().getELContext(),
+                binding,
+                null,
+                new Class[]{ActionEvent.class});
     }
     
     

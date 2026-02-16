@@ -873,9 +873,12 @@ public class DynFormFactory extends AbstractSessionBean implements DynamicForm {
     }
 
 
-    private MethodBinding bindOccursButtonListener() {
+    private MethodExpression bindOccursButtonListener() {
         Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding("#{dynForm.btnOccursAction}",
+        return app.getExpressionFactory().createMethodExpression(
+                FacesContext.getCurrentInstance().getELContext(),
+                "#{dynForm.btnOccursAction}",
+                null,
                 new Class[]{ActionEvent.class});
     }
 

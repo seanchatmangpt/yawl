@@ -291,10 +291,13 @@ public class MessagePanel extends PanelLayout {
     }
 
 
-    private MethodBinding bindButtonListener() {
+    private MethodExpression bindButtonListener() {
         Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding("#{SessionBean.messagePanelOKBtnAction}",
-                                         new Class[]{ActionEvent.class});
+        return app.getExpressionFactory().createMethodExpression(
+                FacesContext.getCurrentInstance().getELContext(),
+                "#{SessionBean.messagePanelOKBtnAction}",
+                null,
+                new Class[]{ActionEvent.class});
     }
 
 
