@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Cancel Region Pattern Test Specification -->
+<!-- Cancel a set of tasks within a region -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="CancelRegionSpec">
+        <metaData/>
+        <rootNet id="CancelRegionNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="regionTaskA"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="regionTaskB"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="cancelTrigger"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="regionTaskA">
+                    <flowsInto>
+                        <nextElementRef id="regionJoin"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <cancelBehaviour>cancel</cancelBehaviour>
+                </task>
+                <task id="regionTaskB">
+                    <flowsInto>
+                        <nextElementRef id="regionJoin"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <cancelBehaviour>cancel</cancelBehaviour>
+                </task>
+                <condition id="regionJoin">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                </condition>
+                <task id="cancelTrigger">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <removalSet>
+                        <task id="regionTaskA"/>
+                        <task id="regionTaskB"/>
+                    </removalSet>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

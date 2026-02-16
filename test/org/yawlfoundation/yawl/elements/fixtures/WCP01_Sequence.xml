@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP1: Sequence Pattern - Tasks execute in sequential order -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP01_Sequence">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="SequenceNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="taskA"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="taskA">
+          <flowsInto>
+            <nextElementRef id="taskB"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="DecompositionA"/>
+        </task>
+        <task id="taskB">
+          <flowsInto>
+            <nextElementRef id="taskC"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="DecompositionB"/>
+        </task>
+        <task id="taskC">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="DecompositionC"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="DecompositionA" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="DecompositionB" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="DecompositionC" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

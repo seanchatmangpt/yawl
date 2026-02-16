@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- While Loop Pattern Test Specification -->
+<!-- Pre-condition loop: condition checked before each iteration -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="WhileLoopSpec">
+        <metaData/>
+        <rootNet id="WhileLoopNet">
+            <localVariable name="continueLoop">
+                <type>xs:boolean</type>
+                <initialValue>true</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="whileCondition"/>
+                    </flowsInto>
+                </inputCondition>
+                <condition id="whileCondition">
+                    <flowsInto>
+                        <nextElementRef id="whileTask"/>
+                        <predicate>/data/continueLoop = true</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                        <predicate>/data/continueLoop = false</predicate>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                </condition>
+                <task id="whileTask">
+                    <flowsInto>
+                        <nextElementRef id="whileCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

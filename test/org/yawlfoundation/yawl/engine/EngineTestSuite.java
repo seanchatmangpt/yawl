@@ -33,6 +33,7 @@ public class EngineTestSuite extends TestCase{
         suite.addTestSuite(TestYWorkItem.class);
         suite.addTestSuite(TestYWorkItemID.class);
         suite.addTestSuite(TestYWorkItemRepository.class);
+        suite.addTestSuite(TestSpecificationManagement.class);
         return suite;
     }
 

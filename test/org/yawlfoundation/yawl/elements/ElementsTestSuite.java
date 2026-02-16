@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.elements;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
+import org.yawlfoundation.yawl.elements.patterns.TestBasicPatterns;
 
 /**
  * 
@@ -40,6 +41,8 @@ public class ElementsTestSuite extends TestSuite{
         suite.addTestSuite(TestYNetElement.class);
         suite.addTestSuite(TestYOutputCondition.class);
         suite.addTestSuite(TestYSpecification.class);
+        suite.addTestSuite(TestBasicPatterns.class);
+        suite.addTestSuite(TestAdvancedPatterns.class);
         //return
         return suite;
     }

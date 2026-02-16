@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP15: Multiple Instances without Runtime Knowledge Pattern Test Specification -->
+<!-- Dynamic creation of instances during execution -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="MIWithoutRunTimeKnowledgeSpec">
+        <metaData/>
+        <rootNet id="MIWithoutRunTimeKnowledgeNet">
+            <localVariable name="dynamicCount">
+                <type>xs:integer</type>
+                <initialValue>5</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="miTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="miTask" xsi:type="MultipleInstanceExternalTaskFactsType">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <minimum>1</minimum>
+                    <maximum>/data/dynamicCount</maximum>
+                    <threshold>1</threshold>
+                    <creationMode code="dynamic"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+        <decomposition id="miTask" xsi:type="WebServiceGatewayFactsType"/>
+    </specification>
+</specificationSet>

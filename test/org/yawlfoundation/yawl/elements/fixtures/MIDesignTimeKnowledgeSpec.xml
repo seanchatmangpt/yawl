@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP13: Multiple Instances with Design-time Knowledge Pattern Test Specification -->
+<!-- Number of instances known at design time -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="MIDesignTimeKnowledgeSpec">
+        <metaData/>
+        <rootNet id="MIDesignTimeKnowledgeNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="miTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="miTask" xsi:type="MultipleInstanceExternalTaskFactsType">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <minimum>3</minimum>
+                    <maximum>3</maximum>
+                    <threshold>3</threshold>
+                    <creationMode code="static"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+        <decomposition id="miTask" xsi:type="WebServiceGatewayFactsType"/>
+    </specification>
+</specificationSet>

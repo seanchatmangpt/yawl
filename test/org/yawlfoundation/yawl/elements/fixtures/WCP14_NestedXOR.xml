@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nested XOR Patterns - Nested exclusive choice structures -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP14_NestedXOR">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="NestedXORNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="outerDecision"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="outerDecision">
+          <flowsInto>
+            <nextElementRef id="innerDecision"/>
+            <predicate ordering="1">true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="taskB"/>
+            <isDefaultFlow/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="OuterDecisionDecomposition"/>
+        </task>
+        <task id="innerDecision">
+          <flowsInto>
+            <nextElementRef id="taskA1"/>
+            <predicate ordering="1">true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="taskA2"/>
+            <isDefaultFlow/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="InnerDecisionDecomposition"/>
+        </task>
+        <task id="taskA1">
+          <flowsInto>
+            <nextElementRef id="outerMerge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskA1Decomposition"/>
+        </task>
+        <task id="taskA2">
+          <flowsInto>
+            <nextElementRef id="outerMerge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskA2Decomposition"/>
+        </task>
+        <task id="taskB">
+          <flowsInto>
+            <nextElementRef id="outerMerge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskBDecomposition"/>
+        </task>
+        <task id="outerMerge">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="OuterMergeDecomposition"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="OuterDecisionDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="InnerDecisionDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskA1Decomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskA2Decomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskBDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="OuterMergeDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

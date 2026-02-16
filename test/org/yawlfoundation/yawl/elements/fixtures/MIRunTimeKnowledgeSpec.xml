@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP14: Multiple Instances with Runtime Knowledge Pattern Test Specification -->
+<!-- Number of instances determined at runtime but before execution begins -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="MIRunTimeKnowledgeSpec">
+        <metaData/>
+        <rootNet id="MIRunTimeKnowledgeNet">
+            <inputParam name="instanceCount">
+                <type>xs:integer</type>
+            </inputParam>
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="miTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="miTask" xsi:type="MultipleInstanceExternalTaskFactsType">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <minimum>/data/instanceCount</minimum>
+                    <maximum>/data/instanceCount</maximum>
+                    <threshold>/data/instanceCount</threshold>
+                    <creationMode code="static"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+        <decomposition id="miTask" xsi:type="WebServiceGatewayFactsType"/>
+    </specification>
+</specificationSet>

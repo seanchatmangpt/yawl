@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP12: Multiple Instances without Synchronization Pattern Test Specification -->
+<!-- Each instance runs independently, no synchronization at completion -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="MIWithoutSynchronizationSpec">
+        <metaData/>
+        <rootNet id="MIWithoutSynchronizationNet">
+            <localVariable name="itemList">
+                <type>xs:string</type>
+                <initialValue>&lt;item&gt;a&lt;/item&gt;&lt;item&gt;b&lt;/item&gt;&lt;item&gt;c&lt;/item&gt;</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="miTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="miTask" xsi:type="MultipleInstanceExternalTaskFactsType">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <minimum>1</minimum>
+                    <maximum>3</maximum>
+                    <threshold>1</threshold>
+                    <creationMode code="static"/>
+                    <miDataInput>
+                        <expression query="/data/itemList"/>
+                        <splittingExpression query="for $i in /itemList/* return $i"/>
+                        <formalInputParam>item</formalInputParam>
+                    </miDataInput>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+        <decomposition id="miTask" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="item">
+                <type>xs:string</type>
+            </inputParam>
+        </decomposition>
+    </specification>
+</specificationSet>

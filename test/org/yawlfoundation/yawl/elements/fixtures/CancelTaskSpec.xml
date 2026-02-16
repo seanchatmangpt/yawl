@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP19: Cancel Task Pattern Test Specification -->
+<!-- Task cancellation triggered by another task -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="CancelTaskSpec">
+        <metaData/>
+        <rootNet id="CancelTaskNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="taskToCancel"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="cancellingTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="taskToCancel">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <cancelBehaviour>cancel</cancelBehaviour>
+                </task>
+                <task id="cancellingTask">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <removalSet>
+                        <task id="taskToCancel"/>
+                    </removalSet>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

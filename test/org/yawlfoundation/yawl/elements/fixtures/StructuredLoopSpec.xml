@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structured Loop Pattern Test Specification -->
+<!-- While/Repeat loop constructs -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="StructuredLoopSpec">
+        <metaData/>
+        <rootNet id="StructuredLoopNet">
+            <localVariable name="counter">
+                <type>xs:integer</type>
+                <initialValue>0</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="loopCondition"/>
+                    </flowsInto>
+                </inputCondition>
+                <condition id="loopCondition">
+                    <flowsInto>
+                        <nextElementRef id="loopTask"/>
+                        <predicate>/data/counter &lt; 3</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                        <predicate>/data/counter &gt;= 3</predicate>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                </condition>
+                <task id="loopTask">
+                    <flowsInto>
+                        <nextElementRef id="loopCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

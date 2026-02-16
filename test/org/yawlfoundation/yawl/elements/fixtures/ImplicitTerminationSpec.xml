@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP11: Implicit Termination Pattern Test Specification -->
+<!-- Process terminates when no active work remains -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="ImplicitTerminationSpec">
+        <metaData/>
+        <rootNet id="ImplicitTerminationNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="taskA"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="taskB"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="taskA">
+                    <flowsInto>
+                        <nextElementRef id="outputA"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <task id="taskB">
+                    <flowsInto>
+                        <nextElementRef id="outputB"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="outputA"/>
+                <outputCondition id="outputB"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

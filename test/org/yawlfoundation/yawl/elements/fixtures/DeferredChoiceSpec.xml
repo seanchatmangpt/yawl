@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP16: Deferred Choice Pattern Test Specification -->
+<!-- Choice is made based on event occurrence, not data -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="DeferredChoiceSpec">
+        <metaData/>
+        <rootNet id="DeferredChoiceNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="deferredCondition"/>
+                    </flowsInto>
+                </inputCondition>
+                <condition id="deferredCondition">
+                    <flowsInto>
+                        <nextElementRef id="taskA"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="taskB"/>
+                    </flowsInto>
+                </condition>
+                <task id="taskA">
+                    <flowsInto>
+                        <nextElementRef id="outputA"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <task id="taskB">
+                    <flowsInto>
+                        <nextElementRef id="outputB"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="outputA"/>
+                <outputCondition id="outputB"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

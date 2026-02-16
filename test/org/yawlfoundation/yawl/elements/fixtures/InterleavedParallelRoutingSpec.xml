@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP17: Interleaved Parallel Routing Pattern Test Specification -->
+<!-- Tasks can execute in any order but not concurrently -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="InterleavedParallelRoutingSpec">
+        <metaData/>
+        <rootNet id="InterleavedParallelRoutingNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="splitCondition"/>
+                    </flowsInto>
+                </inputCondition>
+                <condition id="splitCondition">
+                    <flowsInto>
+                        <nextElementRef id="taskA"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="taskB"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="taskC"/>
+                    </flowsInto>
+                </condition>
+                <task id="taskA">
+                    <flowsInto>
+                        <nextElementRef id="joinCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <task id="taskB">
+                    <flowsInto>
+                        <nextElementRef id="joinCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <task id="taskC">
+                    <flowsInto>
+                        <nextElementRef id="joinCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <condition id="joinCondition">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                </condition>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

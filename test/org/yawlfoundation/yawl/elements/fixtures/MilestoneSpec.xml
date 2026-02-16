@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP18: Milestone Pattern Test Specification -->
+<!-- Task can only execute when milestone is reached -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="MilestoneSpec">
+        <metaData/>
+        <rootNet id="MilestoneNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="milestoneTask"/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="waitingTask"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="milestoneTask">
+                    <flowsInto>
+                        <nextElementRef id="milestoneCondition"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <condition id="milestoneCondition">
+                    <flowsInto>
+                        <nextElementRef id="waitingTask"/>
+                    </flowsInto>
+                </condition>
+                <task id="waitingTask">
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+        </rootNet>
+    </specification>
+</specificationSet>

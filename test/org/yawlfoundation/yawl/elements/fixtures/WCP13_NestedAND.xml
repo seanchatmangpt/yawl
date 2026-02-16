@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nested AND Patterns - Nested parallel structures -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP13_NestedAND">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="NestedANDNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="outerSplit"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="outerSplit">
+          <flowsInto>
+            <nextElementRef id="innerSplitA"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="taskB"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="OuterSplitDecomposition"/>
+        </task>
+        <task id="innerSplitA">
+          <flowsInto>
+            <nextElementRef id="taskA1"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="taskA2"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="InnerSplitDecomposition"/>
+        </task>
+        <task id="taskA1">
+          <flowsInto>
+            <nextElementRef id="innerJoinA"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskA1Decomposition"/>
+        </task>
+        <task id="taskA2">
+          <flowsInto>
+            <nextElementRef id="innerJoinA"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskA2Decomposition"/>
+        </task>
+        <task id="innerJoinA">
+          <flowsInto>
+            <nextElementRef id="outerJoin"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="and"/>
+          <decomposesTo id="InnerJoinDecomposition"/>
+        </task>
+        <task id="taskB">
+          <flowsInto>
+            <nextElementRef id="outerJoin"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="TaskBDecomposition"/>
+        </task>
+        <task id="outerJoin">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="and"/>
+          <decomposesTo id="OuterJoinDecomposition"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="OuterSplitDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="InnerSplitDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskA1Decomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskA2Decomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="InnerJoinDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="TaskBDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="OuterJoinDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

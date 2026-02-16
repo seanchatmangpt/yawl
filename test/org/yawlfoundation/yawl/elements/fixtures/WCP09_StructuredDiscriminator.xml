@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP9: Structured Discriminator Pattern - First to complete triggers continuation, others ignored -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP09_StructuredDiscriminator">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="StructuredDiscriminatorNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="branchA"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchB"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchC"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="branchA">
+          <flowsInto>
+            <nextElementRef id="discriminatorTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchADecomposition"/>
+        </task>
+        <task id="branchB">
+          <flowsInto>
+            <nextElementRef id="discriminatorTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchBDecomposition"/>
+        </task>
+        <task id="branchC">
+          <flowsInto>
+            <nextElementRef id="discriminatorTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchCDecomposition"/>
+        </task>
+        <task id="discriminatorTask">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="or"/>
+          <split code="and"/>
+          <decomposesTo id="DiscriminatorDecomposition"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="BranchADecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchBDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchCDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="DiscriminatorDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

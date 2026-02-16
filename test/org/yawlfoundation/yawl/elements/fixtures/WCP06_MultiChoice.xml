@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP6: Multi-Choice Pattern (OR-split) - Thread follows one or more branches based on conditions -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP06_MultiChoice">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="MultiChoiceNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="decisionTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="decisionTask">
+          <flowsInto>
+            <nextElementRef id="branchA"/>
+            <predicate>true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchB"/>
+            <predicate>true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchC"/>
+            <predicate>false()</predicate>
+            <isDefaultFlow/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="or"/>
+          <decomposesTo id="DecisionDecomposition"/>
+        </task>
+        <task id="branchA">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchADecomposition"/>
+        </task>
+        <task id="branchB">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchBDecomposition"/>
+        </task>
+        <task id="branchC">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchCDecomposition"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="DecisionDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchADecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchBDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchCDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

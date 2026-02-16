@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Combined OR-split/OR-join Pattern - Multi-choice with synchronizing merge -->
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4">
+  <specification uri="WCP12_ORSplitJoin">
+    <metaData/>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema"/>
+    <decomposition id="ORSplitJoinNet" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="input">
+          <flowsInto>
+            <nextElementRef id="splitTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="splitTask">
+          <flowsInto>
+            <nextElementRef id="branchA"/>
+            <predicate>true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchB"/>
+            <predicate>true()</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchC"/>
+            <predicate>false()</predicate>
+            <isDefaultFlow/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="or"/>
+          <decomposesTo id="SplitDecomposition"/>
+        </task>
+        <task id="branchA">
+          <flowsInto>
+            <nextElementRef id="joinTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchADecomposition"/>
+        </task>
+        <task id="branchB">
+          <flowsInto>
+            <nextElementRef id="joinTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchBDecomposition"/>
+        </task>
+        <task id="branchC">
+          <flowsInto>
+            <nextElementRef id="joinTask"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="BranchCDecomposition"/>
+        </task>
+        <task id="joinTask">
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="or"/>
+          <split code="and"/>
+          <decomposesTo id="JoinDecomposition"/>
+        </task>
+        <outputCondition id="output"/>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="SplitDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchADecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchBDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="BranchCDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="JoinDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+  </specification>
+</specificationSet>

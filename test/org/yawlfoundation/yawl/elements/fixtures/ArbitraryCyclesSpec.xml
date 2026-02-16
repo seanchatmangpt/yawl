@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WCP10: Arbitrary Cycles Pattern Test Specification -->
+<specificationSet xmlns="http://www.yawlfoundation.org/yawl/schemas/2.2"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawl/schemas/2.2">
+    <specification uri="ArbitraryCyclesSpec">
+        <metaData/>
+        <rootNet id="ArbitraryCyclesNet">
+            <processControlElements>
+                <inputCondition id="input">
+                    <flowsInto>
+                        <nextElementRef id="taskA"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="taskA">
+                    <flowsInto>
+                        <nextElementRef id="choice"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <condition id="choice">
+                    <flowsInto>
+                        <nextElementRef id="taskB"/>
+                        <predicate>data/continue = 'true'</predicate>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="output"/>
+                        <predicate>data/continue = 'false'</predicate>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                </condition>
+                <task id="taskB">
+                    <flowsInto>
+                        <nextElementRef id="taskA"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="output"/>
+            </processControlElements>
+            <localVariable name="continue">
+                <type>xs:string</type>
+                <initialValue>true</initialValue>
+            </localVariable>
+        </rootNet>
+    </specification>
+</specificationSet>
