@@ -57,6 +57,9 @@ public class TestAllYAWLSuites extends TestSuite {
         // Integration tests (Chicago TDD - real integrations)
         suite.addTest(IntegrationTestSuite.suite());
 
+        // Excluded modules unit tests (core logic, no infrastructure)
+        suite.addTest(ExcludedModulesTestSuite.suite());
+
         return suite;
     }
 
