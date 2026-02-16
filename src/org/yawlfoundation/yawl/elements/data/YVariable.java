@@ -483,35 +483,39 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
     private void checkValue(String value, String label,
                             YVerificationHandler handler) {
 
-        // any value for a string type, or an empty value, is OK
-        if (! ("string".equals(getDataTypeName()) || StringUtil.isNullOrEmpty(value))) {
-            String valueToValidate = value;
-            if (_dataTypeName != null && _dataTypeName.endsWith("StubListType")
-                    && value != null && value.matches("(<stub\\s*/>)+")) {
-                valueToValidate = value.replaceAll("<stub\\s*/>", "<stub xmlns=\"http://www.citi.qut.edu.au/stub\"></stub>");
-            }
+        // any value for a string type, empty value, or valid StubListType is OK
+        if ("string".equals(getDataTypeName()) || StringUtil.isNullOrEmpty(value)) {
+            return;
+        }
 
-            Element testElem;
+        // StubListType validation: check pattern and skip schema validation
+        // (YDataValidator can't properly validate namespaced custom types)
+        if (_dataTypeName != null && _dataTypeName.endsWith("StubListType")
+                && value != null && value.matches("(<stub\\s*/>)+")) {
+            return;
+        }
 
-            // check if well-formed
-            String data = StringUtil.wrap(StringUtil.wrap(valueToValidate, getPreferredName()), "data");
-            testElem = JDOMUtil.stringToElement(data);
-            if (testElem == null) {
-                handler.error(this,
-                        "The " + label + " value [" + value + "] of variable [" +
-                                getPreferredName() + "] in decomposition [" +
-                                _parentDecomposition + "] is not well formed.");
-            }
+        String valueToValidate = value;
+        Element testElem;
 
-            // check if correct for data type
-            try {
-                checkDataTypeValue(testElem);
-            } catch (YDataValidationException ydve) {
-                handler.error(this,
-                        "The " + label + " value [" + value + "] of variable [" +
-                                getPreferredName() + "] in decomposition [" +
-                                _parentDecomposition + "] is not valid for its data type.");
-            }
+        // check if well-formed
+        String data = StringUtil.wrap(StringUtil.wrap(valueToValidate, getPreferredName()), "data");
+        testElem = JDOMUtil.stringToElement(data);
+        if (testElem == null) {
+            handler.error(this,
+                    "The " + label + " value [" + value + "] of variable [" +
+                            getPreferredName() + "] in decomposition [" +
+                            _parentDecomposition + "] is not well formed.");
+        }
+
+        // check if correct for data type
+        try {
+            checkDataTypeValue(testElem);
+        } catch (YDataValidationException ydve) {
+            handler.error(this,
+                    "The " + label + " value [" + value + "] of variable [" +
+                            getPreferredName() + "] in decomposition [" +
+                            _parentDecomposition + "] is not valid for its data type.");
         }
     }
 

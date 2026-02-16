@@ -3508,6 +3508,11 @@
         <copy todir="${classes.dir}">
             <fileset dir="${test.dir}" excludes="**/*.java"/>
         </copy>
+
+        <!-- Ensure hibernate config is available for engine initialization tests -->
+        <copy file="${properties.dir}/hibernate.cfg.xml" todir="${classes.dir}" overwrite="true"/>
+        <copy filtering="true" overwrite="true" file="${properties.dir}/log4j2.xml" todir="${classes.dir}"/>
+
         <javac srcdir="${test.dir}" destdir="${classes.dir}">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
