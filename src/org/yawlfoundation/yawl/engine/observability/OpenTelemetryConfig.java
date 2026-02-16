@@ -237,7 +237,7 @@ public class OpenTelemetryConfig {
     public SdkMeterProvider sdkMeterProvider(Resource resource,
                                               MetricReader prometheusMetricReader,
                                               MetricReader otlpMetricReader) {
-        SdkMeterProvider.Builder builder = SdkMeterProvider.builder()
+        var builder = SdkMeterProvider.builder()
             .setResource(resource)
             .registerMetricReader(prometheusMetricReader);
 
