@@ -475,7 +475,7 @@ public class YNetRunner {
             kick(pmgr);
             return newChildIdentifiers;
         }
-        return null;
+        throw new YStateException("Task is not (or no longer) enabled: " + taskID);
     }
 
 
@@ -489,7 +489,7 @@ public class YNetRunner {
         if (task.t_isBusy()) {
             return task.t_add(pmgr, aSiblingInstance, newInstanceData);
         }
-        return null;
+        throw new YStateException("Cannot add instance to non-busy task: " + taskID);
     }
 
 
@@ -1126,7 +1126,9 @@ public class YNetRunner {
 
 
     /** returns the task id of the task that the specified task flows into
-        In other words, gets the id of the next task in the process flow */
+        In other words, gets the id of the next task in the process flow
+        @param task the task to get the flows-into task id for
+        @return the task id, or null if task is null or not an atomic task */
     private String getFlowsIntoTaskID(YTask task) {
         if ((task != null) && (task instanceof YAtomicTask)) {
             Element eTask = JDOMUtil.stringToElement(task.toXML());
@@ -1200,6 +1202,9 @@ public class YNetRunner {
     }
 
 
+    /** Retrieves the timer variable for a task by name
+        @param taskName the name of the task
+        @return the timer variable, or null if no task with that name is found */
     private YTimerVariable getTimerVariable(String taskName) {
         for (YTask task : _netTasks) {
             if (task.getName() != null && task.getName().equals(taskName)) {

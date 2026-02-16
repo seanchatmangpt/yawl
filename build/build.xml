@@ -341,7 +341,8 @@
     <!-- prl -->
     <property name="jung-visualization" value="jung-visualization-2.0.jar"/>
     <!-- prl -->
-    <property name="junit" value="junit-4.10.jar"/>
+    <property name="junit" value="junit-4.13.2.jar"/>
+    <property name="hamcrest" value="hamcrest-core-1.3.jar"/>
 
     <property name="kotlin" value="kotlin-stdlib-2.1.0.jar"/>
     <!-- mul -->
@@ -674,6 +675,7 @@
 
     <path id="cp.compile">
         <pathelement location="${lib.dir}/${junit}"/>
+        <pathelement location="${lib.dir}/${hamcrest}"/>
         <pathelement location="${lib.dir}/${xerces}"/>
         <pathelement location="${lib.dir}/${saxon}"/>
         <pathelement location="${lib.dir}/${saxonapi}"/>
@@ -1036,7 +1038,7 @@
             <fileset dir="${lib.dir}"
                      includes="${persistence.libs} ${xsd.libs} ${jdom} ${jakarta-xml}
                                ${saxon.libs} ${xerces} ${commonsLang} ${dbClient}
-                               ${commonsCodec} ${jaxen} ${log4j.libs} ${junit}"
+                               ${commonsCodec} ${jaxen} ${log4j.libs} ${junit} ${hamcrest}"
                      excludes="hibernate.cfg.xml"/>
         </unzip>
 
@@ -3038,9 +3040,9 @@
 
     </target>
 
-    <!-- Uncomment next two lines to build to previous java version -->
-<!--    <property name="ant.build.javac.source" value="1.8"/>-->
-<!--    <property name="ant.build.javac.target" value="1.8"/>-->
+    <!-- Uncomment next two lines to override java version -->
+<!--    <property name="ant.build.javac.source" value="25"/>-->
+<!--    <property name="ant.build.javac.target" value="25"/>-->
 
 
     <target name="build_stateless.jar" depends="compile">
@@ -3311,6 +3313,7 @@
             <classpath refid="cp.scheduling"/>
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
+                <pathelement location="${lib.dir}/${hamcrest}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
@@ -3335,6 +3338,7 @@
             <classpath refid="cp.scheduling"/>
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
+                <pathelement location="${lib.dir}/${hamcrest}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
@@ -3357,6 +3361,7 @@
             <classpath refid="cp.scheduling"/>
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
+                <pathelement location="${lib.dir}/${hamcrest}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
@@ -3528,6 +3533,11 @@
         <copy todir="${classes.dir}">
             <fileset dir="${test.dir}" excludes="**/*.java"/>
         </copy>
+
+        <!-- Ensure hibernate config is available for engine initialization tests -->
+        <copy file="${properties.dir}/hibernate.cfg.xml" todir="${classes.dir}" overwrite="true"/>
+        <copy filtering="true" overwrite="true" file="${properties.dir}/log4j2.xml" todir="${classes.dir}"/>
+
         <javac srcdir="${test.dir}" destdir="${classes.dir}">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>

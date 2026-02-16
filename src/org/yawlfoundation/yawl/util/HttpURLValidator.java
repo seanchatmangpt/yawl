@@ -24,6 +24,7 @@ import org.jdom2.Element;
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
+import java.net.URI;
 
 /**
  * A simple static checker that (1) checks that the url string passed in is a valid
@@ -79,7 +80,7 @@ public class HttpURLValidator {
         }
 
         // this will throw an exception if the URL is invalid
-        return new URL(urlStr);
+        return URI.create(urlStr).toURL();
     }
 
 
@@ -116,7 +117,7 @@ public class HttpURLValidator {
 
     public static boolean isTomcatRunning(String urlStr) {
         try {
-            return simplePing(new URL(urlStr).getHost(), getTomcatServerPort());
+            return simplePing(URI.create(urlStr).toURL().getHost(), getTomcatServerPort());
         } catch (MalformedURLException mue) {
             return false;
         }

@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -60,7 +61,7 @@ public class Sender extends Interface_Client {
 
 
     private String encodeCredentials() throws IOException {
-        byte[] bytes = Base64.encodeBase64((get("u") + ":" + get("k")).getBytes());
+        byte[] bytes = Base64.encodeBase64((get("u") + ":" + get("k")).getBytes(StandardCharsets.UTF_8));
         return new String(bytes);
     }
 

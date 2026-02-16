@@ -164,7 +164,7 @@ public class YWorklistModel {
                     _formatter.format(item.getFiringTime()),
                     _formatter.format(item.getStartTime()),
                                   inSequence ? "Y" : "N",
-                                  new Boolean(allowsDynamicInstanceCreation),
+                                  Boolean.valueOf(allowsDynamicInstanceCreation),
                     item.getDataString(),
                     getOutputSkeletonXML(caseIDStr, taskID)
                 });
@@ -471,9 +471,9 @@ class UserInputValidationErrorBox extends JDialog implements ActionListener {
             }
         });
 
-        Double screenWidth = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
-        Double screenHeight = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
-        setSize(new Double(screenWidth * 0.8).intValue(), new Double(screenHeight * 0.8).intValue());
+        Double screenWidth = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
+        Double screenHeight = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
+        setSize(Double.valueOf(screenWidth * 0.8).intValue(), Double.valueOf(screenHeight * 0.8).intValue());
 
         Dimension labelSize = this.getSize();
         setLocation(screenWidth.intValue() / 2 - (labelSize.width / 2),
@@ -708,9 +708,9 @@ class SpecificationQueryProcessingValidationErrorBox extends JDialog implements 
         });
         //setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setSize(800, 600);
-        Double screenWidth = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
-        Double screenHeight = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
-//        setSize(new Double((screenWidth - guiSize.width) * 2).intValue(), new Double((screenHeight - guiSize.height) * 2).intValue());
+        Double screenWidth = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
+        Double screenHeight = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
+//        setSize(Double.valueOf((screenWidth - guiSize.width) * 2).intValue(), Double.valueOf((screenHeight - guiSize.height) * 2).intValue());
 //        setLocation(((screenWidth.intValue() - guiSize.width) / 2),0);
 //        pack();
         Dimension labelSize = this.getSize();

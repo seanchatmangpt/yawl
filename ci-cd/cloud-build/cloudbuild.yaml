@@ -28,7 +28,7 @@ substitutions:
   _REGISTRY: '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/yawl'
 
   # Build Configuration
-  _JAVA_VERSION: '17'
+  _JAVA_VERSION: '25'
   _TOMCAT_VERSION: '9.0.89'
   _YAWL_VERSION: '5.2'
 

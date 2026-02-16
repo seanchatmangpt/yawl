@@ -76,7 +76,7 @@ public class WorkItemAgeComparator implements Comparator<WorkItemRecord> {
 
     private long StringToLong(String s) {
         try {
-            return new Long(s);
+            return Long.valueOf(s);
         }
         catch (NumberFormatException nfe) {
             return 0;

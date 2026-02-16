@@ -131,8 +131,8 @@ public class TabbedEngineGUI extends JPanel {
  * AJH: Changed to support dual head X environments better
  */
         Dimension labelSize = _frame.getSize();
-        Double screenWidth = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
-        Double screenHeight = new Double(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
+        Double screenWidth = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getWidth());
+        Double screenHeight = Double.valueOf(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getHeight());
 
         _frame.setLocation(screenWidth.intValue() / 2 - (labelSize.width / 2),
                     screenHeight.intValue() / 2 - (labelSize.height / 2));

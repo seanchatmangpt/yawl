@@ -218,7 +218,7 @@ public class ZaiEligibilityReasonerTest extends TestCase {
         WorkItemRecord workItem = new WorkItemRecord();
         workItem.setTaskName(taskName);
         workItem.setCaseID(caseId);
-        workItem.setID("wi-" + System.currentTimeMillis());
+        workItem.setTaskID("wi-" + System.currentTimeMillis());
         return workItem;
     }
 

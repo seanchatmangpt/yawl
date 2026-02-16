@@ -25,12 +25,12 @@ public class TestYSetOfMarkings extends TestCase{
 
 
     public void setUp(){
-//        Integer one = new Integer(1);
-//        Integer two = new Integer(2);
-//        Integer three = new Integer(3);
-//        Integer four = new Integer(4);
-//        Integer five = new Integer(5);
-//        Integer six = new Integer(6);
+//        Integer one = Integer.valueOf(1);
+//        Integer two = Integer.valueOf(2);
+//        Integer three = Integer.valueOf(3);
+//        Integer four = Integer.valueOf(4);
+//        Integer five = Integer.valueOf(5);
+//        Integer six = Integer.valueOf(6);
         YCondition a = new YCondition("a", null);
         YCondition b = new YCondition("b", null);
         YCondition c = new YCondition("c", null);

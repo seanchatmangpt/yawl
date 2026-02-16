@@ -263,7 +263,7 @@ public class TestYExternalTask extends TestCase{
 
         YFlow f2 = new YFlow(t1, t2);
         f2.setXpathPredicate("true()");
-        f2.setEvalOrdering(new Integer(1));
+        f2.setEvalOrdering(Integer.valueOf(1));
 
         YCondition implicit = new YCondition("imp", null);
         implicit.setImplicit(true);
@@ -273,7 +273,7 @@ public class TestYExternalTask extends TestCase{
 
         YFlow f4 = new YFlow(t1, t4);
         f4.setXpathPredicate("true()");
-        f4.setEvalOrdering(new Integer(2));
+        f4.setEvalOrdering(Integer.valueOf(2));
 
         YFlow fImp = new YFlow(t2, implicit);
         t2.addPostset(fImp);

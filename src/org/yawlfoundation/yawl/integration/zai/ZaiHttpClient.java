@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.integration.zai;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -53,7 +54,7 @@ public class ZaiHttpClient {
         String url = baseUrl + CHAT_ENDPOINT;
         String requestBody = buildChatRequestBody(model, messages, temperature, maxTokens);
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Authorization", "Bearer " + apiKey);

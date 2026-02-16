@@ -533,11 +533,11 @@ public class FormGenerator implements Constants {
      * @param haveTosave
      * @return
      */
-    protected StringBuffer getForm(Case cas, boolean haveTosave) throws IOException, JDOMException {
+    protected StringBuilder getForm(Case cas, boolean haveTosave) throws IOException, JDOMException {
         Document rup = cas.getRUP();
         bufferBottomDebug.append(Utils.element2String(rup.getRootElement(), true));
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         bufferTop.append(" window.name = \"")
                  .append(config.getLocalizedString("titleSchedulingPage"))
@@ -743,9 +743,9 @@ public class FormGenerator implements Constants {
     }
 
 
-    private StringBuffer getInputColumn(Element field, String name2Show,
+    private StringBuilder getInputColumn(Element field, String name2Show,
                                         Element dependingField, String key, boolean visible) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         String fieldKey = key + "_" + field.getName();
 
@@ -882,8 +882,8 @@ public class FormGenerator implements Constants {
         return buffer;
     }
 
-    private StringBuffer getInputHTML(Element field, Element dependingField, String key) {
-        StringBuffer tag1 = new StringBuffer(), tag2 = new StringBuffer(), tag3 = new StringBuffer();
+    private StringBuilder getInputHTML(Element field, Element dependingField, String key) {
+        StringBuilder tag1 = new StringBuilder(), tag2 = new StringBuilder(), tag3 = new StringBuilder();
 
         String n = field.getName();
         String value = field.getText();
@@ -1077,7 +1077,7 @@ public class FormGenerator implements Constants {
      * @param listElementName
      * @return
      */
-    private StringBuffer getListOf(Element activity, String listElementName, boolean visible) {
+    private StringBuilder getListOf(Element activity, String listElementName, boolean visible) {
         boolean disabledButton = false;
         if (listElementName.equals(XML_RESERVATION)) {
             disabledButton = isRequestTypeEOU(activity) || isRequestTypeSOU(activity);
@@ -1085,7 +1085,7 @@ public class FormGenerator implements Constants {
             disabledButton = true; // only one utilisation relation per activity is currently supported
         }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         String templateName = listElementName + "Template";
         String insertName = activity.getChildText(XML_ACTIVITYNAME) + "_" + templateName + "_insert";
         String key = XML_ACTIVITY + "_" + activity.getChildText(XML_ACTIVITYNAME) + "_" + listElementName + "_#";
@@ -1124,8 +1124,8 @@ public class FormGenerator implements Constants {
      * @param disabledButton
      * @return
      */
-    private StringBuffer getRow(Element resOrUtil, String key, boolean disabledButton) {
-        StringBuffer buffer = new StringBuffer();
+    private StringBuilder getRow(Element resOrUtil, String key, boolean disabledButton) {
+        StringBuilder buffer = new StringBuilder();
         String trStyle = count % 2 == 1 ? " style=\"background-color: #FFEEBB;\"" : "";
         buffer.append("\r\n\r\n<tr id=\"" + key + "\"" + trStyle + ">");
         if (wrapBeforeResource) {
@@ -1157,8 +1157,8 @@ public class FormGenerator implements Constants {
      * @param key
      * @return
      */
-    private StringBuffer getErrorRow(Element element, String key) {
-        StringBuffer buffer = new StringBuffer();
+    private StringBuilder getErrorRow(Element element, String key) {
+        StringBuilder buffer = new StringBuilder();
         String error = config.getLocalizedJSONString(XMLUtils.getErrorValue(element));
         if (error != null) {
             buffer.append("<tr id=\"" + key + "_error\"><td colspan=\"" + (getColspan(element) * 2 + 1) + "\" style=\"text-align:left;\">");
@@ -1186,11 +1186,11 @@ public class FormGenerator implements Constants {
         return count;
     }
 
-    private StringBuffer getAddButton(String templateName, String key, String insertName, boolean disabled) {
+    private StringBuilder getAddButton(String templateName, String key, String insertName, boolean disabled) {
         String onclickAdd = "addCloneBeforeInsert(document.getElementById('" + templateName + "'), " +
                 "'" + key + "', document.getElementById('" + insertName + "')); enableButton('Save', true); return false;";
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append("<td>");
 
         buffer.append("\r\n<input type=\"image\" src=\"images/plus2.png\" alt=\"" + config.getLocalizedString("addResourceButton") + "\"");
@@ -1205,10 +1205,10 @@ public class FormGenerator implements Constants {
         return buffer;
     }
 
-    private StringBuffer getAddRemoveButtons(String key, boolean disabled, int levelsUp) {
+    private StringBuilder getAddRemoveButtons(String key, boolean disabled, int levelsUp) {
         String onclickRemove = "removeFieldAndItsError(this" + Utils.copy(".parentNode", levelsUp) + "); enableButton('Save', true); return false;";
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append("<td style=\"text-align: right;\">");
         buffer.append("\r\n\r\n<input type=\"image\" src=\"images/minus2.png\" alt=\"" + config.getLocalizedString("removeButton") + "\"");
         buffer.append(" onclick=\"" + onclickRemove + "\"");

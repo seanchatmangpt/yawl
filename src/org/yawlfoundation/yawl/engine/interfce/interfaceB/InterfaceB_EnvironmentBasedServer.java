@@ -79,7 +79,7 @@ public class InterfaceB_EnvironmentBasedServer extends HttpServlet {
                 _controller = (InterfaceBWebsideController) instMethod.invoke(null);
             }
             catch (NoSuchMethodException nsme) {
-                _controller = controllerClass.newInstance();
+                _controller = controllerClass.getDeclaredConstructor().newInstance();
             }
             
             // retrieve the URL of the YAWL Engine from the web.xml file.

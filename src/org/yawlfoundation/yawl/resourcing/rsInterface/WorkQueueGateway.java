@@ -669,7 +669,7 @@ public class WorkQueueGateway extends YHttpServlet {
 
     private int getQueueType(String queue) {
         try {
-            return new Integer(queue);
+            return Integer.valueOf(queue);
         } catch (NumberFormatException nfe) {
             return -1;
         }

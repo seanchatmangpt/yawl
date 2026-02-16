@@ -69,7 +69,7 @@ public class TestYFlowsInto extends TestCase{
     public void testANDCantBeDefaultFlow(){
         _flowsInto2.setIsDefaultFlow(true);
         _flowsInto2.setXpathPredicate("hi mum");
-        _flowsInto2.setEvalOrdering(new Integer(5));
+        _flowsInto2.setEvalOrdering(Integer.valueOf(5));
         handler.reset();
         _flowsInto2.verify(null, handler);
         if (handler.getMessageCount() != 4) {
@@ -96,7 +96,7 @@ public class TestYFlowsInto extends TestCase{
         _flowsInto4.verify(null, handler);
         assertTrue(handler.getMessageCount() == 3);
 
-        _flowsInto4.setEvalOrdering(new Integer(100));
+        _flowsInto4.setEvalOrdering(Integer.valueOf(100));
         handler.reset();
         _flowsInto4.verify(null, handler);
         assertTrue(handler.getMessageCount() == 4);

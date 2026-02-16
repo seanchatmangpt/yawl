@@ -29,7 +29,7 @@ phases:
   # ============================================
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto25
     commands:
       - echo "=== Install Phase Started at $(date) ==="
       # Install kubectl

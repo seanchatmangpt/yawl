@@ -427,7 +427,7 @@ public class SchedulingService extends Service {
                             values.add(Long.parseLong(node.getText()));
                         } catch (Exception e) {
                             try {
-                                values.add(new Long(Utils.duration2Minutes(XMLUtils.getDurationValue(node, true))));
+                                values.add(Long.valueOf(Utils.duration2Minutes(XMLUtils.getDurationValue(node, true))));
                                 isDurationValue = true;
                             } catch (Exception e1) {
                                 // _log.debug(Utils.toString(node) +

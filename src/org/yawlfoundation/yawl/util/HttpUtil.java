@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -47,7 +48,7 @@ public class HttpUtil {
 
 
     public static URL resolveURL(String urlString) throws IOException {
-        return resolveURL(new URL(urlString));
+        return resolveURL(URI.create(urlString).toURL());
     }
 
 
@@ -64,7 +65,7 @@ public class HttpUtil {
             }
             if (responseCode < 400) {                        // some redirect response
                 String location = httpConnection.getHeaderField("Location");
-                url = new URL(location);
+                url = URI.create(location).toURL();
             }
             else {                                           // error response
                 throw new IOException(httpConnection.getResponseMessage());
@@ -85,7 +86,7 @@ public class HttpUtil {
 
 
     public static void download(String fromURL, File toFile) throws IOException {
-        download(new URL(fromURL), toFile);
+        download(URI.create(fromURL).toURL(), toFile);
     }
 
 
