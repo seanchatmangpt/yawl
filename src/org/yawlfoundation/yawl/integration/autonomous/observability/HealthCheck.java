@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -155,7 +156,7 @@ public class HealthCheck {
      */
     private CheckResult checkYawlEngine() {
         try {
-            URL url = new URL(yawlEngineUrl);
+            URL url = URI.create(yawlEngineUrl).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("HEAD");
             conn.setConnectTimeout(timeoutMs);
@@ -188,7 +189,7 @@ public class HealthCheck {
         }
 
         try {
-            URL url = new URL(zaiApiUrl);
+            URL url = URI.create(zaiApiUrl).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("HEAD");
             conn.setConnectTimeout(timeoutMs);

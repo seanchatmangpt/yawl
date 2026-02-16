@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.procletService.connect;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 
 /** Class of static methods to convert objects to ByteStream compatible
@@ -35,7 +36,7 @@ public class EncodeDecode
  */
     public static ByteArrayInputStream encodeString(String toConvert)
     {
-        return new ByteArrayInputStream(toConvert.getBytes());
+        return new ByteArrayInputStream(toConvert.getBytes(StandardCharsets.UTF_8));
     }
     
 /** Method to convert a ByteArrayOutputStream to a string

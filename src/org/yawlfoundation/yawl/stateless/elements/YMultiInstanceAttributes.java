@@ -143,19 +143,19 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
     public void setProperties(String minInstancesQuery, String maxInstancesQuery,
                               String thresholdQuery, String creationMode) {
         try {
-            _minInstances = new Integer(minInstancesQuery);
+            _minInstances = Integer.valueOf(minInstancesQuery);
         } catch (NumberFormatException e) {
             _minInstancesQuery = minInstancesQuery;
             _minInstances = null;
         }
         try {
-            _maxInstances = new Integer(maxInstancesQuery);
+            _maxInstances = Integer.valueOf(maxInstancesQuery);
         } catch (NumberFormatException e) {
             _maxInstancesQuery = maxInstancesQuery;
             _maxInstances = null;
         }
         try {
-            _threshold = new Integer(thresholdQuery);
+            _threshold = Integer.valueOf(thresholdQuery);
         } catch (NumberFormatException e) {
             _thresholdQuery = thresholdQuery;
             _threshold = null;
@@ -266,7 +266,7 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
     private int getQueryValue(String query) throws IllegalArgumentException {
         Element element = JDOMUtil.selectElement(_task._net.getInternalDataDocument(), query);
         if (element == null) throw new IllegalArgumentException();
-        return new Integer(element.getText());
+        return Integer.valueOf(element.getText());
     }
 
 }//end class

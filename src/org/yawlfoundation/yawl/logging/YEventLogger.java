@@ -361,7 +361,7 @@ public class YEventLogger {
             String engineID = (String) query.iterate().next();
             try {
                 // only want integral case numbers
-                return new Double(engineID).intValue();
+                return Double.valueOf(engineID).intValue();
             }
             catch (Exception e) {
                 // ignore - fallthrough

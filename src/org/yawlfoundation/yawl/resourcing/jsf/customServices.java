@@ -368,7 +368,7 @@ public class customServices extends AbstractPageBean {
     // remove the selected service from the engine
     public String btnRemove_action() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             _appbean.removeRegisteredService(selectedRowIndex);
             msgPanel.success("Service successfully removed.");
         }

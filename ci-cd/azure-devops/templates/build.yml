@@ -13,7 +13,7 @@ parameters:
     default: '1.10.14'
   - name: javaVersion
     type: string
-    default: '11'
+    default: '25'
 
 jobs:
   - job: Build

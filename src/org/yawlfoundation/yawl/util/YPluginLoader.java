@@ -130,7 +130,7 @@ public class YPluginLoader extends URLClassLoader {
         try {
             for (Class<T> clazz : load(mask)) {
                 if (clazz.getName().equals(instanceName)) {
-                    return clazz.newInstance();
+                    return clazz.getDeclaredConstructor().newInstance();
                 }
             }
         }

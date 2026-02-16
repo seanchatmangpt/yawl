@@ -158,7 +158,7 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
 
             // no getInstance(), so just create a plain new instance
             catch (NoSuchMethodException nsme) {
-                gateway = (ObserverGateway) gatewayClass.newInstance();
+                gateway = (ObserverGateway) gatewayClass.getDeclaredConstructor().newInstance();
             }
 
             if (gateway != null)

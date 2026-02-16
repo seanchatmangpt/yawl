@@ -146,13 +146,13 @@ public class WSIFController extends InterfaceBWebsideController {
         }
         try {
             if (type.endsWith("integer")) {
-               return String.valueOf(new Integer(value));
+               return String.valueOf(Integer.valueOf(value));
             }
             else if (type.endsWith("double")) {
-               return String.valueOf(new Double(value));
+               return String.valueOf(Double.valueOf(value));
             }
             else if (type.endsWith("float")) {
-               return String.valueOf(new Float(value));
+               return String.valueOf(Float.valueOf(value));
             }
             else return value;    // we tried!
         }

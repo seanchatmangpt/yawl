@@ -385,8 +385,8 @@ public class SessionBean extends AbstractSessionBean {
             String caseEvent = _monClient.getCaseEvent(caseID, "CaseStart");
             if (! caseEvent.startsWith("<fail")) {
                 Element caseElem = JDOMUtil.stringToElement(caseEvent).getChild("event");
-                caseStartTime = new Long(caseElem.getChildText("timestamp"));
-                startingServiceName = _monClient.getServiceName(new Long(caseElem.getChildText("serviceKey")));
+                caseStartTime = Long.valueOf(caseElem.getChildText("timestamp"));
+                startingServiceName = _monClient.getServiceName(Long.valueOf(caseElem.getChildText("serviceKey")));
             }
             else {
                 caseStartTime = 0;

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,10 +51,10 @@ public class ResourceResolver implements LSResourceResolver {
     public LSInput resolveResource(String type, String namespaceURI,
                                    String publicId, String systemId, String baseURI) {
         try {
-            URL url = new URL(namespaceURI + '/' + systemId);
+            URL url = URI.create(namespaceURI + '/' + systemId).toURL();
             String content = cache.get(url);
             if (content == null) {
-                content = streamToString(new URL(namespaceURI + '/' + systemId).openStream());
+                content = streamToString(URI.create(namespaceURI + '/' + systemId).toURL().openStream());
                 if (content != null) cache.put(url, content);
             }
             return new Input(publicId, systemId, stringToStream(content));

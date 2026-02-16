@@ -29,6 +29,7 @@ import javax.naming.directory.*;
 import javax.naming.ldap.LdapName;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.yawlfoundation.yawl.resourcing.datastore.orgdata.LDAPConstants.*;
@@ -326,7 +327,7 @@ public class LDAPSourceExtended extends DataSource {
         if (isNotNullOrEmpty(yawlInternalId)) {
             participant.setID(yawlInternalId);
         } else {
-            participant.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes()).toString());
+            participant.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes(StandardCharsets.UTF_8)).toString());
         }
         UserPrivileges userPrivileges = 
                 new UserPrivileges(participant.getID(), canChooseItemToStart, canStartConcurrent, canReorder,
@@ -394,7 +395,7 @@ public class LDAPSourceExtended extends DataSource {
         if (isNotNullOrEmpty(yawlInternalId)) {
             orgGroup.setID(yawlInternalId);
         } else {
-            orgGroup.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes()).toString());
+            orgGroup.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes(StandardCharsets.UTF_8)).toString());
         }
         orgGroup.setNotes(notes);
         if (isNotNullOrEmpty(displayName)) {
@@ -417,7 +418,7 @@ public class LDAPSourceExtended extends DataSource {
         if (isNotNullOrEmpty(yawlInternalId)) {
             capability.setID(yawlInternalId);
         } else {
-            capability.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes()).toString());
+            capability.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes(StandardCharsets.UTF_8)).toString());
         }
         capability.setNotes(notes);
         if (isNotNullOrEmpty(displayName)) {
@@ -440,7 +441,7 @@ public class LDAPSourceExtended extends DataSource {
         if (isNotNullOrEmpty(yawlInternalId)) {
             position.setID(yawlInternalId);
         } else {
-            position.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes()).toString());
+            position.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes(StandardCharsets.UTF_8)).toString());
         }
         position.setDescription(description);
         position.setNotes(notes);
@@ -466,7 +467,7 @@ public class LDAPSourceExtended extends DataSource {
         if (isNotNullOrEmpty(yawlInternalId)) {
             role.setID(yawlInternalId);
         } else {
-            role.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes()).toString());
+            role.setID(UUID.nameUUIDFromBytes(dn.toString().getBytes(StandardCharsets.UTF_8)).toString());
         }
         if (isNotNullOrEmpty(displayName)) {
             role.setLabel(displayName);
@@ -488,12 +489,13 @@ public class LDAPSourceExtended extends DataSource {
     private String getAttributeAsString(Attributes attr, String attributeName) {
         if (attr.get(attributeName) != null) {
             try {
-                return (String) attr.get(attributeName).get();
+                Object value = attr.get(attributeName).get();
+                return (value != null) ? (String) value : null;
             } catch (NamingException ex) {
                 _log.error("Error getting attribute " + attributeName, ex);
             }
         }
-        return "";
+        return null;
     } 
     
     private boolean isNotNullOrEmpty(String s) {
@@ -611,16 +613,24 @@ public class LDAPSourceExtended extends DataSource {
     }
 
     @Override
-    public void update(Object obj) { }
+    public void update(Object obj) {
+        throw new UnsupportedOperationException("LDAP data source does not support update operations");
+    }
 
     @Override
-    public boolean delete(Object obj) { return false; }
+    public boolean delete(Object obj) {
+        throw new UnsupportedOperationException("LDAP data source does not support delete operations");
+    }
 
     @Override
-    public String insert(Object obj) { return null; }
+    public String insert(Object obj) {
+        throw new UnsupportedOperationException("LDAP data source does not support insert operations");
+    }
 
     @Override
-    public void importObj(Object obj) { }
+    public void importObj(Object obj) {
+        throw new UnsupportedOperationException("LDAP data source does not support import operations");
+    }
 
     @Override
     public int execUpdate(String query) { return -1; }

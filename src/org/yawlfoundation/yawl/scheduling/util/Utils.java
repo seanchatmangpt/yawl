@@ -45,6 +45,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -634,7 +635,7 @@ public class Utils implements Constants {
 	 */
 	public static String sendRequest(String urlStr, Map<String, Object[]> parameters) throws Exception
 	{
-		URL url = new URL(urlStr);
+		URL url = URI.create(urlStr).toURL();
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setDoOutput(true);
 		connection.setRequestMethod("POST");

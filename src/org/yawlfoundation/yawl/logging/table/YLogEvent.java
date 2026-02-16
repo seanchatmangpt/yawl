@@ -148,7 +148,7 @@ public class YLogEvent {
 
     private long strToLong(String value) {
         try {
-            return new Long(value);
+            return Long.valueOf(value);
         }
         catch (NumberFormatException nfe) {
             return -1;

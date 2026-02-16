@@ -7,7 +7,7 @@ version: 0.2
 env:
   shell: bash
   variables:
-    JAVA_VERSION: "17"
+    JAVA_VERSION: "25"
     ANT_VERSION: "1.10.14"
     ANT_OPTS: "-Xmx2048m"
   parameter-store:
@@ -28,7 +28,7 @@ phases:
   # ============================================
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto25
       docker: latest
     commands:
       - echo "=== Install Phase Started at $(date) ==="

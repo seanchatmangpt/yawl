@@ -611,7 +611,7 @@ public class calendarMgt extends AbstractPageBean {
 
     public String btnUpdate_action() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             CalendarRow row = _sb.getSelectedCalendarRow(selectedRowIndex - 1);
             if (row != null) {
                 String startTimeStr = row.getStartTimeAsString();
@@ -639,7 +639,7 @@ public class calendarMgt extends AbstractPageBean {
 
     public String btnDelete_action() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             String result = _sb.removeCalendarRow(selectedRowIndex - 1);
             if (result.startsWith("<fail")) {
                 _msgPanel.error(result);

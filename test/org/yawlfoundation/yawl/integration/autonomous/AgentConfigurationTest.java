@@ -15,12 +15,14 @@ package org.yawlfoundation.yawl.integration.autonomous;
 
 import junit.framework.TestCase;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.OutputGenerator;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tests for AgentConfiguration builder.
@@ -35,7 +37,6 @@ public class AgentConfigurationTest extends TestCase {
     private DiscoveryStrategy discoveryStrategy;
     private EligibilityReasoner eligibilityReasoner;
     private DecisionReasoner decisionReasoner;
-    private OutputGenerator outputGenerator;
 
     public AgentConfigurationTest(String name) {
         super(name);
@@ -47,7 +48,6 @@ public class AgentConfigurationTest extends TestCase {
         discoveryStrategy = new TestDiscoveryStrategy();
         eligibilityReasoner = new TestEligibilityReasoner();
         decisionReasoner = new TestDecisionReasoner();
-        outputGenerator = new TestOutputGenerator();
     }
 
     public void testBuilderWithAllRequiredFields() {
@@ -59,7 +59,6 @@ public class AgentConfigurationTest extends TestCase {
             .discoveryStrategy(discoveryStrategy)
             .eligibilityReasoner(eligibilityReasoner)
             .decisionReasoner(decisionReasoner)
-            .outputGenerator(outputGenerator)
             .build();
 
         assertNotNull(config);
@@ -72,7 +71,6 @@ public class AgentConfigurationTest extends TestCase {
         assertEquals(discoveryStrategy, config.getDiscoveryStrategy());
         assertEquals(eligibilityReasoner, config.getEligibilityReasoner());
         assertEquals(decisionReasoner, config.getDecisionReasoner());
-        assertEquals(outputGenerator, config.getOutputGenerator());
     }
 
     public void testBuilderWithCustomPort() {
@@ -85,7 +83,6 @@ public class AgentConfigurationTest extends TestCase {
             .discoveryStrategy(discoveryStrategy)
             .eligibilityReasoner(eligibilityReasoner)
             .decisionReasoner(decisionReasoner)
-            .outputGenerator(outputGenerator)
             .build();
 
         assertEquals(9090, config.getPort());
@@ -101,7 +98,6 @@ public class AgentConfigurationTest extends TestCase {
             .discoveryStrategy(discoveryStrategy)
             .eligibilityReasoner(eligibilityReasoner)
             .decisionReasoner(decisionReasoner)
-            .outputGenerator(outputGenerator)
             .build();
 
         assertEquals("6.0.0", config.getVersion());
@@ -116,7 +112,6 @@ public class AgentConfigurationTest extends TestCase {
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing capability");
         } catch (IllegalStateException e) {
@@ -133,7 +128,6 @@ public class AgentConfigurationTest extends TestCase {
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing engineUrl");
         } catch (IllegalStateException e) {
@@ -151,7 +145,6 @@ public class AgentConfigurationTest extends TestCase {
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject empty engineUrl");
         } catch (IllegalStateException e) {
@@ -168,7 +161,6 @@ public class AgentConfigurationTest extends TestCase {
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing username");
         } catch (IllegalStateException e) {
@@ -185,7 +177,6 @@ public class AgentConfigurationTest extends TestCase {
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing password");
         } catch (IllegalStateException e) {
@@ -202,7 +193,6 @@ public class AgentConfigurationTest extends TestCase {
                 .password("YAWL")
                 .eligibilityReasoner(eligibilityReasoner)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing discoveryStrategy");
         } catch (IllegalStateException e) {
@@ -219,7 +209,6 @@ public class AgentConfigurationTest extends TestCase {
                 .password("YAWL")
                 .discoveryStrategy(discoveryStrategy)
                 .decisionReasoner(decisionReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing eligibilityReasoner");
         } catch (IllegalStateException e) {
@@ -236,7 +225,6 @@ public class AgentConfigurationTest extends TestCase {
                 .password("YAWL")
                 .discoveryStrategy(discoveryStrategy)
                 .eligibilityReasoner(eligibilityReasoner)
-                .outputGenerator(outputGenerator)
                 .build();
             fail("Should reject missing decisionReasoner");
         } catch (IllegalStateException e) {
@@ -244,30 +232,12 @@ public class AgentConfigurationTest extends TestCase {
         }
     }
 
-    public void testBuilderRejectsMissingOutputGenerator() {
-        try {
-            AgentConfiguration.builder()
-                .capability(capability)
-                .engineUrl("http://localhost:8080/yawl/ia")
-                .username("admin")
-                .password("YAWL")
-                .discoveryStrategy(discoveryStrategy)
-                .eligibilityReasoner(eligibilityReasoner)
-                .decisionReasoner(decisionReasoner)
-                .build();
-            fail("Should reject missing outputGenerator");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("outputGenerator is required"));
-        }
-    }
-
     private static class TestDiscoveryStrategy implements DiscoveryStrategy {
         @Override
-        public void start(WorkItemCallback callback) throws IOException {
-        }
-
-        @Override
-        public void stop() {
+        public List<WorkItemRecord> discoverWorkItems(
+                InterfaceB_EnvironmentBasedClient interfaceBClient,
+                String sessionHandle) throws IOException {
+            return Collections.emptyList();
         }
     }
 
@@ -280,14 +250,7 @@ public class AgentConfigurationTest extends TestCase {
 
     private static class TestDecisionReasoner implements DecisionReasoner {
         @Override
-        public Object makeDecision(WorkItemRecord workItem) {
-            return "approved";
-        }
-    }
-
-    private static class TestOutputGenerator implements OutputGenerator {
-        @Override
-        public String generateOutput(WorkItemRecord workItem, Object decision) {
+        public String produceOutput(WorkItemRecord workItem) {
             return "<data/>";
         }
     }

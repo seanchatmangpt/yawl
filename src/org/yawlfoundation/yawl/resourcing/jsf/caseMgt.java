@@ -696,7 +696,7 @@ public class caseMgt extends AbstractPageBean {
     
     private int getSelectedSpecIndex() {
         try {
-            return new Integer((String) hdnRowIndex.getValue());
+            return Integer.valueOf((String) hdnRowIndex.getValue());
         }
         catch (NumberFormatException nfe) {
             msgPanel.error("No specification selected to launch.") ;
@@ -768,7 +768,7 @@ public class caseMgt extends AbstractPageBean {
 
         // get selected spec
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             SpecificationData spec = _sb.getLoadedSpec(selectedRowIndex);
             if (spec != null) {
                 String result = unloadSpec(spec) ;
@@ -912,7 +912,7 @@ public class caseMgt extends AbstractPageBean {
 
     private void showSpecInfo() {
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             SpecificationData spec = _sb.getLoadedSpec(selectedRowIndex);
 
             if (spec != null) {
@@ -955,7 +955,7 @@ public class caseMgt extends AbstractPageBean {
         InputStream is = null;
         OutputStream os = null;
         try {
-            Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue());
+            Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue());
             SpecificationData spec = _sb.getLoadedSpec(selectedRowIndex);
 
             if (spec != null) {

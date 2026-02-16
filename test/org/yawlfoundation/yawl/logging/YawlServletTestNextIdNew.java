@@ -28,16 +28,16 @@ public class YawlServletTestNextIdNew extends TestCase {
 
 //        System.out.println("HERE: " + x + " " + y + " " + z);
 
-        int xd = new Integer(x).intValue();
+        int xd = Integer.valueOf(x).intValue();
 
-        int yd = new Integer(y).intValue();
+        int yd = Integer.valueOf(y).intValue();
         int delta = yd - xd;
 
         if (delta != 1) {
             fail();
         }
 
-        int zd = new Integer(z).intValue();
+        int zd = Integer.valueOf(z).intValue();
 
         delta = zd - yd;
 

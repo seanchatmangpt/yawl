@@ -12,7 +12,7 @@ stages:
   - deploy-prod
 
 variables:
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "25"
   ANT_VERSION: "1.10.14"
   MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode"
   DOCKER_TLS_CERTDIR: ""
@@ -75,7 +75,7 @@ prepare:
       - build/
     expire_in: 1 week
 
-build:jdk17:
+build:jdk25:
   extends: .build_template
   script:
     - ant -f build/build.xml compile
@@ -93,13 +93,6 @@ build:jdk21:
     - ant -f build/build.xml compile
   allow_failure: true
 
-build:jdk11:
-  extends: .build_template
-  image: eclipse-temurin:11-jdk
-  script:
-    - ant -f build/build.xml compile
-  allow_failure: true
-
 # ============================================
 # Test Stage
 # ============================================
@@ -107,7 +100,7 @@ test:unit:
   stage: test
   extends: .global_cache
   image: eclipse-temurin:${JAVA_VERSION}-jdk
-  needs: [build:jdk17]
+  needs: [build:jdk25]
   before_script:
     - apt-get update && apt-get install -y ant
   script:
@@ -126,7 +119,7 @@ test:integration:
   stage: test
   extends: .global_cache
   image: eclipse-temurin:${JAVA_VERSION}-jdk
-  needs: [build:jdk17]
+  needs: [build:jdk25]
   services:
     - name: postgres:15
       alias: postgres
@@ -234,7 +227,7 @@ package:docker:
   image: docker:latest
   services:
     - docker:dind
-  needs: [build:jdk17]
+  needs: [build:jdk25]
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -243,7 +236,7 @@ package:docker:
   script:
     - |
       cat > Dockerfile << 'EOF'
-      FROM tomcat:9-jdk17-temurin
+      FROM tomcat:9-jdk25-temurin
       ARG VERSION
       ARG BUILD_DATE
       ARG VCS_REF
@@ -271,7 +264,7 @@ package:docker:
 package:helm:
   stage: package
   image: alpine/helm:latest
-  needs: [build:jdk17]
+  needs: [build:jdk25]
   script:
     - helm package helm/yawl
     - mkdir -p charts

@@ -152,7 +152,7 @@ public class FormViewer {
         // convert to int, remember current timeout, set new timeout (as secs)
         if (rawValue != null) {
             try {
-                int minutes = new Integer(rawValue);
+                int minutes = Integer.valueOf(rawValue);
                 HttpSession session = _sb.getExternalSession();
                 _sb.setDefaultSessionTimeoutValue(session.getMaxInactiveInterval()) ;
                 session.setMaxInactiveInterval(minutes * 60);

@@ -33,6 +33,7 @@ import javax.faces.component.UIComponent;
 import javax.swing.*;
 import java.awt.*;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -464,7 +465,7 @@ public class DynFormComponentBuilder {
 
     private Dimension getImageSize(String imagePath) {
         try {
-            URL url = new URL(imagePath);
+            URL url = URI.create(imagePath).toURL();
             ImageIcon image = new ImageIcon(url);
             return new Dimension(image.getIconWidth(), image.getIconHeight());
         }

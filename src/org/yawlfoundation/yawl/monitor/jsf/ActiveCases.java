@@ -294,7 +294,7 @@ public class ActiveCases extends AbstractPageBean {
 
 
     public String btnDetails_action() {
-        Integer selectedRowIndex = new Integer((String) hdnRowIndex.getValue()) - 1;
+        Integer selectedRowIndex = Integer.valueOf((String) hdnRowIndex.getValue()) - 1;
         _sb.setCaseSelection(selectedRowIndex);
         return "showWorkItems";
     }

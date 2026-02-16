@@ -39,6 +39,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
@@ -111,7 +112,7 @@ public class DigitalSignature extends InterfaceBWebsideController
 	                        Base64 deCoder = new Base64();
 
 
-	                        byte[] SignedDocument = deCoder.decode(Document.getBytes());
+	                        byte[] SignedDocument = deCoder.decode(Document.getBytes(StandardCharsets.UTF_8));
 	                        System.out.println("Beginning of Checking XmlSignature:");
 	                        if(checkSignature(SignedDocument))
 	                        	answer = "true";
@@ -234,7 +235,7 @@ public class DigitalSignature extends InterfaceBWebsideController
 			DocumentBuilderFactory Factory = DocumentBuilderFactory.newInstance();								
 			DocumentBuilder DocBuild = Factory.newDocumentBuilder();								
 					
-			StringBuffer Buffer = new StringBuffer(Doc);
+			StringBuilder Buffer = new StringBuilder(Doc);
 			ByteArrayInputStream DocArray = new ByteArrayInputStream(Buffer.toString().getBytes("UTF-8"));
 			document = DocBuild.parse(DocArray);
 		
@@ -377,7 +378,7 @@ public class DigitalSignature extends InterfaceBWebsideController
             signGen.addCertificatesAndCRLs(certs);
             System.out.println("Signer loaded");
             
-            CMSProcessable content = new CMSProcessableByteArray(Document.getBytes());
+            CMSProcessable content = new CMSProcessableByteArray(Document.getBytes(StandardCharsets.UTF_8));
             System.out.println("BytesArray loaded");
             // the second variable "true" means that the content will be wrap with the signature
             return signGen.generate(content, true, "BC");

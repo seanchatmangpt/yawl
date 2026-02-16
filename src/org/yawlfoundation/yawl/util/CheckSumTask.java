@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -154,17 +155,17 @@ public class CheckSumTask extends AbstractCheckSumTask {
             return summer.getMD5Hex(file);
         }
         catch (IOException ioe) {
-            return "";
+            throw new RuntimeException("Failed to compute MD5 hash for file: " + file.getAbsolutePath(), ioe);
         }
     }
 
 
     private String getMD5Hex(String s, CheckSummer summer) {
         try {
-            return summer.getMD5Hex(s.getBytes());
+            return summer.getMD5Hex(s.getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException ioe) {
-            return "";
+            throw new RuntimeException("Failed to compute MD5 hash for string content", ioe);
         }
     }
 

@@ -363,7 +363,7 @@ public class WorkItemInstance implements YInstance {
         long result = 0;
         if (s != null) {
             try {
-                result = new Long(s);
+                result = Long.valueOf(s);
             } catch (NumberFormatException ignore) {
             }
         }
