@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.icons;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.io.IOException;
@@ -31,6 +34,7 @@ import java.util.Map;
  * @date 20/08/2014
  */
 public class IconLoader {
+    private static final Logger logger = LogManager.getLogger(IconLoader.class);
 
     private static final String DEF_EXTN = ".png";
     private static final Map<String, ImageIcon> CACHE = new HashMap<String, ImageIcon>();
@@ -64,8 +68,8 @@ public class IconLoader {
             }
             if (icon != null) CACHE.put(name, icon);
         }
-        catch (IOException ignore) {
-            // ignore this file
+        catch (IOException e) {
+            logger.warn("Failed to load icon resource: " + e.getMessage(), e);
         }
         return icon;
     }

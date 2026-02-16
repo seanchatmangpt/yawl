@@ -1,0 +1,55 @@
+# SPIFFE Federation Configuration for Multi-Cloud Identity
+#
+# This configuration defines federated SPIFFE trust domains that enable
+# YAWL workloads to authenticate with services across different cloud providers
+# without sharing credentials.
+#
+# Deployment:
+#   1. Copy to /etc/spiffe/federation.yaml on each YAWL instance
+#   2. Or set SPIFFE_FEDERATION_CONFIG environment variable to custom path
+#   3. Restart YAWL services to apply changes
+#
+# Trust Domain Naming Convention:
+#   spiffe://<cloud>.<org>.cloud/<workload-path>
+#
+# Examples:
+#   spiffe://gcp.yawl.cloud/engine/us-central1-a/instance-1
+#   spiffe://aws.yawl.cloud/agent/order-processor
+#   spiffe://azure.yawl.cloud/service/zai-api
+
+# Local trust domain for this deployment
+local_trust_domain: yawl.local
+
+# Federated trust domains
+federations:
+  # Google Cloud Platform SPIRE deployment
+  - trust_domain: gcp.yawl.cloud
+    bundle_endpoint: https://spire-server-gcp.yawl.cloud/bundle
+    cloud: gcp
+    region: us-central1
+
+  # Amazon Web Services SPIRE deployment
+  - trust_domain: aws.yawl.cloud
+    bundle_endpoint: https://spire-server-aws.yawl.cloud/bundle
+    cloud: aws
+    region: us-east-1
+
+  # Microsoft Azure SPIRE deployment
+  - trust_domain: azure.yawl.cloud
+    bundle_endpoint: https://spire-server-azure.yawl.cloud/bundle
+    cloud: azure
+    region: eastus
+
+  # On-premises SPIRE deployment
+  - trust_domain: onprem.yawl.cloud
+    bundle_endpoint: https://spire-server.yawl.internal/bundle
+    cloud: onprem
+    region: datacenter-1
+
+# Federation enables:
+#   - Cross-cloud service authentication
+#   - Zero-trust networking without VPNs
+#   - Automatic credential rotation
+#   - No shared secrets or API keys
+#
+# See: https://spiffe.io/docs/latest/spire-about/spire-concepts/#federation

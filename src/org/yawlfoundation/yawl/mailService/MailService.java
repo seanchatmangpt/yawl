@@ -81,7 +81,9 @@ public class MailService extends InterfaceBWebsideController {
     }
 
     // have to implement abstract method, but have no need for this event
-    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {  }
+    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        throw new UnsupportedOperationException("Mail service does not handle cancelled work item events");
+    }
 
 
     // these parameters are automatically inserted (in the Editor) into a task

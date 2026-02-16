@@ -1,0 +1,72 @@
+# YAWL Spring Boot Actuator Configuration
+# Cloud-native health, readiness, and liveness endpoints
+
+spring:
+  application:
+    name: yawl-engine
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,metrics,prometheus,info,env
+      path-mapping:
+        health: health
+    enabled-by-default: true
+
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+      show-components: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessHealthIndicator
+          show-details: always
+        readiness:
+          include: readinessHealthIndicator,yEngineHealthIndicator,yDatabaseHealthIndicator
+          show-details: always
+
+    metrics:
+      enabled: true
+
+    prometheus:
+      enabled: true
+
+  health:
+    defaults:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 10MB
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        yawl.case.execution.time: true
+        yawl.workitem.execution.time: true
+        yawl.agent.response.time: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:development}
+      version: 5.2
+
+# Server configuration
+server:
+  port: 8080
+  shutdown: graceful
+
+# Logging configuration
+logging:
+  level:
+    org.yawlfoundation.yawl.engine.actuator: INFO
+    org.springframework.boot.actuate: INFO
+    io.micrometer: INFO

@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.editor.block;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import org.yawlfoundation.yawl.procletService.connect.Receiver;
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
@@ -26,8 +29,9 @@ import org.yawlfoundation.yawl.procletService.util.EntityMID;
 
 import javax.swing.*;
 
-public class BlockCoordinator
-    extends InternalCoordinator {
+public class BlockCoordinator extends InternalCoordinator {
+
+  private static final Logger logger = LogManager.getLogger(BlockCoordinator.class);
 
   // frame for the block
   private FrmBlock frame = null;
@@ -149,7 +153,9 @@ public class BlockCoordinator
     try {
       this.frame.setClosed(true);
     }
-    catch (Exception pve) {}
+    catch (Exception e) {
+        logger.warn("Failed to close block coordinator frame: " + e.getMessage(), e);
+    }
     ;
   }
 

@@ -27,8 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * SOAP client for invoking external web services using Jakarta SOAP API.
+ * Migrated from javax.xml.soap to jakarta.xml.soap (Jakarta EE 10).
+ *
  * @author Michael Adams
  * @date 24/5/17
+ * @since 5.2 Migrated to Jakarta EE 10
  */
 public class SoapClient {
 

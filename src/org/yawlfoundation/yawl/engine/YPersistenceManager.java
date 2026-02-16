@@ -26,10 +26,8 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import org.hibernate.tool.schema.spi.SchemaMigrator;
-import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.TargetType;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
@@ -43,8 +41,10 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.HibernateStatistics;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -102,13 +102,11 @@ public class YPersistenceManager {
                 Metadata metadata = metadataSources.buildMetadata();
                 factory = metadata.buildSessionFactory();
 
-                // Hibernate 6: Use SchemaMigrator for schema updates
-                SchemaManagementTool tool = factory.getSessionFactoryOptions()
-                    .getServiceRegistry()
-                    .getService(SchemaManagementTool.class);
-                SchemaMigrator migrator = tool.getSchemaMigrator(null);
-                ExecutionOptions execOptions = () -> null;
-                migrator.doMigration(metadata, execOptions, (contributed) -> true);
+                EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
+                SchemaManagementTool schemaManagementTool = standardRegistry
+                        .getService(SchemaManagementTool.class);
+                schemaManagementTool.getSchemaUpdater(null)
+                        .doUpdate(metadata, targetTypes, false);
                 setEnabled(true);
             }
             catch (Exception e) {
@@ -468,6 +466,51 @@ public class YPersistenceManager {
     public Object selectScalar(String className, String field, long value)
             throws YPersistenceException {
         return selectScalar(className, field, String.valueOf(value));
+    }
+
+    /**
+     * Gets the Hibernate SessionFactory.
+     * Used by health indicators to check database connectivity.
+     * @return the SessionFactory, or null if not initialized
+     */
+    public SessionFactory getSessionFactory() {
+        return factory;
+    }
+
+    /**
+     * Checks if persistence is enabled and active.
+     * @return true if persistence is enabled
+     */
+    public boolean isPersisting() {
+        return isEnabled();
+    }
+
+    /**
+     * Gets connection pool and Hibernate statistics as a map.
+     * Used by health indicators.
+     * @return map of statistics
+     */
+    public Map<String, Object> getStatisticsMap() {
+        Map<String, Object> stats = new HashMap<>();
+        if (factory != null && isStatisticsEnabled()) {
+            org.hibernate.stat.Statistics hibernateStats = factory.getStatistics();
+            if (hibernateStats != null) {
+                stats.put("connectCount", hibernateStats.getConnectCount());
+                stats.put("sessionOpenCount", hibernateStats.getSessionOpenCount());
+                stats.put("sessionCloseCount", hibernateStats.getSessionCloseCount());
+                stats.put("transactionCount", hibernateStats.getTransactionCount());
+                stats.put("queryExecutionCount", hibernateStats.getQueryExecutionCount());
+            }
+        }
+        return stats;
+    }
+
+    /**
+     * Gets a singleton instance of the persistence manager.
+     * @return the singleton instance
+     */
+    public static YPersistenceManager getInstance() {
+        return YEngine._pmgr;
     }
 
 }

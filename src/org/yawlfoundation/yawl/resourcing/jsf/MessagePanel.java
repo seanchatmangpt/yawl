@@ -24,7 +24,7 @@ import com.sun.rave.web.ui.component.Label;
 
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
+import jakarta.el.MethodExpression;
 import jakarta.faces.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.Font;

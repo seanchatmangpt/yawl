@@ -204,4 +204,12 @@ public class YSpecificationTable
 
     }
 
+    /**
+     * Gets a singleton instance of the specification table.
+     * @return the singleton instance
+     */
+    public static YSpecificationTable getInstance() {
+        return YEngine.getInstance()._specifications;
+    }
+
 }

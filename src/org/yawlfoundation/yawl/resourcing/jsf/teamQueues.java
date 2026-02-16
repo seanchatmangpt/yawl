@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.resourcing.jsf;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.sun.rave.web.ui.appbase.AbstractPageBean;
 import com.sun.rave.web.ui.component.*;
 import com.sun.rave.web.ui.model.Option;
@@ -46,6 +49,7 @@ import java.util.TreeSet;
  */
 
 public class teamQueues extends AbstractPageBean {
+    private static final Logger logger = LogManager.getLogger(teamQueues.class);
 
     // REQUIRED AND/OR IMPLEMENTED ABSTRACT PAGE BEAN METHODS //
 
@@ -295,7 +299,9 @@ public class teamQueues extends AbstractPageBean {
             try {
                 externalContext.redirect("teamQueues.jsp");
             }
-            catch (IOException ioe) {}
+            catch (IOException e) {
+                logger.error("Failed to redirect to teamQueues.jsp: " + e.getMessage(), e);
+            }
         }
     }
 

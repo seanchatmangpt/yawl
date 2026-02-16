@@ -12,9 +12,10 @@ hibernate.query.substitutions true 1, false 0, yes 'Y', no 'N'
 ### Platforms ###
 #################
 
-## MySQL
+## MySQL (SECURITY UPDATE 2026-02-15: MySQL Connector/J 8.0.33)
+## Driver class changed from com.mysql.jdbc.Driver to com.mysql.cj.jdbc.Driver
 
-hibernate.dialect org.hibernate.dialect.MySQL8Dialect
+hibernate.dialect org.hibernate.dialect.MySQLDialect
 hibernate.connection.driver_class com.mysql.cj.jdbc.Driver
 hibernate.connection.url jdbc:mysql:@DB_Path@
 hibernate.connection.username @DB_User@

@@ -45,7 +45,12 @@ public final class XesExportLauncher {
         String username = System.getenv("YAWL_USERNAME");
         if (username == null || username.isEmpty()) username = "admin";
         String password = System.getenv("YAWL_PASSWORD");
-        if (password == null || password.isEmpty()) password = "YAWL";
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException(
+                "YAWL_PASSWORD environment variable must be set. " +
+                "See deployment runbook for credential configuration."
+            );
+        }
 
         String outputStr = System.getenv("OUTPUT_PATH");
         Path outputPath = outputStr != null && !outputStr.isEmpty()

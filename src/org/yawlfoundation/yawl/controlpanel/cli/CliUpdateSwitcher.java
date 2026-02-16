@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.cli;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.controlpanel.update.Differ;
 import org.yawlfoundation.yawl.controlpanel.update.UpdateChecker;
 import org.yawlfoundation.yawl.controlpanel.update.table.UpdateRow;
@@ -36,6 +39,7 @@ import java.io.Console;
  * @date 3/11/2015
  */
 public class CliUpdateSwitcher {
+    private static final Logger logger = LogManager.getLogger(CliUpdateSwitcher.class);
 
 
     public boolean handle(String[] args) {
@@ -251,7 +255,10 @@ public class CliUpdateSwitcher {
         try {
             Thread.sleep(mSecs);
         }
-        catch (InterruptedException ignore) { }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted during update switch wait: " + e.getMessage());
+        }
     }
 
 }

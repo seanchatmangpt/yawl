@@ -2331,4 +2331,39 @@ public class YEngine implements InterfaceADesign,
         _yawllog.disable();
     }
 
+    /**
+     * Gets the count of currently running workflow cases.
+     * Used by health indicators and metrics.
+     * @return the number of active cases
+     */
+    public int getRunningCaseCount() {
+        return _runningCaseIDToSpecMap != null ? _runningCaseIDToSpecMap.size() : 0;
+    }
+
+    /**
+     * Gets the count of loaded workflow specifications.
+     * Used by health indicators and metrics.
+     * @return the number of loaded specifications
+     */
+    public int getLoadedSpecificationCount() {
+        return _specifications != null ? _specifications.getSpecIDs().size() : 0;
+    }
+
+    /**
+     * Gets the engine start time in milliseconds.
+     * Used for uptime calculations in health checks.
+     * @return the start time in milliseconds since epoch, or 0 if not available
+     */
+    public long getStartTime() {
+        return System.currentTimeMillis() - getUptime();
+    }
+
+    /**
+     * Gets the engine uptime in milliseconds.
+     * @return uptime in milliseconds
+     */
+    private long getUptime() {
+        return java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
+    }
+
 }

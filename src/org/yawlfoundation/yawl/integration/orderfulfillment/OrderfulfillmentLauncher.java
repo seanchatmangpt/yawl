@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
@@ -123,11 +126,13 @@ public final class OrderfulfillmentLauncher {
         } finally {
             try {
                 iaClient.disconnect(sessionA);
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect client: " + e.getMessage(), e);
             }
             try {
                 ibClient.disconnect(sessionB);
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect client: " + e.getMessage(), e);
             }
         }
     }
@@ -157,7 +162,12 @@ public final class OrderfulfillmentLauncher {
         String username = System.getenv("YAWL_USERNAME");
         if (username == null || username.isEmpty()) username = "admin";
         String password = System.getenv("YAWL_PASSWORD");
-        if (password == null || password.isEmpty()) password = "YAWL";
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException(
+                "YAWL_PASSWORD environment variable must be set. " +
+                "See deployment runbook for credential configuration."
+            );
+        }
 
         String specPathStr = System.getenv("SPEC_PATH");
         if (specPathStr == null || specPathStr.isEmpty()) {
@@ -174,7 +184,8 @@ public final class OrderfulfillmentLauncher {
         if (timeoutStr != null && !timeoutStr.isEmpty()) {
             try {
                 timeoutSec = Long.parseLong(timeoutStr);
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid number format in parameter: " + e.getMessage(), e);
             }
         }
 

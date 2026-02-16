@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.cost.evaluate;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.yawlfoundation.yawl.cost.CostService;
 import org.yawlfoundation.yawl.resourcing.datastore.eventlog.ResourceEvent;
@@ -136,7 +137,7 @@ public class Predicate {
         if (randomCases > 0) {
             if (allCaseIDs.size() < randomCases) range.addAll(allCaseIDs);
             else {
-                Random r = new Random();
+                Random r = ThreadLocalRandom.current();
                 for (int i=0; i < randomCases; i++) {
                   range.add(allCaseIDs.remove(r.nextInt(allCaseIDs.size()))); // no duplicate gets
                 }

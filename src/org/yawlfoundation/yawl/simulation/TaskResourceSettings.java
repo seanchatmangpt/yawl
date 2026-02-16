@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.simulation;
+import java.util.concurrent.ThreadLocalRandom;
 
 import java.util.Random;
 
@@ -26,7 +27,7 @@ class TaskResourceSettings {
     private int maxTime;
     private int minTime;
     private int concurrent = 1;
-    private static final Random RANDOM = new Random();
+    private static final Random RANDOM = ThreadLocalRandom.current();
 
 
     TaskResourceSettings() { }

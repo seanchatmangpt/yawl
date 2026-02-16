@@ -45,19 +45,33 @@ import java.util.concurrent.Executors;
 
 /**
  * Receives event announcements from the engine and passes each of them to the
- *  custom service's appropriate handling method
+ * custom service's appropriate handling method.
+ *
+ * Migrated to virtual threads for improved concurrency and resource efficiency.
+ * Each event is processed on a dedicated virtual thread, ensuring no blocking
+ * of the HTTP request/response cycle.
  *
  * @author Lachlan Aldred
  * Date: 23/01/2004
  * Time: 13:26:04
  *
  * @author Michael Adams (refactored for v2.0, 12/2008)
+ * @updated 2026-02-16 Virtual thread migration (Java 21)
  */
 
 public class InterfaceB_EnvironmentBasedServer extends HttpServlet {
     private InterfaceBWebsideController _controller;
     private final Logger _logger = LogManager.getLogger(InterfaceB_EnvironmentBasedServer.class);
-    private final ExecutorService _executor =  Executors.newSingleThreadExecutor();
+
+    /**
+     * Virtual thread executor for async event processing.
+     * Before: Single platform thread (sequential event processing)
+     * After: Virtual threads (concurrent event processing with no queue wait)
+     *
+     * Each HTTP event announcement spawns a virtual thread, allowing HTTP response
+     * to complete immediately while event processing continues asynchronously.
+     */
+    private final ExecutorService _executor = Executors.newVirtualThreadPerTaskExecutor();
 
 
     public void init(ServletConfig servletConfig) throws ServletException {

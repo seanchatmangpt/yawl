@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.resourcing.util;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -196,7 +197,7 @@ public class RandomOrgDataGenerator {
         List<String> addedUsers = new ArrayList<String>();
         boolean unique;
         String last = "", first = "", user = "";
-        Random rand = new Random();
+        Random rand = ThreadLocalRandom.current();
 
         for (int i = 0; i < howManyToCreate; i++) {
 

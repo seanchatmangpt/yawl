@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.resourcing.allocators;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.resourcing.resource.Participant;
@@ -60,7 +61,7 @@ public class RandomChoice extends AbstractAllocator {
         if (op.length == 0) return null ;                  // case: empty set
         if (op.length == 1) return (Participant) op[0] ;   // case: only one member
 
-        return (Participant) op[new Random().nextInt(op.length)];
+        return (Participant) op[ThreadLocalRandom.current().nextInt(op.length)];
     }
 
 }

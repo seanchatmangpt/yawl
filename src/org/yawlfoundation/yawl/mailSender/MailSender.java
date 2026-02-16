@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.mailSender;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -41,6 +43,8 @@ import java.util.Properties;
 
 
 public class MailSender extends InterfaceBWebsideController {
+
+    private static final Logger logger = LogManager.getLogger(MailSender.class);
 
 
     //private static String _sessionHandle = null;
@@ -105,7 +109,12 @@ public class MailSender extends InterfaceBWebsideController {
 				  System.out.println("Port : " + Port);
 	            }
 	      }
-    	}catch  (Exception e){}
+    	}catch  (Exception e){
+    	    // XML parsing failed - fall back to method parameters
+    	    // This is acceptable: method already received SMTP/Port as parameters
+    	    logger.info("Could not load SMTP configuration from XML (using provided parameters): {}", 
+    	            e.getMessage());
+    	}
 
     	 Properties props = new Properties();
         // props.setProperty("mail.transport.protocol", "smtp");
@@ -162,6 +171,9 @@ public class MailSender extends InterfaceBWebsideController {
          message.setContent(mimemultipart);
         
          Transport.send(message);
-     }catch (Exception e) {e.printStackTrace();}
+     }catch (Exception e) {
+         logger.error("Failed to send email to: {}, subject: {}", To, subject, e);
+         e.printStackTrace();
+     }
     }
 }

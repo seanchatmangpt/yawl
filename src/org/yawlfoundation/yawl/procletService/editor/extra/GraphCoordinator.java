@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.editor.extra;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
@@ -25,6 +28,7 @@ import org.yawlfoundation.yawl.procletService.util.EntityMID;
 import javax.swing.*;
 
 public class GraphCoordinator extends InternalCoordinator {
+    private static final Logger logger = LogManager.getLogger(GraphCoordinator.class);
 
 	  // frame for the block
 	  private FrmGraph frame = null;
@@ -81,7 +85,9 @@ public class GraphCoordinator extends InternalCoordinator {
 	    try {
 	      this.frame.setClosed(true);
 	    }
-	    catch (Exception pve) {}
+	    catch (Exception e) {
+            logger.warn("Failed to close graph frame: " + e.getMessage(), e);
+        }
 	    ;
 	  }
 

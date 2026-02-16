@@ -1,0 +1,124 @@
+# YAWL v5.2 - Modernized Multi-Stage Docker Build
+#
+# Features:
+# - Multi-stage build (build stage + runtime stage)
+# - JDK 21 for build, JRE 21 for runtime (smaller image)
+# - Virtual threads support (Java 21+)
+# - Health checks for container orchestration
+# - Non-root user for security
+# - Optimized JVM settings for containers
+
+# ============================================================================
+# Build Stage
+# ============================================================================
+FROM eclipse-temurin:21-jdk-alpine AS builder
+
+LABEL stage=builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    maven \
+    git \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /build
+
+# Copy Maven configuration and source
+COPY pom.xml ./
+COPY pom-modernized.xml ./pom.xml
+COPY src ./src
+COPY test ./test
+COPY build ./build
+COPY schema ./schema
+
+# Build with Maven (skip tests in Docker build, run in CI)
+RUN mvn clean package -DskipTests -B
+
+# ============================================================================
+# Runtime Stage
+# ============================================================================
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL maintainer="YAWL Foundation"
+LABEL version="5.2"
+LABEL description="YAWL Workflow Engine - Cloud-Native with Virtual Threads Support"
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    bash \
+    curl \
+    postgresql-client \
+    mysql-client \
+    && rm -rf /var/cache/apk/*
+
+# Create application user and group for security
+RUN addgroup -S yawl && adduser -S yawl -G yawl
+
+# Set working directory
+WORKDIR /app
+
+# Copy built artifacts from builder stage
+COPY --from=builder /build/target/*.jar /app/yawl.jar
+
+# Copy configuration files
+COPY --chown=yawl:yawl config /app/config
+
+# Create directories for workflow specifications, logs, and data
+RUN mkdir -p \
+    /app/specifications \
+    /app/logs \
+    /app/data \
+    /app/temp \
+    && chown -R yawl:yawl /app
+
+# Switch to non-root user
+USER yawl
+
+# Expose ports
+# 8080 - Main application
+# 9090 - Management/Actuator
+# 8081 - Engine API
+EXPOSE 8080 9090 8081
+
+# Health check using Spring Boot Actuator liveness endpoint
+HEALTHCHECK --interval=30s \
+            --timeout=5s \
+            --start-period=60s \
+            --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
+
+# JVM options optimized for containers and Java 21+
+ENV JAVA_OPTS="\
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:InitialRAMPercentage=50.0 \
+    -XX:+UseZGC \
+    -XX:+ZGenerational \
+    -XX:+UseStringDeduplication \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/app/logs/heap-dump.hprof \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Djava.io.tmpdir=/app/temp"
+
+# Virtual Threads configuration (Java 21+)
+ENV JAVA_OPTS="${JAVA_OPTS} \
+    -Djdk.virtualThreadScheduler.parallelism=200 \
+    -Djdk.virtualThreadScheduler.maxPoolSize=256"
+
+# Application configuration
+ENV SPRING_PROFILES_ACTIVE=production
+ENV MANAGEMENT_HEALTH_PROBES_ENABLED=true
+ENV MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when-authorized
+
+# OpenTelemetry configuration (if agent is added)
+ENV OTEL_SERVICE_NAME=yawl-engine
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=prometheus
+ENV OTEL_LOGS_EXPORTER=otlp
+
+# Start application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/yawl.jar"]
+
+# Alternative: Use Spring Boot's layered JAR approach for even smaller images
+# ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} org.springframework.boot.loader.JarLauncher"]

@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import jakarta.faces.FacesException;
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
+import jakarta.el.MethodExpression;
 
 /*
  * Fragment bean that provides a menubar for each form
@@ -60,7 +60,9 @@ public class pfMenubar extends AbstractFragmentBean {
         }
     }
 
-    public void destroy() { }
+    public void destroy() {
+        // No resources to clean up - menuPanel lifecycle managed by JSF container
+    }
     
     /*******************************************************/
 
@@ -228,14 +230,18 @@ public class pfMenubar extends AbstractFragmentBean {
         if (btnType.equals(BTN_SERVICEMGT)) return "Services";
         if (btnType.equals(BTN_EXTCLIENTS)) return "Client Apps";
         if (btnType.equals(BTN_TEAMQUEUES)) return "Team Queues";
-        return "";
+        throw new IllegalArgumentException("Unknown button type: " + btnType);
     }
 
 
-    private MethodBinding bindButtonListener(String btnType) {
+    private MethodExpression bindButtonListener(String btnType) {
         String listenerName = String.format("#{pfMenubar.btn%sAction}", btnType);
-        Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding(listenerName, new Class[0]);
+        FacesContext context = FacesContext.getCurrentInstance();
+        return context.getApplication().getExpressionFactory().createMethodExpression(
+                context.getELContext(),
+                listenerName,
+                null,
+                new Class[0]);
     }
 
 

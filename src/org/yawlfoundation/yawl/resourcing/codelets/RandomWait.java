@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.resourcing.codelets;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YParameter;
@@ -89,7 +90,7 @@ public class RandomWait extends AbstractCodelet {
         }
 
         // do the work of the codelet
-        long randomWait = Math.round(new Random().nextDouble() * max) * 1000;   // msecs
+        long randomWait = Math.round(ThreadLocalRandom.current().nextDouble() * max) * 1000;   // msecs
         if (interval.equalsIgnoreCase("M"))
             randomWait *= 60;                                // seconds -> minutes
         else if (interval.equalsIgnoreCase("H"))

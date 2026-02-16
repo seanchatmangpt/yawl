@@ -27,11 +27,9 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
 
-import jakarta.xml.bind.DatatypeConverter;
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.datatype.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;

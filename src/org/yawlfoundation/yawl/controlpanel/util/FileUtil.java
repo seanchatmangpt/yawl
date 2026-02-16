@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.apache.commons.io.FileUtils;
 import org.yawlfoundation.yawl.controlpanel.YControlPanel;
 import org.yawlfoundation.yawl.controlpanel.update.UpdateConstants;
@@ -40,6 +43,7 @@ import java.util.zip.ZipInputStream;
  * @date 23/08/2014
  */
 public class FileUtil {
+    private static final Logger logger = LogManager.getLogger(FileUtil.class);
 
     private static final String HOME_DIR = setHomeDir();
     public static final char SEP = File.separatorChar;
@@ -141,7 +145,7 @@ public class FileUtil {
         try {
             closeable.close();
         }
-        catch (IOException ignore) {
+        catch (IOException e) {
             //
         }
     }

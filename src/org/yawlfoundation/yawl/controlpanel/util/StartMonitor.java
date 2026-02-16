@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.controlpanel.pubsub.Publisher;
 
 import javax.swing.*;
@@ -27,6 +30,7 @@ import javax.swing.*;
  * @date 16/06/15
  */
 public class StartMonitor extends SwingWorker<Void, Void> {
+    private static final Logger logger = LogManager.getLogger(StartMonitor.class);
 
     private int _totalSecs;
 
@@ -60,7 +64,10 @@ public class StartMonitor extends SwingWorker<Void, Void> {
         try {
             Thread.sleep(milliseconds);
         }
-        catch (InterruptedException ignore) { }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted during start monitoring: " + e.getMessage());
+        }
     }
 
 

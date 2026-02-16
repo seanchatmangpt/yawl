@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.resourcing.datastore.orgdata.util;
 
-import org.apache.log4j.LogManager;
+import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.resourcing.QueueSet;
 import org.yawlfoundation.yawl.resourcing.ResourceManager;
 import org.yawlfoundation.yawl.resourcing.datastore.orgdata.ResourceDataSet;

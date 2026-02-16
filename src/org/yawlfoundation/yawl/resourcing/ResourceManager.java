@@ -1624,7 +1624,7 @@ public final class ResourceManager extends InterfaceBWebsideController {
             if (wir.getRootCaseID().equals(caseID))
                 return wir.getSpecIdentifier();
         }
-        return "";
+        return null;
     }
 
     private void cleanCaches() {

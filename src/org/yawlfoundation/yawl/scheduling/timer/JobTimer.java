@@ -40,6 +40,17 @@ public class JobTimer implements Constants {
 
 	private static final Logger _log = LogManager.getLogger(JobTimer.class);
 
+    /**
+     * Scheduled executor for timer-based job scheduling.
+     *
+     * NOTE: Kept as platform thread-based scheduled executor because:
+     * 1. ScheduledExecutorService with virtual threads not directly supported in Java 21
+     * 2. Single-threaded scheduler is sufficient (schedules work, delegates to virtual threads)
+     * 3. Actual job execution (JobMsgTransfer, JobRUPCheck) runs on virtual threads
+     *
+     * Future Migration (Java 23+): Consider virtual thread-based scheduling when available.
+     * For now: Scheduler thread is lightweight, actual work happens on virtual threads.
+     */
     private static final ScheduledExecutorService _executor =
            Executors.newScheduledThreadPool(1);
 

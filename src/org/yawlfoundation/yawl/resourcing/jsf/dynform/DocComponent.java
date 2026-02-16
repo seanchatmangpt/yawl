@@ -28,10 +28,10 @@ import org.yawlfoundation.yawl.resourcing.ResourceManager;
 import org.yawlfoundation.yawl.resourcing.client.DocStoreClient;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import jakarta.el.MethodExpression;
 import jakarta.faces.application.Application;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
 import jakarta.faces.event.ActionEvent;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -201,10 +201,13 @@ public class DocComponent extends PanelLayout {
     }
 
 
-    private MethodBinding bindButtonListener() {
-        Application app = FacesContext.getCurrentInstance().getApplication();
-        return app.createMethodBinding("#{dynForm.btnDocumentAction}",
-                                                  new Class[]{ActionEvent.class});
+    private MethodExpression bindButtonListener() {
+        FacesContext context = FacesContext.getCurrentInstance();
+        return context.getApplication().getExpressionFactory().createMethodExpression(
+                context.getELContext(),
+                "#{dynForm.btnDocumentAction}",
+                null,
+                new Class[]{ActionEvent.class});
     }
     
     

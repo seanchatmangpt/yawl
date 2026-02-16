@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.resourcing.jsf;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.sun.rave.web.ui.appbase.AbstractSessionBean;
 import com.sun.rave.web.ui.component.Button;
 import com.sun.rave.web.ui.component.Listbox;
@@ -73,6 +76,7 @@ import java.util.*;
  */
 
 public class SessionBean extends AbstractSessionBean {
+    private static final Logger logger = LogManager.getLogger(SessionBean.class);
 
     // REQUIRED AND/OR IMPLEMENTED ABSTRACT SESSION BEAN METHODS //
 
@@ -100,9 +104,11 @@ public class SessionBean extends AbstractSessionBean {
         }
     }
 
-    public void passivate() { }
+    /** JSF lifecycle callback - no passivation needed */
+    public void passivate() { /* intentionally empty - no state to passivate */ }
 
-    public void activate() { }
+    /** JSF lifecycle callback - no activation needed */
+    public void activate() { /* intentionally empty - no state to activate */ }
 
     public void destroy() {
 
@@ -678,8 +684,8 @@ public class SessionBean extends AbstractSessionBean {
             try {
                 FacesContext.getCurrentInstance().getExternalContext().redirect("Login.jsp");
             }
-            catch (IOException ignore) {
-                //
+            catch (IOException e) {
+                logger.error("Failed to redirect to Login.jsp: " + e.getMessage(), e);
             }
         }
     }
@@ -1679,28 +1685,32 @@ public class SessionBean extends AbstractSessionBean {
     // Methods to initialise page values
 
     public String getInitSpecID() {
-        return chosenWIR != null ? chosenWIR.getSpecIdentifier() : "";
+        return chosenWIR != null ? chosenWIR.getSpecIdentifier() : null;
     }
 
-    public void setInitSpecID(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitSpecID(String id) { /* read-only property */ }
 
     public String getInitCaseID() {
-        return chosenWIR != null ? chosenWIR.getCaseID() : "";
+        return chosenWIR != null ? chosenWIR.getCaseID() : null;
     }
 
-    public void setInitCaseID(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitCaseID(String id) { /* read-only property */ }
 
     public String getInitTaskID() {
-        return chosenWIR != null ? chosenWIR.getTaskID() : "";
+        return chosenWIR != null ? chosenWIR.getTaskID() : null;
     }
 
-    public void setInitTaskID(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitTaskID(String id) { /* read-only property */ }
 
     public String getInitStatus() {
-        return chosenWIR != null ? chosenWIR.getStatus() : "";
+        return chosenWIR != null ? chosenWIR.getStatus() : null;
     }
 
-    public void setInitStatus(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitStatus(String id) { /* read-only property */ }
 
     public String getInitAge() {
         String result = null ;
@@ -1717,7 +1727,8 @@ public class SessionBean extends AbstractSessionBean {
         return result ;
     }
 
-    public void setInitAge(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitAge(String id) { /* read-only property */ }
 
     public String getInitCreatedDate() {
         if (chosenWIR != null) {
@@ -1725,14 +1736,16 @@ public class SessionBean extends AbstractSessionBean {
                 return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                         .format(chosenWIR.getEnablementTimeMs());
             }
-            catch (Exception ignore) {
-                // fall through to empty string below
+            catch (Exception e) {
+                logger.warn("Failed to format enablement time: " + e.getMessage(), e);
+                return null;
             }
         }
-        return "" ;
+        return null;
     }
 
-    public void setInitCreatedDate(String id) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitCreatedDate(String id) { /* read-only property */ }
 
     public String getInitTabText(int n) {
         String result = WorkQueue.getQueueName(n) ;
@@ -1756,7 +1769,8 @@ public class SessionBean extends AbstractSessionBean {
     public String getInitWorklistedTabText() { return getInitTabText(WorkQueue.WORKLISTED) ; }
 
 
-    public void setInitTabText(String s) {}
+    /** JSF requires setter for bean property - read-only, no action needed */
+    public void setInitTabText(String s) { /* read-only property */ }
 
     public String getInitTabStyle() { return "color: #3277ba" ; }
 
@@ -2599,8 +2613,8 @@ public class SessionBean extends AbstractSessionBean {
 
     private String getNameForCalendarID(String id) {
         ResourceCalendar cal = _rm.getCalendar();
-        if (id == null) return "";
-        String result = "";
+        if (id == null) return null;
+        String result = null;
         if (id.equals(cal.getEntryString(ResourceCalendar.ResourceGroup.AllResources))) {
             result = "All Resources";
         }

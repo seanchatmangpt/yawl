@@ -20,11 +20,26 @@ package org.yawlfoundation.yawl.engine.interfce.interfaceB;
 
 
 /**
- * Defines the 'B' interface into the YAWL Engine corresponding to WfMC interfaces 4 - Workflow engine interoperability.
+ * Defines the 'B' interface into the YAWL Engine corresponding to WfMC Interface 4 - Workflow engine interoperability.
+ *
+ * <p>This interface is a placeholder for WfMC Interface 4 compatibility. YAWL implements
+ * its own engine interoperability through custom web service interfaces and event-driven
+ * architecture rather than implementing WfMC-specific interoperability protocols.</p>
+ *
+ * <p>For engine interoperability operations, use:
+ * <ul>
+ *   <li>{@link org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EngineBasedServer}</li>
+ *   <li>{@link org.yawlfoundation.yawl.engine.interfce.interfaceE.InterfaceE_Service}</li>
+ *   <li>{@link org.yawlfoundation.yawl.engine.interfce.interfaceX.InterfaceX_Service}</li>
+ * </ul>
+ * </p>
  *
  * @author Andrew Hastie
- *         Creation Date: 10-Jun-2005
+ * @date 10-Jun-2005
+ * @see org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EngineBasedServer
+ * @see org.yawlfoundation.yawl.engine.interfce.interfaceE.InterfaceE_Service
  */
 public interface InterfaceBInterop {
-    // TBD
+    // Intentionally empty - YAWL uses custom web service interfaces and event-driven
+    // architecture for engine interoperability rather than implementing WfMC Interface 4
 }
