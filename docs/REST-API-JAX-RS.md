@@ -367,16 +367,112 @@ public void testConnect() {
 5. **GraphQL Support** - Alternative to REST for complex queries
 6. **API Versioning** - `/api/v1/ib`, `/api/v2/ib`
 
+## Web.xml Configuration
+
+The REST API is configured in `/home/user/yawl/build/engine/web.xml`:
+
+### Jersey Servlet
+
+```xml
+<servlet>
+    <servlet-name>JerseyServlet</servlet-name>
+    <description>
+        JAX-RS servlet for modern REST API endpoints.
+        Provides JSON-based REST APIs for all YAWL interfaces (A, B, E, X).
+    </description>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param>
+        <param-name>jakarta.ws.rs.Application</param-name>
+        <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+    </init-param>
+    <init-param>
+        <param-name>jersey.config.server.provider.packages</param-name>
+        <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+    </init-param>
+    <load-on-startup>5</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>JerseyServlet</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+</servlet-mapping>
+```
+
+### CORS Filter
+
+```xml
+<filter>
+    <filter-name>CorsFilter</filter-name>
+    <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>CorsFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+</filter-mapping>
+```
+
+**CORS Features:**
+- Allows cross-origin requests (configurable origins)
+- Supports standard HTTP methods (GET, POST, PUT, DELETE, OPTIONS)
+- Handles preflight OPTIONS requests
+- Custom headers: `Content-Type`, `Authorization`, `X-Session-Handle`
+
+**Production Configuration:**
+To restrict origins in production, add init parameters:
+
+```xml
+<filter>
+    <filter-name>CorsFilter</filter-name>
+    <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    <init-param>
+        <param-name>allowedOrigins</param-name>
+        <param-value>https://app.example.com,https://admin.example.com</param-value>
+    </init-param>
+</filter>
+```
+
+## Deployment
+
+### Build and Deploy
+
+```bash
+# Build YAWL with REST API
+cd /home/user/yawl
+ant -f build/build.xml buildAll
+
+# Deploy to Tomcat
+cp output/yawl.war $CATALINA_HOME/webapps/
+
+# Verify deployment
+curl http://localhost:8080/yawl/api-docs.html
+```
+
+### URL Structure
+
+- **Legacy Interfaces:** `http://localhost:8080/yawl/ib`, `/ia`, `/ix`, `/logGateway`
+- **REST API:** `http://localhost:8080/yawl/api/ib`, `/api/ia`, `/api/ie`, `/api/ix`
+
+Both interfaces coexist and share the same backend engine.
+
+## Documentation Files
+
+- `/home/user/yawl/docs/REST-API-Configuration.md` - Detailed configuration guide
+- `/home/user/yawl/build/engine/api-docs.html` - Interactive API documentation (deployed with WAR)
+- `/home/user/yawl/docs/REST-API-JAX-RS.md` - This document
+
 ## References
 
 - [Jakarta RESTful Web Services](https://jakarta.ee/specifications/restful-ws/3.1/)
 - [Jersey Documentation](https://eclipse-ee4j.github.io/jersey/)
 - [JAX-RS Tutorial](https://docs.oracle.com/javaee/7/tutorial/jaxrs.htm)
+- [REST API Configuration Guide](REST-API-Configuration.md)
 
 ## Authors
 
-- Michael Adams - YAWL Foundation
-- Implementation Date: February 16, 2026
+- **REST Resources:** Agent a757323 (February 16, 2026)
+- **Web.xml Configuration & CORS:** Configuration Agent (February 16, 2026)
+- **Documentation:** Configuration Agent (February 16, 2026)
 - YAWL Version: 5.2
 
 ## License

@@ -18,9 +18,10 @@
 
 package org.yawlfoundation.yawl.schema;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -344,7 +345,9 @@ public class XSDType {
 
 
     private static String getDateTimeValue(String pattern) {
-        return new SimpleDateFormat(pattern).format(new Date());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern)
+                .withZone(ZoneId.systemDefault());
+        return formatter.format(Instant.now());
     }
 
 }
