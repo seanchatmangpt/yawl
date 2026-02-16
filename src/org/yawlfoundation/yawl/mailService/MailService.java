@@ -33,7 +33,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideContr
 import org.yawlfoundation.yawl.util.MailSettings;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import jakarta.mail.Message;
+import javax.mail.Message;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -81,7 +81,9 @@ public class MailService extends InterfaceBWebsideController {
     }
 
     // have to implement abstract method, but have no need for this event
-    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {  }
+    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        throw new UnsupportedOperationException("Mail service does not handle cancelled work item events");
+    }
 
 
     // these parameters are automatically inserted (in the Editor) into a task

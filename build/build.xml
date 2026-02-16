@@ -275,6 +275,10 @@
     <!-- sml -->
     <property name="jakarta-xml" value="jakarta.xml.bind-api-3.0.1.jar"/>
     <!-- dbd -->
+    <property name="jakarta-el-api" value="jakarta.el-api-5.0.1.jar"/>
+    <!-- jsf - Jakarta Expression Language API -->
+    <property name="jakarta-el" value="jakarta.el-4.0.2.jar"/>
+    <!-- jsf - Jakarta Expression Language implementation -->
     <property name="jaxb1" value="jaxb1-impl.jar"/>
     <!--off-->
     <property name="jaxb-api" value="jaxb-api-2.3.1.jar"/>
@@ -724,6 +728,10 @@
         <!-- Jakarta Annotation API (PostConstruct, PreDestroy, etc.) -->
         <pathelement location="${lib.dir}/${jakarta-annotation}"/>
 
+        <!-- Jakarta Expression Language (EL) API -->
+        <pathelement location="${lib.dir}/${jakarta-el-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-el}"/>
+
         <!-- Jakarta Mail API (email functionality) -->
         <pathelement location="${lib.dir}/${jakarta-mail}"/>
         <pathelement location="${lib.dir}/${jakarta-activation}"/>
@@ -742,6 +750,10 @@
 
         <!-- Jakarta CDI API (required by A2A transport-rest) -->
         <pathelement location="${lib.dir}/${jakarta-cdi-api}"/>
+
+        <!-- JSF API (required by Resource/Monitor services) -->
+        <pathelement location="${lib.dir}/${jsf-api}"/>
+        <pathelement location="${lib.dir}/${jsf-impl}"/>
 
         <!-- MCP SDK -->
         <pathelement location="${lib.dir}/${mcp}"/>
@@ -1220,6 +1232,7 @@
             <exclude name="**/engine/observability/**"/>
             <exclude name="**/integration/observability/**"/>
             <exclude name="**/resilience/**"/>
+            <exclude name="**/integration/autonomous/**"/>
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
             <classpath refid="cp.wsif"/>
