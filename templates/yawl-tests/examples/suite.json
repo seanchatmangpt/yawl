@@ -1,0 +1,20 @@
+{
+  "package": "org.yawlfoundation.yawl.engine",
+  "suite_name": "Engine",
+  "suite_class": "EngineTestSuite",
+  "test_classes": [
+    {"class": "TestYEngineInit", "description": "Engine initialization and shutdown tests"},
+    {"class": "TestYNetRunner", "description": "Net runner execution tests"},
+    {"class": "TestYWorkItem", "description": "Work item lifecycle tests"},
+    {"class": "TestYWorkItemID", "description": "Work item ID generation tests"},
+    {"class": "TestYWorkItemRepository", "description": "Work item repository tests"},
+    {"class": "TestCaseCancellation", "description": "Case cancellation tests"},
+    {"class": "TestOrJoin", "description": "OR-join semantics tests"},
+    {"class": "TestSimpleExecutionUseCases", "description": "Basic execution use cases"}
+  ],
+  "sub_suites": [],
+  "execution_mode": "CONCURRENT",
+  "fail_fast": true,
+  "author": "YAWL Foundation",
+  "version": "5.2"
+}

@@ -38,7 +38,7 @@ import java.util.List;
 public class SaxonUtil {
 
     private static final Processor _processor = new Processor(false);
-    private static final Serializer _output = new Serializer();
+    private static final Serializer _output = _processor.newSerializer();
     private static final XQueryCompiler _compiler = _processor.newXQueryCompiler();
     private static final DOMOutputter _domOutputter = new DOMOutputter();
 

@@ -46,8 +46,8 @@
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.xml.bind.version>3.0.1</jakarta.xml.bind.version>
-        <jakarta.mail.version>2.1.0</jakarta.mail.version>
-        <jakarta.activation.version>2.1.0</jakarta.activation.version>
+        <jakarta.mail.version>2.0.1</jakarta.mail.version>
+        <jakarta.activation.version>2.0.1</jakarta.activation.version>
         <jakarta.faces.version>3.0.0</jakarta.faces.version>
         <jakarta.cdi.version>3.0.0</jakarta.cdi.version>
 
@@ -68,7 +68,7 @@
         <!-- Database Drivers -->
         <h2.version>2.2.224</h2.version>
         <postgresql.version>42.7.4</postgresql.version>
-        <mysql.version>8.0.36</mysql.version>
+        <mysql.version>8.0.33</mysql.version>
         <derby.version>10.17.1.0</derby.version>
         <hsqldb.version>2.7.2</hsqldb.version>
         <hikaricp.version>5.1.0</hikaricp.version>
@@ -115,6 +115,14 @@
         <jersey.version>3.1.5</jersey.version>
         <microsoft.graph.version>6.55.0</microsoft.graph.version>
         <azure.identity.version>1.18.1</azure.identity.version>
+
+        <!-- Additional Libraries -->
+        <jjwt.version>0.12.5</jjwt.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <jakarta.soap.version>1.5.3</jakarta.soap.version>
+        <simple-java-mail.version>8.11.2</simple-java-mail.version>
+        <ant.version>1.10.15</ant.version>
+        <micrometer.version>1.12.5</micrometer.version>
     </properties>
 
     <repositories>
@@ -188,8 +196,8 @@
                 <version>${jakarta.activation.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.activation</groupId>
-                <artifactId>jakarta.activation</artifactId>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-activation</artifactId>
                 <version>${jakarta.activation.version}</version>
             </dependency>
             <dependency>
@@ -518,6 +526,80 @@
                 <version>${azure.identity.version}</version>
             </dependency>
 
+            <!-- JJWT (JSON Web Token) -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+
+            <!-- Commons BeanUtils -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <!-- SOAP API (javax namespace for backwards compatibility) -->
+            <dependency>
+                <groupId>javax.xml.soap</groupId>
+                <artifactId>javax.xml.soap-api</artifactId>
+                <version>1.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.messaging.saaj</groupId>
+                <artifactId>saaj-impl</artifactId>
+                <version>1.5.3</version>
+            </dependency>
+
+            <!-- Simple Java Mail -->
+            <dependency>
+                <groupId>org.simplejavamail</groupId>
+                <artifactId>simple-java-mail</artifactId>
+                <version>${simple-java-mail.version}</version>
+            </dependency>
+
+            <!-- Apache Ant (for build utilities) -->
+            <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant</artifactId>
+                <version>${ant.version}</version>
+            </dependency>
+
+            <!-- Micrometer (metrics) -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+
+            <!-- Spring Boot Actuator -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-actuator</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+
             <!-- Supporting Libraries -->
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -560,6 +642,16 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-exporter-logging</artifactId>
                 <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-prometheus</artifactId>
+                <version>1.39.0-alpha</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.semconv</groupId>
+                <artifactId>opentelemetry-semconv</artifactId>
+                <version>1.25.0-alpha</version>
             </dependency>
 
             <!-- OpenTelemetry Instrumentation (would be managed by opentelemetry-instrumentation-bom-alpha) -->
@@ -688,8 +780,8 @@
             <version>${jakarta.activation.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>jakarta.activation</artifactId>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-activation</artifactId>
             <version>${jakarta.activation.version}</version>
         </dependency>
 
@@ -886,54 +978,65 @@
             <version>${okhttp.version}</version>
         </dependency>
 
-        <!-- MCP SDK -->
+        <!-- MCP SDK (not on Maven Central - install locally if needed, versions managed in dependencyManagement)
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-core</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-json</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.modelcontextprotocol</groupId>
             <artifactId>mcp-json-jackson2</artifactId>
             <version>${mcp.version}</version>
+            <optional>true</optional>
         </dependency>
+        -->
 
-        <!-- A2A SDK -->
+        <!-- A2A SDK (not on Maven Central - install locally if needed, versions managed in dependencyManagement)
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-spec</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-common</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-server-common</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-transport-rest</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-http-client</artifactId>
             <version>${a2a.version}</version>
+            <optional>true</optional>
         </dependency>
+        -->
 
         <!-- JSpecify (nullable annotations) -->
         <dependency>
@@ -981,16 +1084,29 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-prometheus</artifactId>
+            <version>1.39.0-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.semconv</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.25.0-alpha</version>
+        </dependency>
 
-        <!-- OpenTelemetry Instrumentation (versions managed by dependencyManagement) -->
+        <!-- OpenTelemetry Instrumentation (alpha versions - versions managed in dependencyManagement)
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-api</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <optional>true</optional>
         </dependency>
+        -->
 
         <!-- Resilience4j (versions managed by dependencyManagement) -->
         <dependency>
@@ -1072,6 +1188,82 @@
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
             <version>${azure.identity.version}</version>
+        </dependency>
+
+        <!-- JJWT (JSON Web Token) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Commons BeanUtils -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>${commons-beanutils.version}</version>
+        </dependency>
+
+        <!-- SOAP API (javax namespace for backwards compatibility) -->
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+
+        <!-- Simple Java Mail -->
+        <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <version>${simple-java-mail.version}</version>
+        </dependency>
+
+        <!-- Apache Ant (for build utilities) -->
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>${ant.version}</version>
+        </dependency>
+
+        <!-- Micrometer (metrics) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Actuator -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
 
         <!-- Testing Dependencies -->
@@ -1390,10 +1582,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
+                            <release>25</release>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
-                                <arg>--add-modules</arg>
-                                <arg>jdk.incubator.concurrent</arg>
                                 <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
@@ -1402,7 +1593,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>--enable-preview --add-modules jdk.incubator.concurrent</argLine>
+                            <argLine>--enable-preview</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

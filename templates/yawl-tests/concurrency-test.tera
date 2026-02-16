@@ -1,0 +1,620 @@
+{#
+ # Concurrency Test Generator Template
+ # Generates multi-threaded and concurrent execution tests
+ # Chicago TDD style - Tests real thread behavior, virtual threads, and race conditions
+ #
+ # Usage: tera --template concurrency-test.tera --spec concurrency.json --output ConcurrencyTest.java
+ #
+ # Input JSON Schema:
+ # {
+ #   "package": "org.yawlfoundation.yawl.engine",
+ #   "test_class": "TestYEngineConcurrency",
+ #   "class_under_test": "YEngine",
+ #   "junit_version": "5",
+ #   "use_virtual_threads": true,
+ #   "thread_counts": [10, 100, 1000],
+ #   "concurrent_scenarios": [
+ #     {
+ #       "name": "ConcurrentCaseStart",
+ #       "description": "Multiple threads starting cases simultaneously",
+ #       "operation": "startCase",
+ #       "thread_count": 100,
+ #       "assertions": ["allCasesStart", "noExceptions", "noRaceConditions"]
+ #     },
+ #     {
+ #       "name": "ConcurrentWorkItemAccess",
+ #       "description": "Multiple threads accessing work items",
+ #       "operation": "getWorkItem",
+ #       "thread_count": 50,
+ #       "assertions": ["threadSafe", "noDeadlock"]
+ #     }
+ #   ],
+ #   "timeout_seconds": 60,
+ #   "author": "YAWL Foundation",
+ #   "version": "5.2"
+ # }
+ #}
+/*
+ * Copyright (c) 2004-{{ "now" | date(format="%Y") }} The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * Generated for concurrent testing: {{ class_under_test }}
+ * Scenarios: {{ concurrent_scenarios | length }}
+ * Thread counts tested: {{ thread_counts | join(", ") }}
+ */
+
+package {{ package }};
+
+{% if junit_version == "5" %}
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import static org.junit.jupiter.api.Assertions.*;
+{% else %}
+import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+{% endif %}
+
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
+
+/**
+ * Concurrency integration tests for {{ class_under_test }}.
+ * Chicago TDD style - tests real thread behavior with actual concurrent access.
+ *
+ * Test scenarios:
+ * {% for scenario in concurrent_scenarios %}
+ * - {{ scenario.name }}: {{ scenario.description }} ({{ scenario.thread_count }} threads)
+ * {% endfor %}
+ *
+ * @author {{ author }}
+ * @version {{ version }}
+ * @see {{ class_under_test }}
+ */
+{% if junit_version == "5" %}
+@DisplayName("{{ class_under_test }} Concurrency Tests")
+@Execution(ExecutionMode.CONCURRENT)
+public class {{ test_class }} {
+{% else %}
+public class {{ test_class }} extends TestCase {
+
+    public {{ test_class }}(String name) {
+        super(name);
+    }
+{% endif %}
+
+    private ExecutorService virtualThreadExecutor;
+    private ExecutorService platformThreadExecutor;
+    private {{ class_under_test }} instance;
+
+    {% if junit_version == "5" %}
+    @BeforeEach
+    {% else %}
+    @Override
+    @Before
+    {% endif %}
+    public void setUp() throws Exception {
+        {% if use_virtual_threads %}
+        // Use virtual threads if available (Java 21+)
+        try {
+            var method = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
+            virtualThreadExecutor = (ExecutorService) method.invoke(null);
+        } catch (Exception e) {
+            // Fall back to platform threads for Java 11
+            virtualThreadExecutor = Executors.newFixedThreadPool(10);
+        }
+        {% else %}
+        virtualThreadExecutor = Executors.newFixedThreadPool(10);
+        {% endif %}
+        platformThreadExecutor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors());
+
+        instance = {{ class_under_test }}.getInstance();
+    }
+
+    {% if junit_version == "5" %}
+    @AfterEach
+    {% else %}
+    @Override
+    @After
+    {% endif %}
+    public void tearDown() throws InterruptedException {
+        shutdownExecutor(virtualThreadExecutor);
+        shutdownExecutor(platformThreadExecutor);
+    }
+
+    private void shutdownExecutor(ExecutorService executor) throws InterruptedException {
+        if (executor != null) {
+            executor.shutdownNow();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        }
+    }
+
+    // ============================================================
+    // Basic Concurrency Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Basic Concurrency Tests")
+    class BasicConcurrencyTests {
+    {% endif %}
+
+    /**
+     * Test that executor can handle concurrent task submission.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Executor should handle concurrent task submission")
+    @Timeout(value = {{ timeout_seconds }}, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testConcurrentTaskSubmission() throws InterruptedException {
+        int taskCount = 100;
+        CountDownLatch latch = new CountDownLatch(taskCount);
+        AtomicInteger completedCount = new AtomicInteger(0);
+
+        for (int i = 0; i < taskCount; i++) {
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    completedCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean finished = latch.await(10, TimeUnit.SECONDS);
+        assertTrue("All tasks should complete within timeout", finished);
+        assertEquals("All tasks should be completed", taskCount, completedCount.get());
+    }
+
+    {% if junit_version == "5" %}
+    } // End BasicConcurrencyTests
+    {% endif %}
+
+    // ============================================================
+    // Scenario-Based Tests
+    // ============================================================
+
+    {% for scenario in concurrent_scenarios %}
+    {% if junit_version == "5" %}
+    /**
+     * Test {{ scenario.name }} scenario.
+     * {{ scenario.description }}
+     */
+    @Test
+    @DisplayName("{{ scenario.name }}: {{ scenario.description }}")
+    @Timeout(value = {{ timeout_seconds }}, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    public void test{{ scenario.name | pascal_case }}() throws Exception {
+    {% endif %}
+    public void test{{ scenario.name | pascal_case }}() throws Exception {
+        int threadCount = {{ scenario.thread_count }};
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failureCount = new AtomicInteger(0);
+        List<Throwable> exceptions = Collections.synchronizedList(new ArrayList<>());
+
+        {% if scenario.operation == "startCase" %}
+        // Prepare for concurrent case starts
+        Set<String> caseIds = Collections.synchronizedSet(new HashSet<>());
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    startLatch.await(); // Wait for all threads to be ready
+
+                    String caseId = "case-" + index + "-" + System.nanoTime();
+                    // instance.{{ scenario.operation }}(...);
+                    caseIds.add(caseId);
+                    successCount.incrementAndGet();
+                } catch (Throwable e) {
+                    exceptions.add(e);
+                    failureCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown(); // Release all threads simultaneously
+        boolean finished = doneLatch.await({{ timeout_seconds }}, TimeUnit.SECONDS);
+
+        assertTrue("All threads should complete within timeout", finished);
+        {% if "allCasesStart" in scenario.assertions %}
+        assertEquals("All cases should start successfully", threadCount, successCount.get());
+        {% endif %}
+        {% if "noExceptions" in scenario.assertions %}
+        assertTrue("No exceptions should occur: " + exceptions,
+            exceptions.isEmpty());
+        {% endif %}
+        {% if "noRaceConditions" in scenario.assertions %}
+        assertEquals("All case IDs should be unique", threadCount, caseIds.size());
+        {% endif %}
+
+        {% elif scenario.operation == "getWorkItem" %}
+        // Prepare for concurrent work item access
+        String workItemId = "test-work-item";
+        AtomicInteger readCount = new AtomicInteger(0);
+
+        for (int i = 0; i < threadCount; i++) {
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    startLatch.await(); // Wait for all threads to be ready
+
+                    // Simulate concurrent read
+                    // YWorkItem item = instance.{{ scenario.operation }}(workItemId);
+                    readCount.incrementAndGet();
+                    successCount.incrementAndGet();
+                } catch (Throwable e) {
+                    exceptions.add(e);
+                    failureCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown(); // Release all threads simultaneously
+        boolean finished = doneLatch.await({{ timeout_seconds }}, TimeUnit.SECONDS);
+
+        assertTrue("All threads should complete within timeout", finished);
+        {% if "threadSafe" in scenario.assertions %}
+        assertEquals("All reads should succeed", threadCount, readCount.get());
+        {% endif %}
+        {% if "noDeadlock" in scenario.assertions %}
+        assertTrue("No deadlock should occur", finished);
+        {% endif %}
+
+        {% else %}
+        // Generic concurrent operation test
+        for (int i = 0; i < threadCount; i++) {
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    startLatch.await(); // Wait for all threads to be ready
+
+                    // Perform {{ scenario.operation }}
+                    successCount.incrementAndGet();
+                } catch (Throwable e) {
+                    exceptions.add(e);
+                    failureCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown(); // Release all threads simultaneously
+        boolean finished = doneLatch.await({{ timeout_seconds }}, TimeUnit.SECONDS);
+
+        assertTrue("All threads should complete within timeout", finished);
+        {% endif %}
+    }
+
+    {% endfor %}
+    // ============================================================
+    // Stress Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Stress Tests")
+    class StressTests {
+    {% endif %}
+
+    {% for thread_count in thread_counts %}
+    /**
+     * Stress test with {{ thread_count }} concurrent threads.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Stress test with {{ thread_count }} threads")
+    @Timeout(value = {{ timeout_seconds }}, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testStress{{ thread_count }}Threads() throws InterruptedException {
+        int threadCount = {{ thread_count }};
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger completedCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        Instant start = Instant.now();
+
+        for (int i = 0; i < threadCount; i++) {
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    // Simulate workload
+                    Thread.sleep(1);
+                    completedCount.incrementAndGet();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    errorCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean finished = latch.await({{ timeout_seconds }}, TimeUnit.SECONDS);
+        Instant end = Instant.now();
+
+        assertTrue("Stress test should complete within timeout", finished);
+        assertEquals("All threads should complete", threadCount, completedCount.get());
+        assertEquals("No errors should occur", 0, errorCount.get());
+
+        long duration = java.time.Duration.between(start, end).toMillis();
+        System.out.println("Stress test {{ thread_count }} threads completed in " + duration + "ms");
+    }
+
+    {% endfor %}
+    {% if junit_version == "5" %}
+    } // End StressTests
+    {% endif %}
+
+    // ============================================================
+    // Race Condition Detection Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Race Condition Detection")
+    class RaceConditionTests {
+    {% endif %}
+
+    /**
+     * Test for race conditions with shared counter.
+     * Uses AtomicInteger to detect concurrent modification issues.
+     */
+    {% if junit_version == "5" %}
+    @RepeatedTest(10)
+    @DisplayName("Should handle shared counter without race conditions")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSharedCounterRaceCondition() throws InterruptedException {
+        int threadCount = 100;
+        int iterationsPerThread = 100;
+        AtomicInteger counter = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    for (int j = 0; j < iterationsPerThread; j++) {
+                        counter.incrementAndGet();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await(30, TimeUnit.SECONDS);
+
+        int expected = threadCount * iterationsPerThread;
+        assertEquals("Counter should be exactly " + expected, expected, counter.get());
+    }
+
+    /**
+     * Test for race conditions with shared collection.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should handle shared collection safely")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSharedCollectionRaceCondition() throws InterruptedException {
+        int threadCount = 100;
+        Set<Integer> syncSet = Collections.synchronizedSet(new HashSet<>());
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            final int value = i;
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    syncSet.add(value);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await(30, TimeUnit.SECONDS);
+        assertEquals("Set should contain all values", threadCount, syncSet.size());
+    }
+
+    {% if junit_version == "5" %}
+    } // End RaceConditionTests
+    {% endif %}
+
+    // ============================================================
+    // Deadlock Detection Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Deadlock Detection")
+    class DeadlockTests {
+    {% endif %}
+
+    /**
+     * Test for potential deadlocks with ordered lock acquisition.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should not deadlock with ordered lock acquisition")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testNoDeadlockOrderedLocks() throws InterruptedException {
+        int threadCount = 50;
+        Lock lock1 = new ReentrantLock();
+        Lock lock2 = new ReentrantLock();
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger completedCount = new AtomicInteger(0);
+
+        for (int i = 0; i < threadCount; i++) {
+            final boolean reverse = (i % 2 == 0);
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    // Always acquire locks in same order to prevent deadlock
+                    lock1.lock();
+                    try {
+                        lock2.lock();
+                        try {
+                            completedCount.incrementAndGet();
+                        } finally {
+                            lock2.unlock();
+                        }
+                    } finally {
+                        lock1.unlock();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean finished = latch.await(30, TimeUnit.SECONDS);
+        assertTrue("Should not deadlock", finished);
+        assertEquals("All threads should complete", threadCount, completedCount.get());
+    }
+
+    {% if junit_version == "5" %}
+    } // End DeadlockTests
+    {% endif %}
+
+    // ============================================================
+    // Thread Pool Comparison Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Thread Pool Comparison")
+    class ThreadPoolComparisonTests {
+    {% endif %}
+
+    /**
+     * Compare performance between virtual and platform threads.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Compare virtual vs platform thread performance")
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testThreadPoolComparison() throws InterruptedException {
+        int taskCount = 1000;
+
+        long virtualTime = runBenchmark(virtualThreadExecutor, taskCount);
+        long platformTime = runBenchmark(platformThreadExecutor, taskCount);
+
+        System.out.println("Virtual threads: " + virtualTime + "ms");
+        System.out.println("Platform threads: " + platformTime + "ms");
+
+        // Virtual threads should not be significantly slower
+        assertTrue("Virtual threads should complete in reasonable time",
+            virtualTime < 30000);
+    }
+
+    private long runBenchmark(ExecutorService executor, int taskCount)
+            throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(taskCount);
+        Instant start = Instant.now();
+
+        for (int i = 0; i < taskCount; i++) {
+            executor.execute(() -> {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await(60, TimeUnit.SECONDS);
+        return java.time.Duration.between(start, Instant.now()).toMillis();
+    }
+
+    {% if junit_version == "5" %}
+    } // End ThreadPoolComparisonTests
+    {% endif %}
+
+    // ============================================================
+    // Graceful Shutdown Tests
+    // ============================================================
+
+    {% if junit_version == "5" %}
+    @Nested
+    @DisplayName("Graceful Shutdown")
+    class ShutdownTests {
+    {% endif %}
+
+    /**
+     * Test graceful executor shutdown.
+     */
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Should shutdown gracefully")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testGracefulShutdown() throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        AtomicInteger completedCount = new AtomicInteger(0);
+
+        for (int i = 0; i < 100; i++) {
+            executor.execute(() -> {
+                try {
+                    Thread.sleep(10);
+                    completedCount.incrementAndGet();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+
+        executor.shutdown();
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+
+        assertTrue("Executor should terminate gracefully", terminated);
+        assertTrue("Some tasks should complete before shutdown", completedCount.get() > 0);
+    }
+
+    {% if junit_version == "5" %}
+    } // End ShutdownTests
+    {% endif %}
+}

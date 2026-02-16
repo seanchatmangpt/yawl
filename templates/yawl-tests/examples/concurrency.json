@@ -1,0 +1,41 @@
+{
+  "package": "org.yawlfoundation.yawl.engine",
+  "test_class": "TestYEngineConcurrency",
+  "class_under_test": "YEngine",
+  "junit_version": "5",
+  "use_virtual_threads": true,
+  "thread_counts": [10, 100, 1000],
+  "concurrent_scenarios": [
+    {
+      "name": "ConcurrentCaseStart",
+      "description": "Multiple threads starting cases simultaneously to verify thread safety",
+      "operation": "startCase",
+      "thread_count": 100,
+      "assertions": ["allCasesStart", "noExceptions", "noRaceConditions"]
+    },
+    {
+      "name": "ConcurrentWorkItemAccess",
+      "description": "Multiple threads accessing work items to verify no data corruption",
+      "operation": "getWorkItem",
+      "thread_count": 50,
+      "assertions": ["threadSafe", "noDeadlock"]
+    },
+    {
+      "name": "ConcurrentSpecificationLoad",
+      "description": "Multiple threads loading specifications simultaneously",
+      "operation": "loadSpecification",
+      "thread_count": 25,
+      "assertions": ["allSpecsLoad", "noDuplicateKeys"]
+    },
+    {
+      "name": "ConcurrentCaseCancellation",
+      "description": "Multiple threads cancelling cases to verify proper cleanup",
+      "operation": "cancelCase",
+      "thread_count": 75,
+      "assertions": ["allCasesCancel", "noOrphanedWorkItems"]
+    }
+  ],
+  "timeout_seconds": 60,
+  "author": "YAWL Foundation",
+  "version": "5.2"
+}
