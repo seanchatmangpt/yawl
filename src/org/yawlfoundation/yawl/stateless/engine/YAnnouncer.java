@@ -43,6 +43,8 @@ import java.util.Set;
  */
 public class YAnnouncer {
 
+
+    private static final Logger logger = LogManager.getLogger(YAnnouncer.class);
     private final Logger _logger;
     private final Set<YExceptionEventListener> _exceptionListeners;
     private final Set<YCaseEventListener> _caseListeners;

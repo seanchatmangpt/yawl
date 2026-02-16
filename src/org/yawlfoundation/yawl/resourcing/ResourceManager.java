@@ -84,6 +84,8 @@ import java.util.*;
 
 public final class ResourceManager extends InterfaceBWebsideController {
 
+
+    private static final Logger logger = LogManager.getLogger(ResourceManager.class);
     // a cache of misc. runtime items
     private RuntimeCache _cache = new RuntimeCache();
 

@@ -49,6 +49,8 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
  */
 public class YAnnouncer {
 
+
+    private static final Logger logger = LogManager.getLogger(YAnnouncer.class);
     private final ObserverGatewayController _controller;
     private final YEngine _engine;
     private final Logger _logger;

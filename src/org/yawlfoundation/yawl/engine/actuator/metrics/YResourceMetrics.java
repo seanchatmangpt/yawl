@@ -44,6 +44,8 @@ import java.lang.management.ThreadMXBean;
 @Component
 public class YResourceMetrics {
 
+
+    private static final Logger logger = LogManager.getLogger(YResourceMetrics.class);
     private static final Logger _logger = LogManager.getLogger(YResourceMetrics.class);
 
     private final MeterRegistry registry;

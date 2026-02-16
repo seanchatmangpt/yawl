@@ -49,6 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Deprecated
 public final class PartyAgent {
 
+
+    private static final Logger logger = LogManager.getLogger(PartyAgent.class);
     private static final String VERSION = "5.2.0";
     private static final long POLL_INTERVAL_MS = 3000;
 

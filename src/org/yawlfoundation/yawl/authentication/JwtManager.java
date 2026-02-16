@@ -37,6 +37,8 @@ import java.util.Date;
  */
 public class JwtManager {
     
+
+    private static final Logger logger = LogManager.getLogger(JwtManager.class);
     private static final Logger _logger = LogManager.getLogger(JwtManager.class);
     private static final SecretKey KEY = loadSigningKey();
     private static final long EXPIRATION_HOURS = 24;
@@ -87,12 +89,12 @@ public class JwtManager {
     public static String generateToken(String userId, String sessionHandle) {
         Instant now = Instant.now();
         Instant expiration = now.plus(EXPIRATION_HOURS, ChronoUnit.HOURS);
-        
+
         return Jwts.builder()
-            .setSubject(userId)
+            .subject(userId)
             .claim("sessionHandle", sessionHandle)
-            .setIssuedAt(Date.from(now))
-            .setExpiration(Date.from(expiration))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expiration))
             .signWith(KEY)
             .compact();
     }
@@ -115,13 +117,13 @@ public class JwtManager {
         if (token == null || token.isEmpty()) {
             return null;
         }
-        
+
         try {
-            return Jwts.parserBuilder()
-                .setSigningKey(KEY)
+            return Jwts.parser()
+                .verifyWith(KEY)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
         } catch (ExpiredJwtException e) {
             _logger.debug("JWT token expired: {}", e.getMessage());
             return null;

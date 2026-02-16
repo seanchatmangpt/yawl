@@ -68,6 +68,8 @@ import java.util.TreeSet;
 
 public class caseMgt extends AbstractPageBean {
 
+
+    private static final Logger logger = LogManager.getLogger(caseMgt.class);
     private int __jsfReserved;
 
     private void _init() throws Exception { }

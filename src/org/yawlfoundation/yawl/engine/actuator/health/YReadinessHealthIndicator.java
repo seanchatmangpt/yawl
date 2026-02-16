@@ -44,6 +44,8 @@ import org.yawlfoundation.yawl.engine.YPersistenceManager;
 @Component("readinessHealthIndicator")
 public class YReadinessHealthIndicator implements HealthIndicator {
 
+
+    private static final Logger logger = LogManager.getLogger(YReadinessHealthIndicator.class);
     private static final Logger _logger = LogManager.getLogger(YReadinessHealthIndicator.class);
 
     private static final int MAX_ACTIVE_CASES = 10000;

@@ -46,6 +46,8 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class YWorkflowMetrics {
 
+
+    private static final Logger logger = LogManager.getLogger(YWorkflowMetrics.class);
     private static final Logger _logger = LogManager.getLogger(YWorkflowMetrics.class);
 
     private final MeterRegistry registry;

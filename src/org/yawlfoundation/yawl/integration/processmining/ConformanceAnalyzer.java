@@ -37,6 +37,8 @@ import java.util.Set;
  */
 public final class ConformanceAnalyzer {
 
+
+    private static final Logger logger = LogManager.getLogger(ConformanceAnalyzer.class);
     /**
      * Result of conformance analysis.
      */

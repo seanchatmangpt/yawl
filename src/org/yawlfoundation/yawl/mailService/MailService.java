@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.mailService;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.email.EmailBuilder;
@@ -47,6 +49,8 @@ import java.util.stream.Collectors;
 
 public class MailService extends InterfaceBWebsideController {
 
+
+    private static final Logger logger = LogManager.getLogger(MailService.class);
     // holds a session handle to the engine
     private String _handle = null;
 

@@ -44,6 +44,8 @@ import java.util.*;
 
 public class LogMiner {
 
+
+    private static final Logger logger = LogManager.getLogger(LogMiner.class);
     private static LogMiner _me ;
     private final Persister _reader ;
     private boolean _replaceResourceIdsWithUserIds;

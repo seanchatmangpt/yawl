@@ -26,6 +26,8 @@ package org.yawlfoundation.yawl.procletService.util;
  *
  */
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
@@ -39,6 +41,8 @@ import java.util.*;
 
 public class TimeService extends InterfaceBWebsideController {
 
+
+    private static final Logger logger = LogManager.getLogger(TimeService.class);
 
     private String _sessionHandle = null;
 

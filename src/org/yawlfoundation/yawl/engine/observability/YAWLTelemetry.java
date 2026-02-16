@@ -42,6 +42,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class YAWLTelemetry {
 
+
+    private static final Logger logger = LogManager.getLogger(YAWLTelemetry.class);
     private static final Logger _logger = LogManager.getLogger(YAWLTelemetry.class);
 
     private static final String INSTRUMENTATION_NAME = "org.yawlfoundation.yawl";

@@ -32,6 +32,8 @@ import org.yawlfoundation.yawl.controlpanel.util.EngineMonitor;
  */
 public abstract class CliEngineController implements EngineStatusListener {
 
+
+    private static final Logger logger = LogManager.getLogger(CliEngineController.class);
     protected EngineStatus _engineStatus;
 
 

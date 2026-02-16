@@ -41,6 +41,8 @@ import org.yawlfoundation.yawl.engine.YEngine;
 @Component("livenessHealthIndicator")
 public class YLivenessHealthIndicator implements HealthIndicator {
 
+
+    private static final Logger logger = LogManager.getLogger(YLivenessHealthIndicator.class);
     private static final Logger _logger = LogManager.getLogger(YLivenessHealthIndicator.class);
 
     private final YEngine engine;

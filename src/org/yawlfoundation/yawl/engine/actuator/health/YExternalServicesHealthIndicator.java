@@ -48,6 +48,8 @@ import java.util.concurrent.*;
 @Component
 public class YExternalServicesHealthIndicator implements HealthIndicator {
 
+
+    private static final Logger logger = LogManager.getLogger(YExternalServicesHealthIndicator.class);
     private static final Logger _logger = LogManager.getLogger(YExternalServicesHealthIndicator.class);
 
     private static final int CONNECT_TIMEOUT_MS = 3000;

@@ -37,6 +37,8 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
  */
 public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRunner> {
 
+
+    private static final Logger logger = LogManager.getLogger(YNetRunnerRepository.class);
     private Map<String, YIdentifier> _idMap;
 
     public YNetRunnerRepository() {

@@ -59,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnProperty(name = "yawl.observability.enabled", havingValue = "true", matchIfMissing = false)
 public class OpenTelemetryConfig {
 
+
+    private static final Logger logger = LogManager.getLogger(OpenTelemetryConfig.class);
     private static final Logger _logger = LogManager.getLogger(OpenTelemetryConfig.class);
 
     @Value("${yawl.observability.service.name:yawl-engine}")

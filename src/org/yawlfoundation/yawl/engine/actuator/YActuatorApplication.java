@@ -46,6 +46,8 @@ import org.springframework.context.annotation.ComponentScan;
 })
 public class YActuatorApplication {
 
+
+    private static final Logger logger = LogManager.getLogger(YActuatorApplication.class);
     private static final Logger _logger = LogManager.getLogger(YActuatorApplication.class);
 
     public static void main(String[] args) {

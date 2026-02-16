@@ -53,6 +53,8 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class InterfaceBRestResource {
 
+
+    private static final Logger logger = LogManager.getLogger(InterfaceBRestResource.class);
     private static final Logger _logger = LogManager.getLogger(InterfaceBRestResource.class);
     private final InterfaceBInterop _ibInterop;
     private final ObjectMapper _mapper;

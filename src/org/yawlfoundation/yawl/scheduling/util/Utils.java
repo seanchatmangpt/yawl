@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.scheduling.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -53,6 +55,8 @@ import java.util.*;
 
 public class Utils implements Constants {
 
+
+    private static final Logger logger = LogManager.getLogger(Utils.class);
 	private static XMLOutputter format = new XMLOutputter(Format.getPrettyFormat());
 	private static XMLOutputter compact = new XMLOutputter(Format.getCompactFormat());
 

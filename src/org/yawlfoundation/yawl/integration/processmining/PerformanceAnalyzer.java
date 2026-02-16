@@ -33,6 +33,8 @@ import java.util.Map;
  */
 public final class PerformanceAnalyzer {
 
+
+    private static final Logger logger = LogManager.getLogger(PerformanceAnalyzer.class);
     /**
      * Result of performance analysis.
      */

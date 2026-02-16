@@ -44,6 +44,8 @@ import java.io.IOException;
  */
 public class CorsFilter implements Filter {
 
+
+    private static final Logger logger = LogManager.getLogger(CorsFilter.class);
     private static final Logger _logger = LogManager.getLogger(CorsFilter.class);
 
     private String allowedOrigins = "*";
