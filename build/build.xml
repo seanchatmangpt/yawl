@@ -557,8 +557,8 @@
     -->
     <property name="persistence.libs"
               value="${antlr} ${commonsCollections} ${byte-buddy} ${classmate} ${ehcache}
-                     ${hikaricp} ${hibernate-core} ${hibernate-commons}
-                     ${hibernate-ehcache} ${hibernate-jpa} hibernate.cfg.xml
+                     ${hikaricp} ${hibernate-hikaricp} ${hibernate-core} ${hibernate-commons}
+                     ${hibernate-jcache} ${hibernate-dialects} ${jakarta-persistence} hibernate.cfg.xml
                      ${istack} ${jandex} ${jboss-logging} ${jboss-transaction}
                      ${javax-activation} ${javax-persistence} ${jaxb-api} ${jaxb-runtime}
                      ${slf4j} ${mchange}"/>
@@ -763,10 +763,17 @@
         <!--<pathelement location="${lib.dir}/${c3p0}"/>-->
         <!-- HikariCP Connection Pool (ACTIVE) -->
         <pathelement location="${lib.dir}/${hikaricp}"/>
+        <pathelement location="${lib.dir}/${hibernate-hikaricp}"/>
+        <!-- Hibernate 6.x Core and Dependencies -->
         <pathelement location="${lib.dir}/${hibernate-core}"/>
         <pathelement location="${lib.dir}/${hibernate-commons}"/>
-        <pathelement location="${lib.dir}/${hibernate-ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-jpa}"/>
+        <pathelement location="${lib.dir}/${hibernate-jcache}"/>
+        <pathelement location="${lib.dir}/${hibernate-dialects}"/>
+        <!-- DEPRECATED: Hibernate 5.x JPA API replaced by Jakarta Persistence 3.1 -->
+        <!--<pathelement location="${lib.dir}/${hibernate-ehcache}"/>-->
+        <!--<pathelement location="${lib.dir}/${hibernate-jpa}"/>-->
+        <!-- Jakarta Persistence 3.1 (required for Hibernate 6.x) -->
+        <pathelement location="${lib.dir}/${jakarta-persistence}"/>
         <pathelement location="${lib.dir}/${jandex}"/>
         <pathelement location="${lib.dir}/${mchange}"/>
         <pathelement location="${lib.dir}/${jboss-logging}"/>
