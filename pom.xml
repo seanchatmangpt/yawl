@@ -21,6 +21,7 @@
         <module>yawl-resourcing</module>
         <module>yawl-worklet</module>
         <module>yawl-scheduling</module>
+        <module>yawl-security</module>
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
         <module>yawl-control-panel</module>
