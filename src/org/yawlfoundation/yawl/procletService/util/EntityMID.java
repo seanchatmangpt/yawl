@@ -18,23 +18,64 @@
 
 package org.yawlfoundation.yawl.procletService.util;
 
-public class EntityMID {
-	
-	private String emid = "";
-	
-	public EntityMID (String emid) {
-		this.emid = emid;
-	}
-	
-	public String getValue() {
-		return this.emid;
-	}
-	
-	public void setEmid(String emid) {
-		this.emid = emid;
-	}
-	
-	public String toString () {
-		return this.getValue();
-	}
+import java.io.Serializable;
+
+/**
+ * Immutable entity model identifier (EMID) record.
+ * Converted to Java 25 record for improved immutability and type safety.
+ *
+ * @author YAWL Foundation
+ * @author YAWL Foundation (Java 25 conversion)
+ * @since 2.0
+ * @version 5.2
+ *
+ * @param emid Entity model identifier value
+ */
+public record EntityMID(String emid) implements Serializable {
+
+    @java.io.Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Default constructor with empty emid.
+     */
+    public EntityMID() {
+        this("");
+    }
+
+    /**
+     * Canonical constructor ensuring non-null emid.
+     */
+    public EntityMID {
+        if (emid == null) {
+            emid = "";
+        }
+    }
+
+    /**
+     * Returns the emid value.
+     * @deprecated Use emid() accessor instead
+     * @return the emid value
+     */
+    @Deprecated
+    public String getValue() {
+        return emid;
+    }
+
+    /**
+     * Creates a new EntityMID with the specified value.
+     * @deprecated Use constructor EntityMID(String) instead
+     * @param newEmid the new emid value
+     */
+    @Deprecated
+    public void setEmid(String newEmid) {
+        throw new UnsupportedOperationException(
+            "EntityMID is immutable. Create a new instance: new EntityMID(\"" + newEmid + "\")"
+        );
+    }
+
+    @Override
+    public String toString() {
+        return emid;
+    }
 }

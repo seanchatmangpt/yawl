@@ -22,91 +22,171 @@ import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.io.Serializable;
+
 /**
- * Author: Michael Adams
- * Creation Date: 6/04/2009
+ * Immutable logging data item record.
+ * Converted to Java 25 record for improved immutability and type safety.
+ *
+ * @author Michael Adams
+ * @author YAWL Foundation (Java 25 conversion)
+ * @since 2.0
+ * @version 5.2
+ *
+ * @param name Name of the log data item
+ * @param value Value of the log data item
+ * @param dataTypeName Data type name
+ * @param dataTypeDefinition Full data type definition
+ * @param descriptor Meaningful string describing the class, category or group
  */
-public class YLogDataItem {
+public record YLogDataItem(
+    String name,
+    String value,
+    String dataTypeName,
+    String dataTypeDefinition,
+    String descriptor
+) implements Serializable {
 
-    private String name ;
-    private String value ;
-    private String dataTypeName;
-    private String dataTypeDefinition;
+    @java.io.Serial
+    private static final long serialVersionUID = 1L;
 
-    // any meaningful string that describes the class, category or group of the item
-    private String descriptor ;
-
-
-    public YLogDataItem() { }
-
-    public YLogDataItem(String descriptor, String name, String value, String dataType) {
-        this.name = name;
-        this.value = value;
-        this.dataTypeName = dataType;
-        this.descriptor = descriptor;
-        this.dataTypeDefinition = dataType;           // deliberate, default duplication
+    /**
+     * Default constructor (no data).
+     */
+    public YLogDataItem() {
+        this(null, null, null, null, null);
     }
 
-    public YLogDataItem(String descriptor, String name, String value, String dataType,
-                        String dataTypeDefinition) {
-        this(descriptor, name, value, dataType);
-        this.dataTypeDefinition = dataTypeDefinition;
+    /**
+     * Constructor with basic fields (dataTypeDefinition defaults to dataTypeName).
+     */
+    public YLogDataItem(String descriptor, String name, String value, String dataTypeName) {
+        this(name, value, dataTypeName, dataTypeName, descriptor);
     }
 
-
+    /**
+     * Constructor from XML string.
+     */
     public YLogDataItem(String xml) {
-        fromXML(xml);
+        this(JDOMUtil.stringToElement(xml));
     }
 
+    /**
+     * Constructor from XML Element.
+     */
     public YLogDataItem(Element xml) {
-        fromXML(xml);
+        this(
+            xml != null ? JDOMUtil.decodeEscapes(xml.getChildText("name")) : null,
+            xml != null ? JDOMUtil.decodeEscapes(xml.getChildText("value")) : null,
+            xml != null ? JDOMUtil.decodeEscapes(xml.getChildText("datatype")) : null,
+            xml != null ? JDOMUtil.decodeEscapes(xml.getChildText("datatypedefinition")) : null,
+            xml != null ? JDOMUtil.decodeEscapes(xml.getChildText("descriptor")) : null
+        );
     }
 
-
+    /**
+     * Legacy getter for name (maintains backward compatibility).
+     * @deprecated Use name() accessor instead
+     */
+    @Deprecated
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    /**
+     * Legacy getter for value (maintains backward compatibility).
+     * @deprecated Use value() accessor instead
+     */
+    @Deprecated
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public void setValue(Object value) {
-        this.value = String.valueOf(value);
-    }
-
+    /**
+     * Legacy getter for dataTypeName (maintains backward compatibility).
+     * @deprecated Use dataTypeName() accessor instead
+     */
+    @Deprecated
     public String getDataTypeName() {
         return dataTypeName;
     }
 
-    public void setDataTypeName(String dataTypeName) {
-        this.dataTypeName = dataTypeName;
-    }
-
-    public String getDescriptor() {
-        return descriptor;
-    }
-
-    public void setDescriptor(String descriptor) {
-        this.descriptor = descriptor;
-    }
-
+    /**
+     * Legacy getter for dataTypeDefinition (maintains backward compatibility).
+     * @deprecated Use dataTypeDefinition() accessor instead
+     */
+    @Deprecated
     public String getDataTypeDefinition() {
         return dataTypeDefinition;
     }
 
-    public void setDataTypeDefinition(String dataTypeDefinition) {
-        this.dataTypeDefinition = dataTypeDefinition;
+    /**
+     * Legacy getter for descriptor (maintains backward compatibility).
+     * @deprecated Use descriptor() accessor instead
+     */
+    @Deprecated
+    public String getDescriptor() {
+        return descriptor;
     }
 
+    /**
+     * Creates a new YLogDataItem with updated value.
+     * @param newValue the new value
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withValue(String newValue) {
+        return new YLogDataItem(name, newValue, dataTypeName, dataTypeDefinition, descriptor);
+    }
+
+    /**
+     * Creates a new YLogDataItem with updated value from an Object.
+     * @param newValue the new value object
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withValue(Object newValue) {
+        return withValue(String.valueOf(newValue));
+    }
+
+    /**
+     * Creates a new YLogDataItem with updated name.
+     * @param newName the new name
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withName(String newName) {
+        return new YLogDataItem(newName, value, dataTypeName, dataTypeDefinition, descriptor);
+    }
+
+    /**
+     * Creates a new YLogDataItem with updated descriptor.
+     * @param newDescriptor the new descriptor
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withDescriptor(String newDescriptor) {
+        return new YLogDataItem(name, value, dataTypeName, dataTypeDefinition, newDescriptor);
+    }
+
+    /**
+     * Creates a new YLogDataItem with updated data type name.
+     * @param newDataTypeName the new data type name
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withDataTypeName(String newDataTypeName) {
+        return new YLogDataItem(name, value, newDataTypeName, dataTypeDefinition, descriptor);
+    }
+
+    /**
+     * Creates a new YLogDataItem with updated data type definition.
+     * @param newDataTypeDefinition the new data type definition
+     * @return a new YLogDataItem instance
+     */
+    public YLogDataItem withDataTypeDefinition(String newDataTypeDefinition) {
+        return new YLogDataItem(name, value, dataTypeName, newDataTypeDefinition, descriptor);
+    }
+
+    /**
+     * Converts to full XML representation.
+     * @return XML string
+     */
     public String toXML() {
         return """
             <logdataitem>%s%s%s</logdataitem>""".formatted(
@@ -116,7 +196,10 @@ public class YLogDataItem {
         );
     }
 
-    
+    /**
+     * Converts to short XML representation (without data types).
+     * @return short XML string
+     */
     public String toXMLShort() {
         return "%s%s%s".formatted(
             StringUtil.wrapEscaped(name, "name"),
@@ -124,21 +207,4 @@ public class YLogDataItem {
             StringUtil.wrapEscaped(descriptor, "descriptor")
         );
     }
-
-
-    private void fromXML(String xml) {
-        fromXML(JDOMUtil.stringToElement(xml));
-    }
-
-
-    private void fromXML(Element e) {
-        if (e != null) {
-            name = JDOMUtil.decodeEscapes(e.getChildText("name"));
-            value = JDOMUtil.decodeEscapes(e.getChildText("value"));
-            descriptor = JDOMUtil.decodeEscapes(e.getChildText("descriptor"));
-            dataTypeName = JDOMUtil.decodeEscapes(e.getChildText("datatype"));
-            dataTypeDefinition =  JDOMUtil.decodeEscapes(e.getChildText("datatypedefinition"));
-        }
-    }
-
 }
