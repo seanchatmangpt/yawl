@@ -244,21 +244,16 @@ public class SpecificationsResource implements YawlMcpResource {
         StringBuilder sb = new StringBuilder(text.length());
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            switch (c) {
-                case '"':  sb.append("\\\""); break;
-                case '\\': sb.append("\\\\"); break;
-                case '\b': sb.append("\\b");  break;
-                case '\f': sb.append("\\f");  break;
-                case '\n': sb.append("\\n");  break;
-                case '\r': sb.append("\\r");  break;
-                case '\t': sb.append("\\t");  break;
-                default:
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-            }
+            sb.append(switch (c) {
+                case '"' -> "\\\"";
+                case '\\' -> "\\\\";
+                case '\b' -> "\\b";
+                case '\f' -> "\\f";
+                case '\n' -> "\\n";
+                case '\r' -> "\\r";
+                case '\t' -> "\\t";
+                default -> c < 0x20 ? String.format("\\u%04x", (int) c) : String.valueOf(c);
+            });
         }
         return sb.toString();
     }
