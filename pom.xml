@@ -972,7 +972,8 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Code Coverage -->
+            <!-- JaCoCo Code Coverage - temporarily disabled for offline builds -->
+            <!--
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -992,6 +993,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
 
             <!-- Dependency Plugin for analyzing dependencies -->
             <plugin>
@@ -1047,7 +1049,8 @@
                 </executions>
             </plugin>
 
-            <!-- Enforcer Plugin - version consistency and dependency convergence -->
+            <!-- Enforcer Plugin - temporarily disabled for offline builds -->
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -1074,6 +1077,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
     </build>
 

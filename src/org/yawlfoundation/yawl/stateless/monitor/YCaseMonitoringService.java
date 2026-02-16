@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -133,8 +134,9 @@ public class YCaseMonitoringService {
                             k -> new TaskMetrics(taskID)
                         );
 
-                        if (item.getEnablementTime() > 0) {
-                            long duration = System.currentTimeMillis() - item.getEnablementTime();
+                        Instant enablementTime = item.getEnablementTime();
+                        if (enablementTime != null && !enablementTime.equals(Instant.EPOCH)) {
+                            long duration = System.currentTimeMillis() - enablementTime.toEpochMilli();
                             taskMetrics.addDuration(duration);
                             taskMetrics.incrementCount();
                         }
