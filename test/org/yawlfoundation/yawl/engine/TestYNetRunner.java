@@ -60,13 +60,18 @@ public class TestYNetRunner extends TestCase {
         assertTrue(_netRunner1.getEnabledTasks().contains(_netRunner1.getNetElement("a-top")));
         assertTrue(_netRunner1.getEnabledTasks().size() == 1);
         List children = null;
+        YStateException expectedException = null;
         try {
             children = _netRunner1.attemptToFireAtomicTask(null, "b-top");
+            fail("Should have thrown YStateException for non-enabled task");
+        } catch (YStateException e) {
+            expectedException = e;
+            assertTrue("Exception message should mention task", e.getMessage().contains("b-top"));
         } catch (YDataStateException e) {
             e.printStackTrace();
             fail();
         }
-        assertTrue(children == null);
+        assertNotNull("Should have thrown YStateException", expectedException);
         try {
             children = _netRunner1.attemptToFireAtomicTask(null, "a-top");
         } catch (YDataStateException e) {

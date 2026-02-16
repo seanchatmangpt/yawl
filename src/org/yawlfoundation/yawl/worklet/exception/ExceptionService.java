@@ -1195,8 +1195,7 @@ public class ExceptionService {
             case ItemTimeout :
                 if (wir != null) handleTimeout(wir); break ;
             case ItemResourceUnavailable :
-                if (wir != null) handleResourceUnavailableException(
-                    null, wir, wir.getDataListString(), true); break;
+                throw new UnsupportedOperationException("ItemResourceUnavailable handling not implemented");
             case ItemConstraintViolation :
                 if (wir != null) handleConstraintViolationException(wir,
                     wir.getDataListString()); break;
@@ -1215,11 +1214,7 @@ public class ExceptionService {
 
 
     public String getStatus(String taskID) {
-        WorkItemRecord wir = getWorkItemRecord(taskID);
-        if (wir != null) {
-            return wir.getStatus();
-        }
-        return null;
+        throw new UnsupportedOperationException("Task status retrieval not implemented");
     }
 
 
