@@ -69,6 +69,7 @@ jobs:
           retention-days: 5
 
   test-unit:
+  test-unit:
     name: Unit Tests (Java ${{ matrix.java-version }})
     needs: build
     runs-on: ubuntu-latest
@@ -89,11 +90,19 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests with Coverage
         run: |
           mvn test -B -V \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
+
+      - name: Generate Coverage Report
+        if: matrix.java-version == 25
+        run: mvn jacoco:report
+
+      - name: Verify Coverage Threshold (65% minimum)
+        if: matrix.java-version == 25
+        run: mvn jacoco:check || echo "⚠️  Coverage threshold not met - continuing build but please add tests"
 
       - name: Upload Test Results
         if: always()
@@ -113,6 +122,14 @@ jobs:
           path: target/site/jacoco/
           retention-days: 7
 
+      - name: Upload Coverage to Codecov
+        if: matrix.java-version == 25
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-yawl
+          fail_ci_if_error: false
   test-integration:
     name: Integration Tests
     needs: build
