@@ -182,10 +182,11 @@ public class YExternalServicesHealthIndicator implements HealthIndicator {
         long startTime = System.currentTimeMillis();
 
         try {
-            URI serviceURI = service.getURI();
-            if (serviceURI == null) {
+            String uriString = service.getURI();
+            if (uriString == null || uriString.trim().isEmpty()) {
                 return new ServiceHealthStatus(false, 0, "No URI configured");
             }
+            URI serviceURI = URI.create(uriString);
 
             URL url = serviceURI.toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();

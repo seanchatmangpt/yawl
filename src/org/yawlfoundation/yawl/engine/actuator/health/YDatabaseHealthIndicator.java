@@ -170,7 +170,7 @@ public class YDatabaseHealthIndicator implements HealthIndicator {
 
     private void addConnectionPoolStats(SessionFactory sessionFactory, Health.Builder healthBuilder) {
         try {
-            Map<String, Object> statistics = persistenceManager.getStatistics();
+            Map<String, Object> statistics = persistenceManager.getStatisticsMap();
             if (statistics != null && !statistics.isEmpty()) {
                 healthBuilder.withDetail("connectionPool", statistics);
             }

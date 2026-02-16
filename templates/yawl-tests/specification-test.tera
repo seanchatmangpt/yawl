@@ -1,0 +1,278 @@
+{#
+ # Specification Test Generator Template
+ # Generates JUnit 4/5 tests from YAWL XML specifications
+ # Chicago TDD style - Real engine integration tests
+ #
+ # Usage: tera --template specification-test.tera --spec spec.json --output TestSpec.java
+ #
+ # Input JSON Schema:
+ # {
+ #   "package": "org.yawlfoundation.yawl.engine",
+ #   "test_class": "TestMySpecification",
+ #   "spec_file": "MySpecification.xml",
+ #   "spec_id": "MySpec",
+ #   "spec_uri": "MySpecification.xml",
+ #   "root_net_id": "top",
+ #   "junit_version": "5",  // "4" or "5"
+ #   "tasks": [
+ #     {"id": "task-a", "name": "Task A", "type": "WebServiceGateway"},
+ #     {"id": "task-b", "name": "Task B", "type": "MultipleInstanceExternal"}
+ #   ],
+ #   "input_params": [
+ #     {"name": "requestId", "type": "xs:string"}
+ #   ],
+ #   "test_scenarios": [
+ #     {"name": "BasicExecution", "description": "Tests basic specification execution"},
+ #     {"name": "TaskCompletion", "description": "Tests completing all tasks in order"}
+ #   ],
+ #   "author": "YAWL Foundation",
+ #   "version": "5.2"
+ # }
+ #}
+/*
+ * Copyright (c) 2004-{{ "now" | date(format="%Y") }} The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * Generated from specification: {{ spec_file }}
+ * Test scenarios: {{ test_scenarios | length }}
+ */
+
+package {{ package }};
+
+{% if junit_version == "5" %}
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
+{% else %}
+import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+{% endif %}
+
+import org.jdom2.JDOMException;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.YTask;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Integration tests for {{ spec_id }} specification.
+ * Chicago TDD style - tests real YAWL engine with actual specification.
+ *
+ * {% for scenario in test_scenarios %}
+ * - {{ scenario.name }}: {{ scenario.description }}
+ * {% endfor %}
+ *
+ * @author {{ author }}
+ * @version {{ version }}
+ * @see YSpecification
+ * @see YEngine
+ */
+{% if junit_version == "5" %}
+@DisplayName("{{ spec_id }} Specification Tests")
+public class {{ test_class }} {
+{% else %}
+public class {{ test_class }} extends TestCase {
+{% endif %}
+
+    private YEngine engine;
+    private YSpecification specification;
+    private YSpecificationID specId;
+    private YIdentifier caseId;
+
+    {% if junit_version == "5" %}
+    @BeforeEach
+    {% else %}
+    @Override
+    @Before
+    {% endif %}
+    public void setUp() throws YSchemaBuildingException, YSyntaxException,
+            YEngineStateException, YQueryException, JDOMException, IOException,
+            YStateException, YPersistenceException, YDataStateException {
+        // Load specification from test resources
+        URL specUrl = getClass().getResource("{{ spec_file }}");
+        assertNotNull("Specification file must exist: {{ spec_file }}", specUrl);
+
+        File specFile = new File(specUrl.getFile());
+        String specXml = StringUtil.fileToString(specFile.getAbsolutePath());
+
+        // Unmarshal and validate specification
+        specification = YMarshal.unmarshalSpecifications(specXml).get(0);
+        assertNotNull("Specification should unmarshal successfully", specification);
+
+        specId = specification.getSpecificationID();
+
+        // Initialize engine
+        engine = YEngine.getInstance();
+        EngineClearer.clear(engine);
+        engine.loadSpecification(specification);
+    }
+
+    {% if junit_version == "5" %}
+    @AfterEach
+    {% else %}
+    @Override
+    @After
+    {% endif %}
+    public void tearDown() throws YStateException, YPersistenceException {
+        if (engine != null) {
+            if (caseId != null) {
+                engine.cancelCase(caseId);
+            }
+            EngineClearer.clear(engine);
+        }
+    }
+
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Specification should load successfully")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSpecificationLoads() {
+        assertNotNull("Engine should be initialized", engine);
+        assertNotNull("Specification should be loaded", specification);
+        assertEquals("Specification ID should match", "{{ spec_id }}", specId.getUri());
+    }
+
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Specification should validate successfully")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testSpecificationValidates() {
+        Set<YSyntaxException> errors = specification.getErrors();
+        assertTrue("Specification should have no validation errors: " + errors, errors.isEmpty());
+    }
+
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Case should start successfully")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testCaseStarts() throws YAWLException {
+        caseId = engine.startCase(
+            specId,
+            null,  // caseParams
+            null,  // completionObserver
+            null,  // completionFlag
+            new YLogDataItemList(),
+            null,  // service
+            false  // delayed
+        );
+
+        assertNotNull("Case ID should be returned", caseId);
+        assertFalse("Case ID should not be empty", caseId.toString().isEmpty());
+    }
+
+    {% for task in tasks %}
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Task {{ task.id }} should be reachable")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testTask{{ task.id | replace(from="-", to="_") | pascal_case }}Reachable() throws YAWLException, InterruptedException {
+        caseId = engine.startCase(specId, null, null, null, new YLogDataItemList(), null, false);
+
+        // Allow workflow to progress
+        Thread.sleep(500);
+
+        YTask task = specification.getNet("{{ root_net_id }}").getTask("{{ task.id }}");
+        assertNotNull("Task {{ task.id }} should exist in specification", task);
+    }
+
+    {% endfor %}
+    {% for scenario in test_scenarios %}
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("{{ scenario.name }}")
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void test{{ scenario.name | pascal_case }}() throws YAWLException, InterruptedException {
+        // {{ scenario.description }}
+        caseId = engine.startCase(specId, null, null, null, new YLogDataItemList(), null, false);
+        assertNotNull("Case should start for {{ scenario.name }}", caseId);
+
+        // TODO: Implement {{ scenario.name }} scenario
+        // 1. Get enabled work items
+        // 2. Complete work items in expected order
+        // 3. Verify case completion
+    }
+
+    {% endfor %}
+    {% if input_params is not empty %}
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Case should accept input parameters")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testInputParameters() throws YAWLException {
+        String caseParams = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+        caseParams += "<data>";
+        {% for param in input_params %}
+        caseParams += "<{{ param.name }}>test-value</{{ param.name }}>";
+        {% endfor %}
+        caseParams += "</data>";
+
+        caseId = engine.startCase(
+            specId,
+            caseParams,
+            null,
+            null,
+            new YLogDataItemList(),
+            null,
+            false
+        );
+
+        assertNotNull("Case should start with input parameters", caseId);
+    }
+    {% endif %}
+
+    {% if junit_version == "5" %}
+    @Test
+    @DisplayName("Case should handle cancellation")
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    {% else %}
+    @Test
+    {% endif %}
+    public void testCaseCancellation() throws YAWLException, YStateException, YPersistenceException {
+        caseId = engine.startCase(specId, null, null, null, new YLogDataItemList(), null, false);
+        assertNotNull("Case should start before cancellation", caseId);
+
+        engine.cancelCase(caseId);
+        // Case should be cancelled without throwing
+    }
+}

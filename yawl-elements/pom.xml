@@ -18,6 +18,13 @@
     <description>Workflow element definitions - core Petri net components, specifications, and process structures</description>
 
     <dependencies>
+        <!-- YAWL Utilities (for exceptions) -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-utilities</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- XML Processing -->
         <dependency>
             <groupId>org.jdom</groupId>
@@ -75,13 +82,31 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/elements</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/elements</testSourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YDataStateException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YStateException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YEngine*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YEngineID*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YSpecificationID*</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
