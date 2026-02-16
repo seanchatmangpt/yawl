@@ -64,7 +64,7 @@ class TestYNetRunner {
             fail("Should have thrown YStateException for non-enabled task");
         } catch (YStateException e) {
             expectedException = e;
-            assertTrue(e.getMessage(, "Exception message should mention task").contains("b-top"));
+            assertTrue(e.getMessage().contains("b-top"), "Exception message should mention task");
         } catch (YDataStateException e) {
             e.printStackTrace();
             fail();

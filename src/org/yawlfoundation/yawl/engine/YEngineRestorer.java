@@ -154,14 +154,17 @@ public class YEngineRestorer {
     protected YCaseNbrStore restoreNextAvailableCaseNumber() throws YPersistenceException {
         YCaseNbrStore caseNbrStore = YCaseNbrStore.getInstance();
         Query query = _pmgr.createQuery("from YCaseNbrStore");
-        if ((query != null) && (!query.list().isEmpty())) {
-            caseNbrStore = (YCaseNbrStore) query.iterate().next();
-            caseNbrStore.setPersisted(true);               // flag to update only
-        } else {
+        if (query != null) {
+            List results = query.getResultList();
+            if (results != null && !results.isEmpty()) {
+                caseNbrStore = (YCaseNbrStore) results.get(0);
+                caseNbrStore.setPersisted(true);               // flag to update only
+            } else {
 
-            // secondary attempt: eg. if there's no case number stored (as will be
-            // the case if this is the first restart after a database rebuild)
-            caseNbrStore.setCaseNbr(YEventLogger.getInstance().getMaxCaseNbr());
+                // secondary attempt: eg. if there's no case number stored (as will be
+                // the case if this is the first restart after a database rebuild)
+                caseNbrStore.setCaseNbr(YEventLogger.getInstance().getMaxCaseNbr());
+            }
         }
 
         // persisting flag must be reset as it is not itself persisted
@@ -780,14 +783,17 @@ public class YEngineRestorer {
     private <T> List<T> restoreObjects(Class<T> clazz, String queryString) throws YPersistenceException {
         List<T> list = new ArrayList<T>();
         Query query = _pmgr.createQuery(queryString);
-        for (Iterator it = query.iterate(); it.hasNext(); ) {
-            try {
-                T item = clazz.cast(it.next());
-                if (item != null) list.add(item);
-            }
-            catch (ClassCastException cce) {
-                // ignore this object
-                _log.warn("Ignored object while restoring: " + cce.getMessage());
+        List results = query.getResultList();
+        if (results != null) {
+            for (Object obj : results) {
+                try {
+                    T item = clazz.cast(obj);
+                    if (item != null) list.add(item);
+                }
+                catch (ClassCastException cce) {
+                    // ignore this object
+                    _log.warn("Ignored object while restoring: " + cce.getMessage());
+                }
             }
         }
         return list;

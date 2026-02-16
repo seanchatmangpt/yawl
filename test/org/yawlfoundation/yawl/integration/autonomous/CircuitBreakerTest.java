@@ -35,16 +35,16 @@ public class CircuitBreakerTest extends TestCase {
 
     public void testDefaultConstructor() {
         CircuitBreaker breaker = new CircuitBreaker("test");
-        assertEquals(breaker.getName());
-        assertEquals(5, breaker.getFailureThreshold(, "test"));
+        assertEquals("test", breaker.getName());
+        assertEquals(5, breaker.getFailureThreshold());
         assertEquals(30000, breaker.getOpenDurationMs());
         assertEquals(State.CLOSED, breaker.getState());
     }
 
     public void testCustomConstructor() {
         CircuitBreaker breaker = new CircuitBreaker("test", 3, 5000);
-        assertEquals(breaker.getName());
-        assertEquals(3, breaker.getFailureThreshold(, "test"));
+        assertEquals("test", breaker.getName());
+        assertEquals(3, breaker.getFailureThreshold());
         assertEquals(5000, breaker.getOpenDurationMs());
         assertEquals(State.CLOSED, breaker.getState());
     }
@@ -90,8 +90,8 @@ public class CircuitBreakerTest extends TestCase {
 
         String result = breaker.execute(() -> "success");
 
-        assertEquals(result);
-        assertEquals(State.CLOSED, breaker.getState(, "success"));
+        assertEquals("success", result);
+        assertEquals(State.CLOSED, breaker.getState());
         assertEquals(0, breaker.getConsecutiveFailures());
     }
 
@@ -104,10 +104,10 @@ public class CircuitBreakerTest extends TestCase {
             });
             fail("Should propagate exception");
         } catch (RuntimeException e) {
-            assertEquals(e.getMessage());
+            assertEquals("fail", e.getMessage());
         }
 
-        assertEquals(State.CLOSED, breaker.getState(, "fail"));
+        assertEquals(State.CLOSED, breaker.getState());
         assertEquals(1, breaker.getConsecutiveFailures());
     }
 
@@ -194,8 +194,8 @@ public class CircuitBreakerTest extends TestCase {
 
         String result = breaker.execute(() -> "success");
 
-        assertEquals(result);
-        assertEquals(State.CLOSED, breaker.getState(, "success"));
+        assertEquals("success", result);
+        assertEquals(State.CLOSED, breaker.getState());
         assertEquals(0, breaker.getConsecutiveFailures());
     }
 
@@ -262,7 +262,7 @@ public class CircuitBreakerTest extends TestCase {
         assertEquals(0, breaker.getConsecutiveFailures());
 
         String result = breaker.execute(() -> "success");
-        assertEquals(result);
+        assertEquals("success", result);
     }
 
     public void testRejectsNullOperation() {
@@ -278,7 +278,7 @@ public class CircuitBreakerTest extends TestCase {
     }
 
     public void testConcurrentOperations() throws Exception {
-        CircuitBreaker breaker = new CircuitBreaker("test", 5, 1000, "success");
+        CircuitBreaker breaker = new CircuitBreaker("test", 5, 1000);
         AtomicInteger successes = new AtomicInteger(0);
         AtomicInteger failures = new AtomicInteger(0);
 
@@ -310,7 +310,7 @@ public class CircuitBreakerTest extends TestCase {
         }
 
         assertEquals(10, successes.get() + failures.get());
-        assertTrue(successes.get(, "Some operations succeeded") > 0);
-        assertTrue(failures.get(, "Some operations failed") > 0);
+        assertTrue(successes.get() > 0, "Some operations succeeded");
+        assertTrue(failures.get() > 0, "Some operations failed");
     }
 }

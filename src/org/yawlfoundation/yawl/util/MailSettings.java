@@ -11,6 +11,8 @@ import org.simplejavamail.mailer.config.TransportStrategy;
  */
 public class MailSettings {
     private Logger _logger = LogManager.getLogger(getClass());
+
+    private static final Logger logger = LogManager.getLogger(MailSettings.class);
     
     public String host = null;
     public int port = 25;

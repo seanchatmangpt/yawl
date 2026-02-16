@@ -261,7 +261,7 @@ public class StringUtil {
      * @return escaped string
      */
     public static String formatForHTML(String string) {
-        string = StringEscapeUtils.escapeHtml(string);
+        string = StringEscapeUtils.escapeHtml4(string);
         string = string.replaceAll("\n", "<br>");
         string = string.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
         string = string.replaceAll(" ", "&nbsp;");

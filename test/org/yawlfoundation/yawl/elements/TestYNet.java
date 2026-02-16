@@ -193,7 +193,7 @@ class TestYNet {
     }
 
 //    @Test
-    void testCloneWithNewDataModel() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+//    void testCloneWithNewDataModel() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
 //        File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
 //        List specifications = null;
 //        specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));

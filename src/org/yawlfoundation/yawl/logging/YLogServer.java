@@ -123,9 +123,9 @@ public class YLogServer {
             Query query = _logDb.createQuery(
                     "select ni from YLogNet as n, YLogNetInstance as ni " +
                             "where ni.netID=n.netID and n.specKey=:specKey")
-                    .setLong("specKey", specKey);
+                    .setParameter("specKey", specKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<netInstances specID=\"%d\">", specKey));
@@ -154,9 +154,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogEvent as e where " +
                     "e.rootNetInstanceID=:key")
-                    .setLong("key", rootNetInstanceKey);
+                    .setParameter("key", rootNetInstanceKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<events rootNetInstanceKey=\"%d\">",
@@ -183,9 +183,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery(
                     "from YLogNetInstance as n where n.engineInstanceID=:caseID")
-                    .setString("caseID", caseID);
+                    .setParameter("caseID", caseID);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     YLogNetInstance instance = (YLogNetInstance) itr.next();
                     result = getCaseEvents(instance.getNetInstanceID());
@@ -209,11 +209,11 @@ public class YLogServer {
                             "or ti.engineInstanceID like :caseIDlike) " +
                             "and ti.taskID=t.taskID " +
                             "and t.name=:taskName")
-                    .setString("caseID", caseID)
-                    .setString("caseIDlike", caseID + ".%")
-                    .setString("taskName", taskName);
+                    .setParameter("caseID", caseID)
+                    .setParameter("caseIDlike", caseID + ".%")
+                    .setParameter("taskName", taskName);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<taskinstances caseID=\"%s\" taskname=\"%s\">",
@@ -241,9 +241,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogEvent as e where " +
                     "e.instanceID=:key")
-                    .setLong("key", instanceKey);
+                    .setParameter("key", instanceKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<events instanceKey=\"%d\">",
@@ -270,9 +270,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogDataItemInstance as di where " +
                     "di.eventID=:key")
-                    .setLong("key", eventKey);
+                    .setParameter("key", eventKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<dataitems eventKey=\"%d\">", eventKey));
@@ -298,9 +298,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogDataType as dt where " +
                     "dt.dataTypeID=:key")
-                    .setLong("key", dataTypeKey);
+                    .setParameter("key", dataTypeKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     YLogDataType dataType = (YLogDataType) itr.next();
@@ -322,9 +322,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogTaskInstance as ti where " +
                     "ti.engineInstanceID like :key")
-                    .setString("key", caseID + ".%");
+                    .setParameter("key", caseID + ".%");
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<taskinstances caseID=\"%s\">", caseID));
@@ -350,9 +350,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogTaskInstance as ti where " +
                     "ti.taskID=:key")
-                    .setLong("key", taskKey);
+                    .setParameter("key", taskKey);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<taskinstances key=\"%d\">", taskKey));
@@ -409,10 +409,10 @@ public class YLogServer {
                     "select e from YLogEvent as e, YLogNetInstance as ni where " +
                             "ni.engineInstanceID=:caseID and e.instanceID=ni.netInstanceID " +
                             "and e.descriptor=:eventType")
-                    .setString("caseID", caseID)
-                    .setString("eventType", eventType);
+                    .setParameter("caseID", caseID)
+                    .setParameter("eventType", eventType);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<caseEvent caseID=\"%s\">", caseID));
@@ -440,10 +440,10 @@ public class YLogServer {
                     "select e from YLogEvent as e, YLogService as s where " +
                             "s.serviceID=e.serviceID and " +
                             "s.name=:serviceName and e.descriptor=:event")
-                    .setString("serviceName", serviceName)
-                    .setString("event", eventType);
+                    .setParameter("serviceName", serviceName)
+                    .setParameter("event", eventType);
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     StringBuilder xml = new StringBuilder();
                     xml.append(String.format("<caseEvent serviceName=\"%s\">", serviceName));
@@ -851,19 +851,19 @@ public class YLogServer {
                 query = _logDb.createQuery(
                         "select distinct s from YLogSpecification s where " +
                         "s.identifier=:id and s.version=:version and s.uri=:uri")
-                        .setString("id", identifier)
-                        .setString("version", specID.getVersionAsString())
-                        .setString("uri", specID.getUri());
+                        .setParameter("id", identifier)
+                        .setParameter("version", specID.getVersionAsString())
+                        .setParameter("uri", specID.getUri());
             }
             else {
                 query = _logDb.createQuery(
                         "select distinct s from YLogSpecification s where " +
                         "s.version=:version and s.uri=:uri")
-                        .setString("version", specID.getVersionAsString())
-                        .setString("uri", specID.getUri());
+                        .setParameter("version", specID.getVersionAsString())
+                        .setParameter("uri", specID.getUri());
             }
             if (query != null) {
-                Iterator itr = query.iterate();
+                Iterator itr = query.getResultList().iterator();
                 if (itr.hasNext()) {
                     return (YLogSpecification) itr.next();
                 }
@@ -885,9 +885,9 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery(
                     "from YLogNet as n where n.specKey=:specKey")
-                    .setLong("specKey", specKey);
+                    .setParameter("specKey", specKey);
             if (query != null) {
-                return query.list();
+                return query.getResultList();
             }
         }
         return Collections.emptyList();
@@ -922,10 +922,10 @@ public class YLogServer {
         if (isEnabled()) {
             Query query = _logDb.createQuery("from YLogNetInstance as ni where " +
                     "ni.engineInstanceID=:caseid or ni.engineInstanceID like :likeid")
-                    .setString("caseid", caseID)
-                    .setString("likeid", caseID + ".%");
+                    .setParameter("caseid", caseID)
+                    .setParameter("likeid", caseID + ".%");
             if (query != null) {
-                return query.list();
+                return query.getResultList();
             }
         }
         return Collections.emptyList();
@@ -940,10 +940,10 @@ public class YLogServer {
                 Query query = _logDb.createQuery(
                         "from YLogTaskInstance as ti, YLogTask as t where ti.engineInstanceID=:caseID" +
                                 " and t.name=:taskName and t.taskID=ti.taskID")
-                        .setString("caseID", caseID)
-                        .setString("taskName", taskName);
+                        .setParameter("caseID", caseID)
+                        .setParameter("taskName", taskName);
                 if (query != null) {
-                    List result = query.list();
+                    List result = query.getResultList();
                     if (!result.isEmpty()) {
                         Object[] rows = (Object[]) result.get(0);
                         return (YLogTaskInstance) rows[0];
@@ -1003,9 +1003,9 @@ public class YLogServer {
     
     private List getObjects(String qStr, long key) {
         if (isEnabled()) {
-            Query query = _logDb.createQuery(qStr).setLong("key", key);
+            Query query = _logDb.createQuery(qStr).setParameter("key", key);
             if (query != null) {
-                return query.list();
+                return query.getResultList();
             }
         }
         return Collections.emptyList();

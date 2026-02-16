@@ -62,6 +62,8 @@ import java.util.*;
  */
 public class EngineGatewayImpl implements EngineGateway {
 
+
+    private static final Logger logger = LogManager.getLogger(EngineGatewayImpl.class);
     private YEngine _engine;
     private YSessionCache _sessionCache;
     private boolean _redundantMode;
@@ -802,7 +804,7 @@ public class EngineGatewayImpl implements EngineGateway {
         String sessionMessage = checkSession(sessionHandle);
         if (isFailureMessage(sessionMessage)) return sessionMessage;
         new YLaunchDelayer(specID, caseParams, caseCompletionURI, null,
-                new YLogDataItemList(logDataStr), sessionHandle, expiry, true);
+                new YLogDataItemList(logDataStr), sessionHandle, expiry.toInstant(), true);
         return successMessage("Case scheduled to start at " + expiry.toString());
     }
 

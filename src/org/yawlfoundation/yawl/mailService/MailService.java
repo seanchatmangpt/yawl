@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.mailService;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.email.EmailBuilder;
@@ -33,7 +35,8 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideContr
 import org.yawlfoundation.yawl.util.MailSettings;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.mail.Message;
+import jakarta.mail.Message;
+import javax.mail.Message.RecipientType;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +50,8 @@ import java.util.stream.Collectors;
 
 public class MailService extends InterfaceBWebsideController {
 
+
+    private static final Logger logger = LogManager.getLogger(MailService.class);
     // holds a session handle to the engine
     private String _handle = null;
 
@@ -351,13 +356,25 @@ public class MailService extends InterfaceBWebsideController {
 
 
     private List<Recipient> asRecipientList(String recipients,
-                                            Message.RecipientType recipientType) {
+                                            jakarta.mail.Message.RecipientType jakartaRecipientType) {
         if (! StringUtil.isNullOrEmpty(recipients)) {
+            RecipientType javaxRecipientType = convertRecipientType(jakartaRecipientType);
             return Arrays.stream(recipients.split(";")).map(s -> {
-                return new Recipient(null, s, recipientType);
+                return new Recipient(null, s, javaxRecipientType);
             }).collect(Collectors.toList());
         }
         return Collections.emptyList();
+    }
+
+    private RecipientType convertRecipientType(jakarta.mail.Message.RecipientType jakartaType) {
+        if (jakartaType == jakarta.mail.Message.RecipientType.TO) {
+            return RecipientType.TO;
+        } else if (jakartaType == jakarta.mail.Message.RecipientType.CC) {
+            return RecipientType.CC;
+        } else if (jakartaType == jakarta.mail.Message.RecipientType.BCC) {
+            return RecipientType.BCC;
+        }
+        return RecipientType.TO;
     }
 
 

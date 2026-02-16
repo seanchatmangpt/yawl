@@ -18,110 +18,101 @@
 
 package org.yawlfoundation.yawl.logging;
 
+
 import org.yawlfoundation.yawl.authentication.YClient;
-import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.util.YPredicateParser;
 
 import java.net.URL;
 
 /**
- * Author: Michael Adams
- * Creation Date: 1/03/2010
+ * Parses log predicates for work items in the stateful engine.
+ * Replaces predicate placeholders with actual work item values.
+ *
+ * @author Michael Adams
+ * @date 1/03/2010
  */
 public class YLogPredicateWorkItemParser extends YPredicateParser {
 
-    private YWorkItem _workItem;
+    private final YWorkItem _workItem;
 
     public YLogPredicateWorkItemParser(YWorkItem item) {
         super();
         _workItem = item;
     }
 
-    protected String valueOf(String predicate) {
-        String resolved = "n/a";
-        if (predicate.equals("${item:id}")) {
-            resolved = _workItem.getIDString();
+    protected String valueOf(String s) {
+        if (s.equals("${item:id}")) {
+            s = _workItem.getIDString();
         }
-        else if (predicate.equals("${task:id}")) {
-            resolved = _workItem.getTaskID();
+        else if (s.equals("${task:id}")) {
+            s = _workItem.getTaskID();
         }
-        else if (predicate.equals("${spec:name}")) {
-            resolved = _workItem.getSpecName();
+        else if (s.equals("${spec:name}")) {
+            s = _workItem.getSpecName();
         }
-        else if (predicate.equals("${task:name}")) {
-            resolved = _workItem.getTask().getName();
+        else if (s.equals("${task:name}")) {
+            s = _workItem.getTask().getName();
         }
-        else if (predicate.equals("${spec:version}")) {
-            resolved = _workItem.getSpecificationID().getVersionAsString();
+        else if (s.equals("${spec:version}")) {
+            s = _workItem.getSpecificationID().getVersionAsString();
         }
-        else if (predicate.equals("${spec:key}")) {
-            resolved = _workItem.getSpecificationID().getIdentifier();
+        else if (s.equals("${spec:key}")) {
+            s = _workItem.getSpecificationID().getKey();
         }
-        else if (predicate.equals("${item:handlingservice:name}")) {
+        else if (s.equals("${item:handlingService:name}")) {
             YClient client = _workItem.getExternalClient();
-            if (client != null) {
-                resolved = client.getUserName();
-            }
+            s = (client != null) ? client.getUserName() : "n/a";
         }
-        else if (predicate.equals("${item:handlingservice:uri}")) {
-            YClient client = _workItem.getExternalClient();
-            if ((client instanceof YAWLServiceReference)) {
-                resolved = ((YAWLServiceReference) client).getURI();
-            }
+        else if (s.equals("${item:handlingService:uri}")) {
+            s = "n/a";
         }
-        else if (predicate.equals("${item:handlingservice:doco}")) {
-            YClient client = _workItem.getExternalClient();
-            if (client != null) {
-                resolved = client.getDocumentation();
-            }
+        else if (s.equals("${item:handlingService:doco}")) {
+            s = "n/a";
         }
-        else if (predicate.equals("${item:codelet}")) {
-            resolved = _workItem.getCodelet();
+        else if (s.equals("${item:codelet}")) {
+            String codelet = _workItem.getCodelet();
+            s = (codelet != null) ? codelet : "n/a";
         }
-        else if (predicate.equals("${item:customform}")) {
-            URL url = _workItem.getCustomFormURL();
-            if (url != null) {
-                resolved = url.toString();
-            }
+        else if (s.equals("${item:customForm}")) {
+            URL form = _workItem.getCustomFormURL();
+            s = (form != null) ? form.toString() : "n/a";
         }
-        else if (predicate.equals("${item:enabledtime}")) {
-            resolved = dateTimeString(_workItem.getEnablementTime().getTime());
+        else if (s.equals("${item:enabledTime}")) {
+            s = dateTimeString(_workItem.getEnablementTime().toEpochMilli());
         }
-        else if (predicate.equals("${item:firedtime}")) {
-            resolved = dateTimeString(_workItem.getFiringTime().getTime());
+        else if (s.equals("${item:firedTime}")) {
+            s = dateTimeString(_workItem.getFiringTime().toEpochMilli());
         }
-        else if (predicate.equals("${item:startedtime}")) {
-            resolved = dateTimeString(_workItem.getStartTime().getTime());
+        else if (s.equals("${item:startedTime}")) {
+            s = dateTimeString(_workItem.getStartTime().toEpochMilli());
         }
-        else if (predicate.equals("${item:status}")) {
-            resolved = _workItem.getStatus().toString();
+        else if (s.equals("${item:status}")) {
+            s = _workItem.getStatus().toString();
         }
-        else if (predicate.equals("${task:doco}")) {
-            resolved = _workItem.getTask().getDocumentationPreParsed();
+        else if (s.equals("${task:doco}")) {
+            s = _workItem.getTask().getDocumentation();
         }
-        else if (predicate.equals("${task:decomposition:name}")) {
-            resolved = _workItem.getTask().getDecompositionPrototype().getID();
+        else if (s.equals("${task:decomposition:name}")) {
+            s = _workItem.getTask().getDecompositionPrototype().getName();
         }
-        else if (predicate.equals("${item:timer:status}")) {
-            resolved = _workItem.getTimerStatus();
+        else if (s.equals("${item:timer:status}")) {
+            s = _workItem.getTimerStatus();
         }
-        else if (predicate.equals("${item:timer:expiry}")) {
+        else if (s.equals("${item:timer:expiry}")) {
             long expiry = _workItem.getTimerExpiry();
-            resolved = (expiry > 0) ? dateTimeString(expiry) : "Nil";
+            s = (expiry > 0) ? dateTimeString(expiry) : "Nil";
         }
-        else if (predicate.startsWith("${item:attribute:")) {
-            resolved = getAttributeValue(_workItem.getAttributes(), predicate);
+        else if (s.startsWith("${item:attribute:")) {
+            String value = getAttributeValue(_workItem.getAttributes(), s);
+            s = (value != null) ? value : "n/a";
         }
-        else if (predicate.startsWith("${expression:")) {
-            resolved = evaluateQuery(predicate, _workItem.getDataElement());
+        else if (s.startsWith("${expression:")) {
+            s = evaluateQuery(s, _workItem.getDataElement());
         }
         else {
-            resolved = super.valueOf(predicate);
+            s = super.valueOf(s);
         }
-        if (resolved == null || "null".equals(resolved) || predicate.equals(resolved)) {
-            resolved = "n/a";
-        }
-        return resolved;
-    }    
+        return s;
+    }
 }

@@ -40,6 +40,8 @@ import java.util.*;
  */
 public class SMSSender extends InterfaceBWebsideController implements Runnable {
 
+
+    private static final Logger logger = LogManager.getLogger(SMSSender.class);
     //sms messages that have as yet received no return messages.
     private static List _outStandingInteractions = new ArrayList();
     //true if the polling thread is running

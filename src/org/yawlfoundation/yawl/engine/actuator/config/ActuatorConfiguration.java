@@ -45,6 +45,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ActuatorConfiguration {
 
+
+    private static final Logger logger = LogManager.getLogger(ActuatorConfiguration.class);
     private static final Logger _logger = LogManager.getLogger(ActuatorConfiguration.class);
 
     @Bean

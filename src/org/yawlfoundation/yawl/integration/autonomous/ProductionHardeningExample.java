@@ -22,6 +22,8 @@ import java.util.Map;
  */
 public class ProductionHardeningExample {
 
+
+    private static final Logger logger = LogManager.getLogger(ProductionHardeningExample.class);
     public static void main(String[] args) throws Exception {
         System.out.println("=== YAWL Production Hardening Example ===\n");
 

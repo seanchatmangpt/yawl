@@ -73,8 +73,8 @@ class TestStatelessEngine implements YCaseEventListener, YWorkItemEventListener 
         YSpecification spec = _engine.unmarshalSpecification(xml);
         assertNotNull(spec);
         assertNotNull(spec.getRootNet());
-        assertEquals(spec.getID());
-        assertEquals(1, spec.getDecompositions(, "MinimalSpec").size());
+        assertEquals("MinimalSpec", spec.getID());
+        assertEquals(1, spec.getDecompositions().size());
         assertNotNull(spec.getRootNet().getNetElement("task1"));
         assertNotNull(spec.getRootNet().getInputCondition());
         assertNotNull(spec.getRootNet().getOutputCondition());

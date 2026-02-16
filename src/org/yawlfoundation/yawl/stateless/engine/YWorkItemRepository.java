@@ -40,6 +40,8 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
  */
 public class YWorkItemRepository {
     private final Map<String, YWorkItem> _itemMap; //[case&taskIDStr=YWorkItem]
+
+    private static final Logger logger = LogManager.getLogger(YWorkItemRepository.class);
     private final Logger _logger;
 
     public YWorkItemRepository() {

@@ -44,6 +44,8 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class YAgentPerformanceMetrics {
 
+
+    private static final Logger logger = LogManager.getLogger(YAgentPerformanceMetrics.class);
     private static final Logger _logger = LogManager.getLogger(YAgentPerformanceMetrics.class);
 
     private final MeterRegistry registry;

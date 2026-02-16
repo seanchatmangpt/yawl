@@ -28,6 +28,7 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import javax.xml.XMLConstants;
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.*;
 
 
@@ -168,24 +169,24 @@ class YSpecificationParser {
         String validFrom = metaDataElem.getChildText("validFrom", _yawlNS);
         if (validFrom != null) {
             try {
-                metaData.setValidFrom(YMetaData.dateFormat.parse(validFrom));
-            } catch (ParseException e) {
+                metaData.setValidFrom(LocalDate.from(YMetaData.dateFormat.parse(validFrom)));
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         String validUntil = metaDataElem.getChildText("validUntil", _yawlNS);
         if (validUntil != null) {
             try {
-                metaData.setValidUntil(YMetaData.dateFormat.parse(validUntil));
-            } catch (ParseException e) {
+                metaData.setValidUntil(LocalDate.from(YMetaData.dateFormat.parse(validUntil)));
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         String created = metaDataElem.getChildText("created", _yawlNS);
         if (created != null) {
             try {
-                metaData.setCreated(YMetaData.dateFormat.parse(created));
-            } catch (ParseException e) {
+                metaData.setCreated(LocalDate.from(YMetaData.dateFormat.parse(created)));
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

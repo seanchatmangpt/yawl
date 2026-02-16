@@ -40,6 +40,8 @@ import java.util.Set;
  */
 public class CsrfProtectionFilter implements Filter {
     
+
+    private static final Logger logger = LogManager.getLogger(CsrfProtectionFilter.class);
     private static final Logger _logger = LogManager.getLogger(CsrfProtectionFilter.class);
     private static final Set<String> SAFE_METHODS = new HashSet<>(
         Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE")

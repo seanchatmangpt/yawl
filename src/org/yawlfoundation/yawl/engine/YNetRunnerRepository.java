@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.engine;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 
 import java.util.ArrayList;
@@ -36,6 +37,8 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
  */
 public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRunner> {
 
+
+    private static final Logger logger = LogManager.getLogger(YNetRunnerRepository.class);
     private Map<String, YIdentifier> _idMap;
 
     public YNetRunnerRepository() {

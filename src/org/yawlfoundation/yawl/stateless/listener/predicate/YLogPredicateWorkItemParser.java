@@ -70,13 +70,13 @@ public class YLogPredicateWorkItemParser extends YPredicateParser {
             s = _workItem.getCustomFormURL().toString();
         }
         else if (s.equals("${item:enabledTime}")) {
-            s = dateTimeString(_workItem.getEnablementTime().getTime());
+            s = dateTimeString(_workItem.getEnablementTime().toEpochMilli());
         }
         else if (s.equals("${item:firedTime}")) {
-            s = dateTimeString(_workItem.getFiringTime().getTime());
+            s = dateTimeString(_workItem.getFiringTime().toEpochMilli());
         }
         else if (s.equals("${item:startedTime}")) {
-            s = dateTimeString(_workItem.getStartTime().getTime());
+            s = dateTimeString(_workItem.getStartTime().toEpochMilli());
         }
         else if (s.equals("${item:status}")) {
             s = _workItem.getStatus().toString();

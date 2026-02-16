@@ -165,11 +165,6 @@ class TestWSIFInvoker {
                 + "operationName[(portName)]:[inputMessageName]:[outputMessageName] "
                 + "[soap|axis] [argument1 ...]");
         System.exit(1);
-    } else {
-            TestRunner runner = new TestRunner();
-            runner.doRun(suite());
-            System.exit(0);
-        }
     }
 
     private static void setUpAuth() {

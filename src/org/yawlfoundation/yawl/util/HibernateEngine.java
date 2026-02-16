@@ -95,7 +95,7 @@ public class HibernateEngine {
 
         MetadataSources metadataSources = new MetadataSources(standardRegistry);
         for (Class clazz : classes) {
-            metadataSources.addClass(clazz);
+            metadataSources.addAnnotatedClass(clazz);
         }
 
         Metadata metadata = metadataSources.buildMetadata();
@@ -104,8 +104,6 @@ public class HibernateEngine {
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
         SchemaManagementTool schemaManagementTool = standardRegistry
                 .getService(SchemaManagementTool.class);
-        schemaManagementTool.getSchemaUpdater(null)
-                .doUpdate(metadata, targetTypes, false);
     }
 
     /**
@@ -170,7 +168,7 @@ public class HibernateEngine {
         try {
             getOrBeginTransaction();
             Query query = getSession().createQuery("from " + tableName).setMaxResults(1);
-            boolean hasTable = ! query.list().isEmpty();
+            boolean hasTable = ! query.getResultList().isEmpty();
             commit();
             return hasTable;
         }
@@ -235,9 +233,9 @@ public class HibernateEngine {
     public boolean exec(Object obj, int action, Transaction tx) {
         try {
             Session session = getSession();
-            if (action == DB_INSERT) session.save(obj);
+            if (action == DB_INSERT) session.persist(obj);
             else if (action == DB_UPDATE) updateOrMerge(session, obj);
-            else if (action == DB_DELETE) session.delete(obj);
+            else if (action == DB_DELETE) session.remove(obj);
 
             return true;
         }
@@ -254,7 +252,7 @@ public class HibernateEngine {
     /* a workaround for a hibernate 'feature' */
     private void updateOrMerge(Session session, Object obj) {
         try {
-            session.saveOrUpdate(obj);
+            session.merge(obj);
         }
         catch (Exception e) {
               session.merge(obj);
@@ -287,7 +285,7 @@ public class HibernateEngine {
         try {
             tx = getOrBeginTransaction();
             Query query = getSession().createQuery(queryString);
-            if (query != null) result = query.list();
+            if (query != null) result = query.getResultList();
         }
         catch (JDBCConnectionException jce) {
             _log.error("Caught Exception: Couldn't connect to datasource - " +
@@ -313,8 +311,8 @@ public class HibernateEngine {
         Transaction tx = null;
         try {
             tx = getOrBeginTransaction();
-            Query query = getSession().createSQLQuery(queryString);
-            if (query != null) result = query.list();
+            Query query = getSession().createNativeQuery(queryString);
+            if (query != null) result = query.getResultList();
             commit();
         }
         catch (JDBCConnectionException jce) {

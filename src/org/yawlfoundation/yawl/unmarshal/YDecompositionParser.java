@@ -37,6 +37,7 @@ import javax.xml.datatype.Duration;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -422,7 +423,7 @@ public class YDecompositionParser {
                 // expiry is a stringified long value representing a specific datetime
                 String expiry = timerElem.getChildText("expiry", _yawlNS) ;
                 if (expiry != null)
-                    timerParameters.set(trigger, new Date(Long.valueOf(expiry)));
+                    timerParameters.set(trigger, Instant.ofEpochMilli(Long.valueOf(expiry)));
                 else {
                     // duration type - specified as a Duration?
                     String durationStr = timerElem.getChildText("duration", _yawlNS);

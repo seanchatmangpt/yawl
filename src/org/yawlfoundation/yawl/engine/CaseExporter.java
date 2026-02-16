@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -213,8 +214,8 @@ public class CaseExporter {
         return parent != null ? parent.get_thisID() : null;
     }
 
-    private long getTime(Date date) {
-        return date != null ? date.getTime() : 0;
+    private long getTime(Instant instant) {
+        return instant != null ? instant.toEpochMilli() : 0;
     }
 
 

@@ -50,11 +50,11 @@ class TestYFlowsInto{
     void testXOR_ORSplitNeedsDefaultFlowNotBoth(){
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue(handler.getMessageCount(, "Unexpected messages") == 2);
+        assertTrue(handler.getMessageCount() == 2, "Unexpected messages");
         _flowsInto.setIsDefaultFlow(true);
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue(handler.getMessageCount(, "Unexpected messages") == 1);
+        assertTrue(handler.getMessageCount() == 1, "Unexpected messages");
         _flowsInto.setXpathPredicate("hi mum");
         /*
         null [error] any flow from any Element (YAtomicTask:XORSplit_1) to any Element (YCondition:condition1) must occur with the bounds of the same net.
@@ -63,7 +63,7 @@ class TestYFlowsInto{
         */
         handler.reset();
         _flowsInto.verify(null, handler);
-        assertTrue(handler.getMessageCount(, "Unexpected messages") == 3);
+        assertTrue(handler.getMessageCount() == 3, "Unexpected messages");
     }
 
     @Test

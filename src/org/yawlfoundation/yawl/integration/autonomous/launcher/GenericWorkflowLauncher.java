@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
  */
 public final class GenericWorkflowLauncher {
 
+
+    private static final Logger logger = LogManager.getLogger(GenericWorkflowLauncher.class);
     private static final long POLL_INTERVAL_MS = 2000;
     private static final long DEFAULT_TIMEOUT_SEC = 600;
 

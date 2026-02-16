@@ -42,6 +42,8 @@ import java.util.regex.Pattern;
  */
 public final class PermutationRunner {
 
+
+    private static final Logger logger = LogManager.getLogger(PermutationRunner.class);
     private static final String SPEC_ID = "UID_ae0b797c-2ac8-4d5e-9421-ece89d8043d0";
     private static final String SPEC_URI = "orderfulfillment";
     private static final String SPEC_VERSION = "1.2";

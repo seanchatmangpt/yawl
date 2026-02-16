@@ -38,6 +38,8 @@ import java.util.Map;
 @Provider
 public class YawlExceptionMapper implements ExceptionMapper<Exception> {
 
+
+    private static final Logger logger = LogManager.getLogger(YawlExceptionMapper.class);
     private static final Logger _logger = LogManager.getLogger(YawlExceptionMapper.class);
     private final ObjectMapper _mapper;
 

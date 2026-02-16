@@ -62,6 +62,8 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
 
 public class InterfaceB_EngineBasedClient extends Interface_Client implements ObserverGateway {
 
+
+    private static final Logger logger = LogManager.getLogger(InterfaceB_EngineBasedClient.class);
     protected static final Logger _logger = LogManager.getLogger(InterfaceB_EngineBasedClient.class);
 
     /**

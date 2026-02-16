@@ -57,6 +57,6 @@ class TestYCompositeTask{
     void testInvalidCompositeTask(){
         YVerificationHandler handler = new YVerificationHandler();
         _myCompositeTask2.verify(handler);
-        assertTrue(handler.hasMessages(, "Invalid composite task ct1 should produce verification messages"));
+        assertTrue(handler.hasMessages(), "Invalid composite task ct1 should produce verification messages");
     }
 }

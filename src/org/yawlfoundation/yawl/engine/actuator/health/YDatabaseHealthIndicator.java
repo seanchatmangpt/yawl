@@ -46,6 +46,8 @@ import java.util.Map;
 @Component
 public class YDatabaseHealthIndicator implements HealthIndicator {
 
+
+    private static final Logger logger = LogManager.getLogger(YDatabaseHealthIndicator.class);
     private static final Logger _logger = LogManager.getLogger(YDatabaseHealthIndicator.class);
 
     private static final long QUERY_TIMEOUT_MS = 5000;

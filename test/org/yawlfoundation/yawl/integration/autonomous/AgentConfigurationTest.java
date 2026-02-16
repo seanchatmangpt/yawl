@@ -63,12 +63,12 @@ public class AgentConfigurationTest extends TestCase {
 
         assertNotNull(config);
         assertEquals(capability, config.getCapability());
-        assertEquals(config.getEngineUrl());
-        assertEquals("admin", config.getUsername(, "http://localhost:8080/yawl/ia"));
-        assertEquals(config.getPassword());
-        assertEquals(8091, config.getPort(, "YAWL"));
-        assertEquals(config.getVersion());
-        assertEquals(discoveryStrategy, config.getDiscoveryStrategy(, "5.2.0"));
+        assertEquals("http://localhost:8080/yawl/ia", config.getEngineUrl());
+        assertEquals("admin", config.getUsername());
+        assertEquals("YAWL", config.getPassword());
+        assertEquals(8091, config.getPort());
+        assertEquals("5.2.0", config.getVersion());
+        assertEquals(discoveryStrategy, config.getDiscoveryStrategy());
         assertEquals(eligibilityReasoner, config.getEligibilityReasoner());
         assertEquals(decisionReasoner, config.getDecisionReasoner());
     }
@@ -100,7 +100,7 @@ public class AgentConfigurationTest extends TestCase {
             .decisionReasoner(decisionReasoner)
             .build();
 
-        assertEquals(config.getVersion());
+        assertEquals("6.0.0", config.getVersion());
     }
 
     public void testBuilderRejectsMissingCapability() {
@@ -235,7 +235,7 @@ public class AgentConfigurationTest extends TestCase {
     private static class TestDiscoveryStrategy implements DiscoveryStrategy {
         @Override
         public List<WorkItemRecord> discoverWorkItems(
-                InterfaceB_EnvironmentBasedClient interfaceBClient, String sessionHandle, "6.0.0") throws IOException {
+                InterfaceB_EnvironmentBasedClient interfaceBClient, String sessionHandle) throws IOException {
             return Collections.emptyList();
         }
     }

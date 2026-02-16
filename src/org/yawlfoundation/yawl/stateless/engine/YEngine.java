@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class YEngine {
 
+
+    private static final Logger logger = LogManager.getLogger(YEngine.class);
     // Engine execution statuses
     public enum Status { Dormant, Initialising, Running, Terminating }
 

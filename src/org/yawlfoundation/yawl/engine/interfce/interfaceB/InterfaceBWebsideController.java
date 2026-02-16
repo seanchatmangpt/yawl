@@ -51,6 +51,8 @@ import java.util.List;
 
 public abstract class InterfaceBWebsideController {
     protected InterfaceB_EnvironmentBasedClient _interfaceBClient;
+
+    private static final Logger logger = LogManager.getLogger(InterfaceBWebsideController.class);
     protected IBControllerCache _ibCache;
     private AuthenticationConfig _authConfig4WS;
     protected String _report;

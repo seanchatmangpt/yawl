@@ -32,6 +32,8 @@ public abstract class DesignInternalFrame
     extends JInternalFrame implements ActionListener, MouseListener {
   static final int xOffset = 30, yOffset = 30;
 
+    private static final Logger logger = LogManager.getLogger(DesignInternalFrame.class);
+
   protected DesignInternalFrame(String title) {
     super(title,
           true, //resizable

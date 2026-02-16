@@ -30,6 +30,7 @@ import org.hibernate.exception.JDBCConnectionException;
 import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import org.hibernate.query.NativeQuery;
+import jakarta.persistence.Query;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -136,7 +137,7 @@ public class HibernateEngine {
         MetadataSources metadataSources = new MetadataSources(standardRegistry);
         if (classes != null) {
             for (Class clazz : classes) {
-                metadataSources.addClass(clazz);
+                metadataSources.addAnnotatedClass(clazz);
             }
         }
 
@@ -146,8 +147,6 @@ public class HibernateEngine {
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
         SchemaManagementTool schemaManagementTool = standardRegistry
                 .getService(SchemaManagementTool.class);
-        schemaManagementTool.getSchemaUpdater(null)
-                .doUpdate(metadata, targetTypes, false);
     }
 
     /******************************************************************************/
@@ -174,7 +173,7 @@ public class HibernateEngine {
             Session session = _factory.getCurrentSession();
             tx = session.beginTransaction();
             Query query = session.createQuery(queryString);
-            if (query != null) result = query.list();
+            if (query != null) result = query.getResultList();
         }
         catch (JDBCConnectionException jce) {
             _log.error("Caught Exception: Couldn't connect to datasource - " +
