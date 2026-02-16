@@ -56,6 +56,21 @@
     <property name="developer.name" value="Michael Adams, Lachlan Aldred, Andrew Hastie,
                                            Mike Fowler et al."/>
 
+    <!-- Dependency Version Properties -->
+    <property name="java.version" value="25"/>
+    <property name="postgresql.version" value="42.7.4"/>
+    <property name="mysql.version" value="8.3.0"/>
+    <property name="h2.version" value="2.2.224"/>
+    <property name="hibernate.version" value="5.6.14.Final"/>
+    <property name="jackson.version" value="2.18.2"/>
+    <property name="junit.version" value="5.10.2"/>
+    <property name="jakarta.servlet.version" value="6.0.0"/>
+    <property name="jakarta.faces.version" value="4.0.0"/>
+    <property name="jakarta.persistence.version" value="3.1.0"/>
+    <property name="jdom.version" value="2.0.6.1"/>
+    <property name="saxon.version" value="12.4"/>
+    <property name="log4j.version" value="2.23.1"/>
+
     <!--
         Tomcat root (environment setting takes priority over build.properties value)
     -->
@@ -146,14 +161,14 @@
     <!-- wsi -->
     <property name="axis" value="axis-1.1RC2.jar"/>
     <!-- wsi -->
-    <property name="bcmail" value="bcmail-jdk15-139.jar"/>
+    <property name="bcmail" value="bcmail-jdk18on-1.77.jar"/>
     <!-- dss -->
-    <property name="bcprov" value="bcprov-jdk15-139.jar"/>
+    <property name="bcprov" value="bcprov-jdk18on-1.77.jar"/>
     <!-- dss -->
     <property name="byte-buddy" value="byte-buddy-1.12.23.jar"/>
     <!-- hbn -->
     <property name="c3p0" value="c3p0-0.9.2.1.jar"/>
-    <!-- hbn -->
+    <!-- hbn (DEPRECATED: replaced by HikariCP) -->
     <property name="classmate" value="classmate-1.5.1.jar"/>
     <!-- hbn -->
     <property name="collections-generic" value="collections-generic-4.01.jar"/>
@@ -166,7 +181,7 @@
     <!-- eng, xsd -->
     <property name="commonsBeanutils" value="commons-beanutils.jar"/>
     <!-- eng Dom -->
-    <property name="commonsCodec" value="commons-codec-1.9.jar"/>
+    <property name="commonsCodec" value="commons-codec-1.16.1.jar"/>
     <!-- mul -->
     <property name="commonsCollections" value="commons-collections-3.2.1.jar"/>
     <!-- hbn -->
@@ -178,11 +193,11 @@
     <!-- wsi -->
     <property name="commonsFileupload" value="commons-fileupload-1.2.2.jar"/>
     <!-- jsf, dss, mss -->
-    <property name="commonsIO" value="commons-io-2.0.1.jar"/>
+    <property name="commonsIO" value="commons-io-2.15.1.jar"/>
     <!-- jsf, dss, mss -->
     <property name="commonsLang" value="commons-lang-2.3.jar"/>
     <!-- mul -->
-    <property name="commonsLang3" value="commons-lang3-3.6.jar"/>
+    <property name="commonsLang3" value="commons-lang3-3.14.0.jar"/>
     <!-- bal -->
     <property name="commonsLogging" value="commons-logging-1.1.1.jar"/>
     <!-- mul -->
@@ -208,12 +223,14 @@
     <!-- hbn -->
     <property name="guava" value="guava-21.0.jar"/>
     <!-- bal -->
-    <property name="h2" value="h2-1.3.176.jar"/>
+    <property name="h2" value="h2-2.2.224.jar"/>
     <!-- mul -->
     <property name="hawkular" value="hawkular.jar"/>
     <!-- bal -->
     <property name="hibernate-c3p0" value="hibernate-c3p0-5.6.14.Final.jar"/>
-    <!-- mul -->
+    <!-- mul (DEPRECATED: replaced by HikariCP) -->
+    <property name="hikaricp" value="HikariCP-5.1.0.jar"/>
+    <!-- hbn -->
     <property name="hibernate-core" value="hibernate-core-5.6.14.Final.jar"/>
     <!-- mul -->
     <property name="hibernate-commons"
@@ -252,7 +269,7 @@
     <!--off,hbn-->
     <property name="jaxb-impl" value="jaxb-impl.jar"/>
     <!--off-->
-    <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar"/>
+    <property name="jaxb-runtime" value="jaxb-runtime-4.0.4.jar"/>
     <!--off,hbn-->
     <property name="jaxb-xjc" value="jaxb-xjc.jar"/>
     <!-- hbn -->
@@ -267,9 +284,9 @@
     <!-- off -->
     <property name="jdom1" value="jdom.jar"/>
     <!-- hbn -->
-    <property name="jdom" value="jdom-2.0.5.jar"/>
+    <property name="jdom" value="jdom-2.0.6.1.jar"/>
     <!-- mul -->
-    <property name="jsf-api" value="jsf-api.jar"/>
+    <property name="jsf-api" value="jakarta.faces-api-4.0.0.jar"/>
     <!-- jsf -->
     <property name="jsf-appbase" value="appbase.jar"/>
     <!-- jsf -->
@@ -281,7 +298,7 @@
     <!-- jsf -->
     <property name="jsf-errorhandler" value="errorhandler.jar"/>
     <!-- jsf -->
-    <property name="jsf-impl" value="jsf-impl.jar"/>
+    <property name="jsf-impl" value="jakarta.faces-4.0.0.jar"/>
     <!-- jsf -->
     <property name="jsf-rowset" value="rowset.jar"/>
     <!-- jsf -->
@@ -293,7 +310,7 @@
     <!-- sch -->
     <property name="jsr" value="jsr173_1.0_api.jar"/>
     <!-- sch -->
-    <property name="jstl" value="jstl.jar"/>
+    <property name="jstl" value="jakarta.servlet.jsp.jstl-api-3.0.0.jar"/>
     <!-- jsf -->
     <property name="jung-3d" value="jung-3d-2.0.jar"/>
     <!-- prl -->
@@ -319,12 +336,20 @@
     <!-- prl -->
     <property name="junit" value="junit-4.13.2.jar"/>
     <property name="hamcrest" value="hamcrest-core-1.3.jar"/>
+    <property name="junit-jupiter-api" value="junit-jupiter-api-5.10.2.jar"/>
+    <property name="junit-jupiter-engine" value="junit-jupiter-engine-5.10.2.jar"/>
+    <property name="junit-jupiter-params" value="junit-jupiter-params-5.10.2.jar"/>
+    <property name="junit-platform-engine" value="junit-platform-engine-1.10.2.jar"/>
+    <property name="junit-platform-launcher" value="junit-platform-launcher-1.10.2.jar"/>
+    <property name="junit-platform-commons" value="junit-platform-commons-1.10.2.jar"/>
+    <property name="opentest4j" value="opentest4j-1.3.0.jar"/>
+    <property name="apiguardian-api" value="apiguardian-api-1.1.2.jar"/>
 
     <property name="kotlin" value="kotlin-stdlib-2.1.0.jar"/>
     <!-- mul -->
-    <property name="log4j-api" value="log4j-api-2.18.0.jar"/>
+    <property name="log4j-api" value="log4j-api-2.23.1.jar"/>
     <!-- mul -->
-    <property name="log4j-core" value="log4j-core-2.18.0.jar"/>
+    <property name="log4j-core" value="log4j-core-2.23.1.jar"/>
     <!-- mul -->
     <property name="log4j-bridge" value="log4j-1.2-api-2.17.1.jar"/>
     <!-- mul -->
@@ -340,7 +365,7 @@
     <!-- hbn -->
     <property name="mchange" value="mchange-commons-java-0.2.3.4.jar"/>
     <!-- sml -->
-    <property name="mysql" value="mysql-connector-java-5.1.22-bin.jar"/>
+    <property name="mysql" value="mysql-connector-j-8.3.0.jar"/>
 
     <property name="okhttp" value="okhttp-5.2.1.jar"/>
     <property name="okhttp3" value="okhttp-4.12.0.jar"/>
@@ -351,21 +376,21 @@
     <!-- bal -->
     <property name="orderfulfillment" value="orderfulfillment.jar"/>
     <!-- dbd -->
-    <property name="oracle" value="ojdbc6_9.jar"/>
+    <property name="oracle" value="ojdbc11.jar"/>
     <!-- dbd -->
-    <property name="postgres8" value="postgresql-42.2.8.jar"/>
+    <property name="postgres8" value="postgresql-42.7.4.jar"/>
     <!-- dbd -->
     <property name="saaj" value="saaj.jar"/>
     <!-- wsi -->
-    <property name="saxon" value="saxon9.jar"/>
+    <property name="saxon" value="Saxon-HE-12.4.jar"/>
     <!-- mul -->
     <property name="saxonapi" value="saxon9-s9api.jar"/>
-    <!-- mul -->
+    <!-- mul (included in Saxon-HE-12.4) -->
     <property name="saxondom" value="saxon9-dom.jar"/>
-    <!-- mul -->
+    <!-- mul (included in Saxon-HE-12.4) -->
     <property name="saxonjdom" value="saxon9-jdom.jar"/>
-    <!-- mul -->
-    <property name="servlet" value="servlet-api.jar"/>
+    <!-- mul (may need separate adapter) -->
+    <property name="servlet" value="jakarta.servlet-api-6.0.0.jar"/>
     <!-- mul -->
     <property name="simplemail" value="simple-java-mail-5.5.1.jar"/>
     <!-- sml -->
@@ -521,11 +546,11 @@
     -->
     <property name="persistence.libs"
               value="${antlr} ${commonsCollections} ${byte-buddy} ${classmate} ${ehcache}
-                     ${hibernate-c3p0} ${hibernate-core} ${hibernate-commons}
+                     ${hikaricp} ${hibernate-core} ${hibernate-commons}
                      ${hibernate-ehcache} ${hibernate-jpa} hibernate.cfg.xml
                      ${istack} ${jandex} ${jboss-logging} ${jboss-transaction}
                      ${javax-activation} ${javax-persistence} ${jaxb-api} ${jaxb-runtime}
-                     ${c3p0} ${slf4j} ${mchange}"/>
+                     ${slf4j} ${mchange}"/>
 
     <property name="xsd.libs"
               value="${common} ${ecore}"/>
@@ -722,7 +747,11 @@
         <pathelement location="${lib.dir}/${antlr}"/>
         <pathelement location="${lib.dir}/${commonsCollections}"/>
         <pathelement location="${lib.dir}/${ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-c3p0}"/>
+        <!-- DEPRECATED: C3P0 replaced by HikariCP -->
+        <!--<pathelement location="${lib.dir}/${hibernate-c3p0}"/>-->
+        <!--<pathelement location="${lib.dir}/${c3p0}"/>-->
+        <!-- HikariCP Connection Pool (ACTIVE) -->
+        <pathelement location="${lib.dir}/${hikaricp}"/>
         <pathelement location="${lib.dir}/${hibernate-core}"/>
         <pathelement location="${lib.dir}/${hibernate-commons}"/>
         <pathelement location="${lib.dir}/${hibernate-ehcache}"/>
@@ -738,7 +767,6 @@
         <pathelement location="${lib.dir}/${javax-persistence}"/>
         <pathelement location="${lib.dir}/${jaxb-api}"/>
         <pathelement location="${lib.dir}/${jaxb-runtime}"/>
-        <pathelement location="${lib.dir}/${c3p0}"/>
         <pathelement location="${lib.dir}/${slf4j}"/>
     </path>
 
@@ -3015,9 +3043,9 @@
 
     </target>
 
-    <!-- Uncomment next two lines to override java version -->
-<!--    <property name="ant.build.javac.source" value="25"/>-->
-<!--    <property name="ant.build.javac.target" value="25"/>-->
+    <!-- Java 21 compilation settings -->
+    <property name="ant.build.javac.source" value="21"/>
+    <property name="ant.build.javac.target" value="21"/>
 
 
     <target name="build_stateless.jar" depends="compile">
@@ -3274,8 +3302,7 @@
     </target>
 
     <target name="unitTest" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
-        <junit printsummary="withOutAndErr" fork="true"
-               failureproperty="junit.failure" errorproperty="junit.error">
+        <junitlauncher printsummary="true" failureproperty="junit.failure" haltonfailure="false">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
             <classpath refid="cp.wsif"/>
@@ -3289,14 +3316,26 @@
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
                 <pathelement location="${lib.dir}/${hamcrest}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-api}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-engine}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-params}"/>
+                <pathelement location="${lib.dir}/${junit-platform-engine}"/>
+                <pathelement location="${lib.dir}/${junit-platform-launcher}"/>
+                <pathelement location="${lib.dir}/${junit-platform-commons}"/>
+                <pathelement location="${lib.dir}/${opentest4j}"/>
+                <pathelement location="${lib.dir}/${apiguardian-api}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
-            <formatter type="plain"/>
-            <test name="org.yawlfoundation.yawl.TestAllYAWLSuites"/>
-        </junit>
+            <testclasses outputdir="${classes.dir}">
+                <fileset dir="${classes.dir}">
+                    <include name="**/Test*.class"/>
+                    <exclude name="**/*TestSuite.class"/>
+                </fileset>
+                <listener type="legacy-plain" sendSysOut="true"/>
+            </testclasses>
+        </junitlauncher>
         <fail if="junit.failure" message="Unit tests had failures."/>
-        <fail if="junit.error" message="Unit tests had errors."/>
     </target>
 
     <target name="unitTest-engine-only" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
