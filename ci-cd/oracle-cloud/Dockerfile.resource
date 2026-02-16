@@ -3,7 +3,7 @@
 # Version: 1.0.0
 
 # Build stage
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:25-jdk-jammy AS builder
 
 LABEL maintainer="YAWL Foundation"
 LABEL description="YAWL Resource Service - Build Stage"
@@ -31,7 +31,7 @@ COPY . .
 RUN ant -f build/build.xml buildWebApps
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 LABEL maintainer="YAWL Foundation"
 LABEL description="YAWL Resource Service - Runtime"

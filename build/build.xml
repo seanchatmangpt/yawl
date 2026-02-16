@@ -3013,9 +3013,9 @@
 
     </target>
 
-    <!-- Uncomment next two lines to build to previous java version -->
-<!--    <property name="ant.build.javac.source" value="1.8"/>-->
-<!--    <property name="ant.build.javac.target" value="1.8"/>-->
+    <!-- Uncomment next two lines to override java version -->
+<!--    <property name="ant.build.javac.source" value="25"/>-->
+<!--    <property name="ant.build.javac.target" value="25"/>-->
 
 
     <target name="build_stateless.jar" depends="compile">

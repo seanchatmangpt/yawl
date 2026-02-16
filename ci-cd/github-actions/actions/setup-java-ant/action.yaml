@@ -4,7 +4,7 @@
 # Usage:
 #   - uses: ./.github/actions/setup-java-ant
 #     with:
-#       java_version: '17'
+#       java_version: '25'
 
 name: 'Setup Java and Ant'
 description: 'Sets up Java and Ant build environment for YAWL'
@@ -13,7 +13,7 @@ inputs:
   java_version:
     description: 'Java version to use'
     required: false
-    default: '17'
+    default: '25'
   java_distribution:
     description: 'Java distribution'
     required: false

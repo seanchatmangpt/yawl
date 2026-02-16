@@ -4,7 +4,7 @@
 # Cost tracking and budget management
 # =============================================================================
 
-ARG JAVA_VERSION=17
+ARG JAVA_VERSION=25
 
 # Build stage
 FROM eclipse-temurin:${JAVA_VERSION}-jdk-alpine AS builder
@@ -37,7 +37,7 @@ RUN cd build && ant war_costService
 # =============================================================================
 FROM eclipse-temurin:${JAVA_VERSION}-jre-alpine AS runtime
 
-ARG JAVA_VERSION=17
+ARG JAVA_VERSION=25
 ARG YAWL_VERSION=5.2
 ARG TOMCAT_VERSION=9.0.89
 
