@@ -269,10 +269,16 @@
     <!-- hbn -->
     <property name="jandex" value="jandex-3.1.7.jar"/>
     <!-- eng, hbn -->
-    <property name="jakarta-activation" value="jakarta.activation-1.2.2.jar"/>
-    <!-- sml -->
-    <property name="jakarta-mail" value="jakarta.mail-1.6.7.jar"/>
-    <!-- sml -->
+    <property name="jakarta-activation-api" value="jakarta.activation-api-2.1.0.jar"/>
+    <!-- sml - Jakarta Activation API -->
+    <property name="jakarta-activation" value="jakarta.activation-2.0.1.jar"/>
+    <!-- sml - Jakarta Activation implementation -->
+    <property name="jakarta-mail-api" value="jakarta.mail-api-2.1.0.jar"/>
+    <!-- sml - Jakarta Mail API 2.1.0 (jakarta.mail.* namespace) -->
+    <property name="jakarta-mail" value="jakarta.mail-2.0.1.jar"/>
+    <!-- sml - Jakarta Mail implementation -->
+    <property name="angus-mail" value="angus-mail-2.0.3.jar"/>
+    <!-- sml - Angus Mail (SMTP/IMAP/POP3 protocol support) -->
     <property name="jakarta-xml" value="jakarta.xml.bind-api-3.0.1.jar"/>
     <!-- dbd -->
     <property name="jakarta-el-api" value="jakarta.el-api-5.0.1.jar"/>
@@ -594,8 +600,8 @@
               value="${saxon} ${saxondom} ${saxonapi} ${saxonjdom}"/>
 
     <property name="simplemail.libs"
-              value="${simplemail} ${slf4j} ${jakarta-activation}
-    	             ${jakarta-mail} ${emailaddress}"/>
+              value="${simplemail} ${slf4j} ${jakarta-activation-api} ${jakarta-activation}
+    	             ${jakarta-mail-api} ${jakarta-mail} ${angus-mail} ${emailaddress}"/>
 
     <property name="scheduling.libs"
               value="${json} ${commonsDbcp} ${commonsPool} ${jaxen} ${ucp}
@@ -732,8 +738,11 @@
         <pathelement location="${lib.dir}/${jakarta-el-api}"/>
         <pathelement location="${lib.dir}/${jakarta-el}"/>
 
-        <!-- Jakarta Mail API (email functionality) -->
+        <!-- Jakarta Mail API 2.1.0 (email functionality - jakarta.mail.* namespace) -->
+        <pathelement location="${lib.dir}/${jakarta-mail-api}"/>
         <pathelement location="${lib.dir}/${jakarta-mail}"/>
+        <pathelement location="${lib.dir}/${angus-mail}"/>
+        <pathelement location="${lib.dir}/${jakarta-activation-api}"/>
         <pathelement location="${lib.dir}/${jakarta-activation}"/>
 
         <!-- OkHttp (HTTP client library) -->

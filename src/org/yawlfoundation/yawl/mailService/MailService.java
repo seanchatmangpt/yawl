@@ -33,7 +33,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideContr
 import org.yawlfoundation.yawl.util.MailSettings;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.mail.Message;
+import jakarta.mail.Message;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
