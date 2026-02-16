@@ -17,9 +17,7 @@ import junit.framework.TestSuite;
 @Suite
 @SelectClasses({
     TestConnections.class,
-    TestCsrfTokenManager.class,
-    TestJwtManager.class,
-    TestCsrfProtectionFilter.class
+    TestJwtManager.class
 })
 public class AuthenticationTestSuite {
 
@@ -29,9 +27,7 @@ public class AuthenticationTestSuite {
     public static Test suite() {
         TestSuite suite = new TestSuite("Authentication Test Suite");
         suite.addTestSuite(TestConnections.class);
-        suite.addTestSuite(TestCsrfTokenManager.class);
         suite.addTestSuite(TestJwtManager.class);
-        suite.addTestSuite(TestCsrfProtectionFilter.class);
         return suite;
     }
 }

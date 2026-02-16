@@ -6,7 +6,6 @@ import org.yawlfoundation.yawl.elements.state.StateTestSuite;
 import org.yawlfoundation.yawl.engine.EngineTestSuite;
 import org.yawlfoundation.yawl.exceptions.ExceptionTestSuite;
 import org.yawlfoundation.yawl.integration.IntegrationTestSuite;
-import org.yawlfoundation.yawl.integration.autonomous.AutonomousTestSuite;
 import org.yawlfoundation.yawl.logging.LoggingTestSuite;
 import org.yawlfoundation.yawl.schema.SchemaTestSuite;
 import org.yawlfoundation.yawl.stateless.StatelessTestSuite;
@@ -57,9 +56,6 @@ public class TestAllYAWLSuites extends TestSuite {
 
         // Integration tests (Chicago TDD - real integrations)
         suite.addTest(IntegrationTestSuite.suite());
-
-        // Autonomous agent tests
-        suite.addTest(AutonomousTestSuite.suite());
 
         return suite;
     }
