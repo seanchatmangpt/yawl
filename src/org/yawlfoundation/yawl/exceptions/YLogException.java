@@ -19,18 +19,45 @@
 package org.yawlfoundation.yawl.exceptions;
 
 /**
+ * Exception thrown when logging operations fail in the YAWL engine.
  *
  * @author Michael Adams
- *
-
  */
 public class YLogException extends YAWLException {
-    public YLogException(String msg) {
-        super(msg);
-    }
+    private static final long serialVersionUID = 2L;
 
-
+    /**
+     * Constructs a new log exception with no detail message.
+     */
     public YLogException() {
         super();
+    }
+
+    /**
+     * Constructs a new log exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public YLogException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new log exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YLogException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new log exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YLogException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

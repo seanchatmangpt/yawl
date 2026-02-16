@@ -74,14 +74,14 @@ class TestConnections {
         assertFalse(added);
 
         String outcome = _sessionCache.connect(null, null, -1);
-        assertEquals(outcome);
+        assertTrue(outcome.startsWith("<fail"));
     }
 
     @Test
 
     void testRemoveUser() throws YPersistenceException {
         clearUsers();
-        _engine.addExternalClient(new YExternalClient("fred", "head", "doco", "<failure>Null user name</failure>"));
+        _engine.addExternalClient(new YExternalClient("fred", "head", "doco"));
 
         String handle = _sessionCache.connect("fred", "head", 1200);
 

@@ -21,32 +21,51 @@ package org.yawlfoundation.yawl.exceptions;
 import org.jdom2.Element;
 
 /**
- * 
+ * Exception thrown when a data query fails during YAWL task execution.
+ *
  * @author Lachlan Aldred
- * Date: 1/09/2005
- * Time: 08:39:16
- * 
+ * @since 1/09/2005
  */
 public class YDataQueryException extends YDataStateException {
+    private static final long serialVersionUID = 2L;
 
-
+    /**
+     * Constructs a new data query exception.
+     *
+     * @param queryString the XQuery expression that failed
+     * @param data        the data element being queried
+     * @param source      the source task identifier
+     * @param message     the detail message
+     */
     public YDataQueryException(String queryString, Element data, String source, String message) {
         super(queryString, data, null, null, null, source, message);
     }
 
+    @Override
     public String getMessage() {
         String msg = "The MI data accessing query (" + getQueryString() + ") " +
                 "for the task (" + getSource() + ") was applied over some data. " +
                 "It failed to execute as expected";
-        if (super.getMessage() != null) msg += ": " + super.getMessage();
+        if (super.getMessage() != null) {
+            msg += ": " + super.getMessage();
+        }
         return msg;
     }
 
-
+    /**
+     * Gets the query string that caused this exception.
+     *
+     * @return the XQuery expression
+     */
     public String getQueryString() {
         return _queryString;
     }
 
+    /**
+     * Gets the data element that was being queried.
+     *
+     * @return the queried data element
+     */
     public Element getData() {
         return _queriedData;
     }

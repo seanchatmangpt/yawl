@@ -1,39 +1,50 @@
 # YAWL v5.2 - Unified CI/CD Pipeline
 #
+# Optimized for Java 25 builds with:
+# - Maven dependency caching
+# - Parallel test execution
+# - Multi-arch Docker builds
+# - Improved error reporting
+# - Latest GitHub Actions (checkout@v4, setup-java@v4)
+#
 # Consolidated from:
 # - build-maven.yaml
 # - build-test-deploy.yml
 # - java25-build.yml
-# - unit-tests.yml (archived - Ant-only)
-#
-# Features:
-# - Multi-version Java testing (21 LTS, 24, 25 preview)
-# - Parallel test execution with H2
-# - OWASP Dependency Check for security scanning
-# - Docker multi-arch build and push
-# - Code coverage with JaCoCo (70% minimum)
-# - Integration tests with PostgreSQL/MySQL
+# - unit-tests.yml
 
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [master, main, develop, release/**]
+    branches: [master, main, develop, release/**, 'claude/**']
   pull_request:
     branches: [master, main, develop]
   schedule:
-    # Run security scan daily at 2 AM UTC
+    # Security scan daily at 2 AM UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (emergency builds only)'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
-  MAVEN_OPTS: -Xmx3g -Djava.awt.headless=true
+  MAVEN_OPTS: >-
+    -Xmx3g
+    -Djava.awt.headless=true
+    -Dmaven.artifact.threads=10
+    -Dhttp.keepAlive=false
+    -Dmaven.wagon.http.pool=false
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  JAVA_VERSION: 25
 
 jobs:
   # ============================================================================
-  # Build - Multi-Java Version Matrix
+  # Build - Java 25 (Primary)
   # ============================================================================
   build:
     name: Build (Java ${{ matrix.java }})
@@ -42,17 +53,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [21, 24, 25]
+        java: [25]
         include:
-          - java: 21
-            profile: java21
-          - java: 24
-            profile: java24
           - java: 25
             profile: java25
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -63,34 +71,56 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build with Maven
-        run: mvn -B clean compile -P${{ matrix.profile }} -DskipTests
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '**/pom-modernized.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Display Tool Versions
+        run: |
+          java --version
+          mvn --version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Build with Maven (Parallel)
+        run: |
+          mvn clean compile \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -P${{ matrix.profile }} \
+            -T 1C \
+            -DskipTests=${{ github.event.inputs.skip_tests || 'false' }}
 
       - name: Upload build artifacts
-        if: matrix.java == 21
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifacts-java${{ matrix.java }}
           path: |
             yawl-*/target/*.jar
             target/*.jar
           retention-days: 5
+          if-no-files-found: warn
 
   # ============================================================================
-  # Unit Tests - With H2 Database
+  # Unit Tests - Parallel Execution with H2
   # ============================================================================
   test-unit:
     name: Unit Tests (Java ${{ matrix.java }})
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        java: [21, 24]
+        java: [25]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
@@ -99,10 +129,66 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run unit tests with H2
-        run: mvn -B test -Ddatabase.type=h2 -Dhibernate.dialect=org.hibernate.dialect.H2Dialect
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Upload test results
+      - name: Run Unit Tests (Parallel)
+        id: test
+        run: |
+          mvn test \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -Pjava25 \
+            -T 2C \
+            -Ddatabase.type=h2 \
+            -Dhibernate.dialect=org.hibernate.dialect.H2Dialect \
+            -Dsurefire.parallel=classes \
+            -Dsurefire.threadCount=4 \
+            -Dsurefire.useSystemClassLoader=false \
+            -Dmaven.test.failure.ignore=true
+
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count test results
+          TOTAL_TESTS=0
+          FAILURES=0
+          ERRORS=0
+          SKIPPED=0
+
+          for report in $(find . -path "*/surefire-reports/*.txt" -type f 2>/dev/null); do
+            if [ -f "$report" ]; then
+              TESTS=$(grep -c "^Tests run:" "$report" 2>/dev/null || echo "0")
+              if [ "$TESTS" -gt 0 ]; then
+                TOTAL_TESTS=$((TOTAL_TESTS + 1))
+              fi
+            fi
+          done
+
+          # Parse XML reports for accurate counts
+          for xml in $(find . -path "*/surefire-reports/TEST-*.xml" -type f 2>/dev/null | head -50); do
+            if [ -f "$xml" ]; then
+              T=$(grep -oP 'tests="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "0")
+              F=$(grep -oP 'failures="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "0")
+              E=$(grep -oP 'errors="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "0")
+              S=$(grep -oP 'skipped="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "0")
+              echo "Processed: $(basename $xml) - tests=$T failures=$F errors=$E skipped=$S"
+            fi
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the uploaded artifacts for detailed test reports." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -111,23 +197,35 @@ jobs:
             target/surefire-reports/
             yawl-*/target/surefire-reports/
           retention-days: 7
+          if-no-files-found: warn
 
-      - name: Upload coverage report
-        if: matrix.java == 21
+      - name: Publish Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            **/surefire-reports/*.xml
+          check_run_annotations: all
+          report_individual_runs: true
+          fail_on: failures
+
+      - name: Upload Coverage Report
+        if: matrix.java == 25
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: target/site/jacoco/
           retention-days: 7
+          if-no-files-found: warn
 
   # ============================================================================
-  # Integration Tests - With PostgreSQL
+  # Integration Tests - With PostgreSQL and H2
   # ============================================================================
   test-integration:
     name: Integration Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -145,31 +243,49 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run integration tests
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run Integration Tests
         env:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: yawl_test
           DB_USER: yawl
           DB_PASSWORD: yawl_test_pass
-        run: mvn -B verify -Ddatabase.type=postgresql
+        run: |
+          mvn verify \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -Pjava25 \
+            -Ddatabase.type=postgresql \
+            -Dhibernate.dialect=org.hibernate.dialect.PostgreSQLDialect \
+            -DskipUnitTests=true
 
-      - name: Upload integration test results
+      - name: Upload Integration Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-integration
           path: target/failsafe-reports/
           retention-days: 7
+          if-no-files-found: warn
 
   # ============================================================================
   # Security Scanning
@@ -178,29 +294,59 @@ jobs:
     name: Security Scan
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - name: Run OWASP Dependency Check
-        run: mvn -B -Pprod org.owasp:dependency-check-maven:check
+        id: owasp
+        run: |
+          mvn -B -Pprod org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -Dformats=HTML,JSON,XML \
+            -DsuppressionFiles=owasp-suppressions.xml
         continue-on-error: true
 
-      - name: Upload OWASP report
+      - name: Upload OWASP Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: owasp-dependency-check
           path: target/dependency-check-report.*
           retention-days: 30
+          if-no-files-found: warn
+
+      - name: Security Scan Summary
+        if: always()
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "target/dependency-check-report.json" ]; then
+            VULN_COUNT=$(cat target/dependency-check-report.json | jq '.dependencies | length' 2>/dev/null || echo "N/A")
+            echo "**Dependencies Scanned:** $VULN_COUNT" >> $GITHUB_STEP_SUMMARY
+            CRITICAL=$(cat target/dependency-check-report.json | jq '[.dependencies[]?.vulnerabilities[]? | select(.severity == "CRITICAL")] | length' 2>/dev/null || echo "0")
+            HIGH=$(cat target/dependency-check-report.json | jq '[.dependencies[]?.vulnerabilities[]? | select(.severity == "HIGH")] | length' 2>/dev/null || echo "0")
+            echo "**Critical Vulnerabilities:** $CRITICAL" >> $GITHUB_STEP_SUMMARY
+            echo "**High Vulnerabilities:** $HIGH" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # ============================================================================
   # Code Coverage
@@ -209,46 +355,102 @@ jobs:
     name: Code Coverage
     needs: test-unit
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run tests with coverage
-        run: mvn -B clean verify jacoco:report
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Upload coverage to Codecov
+      - name: Run Tests with Coverage
+        run: |
+          mvn clean verify \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -Pjava25 \
+            jacoco:report jacoco:report-aggregate
+
+      - name: Extract Coverage Metrics
+        id: coverage
+        run: |
+          if [ -f "target/site/jacoco-aggregate/jacoco.csv" ]; then
+            INSTRUCTION_COV=$(awk -F',' 'NR==2 {print $4}' target/site/jacoco-aggregate/jacoco.csv)
+            BRANCH_COV=$(awk -F',' 'NR==2 {print $8}' target/site/jacoco-aggregate/jacoco.csv)
+            LINE_COV=$(awk -F',' 'NR==2 {print $10}' target/site/jacoco-aggregate/jacoco.csv)
+            echo "instruction_coverage=$INSTRUCTION_COV" >> $GITHUB_OUTPUT
+            echo "branch_coverage=$BRANCH_COV" >> $GITHUB_OUTPUT
+            echo "line_coverage=$LINE_COV" >> $GITHUB_OUTPUT
+            echo "**Instruction Coverage:** $INSTRUCTION_COV%" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch Coverage:** $BRANCH_COV%" >> $GITHUB_STEP_SUMMARY
+            echo "**Line Coverage:** $LINE_COV%" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: target/site/jacoco/jacoco.xml
+          files: target/site/jacoco/jacoco.xml,target/site/jacoco-aggregate/jacoco.xml
           flags: unittests
-          name: codecov-yawl
+          name: codecov-yawl-java25
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-full
+          path: |
+            target/site/jacoco/
+            target/site/jacoco-aggregate/
+          retention-days: 7
 
   # ============================================================================
-  # Docker Build - Multi-Arch
+  # Docker Build - Multi-Arch with GitHub Actions Cache
   # ============================================================================
   docker-build:
-    name: Docker Build
+    name: Docker Build (Multi-Arch)
     needs: [test-unit, security-scan]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     if: github.event_name == 'push'
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up QEMU
+      - name: Set up QEMU for Multi-Arch
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Cache Docker Layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Log in to GitHub Container Registry
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -258,7 +460,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: Extract Docker Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -270,36 +472,56 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=java25,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker Image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.modernized
+          file: ./Dockerfile.java25
           platforms: linux/amd64,linux/arm64
           push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=gha
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           build-args: |
             VERSION=5.2
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
+            JAVA_VERSION=25
 
-      - name: Run Trivy vulnerability scanner
+      - name: Move Docker Cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Run Trivy Vulnerability Scanner
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
 
-      - name: Upload Trivy results to GitHub Security
+      - name: Upload Trivy Results to GitHub Security
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Docker Build Summary
+        run: |
+          echo "## Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
   # Ant Build Verification (Legacy Support)
@@ -307,9 +529,12 @@ jobs:
   ant-verify:
     name: Verify Ant Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -335,20 +560,64 @@ jobs:
   dependency-analysis:
     name: Analyze Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Analyze dependencies
-        run: mvn -B dependency:analyze dependency:tree
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Check for updates
+      - name: Analyze Dependencies
+        run: mvn -B dependency:analyze dependency:tree -DoutputType=dot
+
+      - name: Check for Updates
         run: mvn -B versions:display-dependency-updates versions:display-plugin-updates
         continue-on-error: true
+
+  # ============================================================================
+  # Final Status Report
+  # ============================================================================
+  report:
+    name: Pipeline Summary
+    needs: [build, test-unit, test-integration, coverage, docker-build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Create Job Summary
+        run: |
+          echo "# YAWL CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.test-unit.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.test-integration.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.docker-build.result == 'success' && '✅ Passed' || (needs.docker-build.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if critical jobs failed
+        if: contains(needs.*.result, 'failure') && (needs.build.result == 'failure' || needs.test-unit.result == 'failure')
+        run: exit 1

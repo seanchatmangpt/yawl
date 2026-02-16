@@ -21,24 +21,30 @@ package org.yawlfoundation.yawl.exceptions;
 import org.jdom2.Element;
 
 /**
- * 
+ * Exception thrown when data validation fails against a schema during YAWL execution.
+ *
  * @author Lachlan Aldred
- * Date: 1/09/2005
- * Time: 08:35:08
- * 
+ * @since 1/09/2005
  */
 public class YDataValidationException extends YDataStateException {
+    private static final long serialVersionUID = 2L;
 
+    /**
+     * Constructs a new data validation exception.
+     *
+     * @param schema       the schema used for validation
+     * @param dataInput    the data element that failed validation
+     * @param xercesErrors the validation errors from Xerces
+     * @param source       the source task identifier
+     * @param message      the detail message
+     */
     public YDataValidationException(String schema, Element dataInput, String xercesErrors,
                                     String source, String message) {
         super(null, null, schema, dataInput, xercesErrors, source, message);
     }
 
+    @Override
     public String getMessage() {
         return super.getMessage();
     }
-
-
-
-
 }

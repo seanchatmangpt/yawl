@@ -34,7 +34,8 @@ import java.io.StringReader;
  * 
  */
 public class YDataStateException extends YAWLException {
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2L;
 
     //query fields
     protected String _queryString;

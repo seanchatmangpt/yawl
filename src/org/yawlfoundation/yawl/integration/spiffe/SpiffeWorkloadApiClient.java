@@ -1,8 +1,12 @@
 package org.yawlfoundation.yawl.integration.spiffe;
 
-import java.io.*;
-import java.net.Socket;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
 import java.net.SocketAddress;
+import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -12,47 +16,57 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * SPIFFE Workload API Client for YAWL
+ * SPIFFE Workload API Client for YAWL.
  *
- * Connects to the SPIRE Agent via Unix Domain Socket to fetch SVIDs (X.509 and JWT).
+ * <p>Connects to the SPIRE Agent via Unix Domain Socket to fetch SVIDs (X.509 and JWT).
  * The SPIRE Agent automatically attests the workload identity based on:
- *   - Process PID and UID
- *   - Kubernetes pod/namespace
- *   - Docker container
- *   - AWS/GCP/Azure instance metadata
+ * <ul>
+ *   <li>Process PID and UID</li>
+ *   <li>Kubernetes pod/namespace</li>
+ *   <li>Docker container</li>
+ *   <li>AWS/GCP/Azure instance metadata</li>
+ * </ul>
  *
- * This client implements the SPIFFE Workload API specification:
- * https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md
+ * <p>This client implements the SPIFFE Workload API specification:
+ * <a href="https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md">SPIFFE Workload API</a>
  *
- * Default socket: /run/spire/sockets/agent.sock (SPIFFE_ENDPOINT_SOCKET env var)
+ * <p>Default socket: /run/spire/sockets/agent.sock (SPIFFE_ENDPOINT_SOCKET env var)
  *
- * Usage:
- * <pre>
+ * <p>Usage:
+ * <pre>{@code
  *   SpiffeWorkloadApiClient client = new SpiffeWorkloadApiClient();
  *   SpiffeWorkloadIdentity identity = client.fetchX509Svid();
  *   System.out.println("My SPIFFE ID: " + identity.getSpiffeId());
- * </pre>
+ * }</pre>
  *
  * @author YAWL Foundation
  * @version 5.2
+ * @since 5.2
  */
-public class SpiffeWorkloadApiClient {
+public class SpiffeWorkloadApiClient implements AutoCloseable {
 
     private static final String DEFAULT_SOCKET_PATH = "/run/spire/sockets/agent.sock";
     private static final String SOCKET_ENV_VAR = "SPIFFE_ENDPOINT_SOCKET";
+    private static final Duration DEFAULT_ROTATION_INTERVAL = Duration.ofSeconds(5);
+    private static final int SOCKET_BUFFER_SIZE = 8192;
 
     private final String socketPath;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private SpiffeWorkloadIdentity currentIdentity;
-    private volatile boolean autoRotationEnabled = false;
-    private Thread rotationThread;
+    private volatile SpiffeWorkloadIdentity currentIdentity;
+    private final AtomicBoolean autoRotationEnabled = new AtomicBoolean(false);
+    private ScheduledExecutorService rotationScheduler;
 
     /**
      * Create client with default socket path from SPIFFE_ENDPOINT_SOCKET env var

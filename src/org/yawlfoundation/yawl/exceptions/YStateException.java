@@ -19,16 +19,46 @@
 package org.yawlfoundation.yawl.exceptions;
 
 /**
- * 
+ * Exception thrown when an invalid state is encountered in the YAWL engine.
+ *
  * @author Lachlan Aldred
- * Date: 23/04/2003
- * Time: 16:11:52
- * 
+ * @since 23/04/2003
  */
 public class YStateException extends YAWLException {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
-    public YStateException(String msg) {
-        super(msg);
+    /**
+     * Constructs a new state exception with no detail message.
+     */
+    public YStateException() {
+        super();
+    }
+
+    /**
+     * Constructs a new state exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public YStateException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new state exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YStateException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new state exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YStateException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

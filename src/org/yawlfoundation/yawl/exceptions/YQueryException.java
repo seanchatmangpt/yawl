@@ -19,17 +19,46 @@
 package org.yawlfoundation.yawl.exceptions;
 
 /**
- * 
+ * Exception thrown when a query operation fails in the YAWL engine.
+ *
  * @author Lachlan Aldred
- * Date: 22/01/2005
- * Time: 12:40:31
- * 
+ * @since 22/01/2005
  */
 public class YQueryException extends YAWLException {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
+    /**
+     * Constructs a new query exception with no detail message.
+     */
+    public YQueryException() {
+        super();
+    }
+
+    /**
+     * Constructs a new query exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
     public YQueryException(String message) {
         super(message);
     }
 
+    /**
+     * Constructs a new query exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YQueryException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new query exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YQueryException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

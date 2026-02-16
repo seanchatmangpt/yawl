@@ -20,27 +20,40 @@ package org.yawlfoundation.yawl.exceptions;
 
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
-
 /**
- * 
+ * Exception thrown when an invalid connection is attempted between YAWL net elements.
+ *
  * @author Lachlan Aldred
- * 
  */
 public class YConnectivityException extends YSyntaxException {
+    private static final long serialVersionUID = 2L;
 
-
+    /**
+     * Constructs a new connectivity exception for an invalid connection between two elements.
+     *
+     * @param source      the source net element
+     * @param destination the destination net element
+     */
     public YConnectivityException(YExternalNetElement source, YExternalNetElement destination) {
-        super("YAWL Syntax does not permit " + source
-                + " to be connected with " + destination);
+        super("YAWL Syntax does not permit " + source + " to be connected with " + destination);
     }
 
     /**
-     * Constructor YConnectivityException.
-     * @param msg
+     * Constructs a new connectivity exception with the specified message.
+     *
+     * @param message the detail message
      */
-    public YConnectivityException(String msg) {
-        super(msg);
+    public YConnectivityException(String message) {
+        super(message);
     }
 
-
+    /**
+     * Constructs a new connectivity exception with the specified message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YConnectivityException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2025 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -19,859 +19,843 @@
 package org.yawlfoundation.yawl.stateless.elements.e2wfoj;
 
 import org.yawlfoundation.yawl.elements.YNetElement;
-import org.yawlfoundation.yawl.elements.e2wfoj.*;
+import org.yawlfoundation.yawl.elements.e2wfoj.CombinationGenerator;
+import org.yawlfoundation.yawl.elements.e2wfoj.RElement;
+import org.yawlfoundation.yawl.elements.e2wfoj.RFlow;
+import org.yawlfoundation.yawl.elements.e2wfoj.RMarking;
+import org.yawlfoundation.yawl.elements.e2wfoj.RPlace;
+import org.yawlfoundation.yawl.elements.e2wfoj.RSetOfMarkings;
+import org.yawlfoundation.yawl.elements.e2wfoj.RTransition;
 import org.yawlfoundation.yawl.stateless.elements.YCondition;
 import org.yawlfoundation.yawl.stateless.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YNet;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.stateless.elements.marking.YMarking;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- *  A Reset net formalisation of a YAWL net.
+ * A Reset net formalisation of a YAWL net for OR-join analysis (stateless variant).
+ * <p>
+ * This class implements the E2WFOJ (Enabling Tree With Fair Or-Join) algorithm
+ * for determining when an OR-join task should be enabled in a YAWL workflow.
+ * The algorithm converts a YAWL net to a Reset net and uses backwards reachability
+ * analysis to determine OR-join enablement.
+ * </p>
+ * <p>
+ * This is the stateless variant that works with the stateless YAWL elements.
+ * </p>
  *
- **/
-@SuppressWarnings({"rawtypes", "unchecked"})
+ * @author YAWL Foundation
+ * @since 2.0
+ */
 public final class E2WFOJNet {
-    private Map _Transitions = new HashMap(100);
-    private Map _Places = new HashMap(100);
-    private Map _OJ = new HashMap();
-    private Map _YOJ = new HashMap();
-    private YNet _yNet;
-    //testing for optimisation  
-    private Set alreadyConsideredMarkings = new HashSet(100);
-    private Set _Conditions = new HashSet(100);
- 
-    
+
+    private final Map<String, RTransition> transitions = new HashMap<>(100);
+    private final Map<String, RPlace> places = new HashMap<>(100);
+    private Map<String, RTransition> orJoinTransitions = new HashMap<>();
+    private Map<String, YTask> yawlOrJoins = new HashMap<>();
+    private YNet yNet;
+    private Set<RMarking> alreadyConsideredMarkings = new HashSet<>(100);
+    private Set<YExternalNetElement> conditions = new HashSet<>(100);
+
     /**
-     * Constructor for Reset net.
+     * Constructs a Reset net from a YAWL net for OR-join analysis.
      *
+     * @param yNet   the YAWL net to convert
+     * @param orJoin the OR-join task being analyzed
      */
     public E2WFOJNet(YNet yNet, YTask orJoin) {
-        _yNet = yNet;
-        ConvertToResetNet();
-        OJRemove(orJoin);
-        _OJ = null;
-        _YOJ = null;
-        _yNet = null;
+        this.yNet = Objects.requireNonNull(yNet, "YNet cannot be null");
+        Objects.requireNonNull(orJoin, "OR-join task cannot be null");
+        convertToResetNet();
+        removeOrJoin(orJoin);
+        // Clean up references no longer needed after construction
+        this.orJoinTransitions = null;
+        this.yawlOrJoins = null;
+        this.yNet = null;
     }
-    
-    private E2WFOJNet(){
-    	//do nothing
-    }
-    
+
     /**
-     * The method converts a YAWL net into a Reset net.
+     * Private constructor for testing purposes.
+     */
+    private E2WFOJNet() {
+        // No-op constructor for testing
+    }
+
+    /**
+     * Converts a YAWL net into a Reset net representation.
+     * <p>
+     * This method creates RPlace and RTransition elements corresponding to
+     * the conditions and tasks in the YAWL net, establishing proper flow
+     * relationships based on task join and split types.
+     * </p>
+     */
+    private void convertToResetNet() {
+        Map<String, ? extends YExternalNetElement> netElements = yNet.getNetElements();
+
+        // Generate places from conditions and tasks
+        for (YExternalNetElement element : netElements.values()) {
+            switch (element) {
+                case YCondition condition -> {
+                    RPlace place = new RPlace(condition.getID());
+                    places.put(place.getID(), place);
+                    conditions.add(condition);
+                }
+                case YTask task -> {
+                    RPlace place = new RPlace("p_" + task.getID());
+                    places.put(place.getID(), place);
+                }
+                default -> {
+                    // Other element types are not converted to places
+                }
+            }
+        }
+
+        Map<String, RTransition> startTransitions = new HashMap<>();
+        Map<String, RTransition> endTransitions = new HashMap<>();
+
+        // Generate transitions based on task join/split types
+        for (YExternalNetElement element : netElements.values()) {
+            if (element instanceof YTask task) {
+                createStartTransition(task, startTransitions);
+                createEndTransition(task, endTransitions);
+            }
+        }
+
+        transitions.putAll(startTransitions);
+        transitions.putAll(endTransitions);
+    }
+
+    /**
+     * Creates the start transition(s) for a task based on its join type.
+     */
+    private void createStartTransition(YTask task, Map<String, RTransition> startTransitions) {
+        int joinType = task.getJoinType();
+
+        if (joinType == YTask._AND) {
+            RTransition transition = new RTransition(task.getID() + "_start");
+            startTransitions.put(transition.getID(), transition);
+
+            for (YExternalNetElement preElement : task.getPresetElements()) {
+                RFlow inflow = new RFlow(places.get(preElement.getID()), transition);
+                transition.setPreset(inflow);
+
+                RFlow outflow = new RFlow(transition, places.get("p_" + task.getID()));
+                transition.setPostset(outflow);
+            }
+        } else if (joinType == YTask._XOR) {
+            for (YExternalNetElement preElement : task.getPresetElements()) {
+                RTransition transition = new RTransition(
+                        task.getID() + "_start^" + preElement.getID());
+                startTransitions.put(transition.getID(), transition);
+
+                RFlow inflow = new RFlow(places.get(preElement.getID()), transition);
+                transition.setPreset(inflow);
+
+                RFlow outflow = new RFlow(transition, places.get("p_" + task.getID()));
+                transition.setPostset(outflow);
+            }
+        } else if (joinType == YTask._OR) {
+            RTransition transition = new RTransition(task.getID() + "_start");
+            startTransitions.put(transition.getID(), transition);
+            orJoinTransitions.put(transition.getID(), transition);
+            yawlOrJoins.put(task.getID(), task);
+        }
+    }
+
+    /**
+     * Creates the end transition(s) for a task based on its split type.
+     */
+    private void createEndTransition(YTask task, Map<String, RTransition> endTransitions) {
+        int splitType = task.getSplitType();
+
+        if (splitType == YTask._AND) {
+            createAndSplitEndTransition(task, endTransitions);
+        } else if (splitType == YTask._XOR) {
+            createXorSplitEndTransition(task, endTransitions);
+        } else if (splitType == YTask._OR) {
+            createOrSplitEndTransition(task, endTransitions);
+        }
+    }
+
+    /**
+     * Creates AND split end transition with all postset elements.
+     */
+    private void createAndSplitEndTransition(YTask task, Map<String, RTransition> endTransitions) {
+        RTransition transition = new RTransition(task.getID() + "_end");
+        endTransitions.put(transition.getID(), transition);
+
+        for (YExternalNetElement postElement : task.getPostsetElements()) {
+            RFlow inflow = new RFlow(places.get("p_" + task.getID()), transition);
+            transition.setPreset(inflow);
+
+            RFlow outflow = new RFlow(transition, places.get(postElement.getID()));
+            transition.setPostset(outflow);
+        }
+
+        Set<YExternalNetElement> removeSet = new HashSet<>(task.getRemoveSet());
+        if (!removeSet.isEmpty()) {
+            addCancelSet(transition, removeSet);
+        }
+    }
+
+    /**
+     * Creates XOR split end transitions - one per postset element.
+     */
+    private void createXorSplitEndTransition(YTask task, Map<String, RTransition> endTransitions) {
+        for (YExternalNetElement postElement : task.getPostsetElements()) {
+            RTransition transition = new RTransition(
+                    task.getID() + "_end^" + postElement.getID());
+            endTransitions.put(transition.getID(), transition);
+
+            RFlow inflow = new RFlow(places.get("p_" + task.getID()), transition);
+            transition.setPreset(inflow);
+
+            RFlow outflow = new RFlow(transition, places.get(postElement.getID()));
+            transition.setPostset(outflow);
+
+            Set<YExternalNetElement> removeSet = new HashSet<>(task.getRemoveSet());
+            if (!removeSet.isEmpty()) {
+                addCancelSet(transition, removeSet);
+            }
+        }
+    }
+
+    /**
+     * Creates OR split end transitions - generates all non-empty subset combinations.
+     */
+    private void createOrSplitEndTransition(YTask task, Map<String, RTransition> endTransitions) {
+        Set<YExternalNetElement> postElements = task.getPostsetElements();
+        Set<Set<YExternalNetElement>> allSubsets = new HashSet<>();
+
+        // Generate all non-empty subsets of postset
+        for (int size = 1; size <= postElements.size(); size++) {
+            allSubsets.addAll(generateCombinations(postElements, size));
+        }
+
+        for (Set<YExternalNetElement> subset : allSubsets) {
+            String transitionId = buildTransitionId(task.getID(), "_end^{", subset, " ");
+            RTransition transition = new RTransition(transitionId);
+            endTransitions.put(transition.getID(), transition);
+
+            RFlow inflow = new RFlow(places.get("p_" + task.getID()), transition);
+            transition.setPreset(inflow);
+
+            for (YExternalNetElement postElement : subset) {
+                RFlow outflow = new RFlow(transition, places.get(postElement.getID()));
+                transition.setPostset(outflow);
+            }
+
+            Set<YExternalNetElement> removeSet = new HashSet<>(task.getRemoveSet());
+            if (!removeSet.isEmpty()) {
+                addCancelSet(transition, removeSet);
+            }
+        }
+    }
+
+    /**
+     * Builds a transition ID from task prefix, suffix, and element subset.
+     */
+    private String buildTransitionId(String prefix, String suffix,
+                                     Set<YExternalNetElement> elements, String delimiter) {
+        StringBuilder builder = new StringBuilder(prefix);
+        builder.append(suffix);
+        for (YExternalNetElement element : elements) {
+            builder.append(element.getID()).append(delimiter);
+        }
+        builder.append('}');
+        return builder.toString();
+    }
+
+    /**
+     * Generates all combinations of the specified size from the given set.
      *
+     * @param netElements the set of elements to combine
+     * @param size        the size of each combination
+     * @return a set of all combinations of the specified size
      */
-    private void ConvertToResetNet(){
-    Map netElements = _yNet.getNetElements();
-     
-     //Generate places
-    Iterator netEles = netElements.values().iterator();
-    while (netEles.hasNext()) {
-            YExternalNetElement nextElement = (YExternalNetElement) netEles.next();
-            if (nextElement instanceof YCondition) {
-            	RPlace p = new RPlace(nextElement.getID());
-            	_Places.put(p.getID(),p);
-            	_Conditions.add(nextElement);
-        	}
-            else if (nextElement instanceof YTask) {
-            	RPlace p = new RPlace("p_"+nextElement.getID());
-            	_Places.put(p.getID(),p);
+    private Set<Set<YExternalNetElement>> generateCombinations(
+            Set<YExternalNetElement> netElements, int size) {
+        Set<Set<YExternalNetElement>> subsets = new HashSet<>();
+        Object[] elements = netElements.toArray();
+        CombinationGenerator generator = new CombinationGenerator(elements.length, size);
+
+        while (generator.hasMore()) {
+            Set<YExternalNetElement> combination = new HashSet<>();
+            int[] indices = generator.getNext();
+            for (int index : indices) {
+                combination.add((YExternalNetElement) elements[index]);
             }
+            subsets.add(combination);
+        }
+        return subsets;
     }
- 
-      
-    Map _StartTransitions = new HashMap();
-    Map _EndTransitions = new HashMap();
-    Iterator netEls = netElements.values().iterator();
-    while (netEls.hasNext()) {
-            YExternalNetElement next = (YExternalNetElement) netEls.next();
-            if (next instanceof YTask){
-               YTask nextElement = (YTask) next;
-           //  keepTrackOfTaskTypes(nextElement);
-             if (nextElement.getJoinType() == YTask._AND) 
-            {    RTransition t = new RTransition(nextElement.getID()+"_start");
-            	 _StartTransitions.put(t.getID(),t);
-            	
-            	Set pre = nextElement.getPresetElements();
-            	Iterator preEls = pre.iterator();
-            	while (preEls.hasNext()) {
-            		
-            	YExternalNetElement preElement = (YExternalNetElement) preEls.next();
-            	RFlow inflow = new RFlow((RPlace)_Places.get(preElement.getID()),t);
-                t.setPreset(inflow);
-               
-                RFlow outflow = new RFlow(t,(RPlace)_Places.get("p_"+nextElement.getID()));
-                t.setPostset(outflow);        
- 
-            	} 
-            	 
-            }
-            else if (nextElement.getJoinType() == YTask._XOR) {
-            	
-               	Set pre = nextElement.getPresetElements();
-            	Iterator preEls = pre.iterator();
-            	while (preEls.hasNext()) {
-            	YExternalNetElement preElement = (YExternalNetElement) preEls.next();
-            	RTransition t = new RTransition(nextElement.getID()+"_start^"+preElement.getID());	
-            	_StartTransitions.put(t.getID(),t);
-            
-            	
-            	RFlow inflow = new RFlow((RPlace)_Places.get(preElement.getID()),t);
-                t.setPreset(inflow);
-                
-                RFlow outflow = new RFlow(t,(RPlace)_Places.get("p_"+nextElement.getID()));
-                t.setPostset(outflow);        
-               
-               	}
-            }	
-            else if ( nextElement.getJoinType() == YTask._OR) {
-            	RTransition t = new RTransition(nextElement.getID() +"_start");
-            	_StartTransitions.put(t.getID(),t);
-            	_OJ.put(t.getID(),t);
-            	_YOJ.put(nextElement.getID(),nextElement);
-            }
-                 
-            //T_end            	
-            if (nextElement.getSplitType() == YTask._AND) {
-            	RTransition t = new RTransition(nextElement.getID()+"_end");
-            	_EndTransitions.put(t.getID(),t);
-            	
-            	Set post = nextElement.getPostsetElements();
-            	Iterator postEls = post.iterator();
-            	while (postEls.hasNext()) {
-            	YExternalNetElement postElement = (YExternalNetElement) postEls.next();
-            	          
-            	RFlow inflow = new RFlow((RPlace)_Places.get("p_"+nextElement.getID()),t);
-                t.setPreset(inflow);
-                            
-                RFlow outflow = new RFlow(t,(RPlace)_Places.get(postElement.getID()));
-                t.setPostset(outflow);   
-            	
-            	}
-               	             
-               Set removeSet = new HashSet(nextElement.getRemoveSet());
-	            if (!removeSet.isEmpty())
-	            {  addCancelSet(t,removeSet);
-	            }
-         	
-            }
-                       
-            else if (nextElement.getSplitType() == YTask._XOR) {
-            	Set post = nextElement.getPostsetElements();
-            	Iterator postEls = post.iterator();
-            	while (postEls.hasNext()) {
-	            	YExternalNetElement postElement = (YExternalNetElement) postEls.next();	
-	            	RTransition t = new RTransition(nextElement.getID()+"_end^"+postElement.getID());
-	            	_EndTransitions.put(t.getID(),t);
-	            	
-	         
-            	RFlow inflow = new RFlow((RPlace)_Places.get("p_"+nextElement.getID()),t);
-                t.setPreset(inflow);
-                
-   		       	RFlow outflow = new RFlow(t,(RPlace)_Places.get(postElement.getID()));
-                t.setPostset(outflow);
-	            	
-	           	Set removeSet = new HashSet(nextElement.getRemoveSet());
-	            if (!removeSet.isEmpty())
-	            {  addCancelSet(t,removeSet);
-	            }
-            	}
-                       	
-        	}
-        	
-        	 else if (nextElement.getSplitType() == YTask._OR) {
-            	
-	           	 Set xSubSet = new HashSet();
-	        	 Set post = nextElement.getPostsetElements();
-	        	 for (int i=1; i <= post.size(); i++)
-	        	 {  Set subSet = generateCombination(post,i);
-	             	    xSubSet.addAll(subSet);
-	        	 }
-	              	
-               for (Iterator xSubSetEls = xSubSet.iterator(); xSubSetEls.hasNext();) 
-               	 
-	             { 	Set x = (Set) xSubSetEls.next();
-	            	String t_id = "";
-	            	for (Iterator i = x.iterator(); i.hasNext();) {
-	            	 	YExternalNetElement postElement = (YExternalNetElement) i.next();
-	            	  	t_id += postElement.getID()+" "; 
-	            	 }
-	            	             	 
-	            	 RTransition t = new RTransition(nextElement.getID()+"_end^{"+t_id+"}");
-		             _EndTransitions.put(t.getID(),t);
-		            
-		            RFlow inflow = new RFlow((RPlace)_Places.get("p_"+nextElement.getID()),t);
-	                t.setPreset(inflow);
-	           
-	                for (Iterator i = x.iterator(); i.hasNext();) {
-	            	 	YExternalNetElement postElement = (YExternalNetElement) i.next();
-	            	  	 RFlow outflow = new RFlow(t,(RPlace)_Places.get(postElement.getID()));
-	            	  	t.setPostset(outflow);
-	            	}
-	            	
-		            Set removeSet = new HashSet(nextElement.getRemoveSet());
-		            if (!removeSet.isEmpty())
-		            	{  addCancelSet(t,removeSet);
-		            	}
-              	}
-              	
-       	     
-           }//inner endif t_end
-           
-           
-         }//endif
-    } //endwhile
-    _Transitions.putAll(_StartTransitions);
-    _Transitions.putAll(_EndTransitions);
-     	
-    } //endMethod
-    
-    /**
-     * This method is used to generate combinations of markings for 
-     * comparison. 
-     */
-   	private Set generateCombination(Set netElements,int size){
-    
-    Set subSets = new HashSet();
-	Object[] elements = netElements.toArray();
-	int[] indices;
-	CombinationGenerator x = new CombinationGenerator(elements.length, size);
-    while (x.hasMore ()) {
-	  Set combsubSet = new HashSet();
-	  indices = x.getNext ();
-	  for (int i = 0; i < indices.length; i++) { 
-	    combsubSet.add(elements[indices[i]]);
-	  }
-	  subSets.add(combsubSet);
-	}
-	return subSets;
-} 
 
     /**
-     *This method is used to associate a cancellation set (RPlaces) with each RTransition.
-     *This is the implementation of R.
-     */	
-    private void addCancelSet(RTransition rt,Set removeSet){
-    	
- 	  Set removeSetT = new HashSet(removeSet); 
-	  Set removeSetR = new HashSet();
-	  
-	  //For conditions in YAWL net
-	  removeSet.retainAll(_Conditions);
-	  for (Iterator i = removeSet.iterator(); i.hasNext();)
-	  { YExternalNetElement c = (YExternalNetElement) i.next();
-	     RPlace p = (RPlace) _Places.get(c.getID());
-	     if (p != null)
-	     { removeSetR.add(p);
-	     }
-	  }
-	  //For tasks in YAWL net, add p_t
-	  removeSetT.removeAll(_Conditions);
-	  for (Iterator i = removeSetT.iterator(); i.hasNext();)
-	  { YExternalNetElement t = (YExternalNetElement) i.next();
-	     RPlace p = (RPlace)_Places.get("p_"+t.getID());
-	     if (p != null)
-	     { removeSetR.add(p);
-	     }
-	  }   
-      rt.setRemoveSet(removeSetR);
-     }
-    
-    /**
-     * This method is called with an OR-join task to 
-     * prepare for OR-join enabling call.
+     * Associates a cancellation set with a transition.
+     * <p>
+     * This implements the reset arc functionality in the Reset net.
+     * When a transition fires, all tokens in its cancellation set are removed.
+     * </p>
      *
-     **/
-    private void OJRemove(YTask j) {
-	
-	//Need to keep track of YAWL net type OJs.
-	_YOJ.remove(j.getID());
-	
-	for (Iterator i = _OJ.values().iterator(); i.hasNext();)
-    { RTransition rj = (RTransition) i.next();
-      _Transitions.remove(rj.getID());
+     * @param transition the transition to add the cancellation set to
+     * @param removeSet  the set of YAWL elements to be cancelled
+     */
+    private void addCancelSet(RTransition transition, Set<YExternalNetElement> removeSet) {
+        Set<RPlace> resetPlaces = new HashSet<>();
+
+        // Process conditions in the remove set
+        Set<YExternalNetElement> conditionRemoves = new HashSet<>(removeSet);
+        conditionRemoves.retainAll(conditions);
+        for (YExternalNetElement condition : conditionRemoves) {
+            RPlace place = places.get(condition.getID());
+            if (place != null) {
+                resetPlaces.add(place);
+            }
+        }
+
+        // Process tasks in the remove set (use internal place p_t)
+        Set<YExternalNetElement> taskRemoves = new HashSet<>(removeSet);
+        taskRemoves.removeAll(conditions);
+        for (YExternalNetElement task : taskRemoves) {
+            RPlace place = places.get("p_" + task.getID());
+            if (place != null) {
+                resetPlaces.add(place);
+            }
+        }
+
+        transition.setRemoveSet(resetPlaces);
     }
-    
-	//Similar to XOR join
-	for (Iterator i = _YOJ.values().iterator(); i.hasNext();){
-		YExternalNetElement otherOrjoin = (YExternalNetElement) i.next();	
-		Set pre = otherOrjoin.getPresetElements();
-	    Iterator preEls = pre.iterator();
-	    while (preEls.hasNext()) {
-		    YExternalNetElement preElement = (YExternalNetElement) preEls.next();
-		    RTransition t = new RTransition(otherOrjoin.getID()+"_start^"+preElement.getID());	
-		    _Transitions.put(t.getID(),t);
-		    	
-		    RFlow inflow = new RFlow((RPlace)_Places.get(preElement.getID()),t);
-		    t.setPreset(inflow);
-		 
-		    RFlow outflow = new RFlow(t,(RPlace)_Places.get("p_"+otherOrjoin.getID()));
-		    t.setPostset(outflow);        
-	    }
-	}    
-       
-    }
-    
+
     /**
-     * Perform structural restriction of a reset net.
+     * Removes the specified OR-join task and converts other OR-joins to XOR semantics.
+     * <p>
+     * This is part of the OR-join analysis algorithm where the OR-join being
+     * analyzed is removed, and other OR-joins are treated as XOR joins to
+     * enable the coverability analysis.
+     * </p>
+     *
+     * @param orJoin the OR-join task being analyzed
      */
-     public void restrictNet(YTask j)
-    { 
-    
-     //All transitions that we are interested in
-      Set restrictedTrans = new HashSet();
-      Set restrictedPlaces = new HashSet();
-      
-      Set pre = new HashSet(); //YAWL to reset net conversion 
-      Set Ypre = j.getPresetElements();
-      for (Iterator iterPlace = Ypre.iterator();iterPlace.hasNext();)
-      { YCondition condition = (YCondition) iterPlace.next();    
-    	RPlace place = (RPlace) _Places.get(condition.getID());
-      	if (place != null)
-    	{ pre.add(place);
-    	}
-      }
-     
-      Set rk = new HashSet();
-      Set trans = getPreset(pre);   
-      restrictedTrans.addAll(trans);
-      restrictedPlaces.addAll(pre);
-      while (!rk.equals(restrictedTrans)){
-       	rk = new HashSet(restrictedTrans);
-        pre = getPreset(trans);
-        trans = getPreset(pre);
-        restrictedTrans.addAll(trans);
-        restrictedPlaces.addAll(pre);   
-      }
-          
-   performRestriction(restrictedTrans, restrictedPlaces);
-         
-  }
-    
-   /**
-    * This method is used to perform active projection restriction.
-    *
-    */ 
-  public void restrictNet(YMarking M)
-  {   
-      Set markedPlaces = new HashSet();
-      Set Ymarked = new HashSet(M.getLocations()); 
+    private void removeOrJoin(YTask orJoin) {
+        yawlOrJoins.remove(orJoin.getID());
 
-      //Make sure that every condition in M is external
-      for (Iterator iterPlace = Ymarked.iterator();iterPlace.hasNext();)
-      { YNetElement nextElement = (YNetElement) iterPlace.next();
-        if (nextElement instanceof YCondition) {
-	       	RPlace place = (RPlace) _Places.get(nextElement.getID());
-	       	if (place != null)
-	       	{ markedPlaces.add(place);
-	    	 }
-	    }	 
-    	//Need to consider active tasks in a marking
-    	if (nextElement instanceof YTask){
-    	    String internalPlace = "p_"+ nextElement.getID();
-         	RPlace place = (RPlace) _Places.get(internalPlace);
-          	if (place != null)
-          	{
-          	 markedPlaces.add(place);
-          	 }
-    	}
-      }	
-      
-      //Forward pass
-      Set restrictedTrans = new HashSet();
-      Set restrictedPlaces = new HashSet();
-      Set post = new HashSet();
-      Set fk = new HashSet();
-      Set trans = getPostset(markedPlaces);
-      restrictedTrans.addAll(trans);
-      restrictedPlaces.addAll(markedPlaces);
-      while (!fk.equals(restrictedTrans)){
-      	fk = new HashSet(restrictedTrans);
-        post = getPostset(trans);
-        trans = getPostset(post);
-        restrictedTrans.addAll(trans);
-        restrictedPlaces.addAll(post);   
-      }
-                   
-      Set TransToRemove = new HashSet(_Transitions.values());
-      for (Iterator iterT =TransToRemove.iterator();iterT.hasNext();)
-      { RElement tElement = (RElement) iterT.next();
-        Set preSet = tElement.getPresetElements();
-        if (!restrictedPlaces.containsAll(preSet))
-        { restrictedTrans.remove(tElement);
+        // Remove OR-join transitions from the net
+        for (RTransition rj : orJoinTransitions.values()) {
+            transitions.remove(rj.getID());
         }
-      }
-         
-      performRestriction(restrictedTrans, restrictedPlaces);
-      
-     }
- 
-   /**
-    * Private method for removing tranisitions and places. Used for both
-    * structural restriction and marking dependent restriction.
-    *
-    */
-     private void performRestriction(Set restrictedTrans,Set restrictedPlaces)
-   { 
-      Set irrelevantTrans = new HashSet(_Transitions.values());
-      irrelevantTrans.removeAll(restrictedTrans);	
-      for (Iterator iterT = irrelevantTrans.iterator();iterT.hasNext();)
-      { RTransition t = (RTransition) iterT.next(); 
-        _Transitions.remove(t.getID());
-   	
-       }
- 
-      
-      for (Iterator iterT = restrictedTrans.iterator();iterT.hasNext();)
-      { RTransition t = (RTransition) iterT.next(); 
-        if (t.isCancelTransition())
-        { Set removeSet = new HashSet(t.getRemoveSet());
-           removeSet.retainAll(restrictedPlaces);
+
+        // Convert remaining OR-joins to XOR semantics
+        for (YExternalNetElement otherOrJoin : yawlOrJoins.values()) {
+            for (YExternalNetElement preElement : otherOrJoin.getPresetElements()) {
+                RTransition transition = new RTransition(
+                        otherOrJoin.getID() + "_start^" + preElement.getID());
+                transitions.put(transition.getID(), transition);
+
+                RFlow inflow = new RFlow(places.get(preElement.getID()), transition);
+                transition.setPreset(inflow);
+
+                RFlow outflow = new RFlow(transition, places.get("p_" + otherOrJoin.getID()));
+                transition.setPostset(outflow);
+            }
         }
-         
-     //Change F remove postset places that are not in P'
-      RElement tElement = (RElement)t;
-      Set postSetToRemove = new HashSet(tElement.getPostsetElements());
-      postSetToRemove.removeAll(restrictedPlaces);
-      if (postSetToRemove.size() > 0)
-	   {  Map postSetFlows = new HashMap(tElement.getPostsetFlows());
-	      for (Iterator iterP = postSetToRemove.iterator();iterP.hasNext();)
-		      { RPlace p = (RPlace) iterP.next(); 
-		        postSetFlows.remove(p.getID());
-		      }
-		   tElement.setPostsetFlows(postSetFlows);
-	      }
-	      
-	      
-	  //Change F remove postset places that are not in P'
-      Set preSetToRemove = new HashSet(tElement.getPresetElements());
-      preSetToRemove.removeAll(restrictedPlaces);
-      if (preSetToRemove.size() > 0)
-	   {  Map preSetFlows = new HashMap(tElement.getPresetFlows());
-	      for (Iterator iterP = preSetToRemove.iterator();iterP.hasNext();)
-		      { RPlace p = (RPlace) iterP.next(); 
-		        preSetFlows.remove(p.getID());
-		      }
-		      	tElement.setPresetFlows(preSetFlows);
-	      }
-      }
-           
-     //Remove places that are not part of restrictedNet
-      Set irrelevantPlaces = new HashSet(_Places.values());
-      irrelevantPlaces.removeAll(restrictedPlaces);	
-      for (Iterator iterP = irrelevantPlaces.iterator();iterP.hasNext();)
-      { RPlace p = (RPlace) iterP.next(); 
-        _Places.remove(p.getID());
-     
-        
-      //Change F - remove preset transitions that are not in T'
-      RElement pElement = (RElement)p;
-      Set preSetToRemove = new HashSet(pElement.getPresetElements());
-      preSetToRemove.removeAll(restrictedTrans);
-     if  (preSetToRemove.size() > 0)
-	      {  Map preSetFlows = new HashMap(pElement.getPresetFlows());
-	         for (Iterator iterT = preSetToRemove.iterator();iterT.hasNext();)
-		      { RTransition t = (RTransition) iterT.next(); 
-		        preSetFlows.remove(t.getID());
-		      }
-		      	pElement.setPresetFlows(preSetFlows);
-	      }
-   	
-   	
-   	 Set postSetToRemove = new HashSet(pElement.getPostsetElements());
-     postSetToRemove.removeAll(restrictedTrans);
-     if  (postSetToRemove.size() > 0)
-	      {  Map postSetFlows = new HashMap(pElement.getPostsetFlows());
-	         for (Iterator iterT = postSetToRemove.iterator();iterT.hasNext();)
-		      { RTransition t = (RTransition) iterT.next(); 
-		        postSetFlows.remove(t.getID());
-		      }
-		      	pElement.setPostsetFlows(postSetFlows);
-	      }
-      }
-  
-  
-    }
-  private static Set getPostset(Set elements) {
-        Set postset = new HashSet();
-        Iterator iter = elements.iterator();
-        while (iter.hasNext()) {
-            RElement e = (RElement) iter.next();
-            postset.addAll(e.getPostsetElements());
-        }
-        return postset;
     }
 
-    private static Set getPreset(Set elements) {
-       Set preset = new HashSet();
-        
-        Iterator iter = elements.iterator();
-        while (iter.hasNext()) {
-        RElement e = (RElement) iter.next();
-        preset.addAll(e.getPresetElements());
-        }
-        return preset;
-    }
-
-   /**
-     * This method takes two markings s and t, and check whether s'<= s is coverable 
-     * from the predecessors of t.
+    /**
+     * Performs structural restriction of the reset net based on an OR-join task.
+     * <p>
+     * This restricts the net to only those elements that can reach the OR-join,
+     * improving the efficiency of the coverability analysis.
+     * </p>
+     *
+     * @param orJoin the OR-join task for structural restriction
      */
-    private boolean Coverable(RMarking s,RMarking t) {
-    	
-    alreadyConsideredMarkings = new HashSet(); //Start with a new set
-    RSetOfMarkings tSet = new RSetOfMarkings();
-    tSet.addMarking(t);
- 
-    RSetOfMarkings rm = FiniteBasisPred(tSet);
-   RMarking x;
-   for (Iterator iter = rm.getMarkings().iterator(); iter.hasNext();)   
-    {  x = (RMarking) iter.next();
-       if (x.isLessThanOrEqual(s))
-         {  alreadyConsideredMarkings = null;
+    public void restrictNet(YTask orJoin) {
+        Set<RTransition> restrictedTransitions = new HashSet<>();
+        Set<RPlace> restrictedPlaces = new HashSet<>();
+
+        // Convert YAWL preset to Reset net places
+        Set<RPlace> presetPlaces = new HashSet<>();
+        for (YExternalNetElement element : orJoin.getPresetElements()) {
+            if (element instanceof YCondition condition) {
+                RPlace place = places.get(condition.getID());
+                if (place != null) {
+                    presetPlaces.add(place);
+                }
+            }
+        }
+
+        // Backward reachability pass
+        Set<RTransition> currentTransitions = getPreset(presetPlaces);
+        restrictedTransitions.addAll(currentTransitions);
+        restrictedPlaces.addAll(presetPlaces);
+
+        Set<RTransition> previousTransitions = new HashSet<>();
+        while (!previousTransitions.equals(restrictedTransitions)) {
+            previousTransitions = new HashSet<>(restrictedTransitions);
+            presetPlaces = getPreset(currentTransitions);
+            currentTransitions = getPreset(presetPlaces);
+            restrictedTransitions.addAll(currentTransitions);
+            restrictedPlaces.addAll(presetPlaces);
+        }
+
+        performRestriction(restrictedTransitions, restrictedPlaces);
+    }
+
+    /**
+     * Performs active projection restriction based on a marking.
+     * <p>
+     * This restricts the net to only those elements reachable from the
+     * currently marked places, using forward reachability analysis.
+     * </p>
+     *
+     * @param marking the current marking for active projection
+     */
+    public void restrictNet(YMarking marking) {
+        Set<RPlace> markedPlaces = new HashSet<>();
+        Set<YNetElement> yMarked = new HashSet<>(marking.getLocations());
+
+        // Convert YAWL marking to Reset net places
+        for (YNetElement element : yMarked) {
+            switch (element) {
+                case YCondition condition -> {
+                    RPlace place = places.get(condition.getID());
+                    if (place != null) {
+                        markedPlaces.add(place);
+                    }
+                }
+                case YTask task -> {
+                    RPlace place = places.get("p_" + task.getID());
+                    if (place != null) {
+                        markedPlaces.add(place);
+                    }
+                }
+                default -> {
+                    // Other element types are not converted
+                }
+            }
+        }
+
+        // Forward reachability pass
+        Set<RTransition> restrictedTransitions = new HashSet<>();
+        Set<RPlace> restrictedPlaces = new HashSet<>();
+        Set<RTransition> currentTransitions = getPostset(markedPlaces);
+        restrictedTransitions.addAll(currentTransitions);
+        restrictedPlaces.addAll(markedPlaces);
+
+        Set<RTransition> previousTransitions = new HashSet<>();
+        while (!previousTransitions.equals(restrictedTransitions)) {
+            previousTransitions = new HashSet<>(restrictedTransitions);
+            Set<RPlace> postsetPlaces = getPostset(currentTransitions);
+            currentTransitions = getPostset(postsetPlaces);
+            restrictedTransitions.addAll(currentTransitions);
+            restrictedPlaces.addAll(postsetPlaces);
+        }
+
+        // Remove transitions whose presets are not fully contained
+        Set<RTransition> toRemove = new HashSet<>();
+        for (RTransition transition : restrictedTransitions) {
+            if (!restrictedPlaces.containsAll(transition.getPresetElements())) {
+                toRemove.add(transition);
+            }
+        }
+        restrictedTransitions.removeAll(toRemove);
+
+        performRestriction(restrictedTransitions, restrictedPlaces);
+    }
+
+    /**
+     * Performs the actual restriction by removing irrelevant elements and
+     * updating flow relations.
+     */
+    private void performRestriction(Set<RTransition> restrictedTransitions,
+                                    Set<RPlace> restrictedPlaces) {
+        // Remove irrelevant transitions
+        Set<RTransition> irrelevantTransitions = new HashSet<>(transitions.values());
+        irrelevantTransitions.removeAll(restrictedTransitions);
+        for (RTransition transition : irrelevantTransitions) {
+            transitions.remove(transition.getID());
+        }
+
+        // Update remaining transitions
+        for (RTransition transition : restrictedTransitions) {
+            // Update remove set for cancel transitions
+            if (transition.isCancelTransition()) {
+                Set<RPlace> removeSet = new HashSet<>(transition.getRemoveSet());
+                removeSet.retainAll(restrictedPlaces);
+            }
+
+            // Remove postset places not in restricted set
+            removeElementsFromFlows(transition, restrictedPlaces,
+                    transition.getPostsetElements(), true);
+
+            // Remove preset places not in restricted set
+            removeElementsFromFlows(transition, restrictedPlaces,
+                    transition.getPresetElements(), false);
+        }
+
+        // Remove irrelevant places
+        Set<RPlace> irrelevantPlaces = new HashSet<>(places.values());
+        irrelevantPlaces.removeAll(restrictedPlaces);
+        for (RPlace place : irrelevantPlaces) {
+            places.remove(place.getID());
+
+            // Remove preset/postset transitions not in restricted set
+            removeElementsFromFlows(place, restrictedTransitions,
+                    place.getPresetElements(), false);
+            removeElementsFromFlows(place, restrictedTransitions,
+                    place.getPostsetElements(), true);
+        }
+    }
+
+    /**
+     * Removes elements from flow relations that are not in the restricted set.
+     */
+    private <T extends RElement> void removeElementsFromFlows(
+            RElement element, Set<? extends RElement> restrictedSet,
+            Set<? extends RElement> elementsToRemove, boolean isPostset) {
+
+        Set<RElement> toRemove = new HashSet<>(elementsToRemove);
+        toRemove.removeAll(restrictedSet);
+
+        if (!toRemove.isEmpty()) {
+            Map<String, RFlow> flows = new HashMap<>(
+                    isPostset ? element.getPostsetFlows() : element.getPresetFlows());
+            for (RElement removeElement : toRemove) {
+                flows.remove(removeElement.getID());
+            }
+            if (isPostset) {
+                element.setPostsetFlows(flows);
+            } else {
+                element.setPresetFlows(flows);
+            }
+        }
+    }
+
+    /**
+     * Gets the postset elements of a collection of elements.
+     */
+    private static Set<RTransition> getPostset(Set<? extends RElement> elements) {
+        return elements.stream()
+                .map(RElement::getPostsetElements)
+                .flatMap(Collection::stream)
+                .map(e -> (RTransition) e)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the preset elements of a collection of elements.
+     */
+    private static Set<RPlace> getPreset(Set<? extends RElement> elements) {
+        return elements.stream()
+                .map(RElement::getPresetElements)
+                .flatMap(Collection::stream)
+                .map(e -> (RPlace) e)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Determines if a marking s' less than or equal to s is coverable from the
+     * predecessors of marking t.
+     *
+     * @param source the marking to check for coverability
+     * @param target the target marking to find predecessors from
+     * @return true if a marking s' less than or equal to source is coverable
+     */
+    private boolean isCoverable(RMarking source, RMarking target) {
+        alreadyConsideredMarkings = new HashSet<>();
+
+        RSetOfMarkings targetSet = new RSetOfMarkings();
+        targetSet.addMarking(target);
+
+        RSetOfMarkings predecessors = computeFiniteBasisPredecessors(targetSet);
+
+        for (RMarking predecessor : predecessors.getMarkings()) {
+            if (predecessor.isLessThanOrEqual(source)) {
+                alreadyConsideredMarkings = null;
+                return true;
+            }
+        }
+
+        alreadyConsideredMarkings = null;
+        return false;
+    }
+
+    /**
+     * Computes the finite basis of predecessors for a set of markings.
+     * <p>
+     * This implements the iterative fixpoint computation for predecessor markings.
+     * </p>
+     */
+    private RSetOfMarkings computeFiniteBasisPredecessors(RSetOfMarkings initial) {
+        RSetOfMarkings current = new RSetOfMarkings();
+        RSetOfMarkings next = new RSetOfMarkings();
+        RSetOfMarkings predecessors = new RSetOfMarkings();
+
+        current.addAll(initial);
+        predecessors.addAll(current);
+        next = getMinimalCoveringSet(computePredecessors(current), predecessors);
+
+        while (!current.equals(next)) {
+            current.removeAll();
+            current.addAll(next);
+            predecessors.removeAll();
+            predecessors.addAll(current);
+            next = getMinimalCoveringSet(computePredecessors(current), predecessors);
+        }
+
+        return current;
+    }
+
+    /**
+     * Computes the predecessor markings for a set of markings.
+     */
+    private RSetOfMarkings computePredecessors(RSetOfMarkings markings) {
+        RSetOfMarkings result = new RSetOfMarkings();
+
+        for (RMarking marking : markings.getMarkings()) {
+            result.addAll(computePredecessors(marking));
+        }
+
+        return getMinimalCoveringSet(result);
+    }
+
+    /**
+     * Computes the predecessor markings for a single marking.
+     * <p>
+     * For optimization, this method tracks which markings have already been
+     * considered to avoid redundant computation.
+     * </p>
+     */
+    private RSetOfMarkings computePredecessors(RMarking marking) {
+        RSetOfMarkings result = new RSetOfMarkings();
+
+        if (!alreadyConsideredMarkings.contains(marking)) {
+            for (RTransition transition : transitions.values()) {
+                if (isBackwardsEnabled(marking, transition)) {
+                    RMarking predecessor = getPreviousMarking(marking, transition);
+                    if (!predecessor.isBiggerThanOrEqual(marking)) {
+                        result.addMarking(predecessor);
+                    }
+                }
+            }
+            alreadyConsideredMarkings.add(marking);
+        }
+
+        return result;
+    }
+
+    /**
+     * Determines if a transition is backwards enabled at a given marking.
+     * <p>
+     * A transition is not backwards enabled if there is a token in its remove set
+     * that violates the backwards firing rule.
+     * </p>
+     */
+    private boolean isBackwardsEnabled(RMarking marking, RTransition transition) {
+        Set<RPlace> postSet = transition.getPostsetElements();
+        Set<RPlace> removeSet = transition.getRemoveSet();
+        Map<String, Integer> markedPlaces = marking.getMarkedPlaces();
+
+        if (removeSet.isEmpty()) {
             return true;
-         }
-    }
-    alreadyConsideredMarkings = null;
-    rm = null;    
-    return false;
-    }
-    
-    /**
-     * This methods returns the FiniteBasis of the Predecessors for a set of 
-     * RMarkings.
-     */
-    private RSetOfMarkings FiniteBasisPred(RSetOfMarkings I) {
-    RSetOfMarkings K = new RSetOfMarkings();
-    RSetOfMarkings Kn = new RSetOfMarkings();
-    RSetOfMarkings Pred = new RSetOfMarkings();
-      
-    K.addAll(I);
-    Pred.addAll(K);
-    Kn = getMinimalCoveringSet(pb(K),Pred);
-  	while (!IsUpwardEqual(K,Kn))
-       { K.removeAll();
-         K.addAll(Kn);
-         Pred.removeAll();
-         Pred.addAll(K);
-         Kn = getMinimalCoveringSet(pb(K),Pred);
-       
-       } 
-    Kn = null;
-    Pred = null;
-    return K; 
+        }
 
+        for (RPlace place : removeSet) {
+            String placeName = place.getID();
+
+            if (markedPlaces.containsKey(placeName)) {
+                if (postSet.contains(place)) {
+                    // Reset place is marked and in postset
+                    int count = markedPlaces.get(placeName);
+                    if (count > 1) {
+                        return false;
+                    }
+                } else {
+                    // Reset place is marked but not in postset
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
-    
-    
+
     /**
-     * This method checks whether the basis of the two sets of markings are equal.
-     * This is the implementation of K = Kn.
+     * Computes the marking before a transition fires (backwards firing).
      *
+     * @param currentMarking the current marking
+     * @param transition     the transition to fire backwards
+     * @return the marking before the transition fired
      */
-    private boolean IsUpwardEqual(RSetOfMarkings K, RSetOfMarkings Kn){
-      return K.equals(Kn);
-    
-    }
-    
-    /**
-     * This method is called with a set of RMarkings to generate
-     * a set of precedessors. 
-     */
-    private RSetOfMarkings pb(RSetOfMarkings I) {
-    RSetOfMarkings Z = new RSetOfMarkings();
-    RMarking M;
-   
-    for (Iterator i = I.getMarkings().iterator(); i.hasNext();)   
-       { M = (RMarking)i.next();
-         Z.addAll(pb(M));
-       }
-       
-    Z = getMinimalCoveringSet2(Z);
-    return Z;
-    }
-    
-    /**
-     * This method is called with a RMarking to generate
-     * a set of precedessors of this marking. The method returns 
-     * a finite basis for the predecessors set.(optimisation) 
-     */
-    private RSetOfMarkings pb(RMarking M){
-    RSetOfMarkings Z = new RSetOfMarkings();
-    // For optimisation purpose, we keep track of which marking has been 
-    // considered before with pb(M).
-    
-   if (!alreadyConsideredMarkings.contains(M))
-  { 
-    for (Iterator i = _Transitions.values().iterator(); i.hasNext();)
-    {  RTransition t = (RTransition) i.next();
-       if (isBackwardsEnabled(M,t)) 
-    	{ 
-    	  RMarking preM = getPreviousRMarking(M,t);
-         if (!preM.isBiggerThanOrEqual(M))
-           {  
-             Z.addMarking(preM); //Coverable check
-          }	
-       	} 
-    }
-    alreadyConsideredMarkings.add(M);
-    }
-    return Z;
-    
-   }
-  
-   /**
-    * This method determines whether a transition should be backwards 
-    * enabled at a given RMarking. Currently, a transition 
-    * is not backwards enabled only if there is a token in removeSet. 
-    * 
-    */
-    private boolean isBackwardsEnabled(RMarking currentM, RTransition t) {
-   	Set postSet = t.getPostsetElements();
-	Set removeSet = t.getRemoveSet();
-    Map markedPlaces = currentM.getMarkedPlaces();
-    Integer count;
-    //M[R(t)] <= t\bullet[R(t)]
-    if (removeSet.size() > 0) 
-	{ for (Iterator x = removeSet.iterator(); x.hasNext();)    
-     {  RPlace place = (RPlace) x.next();
-        String placeName = place.getID();
-        //reset place is marked
-        if (markedPlaces.containsKey(placeName))
-        { // and reset place is also a postset
-          if (postSet.contains(place))
-          { //Find out the number of tokens in marked reset place
-            count = (Integer) markedPlaces.get(placeName);
-		    //If it is more than postset (which is 1)
-		    if (count.intValue() > 1)
-		    { 
-		      return false;
-		    }
-          }
-          //reset place is marked but it is not in the postset so should not fire.
-          else
-          { return false;
-          }
-        }   
-      }//endfor
-   } //endif
-   return true;
-            
-    }
-     
-    private RMarking getPreviousRMarking(RMarking currentM, RTransition t){
-    	
-    Map premarkedPlaces  = new HashMap(currentM.getMarkedPlaces());
-    Set postSet = new HashSet(t.getPostsetElements());
-    Set preSet = new HashSet(t.getPresetElements());
-    Set removeSet = new HashSet(t.getRemoveSet());
-  	RElement netElement;
-    String netElementName;
-    Integer countString,tokenCount;    
-    // Remove the marked postSet elements from marking
-    // We need to make sure that only one token is removed and not all tokens.
-    // We cannot use removeAll - which will remove all the tokens
-      
- 	//Remove 1 token from postSet
-  	//only if there are tokens in postSet
-    postSet.removeAll(removeSet);
-    for (Iterator iterator = postSet.iterator(); iterator.hasNext();) {
-       netElement = (RElement) iterator.next();
-       netElementName = netElement.getID();
-       if (premarkedPlaces.containsKey(netElementName))
-       { countString = (Integer) premarkedPlaces.get(netElementName);
-    	 int count = countString.intValue();
-    	 if (count == 1)
-    	 { premarkedPlaces.remove(netElementName);
-    	 }
-         else if(count > 1) 
-    	 { count = count - 1;
-    	   tokenCount = Integer.valueOf(count);
-    	   premarkedPlaces.put(netElementName,tokenCount);
-    	  } 
-       }
-       //nothing to do if postset is not marked
-     }
-       
-       preSet.removeAll(removeSet);
-     //Add one token to preSet
-       tokenCount = Integer.valueOf(1);
-       for (Iterator iterator = preSet.iterator(); iterator.hasNext();) {
-    		netElement = (RElement) iterator.next();
-    		netElementName = netElement.getID();
-    		if (premarkedPlaces.containsKey(netElementName))
-    		{ countString = (Integer)premarkedPlaces.get(netElementName);
-    		  int count = countString.intValue();
-    		  count ++;
-    		  tokenCount = Integer.valueOf(count); 
-    		}
-    	    premarkedPlaces.put(netElementName,tokenCount);
-      	}
-      	
-      //Add one token to R(t) if it is an input place
-      // F(p,t) if p in R(t)
-       removeSet.retainAll(t.getPresetElements());
-       tokenCount = Integer.valueOf(1);
-       for (Iterator iterator = removeSet.iterator(); iterator.hasNext();) {
-    		netElement = (RElement) iterator.next();
-    		netElementName = netElement.getID();
-    		premarkedPlaces.put(netElementName,tokenCount);
-      	}
-   
-   return new RMarking(premarkedPlaces);
+    private RMarking getPreviousMarking(RMarking currentMarking, RTransition transition) {
+        Map<String, Integer> previousPlaces = new HashMap<>(currentMarking.getMarkedPlaces());
+        Set<RPlace> postSet = new HashSet<>(transition.getPostsetElements());
+        Set<RPlace> preSet = new HashSet<>(transition.getPresetElements());
+        Set<RPlace> removeSet = new HashSet<>(transition.getRemoveSet());
 
-   }
-    /**
-     * This method is used to determine whether 
-     * an OrJoin task of a YAWL net should be enabled at 
-     * a given marking. The method returns TRUE if an OrJoin 
-     * should be enabled at the given marking and FALSE, otherwise.
-     */
-    public boolean orJoinEnabled(YMarking M,YTask orJoin){
-   
-    Set MarkedTasks = new HashSet();
-    Map RMap = new HashMap();
-    //Need to convert from YAWL to ResetNet
-    List YLocations = new Vector(M.getLocations());
-    for (Iterator i = YLocations.iterator(); i.hasNext();)    
-       { YNetElement nextElement = (YNetElement) i.next();
-          if (nextElement instanceof YCondition)
-          { YCondition condition = (YCondition) nextElement;    
-    	  	RPlace place = (RPlace) _Places.get(condition.getID());
-       	    if (place != null){
-       	    String placename = place.getID();
-       	    Integer tokenCount = Integer.valueOf(1);
-    		if (RMap.containsKey(placename))
-    		{ Object value = RMap.get(placename);
-    		  Integer countString = Integer.valueOf(value.toString());
-    		  int count = countString.intValue();
-    		  count ++;
-    		  tokenCount = Integer.valueOf(count); 
-    		}
-    	    RMap.put(placename,tokenCount);
-    	    }
-       	     
-   	      } 
-          if (nextElement instanceof YTask)
-         {   MarkedTasks.add(nextElement);
-         }    
-                       
-        }  //endfor
-        
+        // Remove one token from each postset place (excluding reset places)
+        postSet.removeAll(removeSet);
+        for (RPlace place : postSet) {
+            String placeName = place.getID();
+            if (previousPlaces.containsKey(placeName)) {
+                int count = previousPlaces.get(placeName);
+                if (count == 1) {
+                    previousPlaces.remove(placeName);
+                } else if (count > 1) {
+                    previousPlaces.put(placeName, count - 1);
+                }
+            }
+        }
 
-      //To convert the active tasks in the marking into appropriate places  
-      for (Iterator placeConvIter = MarkedTasks.iterator(); placeConvIter.hasNext();)  
-      {  YTask task = (YTask) placeConvIter.next();
-         String internalPlace = "p_"+ task.getID();
-         RPlace place = (RPlace) _Places.get(internalPlace);
-         if (place != null) {
-	       String placename = place.getID();
-	       Integer tokenCount = Integer.valueOf(1);
-       	   RMap.put(placename,tokenCount);
-	           
-    	 }
-     }   
-  // Equivalent Reset net marking     
-      RMarking RM = new RMarking(RMap);
-      RMap = null;  
+        // Add one token to each preset place (excluding reset places)
+        preSet.removeAll(removeSet);
+        for (RPlace place : preSet) {
+            String placeName = place.getID();
+            int newCount = previousPlaces.getOrDefault(placeName, 0) + 1;
+            previousPlaces.put(placeName, newCount);
+        }
 
-                
-    // Generate biggerEnabling markings for OJ
-   	Set X = orJoin.getPresetElements();
-   	Map newMap = new HashMap();
-   	Set emptyPreSetPlaces = new HashSet(); 
-   	Integer tokenCount = Integer.valueOf(1);
-   	for (Iterator x = X.iterator(); x.hasNext();)    
-    {   YCondition preSetCondition = (YCondition) x.next();
-    	RPlace preSetPlace = (RPlace) _Places.get(preSetCondition.getID());
-    	if (preSetPlace != null)    	
-    	{	if (YLocations.contains(preSetCondition))
-	    	{ 
-	    	  //Add one token for each marked place
-	    	   String preSetPlaceName = preSetPlace.getID();
-	    	   newMap.put(preSetPlaceName,tokenCount);
-	    	}
-	    	else 
-	    	{  emptyPreSetPlaces.add(preSetPlace);
-	    	}
-	    } 
-    } //end for
-  
-      
-    RSetOfMarkings Y = new RSetOfMarkings();  
-    for (Iterator i = emptyPreSetPlaces.iterator(); i.hasNext();)    
-    {   RPlace q = (RPlace) i.next();
-        // Add one token for exactly one empty place
-        tokenCount = Integer.valueOf(1);
-    	String qname = q.getID();
-    	newMap.put(qname,tokenCount);
-        RMarking M_w = new RMarking(new HashMap(newMap)); 
-        Y.addMarking(M_w);
-       	newMap.remove(qname);
+        // Add one token to reset places that are also in the preset
+        removeSet.retainAll(transition.getPresetElements());
+        for (RPlace place : removeSet) {
+            previousPlaces.put(place.getID(), 1);
+        }
+
+        return new RMarking(previousPlaces);
     }
-    
-    for (Iterator i = Y.getMarkings().iterator(); i.hasNext();)
-    {   RMarking M_w = (RMarking) i.next();
-        if (Coverable(RM,M_w))
-       	{  
-       	   return false;
-      	}
-    }
-    return true;	
-    }
-    
+
     /**
-     * This method is used to generate the minimal covering set 
-     * for a given set of Markings.
+     * Determines whether an OR-join task should be enabled at a given marking.
+     * <p>
+     * This is the main entry point for OR-join enablement analysis. The OR-join
+     * is enabled if none of the "bigger enabling" markings are coverable from
+     * the current marking's predecessors.
+     * </p>
+     *
+     * @param marking the current marking
+     * @param orJoin  the OR-join task to check
+     * @return true if the OR-join should be enabled, false otherwise
      */
-    private RSetOfMarkings getMinimalCoveringSet2(RSetOfMarkings Z)
-    { RSetOfMarkings Z_min = new RSetOfMarkings();
-      Z_min.addAll(Z);
-     
-     
-     for (Iterator z = Z.getMarkings().iterator();z.hasNext();)
-     {  RMarking M = (RMarking) z.next();
-        RSetOfMarkings Z_inner = new RSetOfMarkings();
-        Z_inner.addAll(Z_min);
-        Z_inner.removeMarking(M);
-    	for (Iterator x = Z_inner.getMarkings().iterator(); x.hasNext();)
-	    { RMarking M_i = (RMarking) x.next();
-	      if (M.isBiggerThanOrEqual(M_i))
-	      {  Z_min.removeMarking(M);
-	      }
-	      
-	    }
-	 }
-	 	 return Z_min;
-	 }
-   
-   
-    private RSetOfMarkings getMinimalCoveringSet(RSetOfMarkings pbZ, RSetOfMarkings Z)
-    { RSetOfMarkings Z_min = new RSetOfMarkings();
-      Z_min.addAll(Z);
-      Z_min.addAll(pbZ);
-     
-     for (Iterator z = pbZ.getMarkings().iterator();z.hasNext();)
-     {  RMarking M = (RMarking) z.next();
-        RSetOfMarkings Z_inner = new RSetOfMarkings();
-        Z_inner.addAll(Z_min);
-        Z_inner.removeMarking(M);
-       	for (Iterator x = Z_inner.getMarkings().iterator(); x.hasNext();)
-	    { RMarking M_i = (RMarking) x.next();
-	      if (M.isBiggerThanOrEqual(M_i))
-	      {  Z_min.removeMarking(M);
-	      }
-	      else if (M_i.isBiggerThanOrEqual(M))
-	      {  Z_min.removeMarking(M_i);
-	      }
-	      
-	    }
-	 }
-	 return Z_min;
-	 }
-   
+    public boolean orJoinEnabled(YMarking marking, YTask orJoin) {
+        // Convert YAWL marking to Reset net marking
+        Map<String, Integer> resetMarking = new HashMap<>();
+        Set<YTask> markedTasks = new HashSet<>();
+        List<YNetElement> yLocations = new java.util.ArrayList<>(marking.getLocations());
+
+        for (YNetElement element : yLocations) {
+            if (element instanceof YCondition condition) {
+                RPlace place = places.get(condition.getID());
+                if (place != null) {
+                    String placeName = place.getID();
+                    resetMarking.merge(placeName, 1, Integer::sum);
+                }
+            } else if (element instanceof YTask task) {
+                markedTasks.add(task);
+            }
+        }
+
+        // Convert active tasks to internal places
+        for (YTask task : markedTasks) {
+            RPlace place = places.get("p_" + task.getID());
+            if (place != null) {
+                resetMarking.put(place.getID(), 1);
+            }
+        }
+
+        RMarking resetM = new RMarking(resetMarking);
+
+        // Generate bigger-enabling markings for OR-join analysis
+        Set<YExternalNetElement> presetConditions = orJoin.getPresetElements();
+        Map<String, Integer> baseMarking = new HashMap<>();
+        Set<RPlace> emptyPresetPlaces = new HashSet<>();
+
+        for (YExternalNetElement element : presetConditions) {
+            if (element instanceof YCondition condition) {
+                RPlace place = places.get(condition.getID());
+                if (place != null) {
+                    if (yLocations.contains(condition)) {
+                        // Add one token for each marked preset place
+                        baseMarking.put(place.getID(), 1);
+                    } else {
+                        emptyPresetPlaces.add(place);
+                    }
+                }
+            }
+        }
+
+        // Check coverability for each bigger-enabling marking
+        RSetOfMarkings biggerEnablingMarkings = new RSetOfMarkings();
+        for (RPlace emptyPlace : emptyPresetPlaces) {
+            Map<String, Integer> biggerMarking = new HashMap<>(baseMarking);
+            biggerMarking.put(emptyPlace.getID(), 1);
+            biggerEnablingMarkings.addMarking(new RMarking(biggerMarking));
+        }
+
+        for (RMarking biggerMarking : biggerEnablingMarkings.getMarkings()) {
+            if (isCoverable(resetM, biggerMarking)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Computes the minimal covering set of markings (version without base set).
+     */
+    private RSetOfMarkings getMinimalCoveringSet(RSetOfMarkings markings) {
+        RSetOfMarkings minimal = new RSetOfMarkings();
+        minimal.addAll(markings);
+
+        for (RMarking marking : markings.getMarkings()) {
+            RSetOfMarkings others = new RSetOfMarkings();
+            others.addAll(minimal);
+            others.removeMarking(marking);
+
+            for (RMarking other : others.getMarkings()) {
+                if (marking.isBiggerThanOrEqual(other)) {
+                    minimal.removeMarking(marking);
+                    break;
+                }
+            }
+        }
+
+        return minimal;
+    }
+
+    /**
+     * Computes the minimal covering set of markings with a base set.
+     */
+    private RSetOfMarkings getMinimalCoveringSet(RSetOfMarkings newMarkings,
+                                                  RSetOfMarkings baseSet) {
+        RSetOfMarkings minimal = new RSetOfMarkings();
+        minimal.addAll(baseSet);
+        minimal.addAll(newMarkings);
+
+        for (RMarking newMarking : newMarkings.getMarkings()) {
+            RSetOfMarkings others = new RSetOfMarkings();
+            others.addAll(minimal);
+            others.removeMarking(newMarking);
+
+            for (RMarking other : others.getMarkings()) {
+                if (newMarking.isBiggerThanOrEqual(other)) {
+                    minimal.removeMarking(newMarking);
+                    break;
+                } else if (other.isBiggerThanOrEqual(newMarking)) {
+                    minimal.removeMarking(other);
+                }
+            }
+        }
+
+        return minimal;
+    }
 }

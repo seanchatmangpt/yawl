@@ -19,18 +19,46 @@
 package org.yawlfoundation.yawl.exceptions;
 
 /**
- * 
+ * Exception thrown when authentication fails in the YAWL engine.
+ *
  * @author Lachlan Aldred
- * Date: 26/11/2004
- * Time: 10:22:49
+ * @since 26/11/2004
  */
 public class YAuthenticationException extends YAWLException {
+    private static final long serialVersionUID = 2L;
+
+    /**
+     * Constructs a new authentication exception with no detail message.
+     */
+    public YAuthenticationException() {
+        super();
+    }
+
+    /**
+     * Constructs a new authentication exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
     public YAuthenticationException(String message) {
         super(message);
     }
 
+    /**
+     * Constructs a new authentication exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YAuthenticationException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new authentication exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
     public YAuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

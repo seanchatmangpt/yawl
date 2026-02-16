@@ -19,15 +19,46 @@
 package org.yawlfoundation.yawl.exceptions;
 
 /**
- /**
- * 
+ * Exception thrown when schema building fails during YAWL specification parsing.
+ *
  * @author Lachlan Aldred
- * Date: 27/08/2004
- * Time: 12:06:28
- * 
+ * @since 27/08/2004
  */
 public class YSchemaBuildingException extends YAWLException {
-    public YSchemaBuildingException(String msg) {
-        super(msg);
+    private static final long serialVersionUID = 2L;
+
+    /**
+     * Constructs a new schema building exception with no detail message.
+     */
+    public YSchemaBuildingException() {
+        super();
+    }
+
+    /**
+     * Constructs a new schema building exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public YSchemaBuildingException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new schema building exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YSchemaBuildingException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new schema building exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YSchemaBuildingException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
