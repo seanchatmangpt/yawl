@@ -16,6 +16,7 @@
     <modules>
         <module>yawl-utilities</module>
         <module>yawl-elements</module>
+        <module>yawl-authentication</module>
         <module>yawl-engine</module>
         <module>yawl-stateless</module>
         <module>yawl-resourcing</module>
@@ -23,6 +24,7 @@
         <module>yawl-scheduling</module>
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
+        <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
     </modules>
 
@@ -51,7 +53,7 @@
 
         <!-- ORM -->
         <hibernate.version>6.5.1.Final</hibernate.version>
-        
+
         <!-- Core Libraries -->
         <commons.lang3.version>3.14.0</commons.lang3.version>
         <commons.io.version>2.15.1</commons.io.version>
@@ -65,14 +67,14 @@
 
         <!-- Database Drivers -->
         <h2.version>2.2.224</h2.version>
-        <postgresql.version>42.7.2</postgresql.version>
+        <postgresql.version>42.7.4</postgresql.version>
         <mysql.version>8.0.36</mysql.version>
         <derby.version>10.17.1.0</derby.version>
         <hsqldb.version>2.7.2</hsqldb.version>
         <hikaricp.version>5.1.0</hikaricp.version>
 
-        <!-- Logging - security fix: 2.18.0 → 2.23.1 (Log4Shell patches) -->
-        <log4j.version>2.23.1</log4j.version>
+        <!-- Logging - security fix: 2.18.0 → 2.24.1 (Log4Shell patches) -->
+        <log4j.version>2.24.1</log4j.version>
         <slf4j.version>2.0.9</slf4j.version>
         <jboss.logging.version>3.5.3.Final</jboss.logging.version>
 
@@ -102,9 +104,17 @@
 
         <!-- Other -->
         <jandex.version>3.1.7</jandex.version>
-        <byte.buddy.version>1.12.23</byte.buddy.version>
+        <byte.buddy.version>1.15.11</byte.buddy.version>
         <classmate.version>1.5.1</classmate.version>
         <istack.version>4.1.1</istack.version>
+
+        <!-- Additional Dependencies for Migration -->
+        <saxon.version>12.4</saxon.version>
+        <jung.version>2.1.1</jung.version>
+        <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
+        <jersey.version>3.1.5</jersey.version>
+        <microsoft.graph.version>6.55.0</microsoft.graph.version>
+        <azure.identity.version>1.18.1</azure.identity.version>
     </properties>
 
     <repositories>
@@ -438,6 +448,74 @@
                 <groupId>org.jspecify</groupId>
                 <artifactId>jspecify</artifactId>
                 <version>${jspecify.version}</version>
+            </dependency>
+
+            <!-- Saxon XSLT/XQuery Processor -->
+            <dependency>
+                <groupId>net.sf.saxon</groupId>
+                <artifactId>Saxon-HE</artifactId>
+                <version>${saxon.version}</version>
+            </dependency>
+
+            <!-- JUNG Graph Library -->
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-api</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-graph-impl</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.jung</groupId>
+                <artifactId>jung-algorithms</artifactId>
+                <version>${jung.version}</version>
+            </dependency>
+
+            <!-- Jakarta JAX-RS API -->
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${jakarta.ws.rs.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Jersey JAX-RS Implementation -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <!-- Microsoft Graph SDK -->
+            <dependency>
+                <groupId>com.microsoft.graph</groupId>
+                <artifactId>microsoft-graph</artifactId>
+                <version>${microsoft.graph.version}</version>
+            </dependency>
+
+            <!-- Azure Identity -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-identity</artifactId>
+                <version>${azure.identity.version}</version>
             </dependency>
 
             <!-- Supporting Libraries -->
@@ -928,6 +1006,74 @@
             <artifactId>resilience4j-ratelimiter</artifactId>
         </dependency>
 
+        <!-- Saxon XSLT/XQuery Processor -->
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+            <version>${saxon.version}</version>
+        </dependency>
+
+        <!-- JUNG Graph Library -->
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-algorithms</artifactId>
+            <version>${jung.version}</version>
+        </dependency>
+
+        <!-- Jakarta JAX-RS API -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>${jakarta.ws.rs.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jersey JAX-RS Implementation -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Microsoft Graph SDK (optional - for Outlook integration) -->
+        <dependency>
+            <groupId>com.microsoft.graph</groupId>
+            <artifactId>microsoft-graph</artifactId>
+            <version>${microsoft.graph.version}</version>
+        </dependency>
+
+        <!-- Azure Identity (optional - for Microsoft auth) -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
+            <version>${azure.identity.version}</version>
+        </dependency>
+
         <!-- Testing Dependencies -->
         <dependency>
             <groupId>junit</groupId>
@@ -993,13 +1139,40 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.5</version>
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                         <include>**/*TestSuite.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <database.type>h2</database.type>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                    </systemPropertyVariables>
+                    <parallel>classes</parallel>
+                    <threadCount>4</threadCount>
+                </configuration>
+            </plugin>
+
+            <!-- Failsafe Integration Test Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <database.type>h2</database.type>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -1018,14 +1191,14 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Code Coverage - temporarily disabled for offline builds -->
-            <!--
+            <!-- JaCoCo Code Coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
                 <executions>
                     <execution>
+                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
@@ -1037,9 +1210,29 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
-            -->
 
             <!-- Dependency Plugin for analyzing dependencies -->
             <plugin>
