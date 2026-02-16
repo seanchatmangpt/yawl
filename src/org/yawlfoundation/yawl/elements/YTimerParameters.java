@@ -85,7 +85,7 @@ public class YTimerParameters {
     }
 
 
-    public void set(YWorkItemTimer.Trigger trigger, Date expiryTime) {
+    public void set(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
         _trigger = trigger;
         _expiryTime = expiryTime;
         _timerType = TimerType.Expiry;
@@ -126,9 +126,9 @@ public class YTimerParameters {
     }
 
 
-    public Date getDate() { return _expiryTime; }
+    public Instant getDate() { return _expiryTime; }
 
-    public void setDate(Date date) {
+    public void setDate(Instant date) {
         _expiryTime = date;
         _timerType = TimerType.Expiry;
     }
@@ -199,7 +199,7 @@ public class YTimerParameters {
 
         try {                                 // test for xsd datetime
             Calendar calendar = DatatypeConverter.parseDateTime(expiry);
-            set(trigger, calendar.getTime());
+            set(trigger, calendar.getTime().toInstant());
             return true;
         }
         catch (IllegalArgumentException pe) {
@@ -208,7 +208,7 @@ public class YTimerParameters {
 
         long time = StringUtil.strToLong(expiry, -1);           // test for long
         if (time < 0) throw new IllegalArgumentException("Malformed expiry value");
-        set(trigger, new Date(time));
+        set(trigger, Instant.ofEpochMilli(time));
         return true;
     }
 
@@ -230,7 +230,7 @@ public class YTimerParameters {
             }
             case Expiry: {
                 node.addChild("trigger", _trigger.name());
-                node.addChild("expiry", _expiryTime.getTime());
+                node.addChild("expiry", _expiryTime.toEpochMilli());
                 break;
             }
             case Interval: {

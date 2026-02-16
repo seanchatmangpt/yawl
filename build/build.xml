@@ -297,6 +297,12 @@
     <!-- hbn -->
     <property name="jdom" value="jdom2-2.0.6.1.jar"/>
     <!-- mul -->
+    <!-- Legacy javax.faces JARs (for Sun Rave components) -->
+    <property name="jsf-api-legacy" value="jsf-api.jar"/>
+    <!-- jsf -->
+    <property name="jsf-impl-legacy" value="jsf-impl.jar"/>
+    <!-- jsf -->
+    <!-- Jakarta Faces 4.0 JARs (for migrated components) -->
     <property name="jsf-api" value="jakarta.faces-api-4.0.1.jar"/>
     <!-- jsf -->
     <property name="jsf-impl" value="jakarta.faces-4.0.5.jar"/>
@@ -585,7 +591,8 @@
               value="${common} ${ecore}"/>
 
     <property name="jsf.libs"
-              value="${jsf-api} ${jsf-impl} ${jakarta-el-api} ${jakarta-el-impl}
+              value="${jsf-api-legacy} ${jsf-impl-legacy}
+                     ${jsf-api} ${jsf-impl} ${jakarta-el-api} ${jakarta-el-impl}
                      ${jakarta-cdi-api} ${jakarta-annotation} ${servlet} ${jstl}
                      ${jsf-appbase} ${jsf-cl} ${jsf-webui}
                      ${commonsDigester} ${commonsBeanutils} ${commonsFileupload}
@@ -834,6 +841,9 @@
     </path>
 
     <path id="cp.jsf">
+        <!-- Legacy javax.faces JARs (required by Sun Rave components) -->
+        <pathelement location="${lib.dir}/${jsf-api-legacy}"/>
+        <pathelement location="${lib.dir}/${jsf-impl-legacy}"/>
         <!-- Jakarta Faces 4.0 (Jakarta EE 10) -->
         <pathelement location="${lib.dir}/${jsf-api}"/>
         <pathelement location="${lib.dir}/${jsf-impl}"/>
@@ -844,7 +854,7 @@
         <!-- Jakarta Servlet/JSP APIs -->
         <pathelement location="${lib.dir}/${servlet}"/>
         <pathelement location="${lib.dir}/${jstl}"/>
-        <!-- Legacy JSF components (if still needed) -->
+        <!-- Legacy JSF components (Sun Rave webui) -->
         <pathelement location="${lib.dir}/${jsf-appbase}"/>
         <pathelement location="${lib.dir}/${jsf-cl}"/>
         <pathelement location="${lib.dir}/${jsf-webui}"/>
