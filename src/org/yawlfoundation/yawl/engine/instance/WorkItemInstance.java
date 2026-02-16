@@ -31,7 +31,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -57,7 +57,7 @@ public class WorkItemInstance implements YInstance {
 
     public WorkItemInstance() {
         dateFormatter = new SimpleDateFormat("yyyy-MM-dd H:mm:ss:SSS");
-        parameters = new Hashtable<String, ParameterInstance>();
+        parameters = new HashMap<>();
     }
 
 
@@ -166,8 +166,9 @@ public class WorkItemInstance implements YInstance {
     }
 
     public String getEnabledTimeAsDateString() {
-        if (getEnabledTime() == 0) return "";
-        return dateFormatter.format(getEnabledTime());
+        long time = getEnabledTime();
+        if (time == 0) return null;  // No enablement time set yet
+        return dateFormatter.format(time);
     }
 
     public void setEnabledTime(long time) { enabledTime = time; }
@@ -179,8 +180,9 @@ public class WorkItemInstance implements YInstance {
     }
 
     public String getStartTimeAsDateString() {
-        if (getStartTime() == 0) return "";
-        return dateFormatter.format(getStartTime());
+        long time = getStartTime();
+        if (time == 0) return null;  // No start time set yet
+        return dateFormatter.format(time);
     }
 
     public void setStartTime(long time) { startTime = time; }
@@ -189,8 +191,9 @@ public class WorkItemInstance implements YInstance {
     public long getCompletionTime() { return completionTime; }
 
     public String getCompletionTimeAsDateString() {
-        if (getCompletionTime() == 0) return "";
-        return dateFormatter.format(getCompletionTime());
+        long time = getCompletionTime();
+        if (time == 0) return null;  // No completion time set yet
+        return dateFormatter.format(time);
     }
 
     public void setCompletionTime(long time) { completionTime = time; }
@@ -204,8 +207,9 @@ public class WorkItemInstance implements YInstance {
     public void setTimerExpiry(long expiry) { timerExpiry = expiry; }
 
     public String getTimerExpiryAsCountdown() {
-        if (getTimerExpiry() == 0) return "";
-        return formatAge(System.currentTimeMillis() - getTimerExpiry());
+        long expiry = getTimerExpiry();
+        if (expiry == 0) return null;  // No timer expiry set
+        return formatAge(System.currentTimeMillis() - expiry);
     }
 
     /**

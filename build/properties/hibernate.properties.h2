@@ -34,10 +34,11 @@ hibernate.query.substitutions true 1, false 0, yes 'Y', no 'N'
 
 hibernate.dialect=org.hibernate.dialect.H2Dialect
 hibernate.connection.driver_class=org.h2.Driver
-hibernate.connection.url=jdbc:h2:@DB_Path@;MVCC=TRUE;AUTO_SERVER=TRUE
+hibernate.connection.url=jdbc:h2:@DB_Path@;AUTO_SERVER=TRUE;MODE=LEGACY
 
-# URL example (please ensure the ';MVCC=TRUE' parameter is added to the end):
-# jdbc:h2:/home/abc/YAWL2XX/engine/databases/yawldb;MVCC=TRUE
+# URL example (MODE=LEGACY enables compatibility with older H2 versions):
+# jdbc:h2:/home/abc/YAWL2XX/engine/databases/yawldb;AUTO_SERVER=TRUE;MODE=LEGACY
+# Note: MVCC parameter removed (deprecated in H2 2.x, enabled by default)
 
 
 

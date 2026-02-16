@@ -19,9 +19,11 @@
 package org.yawlfoundation.yawl.engine.interfce;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +31,8 @@ import java.util.Map;
  * This class is used by clients and servers to execute GET and POST requests
  * across the YAWL interfaces. Note that since v2.0up4 (12/08) all requests are sent as
  * POSTS - increases efficiency, security and allows 'extended' chars to be included.
+ *
+ * Modernized in v5.2 to use java.net.http.HttpClient (Java 11+).
  *
  * @author Lachlan Aldred
  * Date: 22/03/2004
@@ -39,8 +43,13 @@ import java.util.Map;
 
 public class Interface_Client {
 
+    // Shared HTTP client instance with connection pooling and modern defaults
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMillis(5000))
+            .build();
+
     // allows the prevention of socket reads from blocking indefinitely
-    private static int READ_TIMEOUT = 0;              // default: wait indefinitely
+    private static Duration READ_TIMEOUT = Duration.ofMillis(120000);  // default: 2 minutes
 
 
     /**
@@ -54,7 +63,25 @@ public class Interface_Client {
     protected String executePost(String urlStr, Map<String, String> paramsMap)
             throws IOException {
 
-        return send(urlStr, paramsMap, true);
+        String encodedData = encodeData(paramsMap);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(urlStr))
+                .timeout(READ_TIMEOUT)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .header("Connection", "close")  // prevent connection reuse under heavy load
+                .POST(HttpRequest.BodyPublishers.ofString(encodedData))
+                .build();
+
+        try {
+            HttpResponse<String> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            String result = response.body();
+            return stripOuterElement(result);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("HTTP request interrupted", e);
+        }
     }
 
 
@@ -69,7 +96,24 @@ public class Interface_Client {
     protected String executeGet(String urlStr, Map<String, String> paramsMap)
             throws IOException {
 
-        return send(urlStr, paramsMap, false);
+        String encodedData = encodeData(paramsMap);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(urlStr))
+                .timeout(READ_TIMEOUT)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .header("Connection", "close")
+                .POST(HttpRequest.BodyPublishers.ofString(encodedData))
+                .build();
+
+        try {
+            HttpResponse<String> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            return response.body();  // don't strip outer element for GET requests
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("HTTP request interrupted", e);
+        }
     }
 
 
@@ -89,11 +133,15 @@ public class Interface_Client {
 
     /**
      * Set the read timeout value for future connections
-     * @param timeout the timeout value in milliseconds. A value of -1 (the default)
-     *                means a read will wait indefinitely.
+     * @param timeout the timeout value in milliseconds. A value of 0 or less
+     *                means a read will wait indefinitely (up to default limit).
      */
     protected void setReadTimeout(int timeout) {
-        READ_TIMEOUT = timeout;
+        if (timeout > 0) {
+            READ_TIMEOUT = Duration.ofMillis(timeout);
+        } else {
+            READ_TIMEOUT = Duration.ofMillis(120000);  // 2 minute default
+        }
     }
 
 
@@ -114,48 +162,6 @@ public class Interface_Client {
     }
 
 
-    /**
-     * Sends data to the specified url via a HTTP POST, and returns the reply
-     * @param connection the http url connection to send the request to
-     * @param paramsMap a map of attribute=value pairs representing the data to send
-     * @param stripOuterXML true if this was originally a POST request, false if a GET request
-     * @return the response from the url
-     * @throws IOException when there's some kind of communication problem
-     */
-    protected String send(HttpURLConnection connection, Map<String, String> paramsMap,
-                          boolean stripOuterXML) throws IOException {
-
-        // encode data and send query
-        sendData(connection, encodeData(paramsMap)) ;
-
-        //retrieve reply
-        String result = getReply(connection.getInputStream());
-        connection.disconnect();
-
-        if (stripOuterXML) result = stripOuterElement(result);
-        return result;
-
-    }
-
-
-    /**
-     * Initialises a HTTP POST connection
-     * @param urlStr the url to connect to
-     * @return an initialised POST connection
-     * @throws IOException when there's some kind of communication problem
-     */
-    protected HttpURLConnection initPostConnection(String urlStr) throws IOException {
-        URL url = URI.create(urlStr).toURL();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Accept-Charset", "UTF-8");
-        connection.setReadTimeout(READ_TIMEOUT);
-
-        // required to ensure the connection is not reused. When not set, spurious
-        // intermittent problems (double posts, missing posts) occur under heavy load.
-        connection.setRequestProperty("Connection", "close");
-        return connection ;
-    }
 
 
     /**
@@ -173,19 +179,6 @@ public class Interface_Client {
     /*******************************************************************************/
 
     // PRIVATE METHODS //
-
-    /**
-     * Sends data to the specified url via a HTTP POST, and returns the reply
-     * @param urlStr the url to connect to
-     * @param paramsMap a map of attribute=value pairs representing the data to send
-     * @param post true if this was originally a POST request, false if a GET request
-     * @return the response from the url
-     * @throws IOException when there's some kind of communication problem
-     */
-    private String send(String urlStr, Map<String, String> paramsMap, boolean post)
-            throws IOException {
-        return send(initPostConnection(urlStr), paramsMap, post);
-    }
 
 
      /**
@@ -209,44 +202,4 @@ public class Interface_Client {
     }
 
 
-    /**
-     * Submits data on a HTTP connection
-     * @param connection a valid, open HTTP connection
-     * @param data the data to submit
-     * @throws IOException when there's some kind of communication problem
-     */
-    private void sendData(HttpURLConnection connection, String data)
-            throws IOException {
-        OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-        out.write(data);
-        out.close();
-    }
-
-
-    /**
-     * Receives a reply from a HTTP submission
-     * @param is the InputStream of a URL or Connection object
-     * @return the stream's contents (ie. the HTTP reply)
-     * @throws IOException when there's some kind of communication problem
-     */
-    protected String getReply(InputStream is) throws IOException {
-        final int BUF_SIZE = 16384;
-        
-        // read reply into a buffered byte stream - to preserve UTF-8
-        BufferedInputStream inStream = new BufferedInputStream(is);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream(BUF_SIZE);
-        byte[] buffer = new byte[BUF_SIZE];
-
-        // read chunks from the input stream and write them out
-        int bytesRead;
-        while ((bytesRead = inStream.read(buffer, 0, BUF_SIZE)) > 0) {
-            outStream.write(buffer, 0, bytesRead);
-        }
-
-        outStream.close();
-        inStream.close();
-
-        // convert the bytes to a UTF-8 string
-        return outStream.toString("UTF-8");
-    }
 }

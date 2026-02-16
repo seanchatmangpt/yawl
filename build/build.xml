@@ -57,7 +57,7 @@
                                            Mike Fowler et al."/>
 
     <!-- Dependency Version Properties -->
-    <property name="java.version" value="25"/>
+    <property name="java.version" value="21"/>
     <property name="postgresql.version" value="42.7.4"/>
     <property name="mysql.version" value="8.3.0"/>
     <property name="h2.version" value="2.2.224"/>
@@ -231,15 +231,23 @@
     <!-- mul (DEPRECATED: replaced by HikariCP) -->
     <property name="hikaricp" value="HikariCP-5.1.0.jar"/>
     <!-- hbn -->
-    <property name="hibernate-core" value="hibernate-core-5.6.14.Final.jar"/>
-    <!-- mul -->
+    <property name="hibernate-hikaricp" value="hibernate-hikaricp-6.4.4.Final.jar"/>
+    <!-- hbn (Hibernate 6.x HikariCP integration module) -->
+    <property name="hibernate-core" value="hibernate-core-6.4.4.Final.jar"/>
+    <!-- mul (UPGRADED from 5.6.14 to 6.4.4) -->
     <property name="hibernate-commons"
-              value="hibernate-commons-annotations-5.1.2.Final.jar"/>
-    <!-- mul -->
+              value="hibernate-commons-annotations-6.0.6.Final.jar"/>
+    <!-- mul (UPGRADED from 5.1.2 to 6.0.6) -->
+    <property name="hibernate-jcache" value="hibernate-jcache-6.4.4.Final.jar"/>
+    <!-- hbn (replaces hibernate-ehcache for Hibernate 6.x) -->
+    <property name="hibernate-dialects" value="hibernate-community-dialects-6.4.4.Final.jar"/>
+    <!-- hbn (optional community dialects for MySQL, PostgreSQL, etc.) -->
     <property name="hibernate-ehcache" value="hibernate-ehcache-5.6.14.Final.jar"/>
-    <!-- hbn -->
+    <!-- hbn (DEPRECATED: use hibernate-jcache for Hibernate 6.x) -->
     <property name="hibernate-jpa" value="hibernate-jpa-2.1-api-1.0.0.Final.jar"/>
-    <!-- hbn -->
+    <!-- hbn (DEPRECATED: replaced by jakarta.persistence-api for Jakarta EE 9+) -->
+    <property name="jakarta-persistence" value="jakarta.persistence-api-3.1.0.jar"/>
+    <!-- hbn (Jakarta Persistence 3.1 - required for Hibernate 6.x) -->
     <property name="hsql" value="hsqldb.jar"/>
     <!-- hbn -->
     <property name="istack" value="istack-commons-runtime-4.1.1.jar"/>
@@ -251,7 +259,8 @@
     <property name="jackson-jsr310" value="jackson-datatype-jsr310-2.18.2.jar"/>
 
     <!-- hbn -->
-    <property name="jandex" value="jandex-2.4.2.Final.jar"/>
+    <property name="jandex" value="jandex-3.1.2.jar"/>
+    <!-- eng, hbn (UPGRADED from 2.4.2 to 3.1.2 for Hibernate 6.x) -->
     <!-- eng, hbn -->
     <property name="jakarta-activation" value="jakarta.activation-1.2.2.jar"/>
     <!-- sml -->
@@ -269,7 +278,7 @@
     <!--off,hbn-->
     <property name="jaxb-impl" value="jaxb-impl.jar"/>
     <!--off-->
-    <property name="jaxb-runtime" value="jaxb-runtime-4.0.4.jar"/>
+    <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar"/>
     <!--off,hbn-->
     <property name="jaxb-xjc" value="jaxb-xjc.jar"/>
     <!-- hbn -->
@@ -284,7 +293,7 @@
     <!-- off -->
     <property name="jdom1" value="jdom.jar"/>
     <!-- hbn -->
-    <property name="jdom" value="jdom-2.0.6.1.jar"/>
+    <property name="jdom" value="jdom-2.0.5.jar"/>
     <!-- mul -->
     <property name="jsf-api" value="jakarta.faces-api-4.0.0.jar"/>
     <!-- jsf -->
@@ -342,6 +351,8 @@
     <property name="junit-platform-engine" value="junit-platform-engine-1.10.2.jar"/>
     <property name="junit-platform-launcher" value="junit-platform-launcher-1.10.2.jar"/>
     <property name="junit-platform-commons" value="junit-platform-commons-1.10.2.jar"/>
+    <property name="junit-platform-suite-api" value="junit-platform-suite-api-1.10.2.jar"/>
+    <property name="junit-platform-suite-engine" value="junit-platform-suite-engine-1.10.2.jar"/>
     <property name="opentest4j" value="opentest4j-1.3.0.jar"/>
     <property name="apiguardian-api" value="apiguardian-api-1.1.2.jar"/>
 
@@ -382,14 +393,14 @@
     <!-- dbd -->
     <property name="saaj" value="saaj.jar"/>
     <!-- wsi -->
-    <property name="saxon" value="Saxon-HE-12.4.jar"/>
+    <property name="saxon" value="saxon9.jar"/>
     <!-- mul -->
     <property name="saxonapi" value="saxon9-s9api.jar"/>
-    <!-- mul (included in Saxon-HE-12.4) -->
+    <!-- mul -->
     <property name="saxondom" value="saxon9-dom.jar"/>
-    <!-- mul (included in Saxon-HE-12.4) -->
+    <!-- mul -->
     <property name="saxonjdom" value="saxon9-jdom.jar"/>
-    <!-- mul (may need separate adapter) -->
+    <!-- mul -->
     <property name="servlet" value="jakarta.servlet-api-6.0.0.jar"/>
     <!-- mul -->
     <property name="simplemail" value="simple-java-mail-5.5.1.jar"/>
@@ -3322,6 +3333,8 @@
                 <pathelement location="${lib.dir}/${junit-platform-engine}"/>
                 <pathelement location="${lib.dir}/${junit-platform-launcher}"/>
                 <pathelement location="${lib.dir}/${junit-platform-commons}"/>
+                <pathelement location="${lib.dir}/${junit-platform-suite-api}"/>
+                <pathelement location="${lib.dir}/${junit-platform-suite-engine}"/>
                 <pathelement location="${lib.dir}/${opentest4j}"/>
                 <pathelement location="${lib.dir}/${apiguardian-api}"/>
                 <pathelement path="${java.class.path}"/>

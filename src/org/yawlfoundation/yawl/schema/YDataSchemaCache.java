@@ -23,7 +23,6 @@ import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -93,7 +92,7 @@ public class YDataSchemaCache extends ConcurrentHashMap<String, YDataSchemaCache
     }
 
     
-    class SchemaMap extends Hashtable<String, Element> {
+    class SchemaMap extends ConcurrentHashMap<String, Element> {
         public SchemaMap() {
             super();
         }
