@@ -27,8 +27,9 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.schema.TargetType;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.query.NativeQuery;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -109,16 +110,17 @@ public class HibernateEngine {
         props.setProperty("hibernate.cache.use_query_cache", "true");
         props.setProperty("hibernate.cache.use_second_level_cache", "true");
         props.setProperty("hibernate.cache.region.factory_class",
-                          "org.hibernate.cache.ehcache.EhCacheRegionFactory");
+                          "org.hibernate.cache.jcache.JCacheRegionFactory");
 
         props.setProperty("hibernate.connection.provider_class",
-                          "org.hibernate.connection.C3P0ConnectionProvider");
-        props.setProperty("hibernate.c3p0.max_size", "20");
-        props.setProperty("hibernate.c3p0.min_size", "2");
-        props.setProperty("hibernate.c3p0.timeout", "5000");
-        props.setProperty("hibernate.c3p0.max_statements", "100");
-        props.setProperty("hibernate.c3p0.idle_test_period", "3000");
-        props.setProperty("hibernate.c3p0.acquire_increment", "1");
+                          "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+        props.setProperty("hibernate.hikari.maximumPoolSize", "20");
+        props.setProperty("hibernate.hikari.minimumIdle", "5");
+        props.setProperty("hibernate.hikari.connectionTimeout", "30000");
+        props.setProperty("hibernate.hikari.idleTimeout", "600000");
+        props.setProperty("hibernate.hikari.maxLifetime", "1800000");
+        props.setProperty("hibernate.hikari.keepaliveTime", "120000");
+        props.setProperty("hibernate.hikari.leakDetectionThreshold", "60000");
         configureSession(props, classes);
     }
 
@@ -142,7 +144,10 @@ public class HibernateEngine {
         _factory = metadata.buildSessionFactory();
 
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-        new SchemaUpdate().execute(targetTypes, metadata);
+        SchemaManagementTool schemaManagementTool = standardRegistry
+                .getService(SchemaManagementTool.class);
+        schemaManagementTool.getSchemaUpdater(null)
+                .doUpdate(metadata, targetTypes, false);
     }
 
     /******************************************************************************/
@@ -156,8 +161,8 @@ public class HibernateEngine {
         List result = null;
         Session session = _factory.getCurrentSession();
         session.beginTransaction();
-        SQLQuery query = session.createSQLQuery(queryString);
-        if (query != null) result = query.list();
+        NativeQuery query = session.createNativeQuery(queryString);
+        if (query != null) result = query.getResultList();
         return result;
     }
 
@@ -187,7 +192,7 @@ public class HibernateEngine {
 
     public List execNamedQuery(String namedQuery, String key) throws HibernateException {
         Session session = _factory.getCurrentSession();
-        return session.getNamedQuery(namedQuery).setString("key", key).list();       
+        return session.getNamedQuery(namedQuery).setParameter("key", key).getResultList();
     }
 
 

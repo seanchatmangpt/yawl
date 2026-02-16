@@ -25,10 +25,14 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.criterion.Criterion;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.schema.TargetType;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 import java.io.Serializable;
 import java.util.EnumSet;
@@ -83,6 +87,7 @@ public class HibernateEngine {
         StandardServiceRegistryBuilder standardRegistryBuilder = new StandardServiceRegistryBuilder()
             .configure();
         if (props != null) {
+            ensureHikariCPProvider(props);
             standardRegistryBuilder.applySettings(props);
         }
         StandardServiceRegistry standardRegistry = standardRegistryBuilder.build();
@@ -96,7 +101,65 @@ public class HibernateEngine {
         _factory = metadata.buildSessionFactory();
 
         EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-        new SchemaUpdate().execute(targetTypes, metadata);
+        SchemaManagementTool schemaManagementTool = standardRegistry
+                .getService(SchemaManagementTool.class);
+        schemaManagementTool.getSchemaUpdater(null)
+                .doUpdate(metadata, targetTypes, false);
+    }
+
+    /**
+     * Ensures that HikariCP is used as the connection provider.
+     * Migrates legacy c3p0 configurations to HikariCP equivalents.
+     */
+    private void ensureHikariCPProvider(Properties props) {
+        String provider = props.getProperty("hibernate.connection.provider_class");
+
+        if (provider != null && provider.contains("C3P0")) {
+            _log.info("Migrating from c3p0 to HikariCP connection provider");
+            props.setProperty("hibernate.connection.provider_class",
+                    "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+
+            migrateC3P0PropertiesToHikariCP(props);
+        } else if (provider == null) {
+            props.setProperty("hibernate.connection.provider_class",
+                    "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+        }
+    }
+
+    /**
+     * Migrates c3p0 properties to HikariCP equivalents.
+     */
+    private void migrateC3P0PropertiesToHikariCP(Properties props) {
+        String maxSize = props.getProperty("hibernate.c3p0.max_size");
+        if (maxSize != null) {
+            props.setProperty("hibernate.hikari.maximumPoolSize", maxSize);
+            props.remove("hibernate.c3p0.max_size");
+        }
+
+        String minSize = props.getProperty("hibernate.c3p0.min_size");
+        if (minSize != null) {
+            props.setProperty("hibernate.hikari.minimumIdle", minSize);
+            props.remove("hibernate.c3p0.min_size");
+        }
+
+        String timeout = props.getProperty("hibernate.c3p0.timeout");
+        if (timeout != null) {
+            long timeoutMs = Long.parseLong(timeout);
+            props.setProperty("hibernate.hikari.connectionTimeout", String.valueOf(timeoutMs));
+            props.remove("hibernate.c3p0.timeout");
+        }
+
+        String idleTestPeriod = props.getProperty("hibernate.c3p0.idle_test_period");
+        if (idleTestPeriod != null) {
+            long keepaliveMs = Long.parseLong(idleTestPeriod);
+            props.setProperty("hibernate.hikari.keepaliveTime", String.valueOf(keepaliveMs));
+            props.remove("hibernate.c3p0.idle_test_period");
+        }
+
+        props.remove("hibernate.c3p0.max_statements");
+        props.remove("hibernate.c3p0.acquire_increment");
+
+        _log.info("Migrated c3p0 configuration to HikariCP");
     }
 
 
@@ -338,17 +401,31 @@ public class HibernateEngine {
     }
 
 
-    public List getByCriteria(Class claz, Criterion... criteria) {
-        return getByCriteria(claz, true, criteria);
+    /**
+     * Deprecated method for backward compatibility.
+     * Use JPA Criteria API directly for new code.
+     * @deprecated Use {@link #getByCriteriaJPA(Class, Predicate...)} instead
+     */
+    @Deprecated
+    public List getByCriteria(Class claz, Predicate... predicates) {
+        return getByCriteriaJPA(claz, true, predicates);
     }
 
-    public List getByCriteria(Class claz, boolean commit, Criterion... criteria) {
+    /**
+     * Get entities using JPA Criteria API (Hibernate 6 compatible).
+     * Replaces deprecated Hibernate Criteria API.
+     */
+    public List getByCriteriaJPA(Class claz, boolean commit, Predicate... predicates) {
         getOrBeginTransaction();
-        Criteria c = getSession().createCriteria(claz);
-        for (Criterion criterion : criteria) {
-            c.add(criterion);
+        CriteriaBuilder cb = getSession().getCriteriaBuilder();
+        CriteriaQuery cq = cb.createQuery(claz);
+        Root root = cq.from(claz);
+
+        if (predicates != null && predicates.length > 0) {
+            cq.where(predicates);
         }
-        List result = c.list();
+
+        List result = getSession().createQuery(cq).getResultList();
         if (commit) commit();
         return result;
     }

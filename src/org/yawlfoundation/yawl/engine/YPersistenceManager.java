@@ -26,8 +26,8 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.schema.TargetType;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -102,7 +102,10 @@ public class YPersistenceManager {
                 factory = metadata.buildSessionFactory();
 
                 EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-                new SchemaUpdate().execute(targetTypes, metadata);
+                SchemaManagementTool schemaManagementTool = standardRegistry
+                        .getService(SchemaManagementTool.class);
+                schemaManagementTool.getSchemaUpdater(null)
+                        .doUpdate(metadata, targetTypes, false);
                 setEnabled(true);
             }
             catch (Exception e) {
@@ -486,9 +489,9 @@ public class YPersistenceManager {
      * Used by health indicators.
      * @return map of statistics
      */
-    public Map<String, Object> getStatistics() {
+    public Map<String, Object> getStatisticsMap() {
         Map<String, Object> stats = new HashMap<>();
-        if (factory != null && statisticsEnabled) {
+        if (factory != null && isStatisticsEnabled()) {
             org.hibernate.stat.Statistics hibernateStats = factory.getStatistics();
             if (hibernateStats != null) {
                 stats.put("connectCount", hibernateStats.getConnectCount());

@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.mailService;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jdom2.Element;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.email.EmailBuilder;

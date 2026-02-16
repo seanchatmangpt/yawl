@@ -1,0 +1,157 @@
+# =============================================================================
+# YAWL v5.2 - Java 25 Production Container Image
+# =============================================================================
+# Production-ready image with:
+# - Java 25 native virtual threads
+# - Spring Boot Actuator for Kubernetes/Cloud Run
+# - Optimized JVM settings for virtual threads
+# - Non-root security
+# =============================================================================
+
+FROM eclipse-temurin:25-jre-alpine
+
+LABEL maintainer="YAWL Foundation"
+LABEL version="5.2"
+LABEL java.version="25"
+LABEL description="YAWL Workflow Engine with Java 25 Native Virtual Threads"
+LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.licenses="LGPL-3.0"
+
+# Install required packages
+RUN apk add --no-cache \
+    bash \
+    curl \
+    postgresql-client \
+    tzdata \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Create application user for security (non-root)
+RUN addgroup -S yawl && adduser -S yawl -G yawl
+
+# Set working directory
+WORKDIR /app
+
+# Copy application JAR
+COPY --chown=yawl:yawl target/yawl-5.2.jar /app/yawl.jar
+
+# Optional: Copy configuration if not using ConfigMap
+# COPY --chown=yawl:yawl src/main/resources/application.yml /app/config/application.yml
+
+# Create directories for workflow specifications, logs, and data
+RUN mkdir -p \
+    /app/specifications \
+    /app/logs \
+    /app/data \
+    /app/config \
+    /app/temp \
+    && chown -R yawl:yawl /app
+
+# Switch to non-root user (security best practice)
+USER yawl
+
+# Health check using Spring Boot Actuator liveness endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
+
+# Expose ports
+# 8080 - Main application HTTP port
+# 9090 - Actuator management port (optional separate port)
+# 8000 - JMX/Debug port (disabled in production)
+EXPOSE 8080 9090
+
+# =============================================================================
+# JVM Options optimized for Java 25 Virtual Threads
+# =============================================================================
+ENV JAVA_OPTS="\
+    # Container Support \
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:InitialRAMPercentage=50.0 \
+    # Garbage Collection (G1GC optimized for cloud) \
+    -XX:+UseG1GC \
+    -XX:+UseStringDeduplication \
+    -XX:MaxGCPauseMillis=200 \
+    -XX:G1ReservePercent=10 \
+    # Memory Protection \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/app/logs/heap-dump.hprof \
+    # Java 25 Virtual Thread Optimizations \
+    --enable-preview \
+    -Djdk.virtualThreadScheduler.parallelism=64 \
+    -Djdk.virtualThreadScheduler.maxPoolSize=256 \
+    -Djdk.tracePinnedThreads=short \
+    # Performance Tuning \
+    -XX:+UnlockExperimentalVMOptions \
+    -XX:+UseNUMA \
+    -Djava.security.egd=file:/dev/./urandom \
+    # Observability \
+    -XX:+FlightRecorder \
+    -XX:StartFlightRecording=name=YAWL,maxsize=250M,maxage=24h \
+    # Network Stack \
+    -Djava.net.preferIPv4Stack=true \
+    # Encoding \
+    -Dfile.encoding=UTF-8"
+
+# Application Configuration
+ENV SPRING_PROFILES_ACTIVE=production
+ENV MANAGEMENT_HEALTH_PROBES_ENABLED=true
+ENV MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when_authorized
+ENV MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+ENV TZ=UTC
+
+# Virtual Threads Enabled (Spring Boot 3.2+)
+ENV SPRING_THREADS_VIRTUAL_ENABLED=true
+
+# Logging Configuration
+ENV LOGGING_LEVEL_ROOT=INFO
+ENV LOGGING_LEVEL_ORG_YAWLFOUNDATION=DEBUG
+ENV LOGGING_PATTERN_CONSOLE="%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+ENV LOGGING_PATTERN_FILE="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Database Configuration (Override with environment variables or ConfigMap)
+ENV DB_TYPE=postgres
+ENV DB_HOST=postgres
+ENV DB_PORT=5432
+ENV DB_NAME=yawl
+ENV DB_USER=yawl
+# DB_PASSWORD should be provided via Secret
+
+# Feature Flags
+ENV ENABLE_PERSISTENCE=true
+ENV ENABLE_LOGGING=true
+ENV ENABLE_METRICS=true
+ENV ENABLE_TRACING=false
+
+# Start application with virtual threads
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/yawl.jar"]
+
+# =============================================================================
+# Build and Run Instructions
+# =============================================================================
+# Build:
+#   docker build -f Dockerfile.java25 -t yawl-engine:5.2-java25 .
+#
+# Run locally:
+#   docker run -p 8080:8080 -p 9090:9090 \
+#     -e DB_HOST=host.docker.internal \
+#     -e DB_PASSWORD=secret \
+#     yawl-engine:5.2-java25
+#
+# Run in Kubernetes:
+#   kubectl apply -f k8s/yawl-deployment-java25.yaml
+#
+# Health Check:
+#   curl http://localhost:8080/actuator/health
+#
+# Metrics:
+#   curl http://localhost:8080/actuator/metrics
+#   curl http://localhost:8080/actuator/prometheus
+#
+# Virtual Thread Monitoring:
+#   docker exec -it <container> jcmd 1 JFR.dump filename=/app/logs/recording.jfr
+#   docker cp <container>:/app/logs/recording.jfr .
+#   jfr print --events jdk.VirtualThreadStart recording.jfr
+# =============================================================================
