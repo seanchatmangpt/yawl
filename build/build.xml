@@ -368,6 +368,13 @@
     <property name="jung-visualization" value="jung-visualization-2.0.jar"/>
     <!-- prl -->
     <property name="junit" value="junit-4.13.2.jar"/>
+    <property name="junit-jupiter-api" value="junit-jupiter-api-5.10.2.jar"/>
+    <property name="junit-jupiter-engine" value="junit-jupiter-engine-5.10.2.jar"/>
+    <property name="junit-platform-commons" value="junit-platform-commons-1.10.2.jar"/>
+    <property name="junit-platform-engine" value="junit-platform-engine-1.10.2.jar"/>
+    <property name="junit-platform-launcher" value="junit-platform-launcher-1.10.2.jar"/>
+    <property name="junit-platform-suite-api" value="junit-platform-suite-api-1.10.2.jar"/>
+    <property name="junit-platform-suite-engine" value="junit-platform-suite-engine-1.10.2.jar"/>
     <property name="hamcrest" value="hamcrest-core-1.3.jar"/>
 
     <property name="kotlin" value="kotlin-stdlib-2.1.0.jar"/>
@@ -943,6 +950,16 @@
         <pathelement location="${lib.dir}/${guava}"/>
         <pathelement location="${lib.dir}/${hawkular}"/>
         <pathelement location="${lib.dir}/${openforecast}"/>
+    </path>
+
+    <path id="cp.junit5">
+        <pathelement location="${lib.dir}/${junit-jupiter-api}"/>
+        <pathelement location="${lib.dir}/${junit-jupiter-engine}"/>
+        <pathelement location="${lib.dir}/${junit-platform-commons}"/>
+        <pathelement location="${lib.dir}/${junit-platform-engine}"/>
+        <pathelement location="${lib.dir}/${junit-platform-launcher}"/>
+        <pathelement location="${lib.dir}/${junit-platform-suite-api}"/>
+        <pathelement location="${lib.dir}/${junit-platform-suite-engine}"/>
     </path>
 
     <path id="cp.etc">
@@ -3625,6 +3642,7 @@
             <classpath refid="cp.wsif"/>
             <classpath refid="cp.xsd"/>
             <classpath refid="cp.persist"/>
+            <classpath refid="cp.junit5"/>
         </javac>
     </target>
 
