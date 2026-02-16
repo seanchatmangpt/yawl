@@ -32,6 +32,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -192,6 +193,15 @@ public class YDataValidator {
                 e.getMessage(),
                 source,
                 "Problem with process model. I/O error during validation");
+        }
+        catch (TransformerException e) {
+            LOGGER.log(Level.SEVERE, "XML transformation error during validation", e);
+            throw new YDataValidationException(
+                handler.getSchema(),
+                data,
+                e.getMessage(),
+                source,
+                "Problem with process model. XML transformation error");
         }
     }
 

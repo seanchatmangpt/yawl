@@ -385,7 +385,7 @@ public final class E2WFOJNet {
         }
 
         // Backward reachability pass
-        Set<RTransition> currentTransitions = getPreset(presetPlaces);
+        Set<RTransition> currentTransitions = getPresetPlaces(presetPlaces);
         restrictedTransitions.addAll(currentTransitions);
         restrictedPlaces.addAll(presetPlaces);
 
@@ -393,7 +393,7 @@ public final class E2WFOJNet {
         while (!previousTransitions.equals(restrictedTransitions)) {
             previousTransitions = new HashSet<>(restrictedTransitions);
             presetPlaces = getPreset(currentTransitions);
-            currentTransitions = getPreset(presetPlaces);
+            currentTransitions = getPresetPlaces(presetPlaces);
             restrictedTransitions.addAll(currentTransitions);
             restrictedPlaces.addAll(presetPlaces);
         }
@@ -445,7 +445,7 @@ public final class E2WFOJNet {
         Set<RTransition> previousTransitions = new HashSet<>();
         while (!previousTransitions.equals(restrictedTransitions)) {
             previousTransitions = new HashSet<>(restrictedTransitions);
-            Set<RPlace> postsetPlaces = getPostset(currentTransitions);
+            Set<RPlace> postsetPlaces = getPostsetTransitions(currentTransitions);
             currentTransitions = getPostset(postsetPlaces);
             restrictedTransitions.addAll(currentTransitions);
             restrictedPlaces.addAll(postsetPlaces);
@@ -532,24 +532,46 @@ public final class E2WFOJNet {
     }
 
     /**
-     * Gets the postset elements of a collection of elements.
+     * Gets the postset transitions of a collection of places.
      */
-    private static Set<RTransition> getPostset(Set<? extends RElement> elements) {
-        return elements.stream()
+    private static Set<RTransition> getPostset(Set<RPlace> places) {
+        return places.stream()
                 .map(RElement::getPostsetElements)
-                .flatMap(Collection::stream)
+                .flatMap(Set::stream)
                 .map(e -> (RTransition) e)
                 .collect(Collectors.toSet());
     }
 
     /**
-     * Gets the preset elements of a collection of elements.
+     * Gets the postset places of a collection of transitions.
      */
-    private static Set<RPlace> getPreset(Set<? extends RElement> elements) {
-        return elements.stream()
-                .map(RElement::getPresetElements)
-                .flatMap(Collection::stream)
+    private static Set<RPlace> getPostsetTransitions(Set<RTransition> transitions) {
+        return transitions.stream()
+                .map(RElement::getPostsetElements)
+                .flatMap(Set::stream)
                 .map(e -> (RPlace) e)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the preset places of a collection of transitions.
+     */
+    private static Set<RPlace> getPreset(Set<RTransition> transitions) {
+        return transitions.stream()
+                .map(RElement::getPresetElements)
+                .flatMap(Set::stream)
+                .map(e -> (RPlace) e)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the preset transitions of a collection of places.
+     */
+    private static Set<RTransition> getPresetPlaces(Set<RPlace> places) {
+        return places.stream()
+                .map(RElement::getPresetElements)
+                .flatMap(Set::stream)
+                .map(e -> (RTransition) e)
                 .collect(Collectors.toSet());
     }
 
@@ -652,7 +674,7 @@ public final class E2WFOJNet {
      * </p>
      */
     private boolean isBackwardsEnabled(RMarking marking, RTransition transition) {
-        Set<RPlace> postSet = transition.getPostsetElements();
+        Set<RPlace> postSet = transition.getPostsetPlaces();
         Set<RPlace> removeSet = transition.getRemoveSet();
         Map<String, Integer> markedPlaces = marking.getMarkedPlaces();
 
@@ -689,8 +711,8 @@ public final class E2WFOJNet {
      */
     private RMarking getPreviousMarking(RMarking currentMarking, RTransition transition) {
         Map<String, Integer> previousPlaces = new HashMap<>(currentMarking.getMarkedPlaces());
-        Set<RPlace> postSet = new HashSet<>(transition.getPostsetElements());
-        Set<RPlace> preSet = new HashSet<>(transition.getPresetElements());
+        Set<RPlace> postSet = new HashSet<>(transition.getPostsetPlaces());
+        Set<RPlace> preSet = new HashSet<>(transition.getPresetPlaces());
         Set<RPlace> removeSet = new HashSet<>(transition.getRemoveSet());
 
         // Remove one token from each postset place (excluding reset places)

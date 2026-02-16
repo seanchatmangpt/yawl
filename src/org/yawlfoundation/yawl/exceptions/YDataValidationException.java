@@ -20,6 +20,8 @@ package org.yawlfoundation.yawl.exceptions;
 
 import org.jdom2.Element;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when data validation fails against a schema during YAWL execution.
  *
@@ -27,6 +29,7 @@ import org.jdom2.Element;
  * @since 1/09/2005
  */
 public class YDataValidationException extends YDataStateException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

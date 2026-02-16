@@ -18,12 +18,15 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when logging operations fail in the YAWL engine.
  *
  * @author Michael Adams
  */
 public class YLogException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

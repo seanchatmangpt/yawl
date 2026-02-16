@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when authentication fails in the YAWL engine.
  *
@@ -25,6 +27,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @since 26/11/2004
  */
 public class YAuthenticationException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

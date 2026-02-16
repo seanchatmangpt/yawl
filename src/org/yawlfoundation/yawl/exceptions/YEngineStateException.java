@@ -17,10 +17,13 @@
  */
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when the engine state is invalid in relation to the request being actioned.
  */
 public class YEngineStateException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

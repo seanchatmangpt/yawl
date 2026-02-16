@@ -24,6 +24,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.io.Serial;
 import java.io.StringReader;
 
 /**

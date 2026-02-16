@@ -30,9 +30,10 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -192,6 +193,15 @@ public class YDataValidator {
                 source,
                 "Problem with process model. I/O error during validation");
         }
+        catch (TransformerException e) {
+            LOGGER.log(Level.SEVERE, "XML transformation error during validation", e);
+            throw new YDataValidationException(
+                handler.getSchema(),
+                data,
+                e.getMessage(),
+                source,
+                "Problem with process model. XML transformation error");
+        }
     }
 
     /**
@@ -217,7 +227,7 @@ public class YDataValidator {
         disallowDoctypeDeclarations(factory);
 
         DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+        return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

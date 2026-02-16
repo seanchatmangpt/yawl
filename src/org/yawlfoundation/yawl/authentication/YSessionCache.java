@@ -543,7 +543,7 @@ public final class YSessionCache implements ISessionCache {
 
     private void initializeDatabase() {
         try {
-            Set<Class<?>> classSet = new HashSet<>();
+            Set<Class> classSet = new HashSet<>();
             classSet.add(YAuditEvent.class);
             database = new HibernateEngine(true, classSet);
         } catch (Exception e) {

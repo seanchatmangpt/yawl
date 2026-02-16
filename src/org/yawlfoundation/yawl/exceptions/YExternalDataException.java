@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when external data operations fail in the YAWL engine.
  *
@@ -25,6 +27,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @since 29/09/2009
  */
 public class YExternalDataException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

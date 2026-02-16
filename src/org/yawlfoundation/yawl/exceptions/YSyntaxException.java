@@ -20,12 +20,15 @@ package org.yawlfoundation.yawl.exceptions;
 
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when a syntax error is encountered in YAWL specification.
  *
  * @author Lachlan Aldred
  */
 public class YSyntaxException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

@@ -66,7 +66,7 @@ public class SpiffeWorkloadApiClient implements AutoCloseable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private volatile SpiffeWorkloadIdentity currentIdentity;
     private final AtomicBoolean autoRotationEnabled = new AtomicBoolean(false);
-    private ScheduledExecutorService rotationScheduler;
+    private Thread rotationThread;
 
     /**
      * Create client with default socket path from SPIFFE_ENDPOINT_SOCKET env var
@@ -182,15 +182,14 @@ public class SpiffeWorkloadApiClient implements AutoCloseable {
      * @param refreshBeforeExpiry Refresh this duration before expiry (e.g., 30 seconds)
      */
     public void enableAutoRotation(java.time.Duration refreshBeforeExpiry) {
-        if (autoRotationEnabled) {
+        if (autoRotationEnabled.getAndSet(true)) {
             return;
         }
 
-        autoRotationEnabled = true;
         rotationThread = Thread.ofVirtual()
             .name("spiffe-auto-rotation")
             .start(() -> {
-            while (autoRotationEnabled && !Thread.currentThread().isInterrupted()) {
+            while (autoRotationEnabled.get() && !Thread.currentThread().isInterrupted()) {
                 try {
                     Thread.sleep(5000);
 
@@ -215,7 +214,7 @@ public class SpiffeWorkloadApiClient implements AutoCloseable {
      * Disable automatic SVID rotation
      */
     public void disableAutoRotation() {
-        autoRotationEnabled = false;
+        autoRotationEnabled.set(false);
         if (rotationThread != null) {
             rotationThread.interrupt();
             rotationThread = null;
@@ -389,5 +388,14 @@ public class SpiffeWorkloadApiClient implements AutoCloseable {
      */
     public void shutdown() {
         disableAutoRotation();
+    }
+
+    /**
+     * Close the client (implements AutoCloseable).
+     * Equivalent to shutdown().
+     */
+    @Override
+    public void close() {
+        shutdown();
     }
 }

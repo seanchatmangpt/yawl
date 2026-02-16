@@ -479,7 +479,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.java25
+          file: ./Dockerfile.modernized
           platforms: linux/amd64,linux/arm64
           push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -492,7 +492,7 @@ jobs:
             VERSION=5.2
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
-            JAVA_VERSION=25
+            MAVEN_VERSION=3.9.9
 
       - name: Move Docker Cache
         run: |

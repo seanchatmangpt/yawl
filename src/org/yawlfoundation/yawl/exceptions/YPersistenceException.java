@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception which indicates a failure has occurred within the persistence layer of the YAWL engine.
  *
@@ -28,6 +30,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @author Lachlan Aldred
  */
 public class YPersistenceException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

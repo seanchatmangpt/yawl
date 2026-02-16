@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when schema building fails during YAWL specification parsing.
  *
@@ -25,6 +27,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @since 27/08/2004
  */
 public class YSchemaBuildingException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

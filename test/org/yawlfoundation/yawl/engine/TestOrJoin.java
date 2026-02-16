@@ -28,13 +28,11 @@ class TestOrJoin {
     private YEngine _engine;
 
     @BeforeEach
-
     void setUp() {
 
     }
 
     @Test
-
     void testImproperCompletion() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL = getClass().getResource("TestOrJoin.xml");
         File yawlXMLFile = new File(fileURL.getFile());
@@ -155,7 +153,6 @@ class TestOrJoin {
     }
 
     @Test
-
     void testImproperCompletion2() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL2 = getClass().getResource("Test55.xml");
         File yawlXMLFile2 = new File(fileURL2.getFile());

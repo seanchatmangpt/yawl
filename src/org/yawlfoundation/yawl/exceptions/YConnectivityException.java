@@ -20,12 +20,15 @@ package org.yawlfoundation.yawl.exceptions;
 
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when an invalid connection is attempted between YAWL net elements.
  *
  * @author Lachlan Aldred
  */
 public class YConnectivityException extends YSyntaxException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

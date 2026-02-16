@@ -19,14 +19,12 @@ class TestConnections {
     private YEngine _engine;
 
     @BeforeEach
-
     void setUp() throws YAuthenticationException {
         _engine = YEngine.getInstance();
         _sessionCache = _engine.getSessionCache();
     }
 
     @Test
-
     void testConnect() throws YPersistenceException {
         clearUsers();
         try {
@@ -51,10 +49,7 @@ class TestConnections {
         _sessionCache.clear();
     }
 
-
     @Test
-
-
     void testUnbreakable() throws YAuthenticationException {
         clearUsers();
 
@@ -67,7 +62,6 @@ class TestConnections {
     }
 
     @Test
-
     void testRobust() throws YPersistenceException {
         clearUsers();
         boolean added = _engine.addExternalClient(new YExternalClient(null, null, null));
@@ -78,7 +72,6 @@ class TestConnections {
     }
 
     @Test
-
     void testRemoveUser() throws YPersistenceException {
         clearUsers();
         _engine.addExternalClient(new YExternalClient("fred", "head", "doco"));

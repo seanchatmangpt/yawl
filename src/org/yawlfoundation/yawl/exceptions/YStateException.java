@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when an invalid state is encountered in the YAWL engine.
  *
@@ -25,6 +27,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @since 23/04/2003
  */
 public class YStateException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**

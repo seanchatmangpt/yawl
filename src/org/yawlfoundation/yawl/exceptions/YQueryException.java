@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when a query operation fails in the YAWL engine.
  *
@@ -25,6 +27,7 @@ package org.yawlfoundation.yawl.exceptions;
  * @since 22/01/2005
  */
 public class YQueryException extends YAWLException {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /**
