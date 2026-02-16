@@ -1,0 +1,21 @@
+<ivy-module version="2.0">
+    <info organisation="org.yawlfoundation" module="yawl"/>
+    <dependencies>
+        <dependency org="commons-lang" name="commons-lang" rev="2.0"/>
+        <dependency org="commons-cli" name="commons-cli" rev="1.0"/>
+
+        <!-- A2A integration uses custom HTTP client - no external SDK required -->
+        <!-- The A2A protocol is implemented directly in:
+             src/org/yawlfoundation/yawl/integration/a2a/A2AHttpClient.java
+             src/org/yawlfoundation/yawl/integration/a2a/A2ATypes.java
+        -->
+
+        <!-- MCP integration uses custom HTTP client - no external SDK required -->
+        <!-- The MCP protocol is implemented directly in:
+             src/org/yawlfoundation/yawl/integration/mcp/
+        -->
+
+        <!-- Z.AI SDK for intelligent MCP/A2A integration -->
+        <dependency org="ai.z.openapi" name="zai-sdk" rev="0.3.0" conf="default"/>
+    </dependencies>
+</ivy-module>
