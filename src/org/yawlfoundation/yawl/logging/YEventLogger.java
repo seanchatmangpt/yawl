@@ -370,8 +370,8 @@ public class YEventLogger {
     public int getMaxCaseNbr() {
         Query query = getDb().createQuery(
                 "select max(engineInstanceID) from YLogNetInstance");
-        if (query != null && !query.list().isEmpty()) {
-            String engineID = (String) query.iterate().next();
+        if (query != null && !query.getResultList().isEmpty()) {
+            String engineID = (String) query.getResultList().iterator().next();
             try {
                 // only want integral case numbers
                 return Double.valueOf(engineID).intValue();
@@ -642,7 +642,7 @@ public class YEventLogger {
         if (dataTypeID == -1) {
             List list = getDb().createQuery(
                     "from YLogDataType where dataTypeName=:name")
-                            .setString("name", name).list();
+                            .setParameter("name", name).list();
             if (! list.isEmpty()) {
                 for (Object o : list) {
                     YLogDataType logDataType = (YLogDataType) o;

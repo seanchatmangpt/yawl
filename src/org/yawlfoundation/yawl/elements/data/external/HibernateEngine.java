@@ -174,7 +174,7 @@ public class HibernateEngine {
             Session session = _factory.getCurrentSession();
             tx = session.beginTransaction();
             Query query = session.createQuery(queryString);
-            if (query != null) result = query.list();
+            if (query != null) result = query.getResultList();
         }
         catch (JDBCConnectionException jce) {
             _log.error("Caught Exception: Couldn't connect to datasource - " +

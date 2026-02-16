@@ -401,7 +401,7 @@ public class YPersistenceManager {
      */
     public List execQuery(Query query) throws YPersistenceException {
         try {
-            return (query != null) ? query.list() : null;
+            return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
             throw new YPersistenceException("Error executing query: " + query.getQueryString(), he);
         }
@@ -435,7 +435,7 @@ public class YPersistenceManager {
             String qry = String.format("from %s as tbl where tbl.%s",
                     className, whereClause);
             Query query = createQuery(qry);
-            return (query != null) ? query.list() : null;
+            return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
             throw new YPersistenceException("Error reading data for class: " + className, he);
         }
