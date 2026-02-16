@@ -13,6 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
@@ -219,8 +222,16 @@ public final class PermutationRunner {
             }
             throw new IOException("Timeout: not all cases completed within " + p.timeoutSec + "s");
         } finally {
-            try { iaClient.disconnect(sessionA); } catch (IOException ignored) { }
-            try { ibClient.disconnect(sessionB); } catch (IOException ignored) { }
+            try {
+                iaClient.disconnect(sessionA);
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect Interface A client: " + e.getMessage(), e);
+            }
+            try {
+                ibClient.disconnect(sessionB);
+            } catch (IOException e) {
+                logger.warn("Failed to disconnect Interface B client: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -334,7 +345,12 @@ public final class PermutationRunner {
         String username = System.getenv("YAWL_USERNAME");
         if (username == null || username.isEmpty()) username = "admin";
         String password = System.getenv("YAWL_PASSWORD");
-        if (password == null || password.isEmpty()) password = "YAWL";
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException(
+                "YAWL_PASSWORD environment variable must be set. " +
+                "See deployment runbook for credential configuration."
+            );
+        }
 
         String specPathStr = System.getenv("SPEC_PATH");
         if (specPathStr == null || specPathStr.isEmpty()) {

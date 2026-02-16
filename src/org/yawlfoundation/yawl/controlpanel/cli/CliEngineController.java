@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.cli;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.controlpanel.pubsub.EngineStatus;
 import org.yawlfoundation.yawl.controlpanel.pubsub.EngineStatusListener;
 import org.yawlfoundation.yawl.controlpanel.pubsub.Publisher;
@@ -53,7 +56,10 @@ public abstract class CliEngineController implements EngineStatusListener {
         try {
             Thread.sleep(mSecs);
         }
-        catch (InterruptedException ignore) { }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted during engine control wait: " + e.getMessage());
+        }
     }
 
 }

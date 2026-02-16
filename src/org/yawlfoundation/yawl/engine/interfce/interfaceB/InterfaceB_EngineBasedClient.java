@@ -46,18 +46,32 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
 
 
 /**
- * This interface announces specific Engine events to listening custom services
+ * This interface announces specific Engine events to listening custom services.
+ *
+ * Migrated to virtual threads for improved scalability when announcing events
+ * to large numbers of custom services. Each service now gets dedicated virtual
+ * thread executors, eliminating thread pool contention.
  *
  * @author Lachlan Aldred
  * Date: 22/01/2004
  * Time: 17:19:12
  *
  * @author Michael Adams (refactored for v2.0, 06/2008 - 12/2008)
+ * @updated 2026-02-16 Virtual thread migration (Java 21)
  */
 
 public class InterfaceB_EngineBasedClient extends Interface_Client implements ObserverGateway {
 
     protected static final Logger _logger = LogManager.getLogger(InterfaceB_EngineBasedClient.class);
+
+    /**
+     * Map of service-specific virtual thread executors.
+     * Before: Each service got fixed 2-thread platform thread pool
+     * After: Each service gets virtual thread executor (unbounded concurrency)
+     *
+     * This ensures services cannot interfere with each other's event processing
+     * while eliminating thread pool sizing concerns.
+     */
     private final Map<YAWLServiceReference, ExecutorService> _executorMap = new ConcurrentHashMap<>();
 
 
@@ -321,11 +335,21 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
         return super.prepareParamMap(event.label(), null);
     }
 
-    // use a different 2-thread executor for each destination service
+    /**
+     * Returns a dedicated virtual thread executor for each destination service.
+     * Before: Fixed 2-thread platform thread pool per service
+     * After: Virtual thread executor per service (unbounded concurrency)
+     *
+     * This ensures each service can handle unlimited concurrent event announcements
+     * without thread pool exhaustion or queue blocking.
+     *
+     * @param service the YAWL service reference
+     * @return virtual thread executor for this service
+     */
     private ExecutorService getServiceExecutor(YAWLServiceReference service) {
         ExecutorService executor = _executorMap.get(service);
         if (executor == null) {
-            executor = Executors.newFixedThreadPool(2);
+            executor = Executors.newVirtualThreadPerTaskExecutor();
             _executorMap.put(service, executor);
         }
         return executor;

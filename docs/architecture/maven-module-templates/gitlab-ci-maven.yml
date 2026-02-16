@@ -1,0 +1,254 @@
+# GitLab CI/CD Pipeline for YAWL Maven Build
+# Optimized for multi-module Maven projects
+
+image: maven:3.9-eclipse-temurin-21-alpine
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx4g -XX:+UseG1GC"
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode --errors --fail-at-end --show-version"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+# Cache configuration for faster builds
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .m2/repository
+    - target/
+    - "*/target/"
+
+stages:
+  - build
+  - test
+  - security
+  - package
+  - docker
+  - deploy
+
+# Reusable templates
+.maven-template: &maven-template
+  before_script:
+    - echo "Configuring Maven..."
+    - mkdir -p .m2
+    - echo "<settings><mirrors><mirror><id>central</id><url>https://repo.maven.apache.org/maven2</url><mirrorOf>*</mirrorOf></mirror></mirrors></settings>" > .m2/settings.xml
+
+# Build Stage
+build:
+  <<: *maven-template
+  stage: build
+  script:
+    - echo "Building YAWL with Maven..."
+    - ./mvnw $MAVEN_CLI_OPTS clean compile -T 1C
+  artifacts:
+    paths:
+      - target/
+      - "*/target/"
+    expire_in: 1 day
+
+# Test Stage
+test:unit:
+  <<: *maven-template
+  stage: test
+  script:
+    - echo "Running unit tests..."
+    - ./mvnw $MAVEN_CLI_OPTS test
+  coverage: '/Total.*?([0-9]{1,3})%/'
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+        - "*/target/surefire-reports/TEST-*.xml"
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/jacoco/jacoco.xml
+    paths:
+      - target/surefire-reports/
+      - target/site/jacoco/
+
+test:integration:
+  <<: *maven-template
+  stage: test
+  services:
+    - postgres:16-alpine
+  variables:
+    POSTGRES_DB: yawl_test
+    POSTGRES_USER: yawl
+    POSTGRES_PASSWORD: yawl_test
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/yawl_test
+  script:
+    - echo "Running integration tests..."
+    - ./mvnw $MAVEN_CLI_OPTS verify -Pfailsafe
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/failsafe-reports/TEST-*.xml
+        - "*/target/failsafe-reports/TEST-*.xml"
+    paths:
+      - target/failsafe-reports/
+
+# Security Stage
+security:owasp:
+  <<: *maven-template
+  stage: security
+  script:
+    - echo "Running OWASP Dependency Check..."
+    - ./mvnw $MAVEN_CLI_OPTS verify -Psecurity-scan -DskipTests
+  artifacts:
+    when: always
+    paths:
+      - target/dependency-check-report.html
+      - target/dependency-check-report.json
+    expire_in: 30 days
+  allow_failure: true
+
+security:sonarqube:
+  <<: *maven-template
+  stage: security
+  script:
+    - echo "Running SonarQube analysis..."
+    - ./mvnw $MAVEN_CLI_OPTS sonar:sonar
+        -Dsonar.host.url=$SONAR_URL
+        -Dsonar.token=$SONAR_TOKEN
+        -Dsonar.projectKey=yawl
+  only:
+    - main
+    - develop
+  allow_failure: true
+
+# Package Stage
+package:jar:
+  <<: *maven-template
+  stage: package
+  script:
+    - echo "Packaging JARs..."
+    - ./mvnw $MAVEN_CLI_OPTS package -Pprod -DskipTests
+  artifacts:
+    paths:
+      - "*/target/*.jar"
+      - "!*/target/*-sources.jar"
+      - "!*/target/*-javadoc.jar"
+    expire_in: 7 days
+
+package:distribution:
+  <<: *maven-template
+  stage: package
+  script:
+    - echo "Creating distribution package..."
+    - ./mvnw $MAVEN_CLI_OPTS package -Pprod -DskipTests
+    - cd yawl-distribution
+    - ../mvnw $MAVEN_CLI_OPTS assembly:single
+  artifacts:
+    paths:
+      - yawl-distribution/target/yawl-*.zip
+    expire_in: 30 days
+  only:
+    - main
+    - tags
+
+# Docker Stage
+docker:build:
+  stage: docker
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - echo "Building Docker images with Jib..."
+    - apk add --no-cache openjdk21-jdk maven
+    - ./mvnw $MAVEN_CLI_OPTS jib:build
+        -Pprod
+        -Djib.to.auth.username=$CI_REGISTRY_USER
+        -Djib.to.auth.password=$CI_REGISTRY_PASSWORD
+        -Djib.to.tags=$CI_COMMIT_SHORT_SHA,latest
+  only:
+    - main
+    - develop
+    - tags
+
+# Deploy Stage
+deploy:staging:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - echo "Deploying to staging environment..."
+    - kubectl config use-context staging
+    - kubectl set image deployment/yawl-engine yawl-engine=$CI_REGISTRY_IMAGE/yawl-engine:$CI_COMMIT_SHORT_SHA
+    - kubectl rollout status deployment/yawl-engine
+  environment:
+    name: staging
+    url: https://staging.yawl.example.com
+  only:
+    - develop
+
+deploy:production:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - echo "Deploying to production environment..."
+    - kubectl config use-context production
+    - kubectl set image deployment/yawl-engine yawl-engine=$CI_REGISTRY_IMAGE/yawl-engine:$CI_COMMIT_SHORT_SHA
+    - kubectl rollout status deployment/yawl-engine
+  environment:
+    name: production
+    url: https://yawl.example.com
+  when: manual
+  only:
+    - main
+    - tags
+
+# Multi-JDK Testing
+.test-jdk-template: &test-jdk-template
+  <<: *maven-template
+  stage: test
+  script:
+    - echo "Testing on Java $JAVA_VERSION..."
+    - ./mvnw $MAVEN_CLI_OPTS clean test -Pjava-$JAVA_VERSION
+  artifacts:
+    when: on_failure
+    paths:
+      - target/surefire-reports/
+
+test:java-21:
+  <<: *test-jdk-template
+  image: maven:3.9-eclipse-temurin-21
+  variables:
+    JAVA_VERSION: "21"
+
+test:java-24:
+  <<: *test-jdk-template
+  image: maven:3.9-eclipse-temurin-24
+  variables:
+    JAVA_VERSION: "24"
+  allow_failure: true
+
+test:java-25:
+  <<: *test-jdk-template
+  image: maven:3.9-eclipse-temurin-25-ea
+  variables:
+    JAVA_VERSION: "25"
+  allow_failure: true
+
+# Performance Benchmarks
+performance:benchmark:
+  <<: *maven-template
+  stage: test
+  script:
+    - echo "Running JMH benchmarks..."
+    - ./mvnw $MAVEN_CLI_OPTS verify -Pperformance
+  artifacts:
+    paths:
+      - target/jmh-results.json
+    expire_in: 30 days
+  only:
+    - main
+    - schedules
+
+# Scheduled Jobs
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/License-Scanning.gitlab-ci.yml

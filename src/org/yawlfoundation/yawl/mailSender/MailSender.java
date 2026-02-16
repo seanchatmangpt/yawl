@@ -18,29 +18,33 @@
 
 package org.yawlfoundation.yawl.mailSender;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
 
-import javax.activation.DataHandler;
-import javax.activation.FileDataSource;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
+import jakarta.activation.DataHandler;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import jakarta.xml.parsers.DocumentBuilder;
+import jakarta.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
 
 public class MailSender extends InterfaceBWebsideController {
+
+    private static final Logger logger = LogManager.getLogger(MailSender.class);
 
 
     //private static String _sessionHandle = null;
@@ -105,7 +109,12 @@ public class MailSender extends InterfaceBWebsideController {
 				  System.out.println("Port : " + Port);
 	            }
 	      }
-    	}catch  (Exception e){}
+    	}catch  (Exception e){
+    	    // XML parsing failed - fall back to method parameters
+    	    // This is acceptable: method already received SMTP/Port as parameters
+    	    logger.info("Could not load SMTP configuration from XML (using provided parameters): {}", 
+    	            e.getMessage());
+    	}
 
     	 Properties props = new Properties();
         // props.setProperty("mail.transport.protocol", "smtp");
@@ -162,6 +171,9 @@ public class MailSender extends InterfaceBWebsideController {
          message.setContent(mimemultipart);
         
          Transport.send(message);
-     }catch (Exception e) {e.printStackTrace();}
+     }catch (Exception e) {
+         logger.error("Failed to send email to: {}, subject: {}", To, subject, e);
+         e.printStackTrace();
+     }
     }
 }

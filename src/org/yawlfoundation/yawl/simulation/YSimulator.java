@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.simulation;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -203,7 +204,7 @@ public class YSimulator {
              }
         }
         if (!taskToOfferMap.isEmpty()) {
-            Random r = new Random();
+            Random r = ThreadLocalRandom.current();
             for (String itemID : taskToOfferMap.keySet()) {
                 List<String> offerees = taskToOfferMap.get(itemID);
                 String pid = offerees.get(r.nextInt(offerees.size()));

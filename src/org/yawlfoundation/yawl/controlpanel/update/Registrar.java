@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.update;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.controlpanel.update.table.AppEnum;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -37,6 +40,7 @@ import java.util.Map;
  * @date 21/08/2014
  */
 public class Registrar {
+    private static final Logger logger = LogManager.getLogger(Registrar.class);
 
     private static final String URL_STR = "http://localhost:8080/yawl/ia";
     private String _handle;
@@ -60,7 +64,7 @@ public class Registrar {
         try {
             if (_handle != null) send(prepareParamMap("disconnect", _handle));
         }
-        catch (IOException ignore) {
+        catch (IOException e) {
             //
         }
     }

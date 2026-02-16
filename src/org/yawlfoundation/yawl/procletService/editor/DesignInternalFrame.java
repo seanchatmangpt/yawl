@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.editor;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -118,7 +121,9 @@ public abstract class DesignInternalFrame
       this.setMaximum(true);
       this.setSelected(true);
     }
-    catch (java.beans.PropertyVetoException e) {}
+    catch (java.beans.PropertyVetoException e) {
+        logger.warn("Property veto exception in design frame: " + e.getMessage(), e);
+    }
   }
 }
 

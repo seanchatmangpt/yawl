@@ -39,13 +39,18 @@ import java.util.Map;
 
 
 /**
+ * DEPRECATED: Apache WSIF was abandoned in 2007 and has no modern replacement.
+ * This controller is kept for backward compatibility but throws
+ * UnsupportedOperationException when used.
  *
- * 
+ * Migration path: Use Jakarta JAX-WS (jakarta.xml.ws) or modern REST APIs instead.
+ *
  * @author Lachlan Aldred
+ * @deprecated since 5.2 - Apache WSIF abandoned, use JAX-WS or REST
  * Date: 19/03/2004
  * Time: 11:40:59
- * 
  */
+@Deprecated(since = "5.2", forRemoval = true)
 public class WSIFController extends InterfaceBWebsideController {
 
     private String _sessionHandle = null;
@@ -64,65 +69,13 @@ public class WSIFController extends InterfaceBWebsideController {
      * @param enabledWorkItem
      */
     public void handleEnabledWorkItemEvent(WorkItemRecord enabledWorkItem) {
-        try {
-            if (!checkConnection(_sessionHandle)) {
-                _sessionHandle = connect(engineLogonName, engineLogonPassword);
-            }
-            if (successful(_sessionHandle)) {
-                List<WorkItemRecord> executingChildren =
-                        checkOutAllInstancesOfThisTask(enabledWorkItem, _sessionHandle);
-                for (WorkItemRecord itemRecord : executingChildren) {
-                    Element inputData = itemRecord.getDataList();
-                    String wsdlLocation = inputData.getChildText(WSDL_LOCATION_PARAMNAME);
-                    String portName = inputData.getChildText(WSDL_PORTNAME_PARAMNAME);
-                    String operationName = inputData.getChildText(WSDL_OPERATIONNAME_PARAMNAME);
-
-                    Element webServiceArgsData = inputData.clone();
-                    webServiceArgsData.removeChild(WSDL_LOCATION_PARAMNAME);
-                    webServiceArgsData.removeChild(WSDL_PORTNAME_PARAMNAME);
-                    webServiceArgsData.removeChild(WSDL_OPERATIONNAME_PARAMNAME);
-
-                    Map replyFromWebServiceBeingInvoked =
-                            WSIFInvoker.invokeMethod(
-                                    wsdlLocation,
-                                    portName,
-                                    operationName,
-                                    webServiceArgsData,
-                                    getAuthenticationConfig());
-
-                    _log.warn("\n\nReply from Web service being invoked is : {}",
-                            replyFromWebServiceBeingInvoked);
-
-                    Element caseDataBoundForEngine = prepareReplyRootElement(enabledWorkItem, _sessionHandle);
-                    Map<String, String> outputDataTypes = getOutputDataTypes(enabledWorkItem);
-
-                    for (Object o : replyFromWebServiceBeingInvoked.keySet()) {
-                        String varName = (String) o;
-                        Object replyMsg = replyFromWebServiceBeingInvoked.get(varName);
-                        System.out.println("replyMsg class = " + replyMsg.getClass().getName());
-                        String varVal = replyMsg.toString();
-                        String varType = outputDataTypes.get(varName);
-                        if ((varType != null) && (! varType.endsWith("string"))) {
-                            varVal = validateValue(varType, varVal);
-                        }
-                        Element content = new Element(varName);
-                        content.setText(varVal);
-                        caseDataBoundForEngine.addContent(content);
-                    }
-
-                    _logger.debug("\nResult of item [" +
-                            itemRecord.getID() + "] checkin is : " +
-                            checkInWorkItem(
-                                    itemRecord.getID(),
-                                    inputData,
-                                    caseDataBoundForEngine, null,
-                                    _sessionHandle));
-                }
-            }
-
-        } catch (Throwable e) {
-            _logger.error(e.getMessage(), e);
-        }
+        _log.error("WSIF support has been removed. Apache WSIF was abandoned in 2007. " +
+                "Please migrate to Jakarta JAX-WS (jakarta.xml.ws) or modern REST APIs.");
+        throw new UnsupportedOperationException(
+                "WSIF support removed in YAWL 5.2. " +
+                "Apache WSIF was abandoned in 2007 and has known security vulnerabilities. " +
+                "Migrate to Jakarta JAX-WS (jakarta.xml.ws.*) or use modern REST APIs instead. " +
+                "See https://eclipse-ee4j.github.io/metro-jax-ws/ for JAX-WS documentation.");
     }
 
     private Map<String, String> getOutputDataTypes(WorkItemRecord wir) throws IOException {

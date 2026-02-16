@@ -29,16 +29,23 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 import javax.wsdl.*;
-import javax.xml.namespace.QName;
+import jakarta.xml.namespace.QName;
 import java.util.*;
 
 
 /**
+ * DEPRECATED: Apache WSIF was abandoned in 2007 and has no modern replacement.
+ * This class is kept for backward compatibility but may throw
+ * UnsupportedOperationException when used.
+ *
+ * Migration path: Use Jakarta JAX-WS (jakarta.xml.ws) or modern REST APIs instead.
+ *
  * @author Sanjiva Weerawarana
  * @author Alekander Slominski
  * @author Lachlan Aldred
+ * @deprecated since 5.2 - Apache WSIF abandoned, use JAX-WS or REST
  */
-
+@Deprecated(since = "5.2", forRemoval = true)
 public class WSIFInvoker {
     public static HashMap invokeMethod(String wsdlLocation,
                                        String portName, String operationName,

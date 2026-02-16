@@ -1,40 +1,72 @@
 package org.yawlfoundation.yawl;
 
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
 import org.yawlfoundation.yawl.authentication.AuthenticationTestSuite;
 import org.yawlfoundation.yawl.elements.ElementsTestSuite;
 import org.yawlfoundation.yawl.elements.state.StateTestSuite;
 import org.yawlfoundation.yawl.engine.EngineTestSuite;
 import org.yawlfoundation.yawl.exceptions.ExceptionTestSuite;
-import org.yawlfoundation.yawl.integration.rest.RestIntegrationTestSuite;
+import org.yawlfoundation.yawl.integration.IntegrationTestSuite;
+import org.yawlfoundation.yawl.integration.autonomous.AutonomousTestSuite;
 import org.yawlfoundation.yawl.logging.LoggingTestSuite;
 import org.yawlfoundation.yawl.schema.SchemaTestSuite;
 import org.yawlfoundation.yawl.stateless.StatelessTestSuite;
 import org.yawlfoundation.yawl.unmarshal.UnmarshallerTestSuite;
 import org.yawlfoundation.yawl.util.UtilTestSuite;
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.textui.TestRunner;
 
 /**
+ * Master YAWL Test Suite - Aggregates all test suites
  *
- * Author: Lachlan Aldred
- * Date: 9/05/2003
- * Time: 15:33:26
+ * Includes:
+ * - Core engine and elements tests
+ * - Stateless engine tests
+ * - Integration tests (Chicago TDD style)
+ * - Autonomous agent tests
+ * - Authentication, logging, schema tests
+ * - Utility and worklist tests
  *
- * Master JUnit 5 Test Suite for all YAWL tests
+ * Target: 70%+ overall test coverage
+ *
+ * Author: Lachlan Aldred (original)
+ * Updated: YAWL Foundation v5.2
+ * Date: 9/05/2003 (original), 2026-02-16 (updated)
  */
-@Suite
-@SelectClasses({
-    ElementsTestSuite.class,
-    StateTestSuite.class,
-    StatelessTestSuite.class,
-    EngineTestSuite.class,
-    ExceptionTestSuite.class,
-    LoggingTestSuite.class,
-    SchemaTestSuite.class,
-    UnmarshallerTestSuite.class,
-    UtilTestSuite.class,
-    AuthenticationTestSuite.class,
-    RestIntegrationTestSuite.class
-})
-public class TestAllYAWLSuites {
+public class TestAllYAWLSuites extends TestSuite {
+
+    public TestAllYAWLSuites(String name) {
+        super(name);
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite("All YAWL Test Suites");
+
+        // Core component tests
+        suite.addTest(ElementsTestSuite.suite());
+        suite.addTest(StateTestSuite.suite());
+        suite.addTest(StatelessTestSuite.suite());
+        suite.addTest(EngineTestSuite.suite());
+        suite.addTest(ExceptionTestSuite.suite());
+        suite.addTest(LoggingTestSuite.suite());
+        suite.addTest(SchemaTestSuite.suite());
+        suite.addTest(UnmarshallerTestSuite.suite());
+        suite.addTest(UtilTestSuite.suite());
+        suite.addTest(org.yawlfoundation.yawl.swingWorklist.WorklistTestSuite.suite());
+        suite.addTest(AuthenticationTestSuite.suite());
+
+        // Integration tests (Chicago TDD - real integrations)
+        suite.addTest(IntegrationTestSuite.suite());
+
+        // Autonomous agent tests
+        suite.addTest(AutonomousTestSuite.suite());
+
+        return suite;
+    }
+
+    public static void main(String args[]) {
+        TestRunner runner = new TestRunner();
+        runner.doRun(suite());
+        System.exit(0);
+    }
 }

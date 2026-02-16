@@ -25,17 +25,18 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.query.Query;
-import org.hibernate.tool.schema.Action;
+import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator;
-import org.hibernate.tool.schema.spi.ExecutionOptions;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -86,6 +87,7 @@ public class HibernateEngine {
         StandardServiceRegistryBuilder standardRegistryBuilder = new StandardServiceRegistryBuilder()
             .configure();
         if (props != null) {
+            ensureHikariCPProvider(props);
             standardRegistryBuilder.applySettings(props);
         }
         StandardServiceRegistry standardRegistry = standardRegistryBuilder.build();
@@ -96,20 +98,68 @@ public class HibernateEngine {
         }
 
         Metadata metadata = metadataSources.buildMetadata();
-
-        // Hibernate 6.x schema update: Use SchemaManagementToolCoordinator
-        Map<String, Object> settings = new HashMap<>(standardRegistry.getSettings());
-        settings.put("javax.persistence.schema-generation.database.action", "update");
-        settings.put("jakarta.persistence.schema-generation.database.action", "update");
-
-        SchemaManagementToolCoordinator.process(
-                metadata,
-                standardRegistry,
-                settings,
-                action -> action == Action.UPDATE
-        );
-
         _factory = metadata.buildSessionFactory();
+
+        EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
+        SchemaManagementTool schemaManagementTool = standardRegistry
+                .getService(SchemaManagementTool.class);
+        schemaManagementTool.getSchemaUpdater(null)
+                .doUpdate(metadata, targetTypes, false);
+    }
+
+    /**
+     * Ensures that HikariCP is used as the connection provider.
+     * Migrates legacy c3p0 configurations to HikariCP equivalents.
+     */
+    private void ensureHikariCPProvider(Properties props) {
+        String provider = props.getProperty("hibernate.connection.provider_class");
+
+        if (provider != null && provider.contains("C3P0")) {
+            _log.info("Migrating from c3p0 to HikariCP connection provider");
+            props.setProperty("hibernate.connection.provider_class",
+                    "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+
+            migrateC3P0PropertiesToHikariCP(props);
+        } else if (provider == null) {
+            props.setProperty("hibernate.connection.provider_class",
+                    "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+        }
+    }
+
+    /**
+     * Migrates c3p0 properties to HikariCP equivalents.
+     */
+    private void migrateC3P0PropertiesToHikariCP(Properties props) {
+        String maxSize = props.getProperty("hibernate.c3p0.max_size");
+        if (maxSize != null) {
+            props.setProperty("hibernate.hikari.maximumPoolSize", maxSize);
+            props.remove("hibernate.c3p0.max_size");
+        }
+
+        String minSize = props.getProperty("hibernate.c3p0.min_size");
+        if (minSize != null) {
+            props.setProperty("hibernate.hikari.minimumIdle", minSize);
+            props.remove("hibernate.c3p0.min_size");
+        }
+
+        String timeout = props.getProperty("hibernate.c3p0.timeout");
+        if (timeout != null) {
+            long timeoutMs = Long.parseLong(timeout);
+            props.setProperty("hibernate.hikari.connectionTimeout", String.valueOf(timeoutMs));
+            props.remove("hibernate.c3p0.timeout");
+        }
+
+        String idleTestPeriod = props.getProperty("hibernate.c3p0.idle_test_period");
+        if (idleTestPeriod != null) {
+            long keepaliveMs = Long.parseLong(idleTestPeriod);
+            props.setProperty("hibernate.hikari.keepaliveTime", String.valueOf(keepaliveMs));
+            props.remove("hibernate.c3p0.idle_test_period");
+        }
+
+        props.remove("hibernate.c3p0.max_statements");
+        props.remove("hibernate.c3p0.acquire_increment");
+
+        _log.info("Migrated c3p0 configuration to HikariCP");
     }
 
 
@@ -118,7 +168,7 @@ public class HibernateEngine {
     public boolean isAvailable(String tableName) {
         try {
             getOrBeginTransaction();
-            Query<?> query = getSession().createQuery("from " + tableName).setMaxResults(1);
+            Query query = getSession().createQuery("from " + tableName).setMaxResults(1);
             boolean hasTable = ! query.list().isEmpty();
             commit();
             return hasTable;
@@ -235,7 +285,7 @@ public class HibernateEngine {
         Transaction tx = null;
         try {
             tx = getOrBeginTransaction();
-            Query<?> query = getSession().createQuery(queryString);
+            Query query = getSession().createQuery(queryString);
             if (query != null) result = query.list();
         }
         catch (JDBCConnectionException jce) {
@@ -262,7 +312,7 @@ public class HibernateEngine {
         Transaction tx = null;
         try {
             tx = getOrBeginTransaction();
-            Query<?> query = getSession().createNativeQuery(queryString);
+            Query query = getSession().createSQLQuery(queryString);
             if (query != null) result = query.list();
             commit();
         }
@@ -299,6 +349,35 @@ public class HibernateEngine {
         }
         catch (HibernateException he) {
             _log.error("Caught Exception: Error executing query: " + queryString, he);
+            if (tx != null) tx.rollback();
+        }
+
+        return result;
+    }
+
+    /**
+     * Executes a parameterized HQL update query.
+     * @param queryString the HQL query with named parameters (e.g., "delete from Entity where id = :id")
+     * @param paramValue the value for the named parameter
+     * @param commit whether to commit the transaction
+     * @return the number of rows affected
+     */
+    public int execUpdate(String queryString, String paramValue, boolean commit) {
+        int result = -1;
+        Transaction tx = null;
+        try {
+            tx = getOrBeginTransaction();
+            result = getSession().createQuery(queryString)
+                    .setParameter("caseId", paramValue)
+                    .executeUpdate();
+            if (commit) commit();
+        }
+        catch (JDBCConnectionException jce) {
+            _log.error("Caught Exception: Couldn't connect to datasource - " +
+                    "starting with an empty dataset");
+        }
+        catch (HibernateException he) {
+            _log.error("Caught Exception: Error executing parameterized query: " + queryString, he);
             if (tx != null) tx.rollback();
         }
 
@@ -351,6 +430,34 @@ public class HibernateEngine {
     }
 
 
+    /**
+     * Deprecated method for backward compatibility.
+     * Use JPA Criteria API directly for new code.
+     * @deprecated Use {@link #getByCriteriaJPA(Class, Predicate...)} instead
+     */
+    @Deprecated
+    public List getByCriteria(Class claz, Predicate... predicates) {
+        return getByCriteriaJPA(claz, true, predicates);
+    }
+
+    /**
+     * Get entities using JPA Criteria API (Hibernate 6 compatible).
+     * Replaces deprecated Hibernate Criteria API.
+     */
+    public List getByCriteriaJPA(Class claz, boolean commit, Predicate... predicates) {
+        getOrBeginTransaction();
+        CriteriaBuilder cb = getSession().getCriteriaBuilder();
+        CriteriaQuery cq = cb.createQuery(claz);
+        Root root = cq.from(claz);
+
+        if (predicates != null && predicates.length > 0) {
+            cq.where(predicates);
+        }
+
+        List result = getSession().createQuery(cq).getResultList();
+        if (commit) commit();
+        return result;
+    }
 
 
     public void commit() {
@@ -397,28 +504,9 @@ public class HibernateEngine {
      *         called 'field', an object with an key field value of 'value'
      */
     public List execJoinQuery(String table, String field, String value) {
-        validateClassName(table);
-        validateFieldName(field);
-
-        String qry = "from " + table + " parent where :value in elements(parent." + field + ")";
-        List result = null;
-        Transaction tx = null;
-        try {
-            tx = getOrBeginTransaction();
-            Query<?> query = getSession().createQuery(qry);
-            query.setParameter("value", value);
-            result = query.list();
-        }
-        catch (JDBCConnectionException jce) {
-            _log.error("Caught Exception: Couldn't connect to datasource - " +
-                    "continuing with an empty dataset");
-            if (tx != null) tx.rollback();
-        }
-        catch (HibernateException he) {
-            _log.error("Caught Exception: Error executing join query: " + qry, he);
-            if (tx != null) tx.rollback();
-        }
-        return result;
+        String qry = String.format("from %s parent where '%s' in elements(parent.%s)",
+                                    table, value, field) ;
+        return execQuery(qry) ;
     }
 
 
@@ -430,32 +518,13 @@ public class HibernateEngine {
      * @return the first (or only) object matching 'where [field] = [value]'
      */
     public Object selectScalar(String className, String field, String value) {
-        validateClassName(className);
-        validateFieldName(field);
-
-        String qry = "from " + className + " as tbl where tbl." + field + " = :value";
-        List result = null;
-        Transaction tx = null;
-        try {
-            tx = getOrBeginTransaction();
-            Query<?> query = getSession().createQuery(qry);
-            query.setParameter("value", value);
-            result = query.list();
+        String qry = String.format("from %s as tbl where tbl.%s = '%s'",
+                                    className, field, value);
+        List result = execQuery(qry) ;
+        if (result != null) {
+            if (! result.isEmpty()) return result.iterator().next();
         }
-        catch (JDBCConnectionException jce) {
-            _log.error("Caught Exception: Couldn't connect to datasource - " +
-                    "continuing with an empty dataset");
-            if (tx != null) tx.rollback();
-        }
-        catch (HibernateException he) {
-            _log.error("Caught Exception: Error executing scalar query: " + qry, he);
-            if (tx != null) tx.rollback();
-        }
-
-        if (result != null && !result.isEmpty()) {
-            return result.iterator().next();
-        }
-        return null;
+        return null ;
     }
 
 
@@ -475,41 +544,18 @@ public class HibernateEngine {
      * @param className the name of the class to retrieve instances of
      * @param whereClause the condition (without the 'where' part) e.g. "age=21"
      * @return a List of the instances retrieved
-     * @deprecated Use getObjectsForClassWhereParam with parameterized queries instead
      */
-    @Deprecated
     public List getObjectsForClassWhere(String className, String whereClause) {
-        throw new UnsupportedOperationException(
-            "getObjectsForClassWhere is deprecated due to SQL injection risk. " +
-            "Use parameterized queries via createQuery() and setParameter() instead.");
-    }
-
-    /**
-     * returns all the instances currently persisted for the class passed that
-     * match the condition specified
-     * @param className the name of the class to retrieve instances of
-     * @param field the field name to query
-     * @param value the value to match
-     * @return a List of the instances retrieved
-     */
-    public List getObjectsForClassWhereParam(String className, String field, Object value) {
-        validateClassName(className);
-        validateFieldName(field);
-
         List result = null;
-        Transaction tx = null;
         try {
-            String qry = "from " + className + " as tbl where tbl." + field + " = :value";
-            tx = getOrBeginTransaction();
-            Query<?> query = getSession().createQuery(qry);
-            query.setParameter("value", value);
-            result = query.list();
+            String qry = String.format("from %s as tbl where tbl.%s",
+                                        className, whereClause) ;
+            result = execQuery(qry);
         }
         catch (HibernateException he) {
             _log.error("Error reading data for class: " + className, he);
-            if (tx != null) tx.rollback();
         }
-        return result;
+        return result ;
     }
 
 
@@ -531,28 +577,6 @@ public class HibernateEngine {
     
     private Session getSession() {
         return _factory.getCurrentSession();
-    }
-
-    /**
-     * Validate class name to prevent HQL injection
-     * @param className the class name to validate
-     * @throws IllegalArgumentException if class name contains suspicious characters
-     */
-    private void validateClassName(String className) {
-        if (className == null || !className.matches("^[a-zA-Z0-9._]+$")) {
-            throw new IllegalArgumentException("Invalid class name: " + className);
-        }
-    }
-
-    /**
-     * Validate field name to prevent HQL injection
-     * @param field the field name to validate
-     * @throws IllegalArgumentException if field name contains suspicious characters
-     */
-    private void validateFieldName(String field) {
-        if (field == null || !field.matches("^[a-zA-Z0-9._]+$")) {
-            throw new IllegalArgumentException("Invalid field name: " + field);
-        }
     }
 
     /****************************************************************************/

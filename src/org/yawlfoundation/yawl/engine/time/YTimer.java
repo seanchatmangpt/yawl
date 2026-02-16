@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.engine.time;
 
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.util.*;
 
 /**

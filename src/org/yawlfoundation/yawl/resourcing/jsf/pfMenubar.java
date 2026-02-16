@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import jakarta.faces.FacesException;
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
+import jakarta.faces.el.MethodBinding;
 
 /*
  * Fragment bean that provides a menubar for each form

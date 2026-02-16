@@ -594,7 +594,9 @@ public class orgDataMgt extends AbstractPageBean {
             try {
                 externalContext.redirect("userWorkQueues.jsp");
             }
-            catch (IOException ioe) {}
+            catch (IOException e) {
+                logger.error("Failed to redirect to orgDataMgt page: " + e.getMessage(), e);
+            }
         }
     }
 

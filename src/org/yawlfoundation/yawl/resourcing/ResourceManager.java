@@ -64,7 +64,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1624,7 +1624,7 @@ public final class ResourceManager extends InterfaceBWebsideController {
             if (wir.getRootCaseID().equals(caseID))
                 return wir.getSpecIdentifier();
         }
-        return "";
+        return null;
     }
 
     private void cleanCaches() {

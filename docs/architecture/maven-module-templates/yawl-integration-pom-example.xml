@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent POM -->
+    <parent>
+        <groupId>org.yawlfoundation</groupId>
+        <artifactId>yawl-parent</artifactId>
+        <version>5.2</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <!-- Module Coordinates -->
+    <artifactId>yawl-integration</artifactId>
+    <packaging>jar</packaging>
+
+    <name>YAWL Integration</name>
+    <description>A2A and MCP protocol integration for autonomous agents</description>
+
+    <!-- Module-Specific Properties -->
+    <properties>
+        <main.class>org.yawlfoundation.yawl.integration.IntegrationServiceApplication</main.class>
+    </properties>
+
+    <!-- Dependencies -->
+    <dependencies>
+        <!-- Internal YAWL Dependencies -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-engine</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- MCP SDK -->
+        <dependency>
+            <groupId>io.modelcontextprotocol</groupId>
+            <artifactId>mcp</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.modelcontextprotocol</groupId>
+            <artifactId>mcp-spring-webmvc</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
+        <!-- HTTP Client (A2A Protocol) -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <!-- Reactor (Async Support) -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+
+        <!-- OpenTelemetry -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-api</artifactId>
+        </dependency>
+
+        <!-- Resilience4j -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-ratelimiter</artifactId>
+        </dependency>
+
+        <!-- JSON Processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Jib Docker Plugin -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <configuration>
+                    <container>
+                        <mainClass>${main.class}</mainClass>
+                        <ports>
+                            <port>8080</port>
+                            <port>9090</port> <!-- MCP protocol port -->
+                        </ports>
+                        <environment>
+                            <MCP_ENABLED>true</MCP_ENABLED>
+                            <A2A_ENABLED>true</A2A_ENABLED>
+                        </environment>
+                    </container>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,243 @@
+# Docker Compose for YAWL with SPIFFE/SPIRE
+#
+# This compose file deploys a complete SPIFFE infrastructure for YAWL:
+#   - SPIRE Server (issues SVIDs)
+#   - SPIRE Agent (attests workloads)
+#   - YAWL Engine (with SPIFFE identity)
+#   - YAWL MCP Server (with SPIFFE identity)
+#   - YAWL A2A Server (with SPIFFE identity)
+#
+# Usage:
+#   docker-compose -f docker-compose.spiffe.yml up
+#
+# Verify:
+#   docker exec spire-server spire-server entry show
+#   docker exec yawl-engine cat /run/spire/sockets/agent.sock
+
+version: '3.8'
+
+services:
+  # SPIRE Server - issues SVIDs to attested workloads
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.9.0
+    container_name: spire-server
+    hostname: spire-server
+    networks:
+      - yawl-spiffe
+    ports:
+      - "8081:8081"  # gRPC API
+      - "8443:8443"  # Federation bundle endpoint
+    volumes:
+      - ./config/spiffe/spire-server.conf:/opt/spire/conf/server/server.conf:ro
+      - spire-server-data:/opt/spire/data
+      - spire-server-logs:/var/log/spire
+    command: ["-config", "/opt/spire/conf/server/server.conf"]
+    healthcheck:
+      test: ["CMD", "/opt/spire/bin/spire-server", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # SPIRE Agent - runs on each workload host
+  spire-agent:
+    image: ghcr.io/spiffe/spire-agent:1.9.0
+    container_name: spire-agent
+    hostname: spire-agent
+    networks:
+      - yawl-spiffe
+    depends_on:
+      spire-server:
+        condition: service_healthy
+    volumes:
+      - ./config/spiffe/spire-agent.conf:/opt/spire/conf/agent/agent.conf:ro
+      - spire-agent-data:/opt/spire/data
+      - spire-agent-socket:/run/spire/sockets
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: ["-config", "/opt/spire/conf/agent/agent.conf"]
+    healthcheck:
+      test: ["CMD", "/opt/spire/bin/spire-agent", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL for YAWL
+  postgres:
+    image: postgres:15
+    container_name: yawl-postgres
+    networks:
+      - yawl-spiffe
+    environment:
+      POSTGRES_DB: yawl
+      POSTGRES_USER: yawl
+      POSTGRES_PASSWORD: yawl_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # YAWL Engine with SPIFFE identity
+  yawl-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yawl-engine
+    hostname: yawl-engine
+    networks:
+      - yawl-spiffe
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    environment:
+      # SPIFFE configuration
+      SPIFFE_ENDPOINT_SOCKET: unix:///run/spire/sockets/agent.sock
+      SPIFFE_FEDERATION_CONFIG: /etc/spiffe/federation.yaml
+
+      # YAWL configuration
+      YAWL_ENGINE_URL: http://yawl-engine:8080/yawl
+      YAWL_USERNAME: admin
+      YAWL_PASSWORD: YAWL
+
+      # Database
+      YAWL_DB_HOST: postgres
+      YAWL_DB_PORT: 5432
+      YAWL_DB_NAME: yawl
+      YAWL_DB_USER: yawl
+      YAWL_DB_PASSWORD: yawl_password
+
+      # Optional: Z.AI API key for fallback (will use SPIFFE if available)
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
+    volumes:
+      - spire-agent-socket:/run/spire/sockets:ro
+      - ./config/spiffe/federation.yaml:/etc/spiffe/federation.yaml:ro
+    ports:
+      - "8080:8080"
+    labels:
+      app: yawl-engine
+      component: engine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/yawl/ia"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # YAWL MCP Server with SPIFFE identity
+  yawl-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yawl-mcp-server
+    hostname: yawl-mcp-server
+    networks:
+      - yawl-spiffe
+    depends_on:
+      yawl-engine:
+        condition: service_healthy
+      spire-agent:
+        condition: service_healthy
+    environment:
+      SPIFFE_ENDPOINT_SOCKET: unix:///run/spire/sockets/agent.sock
+      YAWL_ENGINE_URL: http://yawl-engine:8080/yawl
+      YAWL_USERNAME: admin
+      YAWL_PASSWORD: YAWL
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
+    volumes:
+      - spire-agent-socket:/run/spire/sockets:ro
+    labels:
+      app: yawl-mcp
+      component: mcp-server
+    command: ["java", "-cp", "/app/yawl.jar", "org.yawlfoundation.yawl.integration.mcp.YawlMcpServer"]
+
+  # YAWL A2A Server with SPIFFE identity
+  yawl-a2a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yawl-a2a-server
+    hostname: yawl-a2a-server
+    networks:
+      - yawl-spiffe
+    depends_on:
+      yawl-engine:
+        condition: service_healthy
+      spire-agent:
+        condition: service_healthy
+    environment:
+      SPIFFE_ENDPOINT_SOCKET: unix:///run/spire/sockets/agent.sock
+      YAWL_ENGINE_URL: http://yawl-engine:8080/yawl
+      YAWL_USERNAME: admin
+      YAWL_PASSWORD: YAWL
+      A2A_PORT: 8081
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
+    volumes:
+      - spire-agent-socket:/run/spire/sockets:ro
+    ports:
+      - "8081:8081"
+    labels:
+      app: yawl-a2a
+      component: a2a-server
+    command: ["java", "-cp", "/app/yawl.jar", "org.yawlfoundation.yawl.integration.a2a.YawlA2AServer"]
+
+  # SPIRE registration job - creates workload entries
+  spire-registration:
+    image: ghcr.io/spiffe/spire-server:1.9.0
+    container_name: spire-registration
+    networks:
+      - yawl-spiffe
+    depends_on:
+      spire-server:
+        condition: service_healthy
+    volumes:
+      - ./scripts/spiffe/register-yawl-workloads.sh:/scripts/register.sh:ro
+      - spire-server-data:/opt/spire/data
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        echo "Waiting for SPIRE Server to be ready..."
+        sleep 10
+
+        echo "Creating node entry for Docker host..."
+        /opt/spire/bin/spire-server entry create \
+          -node \
+          -spiffeID spiffe://yawl.cloud/node/docker-host \
+          -selector docker:label:com.docker.compose.project:yawl \
+          || echo "Node entry may already exist"
+
+        echo "Creating workload entries..."
+        /opt/spire/bin/spire-server entry create \
+          -parentID spiffe://yawl.cloud/node/docker-host \
+          -spiffeID spiffe://yawl.cloud/yawl-engine \
+          -selector docker:label:app:yawl-engine \
+          -ttl 3600 || echo "Entry may already exist"
+
+        /opt/spire/bin/spire-server entry create \
+          -parentID spiffe://yawl.cloud/node/docker-host \
+          -spiffeID spiffe://yawl.cloud/mcp-server \
+          -selector docker:label:app:yawl-mcp \
+          -ttl 3600 || echo "Entry may already exist"
+
+        /opt/spire/bin/spire-server entry create \
+          -parentID spiffe://yawl.cloud/node/docker-host \
+          -spiffeID spiffe://yawl.cloud/a2a-server \
+          -selector docker:label:app:yawl-a2a \
+          -ttl 3600 || echo "Entry may already exist"
+
+        echo "Registration complete!"
+        /opt/spire/bin/spire-server entry show
+
+networks:
+  yawl-spiffe:
+    driver: bridge
+    name: yawl-spiffe-network
+
+volumes:
+  spire-server-data:
+    name: spire-server-data
+  spire-server-logs:
+    name: spire-server-logs
+  spire-agent-data:
+    name: spire-agent-data
+  spire-agent-socket:
+    name: spire-agent-socket
+  postgres-data:
+    name: yawl-postgres-data

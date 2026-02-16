@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 
-import javax.xml.datatype.Duration;
+import jakarta.xml.datatype.Duration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;

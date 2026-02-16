@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.worklet.support;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.jdom2.Element;
 import org.jdom2.IllegalAddException;
 import org.yawlfoundation.yawl.elements.data.YParameter;
@@ -46,6 +49,7 @@ import java.util.*;
  * @date 5/01/2016
  */
 public class EngineClient extends AbstractEngineClient {
+    private static final Logger logger = LogManager.getLogger(EngineClient.class);
 
     protected final WorkletEventServer _server;               // announces events
     protected final InterfaceBWebsideController _controller;  // parent service listener
@@ -357,8 +361,9 @@ public class EngineClient extends AbstractEngineClient {
                 return specID;
             }
         }
-        catch (IOException ignore) {
-            // fallthrough
+        catch (IOException e) {
+            logger.warn("Failed to get specification ID for case: " + e.getMessage(), e);
+            // Return null - caller will handle
         }
         return null;
     }

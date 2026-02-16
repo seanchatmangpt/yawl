@@ -1,0 +1,344 @@
+{
+  "dashboard": {
+    "title": "YAWL Workflow Engine - OpenTelemetry Observability",
+    "tags": ["yawl", "workflow", "opentelemetry"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Workflow Cases",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "yawl_cases_active",
+            "legendFormat": "Active Cases",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 100, "color": "yellow"},
+                {"value": 500, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Active Work Items",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "yawl_workitems_active",
+            "legendFormat": "Active Work Items",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 200, "color": "yellow"},
+                {"value": 1000, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Enabled Tasks",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "yawl_tasks_enabled",
+            "legendFormat": "Enabled Tasks",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 4,
+        "title": "Busy Tasks",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "yawl_tasks_busy",
+            "legendFormat": "Busy Tasks",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        }
+      },
+      {
+        "id": 5,
+        "title": "Case Start/Complete Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(yawl_case_started_total[5m])",
+            "legendFormat": "Cases Started/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(yawl_case_completed_total[5m])",
+            "legendFormat": "Cases Completed/sec",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(yawl_case_failed_total[5m])",
+            "legendFormat": "Cases Failed/sec",
+            "refId": "C"
+          },
+          {
+            "expr": "rate(yawl_case_cancelled_total[5m])",
+            "legendFormat": "Cases Cancelled/sec",
+            "refId": "D"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Work Item Throughput",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(yawl_workitem_created_total[5m])",
+            "legendFormat": "Created/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(yawl_workitem_started_total[5m])",
+            "legendFormat": "Started/sec",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(yawl_workitem_completed_total[5m])",
+            "legendFormat": "Completed/sec",
+            "refId": "C"
+          },
+          {
+            "expr": "rate(yawl_workitem_failed_total[5m])",
+            "legendFormat": "Failed/sec",
+            "refId": "D"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Case Duration (p50, p95, p99)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, rate(yawl_case_duration_bucket[5m]))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(yawl_case_duration_bucket[5m]))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(yawl_case_duration_bucket[5m]))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Work Item Duration (p50, p95, p99)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, rate(yawl_workitem_duration_bucket[5m]))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(yawl_workitem_duration_bucket[5m]))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(yawl_workitem_duration_bucket[5m]))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Engine Operation Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(yawl_engine_operation_duration_bucket[5m])) by (yawl_operation)",
+            "legendFormat": "{{yawl_operation}} p95",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 20
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Trace Spans by Operation",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(traces_spanmetrics_calls_total[5m])",
+            "legendFormat": "{{span_name}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 28
+        }
+      },
+      {
+        "id": 11,
+        "title": "Error Rate by Operation",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(traces_spanmetrics_calls_total{status_code=\"ERROR\"}[5m])",
+            "legendFormat": "{{span_name}} errors",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 28
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Top Slowest Traces",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, traces_spanmetrics_latency_bucket{le=\"+Inf\"})",
+            "legendFormat": "",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 36
+        }
+      }
+    ]
+  }
+}

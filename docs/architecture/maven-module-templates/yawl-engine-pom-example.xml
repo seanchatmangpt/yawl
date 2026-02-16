@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent POM -->
+    <parent>
+        <groupId>org.yawlfoundation</groupId>
+        <artifactId>yawl-parent</artifactId>
+        <version>5.2</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <!-- Module Coordinates -->
+    <artifactId>yawl-engine</artifactId>
+    <packaging>jar</packaging>
+
+    <name>YAWL Engine</name>
+    <description>Core YAWL BPM workflow engine</description>
+
+    <!-- Module-Specific Properties -->
+    <properties>
+        <main.class>org.yawlfoundation.yawl.engine.YEngine</main.class>
+    </properties>
+
+    <!-- Dependencies -->
+    <dependencies>
+        <!-- Internal YAWL Dependencies -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-elements</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-util</artifactId>
+        </dependency>
+
+        <!-- Hibernate ORM (Core Engine Persistence) -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+
+        <!-- Database Drivers (Runtime) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+
+        <!-- XML Processing -->
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+        </dependency>
+
+        <!-- Commons -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-test-support</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Shade Plugin for Fat JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <shadedClassifierName>executable</shadedClassifierName>
+                </configuration>
+            </plugin>
+
+            <!-- Jib Docker Plugin -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <configuration>
+                    <container>
+                        <mainClass>${main.class}</mainClass>
+                        <environment>
+                            <YAWL_MODULE>engine</YAWL_MODULE>
+                        </environment>
+                    </container>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.engine.instance;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.authentication.YClient;
@@ -41,6 +44,7 @@ import java.util.Date;
  * Creation Date: 11/11/2008
  */
 public class WorkItemInstance implements YInstance {
+    private static final Logger logger = LogManager.getLogger(WorkItemInstance.class);
 
     private YWorkItem workItem;
     private String taskID;
@@ -371,7 +375,8 @@ public class WorkItemInstance implements YInstance {
         if (s != null) {
             try {
                 result = Long.valueOf(s);
-            } catch (NumberFormatException ignore) {
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid number format in timer expression: " + e.getMessage(), e);
             }
         }
         return result;

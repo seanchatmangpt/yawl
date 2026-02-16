@@ -18,12 +18,16 @@
 
 package org.yawlfoundation.yawl.procletService.editor.choiceexception;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 
 import javax.swing.*;
 
 public class ExceptionChoiceCoordinator extends InternalCoordinator {
+    private static final Logger logger = LogManager.getLogger(ExceptionChoiceCoordinator.class);
 
 	  // frame for the block
 	  private FrmExceptionChoice frame = null;
@@ -80,7 +84,9 @@ public class ExceptionChoiceCoordinator extends InternalCoordinator {
 	    try {
 	      this.frame.setClosed(true);
 	    }
-	    catch (Exception pve) {}
+	    catch (Exception e) {
+            logger.warn("Failed to close exception choice frame: " + e.getMessage(), e);
+        }
 	    ;
 	  }
 

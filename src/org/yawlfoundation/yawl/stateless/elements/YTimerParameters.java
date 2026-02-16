@@ -28,11 +28,10 @@ import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
 
 import jakarta.xml.bind.DatatypeConverter;
-import javax.xml.datatype.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import jakarta.xml.datatype.Duration;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
@@ -47,7 +46,7 @@ public class YTimerParameters {
     public enum TimerType { Duration, Expiry, Interval, LateBound, Nil }
 
     private String _variableName;                         // late bound net variable
-    private Instant _expiryTime;                          // date param
+    private Date _expiryTime;                             // date param
     private Duration _duration;                           // duration param
     private long _ticks;                                  // interval params
     private YTimer.TimeUnit _timeUnit;                    // ditto
@@ -60,7 +59,7 @@ public class YTimerParameters {
 
     public YTimerParameters(String netParamName) { set(netParamName); }
 
-    public YTimerParameters(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
+    public YTimerParameters(YWorkItemTimer.Trigger trigger, Date expiryTime) {
         set(trigger, expiryTime);
     }
 
@@ -84,7 +83,7 @@ public class YTimerParameters {
     }
 
 
-    public void set(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
+    public void set(YWorkItemTimer.Trigger trigger, Date expiryTime) {
         _trigger = trigger;
         _expiryTime = expiryTime;
         _timerType = TimerType.Expiry;
@@ -125,9 +124,9 @@ public class YTimerParameters {
     }
 
 
-    public Instant getDate() { return _expiryTime; }
+    public Date getDate() { return _expiryTime; }
 
-    public void setDate(Instant date) {
+    public void setDate(Date date) {
         _expiryTime = date;
         _timerType = TimerType.Expiry;
     }
@@ -198,7 +197,7 @@ public class YTimerParameters {
 
         try {                                 // test for xsd datetime
             Calendar calendar = DatatypeConverter.parseDateTime(expiry);
-            set(trigger, calendar.getTime().toInstant());
+            set(trigger, calendar.getTime());
             return true;
         }
         catch (IllegalArgumentException pe) {
@@ -207,15 +206,13 @@ public class YTimerParameters {
 
         long time = StringUtil.strToLong(expiry, -1);           // test for long
         if (time < 0) throw new IllegalArgumentException("Malformed expiry value");
-        set(trigger, Instant.ofEpochMilli(time));
+        set(trigger, new Date(time));
         return true;
     }
 
 
     public String toXML() {
-        if (_timerType == TimerType.Nil) {
-            return new String();  // Return empty but valid XML string for Nil timer type
-        }
+        if (_timerType == TimerType.Nil) return "";
 
         XNode node = new XNode("timer");
         switch (_timerType) {
@@ -229,7 +226,7 @@ public class YTimerParameters {
             }
             case Expiry: {
                 node.addChild("trigger", _trigger.name());
-                node.addChild("expiry", _expiryTime.toEpochMilli());
+                node.addChild("expiry", _expiryTime.getTime());
                 break;
             }
             case Interval: {
@@ -267,7 +264,7 @@ public class YTimerParameters {
         if (expiry != null) {
             long time = StringUtil.strToLong(expiry, 0);
             if (time <= 0) throw new IllegalArgumentException("Invalid 'expiry' parameter");
-            set(trigger, Instant.ofEpochMilli(time));
+            set(trigger, new Date(time));
             return this;
         }
 
@@ -300,11 +297,9 @@ public class YTimerParameters {
     public String toString() {
         if (_timerType == TimerType.Nil) return "Nil";
         String s = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy, h:mm a")
-                .withZone(ZoneId.systemDefault());
         switch (_timerType) {
             case Duration: s += _duration.toString(); break;
-            case Expiry: s += formatter.format(_expiryTime); break;
+            case Expiry: s += new SimpleDateFormat().format(_expiryTime); break;
             case Interval: s += _ticks + " " + _timeUnit.name(); break;
             case LateBound: s = "Variable: " + _variableName; break;
         }

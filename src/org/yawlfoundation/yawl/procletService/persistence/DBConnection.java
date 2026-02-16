@@ -44,7 +44,7 @@ public class DBConnection {
 
          // minimise hibernate logging
          setLogLevel(LogManager.getLogger("org.hibernate"), Level.WARN);
-         setLogLevel(LogManager.getLogger("com.mchange.v2.c3p0"), Level.WARN);
+         setLogLevel(LogManager.getLogger("com.zaxxer.hikari"), Level.INFO);
 
          // setup database connection
          Set<Class> persistedClasses = new HashSet<Class>();
@@ -87,13 +87,13 @@ public class DBConnection {
                           "org.hibernate.cache.ehcache.EhCacheRegionFactory");
 
         props.setProperty("hibernate.connection.provider_class",
-                          "org.hibernate.service.jdbc.connections.internal.C3P0ConnectionProvider");
-        props.setProperty("hibernate.c3p0.max_size", "20");
-        props.setProperty("hibernate.c3p0.min_size", "2");
-        props.setProperty("hibernate.c3p0.timeout", "5000");
-        props.setProperty("hibernate.c3p0.max_statements", "100");
-        props.setProperty("hibernate.c3p0.idle_test_period", "3000");
-        props.setProperty("hibernate.c3p0.acquire_increment", "1");
+                          "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");
+        props.setProperty("hibernate.hikari.maximumPoolSize", "20");
+        props.setProperty("hibernate.hikari.minimumIdle", "5");
+        props.setProperty("hibernate.hikari.connectionTimeout", "30000");
+        props.setProperty("hibernate.hikari.idleTimeout", "600000");
+        props.setProperty("hibernate.hikari.maxLifetime", "1800000");
+        props.setProperty("hibernate.hikari.keepaliveTime", "120000");
 
         return props;
     }

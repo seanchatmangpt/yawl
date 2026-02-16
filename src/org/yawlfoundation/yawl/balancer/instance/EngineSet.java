@@ -17,6 +17,7 @@
  */
 
 package org.yawlfoundation.yawl.balancer.instance;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +49,7 @@ public class EngineSet {
 
     public EngineSet(Monitor monitor) {
         _set = new HashSet<EngineInstance>();
-        _random = new Random();
+        _random = ThreadLocalRandom.current();
         _log = LogManager.getFormatterLogger(this.getClass());
         _arffWriter = new ArffOutputter();
         _monitor = monitor;

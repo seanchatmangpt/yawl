@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.controlpanel.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.util.HttpUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
@@ -38,6 +41,7 @@ import java.util.Date;
  * @date 4/08/2014
  */
 public class TomcatUtil {
+    private static final Logger logger = LogManager.getLogger(TomcatUtil.class);
 
     private static int SERVER_PORT = -1;
     private static URL ENGINE_URL;
@@ -147,7 +151,10 @@ public class TomcatUtil {
         try {
             Thread.sleep(2000);
         }
-        catch (InterruptedException ignore) {}
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted during Tomcat shutdown wait: " + e.getMessage());
+        }
         return ! isPortActive();
     }
 

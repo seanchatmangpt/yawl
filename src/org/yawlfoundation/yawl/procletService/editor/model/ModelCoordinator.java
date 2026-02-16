@@ -18,11 +18,15 @@
 
 package org.yawlfoundation.yawl.procletService.editor.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 
 import javax.swing.*;
 
 public class ModelCoordinator extends InternalCoordinator {
+    private static final Logger logger = LogManager.getLogger(ModelCoordinator.class);
 
   // frame for the block
   private FrmModel frame = null;
@@ -79,7 +83,9 @@ public class ModelCoordinator extends InternalCoordinator {
     try {
       this.frame.setClosed(true);
     }
-    catch (Exception pve) {}
+    catch (Exception e) {
+        logger.warn("Failed to close model frame: " + e.getMessage(), e);
+    }
     ;
   }
 

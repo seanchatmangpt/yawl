@@ -8,6 +8,8 @@ import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
 import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,6 +61,15 @@ public class YCaseMonitor implements YCaseEventListener, YWorkItemEventListener 
 
     public boolean hasCase(YIdentifier caseID) {
         return _caseMap.containsKey(caseID);
+    }
+
+
+    /**
+     * Gets all currently monitored cases.
+     * @return list of all active cases
+     */
+    public List<YCase> getAllCases() {
+        return new ArrayList<>(_caseMap.values());
     }
 
 

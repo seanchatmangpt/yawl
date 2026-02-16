@@ -31,7 +31,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import jakarta.faces.application.Application;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.context.FacesContext;
-import javax.faces.el.MethodBinding;
+import jakarta.faces.el.MethodBinding;
 import jakarta.faces.event.ActionEvent;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
