@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.util.XNode;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for YSpecificationID Java 25 record conversion.
@@ -172,9 +172,11 @@ public class TestYSpecificationID {
         assertEquals("oldspec.yawl", specID.getUri());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFromFullStringInvalid() {
-        YSpecificationID.fromFullString("invalid:format");
+        assertThrows(IllegalArgumentException.class, () -> {
+            YSpecificationID.fromFullString("invalid:format");
+        });
     }
 
     @Test

@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.integration.spiffe;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for SPIFFE workload identity
@@ -26,7 +26,7 @@ public class SpiffeIntegrationTest {
     private SpiffeCredentialProvider credentialProvider;
     private boolean spiffeAvailable;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         credentialProvider = SpiffeCredentialProvider.getInstance();
         spiffeAvailable = credentialProvider.isSpiffeAvailable();

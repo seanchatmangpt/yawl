@@ -21,9 +21,9 @@ package org.yawlfoundation.yawl.engine.interfce.interfaceB;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for InterfaceB_EnvironmentBasedClient batch operations with structured concurrency.
@@ -59,7 +59,7 @@ public class InterfaceB_EnvironmentBasedClientBatchTest {
     private AtomicInteger requestCount;
     private Map<String, String> processedRequests;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         requestCount = new AtomicInteger(0);
         processedRequests = new ConcurrentHashMap<>();
@@ -74,7 +74,7 @@ public class InterfaceB_EnvironmentBasedClientBatchTest {
         client = new InterfaceB_EnvironmentBasedClient(serverUrl);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (testServer != null) {
             testServer.stop(0);
@@ -115,12 +115,14 @@ public class InterfaceB_EnvironmentBasedClientBatchTest {
         assertEquals("Should have result for each work item", workItemIDs.size(), results.size());
     }
 
-    @Test(expected = TimeoutException.class)
-    public void testBatchCheckoutTimeout() throws IOException, TimeoutException, ExecutionException, InterruptedException {
-        List<String> workItemIDs = Arrays.asList("slow-item1", "slow-item2");
-        String sessionHandle = "test-session-123";
+    @Test
+    public void testBatchCheckoutTimeout() throws IOException, InterruptedException {
+        assertThrows(TimeoutException.class, () -> {
+            List<String> workItemIDs = Arrays.asList("slow-item1", "slow-item2");
+            String sessionHandle = "test-session-123";
 
-        client.checkOutWorkItemsBatch(workItemIDs, sessionHandle, 1);
+            client.checkOutWorkItemsBatch(workItemIDs, sessionHandle, 1);
+        });
     }
 
     @Test

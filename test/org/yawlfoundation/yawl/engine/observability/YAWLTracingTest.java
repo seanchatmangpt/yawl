@@ -21,12 +21,12 @@ package org.yawlfoundation.yawl.engine.observability;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for YAWL OpenTelemetry tracing utilities.
@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
  */
 public class YAWLTracingTest {
 
-    @Before
+    @BeforeEach
     public void setUp() {
         YAWLTelemetry telemetry = YAWLTelemetry.getInstance();
         telemetry.setEnabled(true);

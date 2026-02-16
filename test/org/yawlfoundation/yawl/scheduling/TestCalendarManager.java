@@ -1,25 +1,26 @@
 package org.yawlfoundation.yawl.scheduling;
 
-import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.resourcing.rsInterface.ResourceCalendarGatewayClient;
 import org.yawlfoundation.yawl.scheduling.resource.ResourceServiceInterface;
 import org.yawlfoundation.yawl.scheduling.util.Utils;
 
 import java.util.Date;
 
+import static org.junit.jupiter.api.Assertions.*;
 
-public class TestCalendarManager extends TestCase implements Constants {
+
+public class TestCalendarManager implements Constants {
 	private static Logger logger = LogManager.getLogger(TestCalendarManager.class);
 
 	ResourceCalendarGatewayClient client;
 	String handle;
 
-	@Before
+	@BeforeEach
 	public void setUp() {
         ResourceServiceInterface rsi = ResourceServiceInterface.getInstance();
 //		try {
@@ -30,7 +31,7 @@ public class TestCalendarManager extends TestCase implements Constants {
 //		}
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() {
 
 	}

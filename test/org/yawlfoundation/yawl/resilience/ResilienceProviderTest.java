@@ -3,8 +3,8 @@ package org.yawlfoundation.yawl.resilience;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.resilience.config.ResilienceConfig;
 import org.yawlfoundation.yawl.resilience.config.YawlResilienceProperties;
 import org.yawlfoundation.yawl.resilience.provider.YawlResilienceProvider;
@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for YAWL Resilience Provider.
@@ -29,7 +29,7 @@ public class ResilienceProviderTest {
     private YawlResilienceProvider provider;
     private SimpleMeterRegistry meterRegistry;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         YawlResilienceProperties properties = new YawlResilienceProperties();
         meterRegistry = new SimpleMeterRegistry();

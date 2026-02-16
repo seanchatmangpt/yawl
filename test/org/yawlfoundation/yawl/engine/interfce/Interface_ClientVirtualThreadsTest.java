@@ -21,9 +21,9 @@ package org.yawlfoundation.yawl.engine.interfce;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for Interface_Client virtual threads implementation.
@@ -59,7 +59,7 @@ public class Interface_ClientVirtualThreadsTest {
     private AtomicInteger requestCount;
     private Map<String, Long> requestTimings;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         requestCount = new AtomicInteger(0);
         requestTimings = new ConcurrentHashMap<>();
@@ -76,7 +76,7 @@ public class Interface_ClientVirtualThreadsTest {
         client = new TestableInterfaceClient();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (testServer != null) {
             testServer.stop(0);
