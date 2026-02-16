@@ -33,9 +33,3 @@ dependency-reduced-pom.xml
 # Build logs and temp files
 build-log.txt
 build/3rdParty/
-
-# Generated docs and templates
-docs/ggen-examples-analysis.md
-templates/yawl-patterns/
-ggen.toml
-.specify/

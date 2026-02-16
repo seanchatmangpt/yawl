@@ -1,0 +1,792 @@
+# YAWL Extended Workflow Patterns Ontology
+# 43 Original Patterns + 25 New Modern Patterns
+# Total: 68 Workflow Control-Flow Patterns
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix yawl: <http://yawlfoundation.org/yawl#> .
+@prefix yawl-pattern: <http://yawlfoundation.org/yawl/pattern#> .
+@prefix yawl-new: <http://yawlfoundation.org/yawl/pattern/new#> .
+
+# =============================================================================
+# ONTOLOGY METADATA
+# =============================================================================
+
+<http://yawlfoundation.org/yawl/pattern/new> a owl:Ontology ;
+    rdfs:label "YAWL Extended Workflow Patterns" ;
+    rdfs:comment "25 new workflow patterns extending the original 43 YAWL patterns for modern distributed systems, cloud-native architectures, and AI/ML workflows" ;
+    dct:version "5.2.0" ;
+    dct:created "2026-02-16" ;
+    owl:imports <http://yawlfoundation.org/yawl/pattern> .
+
+# =============================================================================
+# PATTERN CATEGORIES (New)
+# =============================================================================
+
+yawl-new:DistributedTransactionPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Distributed Transaction Pattern" ;
+    skos:definition "Patterns for managing transactions across distributed services" .
+
+yawl-new:EventDrivenPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Event-Driven Pattern" ;
+    skos:definition "Patterns for event-based workflow coordination" .
+
+yawl-new:ResiliencePattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Resilience Pattern" ;
+    skos:definition "Patterns for fault tolerance and recovery" .
+
+yawl-new:CompensationPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Compensation Pattern" ;
+    skos:definition "Patterns for rollback and undo operations" .
+
+yawl-new:TemporalPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Temporal Pattern" ;
+    skos:definition "Patterns for time-based workflow control" .
+
+yawl-new:DataFlowPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Data Flow Pattern" ;
+    skos:definition "Patterns for data-driven workflow execution" .
+
+yawl-new:AIPattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "AI/ML Pattern" ;
+    skos:definition "Patterns for AI-augmented workflow execution" .
+
+yawl-new:CloudNativePattern a owl:Class ;
+    rdfs:subClassOf yawl-pattern:WorkflowPattern ;
+    rdfs:label "Cloud-Native Pattern" ;
+    skos:definition "Patterns for cloud-native workflow deployment" .
+
+# =============================================================================
+# PATTERN 44: SAGA ORCHESTRATION
+# =============================================================================
+
+yawl-new:SagaOrchestration a owl:Class ;
+    rdfs:subClassOf yawl-new:DistributedTransactionPattern ;
+    rdfs:label "Saga Orchestration" ;
+    yawl-pattern:patternId "WCP-44" ;
+    yawl-pattern:patternName "Saga Orchestration" ;
+    skos:definition "Coordinates a sequence of local transactions across multiple services with compensating actions for rollback. A central orchestrator manages the saga lifecycle." ;
+    yawl-new:formalism """
+    Saga = (T₁ × C₁) → (T₂ × C₂) → ... → (Tₙ × Cₙ)
+    where Tᵢ = forward transaction, Cᵢ = compensating transaction
+    Rollback: ∀i ∈ [k+1..n]: execute Cᵢ if Tₖ fails
+    """ ;
+    yawl-new:useCase "Order processing with inventory, payment, and shipping services" ;
+    yawl-new:relatedPattern yawl-new:SagaChoreography, yawl-new:CompensatingActivity .
+
+yawl-new:SagaStep a owl:Class ;
+    rdfs:label "Saga Step" ;
+    rdfs:comment "A single step in a saga with forward and compensating actions" ;
+    yawl-new:hasForwardAction yawl:Task ;
+    yawl-new:hasCompensatingAction yawl:Task ;
+    yawl-new:isCompensatable xsd:boolean ;
+    yawl-new:retryLimit xsd:integer ;
+    yawl-new:timeout xsd:duration .
+
+yawl-new:SagaState a owl:Class ;
+    rdfs:label "Saga State" ;
+    rdfs:comment "Tracks the execution state of a saga" ;
+    yawl-new:stateValue xsd:string ; # RUNNING, COMPENSATING, COMPLETED, FAILED
+    yawl-new:currentStep xsd:integer ;
+    yawl-new:completedSteps rdf:List ;
+    yawl-new:failedStep xsd:integer .
+
+# =============================================================================
+# PATTERN 45: SAGA CHOREOGRAPHY
+# =============================================================================
+
+yawl-new:SagaChoreography a owl:Class ;
+    rdfs:subClassOf yawl-new:DistributedTransactionPattern ;
+    rdfs:label "Saga Choreography" ;
+    yawl-pattern:patternId "WCP-45" ;
+    yawl-pattern:patternName "Saga Choreography" ;
+    skos:definition "Distributed saga coordination where each service publishes events and reacts to events from other services. No central coordinator exists." ;
+    yawl-new:formalism """
+    Serviceᵢ → Eventᵢ → Serviceⱼ → Eventⱼ → ...
+    Each service subscribes to relevant events and executes actions accordingly
+    Compensation: Serviceᵢ emits CompensateEventᵢ on failure
+    """ ;
+    yawl-new:useCase "Microservices order processing without central orchestration" ;
+    yawl-new:relatedPattern yawl-new:SagaOrchestration, yawl-new:EventGateway .
+
+yawl-new:ChoreographyParticipant a owl:Class ;
+    rdfs:label "Choreography Participant" ;
+    yawl-new:subscribesTo rdf:List ; # Event types
+    yawl-new:publishes rdf:List ; # Event types
+    yawl-new:forwardAction yawl:Task ;
+    yawl-new:compensateAction yawl:Task .
+
+# =============================================================================
+# PATTERN 46: COMPENSATING ACTIVITY
+# =============================================================================
+
+yawl-new:CompensatingActivity a owl:Class ;
+    rdfs:subClassOf yawl-new:CompensationPattern ;
+    rdfs:label "Compensating Activity" ;
+    yawl-pattern:patternId "WCP-46" ;
+    yawl-pattern:patternName "Compensating Activity" ;
+    skos:definition "Defines an activity that semantically undoes the effects of a previously completed activity. Used in saga patterns and transaction rollback." ;
+    yawl-new:formalism """
+    Compensate(T) = T⁻¹ such that:
+    - T ∘ T⁻¹ ≈ Identity (semantic equivalence)
+    - T⁻¹ may have side effects (audit logs, notifications)
+    """ ;
+    yawl-new:useCase "Refund payment, cancel reservation, restore inventory" ;
+    yawl-new:relatedPattern yawl-new:SagaOrchestration, yawl-pattern:CancelRegion .
+
+yawl-new:CompensationHandler a owl:Class ;
+    rdfs:label "Compensation Handler" ;
+    yawl-new:targetActivity yawl:Task ;
+    yawl-new:compensationActivity yawl:Task ;
+    yawl-new:compensationCondition xsd:string ; # XPath/XQuery
+    yawl-new:compensationOrder xsd:integer .
+
+# =============================================================================
+# PATTERN 47: CIRCUIT BREAKER
+# =============================================================================
+
+yawl-new:CircuitBreaker a owl:Class ;
+    rdfs:subClassOf yawl-new:ResiliencePattern ;
+    rdfs:label "Circuit Breaker" ;
+    yawl-pattern:patternId "WCP-47" ;
+    yawl-pattern:patternName "Circuit Breaker" ;
+    skos:definition "Prevents cascade failures by failing fast when a service is unavailable. Has three states: Closed (normal), Open (failing), Half-Open (testing)." ;
+    yawl-new:formalism """
+    States: CLOSED, OPEN, HALF_OPEN
+    CLOSED → OPEN: failure_count > threshold
+    OPEN → HALF_OPEN: after timeout
+    HALF_OPEN → CLOSED: success
+    HALF_OPEN → OPEN: failure
+    """ ;
+    yawl-new:useCase "External API calls, database connections, microservice invocations" ;
+    yawl-new:relatedPattern yawl-new:RetryWithBackoff, yawl-new:Bulkhead .
+
+yawl-new:CircuitBreakerState a owl:Class ;
+    rdfs:label "Circuit Breaker State" ;
+    yawl-new:currentState xsd:string ; # CLOSED, OPEN, HALF_OPEN
+    yawl-new:failureCount xsd:integer ;
+    yawl-new:successCount xsd:integer ;
+    yawl-new:failureThreshold xsd:integer ;
+    yawl-new:timeout xsd:duration ;
+    yawl-new:lastFailure xsd:dateTime .
+
+# =============================================================================
+# PATTERN 48: RETRY WITH EXPONENTIAL BACKOFF
+# =============================================================================
+
+yawl-new:RetryWithBackoff a owl:Class ;
+    rdfs:subClassOf yawl-new:ResiliencePattern ;
+    rdfs:label "Retry with Exponential Backoff" ;
+    yawl-pattern:patternId "WCP-48" ;
+    yawl-pattern:patternName "Retry with Exponential Backoff" ;
+    skos:definition "Automatically retries failed operations with exponentially increasing delays between attempts to avoid overwhelming struggling services." ;
+    yawl-new:formalism """
+    delay(n) = min(initialDelay × 2ⁿ, maxDelay) + jitter
+    where n = attempt number (0-indexed)
+    Retry until: success OR (attempts > maxRetries) OR (totalTime > maxTime)
+    """ ;
+    yawl-new:useCase "Network requests, database operations, external API calls" ;
+    yawl-new:relatedPattern yawl-new:CircuitBreaker, yawl-new:Timeout .
+
+yawl-new:RetryPolicy a owl:Class ;
+    rdfs:label "Retry Policy" ;
+    yawl-new:initialDelay xsd:duration ; # e.g., PT1S (1 second)
+    yawl-new:maxDelay xsd:duration ; # e.g., PT60S (60 seconds)
+    yawl-new:maxRetries xsd:integer ; # e.g., 5
+    yawl-new:maxTime xsd:duration ; # e.g., PT5M (5 minutes)
+    yawl-new:jitterFactor xsd:decimal ; # e.g., 0.5 (50% jitter)
+    yawl-new:retryableExceptions rdf:List .
+
+# =============================================================================
+# PATTERN 49: BULKHEAD
+# =============================================================================
+
+yawl-new:Bulkhead a owl:Class ;
+    rdfs:subClassOf yawl-new:ResiliencePattern ;
+    rdfs:label "Bulkhead" ;
+    yawl-pattern:patternId "WCP-49" ;
+    yawl-pattern:patternName "Bulkhead" ;
+    skos:definition "Isolates components to prevent cascade failures. Limits concurrent executions per resource to contain failures within a partition." ;
+    yawl-new:formalism """
+    Bulkhead(resource, limit) = {
+        active: Set[Execution],
+        waitQueue: Queue[Execution],
+        accept(e) if |active| < limit else waitQueue.enqueue(e)
+    }
+    """ ;
+    yawl-new:useCase "Thread pools, connection pools, rate limiting" ;
+    yawl-new:relatedPattern yawl-new:CircuitBreaker, yawl-pattern:MultiInstance .
+
+yawl-new:BulkheadConfig a owl:Class ;
+    rdfs:label "Bulkhead Configuration" ;
+    yawl-new:maxConcurrent xsd:integer ;
+    yawl-new:maxWaitTime xsd:duration ;
+    yawl-new:callerRunsWhenFull xsd:boolean ;
+    yawl-new:rejectWhenFull xsd:boolean .
+
+# =============================================================================
+# PATTERN 50: TIMEOUT
+# =============================================================================
+
+yawl-new:Timeout a owl:Class ;
+    rdfs:subClassOf yawl-new:TemporalPattern ;
+    rdfs:label "Timeout" ;
+    yawl-pattern:patternId "WCP-50" ;
+    yawl-pattern:patternName "Timeout" ;
+    skos:definition "Sets a maximum duration for activity execution. If exceeded, the activity is interrupted and a timeout handler is invoked." ;
+    yawl-new:formalism """
+    Timeout(activity, duration) = {
+        result = activity.execute()
+        if elapsed > duration:
+            cancel(activity)
+            execute(timeoutHandler)
+    }
+    """ ;
+    yawl-new:useCase "External service calls, long-running computations, user input" ;
+    yawl-new:relatedPattern yawl-new:RetryWithBackoff, yawl-pattern:Timer ;
+
+yawl-new:TimeoutHandler a owl:Class ;
+    rdfs:label "Timeout Handler" ;
+    yawl-new:timeoutDuration xsd:duration ;
+    yawl-new:onTimeout yawl:Task ; # Activity to execute on timeout
+    yawl-new:cancelActivity xsd:boolean ; # Whether to cancel the original activity
+    yawl-new:propagateException xsd:boolean .
+
+# =============================================================================
+# PATTERN 51: EVENT GATEWAY
+# =============================================================================
+
+yawl-new:EventGateway a owl:Class ;
+    rdfs:subClassOf yawl-new:EventDrivenPattern ;
+    rdfs:label "Event Gateway" ;
+    yawl-pattern:patternId "WCP-51" ;
+    yawl-pattern:patternName "Event Gateway" ;
+    skos:definition "Waits for one or more events from external sources before proceeding. Events can be messages, signals, timers, or condition changes." ;
+    yawl-new:formalism """
+    EventGateway = ⋃ᵢ Eventᵢ → Actionᵢ
+    Wait for: first event (exclusive) OR all events (parallel) OR n of m events
+    """ ;
+    yawl-new:useCase "Waiting for payment confirmation, approval response, system alert" ;
+    yawl-new:relatedPattern yawl-pattern:DeferredChoice, yawl-new:EventSequence .
+
+yawl-new:EventSubscription a owl:Class ;
+    rdfs:label "Event Subscription" ;
+    yawl-new:eventType xsd:string ; # Message, Signal, Timer, Condition
+    yawl-new:eventSource xsd:anyURI ;
+    yawl-new:correlationKey xsd:string ; # For matching events to cases
+    yawl-new:timeout xsd:duration ;
+    yawl-new:onEvent yawl:Task .
+
+# =============================================================================
+# PATTERN 52: EVENT SEQUENCE
+# =============================================================================
+
+yawl-new:EventSequence a owl:Class ;
+    rdfs:subClassOf yawl-new:EventDrivenPattern ;
+    rdfs:label "Event Sequence" ;
+    yawl-pattern:patternId "WCP-52" ;
+    yawl-pattern:patternName "Event Sequence" ;
+    skos:definition "Enforces a specific order of events before proceeding. Events must occur in the defined sequence, not just any order." ;
+    yawl-new:formalism """
+    Sequence = E₁ → E₂ → ... → Eₙ
+    State machine: S₀ --E₁--> S₁ --E₂--> S₂ ... --Eₙ--> S_final
+    Invalid order: reject or reset
+    """ ;
+    yawl-new:useCase "KYC verification steps, approval chain, staged onboarding" ;
+    yawl-new:relatedPattern yawl-new:EventGateway, yawl-pattern:Sequence .
+
+yawl-new:SequencedEvent a owl:Class ;
+    rdfs:label "Sequenced Event" ;
+    yawl-new:sequenceOrder xsd:integer ;
+    yawl-new:eventType xsd:string ;
+    yawl-new:isRequired xsd:boolean ;
+    yawl-new:maxWaitTime xsd:duration ;
+    yawl-new:onSequenceComplete yawl:Task .
+
+# =============================================================================
+# PATTERN 53: MESSAGE CORRELATION
+# =============================================================================
+
+yawl-new:MessageCorrelation a owl:Class ;
+    rdfs:subClassOf yawl-new:EventDrivenPattern ;
+    rdfs:label "Message Correlation" ;
+    yawl-pattern:patternId "WCP-53" ;
+    yawl-pattern:patternName "Message Correlation" ;
+    skos:definition "Correlates incoming messages to the correct workflow instance using correlation keys. Enables async message-driven workflow continuation." ;
+    yawl-new:formalism """
+    Correlate(message, instance) =
+        message.correlationKeys ⊆ instance.correlationKeys
+    Multiple instances may match → first-match or all-match policy
+    """ ;
+    yawl-new:useCase "Async API responses, webhook callbacks, message queue processing" ;
+    yawl-new:relatedPattern yawl-new:EventGateway, yawl-new:OutboxPattern .
+
+yawl-new:CorrelationKey a owl:Class ;
+    rdfs:label "Correlation Key" ;
+    yawl-new:keyName xsd:string ;
+    yawl-new:keyValue xsd:string ;
+    yawl-new:keyType xsd:string ; # STRING, NUMBER, XPath, JSONPath
+    yawl-new:isRequired xsd:boolean .
+
+# =============================================================================
+# PATTERN 54: OUTBOX PATTERN
+# =============================================================================
+
+yawl-new:OutboxPattern a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Outbox Pattern" ;
+    yawl-pattern:patternId "WCP-54" ;
+    yawl-pattern:patternName "Outbox Pattern" ;
+    skos:definition "Ensures reliable message delivery by storing outgoing messages in an outbox table within the same transaction as state changes, then publishing asynchronously." ;
+    yawl-new:formalism """
+    Transaction:
+        1. Update workflow state
+        2. Insert message into outbox
+    Async Publisher:
+        3. Read unpublished messages
+        4. Publish to message broker
+        5. Mark as published
+    """ ;
+    yawl-new:useCase "Event sourcing, microservices communication, audit trails" ;
+    yawl-new:relatedPattern yawl-new:MessageCorrelation, yawl-new:ChangeEventCapture .
+
+yawl-new:OutboxMessage a owl:Class ;
+    rdfs:label "Outbox Message" ;
+    yawl-new:messageId xsd:string ;
+    yawl-new:aggregateType xsd:string ; # e.g., "Case"
+    yawl-new:aggregateId xsd:string ; # Case ID
+    yawl-new:eventType xsd:string ;
+    yawl-new:payload xsd:string ; # JSON/XML
+    yawl-new:createdAt xsd:dateTime ;
+    yawl-new:publishedAt xsd:dateTime ;
+    yawl-new:retryCount xsd:integer .
+
+# =============================================================================
+# PATTERN 55: CHANGE DATA CAPTURE
+# =============================================================================
+
+yawl-new:ChangeEventCapture a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Change Data Capture" ;
+    yawl-pattern:patternId "WCP-55" ;
+    yawl-pattern:patternName "Change Data Capture" ;
+    skos:definition "Captures changes to workflow state and publishes them as events. Enables reactive workflows that respond to data changes." ;
+    yawl-new:formalism """
+    CDC(source, operations) = {
+        INSERT → InsertEvent,
+        UPDATE → UpdateEvent (before, after),
+        DELETE → DeleteEvent
+    }
+    Events published to event stream for downstream processing
+    """ ;
+    yawl-new:useCase "Real-time dashboards, audit logging, cache invalidation" ;
+    yawl-new:relatedPattern yawl-new:OutboxPattern, yawl-new:EventGateway .
+
+yawl-new:CDCConfiguration a owl:Class ;
+    rdfs:label "CDC Configuration" ;
+    yawl-new:sourceTable xsd:string ;
+    yawl-new:captureOperations rdf:List ; # INSERT, UPDATE, DELETE
+    yawl-new:columnFilter rdf:List ; # Columns to include
+    yawl-new:publishTo xsd:anyURI ; # Event stream/topic
+
+# =============================================================================
+# PATTERN 56: AGGREGATOR
+# =============================================================================
+
+yawl-new:Aggregator a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Aggregator" ;
+    yawl-pattern:patternId "WCP-56" ;
+    yawl-pattern:patternName "Aggregator" ;
+    skos:definition "Collects multiple related messages/events and combines them into a single output. Waits for all expected messages or timeout." ;
+    yawl-new:formalism """
+    Aggregator = {
+        expected: n messages,
+        received: Set[Message],
+        aggregate() when |received| == n OR timeout
+    }
+    """ ;
+    yawl-new:useCase "Collecting responses from parallel services, batch processing" ;
+    yawl-new:relatedPattern yawl-pattern:MultiInstance, yawl-new:ScatterGather .
+
+yawl-new:AggregationStrategy a owl:Class ;
+    rdfs:label "Aggregation Strategy" ;
+    yawl-new:correlationExpression xsd:string ;
+    yawl-new:completionCondition xsd:string ; # XPath/XQuery
+    yawl-new:aggregationFunction xsd:string ; # MERGE, APPEND, CUSTOM
+    yawl-new:timeout xsd:duration ;
+    yawl-new:incompleteBehavior xsd:string ; # DISCARD, EMIT_PARTIAL, ERROR
+
+# =============================================================================
+# PATTERN 57: SCATTER-GATHER
+# =============================================================================
+
+yawl-new:ScatterGather a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Scatter-Gather" ;
+    yawl-pattern:patternId "WCP-57" ;
+    yawl-pattern:patternName "Scatter-Gather" ;
+    skos:definition "Broadcasts a message to multiple recipients (scatter) and collects responses (gather). Continues when all or threshold responses received." ;
+    yawl-new:formalism """
+    Scatter(message, recipients) → for each r ∈ recipients: send(message, r)
+    Gather(responses, condition) → wait until condition(responses)
+    Continue with aggregated response
+    """ ;
+    yawl-new:useCase "Price comparison across vendors, parallel API calls, fan-out processing" ;
+    yawl-new:relatedPattern yawl-new:Aggregator, yawl-pattern:ParallelSplit .
+
+yawl-new:ScatterGatherConfig a owl:Class ;
+    rdfs:label "Scatter-Gather Configuration" ;
+    yawl-new:recipients rdf:List ; # Service endpoints
+    yawl-new:gatherTimeout xsd:duration ;
+    yawl-new:minimumResponses xsd:integer ; # Continue after N responses
+    yawl-new:discardLateResponses xsd:boolean ;
+    yawl-new:aggregationStrategy yawl-new:AggregationStrategy .
+
+# =============================================================================
+# PATTERN 58: CONTENT-BASED ROUTER
+# =============================================================================
+
+yawl-new:ContentBasedRouter a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Content-Based Router" ;
+    yawl-pattern:patternId "WCP-58" ;
+    yawl-pattern:patternName "Content-Based Router" ;
+    skos:definition "Routes messages to different recipients based on message content. Evaluates content against routing rules." ;
+    yawl-new:formalism """
+    Route(message) = recipientᵢ where:
+        ruleᵢ(message) == true AND
+        ∀j < i: ruleⱼ(message) == false
+    """ ;
+    yawl-new:useCase "Order routing by type, priority-based processing, region-based services" ;
+    yawl-new:relatedPattern yawl-pattern:ExclusiveChoice, yawl-new:DynamicRouter .
+
+yawl-new:RoutingRule a owl:Class ;
+    rdfs:label "Routing Rule" ;
+    yawl-new:ruleOrder xsd:integer ;
+    yawl-new:condition xsd:string ; # XPath/XQuery
+    yawl-new:destination yawl:Task ;
+    yawl-new:description xsd:string .
+
+# =============================================================================
+# PATTERN 59: DYNAMIC ROUTER
+# =============================================================================
+
+yawl-new:DynamicRouter a owl:Class ;
+    rdfs:subClassOf yawl-new:DataFlowPattern ;
+    rdfs:label "Dynamic Router" ;
+    yawl-pattern:patternId "WCP-59" ;
+    yawl-pattern:patternName "Dynamic Router" ;
+    skos:definition "Routes messages based on dynamically configurable rules. Rules can be added, modified, or removed at runtime without code changes." ;
+    yawl-new:formalism """
+    DynamicRoute(message) = {
+        rules = loadRulesFromRegistry(),
+        for each rule in rules (ordered):
+            if rule.matches(message):
+                return rule.destination
+    }
+    """ ;
+    yawl-new:useCase "A/B testing, feature flags, configurable workflows" ;
+    yawl-new:relatedPattern yawl-new:ContentBasedRouter, yawl-new:RulesEngine .
+
+yawl-new:DynamicRoutingTable a owl:Class ;
+    rdfs:label "Dynamic Routing Table" ;
+    yawl-new:rules rdf:List ;
+    yawl-new:lastUpdated xsd:dateTime ;
+    yawl-new:version xsd:string ;
+    yawl-new:source xsd:anyURI ; # Rule registry URL
+
+# =============================================================================
+# PATTERN 60: RULES ENGINE
+# =============================================================================
+
+yawl-new:RulesEngine a owl:Class ;
+    rdfs:subClassOf yawl-new:AIPattern ;
+    rdfs:label "Rules Engine" ;
+    yawl-pattern:patternId "WCP-60" ;
+    yawl-pattern:patternName "Rules Engine" ;
+    skos:definition "Executes business rules to determine workflow paths. Rules are declarative and can be updated independently of workflow definition." ;
+    yawl-new:formalism """
+    RulesEngine = {
+        rules: Set[Rule],
+        facts: Set[Fact],
+        execute() → Apply rules to facts → Produce actions
+    }
+    Rule: IF condition THEN action
+    """ ;
+    yawl-new:useCase "Loan approval, pricing rules, eligibility checks" ;
+    yawl-new:relatedPattern yawl-new:DynamicRouter, yawl-new:DecisionTable .
+
+yawl-new:Rule a owl:Class ;
+    rdfs:label "Rule" ;
+    yawl-new:ruleId xsd:string ;
+    yawl-new:ruleName xsd:string ;
+    yawl-new:condition xsd:string ; # Drools/DMN syntax
+    yawl-new:action xsd:string ;
+    yawl-new:priority xsd:integer ;
+    yawl-new:enabled xsd:boolean ;
+    yawl-new:effectiveFrom xsd:dateTime ;
+    yawl-new:effectiveTo xsd:dateTime .
+
+# =============================================================================
+# PATTERN 61: DECISION TABLE
+# =============================================================================
+
+yawl-new:DecisionTable a owl:Class ;
+    rdfs:subClassOf yawl-new:AIPattern ;
+    rdfs:label "Decision Table" ;
+    yawl-pattern:patternId "WCP-61" ;
+    yawl-pattern:patternName "Decision Table" ;
+    skos:definition "Represents decision logic in tabular form. Maps input conditions to output actions. Supports hit policies (first, unique, any, collect)." ;
+    yawl-new:formalism """
+    DecisionTable = {
+        inputs: [Input₁, Input₂, ...],
+        outputs: [Output₁, Output₂, ...],
+        rules: [Rule₁, Rule₂, ...],
+        hitPolicy: FIRST | UNIQUE | ANY | COLLECT
+    }
+    """ ;
+    yawl-new:useCase "Approval matrices, pricing tiers, routing decisions" ;
+    yawl-new:relatedPattern yawl-new:RulesEngine, yawl-pattern:ExclusiveChoice .
+
+yawl-new:DecisionRule a owl:Class ;
+    rdfs:label "Decision Rule" ;
+    yawl-new:inputEntries rdf:List ; # Input values/conditions
+    yawl-new:outputEntries rdf:List ; # Output values
+    yawl-new:description xsd:string ;
+    yawl-new:ruleOrder xsd:integer .
+
+# =============================================================================
+# PATTERN 62: ML MODEL INVOCATION
+# =============================================================================
+
+yawl-new:MLModelInvocation a owl:Class ;
+    rdfs:subClassOf yawl-new:AIPattern ;
+    rdfs:label "ML Model Invocation" ;
+    yawl-pattern:patternId "WCP-62" ;
+    yawl-pattern:patternName "ML Model Invocation" ;
+    skos:definition "Invokes a machine learning model as part of workflow execution. Passes workflow data as input and uses model predictions for routing decisions." ;
+    yawl-new:formalism """
+    MLInvoke(model, input) → {
+        prediction = model.predict(input),
+        confidence = model.confidence,
+        if confidence > threshold:
+            return prediction
+        else:
+            fallback()
+    }
+    """ ;
+    yawl-new:useCase "Fraud detection, recommendation engines, document classification" ;
+    yawl-new:relatedPattern yawl-new:RulesEngine, yawl-new:HumanAITeamwork .
+
+yawl-new:MLModelConfig a owl:Class ;
+    rdfs:label "ML Model Configuration" ;
+    yawl-new:modelEndpoint xsd:anyURI ;
+    yawl-new:modelVersion xsd:string ;
+    yawl-new:inputMapping xsd:string ; # Workflow data → model input
+    yawl-new:outputMapping xsd:string ; # Model output → workflow variable
+    yawl-new:confidenceThreshold xsd:decimal ;
+    yawl-new:timeout xsd:duration ;
+    yawl-new:fallbackAction yawl:Task .
+
+# =============================================================================
+# PATTERN 63: HUMAN-AI TEAMWORK
+# =============================================================================
+
+yawl-new:HumanAITeamwork a owl:Class ;
+    rdfs:subClassOf yawl-new:AIPattern ;
+    rdfs:label "Human-AI Teamwork" ;
+    yawl-pattern:patternId "WCP-63" ;
+    yawl-pattern:patternName "Human-AI Teamwork" ;
+    skos:definition "Coordinates human and AI activities in a workflow. AI handles routine decisions; humans review edge cases or low-confidence predictions." ;
+    yawl-new:formalism """
+    HumanAI(prediction, confidence) = {
+        if confidence >= autoThreshold:
+            autoApprove()
+        elif confidence >= reviewThreshold:
+            humanReview() // AI-assisted
+        else:
+            humanDecide() // No AI input shown
+    }
+    """ ;
+    yawl-new:useCase "Content moderation, document review, customer support routing" ;
+    yawl-new:relatedPattern yawl-new:MLModelInvocation, yawl-pattern:ManualHandling .
+
+yawl-new:HumanAIConfig a owl:Class ;
+    rdfs:label "Human-AI Configuration" ;
+    yawl-new:autoApproveThreshold xsd:decimal ; # e.g., 0.95
+    yawl-new:aiAssistedThreshold xsd:decimal ; # e.g., 0.70
+    yawl-new:showAIPrediction xsd:boolean ;
+    yawl-new:showAIConfidence xsd:boolean ;
+    yawl-new:requireHumanReason xsd:boolean .
+
+# =============================================================================
+# PATTERN 64: PARALLEL GATEWAY WITH MERGE
+# =============================================================================
+
+yawl-new:ParallelGatewayMerge a owl:Class ;
+    rdfs:subClassOf yawl-pattern:AdvancedBranchingPattern ;
+    rdfs:label "Parallel Gateway with Merge" ;
+    yawl-pattern:patternId "WCP-64" ;
+    yawl-pattern:patternName "Parallel Gateway with Merge" ;
+    skos:definition "Splits execution into parallel branches and merges them at a synchronization point. All branches must complete before merge proceeds." ;
+    yawl-new:formalism """
+    ParallelGateway(n) = {
+        split: fork into n branches,
+        merge: AND-join all n branches
+    }
+    """ ;
+    yawl-new:useCase "Parallel approvals, multi-system updates, distributed computations" ;
+    yawl-new:relatedPattern yawl-pattern:ParallelSplit, yawl-pattern:Synchronization .
+
+# =============================================================================
+# PATTERN 65: EXCLUSIVE GATEWAY WITH DEFAULT
+# =============================================================================
+
+yawl-new:ExclusiveGatewayDefault a owl:Class ;
+    rdfs:subClassOf yawl-pattern:AdvancedBranchingPattern ;
+    rdfs:label "Exclusive Gateway with Default" ;
+    yawl-pattern:patternId "WCP-65" ;
+    yawl-pattern:patternName "Exclusive Gateway with Default" ;
+    skos:definition "Routes to exactly one branch based on conditions. If no condition matches, follows the default branch." ;
+    yawl-new:formalism """
+    ExclusiveGateway(branches, default) = {
+        for branch in branches:
+            if branch.condition:
+                return branch
+        return default
+    }
+    """ ;
+    yawl-new:useCase "Priority-based routing, fallback handling, exception routing" ;
+    yawl-new:relatedPattern yawl-pattern:ExclusiveChoice, yawl-new:ContentBasedRouter .
+
+# =============================================================================
+# PATTERN 66: INCLUSIVE GATEWAY WITH MERGE
+# =============================================================================
+
+yawl-new:InclusiveGatewayMerge a owl:Class ;
+    rdfs:subClassOf yawl-pattern:AdvancedBranchingPattern ;
+    rdfs:label "Inclusive Gateway with Merge" ;
+    yawl-pattern:patternId "WCP-66" ;
+    yawl-pattern:patternName "Inclusive Gateway with Merge" ;
+    skos:definition "Activates multiple branches based on conditions (OR-split) and synchronizes all activated branches at merge (OR-join)." ;
+    yawl-new:formalism """
+    InclusiveGateway = {
+        split: activate all branches where condition = true,
+        merge: wait for all activated branches to complete
+    }
+    """ ;
+    yawl-new:useCase "Conditional notifications, optional parallel processing" ;
+    yawl-new:relatedPattern yawl-pattern:MultiChoice, yawl-pattern:StructuredSynchronizingMerge .
+
+# =============================================================================
+# PATTERN 67: AD HOC SUB-PROCESS
+# =============================================================================
+
+yawl-new:AdHocSubProcess a owl:Class ;
+    rdfs:subClassOf yawl-pattern:StructuralPattern ;
+    rdfs:label "Ad Hoc Sub-Process" ;
+    yawl-pattern:patternId "WCP-67" ;
+    yawl-pattern:patternName "Ad Hoc Sub-Process" ;
+    skos:definition "A collection of activities that can be executed in any order, any number of times. No predefined control flow; completion determined by condition." ;
+    yawl-new:formalism """
+    AdHoc(activities, completionCondition) = {
+        while !completionCondition:
+            choose any activity
+            execute activity
+    }
+    """ ;
+    yawl-new:useCase "Dynamic task lists, flexible procedures, case management" ;
+    yawl-new:relatedPattern yawl-pattern:InterleavedRouting, yawl-new:CaseManagement .
+
+yawl-new:AdHocActivity a owl:Class ;
+    rdfs:label "Ad Hoc Activity" ;
+    yawl-new:activity yawl:Task ;
+    yawl-new:minExecutions xsd:integer ; # Minimum times to execute
+    yawl-new:maxExecutions xsd:integer ; # Maximum times (unbounded = -1)
+    yawl-new:orderingConstraint xsd:string ; # NONE, SEQUENTIAL, PARALLEL
+
+# =============================================================================
+# PATTERN 68: CASE MANAGEMENT
+# =============================================================================
+
+yawl-new:CaseManagement a owl:Class ;
+    rdfs:subClassOf yawl-new:CloudNativePattern ;
+    rdfs:label "Case Management" ;
+    yawl-pattern:patternId "WCP-68" ;
+    yawl-pattern:patternName "Case Management" ;
+    skos:definition "Manages a case with dynamic activities that can be added, removed, or reordered at runtime based on case state and context." ;
+    yawl-new:formalism """
+    Case = {
+        state: CaseState,
+        activities: Set[Activity],
+        milestones: Set[Milestone],
+        stage: Stage,
+        addActivity(a) if stage.allows(a),
+        completeMilestone(m) if m.preconditionsMet()
+    }
+    """ ;
+    yawl-new:useCase "Legal cases, insurance claims, customer onboarding" ;
+    yawl-new:relatedPattern yawl-new:AdHocSubProcess, yawl-new:Milestone .
+
+yawl-new:CaseStage a owl:Class ;
+    rdfs:label "Case Stage" ;
+    yawl-new:stageName xsd:string ;
+    yawl-new:allowedActivities rdf:List ;
+    yawl-new:entryCondition xsd:string ;
+    yawl-new:exitCondition xsd:string ;
+    yawl-new:autoComplete xsd:boolean .
+
+yawl-new:CaseMilestone a owl:Class ;
+    rdfs:label "Case Milestone" ;
+    yawl-new:milestoneName xsd:string ;
+    yawl-new:achievementCondition xsd:string ;
+    yawl-new:required xsd:boolean ;
+    yawl-new:onAchieve yawl:Task .
+
+# =============================================================================
+# SUPPORTING PROPERTIES
+# =============================================================================
+
+yawl-new:formalism a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "formal specification" .
+
+yawl-new:useCase a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "example use case" .
+
+yawl-new:relatedPattern a owl:ObjectProperty ;
+    rdfs:range yawl-pattern:WorkflowPattern ;
+    rdfs:label "related pattern" .
+
+yawl-new:hasForwardAction a owl:ObjectProperty ;
+    rdfs:range yawl:Task ;
+    rdfs:label "forward action" .
+
+yawl-new:hasCompensatingAction a owl:ObjectProperty ;
+    rdfs:range yawl:Task ;
+    rdfs:label "compensating action" .
+
+yawl-new:isCompensatable a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is compensatable" .
+
+yawl-new:retryLimit a owl:DatatypeProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "retry limit" .
+
+yawl-new:timeout a owl:DatatypeProperty ;
+    rdfs:range xsd:duration ;
+    rdfs:label "timeout" .

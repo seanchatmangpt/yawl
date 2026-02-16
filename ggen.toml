@@ -1,0 +1,1294 @@
+# =============================================================================
+# YAWL v5.2 - Comprehensive ggen Manifest
+# Consolidates patterns from 74 ggen examples for complete workflow generation
+# =============================================================================
+
+[project]
+name = "yawl-codegen"
+version = "5.2.0"
+description = "Ontology-driven code generation for YAWL workflow engine"
+authors = ["YAWL Foundation"]
+license = "Apache-2.0"
+
+# =============================================================================
+# ONTOLOGY CONFIGURATION
+# Single Source of Truth: RDF/OWL ontologies
+# =============================================================================
+
+[ontology]
+# Primary YAWL ontology (from XSD Schema 4.0)
+source = ".specify/yawl-ontology.ttl"
+# SHACL validation shapes
+schema = ".specify/yawl-shapes.ttl"
+# Pattern ontologies
+imports = [
+    ".specify/patterns/saga.ttl",
+    ".specify/patterns/discriminator.ttl",
+    ".specify/patterns/milestone.ttl",
+    ".specify/patterns/interleaved.ttl",
+    ".specify/patterns/deferred-choice.ttl",
+    ".specify/patterns/ontology/extended-patterns.ttl"
+]
+
+[ontology.prefixes]
+yawl = "http://yawlfoundation.org/yawl#"
+yawl-api = "http://yawlfoundation.org/yawl/api#"
+yawl-pattern = "http://yawlfoundation.org/yawl/pattern#"
+yawl-new = "http://yawlfoundation.org/yawl/pattern/new#"
+yawl-engine = "http://yawlfoundation.org/yawl/engine#"
+yawl-state = "http://yawlfoundation.org/yawl/state#"
+yawl-servlet = "http://yawlfoundation.org/yawl/servlet#"
+yawl-worklet = "http://yawlfoundation.org/yawl/worklet#"
+yawl-case = "http://yawlfoundation.org/yawl/case#"
+yawl-task = "http://yawlfoundation.org/yawl/task#"
+yawl-workitem = "http://yawlfoundation.org/yawl/workitem#"
+rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+owl = "http://www.w3.org/2002/07/owl#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
+sh = "http://www.w3.org/ns/shacl#"
+dct = "http://purl.org/dc/terms/"
+
+# =============================================================================
+# INFERENCE RULES (CONSTRUCT queries for graph enrichment)
+# Pattern from: sparql-construct-city, advanced-sparql-graph
+# =============================================================================
+
+[[inference.rules]]
+name = "derive-task-handlers"
+description = "Enrich graph with task handler metadata"
+construct = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX yawl-gen: <http://yawlfoundation.org/yawl/generation#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+CONSTRUCT {
+  ?task yawl-gen:handlerClass ?handlerClass ;
+        yawl-gen:handlerPath ?handlerPath .
+}
+WHERE {
+  ?task a ?taskType ;
+        yawl:taskId ?taskId .
+  ?taskType rdfs:subClassOf* yawl:Task .
+  BIND(CONCAT("Y", ?taskId, "Handler") AS ?handlerClass)
+  BIND(CONCAT("src/org/yawlfoundation/yawl/handlers/", ?handlerClass, ".java") AS ?handlerPath)
+}
+"""
+
+[[inference.rules]]
+name = "derive-flow-metadata"
+description = "Enrich flows with evaluation metadata"
+construct = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX yawl-gen: <http://yawlfoundation.org/yawl/generation#>
+
+CONSTRUCT {
+  ?flow yawl-gen:evaluationOrder ?priority ;
+        yawl-gen:hasCondition ?hasCondition .
+}
+WHERE {
+  ?flow a yawl:Flow ;
+        yawl:flowPriority ?priority .
+  OPTIONAL { ?flow yawl:flowCondition ?condition }
+  BIND(BOUND(?condition) AS ?hasCondition)
+}
+"""
+
+[[inference.rules]]
+name = "derive-state-transitions"
+description = "Generate state transition metadata from status definitions"
+construct = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
+
+CONSTRUCT {
+  ?status yawl-state:canTransitionTo ?nextStatus ;
+          yawl-state:transitionMethod ?methodName .
+}
+WHERE {
+  ?status a yawl:WorkItemStatus ;
+          yawl:allowedTransition ?nextStatus .
+  BIND(CONCAT("setStatusTo", ?nextStatus) AS ?methodName)
+}
+"""
+
+[[inference.rules]]
+name = "derive-api-endpoints"
+description = "Generate API endpoint metadata from interfaces"
+construct = """
+PREFIX yawl-api: <http://yawlfoundation.org/yawl/api#>
+PREFIX yawl-gen: <http://yawlfoundation.org/yawl/generation#>
+
+CONSTRUCT {
+  ?method yawl-gen:endpointPath ?path ;
+          yawl-gen:httpMethod ?httpMethod ;
+          yawl-gen:operationId ?operationId .
+}
+WHERE {
+  ?interface a yawl-api:Interface ;
+             yawl-api:hasMethod ?method .
+  ?method yawl-api:path ?path ;
+          yawl-api:httpMethod ?httpMethod ;
+          yawl-api:name ?operationId .
+}
+"""
+
+# =============================================================================
+# GENERATION CONFIGURATION
+# =============================================================================
+
+[generation]
+output_dir = "generated"
+require_audit_trail = true
+validate_syntax = true
+
+# =============================================================================
+# PHASE 1: JAVA DOMAIN MODEL GENERATION
+# Pattern from: factory-paas, advanced-rust-project, database-schema
+# =============================================================================
+
+# --- YSpecification (Root Entity) ---
+[[generation.rules]]
+name = "java-specification"
+description = "Generate YSpecification.java from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?specId ?specName ?version ?uri ?rootNetId ?documentation
+       (GROUP_CONCAT(DISTINCT ?decompId; separator=",") AS ?decompositions)
+WHERE {
+  ?spec a yawl:Specification ;
+        yawl:specId ?specId ;
+        yawl:specName ?specName ;
+        yawl:version ?version ;
+        yawl:uri ?uri ;
+        yawl:rootNet ?rootNet .
+  ?rootNet yawl:netId ?rootNetId .
+  OPTIONAL { ?spec rdfs:comment ?documentation }
+  OPTIONAL { ?spec yawl:hasDecomposition ?decomp . ?decomp yawl:decompId ?decompId }
+}
+GROUP BY ?specId ?specName ?version ?uri ?rootNetId ?documentation
+""" }
+template = { file = "templates/yawl-java/specification.tera" }
+output_file = "java/engine/YSpecification.java"
+mode = "Overwrite"
+
+# --- YNet (Workflow Net) ---
+[[generation.rules]]
+name = "java-net"
+description = "Generate YNet.java from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?netId ?netName ?isRootNet ?inputCondition ?outputCondition ?documentation
+       (GROUP_CONCAT(DISTINCT ?taskId; separator=",") AS ?tasks)
+       (GROUP_CONCAT(DISTINCT ?conditionId; separator=",") AS ?conditions)
+       (GROUP_CONCAT(DISTINCT ?variableName; separator=",") AS ?localVariables)
+WHERE {
+  ?net a yawl:WorkflowNet ;
+       yawl:netId ?netId ;
+       yawl:netName ?netName .
+  OPTIONAL { ?net yawl:isRootNet ?isRootNet }
+  OPTIONAL { ?net yawl:inputCondition ?inCond . ?inCond yawl:conditionId ?inputCondition }
+  OPTIONAL { ?net yawl:outputCondition ?outCond . ?outCond yawl:conditionId ?outputCondition }
+  OPTIONAL { ?net rdfs:comment ?documentation }
+  OPTIONAL { ?net yawl:hasTask ?task . ?task yawl:taskId ?taskId }
+  OPTIONAL { ?net yawl:hasCondition ?cond . ?cond yawl:conditionId ?conditionId }
+  OPTIONAL { ?net yawl:localVariable ?var . ?var yawl:variableName ?variableName }
+}
+GROUP BY ?netId ?netName ?isRootNet ?inputCondition ?outputCondition ?documentation
+""" }
+template = { file = "templates/yawl-java/net.tera" }
+output_file = "java/elements/YNet.java"
+mode = "Overwrite"
+
+# --- YTask (Atomic/Composite) ---
+[[generation.rules]]
+name = "java-task"
+description = "Generate YTask subclasses from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?taskId ?taskName ?taskType ?splitType ?joinType ?decomposesTo ?documentation
+       ?miMinimum ?miMaximum ?miThreshold ?miCreationMode
+       (GROUP_CONCAT(DISTINCT ?flowTarget; separator=",") AS ?flowTargets)
+WHERE {
+  ?task a ?taskType ;
+        yawl:taskId ?taskId ;
+        yawl:taskName ?taskName .
+  ?taskType rdfs:subClassOf* yawl:Task .
+  OPTIONAL { ?task yawl:splitType ?splitType }
+  OPTIONAL { ?task yawl:joinType ?joinType }
+  OPTIONAL { ?task yawl:decomposesTo ?decomp . ?decomp yawl:decompId ?decomposesTo }
+  OPTIONAL { ?task rdfs:comment ?documentation }
+  OPTIONAL { ?task yawl:miMinimum ?miMinimum }
+  OPTIONAL { ?task yawl:miMaximum ?miMaximum }
+  OPTIONAL { ?task yawl:miThreshold ?miThreshold }
+  OPTIONAL { ?task yawl:miCreationMode ?miCreationMode }
+  OPTIONAL { ?task yawl:flowsTo ?flow . ?flow yawl:targetId ?flowTarget }
+}
+GROUP BY ?taskId ?taskName ?taskType ?splitType ?joinType ?decomposesTo ?documentation
+         ?miMinimum ?miMaximum ?miThreshold ?miCreationMode
+ORDER BY ?taskId
+""" }
+template = { file = "templates/yawl-java/task.tera" }
+output_file = "java/elements/{{ taskId }}.java"
+mode = "Overwrite"
+
+# --- YCondition (Places in Petri Net) ---
+[[generation.rules]]
+name = "java-condition"
+description = "Generate YCondition subclasses from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?conditionId ?conditionName ?conditionType ?documentation
+WHERE {
+  ?condition a ?conditionType ;
+             yawl:conditionId ?conditionId ;
+             yawl:conditionName ?conditionName .
+  ?conditionType rdfs:subClassOf* yawl:Condition .
+  OPTIONAL { ?condition rdfs:comment ?documentation }
+}
+ORDER BY ?conditionId
+""" }
+template = { file = "templates/yawl-java/condition.tera" }
+output_file = "java/elements/{{ conditionId }}.java"
+mode = "Overwrite"
+
+# --- YFlow (Control Flow Connections) ---
+[[generation.rules]]
+name = "java-flow"
+description = "Generate YFlow.java from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?flowId ?sourceId ?targetId ?predicate ?evaluationOrder ?isDefault
+WHERE {
+  ?flow a yawl:Flow ;
+        yawl:flowId ?flowId ;
+        yawl:sourceId ?sourceId ;
+        yawl:targetId ?targetId .
+  OPTIONAL { ?flow yawl:predicate ?predicate }
+  OPTIONAL { ?flow yawl:evaluationOrder ?evaluationOrder }
+  OPTIONAL { ?flow yawl:isDefault ?isDefault }
+}
+ORDER BY ?sourceId ?evaluationOrder
+""" }
+template = { file = "templates/yawl-java/flow.tera" }
+output_file = "java/elements/YFlow.java"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 2: STATE MACHINE GENERATION
+# Pattern from: advanced-lifecycle-demo, rust-cli-lifecycle
+# =============================================================================
+
+# --- YWorkItemStatus (State Enum) ---
+[[generation.rules]]
+name = "java-workitem-status"
+description = "Generate YWorkItemStatus enum with transitions"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
+
+SELECT ?statusName ?isInitial ?isFinal
+       (GROUP_CONCAT(DISTINCT ?nextStatus; separator=",") AS ?allowedTransitions)
+WHERE {
+  ?status a yawl:WorkItemStatus ;
+          yawl:statusName ?statusName .
+  OPTIONAL { ?status yawl:isInitial ?isInitial }
+  OPTIONAL { ?status yawl:isFinal ?isFinal }
+  OPTIONAL { ?status yawl:allowedTransition ?next . ?next yawl:statusName ?nextStatus }
+}
+GROUP BY ?statusName ?isInitial ?isFinal
+ORDER BY ?statusName
+""" }
+template = { file = "templates/yawl-state/state-machine.tera" }
+output_file = "java/engine/YWorkItemStatus.java"
+mode = "Overwrite"
+
+# --- YMarking (Petri Net State) ---
+[[generation.rules]]
+name = "java-marking"
+description = "Generate YMarking for Petri net state"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
+
+SELECT DISTINCT ?markingClass
+WHERE {
+  ?marking a yawl:Marking ;
+           rdfs:label ?markingClass .
+}
+""" }
+template = { file = "templates/yawl-state/marking.tera" }
+output_file = "java/elements/state/YMarking.java"
+mode = "Overwrite"
+
+# --- YIdentifier (Token/Case ID) ---
+[[generation.rules]]
+name = "java-identifier"
+description = "Generate YIdentifier for workflow tokens"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT DISTINCT ?feature
+WHERE {
+  ?identifier a yawl:Identifier ;
+              yawl:hasFeature ?feature .
+}
+""" }
+template = { file = "templates/yawl-state/identifier.tera" }
+output_file = "java/elements/state/YIdentifier.java"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 3: EXCEPTION GENERATION
+# Pattern from: advanced-error-handling
+# =============================================================================
+
+[[generation.rules]]
+name = "java-exceptions"
+description = "Generate exception classes from ontology"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?exceptionName ?parentException ?errorCode ?message ?documentation
+WHERE {
+  ?exception a yawl:Exception ;
+             yawl:exceptionName ?exceptionName .
+  OPTIONAL { ?exception rdfs:subClassOf ?parent . ?parent yawl:exceptionName ?parentException }
+  OPTIONAL { ?exception yawl:errorCode ?errorCode }
+  OPTIONAL { ?exception yawl:defaultMessage ?message }
+  OPTIONAL { ?exception rdfs:comment ?documentation }
+}
+ORDER BY ?exceptionName
+""" }
+template = { file = "templates/yawl-java/exception.tera" }
+output_file = "java/exceptions/{{ exceptionName }}.java"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 4: API CLIENT GENERATION
+# Pattern from: openapi, nextjs-openapi-sqlite-shadcn-vitest, fastapi-from-rdf
+# =============================================================================
+
+# --- OpenAPI 3.0 Specification ---
+[[generation.rules]]
+name = "openapi-spec"
+description = "Generate OpenAPI 3.0 specification from YAWL interfaces"
+query = { inline = """
+PREFIX yawl-api: <http://yawlfoundation.org/yawl/api#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?interfaceName ?methodName ?path ?httpMethod ?description
+       ?requestSchema ?responseSchema ?statusCode
+WHERE {
+  ?interface a yawl-api:Interface ;
+             yawl-api:interfaceName ?interfaceName ;
+             yawl-api:hasMethod ?method .
+  ?method yawl-api:methodName ?methodName ;
+          yawl-api:path ?path ;
+          yawl-api:httpMethod ?httpMethod .
+  OPTIONAL { ?method rdfs:comment ?description }
+  OPTIONAL { ?method yawl-api:requestSchema ?requestSchema }
+  OPTIONAL { ?method yawl-api:responseSchema ?responseSchema }
+  OPTIONAL { ?method yawl-api:statusCode ?statusCode }
+}
+ORDER BY ?interfaceName ?path ?httpMethod
+""" }
+template = { file = "templates/yawl-api/openapi.tera" }
+output_file = "api/openapi.yaml"
+mode = "Overwrite"
+
+# --- TypeScript Client ---
+[[generation.rules]]
+name = "typescript-client"
+description = "Generate TypeScript API client"
+query = { inline = """
+PREFIX yawl-api: <http://yawlfoundation.org/yawl/api#>
+
+SELECT ?methodName ?path ?httpMethod ?requestType ?responseType
+WHERE {
+  ?interface a yawl-api:Interface ;
+             yawl-api:hasMethod ?method .
+  ?method yawl-api:methodName ?methodName ;
+          yawl-api:path ?path ;
+          yawl-api:httpMethod ?httpMethod .
+  OPTIONAL { ?method yawl-api:requestType ?requestType }
+  OPTIONAL { ?method yawl-api:responseType ?responseType }
+}
+ORDER BY ?methodName
+""" }
+template = { file = "templates/yawl-api/typescript-client.tera" }
+output_file = "clients/typescript/yawl-client.ts"
+mode = "Overwrite"
+
+# --- Python Client ---
+[[generation.rules]]
+name = "python-client"
+description = "Generate Python API client"
+query = { inline = """
+PREFIX yawl-api: <http://yawlfoundation.org/yawl/api#>
+
+SELECT ?methodName ?path ?httpMethod ?requestType ?responseType
+WHERE {
+  ?interface a yawl-api:Interface ;
+             yawl-api:hasMethod ?method .
+  ?method yawl-api:methodName ?methodName ;
+          yawl-api:path ?path ;
+          yawl-api:httpMethod ?httpMethod .
+  OPTIONAL { ?method yawl-api:requestType ?requestType }
+  OPTIONAL { ?method yawl-api:responseType ?responseType }
+}
+ORDER BY ?methodName
+""" }
+template = { file = "templates/yawl-api/python-client.tera" }
+output_file = "clients/python/yawl_client.py"
+mode = "Overwrite"
+
+# --- Zod Validation Schemas ---
+[[generation.rules]]
+name = "zod-schemas"
+description = "Generate Zod validation schemas"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?entityName ?propName ?propType ?required ?minLength ?maxLength ?pattern
+WHERE {
+  ?entity a yawl:Entity ;
+          yawl:entityName ?entityName ;
+          yawl:hasProperty ?prop .
+  ?prop yawl:propName ?propName ;
+        yawl:propType ?propType .
+  OPTIONAL { ?prop yawl:required ?required }
+  OPTIONAL { ?prop yawl:minLength ?minLength }
+  OPTIONAL { ?prop yawl:maxLength ?maxLength }
+  OPTIONAL { ?prop yawl:pattern ?pattern }
+}
+ORDER BY ?entityName ?propName
+""" }
+template = { file = "templates/yawl-api/zod-schemas.tera" }
+output_file = "clients/typescript/schemas.ts"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 5: YAWL XML SPECIFICATION GENERATION
+# Pattern from: yawl-workflow-platform
+# =============================================================================
+
+[[generation.rules]]
+name = "yawl-xml-spec"
+description = "Generate YAWL XML specification files"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?specId ?specName ?specVersion ?specUri ?rootNetId
+       ?inputCondition ?outputCondition ?documentation
+WHERE {
+  ?spec a yawl:Specification ;
+        yawl:specId ?specId ;
+        yawl:specName ?specName ;
+        yawl:version ?specVersion ;
+        yawl:uri ?specUri ;
+        yawl:rootNet ?rootNet .
+  ?rootNet yawl:netId ?rootNetId ;
+           yawl:inputCondition ?inCond ;
+           yawl:outputCondition ?outCond .
+  ?inCond yawl:conditionId ?inputCondition .
+  ?outCond yawl:conditionId ?outputCondition .
+  OPTIONAL { ?spec rdfs:comment ?documentation }
+}
+ORDER BY ?specId
+""" }
+template = { file = "templates/yawl-xml/specification.tera" }
+output_file = "specs/{{ specId }}.yawl"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 6: TEST GENERATION
+# Pattern from: validation-schemas, thesis-gen (for structure)
+# =============================================================================
+
+# --- JUnit Tests from SHACL ---
+[[generation.rules]]
+name = "junit-from-shacl"
+description = "Generate JUnit tests from SHACL shapes"
+query = { inline = """
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?shapeName ?targetClass ?constraintType ?constraintValue ?message
+WHERE {
+  ?shape a sh:NodeShape ;
+         sh:targetClass ?targetClass ;
+         rdfs:label ?shapeName .
+  OPTIONAL {
+    ?shape sh:property ?prop .
+    ?prop sh:path ?path ;
+          ?constraintType ?constraintValue .
+    OPTIONAL { ?prop sh:message ?message }
+  }
+}
+ORDER BY ?shapeName
+""" }
+template = { file = "templates/yawl-tests/junit-shacl.tera" }
+output_file = "test/java/Test{{ shapeName }}.java"
+mode = "Overwrite"
+
+# --- Integration Tests ---
+[[generation.rules]]
+name = "integration-tests"
+description = "Generate integration tests from workflow patterns"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?patternId ?patternName ?patternType ?description
+       (GROUP_CONCAT(DISTINCT ?testCase; separator=";;") AS ?testCases)
+WHERE {
+  ?pattern a ?patternType ;
+           yawl-pattern:patternId ?patternId ;
+           yawl-pattern:patternName ?patternName .
+  ?patternType rdfs:subClassOf* yawl-pattern:WorkflowPattern .
+  OPTIONAL { ?pattern rdfs:comment ?description }
+  OPTIONAL { ?pattern yawl-pattern:testCase ?testCase }
+}
+GROUP BY ?patternId ?patternName ?patternType ?description
+ORDER BY ?patternId
+""" }
+template = { file = "templates/yawl-tests/integration.tera" }
+output_file = "test/java/patterns/Test{{ patternId }}.java"
+mode = "Overwrite"
+
+# --- Concurrency Tests ---
+[[generation.rules]]
+name = "concurrency-tests"
+description = "Generate concurrency stress tests"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?componentName ?threadCount ?operationsPerThread ?timeout
+WHERE {
+  ?test a yawl:ConcurrencyTest ;
+        yawl:targetComponent ?componentName .
+  OPTIONAL { ?test yawl:threadCount ?threadCount }
+  OPTIONAL { ?test yawl:operationsPerThread ?operationsPerThread }
+  OPTIONAL { ?test yawl:timeout ?timeout }
+}
+""" }
+template = { file = "templates/yawl-tests/concurrency.tera" }
+output_file = "test/java/concurrency/Test{{ componentName }}Concurrency.java"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 7: DOCUMENTATION GENERATION
+# Pattern from: thesis-gen, gcp-erlang-autonomics
+# =============================================================================
+
+# --- Pattern Catalog (LaTeX) ---
+[[generation.rules]]
+name = "pattern-catalog-latex"
+description = "Generate pattern catalog in LaTeX format"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?patternId ?patternName ?patternType ?description ?formalism ?example
+       (GROUP_CONCAT(DISTINCT ?relatedPattern; separator=",") AS ?relatedPatterns)
+WHERE {
+  ?pattern a ?patternType ;
+           yawl-pattern:patternId ?patternId ;
+           yawl-pattern:patternName ?patternName .
+  ?patternType rdfs:subClassOf* yawl-pattern:WorkflowPattern .
+  OPTIONAL { ?pattern rdfs:comment ?description }
+  OPTIONAL { ?pattern yawl-pattern:formalism ?formalism }
+  OPTIONAL { ?pattern yawl-pattern:example ?example }
+  OPTIONAL { ?pattern yawl-pattern:relatedPattern ?relatedPattern }
+}
+GROUP BY ?patternId ?patternName ?patternType ?description ?formalism ?example
+ORDER BY ?patternId
+""" }
+template = { file = "templates/yawl-docs/pattern-catalog.tera" }
+output_file = "docs/patterns/catalog.tex"
+mode = "Overwrite"
+
+# --- C4 Architecture Diagrams ---
+[[generation.rules]]
+name = "c4-level2-containers"
+description = "Generate C4 Container diagram (Mermaid)"
+query = { inline = """
+PREFIX c4: <http://ggen.io/c4#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?containerLabel ?containerType ?dataflowLabel ?targetContainer
+WHERE {
+  ?system a c4:System ;
+          rdfs:label "YAWL" ;
+          c4:hasContainer ?container .
+  ?container rdfs:label ?containerLabel ;
+             a ?containerType .
+  OPTIONAL {
+    ?container c4:dataFlowTo ?target .
+    ?container c4:flowLabel ?dataflowLabel .
+    ?target rdfs:label ?targetContainer .
+  }
+}
+ORDER BY ?containerLabel
+""" }
+template = { file = "templates/yawl-docs/c4-containers.tera" }
+output_file = "docs/architecture/c2-containers.mmd"
+mode = "Overwrite"
+
+# --- API Documentation ---
+[[generation.rules]]
+name = "api-documentation"
+description = "Generate API documentation in Markdown"
+query = { inline = """
+PREFIX yawl-api: <http://yawlfoundation.org/yawl/api#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?interfaceName ?interfaceDesc ?methodName ?path ?httpMethod ?methodDesc
+       ?requestParam ?requestType ?responseType
+WHERE {
+  ?interface a yawl-api:Interface ;
+             yawl-api:interfaceName ?interfaceName ;
+             yawl-api:hasMethod ?method .
+  ?method yawl-api:methodName ?methodName ;
+          yawl-api:path ?path ;
+          yawl-api:httpMethod ?httpMethod .
+  OPTIONAL { ?interface rdfs:comment ?interfaceDesc }
+  OPTIONAL { ?method rdfs:comment ?methodDesc }
+  OPTIONAL { ?method yawl-api:requestParam ?requestParam }
+  OPTIONAL { ?method yawl-api:requestType ?requestType }
+  OPTIONAL { ?method yawl-api:responseType ?responseType }
+}
+ORDER BY ?interfaceName ?path ?httpMethod
+""" }
+template = { file = "templates/yawl-docs/api-docs.tera" }
+output_file = "docs/api/INTERFACE_{{ interfaceName }}.md"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 8: INFRASTRUCTURE GENERATION
+# Pattern from: factory-paas, gcp-erlang-autonomics
+# =============================================================================
+
+# --- Terraform Configuration ---
+[[generation.rules]]
+name = "terraform-main"
+description = "Generate Terraform main.tf for YAWL deployment"
+query = { inline = """
+PREFIX infra: <http://ggen.io/infra#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?resourceName ?resourceType ?cpuRequest ?memoryRequest ?replicas
+WHERE {
+  ?resource a infra:Resource ;
+            infra:supports yawl:Engine ;
+            infra:resourceName ?resourceName ;
+            infra:resourceType ?resourceType .
+  OPTIONAL { ?resource infra:cpuRequest ?cpuRequest }
+  OPTIONAL { ?resource infra:memoryRequest ?memoryRequest }
+  OPTIONAL { ?resource infra:replicas ?replicas }
+}
+ORDER BY ?resourceName
+""" }
+template = { file = "templates/yawl-infra/terraform-main.tera" }
+output_file = "infra/terraform/main.tf"
+mode = "Overwrite"
+
+# --- Kubernetes Deployment ---
+[[generation.rules]]
+name = "kubernetes-deployment"
+description = "Generate Kubernetes deployment manifests"
+query = { inline = """
+PREFIX k8s: <http://ggen.io/k8s#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?serviceName ?image ?port ?replicas ?cpuLimit ?memoryLimit ?namespace
+WHERE {
+  ?service a k8s:Deployment ;
+           k8s:supports yawl:Engine ;
+           k8s:serviceName ?serviceName ;
+           k8s:image ?image .
+  OPTIONAL { ?service k8s:port ?port }
+  OPTIONAL { ?service k8s:replicas ?replicas }
+  OPTIONAL { ?service k8s:cpuLimit ?cpuLimit }
+  OPTIONAL { ?service k8s:memoryLimit ?memoryLimit }
+  OPTIONAL { ?service k8s:namespace ?namespace }
+}
+ORDER BY ?serviceName
+""" }
+template = { file = "templates/yawl-infra/k8s-deployment.tera" }
+output_file = "infra/k8s/{{ serviceName }}-deployment.yaml"
+mode = "Overwrite"
+
+# --- Docker Compose ---
+[[generation.rules]]
+name = "docker-compose"
+description = "Generate Docker Compose configuration"
+query = { inline = """
+PREFIX docker: <http://ggen.io/docker#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?serviceName ?image ?ports ?volumes ?environment ?dependsOn
+WHERE {
+  ?service a docker:Service ;
+           docker:supports yawl:Engine ;
+           docker:serviceName ?serviceName ;
+           docker:image ?image .
+  OPTIONAL { ?service docker:ports ?ports }
+  OPTIONAL { ?service docker:volumes ?volumes }
+  OPTIONAL { ?service docker:environment ?environment }
+  OPTIONAL { ?service docker:dependsOn ?dependsOn }
+}
+ORDER BY ?serviceName
+""" }
+template = { file = "templates/yawl-infra/docker-compose.tera" }
+output_file = "infra/docker/docker-compose.yml"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 9: COMPLIANCE ARTIFACT GENERATION
+# Pattern from: mcp-board-report (cryptographic receipts)
+# =============================================================================
+
+# --- SBOM Generation ---
+[[generation.rules]]
+name = "sbom-cyclonedx"
+description = "Generate CycloneDX SBOM from specification"
+query = { inline = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?componentName ?componentVersion ?componentType ?license ?purl
+WHERE {
+  ?component a yawl:Component ;
+             yawl:componentName ?componentName .
+  OPTIONAL { ?component yawl:componentVersion ?componentVersion }
+  OPTIONAL { ?component yawl:componentType ?componentType }
+  OPTIONAL { ?component yawl:license ?license }
+  OPTIONAL { ?component yawl:purl ?purl }
+}
+ORDER BY ?componentName
+""" }
+template = { file = "templates/yawl-compliance/sbom.tera" }
+output_file = "compliance/sbom.json"
+mode = "Overwrite"
+
+# --- SOC 2 Control Matrix ---
+[[generation.rules]]
+name = "soc2-controls"
+description = "Generate SOC 2 control mapping from YAWL patterns"
+query = { inline = """
+PREFIX compliance: <http://ggen.io/compliance#>
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?controlId ?controlName ?controlFamily ?patternId ?evidence ?description
+WHERE {
+  ?control a compliance:SOC2Control ;
+           compliance:controlId ?controlId ;
+           compliance:controlName ?controlName ;
+           compliance:controlFamily ?controlFamily .
+  OPTIONAL { ?control compliance:mapsToPattern ?pattern . ?pattern yawl-pattern:patternId ?patternId }
+  OPTIONAL { ?control compliance:evidence ?evidence }
+  OPTIONAL { ?control compliance:description ?description }
+}
+ORDER BY ?controlFamily ?controlId
+""" }
+template = { file = "templates/yawl-compliance/soc2-controls.tera" }
+output_file = "compliance/soc2/control-matrix.md"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 10: NEW PATTERN IMPLEMENTATION
+# Pattern from: yawl-workflow-platform (worklet handlers)
+# =============================================================================
+
+# --- Saga Pattern Implementation ---
+[[generation.rules]]
+name = "pattern-saga-java"
+description = "Generate Saga Orchestration pattern Java code"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?stepId ?stepName ?compensationAction ?isCompensatable ?timeout
+WHERE {
+  ?saga a yawl-pattern:SagaPattern ;
+        yawl-pattern:hasStep ?step .
+  ?step yawl-pattern:stepId ?stepId ;
+        yawl-pattern:stepName ?stepName .
+  OPTIONAL { ?step yawl-pattern:compensationAction ?compensationAction }
+  OPTIONAL { ?step yawl-pattern:isCompensatable ?isCompensatable }
+  OPTIONAL { ?step yawl-pattern:timeout ?timeout }
+}
+ORDER BY ?stepId
+""" }
+template = { file = "templates/yawl-patterns/saga.tera" }
+output_file = "java/patterns/YSagaOrchestrationTask.java"
+mode = "Overwrite"
+
+# --- Discriminator Pattern Implementation ---
+[[generation.rules]]
+name = "pattern-discriminator-java"
+description = "Generate Discriminator pattern Java code"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?branchId ?branchName ?isFirstBranch ?resetCondition
+WHERE {
+  ?discriminator a yawl-pattern:DiscriminatorPattern ;
+                 yawl-pattern:hasBranch ?branch .
+  ?branch yawl-pattern:branchId ?branchId ;
+          yawl-pattern:branchName ?branchName .
+  OPTIONAL { ?branch yawl-pattern:isFirstBranch ?isFirstBranch }
+  OPTIONAL { ?branch yawl-pattern:resetCondition ?resetCondition }
+}
+ORDER BY ?branchId
+""" }
+template = { file = "templates/yawl-patterns/discriminator.tera" }
+output_file = "java/patterns/YDiscriminatorTask.java"
+mode = "Overwrite"
+
+# --- Milestone Pattern Implementation ---
+[[generation.rules]]
+name = "pattern-milestone-java"
+description = "Generate Milestone pattern Java code"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?milestoneId ?milestoneName ?guardedTaskId ?guardOperator
+WHERE {
+  ?milestone a yawl-pattern:MilestonePattern ;
+             yawl-pattern:milestoneId ?milestoneId ;
+             yawl-pattern:milestoneName ?milestoneName .
+  OPTIONAL { ?milestone yawl-pattern:guards ?task . ?task yawl:taskId ?guardedTaskId }
+  OPTIONAL { ?milestone yawl-pattern:guardOperator ?guardOperator }
+}
+ORDER BY ?milestoneId
+""" }
+template = { file = "templates/yawl-patterns/milestone.tera" }
+output_file = "java/patterns/YMilestoneCondition.java"
+mode = "Overwrite"
+
+# --- Interleaved Parallel Routing ---
+[[generation.rules]]
+name = "pattern-interleaved-java"
+description = "Generate Interleaved Parallel Routing pattern Java code"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?taskId ?taskName ?selectionStrategy ?mutexRequired
+WHERE {
+  ?interleaved a yawl-pattern:InterleavedPattern ;
+               yawl-pattern:hasTask ?task .
+  ?task yawl:taskId ?taskId ;
+        yawl:taskName ?taskName .
+  OPTIONAL { ?interleaved yawl-pattern:selectionStrategy ?selectionStrategy }
+  OPTIONAL { ?task yawl-pattern:mutexRequired ?mutexRequired }
+}
+ORDER BY ?taskId
+""" }
+template = { file = "templates/yawl-patterns/interleaved.tera" }
+output_file = "java/patterns/YInterleavedRouterTask.java"
+mode = "Overwrite"
+
+# --- Event-Based Deferred Choice ---
+[[generation.rules]]
+name = "pattern-deferred-choice-java"
+description = "Generate Deferred Choice pattern Java code"
+query = { inline = """
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+
+SELECT ?eventId ?eventType ?eventSource ?triggerBranch
+WHERE {
+  ?deferred a yawl-pattern:DeferredChoicePattern ;
+            yawl-pattern:hasEvent ?event .
+  ?event yawl-pattern:eventId ?eventId ;
+         yawl-pattern:eventType ?eventType .
+  OPTIONAL { ?event yawl-pattern:eventSource ?eventSource }
+  OPTIONAL { ?event yawl-pattern:triggers ?branch . ?branch yawl:taskId ?triggerBranch }
+}
+ORDER BY ?eventId
+""" }
+template = { file = "templates/yawl-patterns/deferred-choice.tera" }
+output_file = "java/patterns/YDeferredChoiceTask.java"
+mode = "Overwrite"
+
+# =============================================================================
+# PHASE 11: EXTENDED PATTERN IMPLEMENTATION (WCP-44 to WCP-68)
+# 25 New Modern Workflow Patterns for Distributed Systems
+# =============================================================================
+
+# --- WCP-44: Saga Orchestration ---
+[[generation.rules]]
+name = "pattern-saga-orchestration"
+description = "Generate Saga Orchestration pattern (WCP-44)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+
+SELECT ?stepId ?stepName ?forwardActionId ?compensatingActionId ?isCompensatable ?timeout ?retryLimit
+WHERE {
+  ?saga a yawl-new:SagaOrchestration ;
+        yawl-new:hasStep ?step .
+  ?step a yawl-new:SagaStep ;
+        yawl-new:stepId ?stepId ;
+        yawl-new:stepName ?stepName .
+  OPTIONAL { ?step yawl-new:hasForwardAction ?fwd . ?fwd yawl:taskId ?forwardActionId }
+  OPTIONAL { ?step yawl-new:hasCompensatingAction ?comp . ?comp yawl:taskId ?compensatingActionId }
+  OPTIONAL { ?step yawl-new:isCompensatable ?isCompensatable }
+  OPTIONAL { ?step yawl-new:timeout ?timeout }
+  OPTIONAL { ?step yawl-new:retryLimit ?retryLimit }
+}
+ORDER BY ?stepId
+""" }
+template = { file = "templates/yawl-patterns/saga.tera" }
+output_file = "java/patterns/extended/YSagaOrchestrationTask.java"
+mode = "Overwrite"
+
+# --- WCP-47: Circuit Breaker ---
+[[generation.rules]]
+name = "pattern-circuit-breaker"
+description = "Generate Circuit Breaker pattern (WCP-47)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?circuitId ?failureThreshold ?timeout ?halfOpenMaxCalls ?callTimeout
+WHERE {
+  ?cb a yawl-new:CircuitBreaker ;
+      yawl-new:circuitId ?circuitId .
+  OPTIONAL { ?cb yawl-new:failureThreshold ?failureThreshold }
+  OPTIONAL { ?cb yawl-new:timeout ?timeout }
+  OPTIONAL { ?cb yawl-new:halfOpenMaxCalls ?halfOpenMaxCalls }
+  OPTIONAL { ?cb yawl-new:callTimeout ?callTimeout }
+}
+""" }
+template = { file = "templates/yawl-patterns/circuit-breaker.tera" }
+output_file = "java/patterns/extended/YCircuitBreakerTask.java"
+mode = "Overwrite"
+
+# --- WCP-48: Retry with Backoff ---
+[[generation.rules]]
+name = "pattern-retry-backoff"
+description = "Generate Retry with Backoff pattern (WCP-48)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?initialDelay ?maxDelay ?maxRetries ?maxTime ?jitterFactor ?backoffStrategy
+WHERE {
+  ?retry a yawl-new:RetryWithBackoff ;
+         yawl-new:hasPolicy ?policy .
+  ?policy a yawl-new:RetryPolicy .
+  OPTIONAL { ?policy yawl-new:initialDelay ?initialDelay }
+  OPTIONAL { ?policy yawl-new:maxDelay ?maxDelay }
+  OPTIONAL { ?policy yawl-new:maxRetries ?maxRetries }
+  OPTIONAL { ?policy yawl-new:maxTime ?maxTime }
+  OPTIONAL { ?policy yawl-new:jitterFactor ?jitterFactor }
+  OPTIONAL { ?policy yawl-new:backoffStrategy ?backoffStrategy }
+}
+""" }
+template = { file = "templates/yawl-patterns/retry-backoff.tera" }
+output_file = "java/patterns/extended/YRetryWithBackoffTask.java"
+mode = "Overwrite"
+
+# --- WCP-51: Event Gateway ---
+[[generation.rules]]
+name = "pattern-event-gateway"
+description = "Generate Event Gateway pattern (WCP-51)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?subscriptionId ?eventType ?eventSource ?correlationKey ?timeout
+WHERE {
+  ?gateway a yawl-new:EventGateway ;
+           yawl-new:hasSubscription ?sub .
+  ?sub a yawl-new:EventSubscription ;
+       yawl-new:subscriptionId ?subscriptionId ;
+       yawl-new:eventType ?eventType .
+  OPTIONAL { ?sub yawl-new:eventSource ?eventSource }
+  OPTIONAL { ?sub yawl-new:correlationKey ?correlationKey }
+  OPTIONAL { ?sub yawl-new:timeout ?timeout }
+}
+ORDER BY ?subscriptionId
+""" }
+template = { file = "templates/yawl-patterns/event-gateway.tera" }
+output_file = "java/patterns/extended/YEventGatewayTask.java"
+mode = "Overwrite"
+
+# --- WCP-54: Outbox Pattern ---
+[[generation.rules]]
+name = "pattern-outbox"
+description = "Generate Outbox pattern (WCP-54)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?aggregateType ?messageIdField ?eventTypeField ?payloadField ?maxRetries ?pollInterval
+WHERE {
+  ?outbox a yawl-new:OutboxPattern ;
+          yawl-new:aggregateType ?aggregateType .
+  OPTIONAL { ?outbox yawl-new:messageIdField ?messageIdField }
+  OPTIONAL { ?outbox yawl-new:eventTypeField ?eventTypeField }
+  OPTIONAL { ?outbox yawl-new:payloadField ?payloadField }
+  OPTIONAL { ?outbox yawl-new:maxRetries ?maxRetries }
+  OPTIONAL { ?outbox yawl-new:pollInterval ?pollInterval }
+}
+""" }
+template = { file = "templates/yawl-patterns/outbox.tera" }
+output_file = "java/patterns/extended/YOutboxPatternTask.java"
+mode = "Overwrite"
+
+# --- WCP-57: Scatter-Gather ---
+[[generation.rules]]
+name = "pattern-scatter-gather"
+description = "Generate Scatter-Gather pattern (WCP-57)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?recipientId ?endpoint ?timeout ?priority ?required
+WHERE {
+  ?sg a yawl-new:ScatterGather ;
+      yawl-new:hasRecipient ?recipient .
+  ?recipient a yawl-new:Recipient ;
+             yawl-new:recipientId ?recipientId ;
+             yawl-new:endpoint ?endpoint .
+  OPTIONAL { ?recipient yawl-new:timeout ?timeout }
+  OPTIONAL { ?recipient yawl-new:priority ?priority }
+  OPTIONAL { ?recipient yawl-new:required ?required }
+}
+ORDER BY ?priority ?recipientId
+""" }
+template = { file = "templates/yawl-patterns/scatter-gather.tera" }
+output_file = "java/patterns/extended/YScatterGatherTask.java"
+mode = "Overwrite"
+
+# --- WCP-58: Content-Based Router ---
+[[generation.rules]]
+name = "pattern-content-router"
+description = "Generate Content-Based Router pattern (WCP-58)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?ruleId ?ruleOrder ?condition ?destination ?description ?ruleType
+WHERE {
+  ?router a yawl-new:ContentBasedRouter ;
+          yawl-new:hasRule ?rule .
+  ?rule a yawl-new:RoutingRule ;
+        yawl-new:ruleId ?ruleId ;
+        yawl-new:condition ?condition ;
+        yawl-new:destination ?destination .
+  OPTIONAL { ?rule yawl-new:ruleOrder ?ruleOrder }
+  OPTIONAL { ?rule yawl-new:description ?description }
+  OPTIONAL { ?rule yawl-new:ruleType ?ruleType }
+}
+ORDER BY ?ruleOrder ?ruleId
+""" }
+template = { file = "templates/yawl-patterns/content-router.tera" }
+output_file = "java/patterns/extended/YContentBasedRouterTask.java"
+mode = "Overwrite"
+
+# --- WCP-60: Rules Engine ---
+[[generation.rules]]
+name = "pattern-rules-engine"
+description = "Generate Rules Engine pattern (WCP-60)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?ruleId ?ruleName ?condition ?action ?priority ?enabled ?effectiveFrom ?effectiveTo ?description
+WHERE {
+  ?engine a yawl-new:RulesEngine ;
+          yawl-new:hasRule ?rule .
+  ?rule a yawl-new:Rule ;
+        yawl-new:ruleId ?ruleId ;
+        yawl-new:ruleName ?ruleName ;
+        yawl-new:condition ?condition ;
+        yawl-new:action ?action .
+  OPTIONAL { ?rule yawl-new:priority ?priority }
+  OPTIONAL { ?rule yawl-new:enabled ?enabled }
+  OPTIONAL { ?rule yawl-new:effectiveFrom ?effectiveFrom }
+  OPTIONAL { ?rule yawl-new:effectiveTo ?effectiveTo }
+  OPTIONAL { ?rule yawl-new:description ?description }
+}
+ORDER BY DESC(?priority) ?ruleId
+""" }
+template = { file = "templates/yawl-patterns/rules-engine.tera" }
+output_file = "java/patterns/extended/YRulesEngineTask.java"
+mode = "Overwrite"
+
+# --- WCP-63: Human-AI Teamwork ---
+[[generation.rules]]
+name = "pattern-human-ai"
+description = "Generate Human-AI Teamwork pattern (WCP-63)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?autoApproveThreshold ?aiAssistedThreshold ?showAIPrediction ?showAIConfidence ?requireHumanReason ?modelEndpoint ?modelVersion
+WHERE {
+  ?hai a yawl-new:HumanAITeamwork ;
+       yawl-new:hasConfig ?config .
+  ?config a yawl-new:HumanAIConfig .
+  OPTIONAL { ?config yawl-new:autoApproveThreshold ?autoApproveThreshold }
+  OPTIONAL { ?config yawl-new:aiAssistedThreshold ?aiAssistedThreshold }
+  OPTIONAL { ?config yawl-new:showAIPrediction ?showAIPrediction }
+  OPTIONAL { ?config yawl-new:showAIConfidence ?showAIConfidence }
+  OPTIONAL { ?config yawl-new:requireHumanReason ?requireHumanReason }
+  OPTIONAL { ?config yawl-new:modelEndpoint ?modelEndpoint }
+  OPTIONAL { ?config yawl-new:modelVersion ?modelVersion }
+}
+""" }
+template = { file = "templates/yawl-patterns/human-ai.tera" }
+output_file = "java/patterns/extended/YHumanAITeamworkTask.java"
+mode = "Overwrite"
+
+# --- WCP-68: Case Management ---
+[[generation.rules]]
+name = "pattern-case-management"
+description = "Generate Case Management pattern (WCP-68)"
+query = { inline = """
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+SELECT ?stageName ?entryCondition ?exitCondition ?autoComplete ?order
+       (GROUP_CONCAT(DISTINCT ?allowedActivity; separator=",") AS ?allowedActivities)
+WHERE {
+  ?cm a yawl-new:CaseManagement ;
+      yawl-new:hasStage ?stage .
+  ?stage a yawl-new:CaseStage ;
+         yawl-new:stageName ?stageName ;
+         yawl-new:order ?order .
+  OPTIONAL { ?stage yawl-new:entryCondition ?entryCondition }
+  OPTIONAL { ?stage yawl-new:exitCondition ?exitCondition }
+  OPTIONAL { ?stage yawl-new:autoComplete ?autoComplete }
+  OPTIONAL { ?stage yawl-new:allowedActivity ?allowedActivity }
+}
+GROUP BY ?stageName ?entryCondition ?exitCondition ?autoComplete ?order
+ORDER BY ?order
+""" }
+template = { file = "templates/yawl-patterns/case-management.tera" }
+output_file = "java/patterns/extended/YCaseManagementTask.java"
+mode = "Overwrite"
+
+# =============================================================================
+# VALIDATION GATES (Quality Checks)
+# Pattern from: factory-paas
+# =============================================================================
+
+[gates]
+
+[[gates.ontology]]
+name = "ontology_valid"
+description = "Ontology must be valid RDF"
+rule = "sparql_validates"
+
+[[gates.completeness]]
+name = "all_tasks_have_decomposition"
+description = "Every task must have a decomposition reference"
+query = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+ASK {
+  ?task a yawl:Task .
+  FILTER NOT EXISTS { ?task yawl:decomposesTo ?decomp }
+}
+"""
+
+[[gates.completeness]]
+name = "all_flows_valid"
+description = "All flows must reference existing tasks/conditions"
+query = """
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+ASK {
+  ?flow a yawl:Flow ;
+        yawl:sourceId ?source ;
+        yawl:targetId ?target .
+  FILTER NOT EXISTS {
+    { ?source a yawl:Task } UNION { ?source a yawl:Condition }
+  }
+}
+"""
+
+[[gates.runtime]]
+name = "health_endpoint_exists"
+description = "Generated API must have /health endpoint"
+check = "routes_includes_health"
+
+# =============================================================================
+# RECEIPTS CONFIGURATION (Audit Trail)
+# Pattern from: mcp-board-report
+# =============================================================================
+
+[receipts]
+enabled = true
+format = "json"
+storage = "append_only_log"
+path = "generated/receipts/"
+include_hash = true
+hash_algorithm = "sha256"
+
+# =============================================================================
+# AI CONFIGURATION (Optional Enhancement)
+# Pattern from: advanced-ai-usage, ai-code-generation
+# =============================================================================
+
+[ai]
+provider = "ollama"
+model = "qwen2.5-coder"
+temperature = 0.7
+max_tokens = 4000
+timeout = 30
+
+[ai.validation]
+enabled = true
+quality_threshold = 0.8
+max_iterations = 3
+
+[ai.prompts]
+system = "You are an expert Java developer specializing in workflow engines and Petri net semantics. Generate production-ready code with proper error handling, testing, and documentation."
+user_prefix = "Generate YAWL workflow code with the following requirements:"
+
+# =============================================================================
+# LIFECYCLE CONFIGURATION
+# Pattern from: rust-cli-lifecycle, advanced-lifecycle-demo
+# =============================================================================
+
+[lifecycle]
+enabled = true
+config_file = "make.toml"
+cache_directory = ".ggen/cache"
+state_file = ".ggen/state.json"
+
+[lifecycle.phases]
+default = ["validate", "generate", "test"]
+full = ["validate", "generate", "compile", "test", "package", "document"]
+
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# Pattern from: perf-library, fortune-5-benchmarks
+# =============================================================================
+
+[performance]
+parallel_execution = true
+max_workers = 8
+cache_size = "512MB"
+cache_enabled = true
+
+# =============================================================================
+# LOGGING & OBSERVABILITY
+# Pattern from: telemetry-demo
+# =============================================================================
+
+[logging]
+level = "info"
+format = "json"
+file = "logs/ggen.log"
+rotation = "daily"
+
+[observability]
+enable_metrics = true
+enable_tracing = true
+otel_endpoint = "http://localhost:4317"
