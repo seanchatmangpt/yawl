@@ -71,8 +71,8 @@ public class RetryPolicyTest extends TestCase {
             return "success";
         });
 
-        assertEquals(result);
-        assertEquals(1, attempts.get(, "success"));
+        assertEquals("success", result);
+        assertEquals(1, attempts.get());
     }
 
     public void testSuccessOnSecondAttempt() throws Exception {
@@ -91,8 +91,8 @@ public class RetryPolicyTest extends TestCase {
 
         long duration = System.currentTimeMillis() - startTime;
 
-        assertEquals(result);
-        assertEquals(2, attempts.get(, "success"));
+        assertEquals("success", result);
+        assertEquals(2, attempts.get());
         assertTrue(duration >= 100, "Should have backoff delay");
     }
 
@@ -112,8 +112,8 @@ public class RetryPolicyTest extends TestCase {
 
         long duration = System.currentTimeMillis() - startTime;
 
-        assertEquals(result);
-        assertEquals(3, attempts.get(, "success"));
+        assertEquals("success", result);
+        assertEquals(3, attempts.get());
         assertTrue(duration >= 150, "Should have exponential backoff");
     }
 
@@ -145,8 +145,8 @@ public class RetryPolicyTest extends TestCase {
             return "success";
         }, 2);
 
-        assertEquals(result);
-        assertEquals(2, attempts.get(, "success"));
+        assertEquals("success", result);
+        assertEquals(2, attempts.get());
     }
 
     public void testRejectsNullOperation() {
@@ -194,7 +194,7 @@ public class RetryPolicyTest extends TestCase {
 
         String result = policy.executeWithRetryUnchecked(() -> "success");
 
-        assertEquals(result);
+        assertEquals("success", result);
     }
 
     public void testExponentialBackoffCalculation() throws Exception {
@@ -248,7 +248,7 @@ public class RetryPolicyTest extends TestCase {
             fail("Test thread interrupted");
         }
 
-        assertTrue(attempts.get(, "Should have attempted at least once") >= 1);
-        assertTrue(attempts.get(, "Should not complete all retries") < 3);
+        assertTrue("Should have attempted at least once", attempts.get() >= 1);
+        assertTrue("Should not complete all retries", attempts.get() < 3);
     }
 }
