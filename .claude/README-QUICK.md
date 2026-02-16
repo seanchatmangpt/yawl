@@ -183,7 +183,7 @@ $ java -cp classes org.yawlfoundation.yawl.util.QuickTest
 🧪 YAWL Quick Test
 ✅ Test 1: Environment detected as REMOTE
 ✅ Test 2: Database type = h2
-✅ Test 3: Java version = 21.0.10
+✅ Test 3: Java version = 25.x
 ✅ Test 4: Classpath configured correctly
 ✅ Test 5: Session ID = session_01PuZ...
 📊 Results: 5 passed, 0 failed

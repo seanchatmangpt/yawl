@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.TestPropertySource;
@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ORM Integration Tests - Verifies entity persistence and relationship management
@@ -23,12 +23,12 @@ public class OrmIntegrationTest {
 
     private TestEntityManager entityManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         assertNotNull("EntityManager should be initialized", entityManager);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         entityManager.clear();
     }

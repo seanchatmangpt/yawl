@@ -5,7 +5,7 @@
     "description": "BPM/Workflow system with powerful modelling language",
     "buildSystem": "Ant",
     "mainLanguage": "Java",
-    "javaVersion": "11+",
+    "javaVersion": "25",
     "environment": "Docker/DevContainer Only"
   },
   "ide": {

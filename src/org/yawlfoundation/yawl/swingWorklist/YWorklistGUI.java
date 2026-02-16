@@ -399,10 +399,10 @@ public class YWorklistGUI extends JPanel implements ActionListener, ListSelectio
 
     public void reportGeneralProblem(Exception e) {
         String message;
-        if (e instanceof IOException || e instanceof JDOMParseException) {
+        if (e instanceof IOException ioEx || e instanceof JDOMParseException jdomEx) {
             message = "There was a problem parsing your input data.  \n" +
                     "Perhaps check that the XML is well formed.";
-        } else if (e instanceof YQueryException) {
+        } else if (e instanceof YQueryException queryEx) {
             message = e.getMessage();
         } else {
             message = e.getMessage();

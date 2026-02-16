@@ -23,9 +23,9 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive test suite for Hibernate 5.6.14 → 6.5.1 migration.
@@ -51,7 +51,7 @@ public class Hibernate6MigrationTest {
     private HibernateEngine hibernateEngine;
     private SessionFactory sessionFactory;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Properties props = new Properties();
         props.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
@@ -78,7 +78,7 @@ public class Hibernate6MigrationTest {
         sessionFactory = hibernateEngine.getSession().getSessionFactory();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (hibernateEngine != null) {
             hibernateEngine.closeFactory();

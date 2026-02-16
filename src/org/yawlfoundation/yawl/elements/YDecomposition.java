@@ -224,37 +224,31 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
     public String toXML() {
 
         // just do the decomposition facts (not the surrounding element) - to keep life simple
-        StringBuilder xml = new StringBuilder();
-        if (_name != null)
-            xml.append(StringUtil.wrapEscaped(_name, "name"));
-        if (_documentation != null)
-            xml.append(StringUtil.wrapEscaped(_documentation, "documentation"));
+        String nameXML = _name != null ? StringUtil.wrapEscaped(_name, "name") : "";
+        String docsXML = _documentation != null ? StringUtil.wrapEscaped(_documentation, "documentation") : "";
+        String outputExpressionsXML = _outputExpressions.stream()
+            .map(expr -> "<outputExpression query=\"%s\"/>".formatted(JDOMUtil.encodeEscapes(expr)))
+            .collect(java.util.stream.Collectors.joining());
+        String logPredicateXML = _logPredicate != null ? _logPredicate.toXML() : "";
 
-        xml.append(paramMapToXML(_inputParameters));
-
-        for (String expression : _outputExpressions) {
-            xml.append("<outputExpression query=\"")
-               .append(JDOMUtil.encodeEscapes(expression))
-               .append("\"/>");
-        }
-
-        xml.append(paramMapToXML(_outputParameters));
-        xml.append(paramMapToXML(_enablementParameters));
-
-        if (_logPredicate != null) xml.append(_logPredicate.toXML());
-
-        return xml.toString();
+        return "%s%s%s%s%s%s%s".formatted(
+            nameXML,
+            docsXML,
+            paramMapToXML(_inputParameters),
+            outputExpressionsXML,
+            paramMapToXML(_outputParameters),
+            paramMapToXML(_enablementParameters),
+            logPredicateXML
+        );
     }
 
 
     private String paramMapToXML(Map<String, YParameter> paramMap) {
-        StringBuilder result = new StringBuilder() ;
         List<YParameter> parameters = new ArrayList<YParameter>(paramMap.values());
         Collections.sort(parameters);
-        for (YParameter parameter : parameters) {
-            result.append(parameter.toXML());
-        }
-        return result.toString() ;
+        return parameters.stream()
+            .map(YParameter::toXML)
+            .collect(java.util.stream.Collectors.joining());
     }
 
 

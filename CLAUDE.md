@@ -23,7 +23,7 @@ mvn clean compile && mvn clean test      # Build + test (must pass)
 ## System Specification
 
 **O** = {engine, elements, stateless, integration, schema, test}
-**Σ** = Java21 + Maven + JUnit + XML/XSD
+**Σ** = Java25 + Maven + JUnit + XML/XSD
 **Λ** = compile ≺ test ≺ validate ≺ deploy
 
 ## μ(O) → A (Agents)

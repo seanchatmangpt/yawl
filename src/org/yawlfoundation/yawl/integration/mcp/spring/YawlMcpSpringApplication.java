@@ -139,13 +139,14 @@ public class YawlMcpSpringApplication {
                        " (" + resourceRegistry.getCustomTemplateCount() + " custom)");
 
             // Register shutdown hook for clean disconnect
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                LOGGER.info("Shutting down YAWL MCP Spring Server...");
-                sessionManager.disconnect();
-                if (mcpServer != null) {
-                    mcpServer.closeGracefully();
-                }
-                LOGGER.info("Shutdown complete");
+            Runtime.getRuntime().addShutdownHook(
+                Thread.ofVirtual().unstarted(() -> {
+                    LOGGER.info("Shutting down YAWL MCP Spring Server...");
+                    sessionManager.disconnect();
+                    if (mcpServer != null) {
+                        mcpServer.closeGracefully();
+                    }
+                    LOGGER.info("Shutdown complete");
             }));
 
             // Keep application running

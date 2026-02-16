@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Observability Integration Tests - Verifies OpenTelemetry tracing and metrics
@@ -16,7 +16,7 @@ public class ObservabilityIntegrationTest {
     private MetricsCollector metricsCollector;
     private TraceContext traceContext;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         metricsCollector = new MetricsCollector();
         traceContext = new TraceContext();

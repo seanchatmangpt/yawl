@@ -25,6 +25,7 @@ import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.elements.YAttributeMap;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.unmarshal.YDecompositionParser;
 import org.yawlfoundation.yawl.util.JDOMUtil;
@@ -49,17 +50,14 @@ public class Marshaller {
 
     public static String getOutputParamsInXML(YParametersSchema paramSchema,
                                               String dataSpaceRootElementNm) {
-        StringBuilder result = new StringBuilder();
-
-        result.append("<").append(dataSpaceRootElementNm).append(">");
+        StringBuilder paramsXml = new StringBuilder();
         if (paramSchema != null) {
             List<YParameter> params = paramSchema.getOutputParams();
             for (YParameter param : params) {
-                result.append(presentParam(param));
+                paramsXml.append(presentParam(param));
             }
         }
-        result.append("</").append(dataSpaceRootElementNm).append(">");
-        return result.toString();
+        return "<%s>%s</%s>".formatted(dataSpaceRootElementNm, paramsXml, dataSpaceRootElementNm);
     }
 
 
@@ -290,13 +288,14 @@ public class Marshaller {
 
     /**
      * Merges input and output data elements into a single XML string.
-     * Returns empty string on failure (graceful degradation for backward compatibility).
-     * 
+     *
      * @param inputData the input data element
      * @param outputData the output data element
-     * @return merged XML string, or empty string if merge fails
+     * @return merged XML string
+     * @throws YAWLException if the merge operation fails
      */
-    public static String getMergedOutputData(Element inputData, Element outputData) {
+    public static String getMergedOutputData(Element inputData, Element outputData)
+            throws YAWLException {
         try {
             Element merged = inputData.clone();
             JDOMUtil.stripAttributes(merged);
@@ -316,12 +315,12 @@ public class Marshaller {
             return JDOMUtil.elementToString(merged);
         }
         catch (Exception e) {
-            // Graceful fallback: return empty string for backward compatibility
-            // This allows callers to continue with empty data rather than failing
-            logger.error("Failed to merge output data - input element: {}, output element: {}", 
-                    inputData != null ? inputData.getName() : "null",
-                    outputData != null ? outputData.getName() : "null", e);
-            return "";
+            String inputName = inputData != null ? inputData.getName() : "null";
+            String outputName = outputData != null ? outputData.getName() : "null";
+            logger.error("Failed to merge output data - input element: {}, output element: {}",
+                    inputName, outputName, e);
+            throw new YAWLException("Failed to merge output data from input element '"
+                    + inputName + "' and output element '" + outputName + "': " + e.getMessage());
         }
     }
 

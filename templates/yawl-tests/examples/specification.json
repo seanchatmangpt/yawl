@@ -1,0 +1,29 @@
+{
+  "package": "org.yawlfoundation.yawl.engine",
+  "test_class": "TestOrderProcessingSpecification",
+  "spec_file": "OrderProcessing.xml",
+  "spec_id": "OrderProcessing",
+  "spec_uri": "OrderProcessing.xml",
+  "root_net_id": "order-net",
+  "junit_version": "5",
+  "tasks": [
+    {"id": "receive-order", "name": "Receive Order", "type": "WebServiceGateway"},
+    {"id": "validate-order", "name": "Validate Order", "type": "WebServiceGateway"},
+    {"id": "check-inventory", "name": "Check Inventory", "type": "MultipleInstanceExternal"},
+    {"id": "process-payment", "name": "Process Payment", "type": "WebServiceGateway"},
+    {"id": "ship-order", "name": "Ship Order", "type": "WebServiceGateway"}
+  ],
+  "input_params": [
+    {"name": "orderId", "type": "xs:string"},
+    {"name": "customerId", "type": "xs:string"},
+    {"name": "orderItems", "type": "xs:list"}
+  ],
+  "test_scenarios": [
+    {"name": "BasicExecution", "description": "Tests basic specification execution from start to finish"},
+    {"name": "OrderValidation", "description": "Tests order validation with valid and invalid orders"},
+    {"name": "PaymentProcessing", "description": "Tests payment processing with various payment methods"},
+    {"name": "ErrorHandling", "description": "Tests error handling when inventory check fails"}
+  ],
+  "author": "YAWL Foundation",
+  "version": "5.2"
+}

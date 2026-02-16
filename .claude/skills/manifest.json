@@ -6,7 +6,7 @@
     {
       "name": "yawl-build",
       "command": "/yawl-build",
-      "description": "Build YAWL modules with Maven",
+      "description": "Build YAWL modules with Maven (Java 25)",
       "script": ".claude/skills/yawl-build.sh",
       "agent": "yawl-engineer",
       "examples": [
@@ -15,12 +15,19 @@
         "/yawl-build package",
         "/yawl-build --module=yawl-engine compile"
       ],
+      "metadata": {
+        "priority": 1,
+        "category": "build",
+        "javaVersions": ["25"],
+        "buildSystems": ["maven"],
+        "preferredBuildSystem": "maven"
+      },
       "parameters": {
         "type": "object",
         "properties": {
           "target": {
             "type": "string",
-            "enum": ["compile", "test", "package", "buildAll", "buildWebApps", "clean", "install", "javadoc", "verify"],
+            "enum": ["compile", "test", "package", "clean", "install", "javadoc", "verify"],
             "default": "compile",
             "description": "Maven build target"
           },
@@ -32,6 +39,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enable verbose output (-X)"
+          },
+          "enablePreview": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable Java 25 preview features (--enable-preview)"
           }
         }
       }

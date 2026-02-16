@@ -1,7 +1,7 @@
 # YAWL v5.2 - Cloud-Native Container Image
 # Production-ready image with Spring Boot Actuator for Kubernetes/Cloud Run
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 LABEL maintainer="YAWL Foundation"
 LABEL version="5.2"

@@ -97,9 +97,9 @@ public class YAWLServiceReference extends YClient implements YVerifiable {
     /***************************************************/
 
     public boolean equals(Object other) {
-        return (other instanceof YAWLServiceReference) &&
+        return other instanceof YAWLServiceReference ref &&
                 ((getServiceID() != null) ?
-                getServiceID().equals(((YAWLServiceReference) other).getServiceID()) :
+                getServiceID().equals(ref.getServiceID()) :
                 super.equals(other));
     }
 

@@ -74,62 +74,67 @@ public class AuthenticationResponseServlet extends HttpServlet {
 
         response.setContentType("text/html; charset=UTF-8");
         PrintWriter outputWriter = response.getWriter();
-        StringBuilder output = new StringBuilder();
 
-        output.append(
-                "<html><head><title>Authentication Details</title>" +
-                "</head><body>" +
-                "<H3>Please Enter Authentication Details</H3>" +
-                "<table width='60%'><form method='post' action='" + request.getContextPath() +
-                "/authServlet' name='availableForm'>" +
-                "<tr>" +
-                "<td colspan='2'>" +
-                "<p>If this custom YAWL Service needs to invoke web services that lie beyond " +
-                "an authenticating proxy server then you will need to enter some authentication " +
-                "parameters to help the system work properly.</p>" +
-                "<p>They can be entered into this form.   Alternatively for a permanent approach try " +
-                "editing the web.xml file.</p>" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td colspan='2'>&nbsp;</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>User Name : </td>" +
-                "<td height='30' align='center'>" +
-                "<input type='text' width='25' name='userName' value='" + userName + "' />" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Password : </td>" +
-                "<td height='30' align='center'>" +
-                "<input type='password' width='25' name='password' value='" + password + "' />" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Proxy Host : </td>" +
-                "<td height='30' align='center'>" +
-                "<input type='text' width='25' name='proxyHost' value='" + proxyHost + "' />" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Proxy Port : </td>" +
-                "<td height='30' align='center'>" +
-                "<input type='text' width='25' name='proxyPort' value='" + proxyPort + "' />" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td height='30' align='left'>" +
-                "<input type='submit' name='submit' value=' Submit ' /></td>" +
-                "<td height='30' align='left'>" +
-                "<input type='reset' value='  Clear  ' />" +
-                "</td>" +
-                "</tr>" +
-                "</form>" +
-                "</table>" +
-                "</body>" +
-                "</html>");
-        outputWriter.write(output.toString());
+        String output = """
+                <html>
+                  <head>
+                    <title>Authentication Details</title>
+                  </head>
+                  <body>
+                    <H3>Please Enter Authentication Details</H3>
+                    <table width='60%%'>
+                      <form method='post' action='%s/authServlet' name='availableForm'>
+                        <tr>
+                          <td colspan='2'>
+                            <p>If this custom YAWL Service needs to invoke web services that lie beyond
+                            an authenticating proxy server then you will need to enter some authentication
+                            parameters to help the system work properly.</p>
+                            <p>They can be entered into this form. Alternatively for a permanent approach try
+                            editing the web.xml file.</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan='2'>&nbsp;</td>
+                        </tr>
+                        <tr>
+                          <td align='left'>User Name : </td>
+                          <td height='30' align='center'>
+                            <input type='text' width='25' name='userName' value='%s' />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align='left'>Password : </td>
+                          <td height='30' align='center'>
+                            <input type='password' width='25' name='password' value='%s' />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align='left'>Proxy Host : </td>
+                          <td height='30' align='center'>
+                            <input type='text' width='25' name='proxyHost' value='%s' />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align='left'>Proxy Port : </td>
+                          <td height='30' align='center'>
+                            <input type='text' width='25' name='proxyPort' value='%s' />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td height='30' align='left'>
+                            <input type='submit' name='submit' value=' Submit ' />
+                          </td>
+                          <td height='30' align='left'>
+                            <input type='reset' value='  Clear  ' />
+                          </td>
+                        </tr>
+                      </form>
+                    </table>
+                  </body>
+                </html>
+                """.formatted(request.getContextPath(), userName, password, proxyHost, proxyPort);
+
+        outputWriter.write(output);
         outputWriter.flush();
         outputWriter.close();
     }
@@ -149,42 +154,47 @@ public class AuthenticationResponseServlet extends HttpServlet {
 
         response.setContentType("text/html");
         PrintWriter outputWriter = response.getWriter();
-        StringBuilder output = new StringBuilder();
 
-        output.append("<html><head><title>Authentication Details</title>" +
-                "</head><body>" +
-                "<H3>Details Entered</H3>" +
-                "<table width='60%'>" +
-                "<tr>" +
-                "<td colspan='2'>" +
-                "<p>Thank you for entering your details.   " +
-                "They have been entered into this custom YAWL Service module.</p>" +
-                "<p>Please feel free to check that the values are correct.</p>" +
-                "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td colspan='2'>&nbsp;</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>User Name : </td>" +
-                "<td height='30' align='center'>" + username + "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Password : </td>" +
-                "<td height='30' align='center'>" + falsePW + "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Proxy Host : </td>" +
-                "<td height='30' align='center'>" + proxyHost + "</td>" +
-                "</tr>" +
-                "<tr>" +
-                "<td align='left'>Proxy Port : </td>" +
-                "<td height='30' align='center'>" + proxyPort + "</td>" +
-                "</tr>" +
-                "</table>" +
-                "</body>" +
-                "</html>");
-        outputWriter.write(output.toString());
+        String output = """
+                <html>
+                  <head>
+                    <title>Authentication Details</title>
+                  </head>
+                  <body>
+                    <H3>Details Entered</H3>
+                    <table width='60%%'>
+                      <tr>
+                        <td colspan='2'>
+                          <p>Thank you for entering your details.
+                          They have been entered into this custom YAWL Service module.</p>
+                          <p>Please feel free to check that the values are correct.</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan='2'>&nbsp;</td>
+                      </tr>
+                      <tr>
+                        <td align='left'>User Name : </td>
+                        <td height='30' align='center'>%s</td>
+                      </tr>
+                      <tr>
+                        <td align='left'>Password : </td>
+                        <td height='30' align='center'>%s</td>
+                      </tr>
+                      <tr>
+                        <td align='left'>Proxy Host : </td>
+                        <td height='30' align='center'>%s</td>
+                      </tr>
+                      <tr>
+                        <td align='left'>Proxy Port : </td>
+                        <td height='30' align='center'>%s</td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """.formatted(username, falsePW, proxyHost, proxyPort);
+
+        outputWriter.write(output);
         outputWriter.flush();
         outputWriter.close();
     }

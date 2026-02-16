@@ -26,6 +26,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 /**
  * This class is used by clients and servers to execute GET and POST requests
@@ -33,19 +35,32 @@ import java.util.Map;
  * POSTS - increases efficiency, security and allows 'extended' chars to be included.
  *
  * Modernized in v5.2 to use java.net.http.HttpClient (Java 11+).
+ * Migrated to virtual threads (Java 25) for improved scalability with external services.
  *
  * @author Lachlan Aldred
  * Date: 22/03/2004
  * Time: 17:49:42
  *
  * @author Michael Adams (refactored for v2.0, 06/2008; and again 12/2008 & 04/2010)
+ * @updated 2026-02-16 Virtual thread migration (Java 25)
  */
 
 public class Interface_Client {
 
-    // Shared HTTP client instance with connection pooling and modern defaults
+    /**
+     * Shared HTTP client instance using virtual threads for network I/O.
+     * Before: Default executor (ForkJoinPool.commonPool())
+     * After: Virtual thread executor (unbounded concurrency for blocking I/O)
+     *
+     * Virtual threads are ideal for HTTP client operations because:
+     * 1. Network I/O is inherently blocking
+     * 2. No CPU-intensive work in HTTP communication
+     * 3. Can handle thousands of concurrent connections efficiently
+     * 4. Eliminates need for connection pool tuning
+     */
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis(5000))
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
             .build();
 
     // allows the prevention of socket reads from blocking indefinitely
@@ -84,6 +99,36 @@ public class Interface_Client {
         }
     }
 
+    /**
+     * Executes an asynchronous HTTP POST request using virtual threads.
+     * This method returns immediately with a CompletableFuture that will be completed
+     * when the HTTP response arrives.
+     *
+     * Virtual threads make this naturally efficient - each async request runs in its
+     * own virtual thread without platform thread pool concerns.
+     *
+     * @param urlStr the URL to send the POST to
+     * @param paramsMap a set of attribute-value pairs that make up the posted data
+     * @return CompletableFuture that will complete with the response string
+     */
+    protected CompletableFuture<String> executePostAsync(String urlStr, Map<String, String> paramsMap) {
+        String encodedData = encodeData(paramsMap);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(urlStr))
+                .timeout(READ_TIMEOUT)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .header("Connection", "close")
+                .POST(HttpRequest.BodyPublishers.ofString(encodedData))
+                .build();
+
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> stripOuterElement(response.body()))
+                .exceptionally(throwable -> {
+                    throw new RuntimeException("HTTP POST failed for URL: " + urlStr, throwable);
+                });
+    }
+
 
     /**
      * Executes a rerouted HTTP GET request as a POST on the specified URL
@@ -114,6 +159,31 @@ public class Interface_Client {
             Thread.currentThread().interrupt();
             throw new IOException("HTTP request interrupted", e);
         }
+    }
+
+    /**
+     * Executes an asynchronous HTTP GET request (implemented as POST) using virtual threads.
+     *
+     * @param urlStr the URL to send the GET to
+     * @param paramsMap a set of attribute-value pairs that make up the posted data
+     * @return CompletableFuture that will complete with the response string
+     */
+    protected CompletableFuture<String> executeGetAsync(String urlStr, Map<String, String> paramsMap) {
+        String encodedData = encodeData(paramsMap);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(urlStr))
+                .timeout(READ_TIMEOUT)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .header("Connection", "close")
+                .POST(HttpRequest.BodyPublishers.ofString(encodedData))
+                .build();
+
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .exceptionally(throwable -> {
+                    throw new RuntimeException("HTTP GET failed for URL: " + urlStr, throwable);
+                });
     }
 
 

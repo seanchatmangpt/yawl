@@ -184,14 +184,14 @@ public class JDOMUtil {
         if (s == null) return s;
         StringBuilder sb = new StringBuilder(s.length());
         for (char c : s.toCharArray()) {
-            switch(c) {
-                case '\'' : sb.append("&apos;"); break;
-                case '\"' : sb.append("&quot;"); break;
-                case '>'  : sb.append("&gt;"); break;
-                case '<'  : sb.append("&lt;"); break;
-                case '&'  : sb.append("&amp;"); break;
-                default   : sb.append(c);
-            }
+            sb.append(switch (c) {
+                case '\'' -> "&apos;";
+                case '\"' -> "&quot;";
+                case '>' -> "&gt;";
+                case '<' -> "&lt;";
+                case '&' -> "&amp;";
+                default -> String.valueOf(c);
+            });
         }
         return sb.toString();
     }

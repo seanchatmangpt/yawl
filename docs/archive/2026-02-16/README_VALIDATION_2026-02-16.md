@@ -181,7 +181,7 @@ ant -f build/build.xml buildAll
 ### Current Status
 - **Build Tool**: Apache Ant (legacy mode)
 - **Primary Build**: Maven 3.9.11 (available)
-- **Java Version**: OpenJDK 21.0.10
+- **Java Version**: OpenJDK 25.x
 - **Build Target**: YAWL v5.2
 
 ### Deprecation Timeline

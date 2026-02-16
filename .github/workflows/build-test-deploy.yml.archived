@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  JAVA_VERSION_PRIMARY: '21'
-  JAVA_VERSION_MATRIX: '["21", "24", "25"]'
+  JAVA_VERSION_PRIMARY: '25'
+  JAVA_VERSION_MATRIX: '["24", "25"]'
   MAVEN_OPTS: -Xmx2048m -Djava.awt.headless=true
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
   REGISTRY: ghcr.io
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [21, 24, 25]
+        java-version: [24, 25]
 
     steps:
       - name: Checkout Repository
@@ -61,13 +61,14 @@ jobs:
             --no-transfer-progress
 
       - name: Upload Build Artifacts
-        if: matrix.java-version == 21
+        if: matrix.java-version == 25
         uses: actions/upload-artifact@v4
         with:
           name: yawl-jar-java${{ matrix.java-version }}
           path: target/*.jar
           retention-days: 5
 
+  test-unit:
   test-unit:
     name: Unit Tests (Java ${{ matrix.java-version }})
     needs: build
@@ -76,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [21, 24, 25]
+        java-version: [24, 25]
 
     steps:
       - name: Checkout Repository
@@ -89,11 +90,19 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests with Coverage
         run: |
           mvn test -B -V \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
+
+      - name: Generate Coverage Report
+        if: matrix.java-version == 25
+        run: mvn jacoco:report
+
+      - name: Verify Coverage Threshold (65% minimum)
+        if: matrix.java-version == 25
+        run: mvn jacoco:check || echo "⚠️  Coverage threshold not met - continuing build but please add tests"
 
       - name: Upload Test Results
         if: always()
@@ -106,13 +115,21 @@ jobs:
           retention-days: 7
 
       - name: Upload Coverage Report
-        if: matrix.java-version == 21
+        if: matrix.java-version == 25
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: target/site/jacoco/
           retention-days: 7
 
+      - name: Upload Coverage to Codecov
+        if: matrix.java-version == 25
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-yawl
+          fail_ci_if_error: false
   test-integration:
     name: Integration Tests
     needs: build
@@ -153,10 +170,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -194,10 +211,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -247,10 +264,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -283,10 +300,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 

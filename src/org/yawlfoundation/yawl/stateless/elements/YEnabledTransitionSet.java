@@ -104,7 +104,7 @@ public class YEnabledTransitionSet {
 
 
     private boolean isEnablingCondition(YNetElement element) {
-        return (element instanceof YCondition) && ((YCondition) element).containsIdentifier();
+        return (element instanceof YCondition condition) && condition.containsIdentifier();
     }
 
 
@@ -230,11 +230,11 @@ public class YEnabledTransitionSet {
 
         private <T extends YTask> T getRandomTask(List<T> taskList) {
             if (taskList == null) return null;
-            switch (taskList.size()) {
-                case 0 : return null;
-                case 1 : return taskList.get(0);
-                default: return taskList.get(ThreadLocalRandom.current().nextInt(taskList.size())) ;
-            }
+            return switch (taskList.size()) {
+                case 0 -> null;
+                case 1 -> taskList.get(0);
+                default -> taskList.get(ThreadLocalRandom.current().nextInt(taskList.size()));
+            };
         }
 
 

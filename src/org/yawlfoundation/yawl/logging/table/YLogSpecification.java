@@ -98,8 +98,8 @@ public class YLogSpecification {
 
 
     public boolean equals(Object other) {
-        return (other instanceof YLogSpecification) &&
-                (this.getRowKey() == ((YLogSpecification) other).getRowKey());
+        return other instanceof YLogSpecification spec &&
+                (this.getRowKey() == spec.getRowKey());
     }
 
     public int hashCode() {
@@ -107,16 +107,21 @@ public class YLogSpecification {
     }
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(210);
-        xml.append(String.format("<specification key=\"%d\">", rowKey));
-        xml.append("<id>");
-        xml.append(StringUtil.wrap(identifier, "identifier"));
-        xml.append(StringUtil.wrap(version, "version"));
-        xml.append(StringUtil.wrap(uri, "uri"));
-        xml.append("</id>");
-        xml.append(StringUtil.wrap(String.valueOf(rootNetID), "rootnetkey"));
-        xml.append("</specification>");
-        return xml.toString();
+        return """
+            <specification key="%d">\
+            <id>\
+            %s\
+            %s\
+            %s\
+            </id>\
+            %s\
+            </specification>""".formatted(
+                rowKey,
+                StringUtil.wrap(identifier, "identifier"),
+                StringUtil.wrap(version, "version"),
+                StringUtil.wrap(uri, "uri"),
+                StringUtil.wrap(String.valueOf(rootNetID), "rootnetkey")
+        );
     }
 
 }

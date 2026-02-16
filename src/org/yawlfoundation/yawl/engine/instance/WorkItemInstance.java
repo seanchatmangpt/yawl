@@ -324,30 +324,41 @@ public class WorkItemInstance implements YInstance {
 
 
     public String marshalParameters() {
-        StringBuilder result = new StringBuilder("<parameterInstances>");
-        for (ParameterInstance param : parameters.values()) {
-            result.append(param.toXML());
-        }
-        result.append("</parameterInstances>");
-        return result.toString();
+        String params = parameters.values().stream()
+            .map(ParameterInstance::toXML)
+            .collect(java.util.stream.Collectors.joining());
+        return """
+            <parameterInstances>%s</parameterInstances>""".formatted(params);
     }
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder("<workitemInstance>");
-        xml.append(StringUtil.wrap(getID(), "id"));
-        xml.append(StringUtil.wrap(getTaskID(), "taskid"));
-        xml.append(StringUtil.wrap(getTaskName(), "taskname"));
-        xml.append(StringUtil.wrap(getCaseID(), "caseid"));
-        xml.append(StringUtil.wrap(getStatus(), "status"));
-        xml.append(StringUtil.wrap(getResourceName(), "resource"));
-        xml.append(StringUtil.wrap(getTimerStatus(), "timerStatus"));
-        xml.append(StringUtil.wrap(String.valueOf(getEnabledTime()), "enabledtime"));
-        xml.append(StringUtil.wrap(String.valueOf(getStartTime()), "starttime"));
-        xml.append(StringUtil.wrap(String.valueOf(getCompletionTime()), "completiontime"));
-        xml.append(StringUtil.wrap(String.valueOf(getTimerExpiry()), "timerexpiry"));
-        xml.append("</workitemInstance>");
-        return xml.toString();
+        return """
+            <workitemInstance>\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            %s\
+            </workitemInstance>""".formatted(
+                StringUtil.wrap(getID(), "id"),
+                StringUtil.wrap(getTaskID(), "taskid"),
+                StringUtil.wrap(getTaskName(), "taskname"),
+                StringUtil.wrap(getCaseID(), "caseid"),
+                StringUtil.wrap(getStatus(), "status"),
+                StringUtil.wrap(getResourceName(), "resource"),
+                StringUtil.wrap(getTimerStatus(), "timerStatus"),
+                StringUtil.wrap(String.valueOf(getEnabledTime()), "enabledtime"),
+                StringUtil.wrap(String.valueOf(getStartTime()), "starttime"),
+                StringUtil.wrap(String.valueOf(getCompletionTime()), "completiontime"),
+                StringUtil.wrap(String.valueOf(getTimerExpiry()), "timerexpiry")
+        );
     }
 
     public void fromXML(String xml) {

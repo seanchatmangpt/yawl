@@ -48,8 +48,8 @@ public class YVerificationHandler {
 
     public void add(Object object, String message, MessageType mType) {
         switch (mType) {
-            case error : error(object, message); break;
-            case warning: warn(object, message); break;
+            case error -> error(object, message);
+            case warning -> warn(object, message);
         }
     }
 

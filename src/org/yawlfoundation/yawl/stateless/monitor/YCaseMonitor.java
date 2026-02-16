@@ -37,12 +37,9 @@ public class YCaseMonitor implements YCaseEventListener, YWorkItemEventListener 
     @Override
     public void handleCaseEvent(YCaseEvent event) {
         switch (event.getEventType()) {
-            case CASE_STARTING: initCase(event); break;
-            case CASE_STARTED: addCase(event); break;             // update init'ed case
-            case CASE_START_FAILED:
-            case CASE_COMPLETED:
-            case CASE_CANCELLED:
-            case CASE_DEADLOCKED: removeCase(event); break;
+            case CASE_STARTING -> initCase(event);
+            case CASE_STARTED -> addCase(event);  // update init'ed case
+            case CASE_START_FAILED, CASE_COMPLETED, CASE_CANCELLED, CASE_DEADLOCKED -> removeCase(event);
         }
     }
 

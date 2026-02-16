@@ -180,49 +180,40 @@ public class YMetaData {
     }
 
     public String toXML() {
-        StringBuilder mds = new StringBuilder();
-        mds.append("<metaData>");
-        if (this.title != null) {
-            mds.append(StringUtil.wrapEscaped(title, "title"));
-        }
-        for (String creator : creators) {
-            mds.append(StringUtil.wrapEscaped(creator, "creator"));
-        }
-        for (String subject : subjects) {
-            mds.append(StringUtil.wrapEscaped(subject, "subject"));
-        }
-        if (description != null) {
-            mds.append(StringUtil.wrapEscaped(description, "description"));
-        }
-        for (String contributor : contributors) {
-            mds.append(StringUtil.wrapEscaped(contributor, "contributor"));
-        }
-        if (coverage != null) {
-            mds.append(StringUtil.wrapEscaped(coverage, "coverage"));
-        }
-        if (validFrom != null) {
-            mds.append(StringUtil.wrap(dateFormat.format(validFrom), "validFrom"));
-        }
-        if (validUntil != null) {
-            mds.append(StringUtil.wrap(dateFormat.format(validUntil), "validUntil"));
-        }
-        if (created != null) {
-            mds.append(StringUtil.wrap(dateFormat.format(created), "created"));
-        }
+        String titleXML = this.title != null ? StringUtil.wrapEscaped(title, "title") : "";
+        String creatorsXML = creators.stream()
+            .map(c -> StringUtil.wrapEscaped(c, "creator"))
+            .collect(java.util.stream.Collectors.joining());
+        String subjectsXML = subjects.stream()
+            .map(s -> StringUtil.wrapEscaped(s, "subject"))
+            .collect(java.util.stream.Collectors.joining());
+        String descriptionXML = description != null ? StringUtil.wrapEscaped(description, "description") : "";
+        String contributorsXML = contributors.stream()
+            .map(c -> StringUtil.wrapEscaped(c, "contributor"))
+            .collect(java.util.stream.Collectors.joining());
+        String coverageXML = coverage != null ? StringUtil.wrapEscaped(coverage, "coverage") : "";
+        String validFromXML = validFrom != null ? StringUtil.wrap(dateFormat.format(validFrom), "validFrom") : "";
+        String validUntilXML = validUntil != null ? StringUtil.wrap(dateFormat.format(validUntil), "validUntil") : "";
+        String createdXML = created != null ? StringUtil.wrap(dateFormat.format(created), "created") : "";
+        String statusXML = status != null ? StringUtil.wrap(status, "status") : "";
+        String identifierXML = uniqueID != null ? StringUtil.wrap(uniqueID, "identifier") : "";
 
-        mds.append(StringUtil.wrap(version.toString(), "version"));
-
-        if (status != null) {
-            mds.append(StringUtil.wrap(status, "status"));
-        }
-
-        mds.append(StringUtil.wrap(String.valueOf(persistent), "persistent"));
-
-        if (uniqueID != null) {
-            mds.append(StringUtil.wrap(uniqueID, "identifier"));
-        }
-
-        mds.append("</metaData>");
-        return mds.toString();
+        return """
+            <metaData>%s%s%s%s%s%s%s%s%s%s%s%s</metaData>
+            """.formatted(
+                titleXML,
+                creatorsXML,
+                subjectsXML,
+                descriptionXML,
+                contributorsXML,
+                coverageXML,
+                validFromXML,
+                validUntilXML,
+                createdXML,
+                StringUtil.wrap(version.toString(), "version"),
+                statusXML,
+                StringUtil.wrap(String.valueOf(persistent), "persistent"),
+                identifierXML
+            );
     }
 }

@@ -90,8 +90,7 @@ public final class YNet extends YDecomposition {
         }
 
         // need to remove from removeSet and cancelledBySet as well
-        if (netElement instanceof YTask) {
-            YTask task = (YTask) netElement;
+        if (netElement instanceof YTask task) {
             Set<YExternalNetElement> removeSet = task.getRemoveSet();
             if (removeSet != null) {
                 for (YExternalNetElement element : removeSet) {
@@ -104,7 +103,9 @@ public final class YNet extends YDecomposition {
         Set<YExternalNetElement> cancelledBy = netElement.getCancelledBySet();
         if (cancelledBy != null) {
             for (YExternalNetElement element : cancelledBy) {
-                ((YTask) element).removeFromRemoveSet(netElement);
+                if (element instanceof YTask task) {
+                    task.removeFromRemoveSet(netElement);
+                }
             }
         }
 
@@ -132,8 +133,8 @@ public final class YNet extends YDecomposition {
     public List<YTask> getNetTasks() {
         List<YTask> result = new ArrayList<YTask>();
         for (YNetElement element : _netElements.values()) {
-            if (element instanceof YTask)
-                result.add((YTask) element);
+            if (element instanceof YTask task)
+                result.add(task);
         }
         return result;
     }
@@ -191,10 +192,10 @@ public final class YNet extends YDecomposition {
         }
 
         for (YExternalNetElement element : _netElements.values()) {
-            if (element instanceof YInputCondition && ! element.equals(_inputCondition)) {
+            if (element instanceof YInputCondition inputCond && ! element.equals(_inputCondition)) {
                 handler.error(this, "Only one Input Condition allowed per net.");
             }
-            if (element instanceof YOutputCondition && ! element.equals(_outputCondition)) {
+            if (element instanceof YOutputCondition outputCond && ! element.equals(_outputCondition)) {
                 handler.error(this, "Only one Output Condition allowed per net.");
             }
             element.verify(handler);
@@ -279,7 +280,7 @@ public final class YNet extends YDecomposition {
     public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
         Set<YExternalNetElement> postset = new HashSet<YExternalNetElement>();
         for (YExternalNetElement element : elements) {
-            if (! (element instanceof YOutputCondition)) {
+            if (! (element instanceof YOutputCondition outputCond)) {
                 postset.addAll(element.getPostsetElements());
             }
         }
@@ -290,7 +291,7 @@ public final class YNet extends YDecomposition {
     public static Set<YExternalNetElement> getPreset(Set<YExternalNetElement> elements) {
         Set<YExternalNetElement> preset = new HashSet<YExternalNetElement>();
         for (YExternalNetElement element : elements) {
-           if (element != null && !(element instanceof YInputCondition)) {
+           if (element != null && !(element instanceof YInputCondition inputCond)) {
                 preset.addAll(element.getPresetElements());
             }
         }
@@ -446,13 +447,12 @@ public final class YNet extends YDecomposition {
         });
         StringBuilder xml = new StringBuilder();
         for (YExternalNetElement element : elementList) {
-            if (element instanceof YTask) {
+            if (element instanceof YTask task) {
                 xml.append(element.toXML());
             }
-            else {
-                YCondition condition = (YCondition) element;
-                if (! (condition instanceof YInputCondition ||
-                        condition instanceof YOutputCondition || condition.isImplicit())) {
+            else if (element instanceof YCondition condition) {
+                if (! (condition instanceof YInputCondition inputCond ||
+                        condition instanceof YOutputCondition outputCond || condition.isImplicit())) {
                     xml.append(condition.toXML());
                 }
             }
@@ -534,8 +534,7 @@ public final class YNet extends YDecomposition {
     public Set<YTask> getActiveTasks(YIdentifier id, String taskType) {
         Set<YTask> activeTasks = new HashSet<YTask>();
         for (YExternalNetElement element : _netElements.values()) {
-            if (element instanceof YTask) {
-                YTask task = (YTask) element;
+            if (element instanceof YTask task) {
                 if ((taskType.equals("enabled") && task.t_enabled(id)) ||
                     (taskType.equals("busy") && task.t_isBusy())) {
                     activeTasks.add(task);

@@ -65,8 +65,8 @@ public class YLogNet {
     }
 
     public boolean equals(Object other) {
-        return (other instanceof YLogNet) &&
-                (this.getNetID() == ((YLogNet) other).getNetID());
+        return other instanceof YLogNet net &&
+                (this.getNetID() == net.getNetID());
     }
 
     public int hashCode() {
@@ -75,12 +75,15 @@ public class YLogNet {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(90);
-        xml.append(String.format("<net key=\"%d\">", netID)) ;
-        xml.append(StringUtil.wrap(name, "name"));
-        xml.append(StringUtil.wrap(String.valueOf(specKey), "specKey"));
-        xml.append("</net>");
-        return xml.toString();
+        return """
+            <net key="%d">\
+            %s\
+            %s\
+            </net>""".formatted(
+                netID,
+                StringUtil.wrap(name, "name"),
+                StringUtil.wrap(String.valueOf(specKey), "specKey")
+        );
     }
 
 }

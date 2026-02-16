@@ -1,12 +1,12 @@
 package org.yawlfoundation.yawl.integration;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Security Integration Tests - Verifies Log4j2 and security patches
