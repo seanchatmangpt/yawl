@@ -23,8 +23,8 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.logging.table.YLogSpecification;
 import org.yawlfoundation.yawl.schema.YDataSchemaCache;
 
-import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A cache of foreign keys for use in event log tables.
@@ -62,14 +62,14 @@ public class YEventKeyCache {
 
     protected YEventKeyCache() {
         dataSchema = new YDataSchemaCache();
-        services = new Hashtable<String, Long>();
-        rootNets = new Hashtable<YSpecificationID, Long>();
-        nets = new Hashtable<YSpecificationID, Map<String, Long>>();
-        tasks = new Hashtable<Long, Map<String, Long>>();
-        specEntries = new Hashtable<YSpecificationID, YLogSpecification>();
-        netInstances = new Hashtable<YIdentifier, Long>();
-        taskInstances = new Hashtable<YIdentifier, Map<Long, Long>>();
-        dataDefn = new Hashtable<String, Map<String, Long>>();
+        services = new ConcurrentHashMap<String, Long>();
+        rootNets = new ConcurrentHashMap<YSpecificationID, Long>();
+        nets = new ConcurrentHashMap<YSpecificationID, Map<String, Long>>();
+        tasks = new ConcurrentHashMap<Long, Map<String, Long>>();
+        specEntries = new ConcurrentHashMap<YSpecificationID, YLogSpecification>();
+        netInstances = new ConcurrentHashMap<YIdentifier, Long>();
+        taskInstances = new ConcurrentHashMap<YIdentifier, Map<Long, Long>>();
+        dataDefn = new ConcurrentHashMap<String, Map<String, Long>>();
     }
 
 
@@ -149,7 +149,7 @@ public class YEventKeyCache {
     private <K, S, V> V putID(Map<K, Map<S, V>> map, K key, S subKey, V value) {
         Map<S, V> subMap = map.get(key);
         if (subMap == null) {
-            subMap = new Hashtable<S, V>();
+            subMap = new ConcurrentHashMap<S, V>();
             map.put(key, subMap);
         }
         return subMap.put(subKey, value);

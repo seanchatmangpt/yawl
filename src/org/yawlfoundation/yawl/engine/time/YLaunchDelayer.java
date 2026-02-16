@@ -30,7 +30,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import javax.xml.datatype.Duration;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -83,7 +83,7 @@ public class YLaunchDelayer implements YTimedObject {
     public YLaunchDelayer(YSpecificationID specID, String caseParams,
                               URI completionObserver, String caseID,
                               YLogDataItemList logData, String serviceHandle,
-                              Date expiryTime, boolean persisting) {
+                              Instant expiryTime, boolean persisting) {
         this(specID, caseParams, completionObserver, caseID, logData, serviceHandle, persisting);
         _endTime = YTimer.getInstance().schedule(this, expiryTime) ;
         persistThis(true);

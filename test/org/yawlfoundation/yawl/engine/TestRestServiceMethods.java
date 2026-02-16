@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
@@ -19,24 +18,20 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 27/02/2004
  * Time: 12:43:53
- * 
+ *
  */
-public class TestRestServiceMethods extends TestCase{
+class TestRestServiceMethods{
     private YEngine _engine;
     private YSpecification _specification;
     private YSpecification _specification2;
 
+    @BeforeEach
 
-    public TestRestServiceMethods(String name){
-        super(name);
-    }
-
-
-    public void setUp() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YPersistenceException {
+    void setUp() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YPersistenceException {
         URL makeMusic = getClass().getResource("MakeMusic.xml");
         URL makeMusic2 = getClass().getResource("MakeMusic2.xml");
         File mmFile = new File(makeMusic.getFile());
@@ -52,26 +47,17 @@ public class TestRestServiceMethods extends TestCase{
 
     }
 
+    @Test
 
-    public void testGetTask(){
+    void testGetTask(){
         YTask task = _engine.getTaskDefinition(_specification.getSpecificationID(), "learn");
         assertTrue(task != null);
     }
 
-    public void testGetTaskWithoutSpecification(){
+    @Test
+
+    void testGetTaskWithoutSpecification(){
         YTask task = _engine.getTaskDefinition(new YSpecificationID("badSpecName"), "irrelevant");
         assertTrue(task == null);
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestRestServiceMethods.class);
-        return suite;
     }
 }

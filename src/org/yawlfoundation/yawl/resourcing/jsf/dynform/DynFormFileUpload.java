@@ -23,10 +23,10 @@ import com.sun.rave.web.ui.component.PanelLayout;
 import com.sun.rave.web.ui.component.StaticText;
 import com.sun.rave.web.ui.component.Upload;
 
-import javax.faces.application.Application;
-import javax.faces.context.FacesContext;
+import jakarta.faces.application.Application;
+import jakarta.faces.context.FacesContext;
 import javax.faces.el.MethodBinding;
-import javax.faces.event.ActionEvent;
+import jakarta.faces.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 

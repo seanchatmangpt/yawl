@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.resourcing.ResourceManager;
 import org.yawlfoundation.yawl.resourcing.datastore.orgdata.ResourceDataSet;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 
 /*
  * The backing bean for the YAWL 2.0 nonhuman resources mgt form

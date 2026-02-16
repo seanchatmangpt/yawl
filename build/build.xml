@@ -56,6 +56,25 @@
     <property name="developer.name" value="Michael Adams, Lachlan Aldred, Andrew Hastie,
                                            Mike Fowler et al."/>
 
+    <!-- Dependency Version Properties -->
+    <property name="java.version" value="21"/>
+    <property name="postgresql.version" value="42.7.4"/>
+    <property name="mysql.version" value="8.3.0"/>
+    <property name="h2.version" value="2.2.224"/>
+    <property name="hibernate.version" value="6.4.4.Final"/>
+    <property name="hibernate.commons.annotations.version" value="6.0.6.Final"/>
+    <property name="jackson.version" value="2.18.2"/>
+    <property name="junit.version" value="5.10.2"/>
+    <property name="jakarta.servlet.version" value="6.0.0"/>
+    <property name="jakarta.faces.api.version" value="4.0.1"/>
+    <property name="jakarta.faces.impl.version" value="4.0.5"/>
+    <property name="jakarta.persistence.version" value="3.1.0"/>
+    <property name="jdom.version" value="2.0.6.1"/>
+    <property name="saxon.version" value="12.4"/>
+    <property name="log4j.version" value="2.23.1"/>
+    <property name="owasp.encoder.version" value="1.2.3"/>
+    <property name="jjwt.version" value="0.12.5"/>
+
     <!--
         Tomcat root (environment setting takes priority over build.properties value)
     -->
@@ -146,14 +165,15 @@
     <!-- wsi -->
     <property name="axis" value="axis-1.1RC2.jar"/>
     <!-- wsi -->
-    <property name="bcmail" value="bcmail-jdk15-139.jar"/>
+    <property name="bcmail" value="bcmail-jdk18on-1.77.jar"/>
     <!-- dss -->
-    <property name="bcprov" value="bcprov-jdk15-139.jar"/>
+    <property name="bcpkix" value="bcpkix-jdk18on-1.77.jar"/>
+    <!-- dss -->
+    <property name="bcprov" value="bcprov-jdk18on-1.77.jar"/>
     <!-- dss -->
     <property name="byte-buddy" value="byte-buddy-1.12.23.jar"/>
     <!-- hbn -->
-    <property name="c3p0" value="c3p0-0.9.2.1.jar"/>
-    <!-- hbn -->
+    <!-- REMOVED: c3p0-0.9.2.1.jar - replaced by HikariCP -->
     <property name="classmate" value="classmate-1.5.1.jar"/>
     <!-- hbn -->
     <property name="collections-generic" value="collections-generic-4.01.jar"/>
@@ -166,7 +186,7 @@
     <!-- eng, xsd -->
     <property name="commonsBeanutils" value="commons-beanutils.jar"/>
     <!-- eng Dom -->
-    <property name="commonsCodec" value="commons-codec-1.9.jar"/>
+    <property name="commonsCodec" value="commons-codec-1.16.1.jar"/>
     <!-- mul -->
     <property name="commonsCollections" value="commons-collections-3.2.1.jar"/>
     <!-- hbn -->
@@ -178,11 +198,10 @@
     <!-- wsi -->
     <property name="commonsFileupload" value="commons-fileupload-1.2.2.jar"/>
     <!-- jsf, dss, mss -->
-    <property name="commonsIO" value="commons-io-2.0.1.jar"/>
+    <property name="commonsIO" value="commons-io-2.15.1.jar"/>
     <!-- jsf, dss, mss -->
-    <property name="commonsLang" value="commons-lang-2.3.jar"/>
-    <!-- mul -->
-    <property name="commonsLang3" value="commons-lang3-3.6.jar"/>
+    <!-- REMOVED: commons-lang-2.3.jar - replaced by commons-lang3-3.14.0.jar -->
+    <property name="commonsLang3" value="commons-lang3-3.14.0.jar"/>
     <!-- bal -->
     <property name="commonsLogging" value="commons-logging-1.1.1.jar"/>
     <!-- mul -->
@@ -208,21 +227,29 @@
     <!-- hbn -->
     <property name="guava" value="guava-21.0.jar"/>
     <!-- bal -->
-    <property name="h2" value="h2-1.3.176.jar"/>
+    <property name="h2" value="h2-${h2.version}.jar"/>
     <!-- mul -->
     <property name="hawkular" value="hawkular.jar"/>
     <!-- bal -->
-    <property name="hibernate-c3p0" value="hibernate-c3p0-5.6.14.Final.jar"/>
-    <!-- mul -->
-    <property name="hibernate-core" value="hibernate-core-5.6.14.Final.jar"/>
-    <!-- mul -->
+    <!-- REMOVED: hibernate-c3p0-5.6.14.Final.jar - replaced by HikariCP -->
+    <property name="hikaricp" value="HikariCP-5.1.0.jar"/>
+    <!-- hbn -->
+    <property name="hibernate-hikaricp" value="hibernate-hikaricp-${hibernate.version}.jar"/>
+    <!-- hbn (Hibernate 6.x HikariCP integration module) -->
+    <property name="hibernate-core" value="hibernate-core-${hibernate.version}.jar"/>
+    <!-- mul (UPGRADED from 5.6.14 to 6.4.4) -->
     <property name="hibernate-commons"
-              value="hibernate-commons-annotations-5.1.2.Final.jar"/>
-    <!-- mul -->
-    <property name="hibernate-ehcache" value="hibernate-ehcache-5.6.14.Final.jar"/>
-    <!-- hbn -->
+              value="hibernate-commons-annotations-${hibernate.commons.annotations.version}.jar"/>
+    <!-- mul (UPGRADED from 5.1.2 to 6.0.6) -->
+    <property name="hibernate-jcache" value="hibernate-jcache-${hibernate.version}.jar"/>
+    <!-- hbn (replaces hibernate-ehcache for Hibernate 6.x) -->
+    <property name="hibernate-dialects" value="hibernate-community-dialects-${hibernate.version}.jar"/>
+    <!-- hbn (optional community dialects for MySQL, PostgreSQL, etc.) -->
+    <!-- REMOVED: hibernate-ehcache-5.6.14.Final.jar - replaced by hibernate-jcache for Hibernate 6.x -->
     <property name="hibernate-jpa" value="hibernate-jpa-2.1-api-1.0.0.Final.jar"/>
-    <!-- hbn -->
+    <!-- hbn (DEPRECATED: replaced by jakarta.persistence-api for Jakarta EE 9+) -->
+    <property name="jakarta-persistence" value="jakarta.persistence-api-3.1.0.jar"/>
+    <!-- hbn (Jakarta Persistence 3.1 - required for Hibernate 6.x) -->
     <property name="hsql" value="hsqldb.jar"/>
     <!-- hbn -->
     <property name="istack" value="istack-commons-runtime-4.1.1.jar"/>
@@ -234,13 +261,14 @@
     <property name="jackson-jsr310" value="jackson-datatype-jsr310-2.18.2.jar"/>
 
     <!-- hbn -->
-    <property name="jandex" value="jandex-2.4.2.Final.jar"/>
+    <property name="jandex" value="jandex-3.1.2.jar"/>
+    <!-- eng, hbn (UPGRADED from 2.4.2 to 3.1.2 for Hibernate 6.x) -->
     <!-- eng, hbn -->
     <property name="jakarta-activation" value="jakarta.activation-1.2.2.jar"/>
     <!-- sml -->
     <property name="jakarta-mail" value="jakarta.mail-1.6.7.jar"/>
     <!-- sml -->
-    <property name="jakarta-xml" value="jakarta.xml.bind-api-3.0.1.jar"/>
+    <property name="jakarta-xml" value="jakarta.xml.bind-api-4.0.1.jar"/>
     <!-- dbd -->
     <property name="javax-activation" value="javax.activation-api-1.2.0.jar"/>
     <!--hbn-->
@@ -252,7 +280,9 @@
     <!--off,hbn-->
     <property name="jaxb-impl" value="jaxb-impl.jar"/>
     <!--off-->
-    <property name="jaxb-runtime" value="jaxb-runtime-2.3.1.jar"/>
+    <property name="jaxb-runtime" value="jaxb-runtime-4.0.4.jar"/>
+    <!--off,hbn-->
+    <property name="jaxb-core" value="jaxb-core-4.0.4.jar"/>
     <!--off,hbn-->
     <property name="jaxb-xjc" value="jaxb-xjc.jar"/>
     <!-- hbn -->
@@ -267,9 +297,21 @@
     <!-- off -->
     <property name="jdom1" value="jdom.jar"/>
     <!-- hbn -->
-    <property name="jdom" value="jdom-2.0.5.jar"/>
+    <property name="jdom" value="jdom2-2.0.6.1.jar"/>
     <!-- mul -->
-    <property name="jsf-api" value="jsf-api.jar"/>
+    <!-- Legacy javax.faces JARs (for Sun Rave components) -->
+    <property name="jsf-api-legacy" value="jsf-api.jar"/>
+    <!-- jsf -->
+    <property name="jsf-impl-legacy" value="jsf-impl.jar"/>
+    <!-- jsf -->
+    <!-- Jakarta Faces 4.0 JARs (for migrated components) -->
+    <property name="jsf-api" value="jakarta.faces-api-${jakarta.faces.api.version}.jar"/>
+    <!-- jsf -->
+    <property name="jsf-impl" value="jakarta.faces-${jakarta.faces.impl.version}.jar"/>
+    <!-- jsf -->
+    <property name="jakarta-el-api" value="jakarta.el-api-5.0.1.jar"/>
+    <!-- jsf -->
+    <property name="jakarta-el-impl" value="jakarta.el-4.0.2.jar"/>
     <!-- jsf -->
     <property name="jsf-appbase" value="appbase.jar"/>
     <!-- jsf -->
@@ -281,8 +323,6 @@
     <!-- jsf -->
     <property name="jsf-errorhandler" value="errorhandler.jar"/>
     <!-- jsf -->
-    <property name="jsf-impl" value="jsf-impl.jar"/>
-    <!-- jsf -->
     <property name="jsf-rowset" value="rowset.jar"/>
     <!-- jsf -->
     <property name="jsf-standard" value="standard.jar"/>
@@ -293,7 +333,7 @@
     <!-- sch -->
     <property name="jsr" value="jsr173_1.0_api.jar"/>
     <!-- sch -->
-    <property name="jstl" value="jstl.jar"/>
+    <property name="jstl" value="jakarta.servlet.jsp.jstl-api-3.0.0.jar"/>
     <!-- jsf -->
     <property name="jung-3d" value="jung-3d-2.0.jar"/>
     <!-- prl -->
@@ -319,12 +359,22 @@
     <!-- prl -->
     <property name="junit" value="junit-4.13.2.jar"/>
     <property name="hamcrest" value="hamcrest-core-1.3.jar"/>
+    <property name="junit-jupiter-api" value="junit-jupiter-api-5.10.2.jar"/>
+    <property name="junit-jupiter-engine" value="junit-jupiter-engine-5.10.2.jar"/>
+    <property name="junit-jupiter-params" value="junit-jupiter-params-5.10.2.jar"/>
+    <property name="junit-platform-engine" value="junit-platform-engine-1.10.2.jar"/>
+    <property name="junit-platform-launcher" value="junit-platform-launcher-1.10.2.jar"/>
+    <property name="junit-platform-commons" value="junit-platform-commons-1.10.2.jar"/>
+    <property name="junit-platform-suite-api" value="junit-platform-suite-api-1.10.2.jar"/>
+    <property name="junit-platform-suite-engine" value="junit-platform-suite-engine-1.10.2.jar"/>
+    <property name="opentest4j" value="opentest4j-1.3.0.jar"/>
+    <property name="apiguardian-api" value="apiguardian-api-1.1.2.jar"/>
 
     <property name="kotlin" value="kotlin-stdlib-2.1.0.jar"/>
     <!-- mul -->
-    <property name="log4j-api" value="log4j-api-2.18.0.jar"/>
+    <property name="log4j-api" value="log4j-api-2.23.1.jar"/>
     <!-- mul -->
-    <property name="log4j-core" value="log4j-core-2.18.0.jar"/>
+    <property name="log4j-core" value="log4j-core-2.23.1.jar"/>
     <!-- mul -->
     <property name="log4j-bridge" value="log4j-1.2-api-2.17.1.jar"/>
     <!-- mul -->
@@ -338,9 +388,8 @@
     <!-- res -->
     <property name="mailsender" value="java-sdk-1.0.1.jar"/>
     <!-- hbn -->
-    <property name="mchange" value="mchange-commons-java-0.2.3.4.jar"/>
-    <!-- sml -->
-    <property name="mysql" value="mysql-connector-java-5.1.22-bin.jar"/>
+    <!-- REMOVED: mchange-commons-java-0.2.3.4.jar - replaced by HikariCP -->
+    <property name="mysql" value="mysql-connector-j-${mysql.version}.jar"/>
 
     <property name="okhttp" value="okhttp-5.2.1.jar"/>
     <property name="okhttp3" value="okhttp-4.12.0.jar"/>
@@ -351,13 +400,13 @@
     <!-- bal -->
     <property name="orderfulfillment" value="orderfulfillment.jar"/>
     <!-- dbd -->
-    <property name="oracle" value="ojdbc6_9.jar"/>
+    <property name="oracle" value="ojdbc11.jar"/>
     <!-- dbd -->
-    <property name="postgres8" value="postgresql-42.2.8.jar"/>
+    <property name="postgres8" value="postgresql-${postgresql.version}.jar"/>
     <!-- dbd -->
     <property name="saaj" value="saaj.jar"/>
     <!-- wsi -->
-    <property name="saxon" value="saxon9.jar"/>
+    <property name="saxon" value="Saxon-HE-12.4.jar"/>
     <!-- mul -->
     <property name="saxonapi" value="saxon9-s9api.jar"/>
     <!-- mul -->
@@ -365,7 +414,7 @@
     <!-- mul -->
     <property name="saxonjdom" value="saxon9-jdom.jar"/>
     <!-- mul -->
-    <property name="servlet" value="servlet-api.jar"/>
+    <property name="servlet" value="jakarta.servlet-api-6.0.0.jar"/>
     <!-- mul -->
     <property name="simplemail" value="simple-java-mail-5.5.1.jar"/>
     <!-- sml -->
@@ -401,7 +450,7 @@
     <property name="azure-core" value="azure-core-1.57.0.jar"/>
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
     <property name="azure-identity" value="azure-identity-1.18.1.jar"/>
-    <property name="jakarta-annotation" value="jakarta.annotation-api-3.0.0.jar"/>
+    <property name="jakarta-annotation" value="jakarta.annotation-api-2.1.1.jar"/>
     <property name="microsoft-graph" value="microsoft-graph-6.55.0.jar"/>
     <property name="microsoft-graph-core" value="microsoft-graph-core-3.6.5.jar"/>
     <property name="kiota-authentication-azure"
@@ -426,7 +475,7 @@
     <property name="json-schema-validator" value="json-schema-validator-2.0.0.jar"/>
 
     <!-- Jakarta CDI API (required by A2A transport-rest at compile time) -->
-    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-3.0.0.jar"/>
+    <property name="jakarta-cdi-api" value="jakarta.enterprise.cdi-api-4.0.1.jar"/>
 
     <!-- A2A (Agent-to-Agent) SDK -->
     <property name="a2a-spec" value="a2a-java-sdk-spec-1.0.0.Alpha2.jar"/>
@@ -440,6 +489,18 @@
     <property name="a2a-client-transport-spi" value="a2a-java-sdk-client-transport-spi-1.0.0.Alpha2.jar"/>
     <property name="a2a-client-transport-rest" value="a2a-java-sdk-client-transport-rest-1.0.0.Alpha2.jar"/>
     <property name="a2a-client-transport-jsonrpc" value="a2a-java-sdk-client-transport-jsonrpc-1.0.0.Alpha2.jar"/>
+
+    <!-- Jakarta JAX-RS (RESTful Web Services) -->
+    <property name="jakarta.ws.rs.api" value="jakarta.ws.rs-api-3.1.0.jar"/>
+    <property name="jersey.server" value="jersey-server-3.1.5.jar"/>
+    <property name="jersey.client" value="jersey-client-3.1.5.jar"/>
+    <property name="jersey.common" value="jersey-common-3.1.5.jar"/>
+    <property name="jersey.servlet" value="jersey-container-servlet-3.1.5.jar"/>
+    <property name="jersey.hk2" value="jersey-hk2-3.1.5.jar"/>
+    <property name="jersey.jackson" value="jersey-media-json-jackson-3.1.5.jar"/>
+    <property name="hk2.locator" value="hk2-locator-3.0.5.jar"/>
+    <property name="hk2.api" value="hk2-api-3.0.5.jar"/>
+    <property name="hk2.utils" value="hk2-utils-3.0.5.jar"/>
 
     <!--
         Filters and properties for per-database-type operations, using
@@ -521,19 +582,22 @@
     -->
     <property name="persistence.libs"
               value="${antlr} ${commonsCollections} ${byte-buddy} ${classmate} ${ehcache}
-                     ${hibernate-c3p0} ${hibernate-core} ${hibernate-commons}
-                     ${hibernate-ehcache} ${hibernate-jpa} hibernate.cfg.xml
+                     ${hikaricp} ${hibernate-hikaricp} ${hibernate-core} ${hibernate-commons}
+                     ${hibernate-jcache} ${hibernate-dialects} ${jakarta-persistence} hibernate.cfg.xml
                      ${istack} ${jandex} ${jboss-logging} ${jboss-transaction}
                      ${javax-activation} ${javax-persistence} ${jaxb-api} ${jaxb-runtime}
-                     ${c3p0} ${slf4j} ${mchange}"/>
+                     ${slf4j}"/>
 
     <property name="xsd.libs"
               value="${common} ${ecore}"/>
 
     <property name="jsf.libs"
-              value="${jsf-appbase} ${jsf-api} ${jsf-impl} ${jsf-cl} ${jsf-webui}
+              value="${jsf-api-legacy} ${jsf-impl-legacy}
+                     ${jsf-api} ${jsf-impl} ${jakarta-el-api} ${jakarta-el-impl}
+                     ${jakarta-cdi-api} ${jakarta-annotation} ${servlet} ${jstl}
+                     ${jsf-appbase} ${jsf-cl} ${jsf-webui}
                      ${commonsDigester} ${commonsBeanutils} ${commonsFileupload}
-                     ${commonsIO} ${commonsLogging} ${jsf-standard} ${jstl} ${jsf-rowset}
+                     ${commonsIO} ${commonsLogging} ${jsf-standard} ${jsf-rowset}
                      ${jsf-dataprovider} ${jsf-errorhandler} ${jsf-defaulttheme-gray}"/>
 
     <property name="wsif.libs"
@@ -544,7 +608,7 @@
               value="${log4j-api} ${log4j-core} ${log4j-bridge} ${log4j-slf4j}"/>
 
     <property name="saxon.libs"
-              value="${saxon} ${saxondom} ${saxonapi} ${saxonjdom}"/>
+              value="${saxon}"/>
 
     <property name="simplemail.libs"
               value="${simplemail} ${slf4j} ${jakarta-activation}
@@ -562,7 +626,7 @@
 
     <property name="controlpanel.libs" value="${macify} ${commonsIO}"/>
 
-    <property name="jaxb.libs" value="${jaxb1} ${jaxb-api} ${jaxb-impl} ${jaxb-xjc}"/>
+    <property name="jaxb.libs" value="${jaxb1} ${jaxb-api} ${jaxb-impl} ${jaxb-runtime} ${jaxb-core} ${jaxb-xjc} ${jakarta-xml}"/>
 
     <property name="res_mail_libs" value="${courier} ${gson} ${jackson-annotations}
                     ${jackson-core} ${jackson-databind} ${jackson-jdk8} ${jackson-jsr310}
@@ -695,6 +759,25 @@
         <pathelement location="${lib.dir}/${a2a-client-transport-rest}"/>
         <pathelement location="${lib.dir}/${a2a-client-transport-jsonrpc}"/>
 
+        <!-- JAX-RS / Jakarta REST -->
+        <pathelement location="${lib.dir}/${jakarta.ws.rs.api}"/>
+        <pathelement location="${lib.dir}/${jersey.server}"/>
+        <pathelement location="${lib.dir}/${jersey.client}"/>
+        <pathelement location="${lib.dir}/${jersey.common}"/>
+        <pathelement location="${lib.dir}/${jersey.servlet}"/>
+        <pathelement location="${lib.dir}/${jersey.hk2}"/>
+        <pathelement location="${lib.dir}/${jersey.jackson}"/>
+        <pathelement location="${lib.dir}/${hk2.locator}"/>
+        <pathelement location="${lib.dir}/${hk2.api}"/>
+        <pathelement location="${lib.dir}/${hk2.utils}"/>
+
+        <!-- Security Libraries (OWASP Encoder + JJWT) -->
+        <pathelement location="${lib.dir}/encoder-${owasp.encoder.version}.jar"/>
+        <pathelement location="${lib.dir}/encoder-jsp-${owasp.encoder.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-api-${jjwt.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-impl-${jjwt.version}.jar"/>
+        <pathelement location="${lib.dir}/jjwt-jackson-${jjwt.version}.jar"/>
+
         <!-- Include all elements that Tomcat exposes to applications -->
         <pathelement location="${CATALINA_HOME}/lib"/>
     </path>
@@ -722,13 +805,24 @@
         <pathelement location="${lib.dir}/${antlr}"/>
         <pathelement location="${lib.dir}/${commonsCollections}"/>
         <pathelement location="${lib.dir}/${ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-c3p0}"/>
+        <!-- DEPRECATED: C3P0 replaced by HikariCP -->
+        <!--<pathelement location="${lib.dir}/${hibernate-c3p0}"/>-->
+        <!--<pathelement location="${lib.dir}/${c3p0}"/>-->
+        <!-- HikariCP Connection Pool (ACTIVE) -->
+        <pathelement location="${lib.dir}/${hikaricp}"/>
+        <pathelement location="${lib.dir}/${hibernate-hikaricp}"/>
+        <!-- Hibernate 6.x Core and Dependencies -->
         <pathelement location="${lib.dir}/${hibernate-core}"/>
         <pathelement location="${lib.dir}/${hibernate-commons}"/>
-        <pathelement location="${lib.dir}/${hibernate-ehcache}"/>
-        <pathelement location="${lib.dir}/${hibernate-jpa}"/>
+        <pathelement location="${lib.dir}/${hibernate-jcache}"/>
+        <pathelement location="${lib.dir}/${hibernate-dialects}"/>
+        <!-- DEPRECATED: Hibernate 5.x JPA API replaced by Jakarta Persistence 3.1 -->
+        <!--<pathelement location="${lib.dir}/${hibernate-ehcache}"/>-->
+        <!--<pathelement location="${lib.dir}/${hibernate-jpa}"/>-->
+        <!-- Jakarta Persistence 3.1 (required for Hibernate 6.x) -->
+        <pathelement location="${lib.dir}/${jakarta-persistence}"/>
         <pathelement location="${lib.dir}/${jandex}"/>
-        <pathelement location="${lib.dir}/${mchange}"/>
+        <!-- REMOVED: mchange-commons-java (legacy C3P0 dependency) -->
         <pathelement location="${lib.dir}/${jboss-logging}"/>
         <pathelement location="${lib.dir}/${jboss-transaction}"/>
         <pathelement location="${lib.dir}/${byte-buddy}"/>
@@ -738,7 +832,8 @@
         <pathelement location="${lib.dir}/${javax-persistence}"/>
         <pathelement location="${lib.dir}/${jaxb-api}"/>
         <pathelement location="${lib.dir}/${jaxb-runtime}"/>
-        <pathelement location="${lib.dir}/${c3p0}"/>
+        <pathelement location="${lib.dir}/${jaxb-core}"/>
+        <pathelement location="${lib.dir}/${jakarta-xml}"/>
         <pathelement location="${lib.dir}/${slf4j}"/>
     </path>
 
@@ -754,13 +849,24 @@
     </path>
 
     <path id="cp.jsf">
-        <pathelement location="${lib.dir}/${jsf-appbase}"/>
+        <!-- Legacy javax.faces JARs (required by Sun Rave components) -->
+        <pathelement location="${lib.dir}/${jsf-api-legacy}"/>
+        <pathelement location="${lib.dir}/${jsf-impl-legacy}"/>
+        <!-- Jakarta Faces 4.0 (Jakarta EE 10) -->
         <pathelement location="${lib.dir}/${jsf-api}"/>
-        <pathelement location="${lib.dir}/${jsf-cl}"/>
         <pathelement location="${lib.dir}/${jsf-impl}"/>
+        <pathelement location="${lib.dir}/${jakarta-el-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-el-impl}"/>
+        <pathelement location="${lib.dir}/${jakarta-cdi-api}"/>
+        <pathelement location="${lib.dir}/${jakarta-annotation}"/>
+        <!-- Jakarta Servlet/JSP APIs -->
+        <pathelement location="${lib.dir}/${servlet}"/>
+        <pathelement location="${lib.dir}/${jstl}"/>
+        <!-- Legacy JSF components (Sun Rave webui) -->
+        <pathelement location="${lib.dir}/${jsf-appbase}"/>
+        <pathelement location="${lib.dir}/${jsf-cl}"/>
         <pathelement location="${lib.dir}/${jsf-webui}"/>
         <pathelement location="${lib.dir}/${jsf-standard}"/>
-        <pathelement location="${lib.dir}/${jstl}"/>
         <pathelement location="${lib.dir}/${jsf-rowset}"/>
         <pathelement location="${lib.dir}/${jsf-dataprovider}"/>
         <pathelement location="${lib.dir}/${jsf-errorhandler}"/>
@@ -769,6 +875,7 @@
 
     <path id="cp.ds">
         <pathelement location="${lib.dir}/${bcmail}"/>
+        <pathelement location="${lib.dir}/${bcpkix}"/>
         <pathelement location="${lib.dir}/${bcprov}"/>
     </path>
 
@@ -851,6 +958,19 @@
         <pathelement location="${lib.dir}/jolokia-client-java-1.2.3.jar"/>
         <pathelement location="${lib.dir}/json-simple-1.1.1.jar"/>
         <pathelement location="${lib.dir}/${jakarta-xml}"/>
+    </path>
+
+    <path id="cp.jaxrs">
+        <pathelement location="${lib.dir}/${jakarta.ws.rs.api}"/>
+        <pathelement location="${lib.dir}/${jersey.server}"/>
+        <pathelement location="${lib.dir}/${jersey.client}"/>
+        <pathelement location="${lib.dir}/${jersey.common}"/>
+        <pathelement location="${lib.dir}/${jersey.servlet}"/>
+        <pathelement location="${lib.dir}/${jersey.hk2}"/>
+        <pathelement location="${lib.dir}/${jersey.jackson}"/>
+        <pathelement location="${lib.dir}/${hk2.locator}"/>
+        <pathelement location="${lib.dir}/${hk2.api}"/>
+        <pathelement location="${lib.dir}/${hk2.utils}"/>
     </path>
 
     <!--
@@ -1125,6 +1245,49 @@
     </target>
 
     <!--
+        Validate that all JAR versions referenced in properties match actual JARs
+    -->
+
+    <target name="validateVersions" description="Validate all JAR versions match actual files">
+        <echo message="Validating Jakarta Faces API..."/>
+        <available file="${lib.dir}/${jsf-api}" property="faces.api.present"/>
+        <fail unless="faces.api.present"
+              message="Missing ${jsf-api} - expected jakarta.faces-api-${jakarta.faces.api.version}.jar"/>
+
+        <echo message="Validating Jakarta Faces Implementation..."/>
+        <available file="${lib.dir}/${jsf-impl}" property="faces.impl.present"/>
+        <fail unless="faces.impl.present"
+              message="Missing ${jsf-impl} - expected jakarta.faces-${jakarta.faces.impl.version}.jar"/>
+
+        <echo message="Validating Hibernate Core..."/>
+        <available file="${lib.dir}/${hibernate-core}" property="hibernate.core.present"/>
+        <fail unless="hibernate.core.present"
+              message="Missing ${hibernate-core} - expected hibernate-core-${hibernate.version}.jar"/>
+
+        <echo message="Validating Hibernate Commons Annotations..."/>
+        <available file="${lib.dir}/${hibernate-commons}" property="hibernate.commons.present"/>
+        <fail unless="hibernate.commons.present"
+              message="Missing ${hibernate-commons} - expected hibernate-commons-annotations-${hibernate.commons.annotations.version}.jar"/>
+
+        <echo message="Validating H2 Database..."/>
+        <available file="${lib.dir}/${h2}" property="h2.present"/>
+        <fail unless="h2.present"
+              message="Missing ${h2} - expected h2-${h2.version}.jar"/>
+
+        <echo message="Validating PostgreSQL Driver..."/>
+        <available file="${lib.dir}/${postgres8}" property="postgresql.present"/>
+        <fail unless="postgresql.present"
+              message="Missing ${postgres8} - expected postgresql-${postgresql.version}.jar"/>
+
+        <echo message="Validating MySQL Driver..."/>
+        <available file="${lib.dir}/${mysql}" property="mysql.present"/>
+        <fail unless="mysql.present"
+              message="Missing ${mysql} - expected mysql-connector-j-${mysql.version}.jar"/>
+
+        <echo message="✓ All version validations passed"/>
+    </target>
+
+    <!--
         Compile main project source into ${classes.dir}, and produce
         library JAR of all non-GUI Java source (for use by Editor builds).
         This also prepares the Log4J properties file in the classes area,
@@ -1132,7 +1295,7 @@
         filtered version will then be used to build all webapps)
     -->
 
-    <target name="compile" depends="init, configureDatabaseAccess">
+    <target name="compile" depends="init, configureDatabaseAccess, validateVersions">
         <javac srcdir="${src.dir}" debug="true" destdir="${classes.dir}"
                deprecation="true" verbose="false" includeantruntime="true"
                encoding="UTF-8">
@@ -3015,9 +3178,9 @@
 
     </target>
 
-    <!-- Uncomment next two lines to override java version -->
-<!--    <property name="ant.build.javac.source" value="25"/>-->
-<!--    <property name="ant.build.javac.target" value="25"/>-->
+    <!-- Java 21 compilation settings -->
+    <property name="ant.build.javac.source" value="21"/>
+    <property name="ant.build.javac.target" value="21"/>
 
 
     <target name="build_stateless.jar" depends="compile">
@@ -3274,8 +3437,7 @@
     </target>
 
     <target name="unitTest" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">
-        <junit printsummary="withOutAndErr" fork="true"
-               failureproperty="junit.failure" errorproperty="junit.error">
+        <junitlauncher printsummary="true" failureproperty="junit.failure" haltonfailure="false">
             <classpath refid="cp.standard"/>
             <classpath refid="cp.compile"/>
             <classpath refid="cp.wsif"/>
@@ -3289,14 +3451,28 @@
             <classpath>
                 <pathelement location="${lib.dir}/${junit}"/>
                 <pathelement location="${lib.dir}/${hamcrest}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-api}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-engine}"/>
+                <pathelement location="${lib.dir}/${junit-jupiter-params}"/>
+                <pathelement location="${lib.dir}/${junit-platform-engine}"/>
+                <pathelement location="${lib.dir}/${junit-platform-launcher}"/>
+                <pathelement location="${lib.dir}/${junit-platform-commons}"/>
+                <pathelement location="${lib.dir}/${junit-platform-suite-api}"/>
+                <pathelement location="${lib.dir}/${junit-platform-suite-engine}"/>
+                <pathelement location="${lib.dir}/${opentest4j}"/>
+                <pathelement location="${lib.dir}/${apiguardian-api}"/>
                 <pathelement path="${java.class.path}"/>
                 <pathelement path="${classes.dir}"/>
             </classpath>
-            <formatter type="plain"/>
-            <test name="org.yawlfoundation.yawl.TestAllYAWLSuites"/>
-        </junit>
+            <testclasses outputdir="${classes.dir}">
+                <fileset dir="${classes.dir}">
+                    <include name="**/Test*.class"/>
+                    <exclude name="**/*TestSuite.class"/>
+                </fileset>
+                <listener type="legacy-plain" sendSysOut="true"/>
+            </testclasses>
+        </junitlauncher>
         <fail if="junit.failure" message="Unit tests had failures."/>
-        <fail if="junit.error" message="Unit tests had errors."/>
     </target>
 
     <target name="unitTest-engine-only" depends="compile-test, check-h2-for-unitTest, prepare-hibernate-for-unitTest">

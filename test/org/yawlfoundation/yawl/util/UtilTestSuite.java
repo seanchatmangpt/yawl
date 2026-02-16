@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -10,13 +10,6 @@ import junit.framework.TestSuite;
  * Time: 16:00:43
  * 
  */
-public class UtilTestSuite extends TestSuite{
-    public UtilTestSuite(String name){
-        super(name);
-    }
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        return suite;
-    }
+@Suite
+public class UtilTestSuite {
 }

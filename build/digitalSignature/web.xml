@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<web-app version="2.4">
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
 
     <!-- General description of your web application -->
     <display-name> DigitalSignature </display-name>
@@ -47,7 +51,17 @@
        <filter-name>CharsetFilter</filter-name>
        <url-pattern>/*</url-pattern>
      </filter-mapping>
-    
+
+    <!-- CORS Filter for REST API -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
 	<servlet>
 		<servlet-name>InterfaceB_Servlet</servlet-name>
@@ -63,33 +77,55 @@
 		<url-pattern>/ib</url-pattern>
 	</servlet-mapping>
 
-    
+    <servlet>
+        <servlet-name>Signature</servlet-name>
+        <jsp-file>/Signature.jsp</jsp-file>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>SupervisorCertification</servlet-name>
+        <jsp-file>/SupervisorCertification.jsp</jsp-file>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>SupervisorCertification</servlet-name>
+        <url-pattern>/SupervisorCertification</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Signature</servlet-name>
+        <url-pattern>/Signature</url-pattern>
+    </servlet-mapping>
+
+    <!-- JAX-RS REST API Configuration -->
+    <servlet>
+        <servlet-name>JerseyServlet</servlet-name>
+        <description>
+            JAX-RS servlet for modern REST API endpoints.
+            Provides JSON-based REST APIs for Digital Signature operations.
+        </description>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jakarta.ws.rs.Application</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+        </init-param>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>JerseyServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
 	<session-config>
 		<session-timeout>30</session-timeout>
 	<!-- 30 minutes -->
 	</session-config>
-
-
-<servlet>
-    <servlet-name>Signature</servlet-name>
-    <jsp-file>/Signature.jsp</jsp-file>
-    <load-on-startup>1</load-on-startup>
-</servlet>
-
-<servlet>
-    <servlet-name>SupervisorCertification</servlet-name>
-    <jsp-file>/SupervisorCertification.jsp</jsp-file>
-    <load-on-startup>1</load-on-startup>
-</servlet>
-
-<servlet-mapping>
-    <servlet-name>SupervisorCertification</servlet-name>
-    <url-pattern>/SupervisorCertification</url-pattern>
-</servlet-mapping>
-
-<servlet-mapping>
-    <servlet-name>Signature</servlet-name>
-    <url-pattern>/Signature</url-pattern>
-</servlet-mapping>
 
 </web-app>

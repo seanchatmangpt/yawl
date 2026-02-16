@@ -26,8 +26,11 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.tool.schema.spi.SchemaMigrator;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.TargetType;
+import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -99,8 +102,13 @@ public class YPersistenceManager {
                 Metadata metadata = metadataSources.buildMetadata();
                 factory = metadata.buildSessionFactory();
 
-                EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-                new SchemaUpdate().execute(targetTypes, metadata);
+                // Hibernate 6: Use SchemaMigrator for schema updates
+                SchemaManagementTool tool = factory.getSessionFactoryOptions()
+                    .getServiceRegistry()
+                    .getService(SchemaManagementTool.class);
+                SchemaMigrator migrator = tool.getSchemaMigrator(null);
+                ExecutionOptions execOptions = () -> null;
+                migrator.doMigration(metadata, execOptions, (contributed) -> true);
                 setEnabled(true);
             }
             catch (Exception e) {

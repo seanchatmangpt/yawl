@@ -21,8 +21,8 @@ import com.sun.rave.web.ui.component.*;
 import com.sun.rave.web.ui.model.DefaultOptionsList;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
-import javax.faces.FacesException;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.event.ValueChangeEvent;
 
 
 public class pfQueueUI extends AbstractFragmentBean {

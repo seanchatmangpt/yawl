@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YAWL REST API Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        header {
+            background-color: #003366;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        h1 { margin: 0 0 10px 0; }
+        h2 {
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #0066cc;
+            margin-top: 25px;
+        }
+        code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "Courier New", monospace;
+        }
+        pre {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .endpoint {
+            background-color: white;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+        .get { background-color: #61affe; color: white; }
+        .post { background-color: #49cc90; color: white; }
+        .put { background-color: #fca130; color: white; }
+        .delete { background-color: #f93e3e; color: white; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+        }
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>YAWL REST API Documentation</h1>
+        <p>Modern JSON-based REST APIs for YAWL Workflow Engine v5.2</p>
+    </header>
+
+    <h2>Overview</h2>
+    <p>
+        The YAWL REST API provides modern, JSON-based HTTP endpoints for all YAWL interfaces.
+        This API complements the existing servlet-based interfaces with a more developer-friendly,
+        standards-compliant approach using JAX-RS.
+    </p>
+
+    <div class="note">
+        <strong>Note:</strong> This REST API is available alongside the legacy servlet interfaces.
+        Existing integrations using /ib/, /ia/, etc. continue to work unchanged.
+    </div>
+
+    <h2>Base URL</h2>
+    <pre><code>http://localhost:8080/yawl/api</code></pre>
+
+    <h2>Authentication</h2>
+    <p>
+        All API endpoints require authentication using a session handle. First, connect to the engine
+        to obtain a session handle, then include it in subsequent requests.
+    </p>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ib/connect</code>
+        <p><strong>Description:</strong> Connect to the engine and obtain a session handle</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "userid": "admin",
+  "password": "YAWL"
+}</code></pre>
+        <p><strong>Response:</strong></p>
+        <pre><code>{
+  "sessionHandle": "S-550e8400-e29b-41d4-a716-446655440000",
+  "userid": "admin",
+  "expiry": "2026-02-16T14:30:00Z"
+}</code></pre>
+    </div>
+
+    <h2>Interface B - Client API</h2>
+    <p>Manage cases and work items</p>
+
+    <h3>Work Items</h3>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ib/workitems</code>
+        <p><strong>Description:</strong> List all available work items</p>
+        <p><strong>Query Parameters:</strong></p>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>sessionHandle</td>
+                <td>string</td>
+                <td>Yes</td>
+                <td>Session handle from /connect</td>
+            </tr>
+        </table>
+        <p><strong>Example:</strong></p>
+        <pre><code>curl -X GET "http://localhost:8080/yawl/api/ib/workitems?sessionHandle=S-550e8400..."</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ib/workitems/{itemID}</code>
+        <p><strong>Description:</strong> Get a specific work item by ID</p>
+        <p><strong>Path Parameters:</strong></p>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>itemID</td>
+                <td>string</td>
+                <td>Work item identifier</td>
+            </tr>
+        </table>
+        <p><strong>Example:</strong></p>
+        <pre><code>curl -X GET "http://localhost:8080/yawl/api/ib/workitems/1234-5678-90?sessionHandle=S-550e8400..."</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ib/workitems/{itemID}/checkout</code>
+        <p><strong>Description:</strong> Check out a work item for execution</p>
+        <p><strong>Example:</strong></p>
+        <pre><code>curl -X POST "http://localhost:8080/yawl/api/ib/workitems/1234-5678-90/checkout?sessionHandle=S-550e8400..."</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ib/workitems/{itemID}/checkin</code>
+        <p><strong>Description:</strong> Check in a completed work item</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "data": "&lt;data&gt;&lt;customerName&gt;John Doe&lt;/customerName&gt;&lt;/data&gt;"
+}</code></pre>
+        <p><strong>Example:</strong></p>
+        <pre><code>curl -X POST "http://localhost:8080/yawl/api/ib/workitems/1234-5678-90/checkin?sessionHandle=S-550e8400..." \
+  -H "Content-Type: application/json" \
+  -d '{"data":"&lt;data&gt;...&lt;/data&gt;"}'</code></pre>
+    </div>
+
+    <h3>Cases</h3>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ib/cases</code>
+        <p><strong>Description:</strong> List all running cases</p>
+        <p><strong>Example:</strong></p>
+        <pre><code>curl -X GET "http://localhost:8080/yawl/api/ib/cases?sessionHandle=S-550e8400..."</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ib/cases</code>
+        <p><strong>Description:</strong> Launch a new case</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "specID": {
+    "identifier": "OrderFulfillment",
+    "version": "0.1",
+    "uri": "http://www.example.com/orderful"
+  },
+  "caseData": "&lt;data&gt;&lt;orderID&gt;12345&lt;/orderID&gt;&lt;/data&gt;"
+}</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ib/cases/{caseID}</code>
+        <p><strong>Description:</strong> Get case data by ID</p>
+    </div>
+
+    <div class="endpoint">
+        <span class="method delete">DELETE</span>
+        <code>/api/ib/cases/{caseID}</code>
+        <p><strong>Description:</strong> Cancel a running case</p>
+    </div>
+
+    <h2>Interface A - Design API</h2>
+    <p>Manage workflow specifications</p>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ia/specifications</code>
+        <p><strong>Description:</strong> List all loaded specifications</p>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ia/specifications</code>
+        <p><strong>Description:</strong> Upload a new specification</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "specificationXML": "&lt;specificationSet&gt;...&lt;/specificationSet&gt;"
+}</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ia/specifications/{identifier}/{version}</code>
+        <p><strong>Description:</strong> Get a specific specification</p>
+    </div>
+
+    <div class="endpoint">
+        <span class="method delete">DELETE</span>
+        <code>/api/ia/specifications/{identifier}/{version}</code>
+        <p><strong>Description:</strong> Unload a specification</p>
+    </div>
+
+    <h2>Interface E - Events API</h2>
+    <p>Subscribe to process events</p>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/api/ie/subscriptions</code>
+        <p><strong>Description:</strong> Create an event subscription</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "eventType": "CASE_STARTED",
+  "callbackURL": "http://myservice.example.com/events"
+}</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ie/events</code>
+        <p><strong>Description:</strong> Query event log</p>
+        <p><strong>Query Parameters:</strong></p>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>caseID</td>
+                <td>Filter by case ID</td>
+            </tr>
+            <tr>
+                <td>eventType</td>
+                <td>Filter by event type</td>
+            </tr>
+            <tr>
+                <td>from</td>
+                <td>Start timestamp (ISO 8601)</td>
+            </tr>
+            <tr>
+                <td>to</td>
+                <td>End timestamp (ISO 8601)</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Interface X - Extended API</h2>
+    <p>Advanced engine operations</p>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ix/engine/status</code>
+        <p><strong>Description:</strong> Get engine status and statistics</p>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/api/ix/exceptions</code>
+        <p><strong>Description:</strong> List process exceptions</p>
+    </div>
+
+    <h2>Error Handling</h2>
+    <p>All errors return a consistent JSON structure:</p>
+    <pre><code>{
+  "error": "InvalidSessionException",
+  "message": "Session handle is invalid or expired",
+  "timestamp": "2026-02-16T12:30:00Z"
+}</code></pre>
+
+    <h3>Common HTTP Status Codes</h3>
+    <table>
+        <tr>
+            <th>Code</th>
+            <th>Meaning</th>
+            <th>Common Causes</th>
+        </tr>
+        <tr>
+            <td>200</td>
+            <td>OK</td>
+            <td>Successful operation</td>
+        </tr>
+        <tr>
+            <td>201</td>
+            <td>Created</td>
+            <td>Resource created (e.g., new case)</td>
+        </tr>
+        <tr>
+            <td>400</td>
+            <td>Bad Request</td>
+            <td>Invalid request data</td>
+        </tr>
+        <tr>
+            <td>401</td>
+            <td>Unauthorized</td>
+            <td>Invalid or missing session handle</td>
+        </tr>
+        <tr>
+            <td>404</td>
+            <td>Not Found</td>
+            <td>Resource doesn't exist</td>
+        </tr>
+        <tr>
+            <td>500</td>
+            <td>Internal Server Error</td>
+            <td>Engine error</td>
+        </tr>
+    </table>
+
+    <h2>CORS Support</h2>
+    <p>
+        The REST API includes CORS (Cross-Origin Resource Sharing) support, allowing web applications
+        from different origins to access the API. The following headers are supported:
+    </p>
+    <ul>
+        <li><strong>Access-Control-Allow-Origin:</strong> Configured origins (default: *)</li>
+        <li><strong>Access-Control-Allow-Methods:</strong> GET, POST, PUT, DELETE, OPTIONS</li>
+        <li><strong>Access-Control-Allow-Headers:</strong> Content-Type, Authorization, X-Session-Handle</li>
+    </ul>
+
+    <div class="note">
+        <strong>Production Note:</strong> For production deployments, configure specific allowed origins
+        in web.xml to restrict access to trusted domains only.
+    </div>
+
+    <h2>Examples</h2>
+
+    <h3>Complete Workflow Example</h3>
+    <pre><code># 1. Connect to engine
+curl -X POST http://localhost:8080/yawl/api/ib/connect \
+  -H "Content-Type: application/json" \
+  -d '{"userid":"admin","password":"YAWL"}'
+
+# Response: {"sessionHandle":"S-abc123..."}
+
+# 2. List loaded specifications
+curl -X GET "http://localhost:8080/yawl/api/ia/specifications?sessionHandle=S-abc123..."
+
+# 3. Launch a case
+curl -X POST "http://localhost:8080/yawl/api/ib/cases?sessionHandle=S-abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"specID":{"identifier":"OrderFulfillment","version":"0.1"}}'
+
+# Response: {"caseID":"1.1"}
+
+# 4. Get available work items
+curl -X GET "http://localhost:8080/yawl/api/ib/workitems?sessionHandle=S-abc123..."
+
+# 5. Checkout a work item
+curl -X POST "http://localhost:8080/yawl/api/ib/workitems/1234/checkout?sessionHandle=S-abc123..."
+
+# 6. Complete and checkin work item
+curl -X POST "http://localhost:8080/yawl/api/ib/workitems/1234/checkin?sessionHandle=S-abc123..." \
+  -H "Content-Type: application/json" \
+  -d '{"data":"&lt;data&gt;&lt;result&gt;completed&lt;/result&gt;&lt;/data&gt;"}'
+
+# 7. Disconnect
+curl -X POST "http://localhost:8080/yawl/api/ib/disconnect?sessionHandle=S-abc123..."</code></pre>
+
+    <h2>Additional Resources</h2>
+    <ul>
+        <li><a href="http://yawlfoundation.org">YAWL Foundation</a></li>
+        <li><a href="http://yawlfoundation.org/manual">YAWL User Manual</a></li>
+        <li><a href="/yawl/ib">Legacy Interface B Servlet</a></li>
+        <li><a href="/yawl/ia">Legacy Interface A Servlet</a></li>
+    </ul>
+
+    <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; text-align: center;">
+        <p>YAWL v5.2 - Yet Another Workflow Language</p>
+        <p>Copyright &copy; 2004-2026 The YAWL Foundation</p>
+    </footer>
+</body>
+</html>

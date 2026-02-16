@@ -34,8 +34,8 @@ public class AgentCapabilityTest extends TestCase {
             "procurement, purchase orders, approvals"
         );
 
-        assertEquals("Ordering", capability.getDomainName());
-        assertEquals("procurement, purchase orders, approvals", capability.getDescription());
+        assertEquals(capability.getDomainName());
+        assertEquals("procurement, purchase orders, approvals", capability.getDescription(, "Ordering"));
     }
 
     public void testConstructorTrimsWhitespace() {
@@ -44,8 +44,8 @@ public class AgentCapabilityTest extends TestCase {
             "  procurement, purchase orders  "
         );
 
-        assertEquals("Ordering", capability.getDomainName());
-        assertEquals("procurement, purchase orders", capability.getDescription());
+        assertEquals(capability.getDomainName());
+        assertEquals("procurement, purchase orders", capability.getDescription(, "Ordering"));
     }
 
     public void testConstructorRejectsNullDomainName() {
@@ -100,13 +100,12 @@ public class AgentCapabilityTest extends TestCase {
         );
 
         String result = capability.toString();
-        assertEquals("Ordering: procurement, purchase orders", result);
+        assertEquals(result);
     }
 
     public void testFromEnvironmentWithColonFormat() {
         try {
-            System.setProperty("test.agent.capability",
-                "Ordering: procurement, purchase orders, approvals");
+            System.setProperty("test.agent.capability", "Ordering: procurement, purchase orders, approvals", "Ordering: procurement, purchase orders");
 
             String envValue = System.getProperty("test.agent.capability");
             int colon = envValue.indexOf(':');
@@ -115,8 +114,8 @@ public class AgentCapabilityTest extends TestCase {
                 envValue.substring(colon + 1).trim()
             );
 
-            assertEquals("Ordering", capability.getDomainName());
-            assertEquals("procurement, purchase orders, approvals", capability.getDescription());
+            assertEquals(capability.getDomainName());
+            assertEquals("procurement, purchase orders, approvals", capability.getDescription(, "Ordering"));
         } finally {
             System.clearProperty("test.agent.capability");
         }
@@ -130,8 +129,8 @@ public class AgentCapabilityTest extends TestCase {
             String domain = envValue.split("\\s+")[0];
             AgentCapability capability = new AgentCapability(domain, envValue);
 
-            assertEquals("procurement", capability.getDomainName());
-            assertEquals("procurement system", capability.getDescription());
+            assertEquals(capability.getDomainName());
+            assertEquals("procurement system", capability.getDescription(, "procurement"));
         } finally {
             System.clearProperty("test.agent.capability");
         }

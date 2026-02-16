@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
@@ -17,13 +16,13 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 17/04/2003
  * Time: 14:35:09
- * 
+ *
  */
-public class TestYSpecification extends TestCase {
+class TestYSpecification {
     private YSpecification _goodSpecification;
     private YSpecification _badSpecification;
     private YSpecification _infiniteLoops;
@@ -36,13 +35,9 @@ public class TestYSpecification extends TestCase {
 
     private YVerificationHandler handler = new YVerificationHandler();
 
+    @BeforeEach
 
-    public TestYSpecification(String name) {
-        super(name);
-    }
-
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
         List specifications = null;
         specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));
@@ -58,8 +53,9 @@ public class TestYSpecification extends TestCase {
         spec.setSchema("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>");
     }
 
+    @Test
 
-    public void testGoodNetVerify() {
+    void testGoodNetVerify() {
         handler.reset();
         _goodSpecification.verify(handler);
         if (handler.hasErrors() || handler.getWarnings().size() != 2) {
@@ -71,8 +67,9 @@ public class TestYSpecification extends TestCase {
         }
     }
 
+    @Test
 
-    public void testBadSpecVerify() {
+    void testBadSpecVerify() {
         handler.reset();
         _badSpecification.verify(handler);
         if (handler.getMessageCount() != 5) {
@@ -90,7 +87,9 @@ public class TestYSpecification extends TestCase {
         }
     }
 
-    public void testSpecWithLoops() {
+    @Test
+
+    void testSpecWithLoops() {
         handler.reset();
         _infiniteLoops.verify(handler);
         /*
@@ -102,8 +101,9 @@ public class TestYSpecification extends TestCase {
         assertTrue(handler.getMessages().get(0).getMessage(), handler.getMessageCount() == 4);
     }
 
+    @Test
 
-    public void testDataStructure() {
+    void testDataStructure() {
         YNet root = _originalSpec.getRootNet();
         YTask recordTask = (YTask) root.getNetElement("record");
         assertTrue(recordTask != null);
@@ -113,8 +113,9 @@ public class TestYSpecification extends TestCase {
         assertTrue(prepare._net == recordNet);
     }
 
+    @Test
 
-    public void testClonedDataStructure() {
+    void testClonedDataStructure() {
         YNet rootNet = _originalSpec.getRootNet();
         YTask recordTask = (YTask) rootNet.getNetElement("record");
         assertTrue(recordTask != null);
@@ -133,28 +134,16 @@ public class TestYSpecification extends TestCase {
         assertSame(prepareClone._mi_active._myTask, prepareClone);
     }
 
-
     /**
      * Test specs ability to correctly handle valid data types.
      */
-    public void testValidDataTypesInSpecification() {
+    @Test
+
+    void testValidDataTypesInSpecification() {
         //Error:Specifications must have a root net.
         handler.reset();
         spec.verify(handler);
         assertTrue(handler.getMessageCount() == 1);
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYSpecification.class);
-        return suite;
     }
 
 }

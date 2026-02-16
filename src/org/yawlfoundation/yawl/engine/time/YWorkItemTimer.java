@@ -22,7 +22,7 @@ import org.yawlfoundation.yawl.engine.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 import javax.xml.datatype.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 
 /**
@@ -51,7 +51,7 @@ public class YWorkItemTimer implements YTimedObject {
     }
 
 
-    public YWorkItemTimer(String workItemID, Date expiryTime, boolean persisting) {
+    public YWorkItemTimer(String workItemID, Instant expiryTime, boolean persisting) {
         _ownerID = workItemID ;
         _persisting = persisting ;
         _endTime = YTimer.getInstance().schedule(this, expiryTime) ;

@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.Vector;
-
 
 /**
  * @author aldredl
@@ -15,24 +15,21 @@ import java.util.Vector;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
-public class TestYIdentifier extends TestCase {
+class TestYIdentifier {
 	
 	private YIdentifier id1 = new YIdentifier(null);
 	private YIdentifier id2 = new YIdentifier(null);
 	
 	
-	/**
-	 * Constructor for IdentifierTest.
-	 */	
-	public TestYIdentifier(String name)
-	{
-		super(name);
-	}
+	
+	
+	@Test
+
 	
 	
 	
 	
-	public void testEquals()
+	void testEquals()
 	{
 		assertFalse(id1.equals(id2));
 		assertTrue( id1.equals(id1));
@@ -40,7 +37,12 @@ public class TestYIdentifier extends TestCase {
 	
 	
 	
-	public void testCreateChild() throws YPersistenceException
+	@Test
+
+	
+	
+	
+	void testCreateChild() throws YPersistenceException
 	{
 		YIdentifier id = new YIdentifier(null);
 		YIdentifier id3 = id.createChild(null);
@@ -52,7 +54,12 @@ public class TestYIdentifier extends TestCase {
 	
 	
 	
-	public void testGetChildren() throws YPersistenceException
+	@Test
+
+	
+	
+	
+	void testGetChildren() throws YPersistenceException
 	{
 		YIdentifier id  = new YIdentifier(null);
 		YIdentifier id3 = id.createChild(null);
@@ -65,7 +72,12 @@ public class TestYIdentifier extends TestCase {
 	
 	
 	
-	public void testIsChildOf() throws YPersistenceException
+	@Test
+
+	
+	
+	
+	void testIsChildOf() throws YPersistenceException
 	{
 		YIdentifier parent = new YIdentifier(null);
 		YIdentifier child = parent.createChild(null);
@@ -75,7 +87,12 @@ public class TestYIdentifier extends TestCase {
 	
 	
 	
-	public void testGetDescendants() throws YPersistenceException
+	@Test
+
+	
+	
+	
+	void testGetDescendants() throws YPersistenceException
 	{
 		List descendants = new Vector();
 		YIdentifier parent = new YIdentifier(null);

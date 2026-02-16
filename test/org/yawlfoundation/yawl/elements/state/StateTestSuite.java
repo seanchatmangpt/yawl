@@ -1,8 +1,7 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -11,24 +10,11 @@ import junit.textui.TestRunner;
  * Time: 15:52:04
  * 
  */
-public class StateTestSuite extends TestSuite {
-    public StateTestSuite(String name){
-        super(name);
-    }
-
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYIdentifier.class);
-        suite.addTestSuite(TestYMarking.class);
-        suite.addTestSuite(TestYSetOfMarkings.class);
-        return suite;
-    }
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
+@Suite
+@SelectClasses({
+    TestYIdentifier.class,
+    TestYMarking.class,
+    TestYSetOfMarkings.class
+})
+public class StateTestSuite {
 }

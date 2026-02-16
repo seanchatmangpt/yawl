@@ -1,44 +1,29 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 9/05/2003
  * Time: 15:57:52
- * 
+ *
+ * JUnit 5 Test Suite for Engine package
  */
-public class EngineTestSuite extends TestCase{
-    public EngineTestSuite(String name){
-        super(name);
-    }
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYEngineInit.class);
-        suite.addTestSuite(TestCaseCancellation.class);
-   //     suite.addTestSuite(TestEngineAgainstABeta4Spec.class);
-   //     suite.addTestSuite(TestEngineAgainstImproperCompletionOfASubnet.class);
-   //     suite.addTestSuite(TestEngineSystem1.class);
-        suite.addTestSuite(TestEngineSystem2.class);
-        suite.addTestSuite(TestImproperCompletion.class);
-        suite.addTestSuite(TestOrJoin.class);
-        suite.addTestSuite(TestRestServiceMethods.class);
-        suite.addTestSuite(TestSimpleExecutionUseCases.class);
-        suite.addTestSuite(TestYNetRunner.class);
-        suite.addTestSuite(TestYWorkItem.class);
-        suite.addTestSuite(TestYWorkItemID.class);
-        suite.addTestSuite(TestYWorkItemRepository.class);
-        return suite;
-    }
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
+@Suite
+@SelectClasses({
+    TestYEngineInit.class,
+    TestCaseCancellation.class,
+    TestEngineSystem2.class,
+    TestImproperCompletion.class,
+    TestOrJoin.class,
+    TestRestServiceMethods.class,
+    TestSimpleExecutionUseCases.class,
+    TestYNetRunner.class,
+    TestYWorkItem.class,
+    TestYWorkItemID.class,
+    TestYWorkItemRepository.class
+})
+public class EngineTestSuite {
 }

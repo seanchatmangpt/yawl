@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.Document;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -31,7 +30,7 @@ import java.util.Set;
  * Date: 21/05/2004
  * Time: 15:41:36
  */
-public class TestCaseCancellation extends TestCase {
+class TestCaseCancellation {
     private YIdentifier _idForTopNet;
     private YEngine _engine;
     private YSpecification _specification;
@@ -41,7 +40,9 @@ public class TestCaseCancellation extends TestCase {
     private List _caseCancellationReceived = new ArrayList();
     private YLogDataItemList _logdata;
 
-    public void setUp() throws YAWLException, YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException, URISyntaxException, YEngineStateException, YQueryException {
+    @BeforeEach
+
+    void setUp() throws YAWLException, YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException, URISyntaxException, YEngineStateException, YQueryException {
         _engine = YEngine.getInstance();
         EngineClearer.clear(_engine);
         _engine.setDefaultWorklist("http://localhost:8080/resourceService/ib#resource");
@@ -99,7 +100,9 @@ public class TestCaseCancellation extends TestCase {
         _engine.registerInterfaceBObserverGateway(og);
     }
 
-    public void testIt() throws InterruptedException, YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    @Test
+
+    void testIt() throws InterruptedException, YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         Thread.sleep(400);
         performTask("register");
         Thread.sleep(400);
@@ -116,7 +119,9 @@ public class TestCaseCancellation extends TestCase {
         assertTrue(cases.toString(), cases.size() == 0);
     }
 
-    public void testCaseCancel() throws InterruptedException, YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+    @Test
+
+    void testCaseCancel() throws InterruptedException, YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         Thread.sleep(400);
         performTask("register");
 
@@ -135,14 +140,15 @@ public class TestCaseCancellation extends TestCase {
         assertTrue(_caseCancellationReceived.size() > 0);
     }
 
-    public void testCaseCompletion() throws YPersistenceException, YEngineStateException, YDataStateException, YSchemaBuildingException, YQueryException, YStateException {
+    @Test
+
+    void testCaseCompletion() throws YPersistenceException, YEngineStateException, YDataStateException, YSchemaBuildingException, YQueryException, YStateException {
         while(_engine.getAvailableWorkItems().size() > 0 ) {
             YWorkItem item = (YWorkItem) _engine.getAvailableWorkItems().iterator().next();
             performTask(item.getTaskID());
         }
      //   assertTrue(_caseCompletionReceived.size() > 0);
     }
-
 
     public void performTask(String name) throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         Set enabledItems = null;
@@ -170,18 +176,5 @@ public class TestCaseCancellation extends TestCase {
                     WorkItemCompletion.Normal);
             break;
         }
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestCaseCancellation.class);
-        return suite;
     }
 }

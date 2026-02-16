@@ -18,15 +18,46 @@
   ~ License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<web-app version="2.4">
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
 
     <display-name>YAWL Reporter Service</display-name>
     <description>
-        Copyright © 2015 The YAWL Foundation. All rights reserved.
+        Copyright (c) 2015 The YAWL Foundation. All rights reserved.
         Author: Michael Adams
         For more information about the YAWL SOFTWARE LICENCE refer to the 'downloads' section under
         http://www.yawlfoundation.org/.
     </description>
+
+    <!--CharsetFilter -->
+
+    <filter>
+        <filter-name>CharsetFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.util.CharsetFilter</filter-class>
+        <init-param>
+            <param-name>requestEncoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CharsetFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- CORS Filter for REST API -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
     <servlet>
 		<servlet-name>ReporterServlet</servlet-name>
@@ -40,6 +71,30 @@
     <servlet-mapping>
         <servlet-name>ReporterServlet</servlet-name>
         <url-pattern>/reporter</url-pattern>
+    </servlet-mapping>
+
+    <!-- JAX-RS REST API Configuration -->
+    <servlet>
+        <servlet-name>JerseyServlet</servlet-name>
+        <description>
+            JAX-RS servlet for modern REST API endpoints.
+            Provides JSON-based REST APIs for Reporter Service operations.
+        </description>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jakarta.ws.rs.Application</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest.YawlRestApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.yawlfoundation.yawl.engine.interfce.rest</param-value>
+        </init-param>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>JerseyServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 
     <session-config>

@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.schema;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  /**
@@ -11,16 +11,10 @@ import junit.framework.TestSuite;
  * Time: 16:47:21
  * 
  */
-public class SchemaTestSuite extends TestSuite{
-    public SchemaTestSuite(String name)
-    {
-        super(name);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestSchemaHandler.class);
-        suite.addTestSuite(TestSchemaHandlerValidation.class);
-        return suite;
-    }
+@Suite
+@SelectClasses({
+    TestSchemaHandler.class,
+    TestSchemaHandlerValidation.class
+})
+public class SchemaTestSuite {
 }

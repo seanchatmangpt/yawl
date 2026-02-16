@@ -28,7 +28,7 @@ import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.resourcing.resource.Position;
 import org.yawlfoundation.yawl.resourcing.resource.Role;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 import java.util.Set;
 
 /**

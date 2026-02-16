@@ -5,8 +5,8 @@
 <%@ page import="org.yawlfoundation.yawl.util.*" %>
 <%@ page import="com.sun.org.apache.xerces.internal.jaxp.datatype.*" %>
 <%@ page import="java.math.*" %>
-<%@ page import="javax.xml.bind.*" %>
-<%@ page import="javax.xml.stream.*" %>
+<%@ page import="jakarta.xml.bind.*" %>
+<%@ page import="jakarta.xml.stream.*" %>
 <%@ page import="javazoom.upload.*"%>
 <%@ page import="java.util.*"%>
 <%@ page import="java.io.*"%>
@@ -315,7 +315,7 @@ if(request.getParameter("Cancel") != null){
 
 	JAXBContext jc = JAXBContext.newInstance("org.yawlfoundation.orderfulfilment.produce_shipment_notice" );
 	Marshaller m = jc.createMarshaller();
-	m.setProperty( javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
+	m.setProperty( jakarta.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
 
 	ByteArrayOutputStream xmlOS = new ByteArrayOutputStream();
 	m.marshal(psnElement, xmlOS);//out to ByteArray

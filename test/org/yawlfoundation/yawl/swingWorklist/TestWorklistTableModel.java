@@ -1,23 +1,18 @@
 package org.yawlfoundation.yawl.swingWorklist;
 
-import junit.framework.TestCase;
-
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 20/05/2003
  * Time: 10:45:17
- * 
+ *
  */
-public class TestWorklistTableModel extends TestCase{
+class TestWorklistTableModel{
     private YWorklistTableModel _tableModel;
 
-    public TestWorklistTableModel(String name){
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp(){
+    void setUp(){
         _tableModel = new YWorklistTableModel(new String[]{"ID", "A string"});
         int activityID = 0;
         for(int i = 0; i < 20; i++){
@@ -25,15 +20,17 @@ public class TestWorklistTableModel extends TestCase{
         }
     }
 
+    @Test
 
-    public void testGetColumnClass(){
+    void testGetColumnClass(){
         assertEquals(this._tableModel.getColumnClass(0), String.class);
         assertEquals(this._tableModel.getColumnClass(1), String.class);
         _tableModel.getColumnClass(2);
     }
 
+    @Test
 
-    public void testGetColumnName(){
+    void testGetColumnName(){
         assertNotNull(_tableModel.getColumnName(0));
         assertNotNull(_tableModel.getColumnName(Integer.MAX_VALUE));
         assertEquals(_tableModel.getColumnName(0), "ID");
@@ -41,8 +38,9 @@ public class TestWorklistTableModel extends TestCase{
         assertNotNull(_tableModel.getColumnName(Integer.MAX_VALUE));
     }
 
+    @Test
 
-    public void testAccessors(){
+    void testAccessors(){
         assertEquals(_tableModel.getRowCount(), 20);
         String s = (String) _tableModel.getValueAt(5, 1);
         assertEquals(s, "this is data 14");
@@ -50,8 +48,9 @@ public class TestWorklistTableModel extends TestCase{
         assertNull(_tableModel.getValueAt(Integer.MAX_VALUE, 0));
     }
 
+    @Test
 
-    public void testRemoveRow(){
+    void testRemoveRow(){
         String id =  (String) _tableModel.getValueAt(5,0);
         String id2 = (String) _tableModel.getValueAt(5,1);
         _tableModel.removeRow(id + id2);

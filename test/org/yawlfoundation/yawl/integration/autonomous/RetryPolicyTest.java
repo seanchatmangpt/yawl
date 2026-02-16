@@ -71,8 +71,8 @@ public class RetryPolicyTest extends TestCase {
             return "success";
         });
 
-        assertEquals("success", result);
-        assertEquals(1, attempts.get());
+        assertEquals(result);
+        assertEquals(1, attempts.get(, "success"));
     }
 
     public void testSuccessOnSecondAttempt() throws Exception {
@@ -91,9 +91,9 @@ public class RetryPolicyTest extends TestCase {
 
         long duration = System.currentTimeMillis() - startTime;
 
-        assertEquals("success", result);
-        assertEquals(2, attempts.get());
-        assertTrue("Should have backoff delay", duration >= 100);
+        assertEquals(result);
+        assertEquals(2, attempts.get(, "success"));
+        assertTrue(duration >= 100, "Should have backoff delay");
     }
 
     public void testSuccessOnThirdAttempt() throws Exception {
@@ -112,9 +112,9 @@ public class RetryPolicyTest extends TestCase {
 
         long duration = System.currentTimeMillis() - startTime;
 
-        assertEquals("success", result);
-        assertEquals(3, attempts.get());
-        assertTrue("Should have exponential backoff", duration >= 150);
+        assertEquals(result);
+        assertEquals(3, attempts.get(, "success"));
+        assertTrue(duration >= 150, "Should have exponential backoff");
     }
 
     public void testFailureAfterAllAttempts() {
@@ -145,8 +145,8 @@ public class RetryPolicyTest extends TestCase {
             return "success";
         }, 2);
 
-        assertEquals("success", result);
-        assertEquals(2, attempts.get());
+        assertEquals(result);
+        assertEquals(2, attempts.get(, "success"));
     }
 
     public void testRejectsNullOperation() {
@@ -194,11 +194,11 @@ public class RetryPolicyTest extends TestCase {
 
         String result = policy.executeWithRetryUnchecked(() -> "success");
 
-        assertEquals("success", result);
+        assertEquals(result);
     }
 
     public void testExponentialBackoffCalculation() throws Exception {
-        RetryPolicy policy = new RetryPolicy(4, 100);
+        RetryPolicy policy = new RetryPolicy(4, 100, "success");
         AtomicInteger attempts = new AtomicInteger(0);
         long[] backoffTimes = new long[3];
         long[] lastAttemptTimeHolder = {System.currentTimeMillis()};
@@ -218,9 +218,9 @@ public class RetryPolicyTest extends TestCase {
         } catch (Exception e) {
         }
 
-        assertTrue("First backoff should be ~100ms", backoffTimes[0] >= 100 && backoffTimes[0] < 200);
-        assertTrue("Second backoff should be ~200ms", backoffTimes[1] >= 200 && backoffTimes[1] < 300);
-        assertTrue("Third backoff should be ~400ms", backoffTimes[2] >= 400 && backoffTimes[2] < 500);
+        assertTrue(backoffTimes[0] >= 100 && backoffTimes[0] < 200, "First backoff should be ~100ms");
+        assertTrue(backoffTimes[1] >= 200 && backoffTimes[1] < 300, "Second backoff should be ~200ms");
+        assertTrue(backoffTimes[2] >= 400 && backoffTimes[2] < 500, "Third backoff should be ~400ms");
     }
 
     public void testInterruptedRetry() {
@@ -248,7 +248,7 @@ public class RetryPolicyTest extends TestCase {
             fail("Test thread interrupted");
         }
 
-        assertTrue("Should have attempted at least once", attempts.get() >= 1);
-        assertTrue("Should not complete all retries", attempts.get() < 3);
+        assertTrue(attempts.get(, "Should have attempted at least once") >= 1);
+        assertTrue(attempts.get(, "Should not complete all retries") < 3);
     }
 }

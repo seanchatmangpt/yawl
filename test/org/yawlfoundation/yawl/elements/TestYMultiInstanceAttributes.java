@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
 
@@ -13,13 +15,14 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
-public class TestYMultiInstanceAttributes extends TestCase{
+class TestYMultiInstanceAttributes{
     private YTask _aTask;
     private YMultiInstanceAttributes _validMultiInstance;
     private YMultiInstanceAttributes _invalidMultiInstanceAttributes;
 
+    @BeforeEach
 
-    public void setUp(){
+    void setUp(){
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
 
@@ -29,8 +32,9 @@ public class TestYMultiInstanceAttributes extends TestCase{
         _invalidMultiInstanceAttributes = new YMultiInstanceAttributes(_aTask, "0", "-1", "-1", "dynhrgs");
     }
 
+    @Test
 
-    public void testValidStuff(){
+    void testValidStuff(){
         YVerificationHandler handler = new YVerificationHandler();
         _validMultiInstance.verify(handler);
         assertEquals(this._validMultiInstance.getMinInstances(), 1);
@@ -45,8 +49,9 @@ public class TestYMultiInstanceAttributes extends TestCase{
         }
     }
 
+    @Test
 
-    public void testInvalidVerify(){
+    void testInvalidVerify(){
         YVerificationHandler handler = new YVerificationHandler();
         _invalidMultiInstanceAttributes.verify(handler);
         if(handler.getMessageCount() != 5){

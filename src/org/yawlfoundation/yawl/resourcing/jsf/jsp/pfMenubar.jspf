@@ -19,7 +19,7 @@
   -->
 
 <div style="position: relative; -rave-layout: grid"
-     xmlns:f="http://java.sun.com/jsf/core"
+     xmlns:f="jakarta.faces.core"
      xmlns:ui="http://www.sun.com/web/ui">
 
     <f:subview id="pfMenubar">

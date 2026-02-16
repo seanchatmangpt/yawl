@@ -24,9 +24,9 @@ import com.sun.rave.web.ui.component.ImageComponent;
 import com.sun.rave.web.ui.component.PanelLayout;
 import org.yawlfoundation.yawl.resourcing.resource.Participant;
 
-import javax.faces.FacesException;
-import javax.faces.application.Application;
-import javax.faces.context.FacesContext;
+import jakarta.faces.FacesException;
+import jakarta.faces.application.Application;
+import jakarta.faces.context.FacesContext;
 import javax.faces.el.MethodBinding;
 
 /*

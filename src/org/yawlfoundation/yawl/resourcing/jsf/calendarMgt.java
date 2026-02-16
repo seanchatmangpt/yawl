@@ -30,11 +30,11 @@ import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.resourcing.resource.nonhuman.NonHumanResource;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.faces.FacesException;
-import javax.faces.component.UIColumn;
-import javax.faces.component.html.HtmlDataTable;
-import javax.faces.component.html.HtmlOutputText;
-import javax.faces.event.ValueChangeEvent;
+import jakarta.faces.FacesException;
+import jakarta.faces.component.UIColumn;
+import jakarta.faces.component.html.HtmlDataTable;
+import jakarta.faces.component.html.HtmlOutputText;
+import jakarta.faces.event.ValueChangeEvent;
 import java.util.Date;
 import java.util.GregorianCalendar;
 

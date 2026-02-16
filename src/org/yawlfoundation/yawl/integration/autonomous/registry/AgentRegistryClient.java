@@ -13,17 +13,18 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.registry;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +43,10 @@ public final class AgentRegistryClient {
 
     private final String registryHost;
     private final int registryPort;
-    private final int connectTimeoutMs;
-    private final int readTimeoutMs;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+    private final Duration connectTimeout;
+    private final Duration readTimeout;
 
     /**
      * Create client with default timeouts (5 seconds connect, 10 seconds read).
@@ -80,8 +83,12 @@ public final class AgentRegistryClient {
 
         this.registryHost = registryHost.trim();
         this.registryPort = registryPort;
-        this.connectTimeoutMs = connectTimeoutMs;
-        this.readTimeoutMs = readTimeoutMs;
+        this.connectTimeout = Duration.ofMillis(connectTimeoutMs);
+        this.readTimeout = Duration.ofMillis(readTimeoutMs);
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(this.connectTimeout)
+                .build();
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -176,77 +183,73 @@ public final class AgentRegistryClient {
     }
 
     private String sendPost(String urlString, String body) throws IOException {
-        URL url = URI.create(urlString).toURL();
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(connectTimeoutMs);
-            conn.setReadTimeout(readTimeoutMs);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlString))
+                    .timeout(readTimeout)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
 
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-                os.flush();
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new IOException(String.format(
+                        "HTTP %d: %s", response.statusCode(), response.body()));
             }
 
-            return readResponse(conn);
-        } finally {
-            conn.disconnect();
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
         }
     }
 
     private String sendGet(String urlString) throws IOException {
-        URL url = URI.create(urlString).toURL();
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(connectTimeoutMs);
-            conn.setReadTimeout(readTimeoutMs);
-            return readResponse(conn);
-        } finally {
-            conn.disconnect();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlString))
+                    .timeout(readTimeout)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new IOException(String.format(
+                        "HTTP %d: %s", response.statusCode(), response.body()));
+            }
+
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
         }
     }
 
     private String sendDelete(String urlString) throws IOException {
-        URL url = URI.create(urlString).toURL();
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
-            conn.setRequestMethod("DELETE");
-            conn.setConnectTimeout(connectTimeoutMs);
-            conn.setReadTimeout(readTimeoutMs);
-            return readResponse(conn);
-        } finally {
-            conn.disconnect();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlString))
+                    .timeout(readTimeout)
+                    .DELETE()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new IOException(String.format(
+                        "HTTP %d: %s", response.statusCode(), response.body()));
+            }
+
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
         }
-    }
-
-    private String readResponse(HttpURLConnection conn) throws IOException {
-        int responseCode = conn.getResponseCode();
-
-        BufferedReader reader;
-        if (responseCode >= 200 && responseCode < 300) {
-            reader = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-        } else {
-            reader = new BufferedReader(
-                new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
-        }
-
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
-        }
-        reader.close();
-
-        if (responseCode < 200 || responseCode >= 300) {
-            throw new IOException(String.format(
-                "HTTP %d: %s", responseCode, response.toString()));
-        }
-
-        return response.toString();
     }
 
     private List<AgentInfo> parseAgentList(String json) {
@@ -292,10 +295,6 @@ public final class AgentRegistryClient {
     }
 
     private String urlEncode(String value) {
-        try {
-            return java.net.URLEncoder.encode(value, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException("UTF-8 encoding not supported", e);
-        }
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

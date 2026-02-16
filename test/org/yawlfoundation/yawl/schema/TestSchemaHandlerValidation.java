@@ -1,12 +1,10 @@
 package org.yawlfoundation.yawl.schema;
 
-import junit.framework.TestCase;
-
 /**
  * @author Mike Fowler
  *         Date: 04-Jul-2006
  */
-public class TestSchemaHandlerValidation extends TestCase
+class TestSchemaHandlerValidation
 {
     private static final String SCHEMA = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
                                          "\n" +
@@ -49,14 +47,17 @@ public class TestSchemaHandlerValidation extends TestCase
     private SchemaHandler handler;
 
     @Override
-    protected void setUp() throws Exception
+    @BeforeEach
+
+    void setUp() throws Exception
     {
-        super.setUp();
         handler = new SchemaHandler(SCHEMA);
         assertTrue(handler.compileSchema());
     }
 
-    public void testSimpleInstance() throws Exception
+    @Test
+
+    void testSimpleInstance() throws Exception
     {
         String xml = "<person>\n" +
                      "  <title>Mr.</title>\n" +
@@ -66,7 +67,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertTrue(handler.validate(xml));
     }
 
-    public void testInvlaidSimpleInstance() throws Exception
+    @Test
+
+    void testInvlaidSimpleInstance() throws Exception
     {
         String xml = "<person>\n" +
                      "  <title>Mr.</title>\n" +
@@ -76,7 +79,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertFalse(handler.validate(xml));
     }
 
-    public void testXMLSchemaInstance() throws Exception
+    @Test
+
+    void testXMLSchemaInstance() throws Exception
     {
         String xml = "<entity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"typePerson\">\n" +
                      "  <title>Mr.</title>\n" +
@@ -86,7 +91,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertTrue(handler.validate(xml));
     }
 
-    public void testIncorrectXMLSchemaInstance() throws Exception
+    @Test
+
+    void testIncorrectXMLSchemaInstance() throws Exception
     {
         String xml = "<entity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"typeBadPerson\">\n" +
                      "  <title>Mr.</title>\n" +
@@ -96,7 +103,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertFalse(handler.validate(xml));
     }
 
-    public void testXSDAny() throws Exception
+    @Test
+
+    void testXSDAny() throws Exception
     {
         String xml = "<person>\n" +
                      "  <title>Mr.</title>\n" +
@@ -114,7 +123,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertTrue(handler.validate(xml));
     }
 
-    public void testMalformedXSDAny() throws Exception
+    @Test
+
+    void testMalformedXSDAny() throws Exception
     {
         String xml = "<person>\n" +
                      "  <title>Mr.</title>\n" +
@@ -132,7 +143,9 @@ public class TestSchemaHandlerValidation extends TestCase
         assertFalse(handler.validate(xml));
     }
 
-    public void testValidationBeforeCompilation() throws Exception
+    @Test
+
+    void testValidationBeforeCompilation() throws Exception
     {
         SchemaHandler handler = new SchemaHandler(SCHEMA);
 

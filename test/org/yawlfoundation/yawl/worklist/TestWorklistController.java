@@ -1,20 +1,22 @@
 package org.yawlfoundation.yawl.worklist;
 
 import org.yawlfoundation.yawl.engine.interfce.TaskInformation;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import junit.framework.TestCase;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 27/02/2004
  * Time: 14:22:31
- * 
+ *
  */
-public class TestWorklistController extends TestCase{
+class TestWorklistController{
 
+    @Test
 
-    public void testGetTaskInformation(){
+    void testGetTaskInformation(){
         String thestring =
                 "<response><taskInfo>" +
                 "<specification><identifier/><version>0.1</version><uri>makeTrip2.xml</uri></specification>" +

@@ -1,0 +1,975 @@
+openapi: 3.0.3
+info:
+  title: YAWL REST API
+  description: |
+    RESTful API for YAWL (Yet Another Workflow Language) v5.2 Workflow Engine
+
+    This API provides comprehensive workflow management capabilities including:
+    - Session management and authentication
+    - Work item lifecycle operations (checkout, checkin, complete)
+    - Case management and control
+    - Specification management and validation
+    - Event subscriptions and monitoring
+    - Extended operations (exception handling, task suspension/resumption)
+
+    All operations require a valid session handle obtained through the `/ib/connect` endpoint.
+  version: 5.2.0
+  contact:
+    name: YAWL Foundation
+    url: https://www.yawlfoundation.org
+  license:
+    name: GNU Lesser General Public License v2.1
+    url: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+servers:
+  - url: http://localhost:8080/yawl/api
+    description: Local development server
+    variables:
+      port:
+        default: '8080'
+  - url: https://yawl.example.com/api
+    description: Production server
+
+tags:
+  - name: Session Management
+    description: Authentication and session control
+  - name: Work Items
+    description: Work item lifecycle operations
+  - name: Cases
+    description: Case management and monitoring
+  - name: Specifications
+    description: Workflow specification management
+  - name: Events
+    description: Event subscription and notifications
+  - name: Extended Operations
+    description: Advanced engine operations
+
+paths:
+  /ib/connect:
+    post:
+      tags:
+        - Session Management
+      summary: Connect to the YAWL engine
+      description: |
+        Authenticates a user and establishes a session with the engine.
+        Returns a session handle that must be used for subsequent operations.
+      operationId: connect
+      requestBody:
+        required: true
+        description: User credentials for authentication
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+            examples:
+              basic:
+                summary: Basic authentication
+                value:
+                  userid: admin
+                  password: admin
+      responses:
+        '200':
+          description: Successful connection - returns session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+              examples:
+                success:
+                  value:
+                    sessionHandle: "H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXZCUGVRYXVKZnFGZl5aZl1iUmlyRGlyRklySkllZkJOVoFGQWZxZklmcWlxSV5RZmlyTmZJZnFqUUVRZXFBSV1+SWlxSWZRSWZJUlFiSWlSaHF+SUpKZX1NZUlqUWlyCUVGWSmpxSWZxcWlySk1mSSllSWpOJUVFqSX5+YUlySllQWZ1QmZxZmpJZn5BaklmSXFBZmlyYklKZnFxZkliSWlxSXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA"
+        '401':
+          description: Authentication failed - invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_credentials:
+                  value:
+                    error: "Invalid credentials"
+        '400':
+          description: Bad request - missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_fields:
+                  value:
+                    error: "Missing userid or password"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/disconnect:
+    post:
+      tags:
+        - Session Management
+      summary: Disconnect from the YAWL engine
+      description: |
+        Terminates the session with the engine.
+        The session handle becomes invalid after this call.
+      operationId: disconnect
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle from connect operation
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful disconnection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: disconnected
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/workitems:
+    get:
+      tags:
+        - Work Items
+      summary: Get all live work items
+      description: |
+        Retrieves all active work items in the engine.
+        Returns a list of WorkItemRecord objects.
+      operationId: getWorkItems
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of work items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkItemRecord'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/workitems/{itemId}:
+    get:
+      tags:
+        - Work Items
+      summary: Get a specific work item
+      description: |
+        Retrieves detailed information about a specific work item by ID.
+      operationId: getWorkItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item details (XML format)
+          content:
+            application/xml:
+              schema:
+                type: string
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Work item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/workitems/{itemId}/checkout:
+    post:
+      tags:
+        - Work Items
+      summary: Check out a work item
+      description: |
+        Starts execution of a work item.
+        Changes the work item status to "Started".
+        Returns the work item data in XML format.
+      operationId: checkoutWorkItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item data (XML format)
+          content:
+            application/xml:
+              schema:
+                type: string
+        '400':
+          description: Failed to checkout work item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/workitems/{itemId}/checkin:
+    post:
+      tags:
+        - Work Items
+      summary: Check in a work item
+      description: |
+        Updates work item data without completing it.
+        Useful for saving intermediate progress.
+      operationId: checkinWorkItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Work item data in XML format
+        content:
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Successful check-in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "checked-in"
+        '400':
+          description: Failed to checkin work item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/workitems/{itemId}/complete:
+    post:
+      tags:
+        - Work Items
+      summary: Complete a work item
+      description: |
+        Completes a work item and provides the final output data.
+        Changes the work item status to "Complete".
+        The work item must be checked out before completion.
+      operationId: completeWorkItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Work item completion data in XML format
+        content:
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Work item completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "completed"
+        '400':
+          description: Failed to complete work item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/cases/{caseId}/workitems:
+    get:
+      tags:
+        - Work Items
+        - Cases
+      summary: Get work items for a specific case
+      description: |
+        Retrieves all work items associated with a particular case instance.
+      operationId: getWorkItemsForCase
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          description: Case ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of work items for the case
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkItemRecord'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/cases/{caseId}:
+    get:
+      tags:
+        - Cases
+      summary: Get case data
+      description: |
+        Retrieves detailed data for a specific case instance,
+        including case variables and current state.
+      operationId: getCaseData
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          description: Case ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case data (XML format)
+          content:
+            application/xml:
+              schema:
+                type: string
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Case not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ib/cases/{caseId}/cancel:
+    post:
+      tags:
+        - Cases
+      summary: Cancel a case
+      description: |
+        Cancels an active case instance.
+        All work items in the case will be terminated.
+      operationId: cancelCase
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          description: Case ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "cancelled"
+        '400':
+          description: Failed to cancel case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing session handle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ia/specifications:
+    post:
+      tags:
+        - Specifications
+      summary: Upload a workflow specification
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceA_EngineBasedServer servlet instead.
+
+        Uploads and registers a new YAWL workflow specification.
+      operationId: uploadSpecification
+      deprecated: true
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Workflow specification in YAWL XML format
+        content:
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '501':
+          description: Not implemented - use InterfaceA_EngineBasedServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Specifications
+      summary: Get all loaded specifications
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceA_EngineBasedServer servlet instead.
+
+        Retrieves metadata for all currently loaded specifications.
+      operationId: getSpecifications
+      deprecated: true
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use InterfaceA_EngineBasedServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ia/specifications/{specId}:
+    delete:
+      tags:
+        - Specifications
+      summary: Unload a specification
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceA_EngineBasedServer servlet instead.
+
+        Unloads a specification from the engine.
+      operationId: unloadSpecification
+      deprecated: true
+      parameters:
+        - name: specId
+          in: path
+          required: true
+          description: Specification ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use InterfaceA_EngineBasedServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ix/workitems/{itemId}/exceptions:
+    post:
+      tags:
+        - Extended Operations
+      summary: Handle a work item exception
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceX_EngineSideServer servlet instead.
+
+        Handles an exception occurring during work item execution.
+      operationId: handleException
+      deprecated: true
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Exception details
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '501':
+          description: Not implemented - use InterfaceX_EngineSideServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ix/workitems/{itemId}/suspend:
+    post:
+      tags:
+        - Extended Operations
+      summary: Suspend a work item
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceX_EngineSideServer servlet instead.
+
+        Temporarily suspends a running work item.
+      operationId: suspendWorkItem
+      deprecated: true
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use InterfaceX_EngineSideServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ix/workitems/{itemId}/resume:
+    post:
+      tags:
+        - Extended Operations
+      summary: Resume a suspended work item
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the InterfaceX_EngineSideServer servlet instead.
+
+        Resumes a previously suspended work item.
+      operationId: resumeWorkItem
+      deprecated: true
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Work item ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use InterfaceX_EngineSideServer servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ie/subscriptions:
+    post:
+      tags:
+        - Events
+      summary: Subscribe to engine events
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the YLogGateway servlet instead.
+
+        Creates a subscription to engine events.
+      operationId: subscribe
+      deprecated: true
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Subscription configuration
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '501':
+          description: Not implemented - use YLogGateway servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Events
+      summary: Get active event subscriptions
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the YLogGateway servlet instead.
+
+        Retrieves all active subscriptions for the current session.
+      operationId: getSubscriptions
+      deprecated: true
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use YLogGateway servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ie/subscriptions/{subscriptionId}:
+    delete:
+      tags:
+        - Events
+      summary: Unsubscribe from events
+      description: |
+        **Note: Currently not implemented as REST endpoint.**
+        Use the YLogGateway servlet instead.
+
+        Removes an event subscription.
+      operationId: unsubscribe
+      deprecated: true
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          description: Subscription ID
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          description: Valid session handle
+          schema:
+            type: string
+      responses:
+        '501':
+          description: Not implemented - use YLogGateway servlet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Credentials:
+      type: object
+      required:
+        - userid
+        - password
+      properties:
+        userid:
+          type: string
+          description: Username for authentication
+          example: admin
+        password:
+          type: string
+          format: password
+          description: User password
+          example: admin
+
+    SessionResponse:
+      type: object
+      required:
+        - sessionHandle
+      properties:
+        sessionHandle:
+          type: string
+          description: |
+            Session handle for use in subsequent requests.
+            Must be included as a query parameter in all operations.
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message describing the failure
+
+    WorkItemRecord:
+      type: object
+      description: |
+        A work item record representing a task instance in a workflow case.
+        Contains identification, status, timing, and data information.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Internal Hibernate primary key
+        specIdentifier:
+          type: string
+          description: Workflow specification identifier
+        specVersion:
+          type: string
+          description: Workflow specification version
+          default: "0.1"
+        specURI:
+          type: string
+          description: Specification URI
+        caseID:
+          type: string
+          description: Case instance ID
+        taskID:
+          type: string
+          description: Task definition ID
+        uniqueID:
+          type: string
+          description: Unique work item identifier (used by PDF Forms service)
+        taskName:
+          type: string
+          description: Human-readable task name
+        documentation:
+          type: string
+          description: Task documentation/description
+        allowsDynamicCreation:
+          type: string
+          description: Whether task allows dynamic work item creation
+        requiresManualResourcing:
+          type: string
+          description: Whether task requires manual resource allocation
+        codelet:
+          type: string
+          description: Codelet implementation (if applicable)
+        status:
+          type: string
+          enum:
+            - Enabled
+            - Fired
+            - Executing
+            - Complete
+            - IsParent
+            - Deadlocked
+            - ForcedComplete
+            - Failed
+            - Suspended
+            - Discarded
+          description: Current execution status
+        resourceStatus:
+          type: string
+          enum:
+            - Offered
+            - Allocated
+            - Started
+            - Suspended
+            - Unoffered
+            - Unresourced
+          description: Current resourcing status
+          default: Unresourced
+        enablementTimeMs:
+          type: string
+          description: Timestamp when work item was enabled (ISO 8601)
+        firingTimeMs:
+          type: string
+          description: Timestamp when work item was fired (ISO 8601)
+        startTimeMs:
+          type: string
+          description: Timestamp when work item execution started (ISO 8601)
+        completionTimeMs:
+          type: string
+          description: Timestamp when work item completed (ISO 8601)
+        timerTrigger:
+          type: string
+          description: Timer trigger value (if enabled)
+        timerExpiry:
+          type: string
+          description: Timer expiry timestamp (if enabled)
+
+  securitySchemes:
+    SessionHandle:
+      type: apiKey
+      in: query
+      name: sessionHandle
+      description: Session handle obtained from /ib/connect endpoint
+
+security:
+  - SessionHandle: []
+
+externalDocs:
+  description: YAWL Foundation Documentation
+  url: https://www.yawlfoundation.org/

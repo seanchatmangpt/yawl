@@ -22,10 +22,10 @@ import com.sun.rave.web.ui.component.Button;
 import com.sun.rave.web.ui.component.*;
 import com.sun.rave.web.ui.component.Label;
 
-import javax.faces.application.Application;
-import javax.faces.context.FacesContext;
+import jakarta.faces.application.Application;
+import jakarta.faces.context.FacesContext;
 import javax.faces.el.MethodBinding;
-import javax.faces.event.ActionEvent;
+import jakarta.faces.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.LinkedHashMap;
@@ -334,7 +334,7 @@ public class MessagePanel extends PanelLayout {
             case warn : return "Warning";
             case info : return "Information";
             case success : return "Success";
-            default: return "";  // should never be reached
+            default: throw new IllegalArgumentException("Unknown message type: " + msgType);
         }
     }
 

@@ -1,6 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
 import org.yawlfoundation.yawl.elements.data.YVariable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -8,10 +11,7 @@ import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
 import org.yawlfoundation.yawl.util.StringUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -27,13 +27,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 17/04/2003
  * Time: 15:52:30
- * 
+ *
  */
-public class TestYExternalTask extends TestCase{
+class TestYExternalTask{
     private YCondition _aCondition;
     private YTask _validTask;
     private YTask _invalidTask;
@@ -41,14 +41,9 @@ public class TestYExternalTask extends TestCase{
     private YTask _needsNoPredicateString;
     private YTask _invalidTask2;
 
+    @BeforeEach
 
-    public TestYExternalTask(String name)
-    {
-        super(name);
-    }
-
-
-    public void setUp() throws YPersistenceException {
+    void setUp() throws YPersistenceException {
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
         YNet deadNet = new YNet("aNetName", spec);
@@ -97,8 +92,9 @@ public class TestYExternalTask extends TestCase{
 
     }
 
+    @Test
 
-    public void testValidStuff(){
+    void testValidStuff(){
         assertTrue(_validTask.getPostsetElement("c1").equals(_aCondition));
         assertTrue(_aCondition.getPostsetElement("et1").equals(_validTask));
         assertTrue(_validTask.getPresetElement("c1").equals(_aCondition));
@@ -114,7 +110,9 @@ public class TestYExternalTask extends TestCase{
         _validTask.getRemoveSet();
     }
 
-    public void testBadQueries(){
+    @Test
+
+    void testBadQueries(){
         YSpecification spec = new YSpecification("spec1");
         YNet net = new YNet("a", spec);
         YVariable var = new YVariable(net);
@@ -138,7 +136,9 @@ public class TestYExternalTask extends TestCase{
         assertTrue(handler.getMessages().size() == 2);
     }
 
-    public void testBadQueries2(){
+    @Test
+
+    void testBadQueries2(){
         YSpecification spec = new YSpecification("spec1");
         YNet net = new YNet("a", spec);
         YVariable var = new YVariable(net);
@@ -168,8 +168,9 @@ public class TestYExternalTask extends TestCase{
         */
     }
 
+    @Test
 
-    public void testInvalidVerify(){
+    void testInvalidVerify(){
         YVerificationHandler handler = new YVerificationHandler();
         _invalidTask.verify(handler);
         if(handler.getMessages().size() != 10){
@@ -193,8 +194,9 @@ public class TestYExternalTask extends TestCase{
         }
     }
 
+    @Test
 
-    public void testNeedsPredicateVerify(){
+    void testNeedsPredicateVerify(){
         YVerificationHandler handler = new YVerificationHandler();
         _needsPredicateString.verify(handler);
         if(! handler.hasMessages()) {
@@ -202,8 +204,9 @@ public class TestYExternalTask extends TestCase{
         }
     }
 
+    @Test
 
-    public void testNeedsNoPredicateVerify(){
+    void testNeedsNoPredicateVerify(){
         YVerificationHandler handler = new YVerificationHandler();
         _needsNoPredicateString.verify(handler);
         if(! handler.hasMessages()) {
@@ -211,8 +214,9 @@ public class TestYExternalTask extends TestCase{
         }
     }
 
+    @Test
 
-    public void testThrowsAppropriateStateExceptions() throws YDataStateException, YQueryException, YPersistenceException, YSchemaBuildingException {
+    void testThrowsAppropriateStateExceptions() throws YDataStateException, YQueryException, YPersistenceException, YSchemaBuildingException {
         Exception f = null;
         try{
             _validTask.t_fire(null);
@@ -251,7 +255,9 @@ public class TestYExternalTask extends TestCase{
         assertNotNull(f);
     }
 
-    public void testToXML(){
+    @Test
+
+    void testToXML(){
         YAtomicTask t1 = new YAtomicTask("1", YAtomicTask._AND, YAtomicTask._XOR, null);
         YAtomicTask t2 = new YAtomicTask("2", YAtomicTask._AND, YAtomicTask._AND, null);
         YSpecification spec = new YSpecification("");
@@ -324,8 +330,9 @@ public class TestYExternalTask extends TestCase{
         t2.toXML());
     }
 
+    @Test
 
-    public void testToXML2(){
+    void testToXML2(){
         YAtomicTask t1 = new YAtomicTask("1", YAtomicTask._AND, YAtomicTask._XOR, null);
         YAtomicTask t2 = new YAtomicTask("2", YAtomicTask._AND, YAtomicTask._AND, null);
 
@@ -369,7 +376,9 @@ public class TestYExternalTask extends TestCase{
 
     }
 
-    public void testInvalidMIAttributeVerify() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    @Test
+
+    void testInvalidMIAttributeVerify() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("BadMI.xml");
 		File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = null;
@@ -383,7 +392,9 @@ public class TestYExternalTask extends TestCase{
                 verificationResult.contains("output parameter is used twice"));
     }
 
-    public void testSelfCancellation() throws YStateException, YQueryException, YDataStateException, YSchemaBuildingException, YPersistenceException {
+    @Test
+
+    void testSelfCancellation() throws YStateException, YQueryException, YDataStateException, YSchemaBuildingException, YPersistenceException {
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
         YNet n = new YNet("", spec);
@@ -410,25 +421,12 @@ public class TestYExternalTask extends TestCase{
         kid = (YIdentifier)kids.iterator().next();
         t1.t_start(null, kid);
         try {
-            t1.t_complete(null, 
+            t1.t_complete(null,
                     kid,
                     new Document(new Element("data")));
         } catch (YDataStateException e) {
             e.printStackTrace();
         }
         assertTrue(c2.containsIdentifier());
-    }
-
-
-    public static void main(String args[]) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYExternalTask.class);
-        return suite;
     }
 }

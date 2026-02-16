@@ -29,9 +29,10 @@ import org.yawlfoundation.yawl.util.XNodeParser;
 
 import jakarta.xml.bind.DatatypeConverter;
 import javax.xml.datatype.Duration;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
-import java.util.Date;
 
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;
 import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
@@ -46,7 +47,7 @@ public class YTimerParameters {
     public enum TimerType { Duration, Expiry, Interval, LateBound, Nil }
 
     private String _variableName;                         // late bound net variable
-    private Date _expiryTime;                             // date param
+    private Instant _expiryTime;                          // date param
     private Duration _duration;                           // duration param
     private long _ticks;                                  // interval params
     private YTimer.TimeUnit _timeUnit;                    // ditto
@@ -59,7 +60,7 @@ public class YTimerParameters {
 
     public YTimerParameters(String netParamName) { set(netParamName); }
 
-    public YTimerParameters(YWorkItemTimer.Trigger trigger, Date expiryTime) {
+    public YTimerParameters(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
         set(trigger, expiryTime);
     }
 
@@ -83,7 +84,7 @@ public class YTimerParameters {
     }
 
 
-    public void set(YWorkItemTimer.Trigger trigger, Date expiryTime) {
+    public void set(YWorkItemTimer.Trigger trigger, Instant expiryTime) {
         _trigger = trigger;
         _expiryTime = expiryTime;
         _timerType = TimerType.Expiry;
@@ -124,9 +125,9 @@ public class YTimerParameters {
     }
 
 
-    public Date getDate() { return _expiryTime; }
+    public Instant getDate() { return _expiryTime; }
 
-    public void setDate(Date date) {
+    public void setDate(Instant date) {
         _expiryTime = date;
         _timerType = TimerType.Expiry;
     }
@@ -197,7 +198,7 @@ public class YTimerParameters {
 
         try {                                 // test for xsd datetime
             Calendar calendar = DatatypeConverter.parseDateTime(expiry);
-            set(trigger, calendar.getTime());
+            set(trigger, calendar.getTime().toInstant());
             return true;
         }
         catch (IllegalArgumentException pe) {
@@ -206,13 +207,15 @@ public class YTimerParameters {
 
         long time = StringUtil.strToLong(expiry, -1);           // test for long
         if (time < 0) throw new IllegalArgumentException("Malformed expiry value");
-        set(trigger, new Date(time));
+        set(trigger, Instant.ofEpochMilli(time));
         return true;
     }
 
 
     public String toXML() {
-        if (_timerType == TimerType.Nil) return "";
+        if (_timerType == TimerType.Nil) {
+            return new String();  // Return empty but valid XML string for Nil timer type
+        }
 
         XNode node = new XNode("timer");
         switch (_timerType) {
@@ -226,7 +229,7 @@ public class YTimerParameters {
             }
             case Expiry: {
                 node.addChild("trigger", _trigger.name());
-                node.addChild("expiry", _expiryTime.getTime());
+                node.addChild("expiry", _expiryTime.toEpochMilli());
                 break;
             }
             case Interval: {
@@ -248,9 +251,11 @@ public class YTimerParameters {
     public String toString() {
         if (_timerType == TimerType.Nil) return "Nil";
         String s = _trigger == YWorkItemTimer.Trigger.OnExecuting ? "Start: " : "Offer: ";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy, h:mm a")
+                .withZone(ZoneId.systemDefault());
         switch (_timerType) {
             case Duration: s += _duration.toString(); break;
-            case Expiry: s += new SimpleDateFormat().format(_expiryTime); break;
+            case Expiry: s += formatter.format(_expiryTime); break;
             case Interval: s += _ticks + " " + _timeUnit.name(); break;
             case LateBound: s = "Variable: " + _variableName; break;
         }

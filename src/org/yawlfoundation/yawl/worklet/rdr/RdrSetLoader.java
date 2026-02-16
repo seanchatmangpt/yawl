@@ -18,8 +18,6 @@
 
 package org.yawlfoundation.yawl.worklet.rdr;
 
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.Restrictions;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.worklet.support.Persister;
 

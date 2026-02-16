@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
@@ -11,24 +13,23 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 23/02/2004
  * Time: 17:23:58
- * 
+ *
  */
-public class TestDataParsing extends TestCase {
+class TestDataParsing {
     private YSpecification _badSpecification;
 
-    public TestDataParsing(String name) {
-        super(name);
+    @BeforeEach
+
+    void setUp() {
     }
 
-    public void setUp() {
-    }
+    @Test
 
-
-    public void testSchemaCatching() throws JDOMException, IOException, YSchemaBuildingException {
+    void testSchemaCatching() throws JDOMException, IOException, YSchemaBuildingException {
         Exception d = null;
         try {
             File file1 = new File(getClass().getResource("duplicateDataSpecification.xml").getFile());

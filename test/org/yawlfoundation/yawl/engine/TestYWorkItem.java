@@ -1,32 +1,31 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.authentication.YClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 30/05/2003
  * Time: 16:07:19
- * 
+ *
  */
-public class TestYWorkItem extends TestCase{
+class TestYWorkItem{
     private YIdentifier _identifier;
     private YWorkItemID _workItemID;
     private YTask _task;
     private YWorkItem _workItem;
     private YIdentifier _childIdentifier;
 
-    public TestYWorkItem(String name){
-        super(name);
-    }
+    @BeforeEach
 
-
-    public void setUp() throws Exception{
+    void setUp() throws Exception{
         _identifier = new YIdentifier(null);
         _childIdentifier = _identifier.createChild(null);
         _workItemID = new YWorkItemID(_identifier, "task-123");
@@ -34,8 +33,9 @@ public class TestYWorkItem extends TestCase{
         _workItem = new YWorkItem(null, new YSpecificationID("ASpecID"), _task, _workItemID, true, false);
     }
 
+    @Test
 
-    public void testCreateChild() throws YPersistenceException {
+    void testCreateChild() throws YPersistenceException {
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
@@ -63,18 +63,19 @@ public class TestYWorkItem extends TestCase{
         }catch(Exception f){
             e= f;
         }
-        assertNotNull("Should have thown an exception.",e);
+        assertNotNull(e, "Should have thown an exception.");
         try{
             child.setStatusToComplete(null, WorkItemCompletion.Normal);
         }catch(Exception f){
             e= f;
         }
-        assertNotNull("Should have thown an exception.",e);
+        assertNotNull(e, "Should have thown an exception.");
 
     }
 
+    @Test
 
-    public void testConstructor(){
+    void testConstructor(){
         assertNull(_workItem.getParent());
         assertTrue(_workItem.getStatus().equals(YWorkItemStatus.statusEnabled));
     }

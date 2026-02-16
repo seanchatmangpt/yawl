@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.worklet.selection;
 
-import org.hibernate.Query;
+import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.worklet.rdr.RuleType;
 import org.yawlfoundation.yawl.worklet.support.Persister;

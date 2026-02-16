@@ -21,8 +21,11 @@ package org.yawlfoundation.yawl.engine.time.workdays;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import javax.xml.datatype.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 
 /**
@@ -83,36 +86,36 @@ public class WorkDayAdjuster {
 
 
     /**
-     * Adjust a Date value so that it will apply only to working days,
+     * Adjust an Instant value so that it will apply only to working days,
      * taking the current moment as a starting date
-     * @param date the value to be adjusted
-     * @return the adjusted Date value
+     * @param instant the value to be adjusted
+     * @return the adjusted Instant value
      */
-    public Date adjust(Date date) {
-        return adjust(new Date(), date);
+    public Instant adjust(Instant instant) {
+        return adjust(Instant.now(), instant);
     }
 
 
     /**
-     * Adjust a Date value so that it will apply only to working days
+     * Adjust an Instant value so that it will apply only to working days
      * @param start the moment to start the adjustment from
      * @param end the value to be adjusted
-     * @return the adjusted Date value
+     * @return the adjusted Instant value
      */
-    public Date adjust(Date start, Date end) {
-        return adjust(createCalendar(start), createCalendar(end)).getTime();
+    public Instant adjust(Instant start, Instant end) {
+        return adjust(createCalendar(start), createCalendar(end)).toInstant();
     }
 
-    
+
 
     private Calendar createCalendar() {
-        return createCalendar(new Date());
+        return createCalendar(Instant.now());
     }
 
 
-    private Calendar createCalendar(Date date) {
+    private Calendar createCalendar(Instant instant) {
         Calendar calendar = new GregorianCalendar();
-        calendar.setTime(date);
+        calendar.setTimeInMillis(instant.toEpochMilli());
         return calendar;
     }
 

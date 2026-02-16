@@ -21,7 +21,7 @@ package org.yawlfoundation.yawl.resourcing.jsf;
 import com.sun.rave.web.ui.appbase.AbstractPageBean;
 import com.sun.rave.web.ui.component.*;
 
-import javax.faces.FacesException;
+import jakarta.faces.FacesException;
 
 /*
  * selectUser.java

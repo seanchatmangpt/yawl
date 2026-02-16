@@ -1,26 +1,26 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 28/04/2003
  * Time: 11:12:39
- * 
+ *
  */
-public class TestYExternalNetElement extends TestCase{
+class TestYExternalNetElement{
     private YExternalNetElement _aCondition;
     private YExternalNetElement _aTask;
 
-    public TestYExternalNetElement(String name){
-        super(name);
-    }
+    @BeforeEach
 
-    public void setUp(){
+    void setUp(){
         YSpecification spec = new YSpecification("");
         spec.setVersion(YSchemaVersion.Beta2);
         YNet deadNet = new YNet("aNetName", spec);
@@ -32,8 +32,9 @@ public class TestYExternalNetElement extends TestCase{
         _aTask.addPostset(f);
     }
 
+    @Test
 
-    public void testFlowStuff(){
+    void testFlowStuff(){
         assertTrue(_aTask.getPostsetElement("c1").equals(_aCondition));
         assertTrue(_aCondition.getPostsetElement("et1").equals(_aTask));
         assertTrue(_aTask.getPresetElement("c1").equals(_aCondition));

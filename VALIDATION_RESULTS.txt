@@ -1,0 +1,92 @@
+YAWL v5.2 Build System Validation Results
+==========================================
+Date: 2026-02-16
+Validator: YAWL Validation Specialist (Claude Code Agent)
+Session: https://claude.ai/code/session_01KDHNeGpU43fqGudyTYv8tM
+
+BUILD STATUS: FAILED
+- Compilation Errors: 1,157
+- Compilation Warnings: 105
+- Files Compiled: 0 of 996
+
+CRITICAL ISSUES: 4
+1. Jakarta Faces version mismatch in build.xml (CRITICAL)
+2. Incomplete Hibernate 6 API migration (CRITICAL)
+3. Missing bcpkix-jdk18on-1.77.jar (HIGH)
+4. Duplicate dependencies (MEDIUM)
+
+REPORTS GENERATED: 4
+==========================================
+
+Executive Summary:
+/home/user/yawl/BUILD_VALIDATION_SUMMARY.md
+
+Detailed Analysis:
+/home/user/yawl/BUILD_HEALTH_REPORT.md
+
+Dependency Inventory:
+/home/user/yawl/DEPENDENCY_MATRIX.md
+
+Documentation Index:
+/home/user/yawl/DOCUMENTATION_INDEX.md
+
+Build Output:
+/tmp/compile-report.txt
+
+QUICK START
+==========================================
+
+1. Read executive summary:
+   cat /home/user/yawl/BUILD_VALIDATION_SUMMARY.md
+
+2. Review detailed health report:
+   less /home/user/yawl/BUILD_HEALTH_REPORT.md
+
+3. Check dependency inventory:
+   less /home/user/yawl/DEPENDENCY_MATRIX.md
+
+4. View all documentation:
+   ls -lh /home/user/yawl/*.md
+
+ESTIMATED FIX TIME: 7-13 hours
+==========================================
+
+Phase 1 (Immediate): 1-2 hours
+  - Fix build.xml JAR versions
+  - Download bcpkix JAR
+  - Update properties
+
+Phase 2 (Hibernate 6): 4-8 hours
+  - Migrate 6 persistence files
+  - Update API usage
+  - Test thoroughly
+
+Phase 3 (Cleanup): 2-3 hours
+  - Remove duplicates
+  - Run tests
+  - HYPER_STANDARDS validation
+
+HYPER_STANDARDS: NOT SCANNED
+==========================================
+Build must compile before standards validation.
+Validation script: /home/user/yawl/.claude/hooks/hyper-validate.sh
+
+NEXT ACTIONS
+==========================================
+1. Fix build.xml (lines 64, 298, 310)
+2. Download bcpkix-jdk18on-1.77.jar
+3. Migrate Hibernate APIs in 6 files
+4. Test build: ant -f build/build.xml compile
+5. Run tests: ant -f build/build.xml unitTest
+6. Validate: .claude/hooks/hyper-validate.sh
+
+DO NOT DEPLOY until:
+- Build compiles successfully
+- All tests pass
+- HYPER_STANDARDS validation passes
+
+VALIDATION COMPLETE
+==========================================
+All issues identified and documented.
+Clear remediation path provided.
+Ready for developer action.

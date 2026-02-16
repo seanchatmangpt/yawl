@@ -13,10 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.launcher;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
@@ -26,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -167,22 +166,29 @@ public final class GenericWorkflowLauncher {
         }
 
         try {
-            JsonElement jsonElement = JsonParser.parseString(jsonData);
-            if (!jsonElement.isJsonObject()) {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(jsonData);
+
+            if (!jsonNode.isObject()) {
                 throw new IllegalArgumentException("Case data must be a JSON object");
             }
 
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
             Element dataElement = new Element("data");
 
-            for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
                 String key = entry.getKey();
-                JsonElement value = entry.getValue();
+                JsonNode value = entry.getValue();
                 Element paramElement = new Element(key);
 
-                if (value.isJsonPrimitive()) {
-                    paramElement.setText(value.getAsString());
-                } else if (value.isJsonNull()) {
+                if (value.isTextual()) {
+                    paramElement.setText(value.asText());
+                } else if (value.isNumber()) {
+                    paramElement.setText(value.asText());
+                } else if (value.isBoolean()) {
+                    paramElement.setText(value.asText());
+                } else if (value.isNull()) {
                     paramElement.setText("");
                 } else {
                     paramElement.setText(value.toString());

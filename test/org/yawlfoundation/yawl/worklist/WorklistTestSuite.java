@@ -1,8 +1,7 @@
 package org.yawlfoundation.yawl.worklist;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * 
@@ -11,19 +10,9 @@ import junit.textui.TestRunner;
  * Time: 14:22:08
  * 
  */
-public class WorklistTestSuite extends TestSuite{
-    public WorklistTestSuite(String name){
-        super(name);
-    }
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestWorklistController.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-    }
+@Suite
+@SelectClasses({
+    TestWorklistController.class
+})
+public class WorklistTestSuite {
 }

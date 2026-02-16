@@ -24,10 +24,10 @@ import org.yawlfoundation.yawl.monitor.sort.ParamOrder;
 import org.yawlfoundation.yawl.monitor.sort.TableSorter;
 import org.yawlfoundation.yawl.resourcing.jsf.MessagePanel;
 
-import javax.faces.FacesException;
-import javax.faces.component.UIColumn;
-import javax.faces.component.html.HtmlDataTable;
-import javax.faces.component.html.HtmlOutputText;
+import jakarta.faces.FacesException;
+import jakarta.faces.component.UIColumn;
+import jakarta.faces.component.html.HtmlDataTable;
+import jakarta.faces.component.html.HtmlOutputText;
 
 /**
  *  Backing bean for the active cases page.

@@ -30,9 +30,9 @@ import org.yawlfoundation.yawl.resourcing.jsf.dynform.DynFormFactory;
 import org.yawlfoundation.yawl.resourcing.resource.Participant;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
-import javax.faces.FacesException;
-import javax.faces.component.html.HtmlOutputText;
-import javax.faces.context.ExternalContext;
+import jakarta.faces.FacesException;
+import jakarta.faces.component.html.HtmlOutputText;
+import jakarta.faces.context.ExternalContext;
 import java.awt.*;
 import java.io.IOException;
 import java.util.Set;

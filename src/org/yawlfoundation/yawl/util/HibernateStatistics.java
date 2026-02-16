@@ -21,8 +21,9 @@ package org.yawlfoundation.yawl.util;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.*;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @author Michael Adams
@@ -163,7 +164,9 @@ public class HibernateStatistics {
 
 
     private String getTimeString(long time) {
-        return new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSS").format(new Date(time));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd' 'HH:mm:ss.SSS")
+                .withZone(ZoneId.systemDefault());
+        return formatter.format(Instant.ofEpochMilli(time));
     }
 
 

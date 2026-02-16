@@ -1,7 +1,5 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.TestCase;
-
 import java.util.Set;
 
 /**
@@ -10,9 +8,11 @@ import java.util.Set;
  * Date: 01/08/2007
  *
  */
-public class TestHibernate extends TestCase {
+class TestHibernate {
 
-    public void testCreateDB() {
+    @Test
+
+    void testCreateDB() {
         ResourceManager rm = ResourceManager.getInstance();
 
         System.out.print("rm is not null: ");
@@ -22,7 +22,6 @@ public class TestHibernate extends TestCase {
 
         System.out.print("set is not null: ");
         System.out.println(set != null) ;
-
 
         int s = rm.getOrgDataSet().getParticipants().size();
 

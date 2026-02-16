@@ -86,7 +86,7 @@ hibernate.query.substitutions true 1, false 0, yes 'Y', no 'N'
 #hibernate.dialect org.hibernate.dialect.Oracle8iDialect
 #hibernate.dialect org.hibernate.dialect.Oracle9Dialect
 #hibernate.dialect org.hibernate.dialect.Oracle9iDialect
-hibernate.dialect org.hibernate.dialect.Oracle10gDialect
+hibernate.dialect org.hibernate.dialect.Oracle12cDialect
 hibernate.connection.driver_class oracle.jdbc.driver.OracleDriver
 hibernate.connection.url jdbc:oracle:thin:@DB_Path@
 hibernate.connection.username @DB_User@

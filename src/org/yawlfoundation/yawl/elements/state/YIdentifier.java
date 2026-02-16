@@ -23,10 +23,10 @@ import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 /**
  * This class has control over data structures that allow for
@@ -38,10 +38,10 @@ import java.util.Vector;
 public class YIdentifier {
 
     // a location may be a condition or a task
-    private List<YNetElement> _locations = new Vector<YNetElement>();
+    private List<YNetElement> _locations = new ArrayList<YNetElement>();
 
-    private List<String> locationNames = new Vector<String>();
-    private List<YIdentifier> _children = new Vector<YIdentifier>();
+    private List<String> locationNames = new ArrayList<String>();
+    private List<YIdentifier> _children = new ArrayList<YIdentifier>();
     private YIdentifier _parent;
     private String id = null;
     private String _idString;
@@ -120,7 +120,7 @@ public class YIdentifier {
     }
 
     public void clearChildren() {
-        _children = new Vector<YIdentifier>();
+        _children = new ArrayList<YIdentifier>();
     }
 
     public boolean removeChild(YIdentifier child) {

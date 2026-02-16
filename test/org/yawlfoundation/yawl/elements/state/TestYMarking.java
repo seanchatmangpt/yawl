@@ -1,10 +1,9 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
@@ -18,13 +17,13 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * 
+ *
  * Author: Lachlan Aldred
  * Date: 24/06/2003
  * Time: 18:24:55
- * 
+ *
  */
-public class TestYMarking extends TestCase{
+class TestYMarking{
     private YMarking _marking1;
     private YMarking _marking2;
     private YMarking _marking3;
@@ -44,13 +43,9 @@ public class TestYMarking extends TestCase{
     private YMarking _marking10;
     private YMarking _marking11;
 
+    @BeforeEach
 
-    public TestYMarking(String name){
-        super(name);
-    }
-
-
-    public void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YPersistenceException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YPersistenceException {
         _conditionArr = new YCondition[6];
         for (int i = 0; i < _conditionArr.length; i++) {
             _conditionArr[i] = new YCondition("ct"+i, "YConditionInterface " + i, null);
@@ -145,16 +140,18 @@ public class TestYMarking extends TestCase{
         _marking11 = new YMarking(id);
     }
 
+    @Test
 
-    public void testEquals(){
+    void testEquals(){
         assertTrue(_marking1.equals(_marking2));
         assertTrue(_marking2.equals(_marking1));
         assertFalse(_marking3.equals(_marking1));
         assertFalse(_marking1.equals(_marking3));
     }
 
+    @Test
 
-    public void testGreaterThanOrEquals(){
+    void testGreaterThanOrEquals(){
         //XPathSaxonUser equal markings
         assertTrue(_marking1.strictlyGreaterThanOrEqualWithSupports(_marking2));
         assertTrue(_marking2.strictlyGreaterThanOrEqualWithSupports(_marking1));
@@ -173,8 +170,9 @@ public class TestYMarking extends TestCase{
         assertFalse(_marking3.strictlyGreaterThanOrEqualWithSupports(_marking5));
     }
 
+    @Test
 
-    public void testLessThan(){
+    void testLessThan(){
         //XPathSaxonUser m2[0 1 2 3 4] m4[0 1 2 3 4 4]
         assertTrue(_marking2.strictlyLessThanWithSupports(_marking4));
         assertFalse(_marking4.strictlyLessThanWithSupports(_marking2));
@@ -188,16 +186,18 @@ public class TestYMarking extends TestCase{
         assertFalse(_marking1.strictlyLessThanWithSupports(_marking2));
     }
 
+    @Test
 
-    public void testHashcode(){
+    void testHashcode(){
         assertTrue(_marking1.hashCode() == _marking2.hashCode());
         assertFalse(_marking1.hashCode() == _marking4.hashCode());
         assertFalse(_marking1.hashCode() == _marking3.hashCode());
         assertFalse(_marking4.hashCode() == _marking6.hashCode());
     }
 
+    @Test
 
-    public void testDoPowerSetRecursion(){
+    void testDoPowerSetRecursion(){
         Set aSet = new HashSet();
         aSet.add("1");
         aSet.add("2");
@@ -209,13 +209,14 @@ public class TestYMarking extends TestCase{
 //        System.out.println("powerSet: " + powerSet);
     }
 
+    @Test
 
-    public void testXorJoinAndSplit(){
+    void testXorJoinAndSplit(){
 //System.out.println("_xorJoinAndSplit preset " + _xorJoinAndSplit.getPresetElements());
 //System.out.println("_xorJoinAndSplit postset " + _xorJoinAndSplit.getPostsetElements());
 //System.out.println("marking locations " + _marking7.getLocations());
         YSetOfMarkings markingSet = _marking7.reachableInOneStep(_xorJoinAndSplit, _orJoin);
-        assertNotNull("reachableInOneStep should return non-null", markingSet);
+        assertNotNull(markingSet, "reachableInOneStep should return non-null");
         for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
             YMarking marking = (YMarking) iterator.next();
             List list = marking.getLocations();
@@ -236,8 +237,9 @@ public class TestYMarking extends TestCase{
         }
     }
 
+    @Test
 
-    public void testAndJoinOrSplit(){
+    void testAndJoinOrSplit(){
         _marking7.getLocations().add(new YCondition("ct10", "CT 10", null));
         YSetOfMarkings markingSet = _marking7.reachableInOneStep(_andJoinOrSplit, _orJoin);
 //        for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
@@ -248,8 +250,9 @@ public class TestYMarking extends TestCase{
         assertEquals(markingSet.getMarkings().size(), 1);
     }
 
+    @Test
 
-    public void testDeadlock(){
+    void testDeadlock(){
         //deadlocked marking with one token in and-join
         assertTrue(_marking8.deadLock(null));
         //XPathSaxonUser empty marking
@@ -258,19 +261,5 @@ public class TestYMarking extends TestCase{
         assertFalse(_marking10.deadLock(null));
         //XPathSaxonUser another non deadlocked marking
         assertFalse(_marking11.deadLock(null));
-    }
-
-
-    public static void main(String args[]){
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
-    }
-
-
-    public static Test suite(){
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestYMarking.class);
-        return suite;
     }
 }

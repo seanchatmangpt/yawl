@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.TestCase;
 import org.jdom2.Element;
+import org.junit.jupiter.api.Test;
 import org.jdom2.Document;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
@@ -11,9 +11,11 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
  * Date: 01/08/2007
  *
  */
-public class TestParseXML extends TestCase {
+class TestParseXML {
 
-    public void testparseXML(){
+    @Test
+
+    void testparseXML(){
 
         Document doc = JDOMUtil.fileToDocument("c:/temp/resourcing2.xml") ;
         Element resElem = doc.getRootElement();

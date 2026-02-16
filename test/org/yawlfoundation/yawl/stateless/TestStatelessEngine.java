@@ -1,7 +1,10 @@
 package org.yawlfoundation.yawl.stateless;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.exceptions.YDataStateException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
@@ -24,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * JUnit tests for the stateless YAWL engine (YStatelessEngine).
  * Covers launchCase, startWorkItem, completeWorkItem, and unmarshal.
  */
-public class TestStatelessEngine extends TestCase implements YCaseEventListener, YWorkItemEventListener {
+class TestStatelessEngine implements YCaseEventListener, YWorkItemEventListener {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long CASE_COMPLETE_TIMEOUT_SEC = 10L;
@@ -33,26 +36,20 @@ public class TestStatelessEngine extends TestCase implements YCaseEventListener,
     private CountDownLatch _caseCompleteLatch;
     private volatile boolean _caseCompleted;
 
-    public TestStatelessEngine(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         _engine = new YStatelessEngine();
         _engine.addCaseEventListener(this);
         _engine.addWorkItemEventListener(this);
         _caseCompleted = false;
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (_engine != null) {
             _engine.removeCaseEventListener(this);
             _engine.removeWorkItemEventListener(this);
         }
-        super.tearDown();
     }
 
     /**
@@ -62,20 +59,22 @@ public class TestStatelessEngine extends TestCase implements YCaseEventListener,
         InputStream is = getClass().getResourceAsStream(MINIMAL_SPEC_RESOURCE);
         assertNotNull("Missing resource: " + MINIMAL_SPEC_RESOURCE, is);
         String xml = StringUtil.streamToString(is);
-        assertNotNull("Empty spec XML", xml);
+        assertNotNull(xml, "Empty spec XML");
         return xml;
     }
 
     /**
      * Test: unmarshal specification returns non-null spec with root net and one task.
      */
-    public void testUnmarshalSpecification() throws YSyntaxException {
+    @Test
+
+    void testUnmarshalSpecification() throws YSyntaxException {
         String xml = loadMinimalSpecXml();
         YSpecification spec = _engine.unmarshalSpecification(xml);
         assertNotNull(spec);
         assertNotNull(spec.getRootNet());
-        assertEquals("MinimalSpec", spec.getID());
-        assertEquals(1, spec.getDecompositions().size());
+        assertEquals(spec.getID());
+        assertEquals(1, spec.getDecompositions(, "MinimalSpec").size());
         assertNotNull(spec.getRootNet().getNetElement("task1"));
         assertNotNull(spec.getRootNet().getInputCondition());
         assertNotNull(spec.getRootNet().getOutputCondition());
@@ -84,7 +83,9 @@ public class TestStatelessEngine extends TestCase implements YCaseEventListener,
     /**
      * Test: launchCase(spec, caseID) returns runner with matching case ID.
      */
-    public void testLaunchCaseWithExplicitCaseID() throws Exception {
+    @Test
+
+    void testLaunchCaseWithExplicitCaseID() throws Exception {
         String xml = loadMinimalSpecXml();
         YSpecification spec = _engine.unmarshalSpecification(xml);
         String caseID = "test-case-1";
@@ -97,7 +98,9 @@ public class TestStatelessEngine extends TestCase implements YCaseEventListener,
     /**
      * Test: launch one case, drive work item (start then complete), assert case completes.
      */
-    public void testLaunchAndCompleteOneCase() throws Exception {
+    @Test
+
+    void testLaunchAndCompleteOneCase() throws Exception {
         String xml = loadMinimalSpecXml();
         YSpecification spec = _engine.unmarshalSpecification(xml);
         _caseCompleteLatch = new CountDownLatch(1);
@@ -107,7 +110,7 @@ public class TestStatelessEngine extends TestCase implements YCaseEventListener,
 
         boolean completed = _caseCompleteLatch.await(CASE_COMPLETE_TIMEOUT_SEC, TimeUnit.SECONDS);
         assertTrue("Case did not complete within " + CASE_COMPLETE_TIMEOUT_SEC + "s", completed);
-        assertTrue("Case completion flag not set", _caseCompleted);
+        assertTrue(_caseCompleted, "Case completion flag not set");
     }
 
     @Override

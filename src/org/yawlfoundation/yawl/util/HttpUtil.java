@@ -19,59 +19,71 @@
 package org.yawlfoundation.yawl.util;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 
 /**
+ * HTTP utility methods using modern java.net.http.HttpClient.
+ *
  * @author Michael Adams
  * @date 4/08/2014
  */
 public class HttpUtil {
 
-    private static final int TIMEOUT_MSECS = 2000;
+    private static final Duration TIMEOUT = Duration.ofSeconds(2);
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(TIMEOUT)
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
 
     public static boolean isResponsive(URL url) {
         try {
             return resolveURL(url) != null;
         }
-        catch (IOException ioe) {
+        catch (IOException | InterruptedException e) {
             return false;
         }
     }
 
 
-    public static URL resolveURL(String urlString) throws IOException {
+    public static URL resolveURL(String urlString) throws IOException, InterruptedException {
         return resolveURL(URI.create(urlString).toURL());
     }
 
 
-    // follows redirects and returns the final url
-    public static URL resolveURL(URL url) throws IOException {
-        while (url != null) {
-            HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
-            httpConnection.setRequestMethod("HEAD");
-            httpConnection.setConnectTimeout(TIMEOUT_MSECS);
-            httpConnection.setReadTimeout(TIMEOUT_MSECS);
-            int responseCode = httpConnection.getResponseCode();
-            if (responseCode < 300) {                        // some non-error response
-                break;
+    /**
+     * Follows redirects and returns the final URL.
+     * Uses modern HttpClient which handles redirects automatically.
+     */
+    public static URL resolveURL(URL url) throws IOException, InterruptedException {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(url.toURI())
+                    .timeout(TIMEOUT)
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            HttpResponse<Void> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+
+            if (response.statusCode() >= 400) {
+                throw new IOException("HTTP " + response.statusCode());
             }
-            if (responseCode < 400) {                        // some redirect response
-                String location = httpConnection.getHeaderField("Location");
-                url = URI.create(location).toURL();
-            }
-            else {                                           // error response
-                throw new IOException(httpConnection.getResponseMessage());
-            }
+
+            return response.uri().toURL();
+        } catch (URISyntaxException e) {
+            throw new IOException("Invalid URL: " + url, e);
         }
-        return url;
     }
 
 
@@ -85,16 +97,33 @@ public class HttpUtil {
     }
 
 
-    public static void download(String fromURL, File toFile) throws IOException {
+    public static void download(String fromURL, File toFile) throws IOException, InterruptedException {
         download(URI.create(fromURL).toURL(), toFile);
     }
 
 
-    public static void download(URL fromURL, File toFile) throws IOException {
-        URL webFile = HttpUtil.resolveURL(fromURL);
-        ReadableByteChannel rbc = Channels.newChannel(webFile.openStream());
-        FileOutputStream fos = new FileOutputStream(toFile);
-        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+    /**
+     * Download a file from a URL using modern HttpClient.
+     */
+    public static void download(URL fromURL, File toFile) throws IOException, InterruptedException {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(fromURL.toURI())
+                    .timeout(Duration.ofMinutes(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<java.io.InputStream> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response.statusCode() >= 400) {
+                throw new IOException("Download failed: HTTP " + response.statusCode());
+            }
+
+            Files.copy(response.body(), toFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (URISyntaxException e) {
+            throw new IOException("Invalid URL: " + fromURL, e);
+        }
     }
 
 

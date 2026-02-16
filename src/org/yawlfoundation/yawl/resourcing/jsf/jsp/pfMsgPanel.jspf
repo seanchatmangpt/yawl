@@ -18,7 +18,7 @@
   ~ License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<div xmlns:f="http://java.sun.com/jsf/core"
+<div xmlns:f="jakarta.faces.core"
      xmlns:ui="http://www.sun.com/web/ui">
 
     <!-- this block handles user dialog msgs -->
