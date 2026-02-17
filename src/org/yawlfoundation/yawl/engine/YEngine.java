@@ -1483,11 +1483,6 @@ public class YEngine implements InterfaceADesign,
                    YPersistenceException, YEngineStateException {
         YWorkItem startedItem = null;
         YTask task = (YTask) netRunner.getNetElement(workItem.getTaskID());
-
-        // Ensure enabled task list is synchronized before attempting to fire
-        // This withdraws any tasks that are no longer actually enabled (e.g., deferred choice)
-        netRunner.continueIfPossible(_pmgr);
-
         List<YIdentifier> childCaseIDs =
                 netRunner.attemptToFireAtomicTask(_pmgr, workItem.getTaskID());
 
