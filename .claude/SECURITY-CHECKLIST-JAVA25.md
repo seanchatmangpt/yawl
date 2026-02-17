@@ -4,6 +4,25 @@
 
 ---
 
+## 🧭 Navigation
+
+**Related Documentation**:
+- **[JAVA-25-FEATURES.md](JAVA-25-FEATURES.md)** - Feature overview
+- **[ARCHITECTURE-PATTERNS-JAVA25.md](ARCHITECTURE-PATTERNS-JAVA25.md)** - Implementation details
+- **[BUILD-PERFORMANCE.md](BUILD-PERFORMANCE.md)** - Build security automation
+- **[BEST-PRACTICES-2026.md](BEST-PRACTICES-2026.md)** - Security best practices (Part 2-4)
+- **[HYPER_STANDARDS.md](HYPER_STANDARDS.md)** - Code quality enforcement
+- **[../CLAUDE.md](../CLAUDE.md)** - Project guardrails (H section)
+
+**Checklist Sections**:
+- ✅ [Section 1: Mandatory Requirements](#section-1-mandatory-security-requirements) (Pre-deployment)
+- ✅ [Section 2: Code Quality](#section-2-code-quality--standards-compliance) (All commits)
+- ✅ [Section 3: Deployment Config](#section-3-deployment-configuration) (Production)
+- ✅ [Section 4: Monitoring](#section-4-monitoring--incident-response) (Runtime)
+- ✅ [Section 5: Compliance](#section-5-compliance-frameworks) (Frameworks)
+
+---
+
 ## Pre-Deployment Security Validation
 
 **CRITICAL**: All items in Section 1 must be ✅ before production deployment.

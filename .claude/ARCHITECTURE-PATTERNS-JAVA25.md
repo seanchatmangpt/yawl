@@ -6,6 +6,23 @@ This document details 8 architectural patterns for Java 25 adoption in YAWL, eac
 
 ---
 
+## 🧭 Navigation
+
+**Related Documentation**:
+- **[JAVA-25-FEATURES.md](JAVA-25-FEATURES.md)** - Feature overview and adoption roadmap
+- **[BUILD-PERFORMANCE.md](BUILD-PERFORMANCE.md)** - Build system optimization
+- **[SECURITY-CHECKLIST-JAVA25.md](SECURITY-CHECKLIST-JAVA25.md)** - Security requirements
+- **[BEST-PRACTICES-2026.md](BEST-PRACTICES-2026.md)** - 12 best practices sections
+- **[../CLAUDE.md](../CLAUDE.md)** - Project specification (architecture section Γ)
+
+**In This Document**:
+- 📊 [Current Architecture Assessment](#current-architecture-assessment) - YAWL v5.2 state
+- 🎯 [8 Patterns](#pattern-1-virtual-threads-for-workflow-concurrency) - Each with code examples
+- 📋 [Priority Matrix](#implementation-priority) - Effort vs benefit
+- ✅ [Files to Update](#implementation-priority) - Specific locations in codebase
+
+---
+
 ## Pattern 1: Virtual Threads for Workflow Concurrency
 
 ### Problem

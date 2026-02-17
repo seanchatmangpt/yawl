@@ -4,6 +4,23 @@
 
 ---
 
+## 🧭 Navigation
+
+**Related Documentation**:
+- **[ARCHITECTURE-PATTERNS-JAVA25.md](ARCHITECTURE-PATTERNS-JAVA25.md)** - How to implement each pattern (8 patterns with code)
+- **[BUILD-PERFORMANCE.md](BUILD-PERFORMANCE.md)** - Build optimization (-50% time with Maven 4.x)
+- **[SECURITY-CHECKLIST-JAVA25.md](SECURITY-CHECKLIST-JAVA25.md)** - Production security compliance
+- **[BEST-PRACTICES-2026.md](BEST-PRACTICES-2026.md)** - Part 12: Java 25 integration
+- **[INDEX.md](INDEX.md)** - Complete documentation map
+
+**Quick Links**:
+- 📋 [Feature Matrix](#feature-matrix-whats-finalized-vs-preview) (finalized vs preview status)
+- 🚀 [Phase 1 Recommendations](#phase-1-core-patterns-immediate---weeks-1-2)
+- 📈 [Performance Metrics](#performance-metrics-measured-in-lab)
+- ✅ [Migration Checklist](#migration-checklist)
+
+---
+
 ## Executive Summary
 
 Java 25 is the latest LTS (Long-Term Support) release with finalized features for immutability, pattern matching, and virtual thread concurrency. This guide prioritizes adoption by impact/effort for YAWL's workflow engine.

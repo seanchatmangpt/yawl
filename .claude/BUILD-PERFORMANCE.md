@@ -4,6 +4,25 @@
 
 ---
 
+## 🧭 Navigation
+
+**Related Documentation**:
+- **[JAVA-25-FEATURES.md](JAVA-25-FEATURES.md)** - Language features overview
+- **[ARCHITECTURE-PATTERNS-JAVA25.md](ARCHITECTURE-PATTERNS-JAVA25.md)** - Implementation patterns
+- **[SECURITY-CHECKLIST-JAVA25.md](SECURITY-CHECKLIST-JAVA25.md)** - Security requirements
+- **[BEST-PRACTICES-2026.md](BEST-PRACTICES-2026.md)** - Complete practices guide
+- **[BUILD_TESTING_RESEARCH_2025-2026.md](BUILD_TESTING_RESEARCH_2025-2026.md)** - Detailed tool research (45KB)
+- **[INDEX.md](INDEX.md)** - Complete documentation map
+
+**Quick Start**:
+- ⚡ [Phase 1: Immediate Wins](#phase-1-immediate-wins-5-minutes-setup) (5 min setup)
+- 🛠️ [Phase 2: Build Optimizations](#phase-2-build-optimizations-setup-30-minutes) (30 min)
+- 📊 [Phase 4: CI/CD Pipeline](#phase-4-cicd-pipeline-github-actions) (Ready to use)
+- 📈 [Performance Targets](#performance-targets) (Metrics)
+- ❓ [Troubleshooting](#troubleshooting) (Common issues)
+
+---
+
 ## Executive Summary
 
 **Current State**: ~180s clean build, ~60s unit tests (sequential)
