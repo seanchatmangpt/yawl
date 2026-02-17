@@ -113,7 +113,7 @@ public class YLivenessHealthIndicator implements HealthIndicator {
                 long hours = uptimeMs / 3600000;
                 long minutes = (uptimeMs % 3600000) / 60000;
                 long seconds = (uptimeMs % 60000) / 1000;
-                return String.format("%dh %dm %ds", hours, minutes, seconds);
+                return "%dh %dm %ds".formatted(hours, minutes, seconds);
             }
         } catch (Exception e) {
             _logger.debug("Could not retrieve engine uptime", e);

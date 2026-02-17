@@ -273,7 +273,7 @@ public class MailService extends InterfaceBWebsideController {
                 Message.RecipientType.BCC);
 
         _logger.debug(
-                String.format("Building email with from=%s, to=%s, cc=%s, bcc=%s, subject=%s",
+                "Building email with from=%s, to=%s, cc=%s, bcc=%s, subject=%s".formatted(
                         fromAddress,
                 toName + "<" + String.join(",", toAddresses) + ">",
                 "<" + ccRecipients.stream().map(Recipient::getAddress).collect(
