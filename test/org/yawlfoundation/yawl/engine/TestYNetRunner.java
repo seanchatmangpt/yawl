@@ -121,9 +121,8 @@ class TestYNetRunner {
             }
             assertNotNull(f);
         }
-        assertTrue(_id1.getLocations().size() == 1
-                ||
-                _id1.getLocations().size() == 0, "locations (should be one or zero in here): " +_id1.getLocations());
+        assertTrue(_id1.getLocations().size() == 1 || _id1.getLocations().size() == 0,
+                "locations (should be one or zero in here): " + _id1.getLocations());
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
@@ -160,7 +159,7 @@ class TestYNetRunner {
         assertTrue(children.size() == 7 || extraID.getParent().equals(id.getParent()));
     }
     public static void main(String[] args) {
-        // Run via: mvn test -pl yawl-engine -Dtest=TestYNetRunner
-        System.out.println("Run via Maven: mvn test -pl yawl-engine -Dtest=TestYNetRunner");
+        // JUnit 5 tests are run via the Maven Surefire plugin or IDE JUnit launcher
+        System.out.println("Run via: mvn test -Dtest=TestYNetRunner");
     }
 }

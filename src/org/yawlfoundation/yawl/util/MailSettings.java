@@ -4,98 +4,110 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 
-import java.io.Serializable;
-
 /**
- * Immutable mail settings record for SMTP configuration.
- * Converted to Java 25 record for improved immutability and type safety.
  *
  * @author Michael Adams
- * @author YAWL Foundation (Java 25 conversion)
- * @since 2.0
- * @version 5.2
- *
- * @param host SMTP server host
- * @param port SMTP server port
- * @param strategy Transport strategy (SMTPS, SMTP_TLS, etc.)
- * @param user SMTP authentication username
- * @param password SMTP authentication password
- * @param fromName Sender name
- * @param fromAddress Sender email address
- * @param toName Recipient name
- * @param toAddress Recipient email address
- * @param ccAddress CC email address
- * @param bccAddress BCC email address
- * @param subject Email subject
- * @param content Email content/body
+ * @date 18/12/2024
  */
-public record MailSettings(
-    String host,
-    int port,
-    TransportStrategy strategy,
-    String user,
-    String password,
-    String fromName,
-    String fromAddress,
-    String toName,
-    String toAddress,
-    String ccAddress,
-    String bccAddress,
-    String subject,
-    String content
-) implements Serializable {
+public class MailSettings {
+    private static final Logger _logger = LogManager.getLogger(MailSettings.class);
 
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
+    private String host;
+    private int port;
+    private TransportStrategy strategy;
+    private String user;
+    private String password;
+    private String fromName;
+    private String fromAddress;
+    private String toName;
+    private String toAddress;
+    private String ccAddress;
+    private String bccAddress;
+    private String subject;
+    private String content;
 
-    private static final Logger logger = LogManager.getLogger(MailSettings.class);
-
-    /**
-     * Default constructor with standard defaults.
-     */
     public MailSettings() {
-        this(null, 25, TransportStrategy.SMTPS, null, null, null, null,
-             null, null, null, null, null, null);
+        this.port = 25;
+        this.strategy = TransportStrategy.SMTPS;
     }
 
+    public MailSettings(String host, int port, TransportStrategy strategy,
+                        String user, String password,
+                        String fromName, String fromAddress,
+                        String toName, String toAddress,
+                        String ccAddress, String bccAddress,
+                        String subject, String content) {
+        this.host = host;
+        this.port = port;
+        this.strategy = strategy;
+        this.user = user;
+        this.password = password;
+        this.fromName = fromName;
+        this.fromAddress = fromAddress;
+        this.toName = toName;
+        this.toAddress = toAddress;
+        this.ccAddress = ccAddress;
+        this.bccAddress = bccAddress;
+        this.subject = subject;
+        this.content = content;
+    }
 
-    /**
-     * Gets a setting value by name.
-     * @param name the setting name
-     * @return the setting value, or null if not found
-     */
+    public String host() { return host; }
+    public int port() { return port; }
+    public TransportStrategy strategy() { return strategy; }
+    public String user() { return user; }
+    public String password() { return password; }
+    public String fromName() { return fromName; }
+    public String fromAddress() { return fromAddress; }
+    public String toName() { return toName; }
+    public String toAddress() { return toAddress; }
+    public String ccAddress() { return ccAddress; }
+    public String bccAddress() { return bccAddress; }
+    public String subject() { return subject; }
+    public String content() { return content; }
+
+    public void setHost(String host) { this.host = host; }
+    public void setPort(int port) { this.port = port; }
+    public void setStrategy(TransportStrategy strategy) { this.strategy = strategy; }
+    public void setUser(String user) { this.user = user; }
+    public void setPassword(String password) { this.password = password; }
+    public void setFromName(String fromName) { this.fromName = fromName; }
+    public void setFromAddress(String fromAddress) { this.fromAddress = fromAddress; }
+    public void setToName(String toName) { this.toName = toName; }
+    public void setToAddress(String toAddress) { this.toAddress = toAddress; }
+    public void setCcAddress(String ccAddress) { this.ccAddress = ccAddress; }
+    public void setBccAddress(String bccAddress) { this.bccAddress = bccAddress; }
+    public void setSubject(String subject) { this.subject = subject; }
+    public void setContent(String content) { this.content = content; }
+
     public String getSetting(String name) {
-        return switch (name) {
-            case "host" -> host;
-            case "user" -> user;
-            case "password" -> password;
-            case "senderName" -> fromName;
-            case "senderAddress" -> fromAddress;
-            case "recipientName" -> toName;
-            case "recipientAddress" -> toAddress;
-            case "CC" -> ccAddress;
-            case "BCC" -> bccAddress;
-            case "subject" -> subject;
-            case "content" -> content;
-            default -> null;
-        };
+        switch (name) {
+            case "host": return host;
+            case "user": return user;
+            case "password": return password;
+            case "senderName": return fromName;
+            case "senderAddress": return fromAddress;
+            case "recipientName": return toName;
+            case "recipientAddress": return toAddress;
+            case "CC": return ccAddress;
+            case "BCC": return bccAddress;
+            case "subject": return subject;
+            case "content": return content;
+            default: return null;
+        }
     }
 
-    /**
-     * Creates a copy of this mail settings (since records are immutable, returns this).
-     * @deprecated Records are immutable; use this instance directly
-     * @return this instance
-     */
-    @Deprecated
+
     public MailSettings copyOf() {
-        logger.debug("MailSettings.copyOf() called (returning this since records are immutable)");
-        return this;
+        _logger.debug("enter MailSettings.copyOf()");
+        MailSettings settings = new MailSettings(host, port, strategy, user, password,
+                fromName, fromAddress, toName, toAddress, ccAddress, bccAddress,
+                subject, content);
+        _logger.debug("copyOf() returning " + settings.toXML());
+        return settings;
     }
 
-    /**
-     * Converts to XML representation.
-     * @return XML string
-     */
+
     public String toXML() {
         XNode node = new XNode("mailsettings");
         node.addChild("host", host);
@@ -113,83 +125,27 @@ public record MailSettings(
         return node.toString();
     }
 
-    /**
-     * Creates a MailSettings instance from XML.
-     * @param xml XML string
-     * @return new MailSettings instance
-     */
+
     public static MailSettings fromXML(String xml) {
-        logger.debug("MailSettings.fromXML({})", xml);
+        _logger.debug(String.format("enter fromXML(%s)", xml));
+        MailSettings settings = new MailSettings();
         XNode node = new XNodeParser().parse(xml);
-        if (node == null) {
-            logger.debug("fromXML() returning default");
-            return new MailSettings();
+        if (node != null) {
+            settings.host = node.getChildText("host");
+            settings.port = StringUtil.strToInt(node.getChildText("port"), 25);
+            settings.user = node.getChildText("user");
+            settings.password = node.getChildText("password");
+            settings.fromName = node.getChildText("fromname");
+            settings.fromAddress = node.getChildText("fromaddress");
+            settings.toName = node.getChildText("toname");
+            settings.toAddress = node.getChildText("toaddress");
+            settings.ccAddress = node.getChildText("CC");
+            settings.bccAddress = node.getChildText("BCC");
+            settings.subject = node.getChildText("subject", true);
+            settings.content = node.getChildText("content", true);
         }
-
-        MailSettings settings = new MailSettings(
-            node.getChildText("host"),
-            StringUtil.strToInt(node.getChildText("port"), 25),
-            TransportStrategy.SMTPS,  // Default strategy
-            node.getChildText("user"),
-            node.getChildText("password"),
-            node.getChildText("fromname"),
-            node.getChildText("fromaddress"),
-            node.getChildText("toname"),
-            node.getChildText("toaddress"),
-            node.getChildText("CC"),
-            node.getChildText("BCC"),
-            node.getChildText("subject", true),
-            node.getChildText("content", true)
-        );
-        logger.debug("fromXML() returning {}", settings.toXML());
+        _logger.debug("returning from fromXML()");
         return settings;
-    }
-
-    /**
-     * Creates a new MailSettings with updated host.
-     * @param newHost the new host
-     * @return a new MailSettings instance
-     */
-    public MailSettings withHost(String newHost) {
-        return new MailSettings(newHost, port, strategy, user, password, fromName,
-                               fromAddress, toName, toAddress, ccAddress, bccAddress,
-                               subject, content);
-    }
-
-    /**
-     * Creates a new MailSettings with updated credentials.
-     * @param newUser the new username
-     * @param newPassword the new password
-     * @return a new MailSettings instance
-     */
-    public MailSettings withCredentials(String newUser, String newPassword) {
-        return new MailSettings(host, port, strategy, newUser, newPassword, fromName,
-                               fromAddress, toName, toAddress, ccAddress, bccAddress,
-                               subject, content);
-    }
-
-    /**
-     * Creates a new MailSettings with updated recipient.
-     * @param newToName the new recipient name
-     * @param newToAddress the new recipient address
-     * @return a new MailSettings instance
-     */
-    public MailSettings withRecipient(String newToName, String newToAddress) {
-        return new MailSettings(host, port, strategy, user, password, fromName,
-                               fromAddress, newToName, newToAddress, ccAddress, bccAddress,
-                               subject, content);
-    }
-
-    /**
-     * Creates a new MailSettings with updated subject and content.
-     * @param newSubject the new subject
-     * @param newContent the new content
-     * @return a new MailSettings instance
-     */
-    public MailSettings withMessage(String newSubject, String newContent) {
-        return new MailSettings(host, port, strategy, user, password, fromName,
-                               fromAddress, toName, toAddress, ccAddress, bccAddress,
-                               newSubject, newContent);
     }
 }
 

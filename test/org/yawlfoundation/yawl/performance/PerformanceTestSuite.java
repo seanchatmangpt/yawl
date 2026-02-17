@@ -24,7 +24,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SelectClasses({
     EnginePerformanceBaseline.class,
     LoadTestSuite.class,
-    ScalabilityTest.class
+    ScalabilityTest.class,
+    HibernatePerformanceRegressionTest.class
 })
 public class PerformanceTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

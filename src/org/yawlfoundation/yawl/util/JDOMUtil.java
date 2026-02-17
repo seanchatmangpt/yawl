@@ -176,9 +176,9 @@ public class JDOMUtil {
 
     public static String getDefaultValueForType(String dataType) {
         if (dataType == null) return "null";
-        else if (dataType.equalsIgnoreCase("boolean")) return "false" ;
+        else if (dataType.equalsIgnoreCase("boolean")) return "false";
         else if (dataType.equalsIgnoreCase("string") ||
-                (! XSDType.isBuiltInType(dataType))) return XSD_STRING_DEFAULT ;
+                (! XSDType.isBuiltInType(dataType))) return XSD_STRING_DEFAULT;
         else return "0";
     }
 

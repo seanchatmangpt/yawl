@@ -85,6 +85,11 @@ public class InteractionArc {
 		this.as = as;
 	}
 
+	/**
+	 * Get the ArcState enum value from its string representation.
+	 * @param as the ArcState string ("UNPRODUCED", "SENT", "CONSUMED", "EXECUTED_NONE", "EXECUTED_SOURCE", "EXECUTED_BOTH", or "FAILED")
+	 * @return the ArcState enum value, or null if unrecognized
+	 */
 	public static ArcState getArcStateFromString (String as) {
 		return switch (as) {
 			case "UNPRODUCED"      -> ArcState.UNPRODUCED;

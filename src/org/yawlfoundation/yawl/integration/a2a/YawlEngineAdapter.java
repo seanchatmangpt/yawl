@@ -95,8 +95,8 @@ public class YawlEngineAdapter {
         }
         if (password == null) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable not set.\n" +
-                "Set it with: export YAWL_PASSWORD=YAWL"
+                "YAWL_PASSWORD environment variable not set. " +
+                "See SECURITY.md for credential configuration procedures."
             );
         }
 
@@ -581,7 +581,7 @@ public class YawlEngineAdapter {
             System.err.println("\nSet the required environment variables:");
             System.err.println("  export YAWL_ENGINE_URL=http://localhost:8080/yawl");
             System.err.println("  export YAWL_USERNAME=admin");
-            System.err.println("  export YAWL_PASSWORD=YAWL");
+            System.err.println("  export YAWL_PASSWORD=<your-password>  # see SECURITY.md");
             return;
         }
 

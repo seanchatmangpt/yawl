@@ -100,7 +100,14 @@ public class SingleInstanceClass {
 	}
 	
 	public void notifyPerformativeListeners (List<Performative> perfs) {
-		// fill mappingDone
+		/* DEADLOCK FIX: Snapshot registered listeners before dispatching notifications.
+		 * Previously the entire method (including spin-wait and tn.notification() calls)
+		 * ran inside synchronized(mutex). InternalRunner.run() also acquires mutex before
+		 * calling tn.notification(true), and any listener that called registerAndWait()
+		 * also needs mutex -- guaranteeing a livelock. Fix: perform all mutation of shared
+		 * state inside mutex, then release mutex before dispatching notifications and
+		 * before the completion spin-wait so other threads can acquire mutex freely. */
+		List<ThreadNotify> listenersToNotify;
 		synchronized(mutex) {
 			// first add performatives
 			var perfsInst = Performatives.getInstance();
@@ -109,28 +116,35 @@ public class SingleInstanceClass {
 			}
 			// first process the creation of new classes
 			BlockPICreate.getInstance().checkForCreationProclets();
-			// notify the listeners
+			// mark all registered listeners as not-done before releasing the lock
 			for (var tn : this.registeredClasses) {
 				this.mappingDone.put(tn, false);
 			}
-			for (var tn : registeredClasses) {
-				tn.notification(false);
-			}
+			// take a defensive snapshot of the listener list so we can notify outside mutex
+			listenersToNotify = new ArrayList<>(this.registeredClasses);
 			this.mapping.clear();
 			this.registeredClasses.clear();
-			// wait for all
-			while (true) {
-				try {
-					Thread.sleep(500);
-					// everybody done
-					boolean done = this.mappingDone.values().stream().allMatch(Boolean::booleanValue);
-					if (done) {
-						break;
-					}
+		}
+		// dispatch notifications outside mutex so listeners (and InternalRunner) can
+		// re-acquire mutex without deadlocking
+		for (var tn : listenersToNotify) {
+			tn.notification(false);
+		}
+		// wait for all listeners to complete outside mutex
+		while (true) {
+			try {
+				Thread.sleep(500);
+				// everybody done
+				boolean done;
+				synchronized(mutex) {
+					done = this.mappingDone.values().stream().allMatch(Boolean::booleanValue);
 				}
-				catch (Exception e) {
-					e.printStackTrace();
+				if (done) {
+					break;
 				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}

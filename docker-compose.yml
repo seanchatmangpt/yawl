@@ -32,7 +32,7 @@ services:
     container_name: yawl-postgres
     environment:
       POSTGRES_USER: yawl
-      POSTGRES_PASSWORD: yawl123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: yawl
     ports:
       - "5432:5432"
@@ -65,7 +65,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=yawl
       - DB_USER=yawl
-      - DB_PASSWORD=yawl123
+      - DB_PASSWORD=${DB_PASSWORD}
       - JAVA_OPTS=-Xms512m -Xmx1024m -Djava.awt.headless=true
       - RESOURCE_SERVICE_URL=http://resource-service:8080/ib
       - WORKLET_SERVICE_URL=http://worklet-service:8080/ib
@@ -102,7 +102,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=yawl
       - DB_USER=yawl
-      - DB_PASSWORD=yawl123
+      - DB_PASSWORD=${DB_PASSWORD}
       - JAVA_OPTS=-Xms256m -Xmx512m
       - ENGINE_URL=http://engine:8080/ib
     ports:
@@ -132,7 +132,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=yawl
       - DB_USER=yawl
-      - DB_PASSWORD=yawl123
+      - DB_PASSWORD=${DB_PASSWORD}
       - JAVA_OPTS=-Xms256m -Xmx512m
       - ENGINE_URL=http://engine:8080/ib
     ports:
@@ -162,7 +162,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=yawl
       - DB_USER=yawl
-      - DB_PASSWORD=yawl123
+      - DB_PASSWORD=${DB_PASSWORD}
       - JAVA_OPTS=-Xms128m -Xmx256m
       - ENGINE_URL=http://engine:8080/ib
     ports:

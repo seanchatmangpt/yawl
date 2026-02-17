@@ -126,6 +126,14 @@
                     <include>**/*.properties</include>
                 </includes>
             </resource>
+            <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->
+            <resource>
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </resource>
         </resources>
 
         <testResources>
@@ -146,6 +154,14 @@
                 <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
                 <includes>
                     <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </testResource>
+            <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
+            <testResource>
+                <directory>../build/properties</directory>
+                <includes>
+                    <include>hibernate.cfg.xml</include>
+                    <include>*.properties</include>
                 </includes>
             </testResource>
         </testResources>
@@ -187,14 +203,23 @@
                         <testExclude>**/*.gif</testExclude>
                         <testExclude>**/*.txt</testExclude>
                         <testExclude>**/*.sql</testExclude>
+                        <testExclude>**/*.class</testExclude>
                         <!-- wsif source classes are not compiled; exclude test that depends on them -->
                         <testExclude>**/org/yawlfoundation/yawl/wsif/TestWSIFInvoker.java</testExclude>
+                        <!-- Behavioral tests use EngineClearer which conflicts with EngineTestSuite shared state -->
+                        <testExclude>**/org/yawlfoundation/yawl/engine/TaskLifecycleBehavioralTest.java</testExclude>
                     </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

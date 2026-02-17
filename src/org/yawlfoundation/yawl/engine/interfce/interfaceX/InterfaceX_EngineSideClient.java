@@ -267,8 +267,8 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
 
             } catch (IOException e) {
                 LogManager.getLogger(InterfaceX_EngineSideClient.class).error(
-                        "failed to call YAWL service", e);
-                e.printStackTrace();
+                        "Failed to call YAWL service at observer URI: {}",
+                        _observerURI, e);
             }
         }
     }

@@ -21,7 +21,7 @@ package org.yawlfoundation.yawl.procletService.editor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
+import org.yawlfoundation.yawl.integration.CredentialManager;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
@@ -78,7 +78,7 @@ public class MainScreen {
   private static String YAWLlocation = "http://localhost:8080/yawl/ib";
   private static String ProcletServiceLocation = "http://localhost:8080/procletService/ib";
   private static String sUserId = "admin";
-  private static String sPwd = "YAWL";
+  private static String sPwd = CredentialManager.getYawlPassword();
 
 
   /**
@@ -171,10 +171,14 @@ public class MainScreen {
                         editorProps.getProperty("password"));
         }
         else {
-            props = DBConnection.configure("org.hibernate.dialect.PostgreSQLDialect",
-                        "org.postgresql.Driver", "jdbc:postgresql:yawl", "postgres", "yawl");
-            System.err.println(
-                    "   ... could not load database connection properties, using postgres defaults");
+            props = DBConnection.configure(
+                        "org.hibernate.dialect.PostgreSQLDialect",
+                        "org.postgresql.Driver",
+                        CredentialManager.getJdbcUrl(),
+                        CredentialManager.getJdbcUser(),
+                        CredentialManager.getJdbcPassword());
+            logger.warn("Could not load database connection properties file; " +
+                    "falling back to environment variables (DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD).");
         }
         return props;
     }
@@ -250,7 +254,9 @@ public class MainScreen {
     *
     * @param actionEvent ActionEvent
     */
-   void childClose_actionPerformed(ActionEvent actionEvent) {}
+   void childClose_actionPerformed(ActionEvent actionEvent) {
+       logger.trace("childClose_actionPerformed");
+   }
 
   private void setMenuKey(JMenuItem menuItem, int key) {
     menuItem.setMnemonic(key);
@@ -925,14 +931,22 @@ public class MainScreen {
 		  		          frames.activate(true, e.getInternalFrame());
 		  		        }
 	
-		  		        public void internalFrameDeiconified(InternalFrameEvent e) {}
-	
-		  		        public void internalFrameIconified(InternalFrameEvent e) {}
-	
-		  		        public void internalFrameClosing(InternalFrameEvent e) {}
-	
-		  		        public void internalFrameOpened(InternalFrameEvent e) {}
-	
+		  		        public void internalFrameDeiconified(InternalFrameEvent e) {
+		  		            logger.trace("internalFrameDeiconified: {}", e.getInternalFrame().getTitle());
+		  		        }
+
+		  		        public void internalFrameIconified(InternalFrameEvent e) {
+		  		            logger.trace("internalFrameIconified: {}", e.getInternalFrame().getTitle());
+		  		        }
+
+		  		        public void internalFrameClosing(InternalFrameEvent e) {
+		  		            logger.trace("internalFrameClosing: {}", e.getInternalFrame().getTitle());
+		  		        }
+
+		  		        public void internalFrameOpened(InternalFrameEvent e) {
+		  		            logger.trace("internalFrameOpened: {}", e.getInternalFrame().getTitle());
+		  		        }
+
 		  		        public void internalFrameClosed(InternalFrameEvent e) {
 		  		          // rename new  to oldName
 		  		        	ModelCoordinator coordinator = ModelCoordinator.getInstance();
@@ -1041,13 +1055,21 @@ public class MainScreen {
 		          frames.activate(true, e.getInternalFrame());
 		        }
 
-		        public void internalFrameDeiconified(InternalFrameEvent e) {}
+		        public void internalFrameDeiconified(InternalFrameEvent e) {
+		            logger.trace("internalFrameDeiconified: {}", e.getInternalFrame().getTitle());
+		        }
 
-		        public void internalFrameIconified(InternalFrameEvent e) {}
+		        public void internalFrameIconified(InternalFrameEvent e) {
+		            logger.trace("internalFrameIconified: {}", e.getInternalFrame().getTitle());
+		        }
 
-		        public void internalFrameClosing(InternalFrameEvent e) {}
+		        public void internalFrameClosing(InternalFrameEvent e) {
+		            logger.trace("internalFrameClosing: {}", e.getInternalFrame().getTitle());
+		        }
 
-		        public void internalFrameOpened(InternalFrameEvent e) {}
+		        public void internalFrameOpened(InternalFrameEvent e) {
+		            logger.trace("internalFrameOpened: {}", e.getInternalFrame().getTitle());
+		        }
 
 		        public void internalFrameClosed(InternalFrameEvent e) {
 		          PConnsCoordinator.finish();
@@ -1077,13 +1099,21 @@ public class MainScreen {
  		          frames.activate(true, e.getInternalFrame());
  		        }
 
- 		        public void internalFrameDeiconified(InternalFrameEvent e) {}
+ 		        public void internalFrameDeiconified(InternalFrameEvent e) {
+ 		            logger.trace("internalFrameDeiconified: {}", e.getInternalFrame().getTitle());
+ 		        }
 
- 		        public void internalFrameIconified(InternalFrameEvent e) {}
+ 		        public void internalFrameIconified(InternalFrameEvent e) {
+ 		            logger.trace("internalFrameIconified: {}", e.getInternalFrame().getTitle());
+ 		        }
 
- 		        public void internalFrameClosing(InternalFrameEvent e) {}
+ 		        public void internalFrameClosing(InternalFrameEvent e) {
+ 		            logger.trace("internalFrameClosing: {}", e.getInternalFrame().getTitle());
+ 		        }
 
- 		        public void internalFrameOpened(InternalFrameEvent e) {}
+ 		        public void internalFrameOpened(InternalFrameEvent e) {
+ 		            logger.trace("internalFrameOpened: {}", e.getInternalFrame().getTitle());
+ 		        }
 
  		        public void internalFrameClosed(InternalFrameEvent e) {
  		        	GraphCoordinator.finish();

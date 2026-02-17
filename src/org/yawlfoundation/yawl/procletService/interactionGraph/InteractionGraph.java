@@ -35,31 +35,31 @@ import java.util.List;
 // colset InteractionGraph = product EntityMID * InteractionNodes * InteractionArcs;
 
 public class InteractionGraph extends DirectedSparseGraph{
-	
+
 	private EntityMID emid = null;
-	
+
 	public InteractionGraph (EntityMID emid) {
 		this.emid = emid;
 	}
-	
+
 	public InteractionGraph (String emid) {
 		this.emid = new EntityMID(emid);
 	}
-	
+
 	public EntityMID getEntityMID () {
 		return this.emid;
 	}
-	
+
 	public void setEntityMID(EntityMID emid) {
 		this.emid = emid;
 	}
-	
+
 	public void addNode (InteractionNode node) {
-		if (!this.getVertices().contains(node)) { 
+		if (!this.getVertices().contains(node)) {
 			this.addVertex(node);
 		}
 	}
-	
+
 	public void deleteNode (InteractionNode node) {
 		this.removeVertex(node);
 		// remove also edges having this node
@@ -74,7 +74,7 @@ public class InteractionGraph extends DirectedSparseGraph{
 			this.removeEdge(arc);
 		}
 	}
-	
+
 	public List<InteractionNode> getNodes() {
 		List<InteractionNode> nodes = new ArrayList<>();
 		for (Object node : this.getVertices()) {
@@ -84,18 +84,25 @@ public class InteractionGraph extends DirectedSparseGraph{
 		}
 		return nodes;
 	}
-	
+
+	/**
+     * Get an interaction node by class, proclet, and block ID.
+     * @param classID the class ID
+     * @param procletID the proclet ID
+     * @param blockID the block ID
+     * @return the InteractionNode if found, or null if not found
+     */
 	public InteractionNode getNode(String classID, String procletID, String blockID) {
 		for (InteractionNode node : this.getNodes()) {
-			if (node.getClassID().equals(classID) && 
-					node.getProcletID().equals(procletID) && 
+			if (node.getClassID().equals(classID) &&
+					node.getProcletID().equals(procletID) &&
 					node.getBlockID().equals(blockID)) {
 				return node;
 			}
 		}
 		return null;
 	}
-	
+
 	public boolean nodeExists(String classID, String procletID, String blockID) {
 		InteractionNode node = this.getNode(classID, procletID, blockID);
 		if (node == null) {
@@ -103,21 +110,31 @@ public class InteractionGraph extends DirectedSparseGraph{
 		}
 		return true;
 	}
-	
+
+	/**
+     * Get an interaction arc by tail and head node identifiers.
+     * @param tailClassID the tail class ID
+     * @param tailProcletID the tail proclet ID
+     * @param tailBlockID the tail block ID
+     * @param headClassID the head class ID
+     * @param headProcletID the head proclet ID
+     * @param headBlockID the head block ID
+     * @return the InteractionArc if found, or null if not found
+     */
 	public InteractionArc getArc(String tailClassID, String tailProcletID, String tailBlockID, String headClassID, String headProcletID, String headBlockID) {
 		for (InteractionArc arc : this.getArcs()) {
-			if (arc.getTail().getClassID().equals(tailClassID) && 
-					arc.getTail().getProcletID().equals(tailProcletID) && 
-					arc.getTail().getBlockID().equals(tailBlockID) && 
-					arc.getHead().getClassID().equals(headClassID) && 
-					arc.getHead().getProcletID().equals(headProcletID) && 
+			if (arc.getTail().getClassID().equals(tailClassID) &&
+					arc.getTail().getProcletID().equals(tailProcletID) &&
+					arc.getTail().getBlockID().equals(tailBlockID) &&
+					arc.getHead().getClassID().equals(headClassID) &&
+					arc.getHead().getProcletID().equals(headProcletID) &&
 					arc.getHead().getBlockID().equals(headBlockID)) {
 				return arc;
 			}
 		}
 		return null;
 	}
-	
+
 	public boolean arcExists(String tailClassID, String tailProcletID, String tailBlockID, String headClassID, String headProcletID, String headBlockID) {
 		InteractionArc arc = this.getArc(tailClassID,tailProcletID,tailBlockID,headClassID,headProcletID,headBlockID);
 		if (arc == null) {
@@ -125,18 +142,18 @@ public class InteractionGraph extends DirectedSparseGraph{
 		}
 		return true;
 	}
-	
+
 	public void addArc (InteractionArc arc) {
 		List<InteractionNode> nodes = this.getNodes();
 		if (nodes.contains(arc.getHead()) && nodes.contains(arc.getTail())) {
 			this.addEdge(arc, arc.getTail(), arc.getHead(), EdgeType.DIRECTED);
 		}
 	}
-	
+
 	public void deleteArc (InteractionArc arc) {
 		this.removeEdge(arc);
 	}
-	
+
 	public List<InteractionArc> getArcs () {
 		List<InteractionArc> arcs = new ArrayList<>();
 		for (Object obj : this.getEdges()) {
@@ -159,21 +176,21 @@ public class InteractionGraph extends DirectedSparseGraph{
 		}
 		return arcs;
 	}
-	
+
 	public void deleteAllNodes () {
 		List<InteractionNode> nodes = this.getNodes();
 		for (InteractionNode node : nodes) {
 			this.deleteNode(node);
 		}
 	}
-	
+
 	public void deleteAllArcs () {
 		List<InteractionArc> arcs = this.getArcs();
 		for (InteractionArc arc : arcs) {
 			this.deleteArc(arc);
 		}
 	}
-	
+
 	public boolean buildFromDB() {
 		this.deleteAllNodes();
 		this.deleteAllArcs();
@@ -185,7 +202,7 @@ public class InteractionGraph extends DirectedSparseGraph{
             }
         }
 
-        items = DBConnection.getObjectsForClassWhere("StoredInteractionArc", 
+        items = DBConnection.getObjectsForClassWhere("StoredInteractionArc",
                 "emid='" + emid.getValue() + "'");
         for (Object o : items) {
             StoredInteractionArc item = (StoredInteractionArc) o;
@@ -197,11 +214,11 @@ public class InteractionGraph extends DirectedSparseGraph{
                     item.getArcState());
        		EntityID eid = new EntityID(emid, new EntitySID(item.getEsid()));
        		InteractionArc arc = new InteractionArc(tail, head, eid, astate);
-       		this.addArc(arc);            
-        }    
+       		this.addArc(arc);
+        }
 		return true;
 	}
-	
+
 	public void deleteGraphFromDB () {
         List items = DBConnection.getStoredItems(Item.InteractionGraph);
         for (Object o : items) {
@@ -209,7 +226,7 @@ public class InteractionGraph extends DirectedSparseGraph{
                 DBConnection.delete(o);
             }
         }
-        
+
         items = DBConnection.getObjectsForClass("StoredInteractionArc");
         for (Object o : items) {
             if (((StoredInteractionArc) o).getEmid().equals(emid.getValue())) {
@@ -217,7 +234,7 @@ public class InteractionGraph extends DirectedSparseGraph{
             }
         }
 	}
-	
+
 	public void persistProcletModel () {
 		this.deleteGraphFromDB();
      	for (InteractionNode node : getNodes()) {
@@ -227,14 +244,14 @@ public class InteractionGraph extends DirectedSparseGraph{
 
 		for (InteractionArc arc : getArcs()) {
             DBConnection.insert(new StoredInteractionArc(emid.getValue(),
-				arc.getTail().getClassID(),	arc.getTail().getProcletID(),
-				arc.getTail().getBlockID(),	arc.getHead().getClassID(),
-				arc.getHead().getProcletID(), arc.getHead().getBlockID(),
-				arc.getEntityID().getEsid().getValue(),
-				arc.getArcState().toString()));
+			arc.getTail().getClassID(),	arc.getTail().getProcletID(),
+			arc.getTail().getBlockID(),	arc.getHead().getClassID(),
+			arc.getHead().getProcletID(), arc.getHead().getBlockID(),
+			arc.getEntityID().getEsid().getValue(),
+			arc.getArcState().toString()));
 		}
 	}
-	
+
 	public static void main(String [] args) {
 		EntityMID emid = new EntityMID("test");
 		EntitySID esid1 = new EntitySID("");
@@ -249,5 +266,5 @@ public class InteractionGraph extends DirectedSparseGraph{
 		graph.deleteNode(node1);
 		graph.persistProcletModel();
 	}
-	
+
 }

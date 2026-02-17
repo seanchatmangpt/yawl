@@ -33,13 +33,10 @@ class TestYAWLExceptionEnhancements {
         exception.withContext("key", "value");
 
         Map<String, String> context = exception.getContext();
-        context.put("newkey", "newvalue");
-
-        Map<String, String> retrievedContext = exception.getContext();
-
-        assertFalse(retrievedContext.containsKey("newkey"),
-                   "Context should not contain externally added keys");
-        assertEquals(1, retrievedContext.size());
+        assertThrows(UnsupportedOperationException.class,
+                () -> context.put("newkey", "newvalue"),
+                "Context map should be immutable");
+        assertEquals(1, exception.getContext().size());
     }
 
     @Test

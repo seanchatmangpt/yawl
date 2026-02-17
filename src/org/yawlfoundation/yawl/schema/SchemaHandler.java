@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -45,6 +47,8 @@ import java.util.Set;
  *         Date: 04-Jul-2006
  */
 public class SchemaHandler {
+
+    private static final Logger _log = LogManager.getLogger(SchemaHandler.class);
 
     // Raw schema source - can be initiated as a String, InputStream or a URL to the xsd
     private Source schemaSource;
@@ -261,13 +265,14 @@ public class SchemaHandler {
     /**
      * Reads the contents at a URL into a String
      * @param url the URL resource
-     * @return a String containing the resource at the URL
+     * @return a String containing the resource at the URL, or null if the stream cannot be opened
      */
     private String streamToString(URL url) {
         try {
             return StringUtil.streamToString(url.openStream());
         }
-        catch (IOException ioe) {       // when opening stream
+        catch (IOException ioe) {
+            _log.error("Failed to read schema content from URL '{}': {}", url, ioe.getMessage(), ioe);
             return null;
         }
     }

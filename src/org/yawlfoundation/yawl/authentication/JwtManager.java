@@ -37,7 +37,6 @@ import java.util.Date;
  */
 public class JwtManager {
 
-
     private static final Logger _logger = LogManager.getLogger(JwtManager.class);
     private static final long EXPIRATION_HOURS = 24;
 
@@ -137,7 +136,7 @@ public class JwtManager {
                 .parseSignedClaims(token)
                 .getPayload();
         } catch (ExpiredJwtException e) {
-            _logger.debug("JWT token expired: {}", e.getMessage());
+            _logger.warn("JWT token expired: {}", e.getMessage());
             return null;
         } catch (JwtException e) {
             _logger.warn("JWT validation failed: {}", e.getMessage());

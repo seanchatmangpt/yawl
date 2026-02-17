@@ -1,6 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * Interface for Spring-managed YAWL MCP resources.

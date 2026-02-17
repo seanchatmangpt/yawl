@@ -108,7 +108,7 @@ public class BlockCP {
 				}
 			}
 			catch (Exception e) {
-				e.printStackTrace();
+				myLog.error("Exception in BlockCP processing", e);
 			}
 		}
 		myLog.debug("emidsBefore:" + emids);
@@ -144,7 +144,7 @@ public class BlockCP {
 						Thread.sleep(500);
 					}
 					catch (Exception e) {
-						e.printStackTrace();
+						myLog.error("Exception in BlockCP processing", e);
 					}
 					pushAvailableEmidsToUser(emids);
 				}
@@ -290,7 +290,7 @@ public class BlockCP {
 								myLog.debug("trigger send something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in BlockCP processing", e);
 							}
 							// and continue building
 						}

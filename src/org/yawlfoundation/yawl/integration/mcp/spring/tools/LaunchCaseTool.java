@@ -1,6 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.spring.tools;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpSessionManager;

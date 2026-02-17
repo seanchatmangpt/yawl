@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -18,93 +18,26 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.yawlfoundation.yawl.engine.core.marking.YCoreSetOfMarkings;
 
 /**
+ * Stateless-engine thin wrapper around {@link YCoreSetOfMarkings}.
  *
- * @author Lachlan Aldred
- * Date: 19/06/2003
- * Time: 15:22:56
+ * <p>This class was refactored as part of Phase 1 engine deduplication
+ * (EngineDedupPlan P1.2).  All set-of-markings algorithm logic now lives in
+ * {@link YCoreSetOfMarkings}; this wrapper is a pure subtype alias that
+ * maintains the original package path for backward compatibility with all
+ * existing stateless engine code that imports
+ * {@code org.yawlfoundation.yawl.stateless.elements.marking.YSetOfMarkings}.</p>
  *
+ * <p>The only difference between the original stateful and stateless implementations
+ * was the {@code final} modifier on the {@code _markings} field and the package
+ * declaration; the canonical implementation in {@link YCoreSetOfMarkings} uses
+ * {@code final} (the superior choice) and is shared by both trees.</p>
+ *
+ * @author Lachlan Aldred (original)
+ * @author YAWL Foundation (Phase 1 deduplication, 2026)
  */
-public class YSetOfMarkings {
-    private final Set<YMarking> _markings = new HashSet<>();
-
-
-
-    //moe - ResetAnalyser
-    public void addMarking(YMarking marking) {
-        if (! contains(marking)) {
-            _markings.add(marking);
-        }
-    }
-
-    //moe - ResetAnalyser
-    public void addAll(YSetOfMarkings newMarkings) {
-        for (YMarking marking : newMarkings.getMarkings()) {
-            addMarking(marking);
-        }
-    }
-
-    //changed by moe - ResetAnalyser
-    public boolean contains(YMarking marking) {
-        for (YMarking yMarking : _markings) {
-            if (yMarking.equivalentTo(marking)) return true;
-        }
-        return false;
-    }
-
-    //added by moe - ResetAnalyser
-    public boolean equals(YSetOfMarkings markings) {
-        Set<YMarking> markingsToCompare = markings.getMarkings();
-        return (_markings.size() == markingsToCompare.size()) &&
-                containsAll(markingsToCompare) && markings.containsAll(_markings);
-    }
-
-    public boolean containsAll(Set<YMarking> markingsToCompare) {
-        for (YMarking yMarking : markingsToCompare) {
-            if (! this.contains(yMarking)) return false;
-        }
-        return true;
-    }
-
-    //moe - ResetAnalyser
-    public void removeAll(){
-        _markings.clear();
-    }
-
-    public Set<YMarking> getMarkings() {
-        return _markings;
-    }
-
-    public int size() {
-        return _markings.size();
-    }
-
-    public YMarking removeAMarking() {
-        if (_markings.size() > 0) {
-            YMarking marking = (YMarking) _markings.iterator().next();
-            _markings.remove(marking);
-            return marking;
-        }
-        return null;
-    }
-
-    public boolean containsEquivalentMarkingTo(YSetOfMarkings possibleFutureMarkingSet) {
-        for (YMarking possibleMarking : possibleFutureMarkingSet.getMarkings()) {
-            for (YMarking marking : _markings) {
-                if (possibleMarking.equivalentTo(marking)) return true;
-            }
-        }
-        return false;
-    }
-
-    //moe - ResetAnalyser
-    public boolean containsBiggerEqual(YMarking m) {
-        for (YMarking marking : _markings) {
-            if (marking.isBiggerThanOrEqual(m)) return true;
-        }
-        return false;
-    }
+public class YSetOfMarkings extends YCoreSetOfMarkings {
+    // No additional members: all logic is inherited from YCoreSetOfMarkings.
 }

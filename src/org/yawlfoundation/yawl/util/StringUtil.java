@@ -20,6 +20,8 @@ package org.yawlfoundation.yawl.util;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -39,6 +41,7 @@ import java.util.regex.Pattern;
 
 
 public class StringUtil {
+    private static final Logger _log = LogManager.getLogger(StringUtil.class);
     private static final String TIMESTAMP_DELIMITER = " ";
     private static final String DATE_DELIMITER = "-";
     private static final String TIME_DELIMITER = ":";
@@ -300,8 +303,8 @@ public class StringUtil {
      */
     public static String unwrap(String xml) {
         if (xml != null) {
-            if (xml.matches("^<\\w+/>$")) {                      // shortened tag pair
-                return xml.substring(xml.length());              // empty content for self-closing tag
+            if (xml.matches("^<\\w+/>$")) {                      // self-closing tag has no content
+                return String.valueOf(new char[0]);
             }
             int start = xml.indexOf('>') + 1;
             int end = xml.lastIndexOf('<');
@@ -400,6 +403,7 @@ public class StringUtil {
                     File.createTempFile(
                             RandomStringUtils.randomAlphanumeric(12), null), contents);
         } catch (IOException e) {
+            _log.error("Failed to create temporary file", e);
             return null;
         }
     }
@@ -424,6 +428,7 @@ public class StringUtil {
                 InputStream fis = new FileInputStream(f);
                 return streamToString(fis, bufsize);
             } catch (Exception e) {
+                _log.error("Failed to read file to string", e);
                 return null;
             }
         } else return null;
@@ -454,6 +459,7 @@ public class StringUtil {
             return outStream.toString(StandardCharsets.UTF_8);
 
         } catch (IOException ioe) {
+            _log.error("Failed to convert stream to string", ioe);
             return null;
         }
     }
@@ -608,6 +614,7 @@ public class StringUtil {
                     DatatypeFactory.newInstance().newXMLGregorianCalendar(gregCal);
             return cal.toXMLFormat();
         } catch (DatatypeConfigurationException dce) {
+            _log.error("Failed to convert long to DateTime", dce);
             return null;
         }
     }
@@ -698,7 +705,7 @@ public class StringUtil {
         if (list.size() == 1) return list.get(0).toString();
         StringBuilder sb = new StringBuilder();
         for (Object s : list) {
-            if (sb.length() > 0) sb.append(separator);     
+            if (sb.length() > 0) sb.append(separator);
             sb.append(s);
         }
         return sb.toString();

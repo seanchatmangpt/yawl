@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.ls.LSInput;
 
 import java.io.BufferedInputStream;
@@ -31,9 +33,16 @@ import java.io.Reader;
  */
 public class Input implements LSInput {
 
+    private static final Logger _log = LogManager.getLogger(Input.class);
     private String publicId;
     private String systemId;
     private BufferedInputStream inputStream;
+    private String baseURI;
+    private InputStream byteStream;
+    private boolean certifiedText;
+    private Reader characterStream;
+    private String encoding;
+    private String stringData;
 
 
     public Input(String publicId, String sysId, InputStream input) {
@@ -52,23 +61,23 @@ public class Input implements LSInput {
     }
 
     public String getBaseURI() {
-        return null;
+        return baseURI;
     }
 
     public InputStream getByteStream() {
-        return null;
+        return byteStream;
     }
 
     public boolean getCertifiedText() {
-        return false;
+        return certifiedText;
     }
 
     public Reader getCharacterStream() {
-        return null;
+        return characterStream;
     }
 
     public String getEncoding() {
-        return null;
+        return encoding;
     }
 
     public String getStringData() {
@@ -76,32 +85,38 @@ public class Input implements LSInput {
             try {
                 byte[] input = new byte[inputStream.available()];
                 inputStream.read(input);
-                String contents = new String(input);
-                return contents;
+                return new String(input);
             } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Exception " + e);
-                return null;
+                _log.error("Failed to read string data from LSInput stream (systemId='{}'): {}",
+                        systemId, e.getMessage(), e);
+                throw new IllegalStateException(
+                        "Failed to read schema input stream for systemId '" + systemId + "'", e);
             }
         }
     }
 
     public void setBaseURI(String baseURI) {
+        this.baseURI = baseURI;
     }
 
     public void setByteStream(InputStream byteStream) {
+        this.byteStream = byteStream;
     }
 
     public void setCertifiedText(boolean certifiedText) {
+        this.certifiedText = certifiedText;
     }
 
     public void setCharacterStream(Reader characterStream) {
+        this.characterStream = characterStream;
     }
 
     public void setEncoding(String encoding) {
+        this.encoding = encoding;
     }
 
     public void setStringData(String stringData) {
+        this.stringData = stringData;
     }
 
     public String getSystemId() {

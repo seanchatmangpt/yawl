@@ -222,7 +222,7 @@ public class Interface_Client {
             int end = xml.lastIndexOf('<');
             if (end > start) {
                 return xml.substring(start, end);
-            }    
+            }
         }
         return xml;
     }

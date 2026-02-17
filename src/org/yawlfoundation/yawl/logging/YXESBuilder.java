@@ -54,6 +54,7 @@ public class YXESBuilder {
             processEvents(root, events);
             return root.toPrettyString(true);
         }
+        _log.warn("No events provided for XES log building");
         return null;
     }
 

@@ -36,20 +36,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BlockPICreate {
-	
+
 	private static BlockPICreate singleInst = null;
 	private Logger myLog = LogManager.getLogger(BlockPICreate.class);
-	
+
 	private BlockPICreate () {
 	}
-	
+
 	public static BlockPICreate getInstance() {
 		if (singleInst == null) {
 			singleInst = new BlockPICreate();
 		}
 		return singleInst;
 	}
-	
+
 	public void checkForCreationProclets () {
 		synchronized(this) {
 			myLog.debug("CHECK FOR CREATION PROCLETS");
@@ -60,7 +60,7 @@ public class BlockPICreate {
 			}
 		}
 	}
-		
+
 	private List<InteractionArc> evalCreateProclets () {
 		myLog.debug("EVALCREATEPROCLETS");
 		// get all arcs for which the procletid of the head is <= 0
@@ -71,7 +71,7 @@ public class BlockPICreate {
 		List<InteractionGraph> graphs = igraphs.getGraphs();
 		for (InteractionGraph graph : graphs) {
 			for (InteractionArc arc : graph.getArcs()) {
-				if (Integer.parseInt(arc.getHead().getProcletID()) <= 0 && 
+				if (Integer.parseInt(arc.getHead().getProcletID()) <= 0 &&
 						pmodels.getBlockForInteractionNode(arc.getHead()).isCreate()) {
 					myLog.debug("add Arc:" + arc + "," + graph.getEntityMID());
 					relevantArcs.add(arc);
@@ -95,7 +95,7 @@ public class BlockPICreate {
 								exists = true;
 							}
 						}
-						if (!exists) { 
+						if (!exists) {
 							createArcs.add(relArc);
 						}
 						break;
@@ -106,7 +106,7 @@ public class BlockPICreate {
 		myLog.debug("createArcs:" + createArcs);
 		return createArcs;
 	}
-	
+
 	private void createProclets(List<InteractionArc> enabledArcs) {
 		myLog.debug("create proclets");
 		// delete perfs
@@ -173,14 +173,14 @@ public class BlockPICreate {
 			igraphs.updateGraphPI(classID,newProcletID,arc.getHead().getBlockID());
 			igraphs.persistGraphs();
 			//20022010
-			// delete the perf 
+			// delete the perf
 			myLog.debug("perfsCheck2:" + perfsInst.getPerformatives());
 			perfsInst.deletePerformativeContent(corPerf);
 			myLog.debug("perfsCheck3:" + perfsInst.getPerformatives());
 		}
-		
+
 	}
-	
+
 	private String removeUnneededData (String s, List<EntityID> eids) {
 		myLog.debug("REMOVEUNNEEDEDDATA");
 		List<Element> eltsRemove = new ArrayList<>();
@@ -223,22 +223,22 @@ public class BlockPICreate {
 		myLog.debug("outputStr:" + outputStr);
 		return outputStr;
 	}
-	
+
 	   public static void main(String [ ] args) {
 		   	BlockPICreate bpic = BlockPICreate.getInstance();
 		   	String s = "<entities>" +
 		    "<entity>" +
 		    "<entity_id>ronny</entity_id>" +
-		    "<name_value_pair>" + 
+		    "<name_value_pair>" +
 		      "<name>visit</name>" +
-		      "<value>visit2</value>" + 
+		      "<value>visit2</value>" +
 		    "</name_value_pair>" +
 		  "</entity>" +
 		  "<entity>" +
 		    "<entity_id>ronny2</entity_id>" +
-		    "<name_value_pair>" + 
+		    "<name_value_pair>" +
 		      "<name>visit</name>" +
-		      "<value>visit2</value>" + 
+		      "<value>visit2</value>" +
 		    "</name_value_pair>" +
 		  "</entity>" +
 		"</entities>";
@@ -248,5 +248,5 @@ public class BlockPICreate {
 		   	bpic.checkForCreationProclets();
 	    	System.out.println();
 	    }
-	
+
 }

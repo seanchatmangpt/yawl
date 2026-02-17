@@ -72,7 +72,12 @@ public class ProcletBlock {
 		this.timeOut = timeOut;
 	}
 	
-	public static BlockType getBlockTypeFromString(String blockType) {
+	/**
+     * Get a BlockType from its string representation.
+     * @param blockType the block type string ("CP", "PI", or "FO")
+     * @return the BlockType if recognized, or null if unrecognized
+     */
+    public static BlockType getBlockTypeFromString(String blockType) {
 		if (blockType.equals("CP")) {
 			return BlockType.CP;			
 		}

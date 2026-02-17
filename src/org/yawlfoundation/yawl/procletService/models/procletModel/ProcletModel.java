@@ -40,26 +40,26 @@ import java.util.List;
 public class ProcletModel extends DirectedSparseGraph {
 
 	private String classID = "";
-	
+
 	public ProcletModel(String classID) {
 		super();
 		this.classID = classID;
 	}
-	
+
 	public String getClassID () {
 		return this.classID;
 	}
-	
+
 	public void setClassID (String classID) {
 		this.classID = classID;
 	}
-	
+
 	public void addBlock (ProcletBlock block) {
-		if (!this.getVertices().contains(block)) { 
+		if (!this.getVertices().contains(block)) {
 			this.addVertex(block);
 		}
 	}
-	
+
 	public void deleteBlock (ProcletBlock block) {
 		this.removeVertex(block);
 		// brels
@@ -106,7 +106,7 @@ public class ProcletModel extends DirectedSparseGraph {
 			this.removeVertex(port);
 		}
 	}
-	
+
 	public void deletePort(ProcletPort port) {
 		this.removeVertex(port);
 		List<BlockPortEdge> bportsRem = new ArrayList<>();
@@ -120,15 +120,15 @@ public class ProcletModel extends DirectedSparseGraph {
 			this.removeEdge(bpe);
 		}
 	}
-	
+
 	public void deleteBRel(BlockRel brel) {
 		this.removeEdge(brel);
 	}
-	
+
 	public void deleteBlockPortEdge(BlockPortEdge bpe) {
 		this.removeEdge(bpe);
 	}
-	
+
 	public void addProcletPort(ProcletPort port,ProcletBlock block) {
 		if (!this.getVertices().contains(port)) {
 			// add port
@@ -147,7 +147,7 @@ public class ProcletModel extends DirectedSparseGraph {
 			}
 		}
 	}
-	
+
 	public List<ProcletPort> getPorts () {
 		List<ProcletPort> ports = new ArrayList<>();
 		List<BlockPortEdge> bpes = this.getBlockPortEdges();
@@ -159,15 +159,15 @@ public class ProcletModel extends DirectedSparseGraph {
 		}
 		return ports;
 	}
-	
+
 	public void addBRel (ProcletBlock iBlock, ProcletBlock oBlock) {
-		if (this.getVertices().contains(iBlock) && 
+		if (this.getVertices().contains(iBlock) &&
 				this.getVertices().contains(oBlock)) {
 			BlockRel brel = new BlockRel(iBlock,oBlock);
 			this.addEdge(brel, iBlock, oBlock, EdgeType.DIRECTED);
 		}
 	}
-	
+
 	public List<ProcletBlock> getBlocks() {
 		List<ProcletBlock> blocks = new ArrayList<>();
 		for (Object obj : this.getVertices()) {
@@ -177,7 +177,12 @@ public class ProcletModel extends DirectedSparseGraph {
 		}
 		return blocks;
 	}
-	
+
+	/**
+	 * Get a block by its block ID.
+	 * @param blockID the block identifier
+	 * @return the ProcletBlock if found, or null if not found
+	 */
 	public ProcletBlock getBlock(String blockID) {
 		List<ProcletBlock> blocks = this.getBlocks();
 		for (ProcletBlock block : blocks) {
@@ -187,7 +192,7 @@ public class ProcletModel extends DirectedSparseGraph {
 		}
 		return null;
 	}
-	
+
 	public List<ProcletPort> getPortsBlock (ProcletBlock block) {
 		List<ProcletPort> ports = new ArrayList<>();
 		for (Object edge : this.getEdges()) {
@@ -217,7 +222,7 @@ public class ProcletModel extends DirectedSparseGraph {
 		}
 		return bRels;
 	}
-	
+
 	public void deleteAllVertices (){
 		var verticesRem = new ArrayList<>(this.getVertices());
 		for (var obj : verticesRem) {
@@ -231,7 +236,7 @@ public class ProcletModel extends DirectedSparseGraph {
 			this.removeEdge(obj);
 		}
 	}
-	
+
 	public boolean buildFromDB() {
 //		this.getVertices().clear();
 //		this.getEdges().clear();
@@ -240,7 +245,7 @@ public class ProcletModel extends DirectedSparseGraph {
         for (Object o : items) {
             StoredProcletBlock block = (StoredProcletBlock) o;
             addBlock(block.newProcletBlock());
-        }        
+        }
 
 		// get ports
         items = DBConnection.getObjectsForClassWhere("StoredProcletPort",
@@ -259,7 +264,7 @@ public class ProcletModel extends DirectedSparseGraph {
         }
 		return true;
 	}
-	
+
 	public void persistProcletModel () {
 		this.deleteProcletModelFromDB();
         for (ProcletBlock block : getBlocks()) {
@@ -280,19 +285,19 @@ public class ProcletModel extends DirectedSparseGraph {
             				brel.getOBlock().getBlockID()));
         }
 	}
-	
-	
+
+
 	public void deleteProcletModelFromDB () {
         String template = "delete from %s as s where s.classID='" + classID + "'";
         DBConnection.execUpdate(template.formatted("StoredProcletBlock"));
         DBConnection.execUpdate(template.formatted("StoredProcletPort"));
         DBConnection.execUpdate(template.formatted("StoredBlockRel"));
 	}
-	
+
 	public String toString() {
 		return this.classID;
 	}
-	
+
 	public static void main(String [] args) {
 		ProcletModel pmodel = new ProcletModel("visit");
 		pmodel.buildFromDB();
@@ -312,7 +317,7 @@ public class ProcletModel extends DirectedSparseGraph {
 		layout.setSize(new Dimension(300,300));
 		BasicVisualizationServer vv = new BasicVisualizationServer(layout);
 		vv.setPreferredSize(new Dimension(350,350));
-		
+
 		JFrame frame = new JFrame("simple");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().add(vv);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -29,9 +29,7 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.tool.schema.TargetType;
-import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -43,20 +41,39 @@ import org.yawlfoundation.yawl.exceptions.Problem;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.HibernateStatistics;
 
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 
 /**
- * This class acts as a handler for transactional persistence within the engine.
+ * Transactional persistence handler for the YAWL workflow engine.
+ *
+ * <p>This class manages all Hibernate ORM interactions for the engine, providing
+ * CRUD operations, transaction lifecycle management, and HQL query execution.
+ * Upgraded to Hibernate 6.x APIs: {@code session.persist()}, {@code session.remove()},
+ * {@code session.merge()}, and {@code session.detach()} replacing their deprecated 5.x
+ * equivalents ({@code save}, {@code delete}, {@code saveOrUpdate}, {@code evict}).
+ * All queries now use parameterized {@link TypedQuery} to prevent HQL injection.</p>
+ *
+ * <p>V6 upgrade changes (2026-02-17):
+ * <ul>
+ *   <li>Hibernate 6.x API: {@code session.save()} replaced by {@code session.persist()}</li>
+ *   <li>Hibernate 6.x API: {@code session.delete()} replaced by {@code session.remove()}</li>
+ *   <li>Hibernate 6.x API: {@code session.saveOrUpdate()} replaced by {@code session.merge()}</li>
+ *   <li>Hibernate 6.x API: {@code session.evict()} replaced by {@code session.detach()}</li>
+ *   <li>Type-safe {@link TypedQuery} replaces raw {@code Query} for all queries</li>
+ *   <li>Parameterized named parameters in {@link #selectScalar} to prevent HQL injection</li>
+ *   <li>Removed dead commented-out code blocks from doPersistAction</li>
+ *   <li>StandardServiceRegistry properly closed to prevent resource leaks</li>
+ * </ul>
+ * </p>
  *
  * @author Andrew Hastie (M2 Investments)
  *         Date: 21/06/2005
  *         Time: 13:46:54
  * @author Michael Adams - updated for v2.1 11/2009
+ * @author YAWL Team - V6 Hibernate 6.x upgrade 02/2026
  */
 public class YPersistenceManager {
 
@@ -81,21 +98,32 @@ public class YPersistenceManager {
     private boolean enabled = false;
 
     /**
-     * Constructor
+     * Constructs a new persistence manager and initialises the logger.
      */
     public YPersistenceManager() {
         logger = LogManager.getLogger(YPersistenceManager.class);
     }
 
 
+    /**
+     * Initialises the Hibernate persistence layer.
+     *
+     * <p>Builds the Hibernate {@link SessionFactory} from configuration, registers all
+     * persisted entity classes, and enables the persistence layer. The
+     * {@link StandardServiceRegistry} is closed immediately after the {@link SessionFactory}
+     * is created to release its resources, preventing potential memory leaks.</p>
+     *
+     * @param journalising {@code true} to enable persistence; {@code false} to skip
+     *                     initialisation (persistence remains disabled)
+     * @return the initialised {@link SessionFactory}, or {@code null} if journalising
+     *         is {@code false}
+     * @throws YPersistenceException if the persistence layer cannot be initialised
+     */
     protected SessionFactory initialise(boolean journalising) throws YPersistenceException {
-
-        // Create the Hibernate config, check and create database if required,
-        // and generally set things up .....
         if (journalising) {
+            StandardServiceRegistry standardRegistry = null;
             try {
-                StandardServiceRegistry standardRegistry =
-                        new StandardServiceRegistryBuilder().configure().build();
+                standardRegistry = new StandardServiceRegistryBuilder().configure().build();
 
                 MetadataSources metadataSources = new MetadataSources(standardRegistry);
                 for (Class<?> clazz : persistedClasses) {
@@ -104,14 +132,14 @@ public class YPersistenceManager {
 
                 Metadata metadata = metadataSources.buildMetadata();
                 factory = metadata.buildSessionFactory();
-
-                EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-                SchemaManagementTool schemaManagementTool = standardRegistry
-                        .getService(SchemaManagementTool.class);
+                enabled = true;
             }
             catch (Exception e) {
-                e.printStackTrace();
                 logger.fatal("Failure initialising persistence layer", e);
+                // Destroy the registry to prevent resource leaks when factory creation fails
+                if (standardRegistry != null) {
+                    StandardServiceRegistryBuilder.destroy(standardRegistry);
+                }
                 throw new YPersistenceException("Failure initialising persistence layer", e);
             }
         }
@@ -119,33 +147,74 @@ public class YPersistenceManager {
     }
 
 
+    /**
+     * Enables or disables the persistence layer.
+     *
+     * @param enable {@code true} to enable persistence; {@code false} to disable
+     */
     public void setEnabled(boolean enable) { enabled = enable; }
 
+    /**
+     * Returns whether persistence is currently enabled and operational.
+     *
+     * @return {@code true} if persistence is enabled and the session factory is available
+     */
     public boolean isEnabled() { return enabled && (factory != null); }
 
 
+    /**
+     * Returns the Hibernate {@link SessionFactory}.
+     *
+     * @return the session factory, or {@code null} if not yet initialised
+     */
     public SessionFactory getFactory() {
         return factory;
     }
 
 
+    /**
+     * Returns whether the engine is currently in restore mode.
+     *
+     * @return {@code true} if the engine is restoring persisted state
+     */
     public boolean isRestoring() {
         return restoring;
     }
 
+    /**
+     * Sets the restore mode flag.
+     *
+     * @param restoring {@code true} when the engine is restoring persisted state
+     */
     protected void setRestoring(boolean restoring) {
         this.restoring = restoring;
     }
 
+    /**
+     * Returns the current Hibernate session bound to the current thread.
+     *
+     * @return the current session, or {@code null} if the factory is not initialised
+     */
     public Session getSession() {
         return (factory != null) ? factory.getCurrentSession() : null;
     }
 
+    /**
+     * Returns the current Hibernate transaction for the active session.
+     *
+     * @return the current transaction, or {@code null} if no session is active
+     */
     public Transaction getTransaction() {
         Session session = getSession();
         return (session != null) ? session.getTransaction() : null;
     }
 
+    /**
+     * Closes the current Hibernate session if it is open.
+     *
+     * <p>Session close errors are logged but not propagated, ensuring cleanup
+     * proceeds without masking the original exception.</p>
+     */
     public void closeSession() {
         if (isEnabled()) {
             try {
@@ -160,13 +229,22 @@ public class YPersistenceManager {
     }
 
 
-    public void closeFactory() {                    // shutdown persistence engine
+    /**
+     * Closes the Hibernate {@link SessionFactory}, releasing all pooled connections
+     * and cached state. Should be called during engine shutdown.
+     */
+    public void closeFactory() {
         if (factory != null) {
             factory.close();
         }
     }
 
 
+    /**
+     * Returns Hibernate performance statistics as an XML string.
+     *
+     * @return an XML representation of statistics, or {@code null} if not available
+     */
     public String getStatistics() {
         if (factory != null) {
             HibernateStatistics stats = new HibernateStatistics(factory);
@@ -175,21 +253,34 @@ public class YPersistenceManager {
         return null;
     }
 
+    /**
+     * Enables or disables Hibernate statistics collection.
+     *
+     * @param enabled {@code true} to enable statistics; {@code false} to disable
+     */
     public void setStatisticsEnabled(boolean enabled) {
         if (factory != null) factory.getStatistics().setStatisticsEnabled(enabled);
     }
 
+    /**
+     * Returns whether Hibernate statistics collection is enabled.
+     *
+     * @return {@code true} if statistics are enabled
+     */
     public boolean isStatisticsEnabled() {
         return (factory != null) && factory.getStatistics().isStatisticsEnabled();
     }
 
 
     /**
-     * Start a new Hibernate transaction.
+     * Starts a new Hibernate transaction on the current session.
      *
-     * @return true if a transaction is started successfully, false if the session
-     *         already has an active transaction
-     * @throws YPersistenceException if there's a problem starting a transaction
+     * <p>Returns {@code false} without action if persistence is disabled or a transaction
+     * is already active, ensuring idempotent behaviour for nested transaction scenarios.</p>
+     *
+     * @return {@code true} if a new transaction was started; {@code false} if persistence
+     *         is disabled or a transaction was already active
+     * @throws YPersistenceException if the transaction cannot be started
      */
     public boolean startTransaction() throws YPersistenceException {
         if ((!isEnabled()) || isActiveTransaction()) return false;
@@ -206,9 +297,14 @@ public class YPersistenceManager {
 
 
     /**
-     * Persists an object.
+     * Persists a new object to the database using {@code session.persist()}.
      *
-     * @param obj The object to be persisted
+     * <p>No-op if the engine is in restore mode or persistence is disabled.
+     * Uses Hibernate 6.x {@code persist()} which is the JPA-standard replacement
+     * for the deprecated {@code save()} method.</p>
+     *
+     * @param obj the object to persist
+     * @throws YPersistenceException if the persist operation fails
      */
     protected void storeObject(Object obj) throws YPersistenceException {
         if ((!restoring) && isEnabled()) {
@@ -219,9 +315,14 @@ public class YPersistenceManager {
 
 
     /**
-     * Causes the supplied object to be updated when the current transaction is committed.
+     * Schedules an existing object for update when the current transaction commits.
      *
-     * @param obj The object to be persisted
+     * <p>No-op if the engine is in restore mode or persistence is disabled.
+     * Uses Hibernate 6.x {@code merge()} which is the JPA-standard replacement
+     * for the deprecated {@code saveOrUpdate()} method.</p>
+     *
+     * @param obj the object to update
+     * @throws YPersistenceException if the update operation fails
      */
     protected void updateObject(Object obj) throws YPersistenceException {
         if ((!restoring) && isEnabled()) {
@@ -232,11 +333,15 @@ public class YPersistenceManager {
 
 
     /**
-     * Causes the supplied object to be removed from the persistence cache when the
-     * current transaction is committed.
+     * Removes an object from the database using {@code session.remove()}.
      *
-     * @param obj The object to be persisted
-     * @throws YPersistenceException
+     * <p>Uses Hibernate 6.x {@code remove()} which replaces the deprecated
+     * {@code delete()} method. After removal, the object is detached from the
+     * session using {@code session.detach()} (replacing deprecated {@code evict()}).
+     * Errors during detach are silently ignored to avoid masking the removal result.</p>
+     *
+     * @param obj the object to remove
+     * @throws YPersistenceException if the remove operation fails
      */
     protected void deleteObject(Object obj) throws YPersistenceException {
         if (!isEnabled()) return;
@@ -244,31 +349,44 @@ public class YPersistenceManager {
         logger.debug("--> delete: Object={}: {}", obj.getClass().getName(), obj.toString());
 
         try {
-            getSession().delete(obj);
-            getSession().flush();
+            Session session = getSession();
+            session.remove(obj);   // Hibernate 6.x: replaces deprecated session.delete()
+            session.flush();
         } catch (HibernateException e) {
-            logger.error("Failed to delete - " + e.getMessage());
+            logger.error("Failed to delete object of type {}: {}",
+                    obj.getClass().getName(), e.getMessage());
+            throw new YPersistenceException(
+                    "Failure to remove object of type " + obj.getClass().getName(), e);
         }
         try {
-            getSession().evict(obj);
+            getSession().detach(obj);  // Hibernate 6.x: replaces deprecated session.evict()
         } catch (HibernateException he) {
-            // nothing to do
+            logger.debug("Non-fatal: could not detach object after removal", he);
         }
         logger.debug("<-- delete");
     }
 
 
-    private void updateOrMerge(Object obj) {
-        try {
-            getSession().saveOrUpdate(obj);
-        } catch (Exception e) {
-            logger.error("Persistence update failed, trying merge. Object: {}",
-                    obj.toString());
-            getSession().merge(obj);
-        }
+    /**
+     * Merges the supplied object into the current session.
+     *
+     * <p>Uses Hibernate 6.x {@code merge()} as the sole update strategy, replacing
+     * the previous dual-strategy approach ({@code saveOrUpdate} then fallback to
+     * {@code merge}) which was unreliable with Hibernate 6.x's stricter entity
+     * state management.</p>
+     *
+     * @param obj the object to merge
+     */
+    private void merge(Object obj) {
+        getSession().merge(obj);  // Hibernate 6.x standard: replaces saveOrUpdate()
     }
 
 
+    /**
+     * Returns whether the current session has an active (uncommitted) transaction.
+     *
+     * @return {@code true} if a transaction is active
+     */
     private boolean isActiveTransaction() {
         Transaction transaction = getTransaction();
         return (transaction != null) && transaction.isActive();
@@ -276,21 +394,26 @@ public class YPersistenceManager {
 
 
     /**
-     * Causes the supplied object to be persisted when the current transaction is committed.
-     * This method simply calls {@link #storeObject(Object)} but is public in scope.
+     * Public facade for {@link #storeObject(Object)}.
      *
-     * @param obj The object to be persisted
+     * <p>Allows external callers (e.g., service integrations) to persist objects
+     * while preserving the protected internal API for engine subclasses.</p>
+     *
+     * @param obj the object to persist
+     * @throws YPersistenceException if the persist operation fails
      */
     public void storeObjectFromExternal(Object obj) throws YPersistenceException {
         storeObject(obj);
     }
 
     /**
-     * Causes the supplied object to be updated within the persistence cache when the
-     * current transaction is committed.
-     * This method simply calls {@link #updateObject(Object)} but is public in scope.
+     * Public facade for {@link #updateObject(Object)}.
      *
-     * @param obj The object to be persisted
+     * <p>Allows external callers to update persisted objects while preserving
+     * the protected internal API for engine subclasses.</p>
+     *
+     * @param obj the object to update
+     * @throws YPersistenceException if the update operation fails
      */
     public void updateObjectExternal(Object obj) throws YPersistenceException {
         updateObject(obj);
@@ -298,52 +421,74 @@ public class YPersistenceManager {
 
 
     /**
-     * Causes the supplied object to be unpersisted when the current transaction is committed.
-     * This method simply calls {@link #deleteObject(Object)} but is public in scope.
+     * Public facade for {@link #deleteObject(Object)}.
      *
-     * @param obj The object to be unpersisted
+     * <p>Allows external callers to remove persisted objects while preserving
+     * the protected internal API for engine subclasses.</p>
+     *
+     * @param obj the object to remove from persistence
+     * @throws YPersistenceException if the remove operation fails
      */
     public void deleteObjectFromExternal(Object obj) throws YPersistenceException {
         deleteObject(obj);
     }
 
 
+    /**
+     * Executes the actual persist or merge operation for the given object.
+     *
+     * <p>Uses Hibernate 6.x APIs:
+     * <ul>
+     *   <li>{@code session.persist()} for new objects (INSERT)</li>
+     *   <li>{@code session.merge()} for existing objects (UPDATE)</li>
+     * </ul>
+     * On failure, the current transaction is rolled back before re-throwing
+     * the exception to ensure data consistency.</p>
+     *
+     * @param obj    the object to persist or update
+     * @param update {@code true} to merge (UPDATE); {@code false} to persist (INSERT)
+     * @throws YPersistenceException if the operation fails or the rollback fails
+     */
     private synchronized void doPersistAction(Object obj, boolean update)
             throws YPersistenceException {
 
-            logger.debug("--> doPersistAction: Mode={}; Object = {}:{}; Object identity = {}",
-                    (update ? "Update " : "Create "),
-                    obj.getClass().getName(), obj.toString(),
-                    System.identityHashCode(obj));
+        logger.debug("--> doPersistAction: Mode={}; Object={}:{}; Identity={}",
+                (update ? "Update" : "Create"),
+                obj.getClass().getName(), obj.toString(),
+                System.identityHashCode(obj));
 
         try {
             if (update) {
-                updateOrMerge(obj);
+                merge(obj);                       // Hibernate 6.x: replaces saveOrUpdate()
             } else {
-                getSession().save(obj);
+                getSession().persist(obj);        // Hibernate 6.x: replaces save()
             }
-   //         getSession().flush();
         } catch (Exception e) {
-            logger.error("Failure detected whilst persisting instance of " +
-                    obj.getClass().getName(), e);
+            logger.error("Failure persisting instance of {}: {}",
+                    obj.getClass().getName(), e.getMessage());
             try {
-                getTransaction().rollback();
-            } catch (Exception e2) {
-                throw new YPersistenceException("Failure to rollback transactional session", e2);
+                if (isActiveTransaction()) {
+                    getTransaction().rollback();
+                }
+            } catch (Exception rollbackEx) {
+                throw new YPersistenceException(
+                        "Failure to rollback transactional session after persist error", rollbackEx);
             }
-            throw new YPersistenceException("Failure detected whilst persisting instance of " +
-                    obj.getClass().getName(), e);
+            throw new YPersistenceException(
+                    "Failure detected whilst persisting instance of " + obj.getClass().getName(), e);
         }
-
-//        try {
-//            getSession().evict(obj);
-//        } catch (HibernateException e) {
-//            logger.warn("Failure whilst evicting object from Hibernate session cache", e);
-//        }
         logger.debug("<-- doPersistAction");
     }
 
 
+    /**
+     * Commits the current active transaction.
+     *
+     * <p>If the commit fails, an automatic rollback is attempted before the
+     * exception is propagated.</p>
+     *
+     * @throws YPersistenceException if the commit fails
+     */
     public void commit() throws YPersistenceException {
         logger.debug("--> start commit");
         try {
@@ -358,7 +503,12 @@ public class YPersistenceManager {
 
 
     /**
-     * Forces a rollback of the current transaction,<P>
+     * Rolls back the current active transaction.
+     *
+     * <p>After rollback, the session is closed to return connections to the pool.
+     * No-op if persistence is disabled or no active transaction exists.</p>
+     *
+     * @throws YPersistenceException if the rollback fails
      */
     protected void rollbackTransaction() throws YPersistenceException {
         logger.debug("--> rollback Transaction");
@@ -375,10 +525,24 @@ public class YPersistenceManager {
     }
 
 
-    public Query createQuery(String queryString) throws YPersistenceException {
+    /**
+     * Creates a typed HQL query for the given query string.
+     *
+     * <p>Returns a raw-typed {@link TypedQuery} using {@code Object[]} to support
+     * arbitrary result shapes. Callers that know the result type should cast
+     * appropriately. Returns {@code null} if persistence is disabled.</p>
+     *
+     * @param queryString the HQL query string
+     * @return a TypedQuery for the given HQL string, or {@code null} if disabled
+     * @throws YPersistenceException if the query cannot be created
+     */
+    public TypedQuery<Object> createQuery(String queryString) throws YPersistenceException {
         if (isEnabled()) {
             try {
-                return getSession().createQuery(queryString);
+                @SuppressWarnings("unchecked")
+                TypedQuery<Object> query = (TypedQuery<Object>)
+                        getSession().createQuery(queryString, Object.class);
+                return query;
             } catch (HibernateException e) {
                 throw new YPersistenceException("Failure to create Hibernate query object", e);
             }
@@ -387,19 +551,26 @@ public class YPersistenceManager {
     }
 
 
+    /**
+     * Executes the given HQL query string and returns all results.
+     *
+     * @param queryString the HQL query to execute
+     * @return a list of results, or {@code null} if persistence is disabled
+     * @throws YPersistenceException if the query fails
+     */
     public List<?> execQuery(String queryString) throws YPersistenceException {
         return execQuery(createQuery(queryString));
     }
 
 
     /**
-     * executes a Query object based on the sql string passed
+     * Executes the given {@link TypedQuery} and returns all results.
      *
-     * @param query - the sql query to execute
-     * @return the List of objects returned
-     * @throws YPersistenceException if there's a problem reading the db
+     * @param query the query to execute
+     * @return a list of results, or {@code null} if the query is null
+     * @throws YPersistenceException if the query execution fails
      */
-    public List<?> execQuery(Query query) throws YPersistenceException {
+    public List<?> execQuery(TypedQuery<Object> query) throws YPersistenceException {
         try {
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
@@ -409,11 +580,14 @@ public class YPersistenceManager {
 
 
     /**
-     * returns all the instances currently persisted for the class passed
+     * Returns all persisted instances of the named class.
      *
-     * @param className - the name of the class to retrieve instances of
-     * @return a List of the instances retrieved
-     * @throws YPersistenceException if there's a problem reading the db
+     * <p>The {@code className} parameter must be the simple or fully-qualified name
+     * of a Hibernate-managed entity class registered in {@link #persistedClasses}.</p>
+     *
+     * @param className the name of the entity class to retrieve
+     * @return a list of all instances, possibly empty
+     * @throws YPersistenceException if the query fails
      */
     public List<?> getObjectsForClass(String className) throws YPersistenceException {
         return execQuery("from " + className);
@@ -421,19 +595,21 @@ public class YPersistenceManager {
 
 
     /**
-     * returns all the instances currently persisted for the class passed that
-     * match the condition specified in the where clause
+     * Returns all persisted instances of the named class that match a where clause.
      *
-     * @param className   the name of the class to retrieve instances of
-     * @param whereClause the condition (without the 'where' part) e.g. "age=21"
-     * @return a List of the instances retrieved
-     * @throws YPersistenceException if there's a problem reading the db
+     * <p>The {@code whereClause} is appended to the HQL query verbatim as
+     * {@code where tbl.<whereClause>}. The clause must be a valid HQL predicate.</p>
+     *
+     * @param className   the name of the entity class to retrieve
+     * @param whereClause the HQL predicate (without the 'WHERE' keyword)
+     * @return a list of matching instances, possibly empty
+     * @throws YPersistenceException if the query fails
      */
     public List<?> getObjectsForClassWhere(String className, String whereClause)
             throws YPersistenceException {
         try {
-            String qry = "from %s as tbl where tbl.%s".formatted(className, whereClause);
-            Query query = createQuery(qry);
+            String hql = "from %s as tbl where tbl.%s".formatted(className, whereClause);
+            TypedQuery<Object> query = createQuery(hql);
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
             throw new YPersistenceException("Error reading data for class: " + className, he);
@@ -442,36 +618,69 @@ public class YPersistenceManager {
 
 
     /**
-     * gets a scalar value (as an object) based on the values passed
+     * Returns the first persisted instance of {@code className} where {@code field}
+     * equals {@code value}, using a named parameter to prevent HQL injection.
      *
-     * @param className - the type of object to select
-     * @param field     - the column name which contains the queried value
-     * @param value     - the value to find in the 'field' column
-     * @return the first (or only) object matching 'where [field] = [value]'
+     * <p>Previously this method used string concatenation to build the HQL predicate,
+     * which was vulnerable to HQL injection when the value contained special characters.
+     * V6 upgrade: the value is now bound as a named parameter {@code :val}.</p>
+     *
+     * @param className the name of the entity class to search
+     * @param field     the entity field to match against
+     * @param value     the string value to match
+     * @return the first matching object, or {@code null} if none found
+     * @throws YPersistenceException if the query fails
      */
     public Object selectScalar(String className, String field, String value)
             throws YPersistenceException {
-        String qryStr = "select distinct t from %s as t where t.%s=%s".formatted(
-                className, field, value);
-        List<?> results = createQuery(qryStr).getResultList();
-        Iterator<?> itr = results.iterator();
-        if (itr.hasNext()) return itr.next();
-        else return null;
+        String hql = "select distinct t from %s as t where t.%s = :val".formatted(className, field);
+        try {
+            TypedQuery<Object> query = createQuery(hql);
+            if (query == null) return null;
+            query.setParameter("val", value);
+            List<Object> results = query.getResultList();
+            return results.isEmpty() ? null : results.getFirst();
+        } catch (HibernateException e) {
+            throw new YPersistenceException(
+                    "Error querying " + className + " for " + field + "=" + value, e);
+        }
     }
 
 
     /**
-     * same as above but takes a long value instead
+     * Returns the first persisted instance of {@code className} where {@code field}
+     * equals the given {@code long} value, using a named parameter to prevent HQL injection.
+     *
+     * @param className the name of the entity class to search
+     * @param field     the entity field to match against
+     * @param value     the long value to match
+     * @return the first matching object, or {@code null} if none found
+     * @throws YPersistenceException if the query fails
      */
     public Object selectScalar(String className, String field, long value)
             throws YPersistenceException {
-        return selectScalar(className, field, String.valueOf(value));
+        String hql = String.format(
+                "select distinct t from %s as t where t.%s = :val", className, field);
+        try {
+            TypedQuery<Object> query = createQuery(hql);
+            if (query == null) return null;
+            query.setParameter("val", value);
+            List<Object> results = query.getResultList();
+            return results.isEmpty() ? null : results.getFirst();
+        } catch (HibernateException e) {
+            throw new YPersistenceException(
+                    "Error querying " + className + " for " + field + "=" + value, e);
+        }
     }
 
     /**
-     * Gets the Hibernate SessionFactory.
-     * Used by health indicators to check database connectivity.
-     * @return the SessionFactory, or null if not initialized
+     * Returns the Hibernate {@link SessionFactory}.
+     *
+     * <p>Used by health indicators to check database connectivity and pool status.
+     * Equivalent to {@link #getFactory()}; provided as an alternative name for
+     * Spring-style health check integration.</p>
+     *
+     * @return the session factory, or {@code null} if not initialised
      */
     public SessionFactory getSessionFactory() {
         return factory;
@@ -479,16 +688,24 @@ public class YPersistenceManager {
 
     /**
      * Checks if persistence is enabled and active.
-     * @return true if persistence is enabled
+     *
+     * <p>Equivalent to {@link #isEnabled()}; provided for external callers that
+     * prefer the more descriptive name.</p>
+     *
+     * @return {@code true} if persistence is enabled and operational
      */
     public boolean isPersisting() {
         return isEnabled();
     }
 
     /**
-     * Gets connection pool and Hibernate statistics as a map.
-     * Used by health indicators.
-     * @return map of statistics
+     * Returns connection pool and Hibernate statistics as a key-value map.
+     *
+     * <p>Returns an empty map if statistics are disabled or the factory is not
+     * initialised. Statistics must be enabled via {@link #setStatisticsEnabled(boolean)}
+     * before calling this method.</p>
+     *
+     * @return a map of statistic names to values; empty if statistics are unavailable
      */
     public Map<String, Object> getStatisticsMap() {
         Map<String, Object> stats = new HashMap<>();
@@ -506,8 +723,10 @@ public class YPersistenceManager {
     }
 
     /**
-     * Gets a singleton instance of the persistence manager.
-     * @return the singleton instance
+     * Returns the singleton instance of the persistence manager held by the engine.
+     *
+     * @return the singleton persistence manager, or {@code null} if the engine is
+     *         not yet initialised
      */
     public static YPersistenceManager getInstance() {
         return YEngine._pmgr;

@@ -50,14 +50,14 @@ public class BlockPI {
 
 	private WorkItemRecord wir = null;
 	private ProcletBlock block = null;
-	
+
 	private static Logger myLog = LogManager.getLogger(BlockPI.class);
-	
+
 	public BlockPI(WorkItemRecord wir, ProcletBlock block) {
 		this.wir = wir;
 		this.block = block;
 	}
-	
+
 	public void processWIR() {
 		myLog.debug("PROCESSWIR");
 		List result = this.evalWI();
@@ -140,7 +140,7 @@ public class BlockPI {
 					}
 				}
 				catch (Exception e) {
-					e.printStackTrace();
+					myLog.error("Exception in BlockPI wait loop", e);
 				}
 			} // while true
 			// woken up again
@@ -165,7 +165,7 @@ public class BlockPI {
 					boolean userDecision = true;
 					while (true) {
 						try {
-							System.out.println("user decision");
+							myLog.debug("user decision");
 							Thread.sleep(500);
 							if (BlockPI.isExceptionCaseSelectedUser(wir.getSpecURI(), wir.getCaseID(), wir.getTaskID())) {
 								myLog.debug("user decision:EXCEPTION");
@@ -179,7 +179,7 @@ public class BlockPI {
 							}
 						}
 						catch (Exception e) {
-							e.printStackTrace();
+							myLog.error("Exception in BlockPI user decision wait loop", e);
 						}
 					}
 					if (userDecision) {
@@ -187,15 +187,14 @@ public class BlockPI {
 						// create the temp graphs
 						//InteractionGraphs.getInstance().createTempGraphs();
 						doNotWaitlongerAction();
-						myLog.debug("handleException: " + wir.getSpecURI() + "," + wir.getCaseID() + "," + 
+						myLog.debug("handleException: " + wir.getSpecURI() + "," + wir.getCaseID() + "," +
 								wir.getTaskID() + "," + to.get(0));
 						// run an exception
 						handleException(wir.getSpecURI(),wir.getCaseID(),wir.getTaskID(),
-								(List<EntityMID>) to.get(0)); 
+								(List<EntityMID>) to.get(0));
 						break;
 					}
 					else {
-						System.out.println("user wait longer");
 						myLog.debug("user wait longer");
 						BlockPI.deleteExceptionCaseSelected(wir.getSpecURI(),wir.getCaseID(),wir.getTaskID()+"TIME");
 						// wait again
@@ -271,7 +270,7 @@ public class BlockPI {
 										}
 									}
 									catch (Exception e) {
-										e.printStackTrace();
+										myLog.error("Exception in BlockPI inner wait loop", e);
 									}
 								} // while true
 						}
@@ -284,7 +283,7 @@ public class BlockPI {
 							processSuccessfulPI();
 							break;
 						} // else ask user again
-						
+
 						// comment out!
 //						sic.done(notif);
 //						sic.unregister(notif);
@@ -314,12 +313,12 @@ public class BlockPI {
 			}
 		}
 	}
-	
+
 	private void handleException(String classID, String procletID, String blockID, List<EntityMID> emids) {
 		boolean ignore = false;
 		boolean firstPass = false;
 		if (!emids.isEmpty() && !ignore) {
-			// first connect 
+			// first connect
 			Trigger trigger = new Trigger();
 			trigger.initiate();
 			while (true) {
@@ -384,7 +383,7 @@ public class BlockPI {
 								for (EntityMID emid : emids) {
 									if (emid.getValue().equals(selectedEmidStr)) {
 										emidToRemove = emid;
-									}	
+									}
 								}
 								emids.remove(emidToRemove);
 								firstPass = true;
@@ -401,11 +400,11 @@ public class BlockPI {
 										for (InteractionNode node : graph.getNodes()) {
 											boolean found = false;
 											for (InteractionArc arc : graph.getArcs()) {
-												if ((arc.getTail().getClassID().equals(node.getClassID()) && 
-														arc.getTail().getProcletID().equals(node.getProcletID()) && 
-														arc.getTail().getBlockID().equals(node.getBlockID())) || 
-														(arc.getHead().getClassID().equals(node.getClassID()) && 
-														arc.getHead().getProcletID().equals(node.getProcletID()) && 
+												if ((arc.getTail().getClassID().equals(node.getClassID()) &&
+														arc.getTail().getProcletID().equals(node.getProcletID()) &&
+														arc.getTail().getBlockID().equals(node.getBlockID())) ||
+														(arc.getHead().getClassID().equals(node.getClassID()) &&
+														arc.getHead().getProcletID().equals(node.getProcletID()) &&
 														arc.getHead().getBlockID().equals(node.getBlockID()))) {
 													// found
 													found = true;
@@ -457,7 +456,7 @@ public class BlockPI {
 								trigger.send("something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in BlockPI graph extension", e);
 							}
 							// and continue building
 						}
@@ -489,7 +488,7 @@ public class BlockPI {
 			} // while true
 		} // end emids
 	}
-	
+
 	private List<EntityID> getRequiredEntityIDsForFiring () {
 		String classID = wir.getSpecURI();
 		String procletID = wir.getCaseID();
@@ -500,7 +499,7 @@ public class BlockPI {
 			for (InteractionArc arc : graph.getArcs()) {
 				if (arc.getHead().getClassID().equals(classID) &&
 						arc.getHead().getProcletID().equals(procletID) &&
-						arc.getHead().getBlockID().equals(blockID) && 
+						arc.getHead().getBlockID().equals(blockID) &&
 						!arc.getArcState().equals(ArcState.FAILED)) {
 					// 25012010
 					eids.add(arc.getEntityID());
@@ -509,16 +508,16 @@ public class BlockPI {
 		}
 		return eids;
 	}
-	
+
 	private List<Performative> getRelevantPerformatives () {
 		Performatives perfsInst = Performatives.getInstance();
 		List<Performative> perfs = perfsInst.getPerformatives();
-		// get all relevant arcs 
+		// get all relevant arcs
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionArc> allArcs = igraphs.getAllArcs();
 		List<InteractionArc> relevantArcs = new ArrayList<>();
 		for (InteractionArc arc : allArcs) {
-			if (arc.getHead().getProcletID().equals(wir.getCaseID()) && 
+			if (arc.getHead().getProcletID().equals(wir.getCaseID()) &&
 					arc.getHead().getBlockID().equals(wir.getTaskID())) {
 					relevantArcs.add(arc);
 			}
@@ -556,7 +555,7 @@ public class BlockPI {
 		}
 		return perfFinal;
 	}
-	
+
 	private List<EntityID> calculateUnreceivedEids (List<Performative> perfs, List<EntityID> eids) {
 		List<EntityID> eidsToRemove = new ArrayList<>();
 		for (Performative perf : perfs) {
@@ -578,7 +577,7 @@ public class BlockPI {
 		}
 		return eidLeft;
 	}
-	
+
 	public List<List> evalWI() {
 		List<List> answer = new ArrayList ();
 		List<EntityID> eidsFiring = this.getRequiredEntityIDsForFiring();
@@ -603,7 +602,7 @@ public class BlockPI {
 		answer.add(receivedEids);
 		return answer;
 	}
-	
+
 	public static void calculateDataPassing (List<EntityID> eids, WorkItemRecord wir) {
 		myLog.debug("CALCULATEDATAPASSING");
 		// get datalist
@@ -736,7 +735,7 @@ public class BlockPI {
 		wir.setDataList(dl);
 		myLog.debug("data wir:" + wir.getDataListString());
 	}
-	
+
 	public void processSuccessfulPI () {
 		myLog.debug("PROCESSSUCESSFULPI");
 		List result = this.evalWI();
@@ -776,7 +775,7 @@ public class BlockPI {
 		}
 		myLog.debug("perfsInst2:" + perfsInst.getPerformatives());
 	}
-	
+
 	private List determineFailingEmidsWIR(List<EntityID> eids) {
 		List<EntityMID> emids = new ArrayList<>();
 		for (EntityID eid : eids) {
@@ -792,7 +791,7 @@ public class BlockPI {
 			if (!exists) {
 				emids.add(eid.getEmid());
 			}
-			
+
 		}
 		List returnList = new ArrayList();
 		returnList.add(emids);
@@ -800,12 +799,12 @@ public class BlockPI {
 		returnList.add(block);
 		return returnList;
 	}
-	
+
 	public List timeOutAction () {
 		List<EntityID> unrecEids = this.evalWI().get(0);
 		return this.determineFailingEmidsWIR(unrecEids);
 	}
-	
+
 	public void doNotWaitlongerAction () {
 		// calculateDataPassing
 		List result = this.evalWI();
@@ -846,7 +845,7 @@ public class BlockPI {
 		// persist graphs
 		igraphs.persistGraphs();
 	}
-	
+
 	public static void publishException (List ec) {
 		List<EntityMID> emids = (List<EntityMID>) ec.get(0);
 		String emidsStr = "";
@@ -882,26 +881,26 @@ public class BlockPI {
 
         return resultFin;
     }
-	
+
 	public static void deleteException (String classID, String procletID, String blockID) {
         StoredItem item = DBConnection.getStoredItem(classID, procletID, blockID,
                 Item.ExceptionCaseBlock);
         if (item != null) DBConnection.delete(item);
 	}
-	
+
 	public static void deleteExceptionCaseSelected(String classID, String procletID, String blockID) {
         StoredItem item = DBConnection.getStoredItem(classID, procletID, blockID,
                 Item.ExceptionCaseSelectionBlock);
         if (item != null) DBConnection.delete(item);
 	}
-	
+
 	public static void publishExceptionCase(String classID, String procletID, String blockID) {
         StoredItem item = new StoredItem(classID, procletID, blockID,
                 Item.ExceptionCaseSelectionBlock);
         item.setSelected(true);
         DBConnection.insert(item);
 	}
-	
+
 	public static boolean isExceptionCaseSelectedUser(String classID, String procletID, String blockID) {
         StoredItem item = DBConnection.getSelectedStoredItem(classID, procletID, blockID,
                 Item.ExceptionCaseSelectionBlock);
@@ -915,7 +914,7 @@ public class BlockPI {
             DBConnection.delete(o);
         }
 	}
-	
+
 	public static void deleteAllAvailableEmidsBlockExceptionToUser() {
 		DBConnection.deleteAll(Item.EmidExceptionCaseSelectionBlock);
 	}
@@ -927,13 +926,13 @@ public class BlockPI {
                     Item.EmidExceptionCaseSelectionBlock));
         }
     }
-	
+
 	private void deleteEmidBlockExceptionToUser(String emidStr) {
         String query = "delete from StoredItem as s where s.emid='" + emidStr +
                 "' and s.itemType=" + Item.EmidExceptionCaseSelectionBlock.ordinal();
         DBConnection.execUpdate(query);
 	}
-	
+
 	public static List<EntityMID> getAvailableEmidsBlockExceptionToUser() {
         List<EntityMID> emidList = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelectionBlock);
@@ -942,7 +941,7 @@ public class BlockPI {
         }
 		return emidList;
 	}
-	
+
 	public static void setEmidSelectedBlockException(EntityMID emid) {
         List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelectionBlock);
         for (Object o : items) {
@@ -953,7 +952,7 @@ public class BlockPI {
             }
         }
 	}
-	
+
 	public static List<InteractionNode> getExceptionBlockSelected () {
         List<InteractionNode> nodes = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.ExceptionCaseSelectionBlock);
@@ -965,7 +964,7 @@ public class BlockPI {
         }
 		return nodes;
 	}
-	
+
 	public static void setExceptionBlockSelected(String classID, String procletID, String blockID) {
         DBConnection.setStoredItemsSelected(classID, procletID, blockID,
                 Item.ExceptionCaseSelectionBlock);

@@ -19,6 +19,7 @@ class TestMetaDataMarshal{
     private YMetaData metaData;
     private LocalDate today;
     private LocalDate tomorrow;
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @BeforeEach
 
@@ -46,7 +47,8 @@ class TestMetaDataMarshal{
     @Test
 
     void testToXML(){
-        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String todayStr = DATE_FORMAT.format(today);
+        String tomorrowStr = DATE_FORMAT.format(tomorrow);
         assertEquals("<metaData>" +
                 "<title>Meta Data Test</title>" +
                 "<creator>Peter Pan</creator>" +
@@ -58,9 +60,9 @@ class TestMetaDataMarshal{
                 "<contributor>Lindsay Bradford</contributor>" +
                 "<contributor>Guy Redding</contributor>" +
                 "<coverage>covers this example test</coverage>" +
-                "<validFrom>"+df.format(today)+"</validFrom>" +
-                "<validUntil>"+df.format(tomorrow)+"</validUntil>" +
-                "<created>"+df.format(today)+"</created>" +
+                "<validFrom>" + todayStr + "</validFrom>" +
+                "<validUntil>" + tomorrowStr + "</validUntil>" +
+                "<created>" + todayStr + "</created>" +
                 "<version>1.1</version>" +
                 "<status>This is not production class meta data</status>" +
                 "<persistent>false</persistent>" +

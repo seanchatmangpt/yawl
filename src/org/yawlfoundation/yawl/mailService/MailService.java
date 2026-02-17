@@ -22,13 +22,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
-import org.simplejavamail.email.Email;
+import org.simplejavamail.api.email.Email;
 import org.simplejavamail.email.EmailBuilder;
-import org.simplejavamail.email.EmailPopulatingBuilder;
-import org.simplejavamail.email.Recipient;
-import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.email.Recipient;
+import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
-import org.simplejavamail.mailer.config.TransportStrategy;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
@@ -125,21 +125,21 @@ public class MailService extends InterfaceBWebsideController {
         return params;
     }
 
-    protected void setHost(String host) { _defaults.host = host; }
+    protected void setHost(String host) { _defaults.setHost(host); }
 
-    protected void setPort(int port) { if (port > -1) _defaults.port = port; }
+    protected void setPort(int port) { if (port > -1) _defaults.setPort(port); }
 
     protected void setTransportStrategy(String strategy) {
-        _defaults.strategy = getTransportStrategy(strategy);
+        _defaults.setStrategy(getTransportStrategy(strategy));
     }
 
-    protected void setUser(String user) { _defaults.user = user; }
+    protected void setUser(String user) { _defaults.setUser(user); }
 
-    protected void setPassword(String password) { _defaults.password = password; }
+    protected void setPassword(String password) { _defaults.setPassword(password); }
 
-    protected void setFromName(String name) { _defaults.fromName = name; }
+    protected void setFromName(String name) { _defaults.setFromName(name); }
 
-    protected void setFromAddress(String address) { _defaults.fromAddress = address; }
+    protected void setFromAddress(String address) { _defaults.setFromAddress(address); }
 
 
     protected String sendMail(String toName, String toAddress, String ccAddress,
@@ -147,12 +147,12 @@ public class MailService extends InterfaceBWebsideController {
 
         // set settings from mix of defaults and above params
         MailSettings settings = _defaults.copyOf();
-        settings.toName = toName;
-        settings.toAddress = toAddress;
-        settings.ccAddress = ccAddress;
-        settings.bccAddress = bccAddress;
-        settings.subject = subject;
-        settings.content = content;
+        settings.setToName(toName);
+        settings.setToAddress(toAddress);
+        settings.setCcAddress(ccAddress);
+        settings.setBccAddress(bccAddress);
+        settings.setSubject(subject);
+        settings.setContent(content);
 
         _logger.debug("MailService.sendMail(String...) calling sendMail(MailSettings)" +
                 " with settings = {}", settings.toXML());

@@ -1,12 +1,11 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.yawlfoundation.yawl.integration.mcp.stub.JacksonMcpJsonMapper;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpServer;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServer;
-import org.yawlfoundation.yawl.integration.mcp.stub.StdioServerTransportProvider;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
-import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.sdk.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.server.McpSyncServer;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpServer;
+import org.yawlfoundation.yawl.integration.mcp.sdk.StdioServerTransportProvider;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
@@ -245,8 +244,8 @@ public class YawlMcpServer {
         var password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isBlank()) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable is required.\n" +
-                "Set it with: export YAWL_PASSWORD=YAWL");
+                "YAWL_PASSWORD environment variable is required. " +
+                "See SECURITY.md for credential configuration procedures.");
         }
 
         System.err.println("Starting YAWL MCP Server v" + SERVER_VERSION);

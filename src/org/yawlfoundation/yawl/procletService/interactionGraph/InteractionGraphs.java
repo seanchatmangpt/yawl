@@ -39,21 +39,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InteractionGraphs {
-	
+
 	private String interactionGraphTN = "interactiongraph";
 	private String interactionGraphTNfieldEmid = "emid";
-	
+
 	private String interactionArcTN = "interactionarc";
-	
+
 	private static InteractionGraphs igraphs = null;
 	private List<InteractionGraph> igraphsList = new ArrayList<>();
-	
+
 	private Logger myLog = LogManager.getLogger(InteractionGraphs.class);
-	
+
 	private InteractionGraphs () {
-		
+
 	}
-	
+
 	public static InteractionGraphs getInstance() {
 		if (igraphs == null) {
 			igraphs = new InteractionGraphs ();
@@ -61,31 +61,31 @@ public class InteractionGraphs {
 		}
 		return igraphs;
 	}
-	
+
 	public static InteractionGraphs getNewInstance() {
 		igraphs = new InteractionGraphs ();
 		igraphs.buildFromDB();
 		return igraphs;
 	}
-	
+
 	public void reset() {
 		igraphs = new InteractionGraphs();
 	}
-	
+
 	public void addGraph(InteractionGraph graph) {
 		if (!igraphsList.contains(graph)) {
-			igraphsList.add(graph);			
+			igraphsList.add(graph);
 		}
 	}
-	
+
 	public void removeGraph (InteractionGraph graph) {
 		this.igraphsList.remove(graph);
 	}
-	
+
 	public List<InteractionGraph> getGraphs() {
 		return this.igraphsList;
 	}
-	
+
 	public List<InteractionGraph> getTempGraphs() {
 		List<InteractionGraph> graphs = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) {
@@ -95,7 +95,12 @@ public class InteractionGraphs {
 		}
 		return graphs;
 	}
-	
+
+	/**
+     * Get an interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the InteractionGraph if found, or null if not found
+     */
 	public InteractionGraph getGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue())) {
@@ -104,7 +109,12 @@ public class InteractionGraphs {
 		}
 		return null;
 	}
-	
+
+	/**
+     * Get a temporary interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the temporary InteractionGraph if found, or null if not found
+     */
 	public InteractionGraph getTempGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue() + "TEMP")) {
@@ -113,7 +123,7 @@ public class InteractionGraphs {
 		}
 		return null;
 	}
-	
+
 	public void createTempGraphs() {
 		List<InteractionGraph> tempList = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) {
@@ -123,10 +133,10 @@ public class InteractionGraphs {
 			this.createTempGraph(graph.getEntityMID());
 		}
 	}
-	
+
 	public void deleteTempGraphs() {
 		List<InteractionGraph> remGraphs = new ArrayList<>();
-		for (InteractionGraph graph : this.getGraphs()) { 
+		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().contains("TEMP")) {
 				remGraphs.add(graph);
 			}
@@ -135,18 +145,18 @@ public class InteractionGraphs {
 			this.removeGraph(graph);
 		}
 	}
-	
+
 	public void createTempGraph(EntityMID emid) {
 		myLog.debug("CREATE TEMP GRAPH");
 		InteractionGraph graph = this.getGraph(emid);
-		InteractionGraph tempGraph = new InteractionGraph(new EntityMID(graph.getEntityMID().getValue() + 
+		InteractionGraph tempGraph = new InteractionGraph(new EntityMID(graph.getEntityMID().getValue() +
 				"TEMP"));
 		if (graph != null) {
 			// create a temporary graph for this one
 			// nodes
 			for (InteractionNode node : graph.getNodes()) {
 				InteractionNode newNode = new InteractionNode(node.getClassID(),
-						node.getProcletID(),node.getBlockID()); 
+						node.getProcletID(),node.getBlockID());
 				tempGraph.addNode(newNode);
 				myLog.debug("add node:" + node.getClassID() + "," + node.getProcletID() + "," + node.getBlockID());
 			}
@@ -156,14 +166,14 @@ public class InteractionGraphs {
 				InteractionNode tailNode = null;
 				InteractionNode headNode = null;
 				for (InteractionNode node : tempGraph.getNodes()) {
-					if (node.getClassID().equals(arc.getTail().getClassID()) && 
-							node.getProcletID().equals(arc.getTail().getProcletID()) && 
+					if (node.getClassID().equals(arc.getTail().getClassID()) &&
+							node.getProcletID().equals(arc.getTail().getProcletID()) &&
 							node.getBlockID().equals(arc.getTail().getBlockID())) {
 						tailNode = node;
 						myLog.debug("tail has been set");
 					}
-					if (node.getClassID().equals(arc.getHead().getClassID()) && 
-							node.getProcletID().equals(arc.getHead().getProcletID()) && 
+					if (node.getClassID().equals(arc.getHead().getClassID()) &&
+							node.getProcletID().equals(arc.getHead().getProcletID()) &&
 							node.getBlockID().equals(arc.getHead().getBlockID())) {
 						headNode = node;
 						myLog.debug("head has been set");
@@ -179,7 +189,7 @@ public class InteractionGraphs {
 			this.addGraph(tempGraph);
 		}
 	}
-	
+
 	public List<InteractionArc> getAllArcs () {
 		List<InteractionArc> allArcs = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) {
@@ -187,7 +197,7 @@ public class InteractionGraphs {
 		}
 		return allArcs;
 	}
-	
+
 	// 19022010
 	public void updateGraphPI(String classID, String procletID, String blockID) {
 		myLog.debug("UPDATEGRAPHPI:" + classID + "," + procletID + "," + blockID);
@@ -196,17 +206,17 @@ public class InteractionGraphs {
 				myLog.debug("considering arc:" + arc);
 				InteractionNode head = arc.getHead();
 				InteractionNode tail = arc.getTail();
-				if (head.getClassID().equals(tail.getClassID()) && 
-						head.getProcletID().equals(tail.getProcletID()) && 
-						tail.getClassID().equals(classID) && 
-						tail.getProcletID().equals(procletID) && 
+				if (head.getClassID().equals(tail.getClassID()) &&
+						head.getProcletID().equals(tail.getProcletID()) &&
+						tail.getClassID().equals(classID) &&
+						tail.getProcletID().equals(procletID) &&
 						tail.getBlockID().equals(blockID)) {
 					myLog.debug("first check");
 					// check the types for them
 					ProcletBlock blockHead = ProcletModels.getInstance().getBlockForInteractionNode(head);
 					ProcletBlock blockTail = ProcletModels.getInstance().getBlockForInteractionNode(tail);
-					if (blockHead != null && blockTail != null && 
-							blockTail.getBlockType().equals(BlockType.PI) && 
+					if (blockHead != null && blockTail != null &&
+							blockTail.getBlockType().equals(BlockType.PI) &&
 							blockHead.getBlockType().equals(BlockType.FO)) {
 						myLog.debug("second chek");
 						// found an internal interaction arc
@@ -217,7 +227,7 @@ public class InteractionGraphs {
 			}
 		}
 	}
-	
+
 	// 19022010
 	public void updateGraphFO(String classID, String procletID, String blockID) {
 		myLog.debug("UPDATEGRAPHFO:" + classID + "," + procletID + "," + blockID);
@@ -226,17 +236,17 @@ public class InteractionGraphs {
 				myLog.debug("considering arc:" + arc);
 				InteractionNode head = arc.getHead();
 				InteractionNode tail = arc.getTail();
-				if (head.getClassID().equals(tail.getClassID()) && 
-						head.getProcletID().equals(tail.getProcletID()) && 
-						head.getClassID().equals(classID) && 
-						head.getProcletID().equals(procletID) && 
+				if (head.getClassID().equals(tail.getClassID()) &&
+						head.getProcletID().equals(tail.getProcletID()) &&
+						head.getClassID().equals(classID) &&
+						head.getProcletID().equals(procletID) &&
 						head.getBlockID().equals(blockID)) {
 					myLog.debug("first check");
 					// check the types for them
 					ProcletBlock blockHead = ProcletModels.getInstance().getBlockForInteractionNode(head);
 					ProcletBlock blockTail = ProcletModels.getInstance().getBlockForInteractionNode(tail);
-					if (blockHead != null && blockTail != null && 
-							blockTail.getBlockType().equals(BlockType.PI) && 
+					if (blockHead != null && blockTail != null &&
+							blockTail.getBlockType().equals(BlockType.PI) &&
 							blockHead.getBlockType().equals(BlockType.FO)) {
 						myLog.debug("second check");
 						// found an internal interaction arc
@@ -250,7 +260,7 @@ public class InteractionGraphs {
 			}
 		}
 	}
-	
+
 	public void updateGraphPerfOut(List<List> relationExts) {
 		for (List relationExt : relationExts) {
 			EntityMID emid = (EntityMID) relationExt.get(0);
@@ -267,7 +277,7 @@ public class InteractionGraphs {
 			}
 		}
 	}
-	
+
 	public void updateGraphPerfIn(List<EntityID> eids) {
 		for (EntityID eid : eids) {
 			for (InteractionGraph graph : this.getGraphs()) {
@@ -283,12 +293,12 @@ public class InteractionGraphs {
 			}
 		}
 	}
-	
+
 	public void updateGraphPerfInFailed(List<EntityID> eids) {
 		for (EntityID eid : eids) {
 			for (InteractionGraph graph : this.getGraphs()) {
 				List<InteractionArc> removeArcs = new ArrayList<>();
-				if (graph.getEntityMID().getValue().equals(eid.getEmid().getValue()) || 
+				if (graph.getEntityMID().getValue().equals(eid.getEmid().getValue()) ||
 						graph.getEntityMID().getValue().equals(eid.getEmid().getValue() + "TEMP")) {
 					// arc
 					for (InteractionArc arc : graph.getArcs()) {
@@ -305,10 +315,10 @@ public class InteractionGraphs {
 				}
 			}
 		}
-		
-		
+
+
 	}
-	
+
 	public void updateGraphCaseID(EntityID eid, String newVal, String oldVal) {
 		myLog.debug("UPDATEGRAPHCASEID:" + eid + "," + newVal + "," + oldVal);
 		// remove temp from eid
@@ -346,7 +356,7 @@ public class InteractionGraphs {
 			}
 		}
 	}
-	
+
 	public void buildFromDB () {
         List items = DBConnection.execQuery("select distinct s.emid from StoredItem as s " +
                             "where s.itemType=" + Item.InteractionGraph.ordinal());
@@ -378,7 +388,7 @@ public class InteractionGraphs {
 		this.deleteTempGraphs();
 		this.persistGraphs();
 	}
-	
+
 	public void commitTempGraphEmid (String emid) {
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionGraph> graphsTemp = igraphs.getTempGraphs();
@@ -402,14 +412,14 @@ public class InteractionGraphs {
 		//this.deleteTempGraphs();
 		this.persistGraphs();
 	}
-	
+
 	public synchronized void persistGraphs () {
 		List<InteractionGraph> graphs = this.getGraphs();
 		for (InteractionGraph graph : graphs) {
 			graph.persistProcletModel();
 		}
 	}
-	
+
 	public void deleteGraphsFromDB () {
         DBConnection.deleteAll(Item.InteractionGraph);
         DBConnection.deleteAll("StoredInteractionArc");
@@ -420,8 +430,8 @@ public class InteractionGraphs {
                                 "and s.itemType=" + Item.InteractionGraph.ordinal());
         DBConnection.execUpdate("delete from StoredInteractionArc as s where s.emid like '%TEMP'");
 	}
-	
-	
+
+
 	public static void main(String [] args) {
 		JOptionPane.showMessageDialog(null,
 			    "Block already exists!",

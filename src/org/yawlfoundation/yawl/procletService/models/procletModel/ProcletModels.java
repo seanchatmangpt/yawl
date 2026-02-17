@@ -26,35 +26,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProcletModels {
-	
+
 	private String procletModelTN = "procletmodel";
 	private static ProcletModels pModels = null;
 	private static List<ProcletModel> pModelsList = new ArrayList<>();
-	
+
 	private ProcletModels () {
-		
+
 	}
-	
+
 	public void addProcletModel (ProcletModel pmodel) {
 		if (!this.pModelsList.contains(pmodel)) {
 			this.pModelsList.add(pmodel);
 		}
 	}
-	
+
+	/**
+     * Get a Proclet model by class ID.
+     * @param classID the class identifier
+     * @return the ProcletModel if found, or null if not found
+     */
 	public ProcletModel getProcletClass(String classID) {
 		for (ProcletModel pmodel : this.pModelsList) {
 			if (pmodel.getClassID().equals(classID)) {
 				return pmodel;
-				
+
 			}
 		}
 		return null;
 	}
-	
+
 	public List<ProcletModel> getProcletClasses () {
 		return this.pModelsList;
 	}
-	
+
 	public void deleteProcletModel (ProcletModel pmodel) {
 		if (this.pModelsList.contains(pmodel)) {
 			this.pModelsList.remove(pmodel);
@@ -62,7 +67,7 @@ public class ProcletModels {
 			pmodel.deleteProcletModelFromDB();
 		}
 	}
-	
+
 	public List<ProcletPort> getPorts() {
 		List<ProcletPort> portsTot = new ArrayList<>();
 		for (ProcletModel pmodel : this.pModelsList) {
@@ -71,7 +76,12 @@ public class ProcletModels {
 		}
 		return portsTot;
 	}
-	
+
+	/**
+     * Get a Proclet block for an interaction node.
+     * @param node the interaction node
+     * @return the ProcletBlock if found, or null if not found
+     */
 	public ProcletBlock getBlockForInteractionNode (InteractionNode node) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(node.getClassID())) {
@@ -84,7 +94,13 @@ public class ProcletModels {
 		}
 		return null;
 	}
-	
+
+	/**
+     * Get a Proclet block by class and block ID.
+     * @param classID the class identifier
+     * @param blockID the block identifier
+     * @return the ProcletBlock if found, or null if not found
+     */
 	public ProcletBlock getProcletBlock(String classID, String blockID) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(classID)) {
@@ -97,7 +113,12 @@ public class ProcletModels {
 		}
 		return null;
 	}
-	
+
+	/**
+     * Get ports for a Proclet block in an interaction node.
+     * @param node the interaction node
+     * @return the list of ProcletPorts if found, or null if not found
+     */
 	public List<ProcletPort> getPortsBlock (InteractionNode node) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(node.getClassID())) {
@@ -110,11 +131,11 @@ public class ProcletModels {
 		}
 		return null;
 	}
-	
+
 	public ProcletPort getConnectedPortIn(List<ProcletPort> oPorts, List<ProcletPort> iPorts) {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
-		// step1, 
+		// step1,
 		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : oPorts) {
 			for (PortConnection pconn : pconns) {
@@ -123,7 +144,7 @@ public class ProcletModels {
 				}
 			}
 		}
-		// step2 
+		// step2
 		PortConnection pconnNeeded = null;
 		for (ProcletPort port : iPorts) {
 			for (PortConnection pconn : intermediate) {
@@ -140,11 +161,11 @@ public class ProcletModels {
 		}
 		return null;
 	}
-	
+
 	public ProcletPort getConnectedPortOut(List<ProcletPort> iPorts, List<ProcletPort> oPorts) {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
-		// step1, 
+		// step1,
 		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : iPorts) {
 			for (PortConnection pconn : pconns) {
@@ -153,7 +174,7 @@ public class ProcletModels {
 				}
 			}
 		}
-		// step2 
+		// step2
 		PortConnection pconnNeeded = null;
 		for (ProcletPort port : oPorts) {
 			for (PortConnection pconn : intermediate) {
@@ -170,8 +191,8 @@ public class ProcletModels {
 		}
 		return null;
 	}
-	
-	
+
+
 	public ProcletPort getOutgoingPort (InteractionArc arc) {
 		InteractionNode tail = arc.getTail();
 		InteractionNode head = arc.getHead();
@@ -181,7 +202,7 @@ public class ProcletModels {
 		ProcletPort port = this.getConnectedPortIn(tailPorts, headPorts);
 		return port;
 	}
-	
+
 	public ProcletPort getIncomingPort (InteractionArc arc) {
 		InteractionNode tail = arc.getTail();
 		InteractionNode head = arc.getHead();
@@ -191,7 +212,7 @@ public class ProcletModels {
 		ProcletPort port = this.getConnectedPortOut(headPorts, tailPorts);
 		return port;
 	}
-	
+
 	public static ProcletModels getInstance() {
 		if (pModels == null) {
 			pModels = new ProcletModels();
@@ -204,7 +225,7 @@ public class ProcletModels {
 		}
 		return pModels;
 	}
-	
+
 	public void buildPModelsFromDB () {
         List items = DBConnection.execQuery("select distinct s.classID from StoredProcletBlock as s");
         for (Object o : items) {
@@ -213,21 +234,21 @@ public class ProcletModels {
         	pModelsList.add(pmodel);
         }
 	}
-	
+
 	public void deletePModelsFromDB () {
 		for (ProcletModel pmodel : this.pModelsList) {
 			pmodel.deleteProcletModelFromDB();
 		}
 		//this.pModelsList.clear();
 	}
-	
+
 	public void persistProcletModels () {
 		this.deletePModelsFromDB();
 		for (ProcletModel pmodel : this.pModelsList) {
 			pmodel.persistProcletModel();
 		}
 	}
-	
+
 	public static void main(String [ ] args) {
 		ProcletModels pmodels = ProcletModels.getInstance();
 		List<ProcletModel> plist = pmodels.getProcletClasses();

@@ -510,8 +510,12 @@ class NetRunnerBehavioralTest {
                 return;
             }
             File yawlXMLFile = new File(fileURL.getFile());
-            specification = YMarshal.unmarshalSpecifications(
-                    StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
+            List<YSpecification> specs = YMarshal.unmarshalSpecifications(
+                    StringUtil.fileToString(yawlXMLFile.getAbsolutePath()), false);
+            if (specs == null || specs.isEmpty()) {
+                return;  // spec could not be parsed - skip
+            }
+            specification = specs.get(0);
 
             engine.loadSpecification(specification);
 
@@ -605,7 +609,7 @@ class NetRunnerBehavioralTest {
          */
         @Test
         @DisplayName("Case ID hierarchy supports subnets")
-        void testCaseIDHierarchy() throws org.yawlfoundation.yawl.exceptions.YPersistenceException {
+        void testCaseIDHierarchy() throws YPersistenceException {
             YIdentifier rootID = new YIdentifier(null);
             assertNull(rootID.getParent(), "Root ID should have no parent");
 

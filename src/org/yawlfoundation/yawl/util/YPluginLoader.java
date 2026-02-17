@@ -38,7 +38,7 @@ import java.util.jar.JarFile;
 public class YPluginLoader extends URLClassLoader {
 
     private List<String> _pathList;
-    private Logger _log = LogManager.getLogger(YPluginLoader.class);
+    private static final Logger _log = LogManager.getLogger(YPluginLoader.class);
 
 
     /**
@@ -84,7 +84,7 @@ public class YPluginLoader extends URLClassLoader {
             return plugins;
         }
         catch (IOException e) {
-            _log.error("Error loading classes: {}", e.getMessage());
+            _log.error("Error loading plugin classes from search path: {}", e.getMessage(), e);
             return Collections.emptySet();
         }
     }
@@ -113,7 +113,7 @@ public class YPluginLoader extends URLClassLoader {
             return plugins;
         }
         catch (IOException e) {
-            _log.error("Error loading classes: {}", e.getMessage());
+            _log.error("Error loading internal plugin classes: {}", e.getMessage(), e);
             return Collections.emptySet();
         }
     }
@@ -125,7 +125,7 @@ public class YPluginLoader extends URLClassLoader {
      * @param mask the interface or super class to use as the basis of the load
      * @param instanceName the name of the class to load an instance of
      * @param <T>
-     * @return the loaded instance, or null if a matching class isn't found
+     * @return the loaded instance, or null if no class with the given name is found
      */
     public <T> T getInstance(Class<T> mask, String instanceName) {
         try {
@@ -135,10 +135,14 @@ public class YPluginLoader extends URLClassLoader {
                 }
             }
         }
-        catch (Throwable t) {
-            _log.error("Failed to load class: " + instanceName, t);
+        catch (Error e) {
+            _log.error("Fatal JVM error loading class '{}': {}", instanceName, e.getMessage(), e);
+            throw e;
         }
-        return null ;
+        catch (Exception e) {
+            _log.error("Failed to instantiate class '{}': {}", instanceName, e.getMessage(), e);
+        }
+        return null;
     }
 
 
@@ -200,13 +204,24 @@ public class YPluginLoader extends URLClassLoader {
                 return (Class<T>) c;
             }
         }
+        catch (OutOfMemoryError | StackOverflowError e) {
+            // Critical JVM errors must not be swallowed during class scanning
+            _log.error("Critical JVM error scanning class '{}': {}", className, e.getMessage(), e);
+            throw e;
+        }
         catch (Throwable e) {
-            _log.error(e.getMessage());
+            // Class incompatibility or missing dependency - skip this class during scan
+            _log.debug("Skipping class '{}' during plugin scan: {}", className, e.getMessage());
         }
         return null;
     }
 
-    // returns an instance of c if c implements the specified interface
+    /**
+     * Returns c cast to Class<T> if c implements the specified interface, or null if not.
+     * @param c the class to check
+     * @param interfaceToMatch the interface to check against
+     * @return c cast to Class<T> if it implements the interface, or null if it does not
+     */
     private <T> Class<T> loadIfImplementer(Class<T> c, Class<?> interfaceToMatch)
             throws Throwable {
         for (Class<?> iface : c.getInterfaces()) {

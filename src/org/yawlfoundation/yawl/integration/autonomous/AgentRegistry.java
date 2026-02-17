@@ -127,6 +127,13 @@ public class AgentRegistry {
      * @throws A2AException if registration fails
      */
     public void registerAgent(String agentId, String endpoint, List<String> capabilities, Map<String, Object> metadata) throws A2AException {
+        if (agentId == null || agentId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Agent ID cannot be null or empty");
+        }
+        if (agents.containsKey(agentId)) {
+            throw new A2AException(A2AException.ErrorCode.INVALID_MESSAGE,
+                "Agent already registered with ID: " + agentId);
+        }
         try {
             AgentEntry entry = new AgentEntry(agentId, endpoint, capabilities, metadata);
             agents.put(agentId, entry);

@@ -195,20 +195,20 @@ public class YMetaData {
         String statusXML = status != null ? StringUtil.wrap(status, "status") : "";
         String identifierXML = uniqueID != null ? StringUtil.wrap(uniqueID, "identifier") : "";
 
-        return "<metaData>" +
-                titleXML +
-                creatorsXML +
-                subjectsXML +
-                descriptionXML +
-                contributorsXML +
-                coverageXML +
-                validFromXML +
-                validUntilXML +
-                createdXML +
-                StringUtil.wrap(version.toString(), "version") +
-                statusXML +
-                StringUtil.wrap(String.valueOf(persistent), "persistent") +
-                identifierXML +
-                "</metaData>";
+        return "<metaData>%s%s%s%s%s%s%s%s%s%s%s%s%s</metaData>".formatted(
+                titleXML,
+                creatorsXML,
+                subjectsXML,
+                descriptionXML,
+                contributorsXML,
+                coverageXML,
+                validFromXML,
+                validUntilXML,
+                createdXML,
+                StringUtil.wrap(version.toString(), "version"),
+                statusXML,
+                StringUtil.wrap(String.valueOf(persistent), "persistent"),
+                identifierXML
+            );
     }
 }

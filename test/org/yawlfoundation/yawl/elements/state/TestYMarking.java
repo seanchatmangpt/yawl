@@ -8,6 +8,7 @@ import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
+import org.yawlfoundation.yawl.engine.core.marking.YCoreSetOfMarkings;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
@@ -197,14 +198,17 @@ class TestYMarking{
 
     @Test
 
-    void testDoPowerSetRecursion(){
+    void testDoPowerSetRecursion() throws Exception {
         Set aSet = new HashSet();
         aSet.add("1");
         aSet.add("2");
         aSet.add("3");
         aSet.add("4");
         aSet.add("5");
-        Set powerSet = _marking1.doPowerSetRecursion(aSet);
+        var method = _marking1.getClass().getSuperclass()
+                .getDeclaredMethod("doPowerSetRecursion", Set.class);
+        method.setAccessible(true);
+        Set powerSet = (Set) method.invoke(_marking1, aSet);
         assertTrue(powerSet.size() == Math.pow(2, aSet.size()) - 1);
 //        System.out.println("powerSet: " + powerSet);
     }
@@ -215,7 +219,7 @@ class TestYMarking{
 //System.out.println("_xorJoinAndSplit preset " + _xorJoinAndSplit.getPresetElements());
 //System.out.println("_xorJoinAndSplit postset " + _xorJoinAndSplit.getPostsetElements());
 //System.out.println("marking locations " + _marking7.getLocations());
-        YSetOfMarkings markingSet = _marking7.reachableInOneStep(_xorJoinAndSplit, _orJoin);
+        YCoreSetOfMarkings markingSet = _marking7.reachableInOneStep(_xorJoinAndSplit, _orJoin);
         assertNotNull(markingSet, "reachableInOneStep should return non-null");
         for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
             YMarking marking = (YMarking) iterator.next();
@@ -241,7 +245,7 @@ class TestYMarking{
 
     void testAndJoinOrSplit(){
         _marking7.getLocations().add(new YCondition("ct10", "CT 10", null));
-        YSetOfMarkings markingSet = _marking7.reachableInOneStep(_andJoinOrSplit, _orJoin);
+        YCoreSetOfMarkings markingSet = _marking7.reachableInOneStep(_andJoinOrSplit, _orJoin);
 //        for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
 //            YMarking marking = (YMarking) iterator.next();
 //            List list = marking.getLocations();

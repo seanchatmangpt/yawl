@@ -38,7 +38,7 @@ public class ProcletPort {
 	private Signature cardinality = Signature.ONE;
 	private Signature multiplicity = Signature.ONE;
 	 
-	
+
 	public ProcletPort(String portID, Direction direction, Signature cardinality, Signature multiplicity) {
 		this.portID = portID;
 		this.direction = direction;
@@ -78,6 +78,11 @@ public class ProcletPort {
 		this.multiplicity = mult;
 	}
 	
+	/**
+	 * Get the Direction enum value from its string representation.
+	 * @param direction the direction string ("IN" or "OUT")
+	 * @return the Direction enum value, or null if unrecognized
+	 */
 	public static Direction getDirectionFromString(String direction) {
 		if (direction.equals("IN")) {
 			return Direction.IN;
@@ -107,6 +112,11 @@ public class ProcletPort {
 		return "";
 	}
 	
+	/**
+	 * Get the Signature enum value from its string representation.
+	 * @param sign the signature string ("ZERO", "ONE", "PLUS", "STAR", or "QUEST")
+	 * @return the Signature enum value, or null if unrecognized
+	 */
 	public static Signature getSignatureFromString(String sign) {
 		// ZERO, ONE, PLUS, STAR, QUEST;
 		if (sign.equals("ZERO")) {

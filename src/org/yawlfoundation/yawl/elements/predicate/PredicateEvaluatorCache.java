@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -20,59 +20,73 @@ package org.yawlfoundation.yawl.elements.predicate;
 
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache;
 
 import java.util.Set;
 
 /**
- * @author Michael Adams
- * @date 5/12/12
+ * Stateful-engine thin wrapper around
+ * {@link org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache}.
+ *
+ * <p>This class was refactored as part of Phase 1 engine deduplication
+ * (EngineDedupPlan P1.5).  The shared {@code substitute()} and {@code accept()} logic
+ * now lives in {@link YCorePredicateEvaluatorCache}.  This wrapper adds only the
+ * stateful-tree-specific {@code process()} method whose signature depends on the
+ * stateful {@link YDecomposition} and {@link YIdentifier} types.</p>
+ *
+ * <p>The public static API is unchanged: existing callers continue to work without
+ * modification.</p>
+ *
+ * @author Michael Adams (original)
+ * @author YAWL Foundation (Phase 1 deduplication, 2026)
  */
-public class PredicateEvaluatorCache {
+public class PredicateEvaluatorCache
+        extends YCorePredicateEvaluatorCache<PredicateEvaluator> {
 
-    private static Set<PredicateEvaluator> _evaluators;
+    /** Per-class singleton used by the static delegation methods. */
+    private static final PredicateEvaluatorCache _instance = new PredicateEvaluatorCache();
+
+    private PredicateEvaluatorCache() { }
 
 
+    // -------------------------------------------------------------------------
+    // Abstract method implementation
+    // -------------------------------------------------------------------------
+
+    /**
+     * Loads and returns the full set of stateful-engine predicate evaluators.
+     *
+     * @return the set of evaluators discovered by {@link PredicateEvaluatorFactory};
+     *         never {@code null}
+     */
+    @Override
+    protected Set<PredicateEvaluator> loadEvaluators() {
+        return PredicateEvaluatorFactory.getInstances();
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Static public API (unchanged from original)
+    // -------------------------------------------------------------------------
 
     public static String process(YDecomposition decomposition, String predicate,
-                                    YIdentifier token) {
-        PredicateEvaluator evaluator = getEvaluator(predicate);
+                                 YIdentifier token) {
+        PredicateEvaluator evaluator = _instance.findTypedEvaluator(predicate);
         while (evaluator != null) {
             predicate = evaluator.replace(decomposition, predicate, token);
-            evaluator = getEvaluator(predicate);
+            evaluator = _instance.findTypedEvaluator(predicate);
         }
         return predicate;
     }
 
 
     public static String substitute(String predicate) {
-        PredicateEvaluator evaluator = getEvaluator(predicate);
-        while (evaluator != null) {
-            predicate = evaluator.substituteDefaults(predicate);
-            evaluator = getEvaluator(predicate);
-        }
-        return predicate;
+        return _instance.doSubstitute(predicate);
     }
 
 
     public static boolean accept(String predicate) {
-        return getEvaluator(predicate) != null;
-    }
-
-
-    private static PredicateEvaluator getEvaluator(String predicate) {
-        try {
-            if (_evaluators == null) {
-                _evaluators = PredicateEvaluatorFactory.getInstances();
-            }
-            for (PredicateEvaluator evaluator : _evaluators) {
-                if (evaluator.accept(predicate)) {
-                    return evaluator;
-                }
-            }
-        } catch (Exception e) {
-            // fall through to null
-        }
-        return null;
+        return _instance.doAccept(predicate);
     }
 
 }

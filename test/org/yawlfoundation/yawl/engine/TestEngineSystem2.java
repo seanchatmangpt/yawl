@@ -63,12 +63,14 @@ class TestEngineSystem2 {
             //enabled btop
             Set currWorkItems = _workItemRepository.getEnabledWorkItems();
             YWorkItem anItem = (YWorkItem) currWorkItems.iterator().next();
-            assertTrue(currWorkItems.size() == 1 && anItem.getTaskID().equals("b-top"), "currWorkItems "+ currWorkItems +
+            assertTrue(currWorkItems.size() == 1 && anItem.getTaskID().equals("b-top"),
+                    "currWorkItems "+ currWorkItems +
                     " anItem.getTaskID() " + anItem.getTaskID());
             Thread.sleep(_sleepTime);
             //fire btop
             anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
-            assertTrue(anItem.getTaskID().equals("b-top"), "Expected b-top: got: " + anItem.getTaskID());
+            assertTrue(anItem.getTaskID().equals("b-top"),
+                    "Expected b-top: got: " + anItem.getTaskID());
             assertTrue(anItem.getCaseID().toString().indexOf(".")>0);
 
             currWorkItems = _workItemRepository.getEnabledWorkItems();

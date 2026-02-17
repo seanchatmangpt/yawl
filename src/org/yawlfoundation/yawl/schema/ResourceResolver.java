@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -37,6 +39,8 @@ import java.util.Scanner;
  * @date 8/12/14
  */
 public class ResourceResolver implements LSResourceResolver {
+
+    private static final Logger _log = LogManager.getLogger(ResourceResolver.class);
 
     private Map<URL, String> cache;
 
@@ -60,11 +64,13 @@ public class ResourceResolver implements LSResourceResolver {
             return new Input(publicId, systemId, stringToStream(content));
         }
         catch (MalformedURLException mue) {
-            mue.printStackTrace();
+            _log.error("Malformed URL resolving schema resource: namespaceURI='{}', systemId='{}'",
+                    namespaceURI, systemId, mue);
             return null;
         }
         catch (IOException ioe) {
-            ioe.printStackTrace();
+            _log.error("I/O error resolving schema resource: namespaceURI='{}', systemId='{}'",
+                    namespaceURI, systemId, ioe);
             return null;
         }
     }
