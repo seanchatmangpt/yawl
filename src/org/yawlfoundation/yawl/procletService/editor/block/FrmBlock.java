@@ -56,15 +56,15 @@ public class FrmBlock extends DesignInternalFrame {
   private javax.swing.JPanel bottomPanel;
   private javax.swing.JButton buttonCommit;
   private javax.swing.JComboBox comboBoxAvEmids;
-  List<JPanel> createItemPanelList = new ArrayList<JPanel>();
-  List<JPanel> nonCreateItemPanelList = new ArrayList<JPanel>();
-  List<JPanel> fragmentItemPanelList = new ArrayList<JPanel>();
-  List<JSpinner> createItemSpinnerList = new ArrayList<JSpinner>();
-  List<JCheckBox> fragmentItemCheckBoxList = new ArrayList<JCheckBox>();
-  List<JCheckBox> nonCreateItemCheckBoxList = new ArrayList<JCheckBox>();
-  List<List> createItemItemList = new ArrayList<List>();
-  List<List> fragmentItemItemList = new ArrayList<List>();
-  List<List> nonCreateItemItemList = new ArrayList<List>();
+  List<JPanel> createItemPanelList = new ArrayList<>();
+  List<JPanel> nonCreateItemPanelList = new ArrayList<>();
+  List<JPanel> fragmentItemPanelList = new ArrayList<>();
+  List<JSpinner> createItemSpinnerList = new ArrayList<>();
+  List<JCheckBox> fragmentItemCheckBoxList = new ArrayList<>();
+  List<JCheckBox> nonCreateItemCheckBoxList = new ArrayList<>();
+  List<List> createItemItemList = new ArrayList<>();
+  List<List> fragmentItemItemList = new ArrayList<>();
+  List<List> nonCreateItemItemList = new ArrayList<>();
   private javax.swing.JButton finishSelButton;
   private javax.swing.JLabel labelCreatePanel;
   private javax.swing.JLabel labelFragmentPanel;
@@ -98,8 +98,8 @@ public class FrmBlock extends DesignInternalFrame {
   private Transformer edgeLabel = null;
   
   private JButton selectButton = new javax.swing.JButton();
-  private List<JRadioButton> initRadioButtons = new ArrayList<JRadioButton>();
-  private Map<JRadioButton,InteractionNode> initRadioButtonMapping = new HashMap<JRadioButton,InteractionNode>();
+  private List<JRadioButton> initRadioButtons = new ArrayList<>();
+  private Map<JRadioButton,InteractionNode> initRadioButtonMapping = new HashMap<>();
   private InteractionNode selectedNode = null;
   // init panel
   private javax.swing.JLabel initMessage;
@@ -646,7 +646,7 @@ private void initComponents() {
 //      vv = new VisualizationViewer(new CircleLayout(pconnsInst));
       
       // options
-      List<String> options = new ArrayList<String>();
+      List<String> options = new ArrayList<>();
       options.add("FRLayout");
       options.add("KKLayout");
       options.add("CircleLayout");
