@@ -431,10 +431,8 @@ public class YNetRunner {
      */
     private boolean deadLocked() {
         for (YNetElement location : _caseIDForNet.getLocations()) {
-            if (location instanceof YExternalNetElement) {
-                if (((YExternalNetElement) location).getPostsetElements().size() > 0) {
-                    return true;
-                }
+            if (location instanceof YExternalNetElement ene && ene.getPostsetElements().size() > 0) {
+                return true;
             }
         }
         return false;
