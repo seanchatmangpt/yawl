@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.stub;
 
+import java.util.Map;
 import java.util.function.BiFunction;
 
 /**

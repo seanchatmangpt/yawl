@@ -11,7 +11,10 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite
 @SuiteDisplayName("Stateless Test Suite")
 @SelectClasses({
-    TestStatelessEngine.class
+    TestStatelessEngine.class,
+    TestStatelessYNet.class,
+    TestStatelessMarshalling.class,
+    TestStatelessCaseMonitor.class
 })
 public class StatelessTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

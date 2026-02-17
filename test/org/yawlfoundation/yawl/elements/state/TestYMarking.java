@@ -220,8 +220,8 @@ class TestYMarking{
         for (Iterator iterator = markingSet.getMarkings().iterator(); iterator.hasNext();) {
             YMarking marking = (YMarking) iterator.next();
             List list = marking.getLocations();
-            assertTrue("each marking must have 5 locations (XOR join removes 1, AND split adds 3), got " + list.size() + ": " + list,
-                    list.size() == 5);
+            assertTrue(list.size() == 5,
+                    "each marking must have 5 locations (XOR join removes 1, AND split adds 3), got " + list.size() + ": " + list);
             List conditionsList = new Vector();
             for (int i = 0; i < _conditionArr.length; i++) {
                   conditionsList.add(_conditionArr[i]);

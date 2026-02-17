@@ -6,6 +6,7 @@ import org.yawlfoundation.yawl.integration.mcp.stub.McpServer;
 import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServer;
 import org.yawlfoundation.yawl.integration.mcp.stub.StdioServerTransportProvider;
 import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
@@ -14,7 +15,6 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import java.io.IOException;
 

@@ -387,28 +387,28 @@ public final class McpSchema {
         }
 
         public CompleteCompletion getCompletion() { return completion; }
-    }
 
-    /**
-     * Completion data.
-     *
-     * @deprecated Replace with official MCP SDK
-     */
-    @Deprecated
-    public static final class CompleteCompletion {
-        private final List<String> values;
-        private final int total;
-        private final boolean hasMore;
+        /**
+         * Completion data.
+         *
+         * @deprecated Replace with official MCP SDK
+         */
+        @Deprecated
+        public static final class CompleteCompletion {
+            private final List<String> values;
+            private final int total;
+            private final boolean hasMore;
 
-        public CompleteCompletion(List<String> values, int total, boolean hasMore) {
-            this.values = values;
-            this.total = total;
-            this.hasMore = hasMore;
+            public CompleteCompletion(List<String> values, int total, boolean hasMore) {
+                this.values = values;
+                this.total = total;
+                this.hasMore = hasMore;
+            }
+
+            public List<String> getValues() { return values; }
+            public int getTotal() { return total; }
+            public boolean hasMore() { return hasMore; }
         }
-
-        public List<String> getValues() { return values; }
-        public int getTotal() { return total; }
-        public boolean hasMore() { return hasMore; }
     }
 
     /**

@@ -109,7 +109,7 @@ class TestStatelessEngine implements YCaseEventListener, YWorkItemEventListener 
         _engine.launchCase(spec);
 
         boolean completed = _caseCompleteLatch.await(CASE_COMPLETE_TIMEOUT_SEC, TimeUnit.SECONDS);
-        assertTrue("Case did not complete within " + CASE_COMPLETE_TIMEOUT_SEC + "s", completed);
+        assertTrue(completed, "Case did not complete within " + CASE_COMPLETE_TIMEOUT_SEC + "s");
         assertTrue(_caseCompleted, "Case completion flag not set");
     }
 

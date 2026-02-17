@@ -3,12 +3,12 @@ package org.yawlfoundation.yawl.integration.mcp.spec;
 import org.yawlfoundation.yawl.integration.mcp.stub.McpServerFeatures;
 import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServerExchange;
 import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

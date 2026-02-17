@@ -41,6 +41,15 @@ public interface McpSyncServer extends AutoCloseable {
      */
     void sendLogNotification(String level, String message);
 
+    /**
+     * Send a logging notification to the client.
+     *
+     * @param notification the logging notification
+     */
+    default void loggingNotification(McpSchema.LoggingMessageNotification notification) {
+        sendLogNotification(notification.getLevel().name(), notification.getData());
+    }
+
     @Override
     default void close() {
         closeGracefully();
