@@ -126,7 +126,36 @@
                     <include>**/*.properties</include>
                 </includes>
             </resource>
+            <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->
+            <resource>
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </resource>
         </resources>
+
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.yawl</include>
+                    <include>**/*.ywl</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xsd</include>
+                </includes>
+            </testResource>
+            <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
+            <testResource>
+                <directory>../build/properties</directory>
+                <includes>
+                    <include>hibernate.cfg.xml</include>
+                    <include>*.properties</include>
+                </includes>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>
@@ -145,11 +174,27 @@
                         <exclude>**/*.png</exclude>
                         <exclude>**/*.gif</exclude>
                     </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.ywl</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

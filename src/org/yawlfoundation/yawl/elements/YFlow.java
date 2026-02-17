@@ -227,9 +227,7 @@ public class YFlow implements Comparable<YFlow> {
         String docsXML = _documentation != null ?
             StringUtil.wrap(_documentation, "documentation") : "";
 
-        return """
-            <flowsInto><nextElementRef id="%s"/>%s%s%s</flowsInto>
-            """.formatted(
+        return "<flowsInto><nextElementRef id=\"%s\"/>%s%s%s</flowsInto>".formatted(
                 _nextElement.getID(),
                 predicateXML,
                 defaultFlow,

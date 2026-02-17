@@ -50,6 +50,9 @@ public class YTimerParameters {
     // the ways in which timer parameters may be expressed
     public enum TimerType { Duration, Expiry, Interval, LateBound, Nil }
 
+    // the trigger conditions for a timer - when the timer activates relative to work item state
+    public enum TriggerType { OnEnabled, OnExecuting }
+
     private String _variableName;                         // late bound net variable
     private Instant _expiryTime;                          // date param
     private Duration _duration;                           // duration param

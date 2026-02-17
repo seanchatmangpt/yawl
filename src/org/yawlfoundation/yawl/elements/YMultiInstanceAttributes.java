@@ -224,18 +224,14 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
     public String toXML() {
         String outputXML = "";
         if (_remoteOutputQuery != null) {
-            outputXML = """
-                <miDataOutput><formalOutputExpression query="%s"/><outputJoiningExpression query="%s"/><resultAppliedToLocalVariable>%s</resultAppliedToLocalVariable></miDataOutput>
-                """.formatted(
+            outputXML = "<miDataOutput><formalOutputExpression query=\"%s\"/><outputJoiningExpression query=\"%s\"/><resultAppliedToLocalVariable>%s</resultAppliedToLocalVariable></miDataOutput>".formatted(
                     JDOMUtil.encodeEscapes(_remoteOutputQuery),
                     JDOMUtil.encodeEscapes(_outputProcessingQuery),
                     getMIOutputAssignmentVar()
                 );
         }
 
-        return """
-            %s%s%s<creationMode code="%s"/><miDataInput><expression query="%s"/><splittingExpression query="%s"/>%s</miDataInput>%s
-            """.formatted(
+        return "%s%s%s<creationMode code=\"%s\"/><miDataInput><expression query=\"%s\"/><splittingExpression query=\"%s\"/>%s</miDataInput>%s".formatted(
                 StringUtil.wrap(JDOMUtil.encodeEscapes(getMinInstancesQuery()), "minimum"),
                 StringUtil.wrap(JDOMUtil.encodeEscapes(getMaxInstancesQuery()), "maximum"),
                 StringUtil.wrap(JDOMUtil.encodeEscapes(getThresholdQuery()), "threshold"),

@@ -226,7 +226,7 @@ class TestYTimerParametersParsing {
     @DisplayName("setVariableName changes type to LateBound")
     void testSetVariableNameChangesTypeToLateBound() {
         YTimerParameters timer = new YTimerParameters(
-                YWorkItemTimer.Trigger.OnEnabled, Instant.now(), YWorkItemTimer.Trigger.OnEnabled);
+                YWorkItemTimer.Trigger.OnEnabled, Instant.now());
         // Reuse timer with different set
         timer.setVariableName("aVariable");
         assertEquals(YTimerParameters.TimerType.LateBound, timer.getTimerType(),

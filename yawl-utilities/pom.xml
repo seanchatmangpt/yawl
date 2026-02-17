@@ -84,6 +84,14 @@
         </resources>
 
         <plugins>
+            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -101,11 +109,48 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <!-- Only compile tests that depend solely on utilities module classes -->
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
+                    <!-- Disable annotation processing to prevent JMH from generating stale files -->
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                    </compilerArgs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-proc:none</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Only run tests that depend solely on utilities module classes -->
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</include>
+                        <include>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</include>
+                    </includes>
+                    <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
