@@ -196,7 +196,7 @@ public final class AgentFactory {
                 "- Input data summary: %s\n\n" +
                 "Should this agent handle this work item? Answer with exactly YES or NO. " +
                 "If YES, add a brief reason in one sentence. If NO, add a brief reason.",
-                capability.getDescription(),
+                capability.description(),
                 taskName,
                 workItem.getCaseID(),
                 inputSummary);
