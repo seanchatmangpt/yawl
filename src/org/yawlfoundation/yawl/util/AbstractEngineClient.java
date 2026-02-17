@@ -278,6 +278,7 @@ public abstract class AbstractEngineClient {
         try {
             return successful(_interfaceAClient.checkConnection(sessionHandle));
         } catch (IOException ioe) {
+            _log.error("IO error checking admin session for handle '{}': {}", sessionHandle, ioe.getMessage(), ioe);
             return false;
         }
     }
@@ -427,7 +428,7 @@ public abstract class AbstractEngineClient {
                                                          getSessionHandle()) ;
         }
         catch (Exception e) {
-            _log.error("Exception attempting to retrieve work item list from engine");
+            _log.error("Exception attempting to retrieve work item list from engine for case '{}'", caseID, e);
         }
         return null;
     }

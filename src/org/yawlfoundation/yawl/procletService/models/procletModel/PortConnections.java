@@ -91,7 +91,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return this.pcs;
 	}
 	
-	public PortConnection getPortConnectionIPort (PortConnection iPort) {
+	/**
+     * Get a port connection by input port.
+     * @param iPort the input port
+     * @return the PortConnection if found, or null if not found
+     */
+    public PortConnection getPortConnectionIPort (PortConnection iPort) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection next = it.next();
@@ -102,7 +107,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return null;
 	}
 	
-	public PortConnection getPortConnectionIPort (String iPortID) {
+	/**
+     * Get a port connection by input port ID.
+     * @param iPortID the input port ID
+     * @return the PortConnection if found, or null if not found
+     */
+    public PortConnection getPortConnectionIPort (String iPortID) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection next = it.next();
@@ -113,7 +123,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return null;
 	}
 	
-	public PortConnection getPortConnectionOPort (PortConnection oPort) {
+	/**
+     * Get a port connection by output port.
+     * @param oPort the output port
+     * @return the PortConnection if found, or null if not found
+     */
+    public PortConnection getPortConnectionOPort (PortConnection oPort) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection next = it.next();
@@ -124,7 +139,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return null;
 	}
 	
-	public PortConnection getPortConnectionOPort (String oPortID) {
+	/**
+     * Get a port connection by output port ID.
+     * @param oPortID the output port ID
+     * @return the PortConnection if found, or null if not found
+     */
+    public PortConnection getPortConnectionOPort (String oPortID) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection next = it.next();
@@ -135,7 +155,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return null;
 	}
 	
-	public ProcletPort getIPort(String portID) {
+	/**
+     * Get an input port by port ID.
+     * @param portID the port ID
+     * @return the ProcletPort if found, or null if not found
+     */
+    public ProcletPort getIPort(String portID) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection port = it.next();
@@ -146,7 +171,12 @@ public class PortConnections extends DirectedSparseGraph {
 		return null;
 	}
 	
-	public ProcletPort getOPort(String portID) {
+	/**
+     * Get an output port by port ID.
+     * @param portID the port ID
+     * @return the ProcletPort if found, or null if not found
+     */
+    public ProcletPort getOPort(String portID) {
 		Iterator<PortConnection> it = pcs.iterator();
 		while (it.hasNext()) {
 			PortConnection port = it.next();

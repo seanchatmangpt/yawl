@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -27,6 +29,8 @@ import java.lang.reflect.Method;
  * @author Mike Fowler (Nov 2, 2005)
  */
 public class DynamicValue {
+
+    private static final Logger _log = LogManager.getLogger(DynamicValue.class);
 
     private String _property;    // a data member name of the object
     private Object _target;      // the object containing the data member
@@ -69,10 +73,12 @@ public class DynamicValue {
                         break;
                     }
                     catch (IllegalAccessException e) {
-                        // fall through to empty string
+                        _log.debug("Cannot access method '{}' on '{}', returning empty string: {}",
+                                method.getName(), _target.getClass().getSimpleName(), e.getMessage());
                     }
                     catch (InvocationTargetException e) {
-                        // fall through to empty string
+                        _log.debug("Method '{}' on '{}' threw an exception, returning empty string: {}",
+                                method.getName(), _target.getClass().getSimpleName(), e.getMessage());
                     }
                 }
             }

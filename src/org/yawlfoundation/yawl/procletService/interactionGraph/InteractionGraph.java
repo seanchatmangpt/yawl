@@ -85,7 +85,14 @@ public class InteractionGraph extends DirectedSparseGraph{
 		return nodes;
 	}
 	
-	public InteractionNode getNode(String classID, String procletID, String blockID) {
+	/**
+     * Get an interaction node by class, proclet, and block ID.
+     * @param classID the class ID
+     * @param procletID the proclet ID
+     * @param blockID the block ID
+     * @return the InteractionNode if found, or null if not found
+     */
+    public InteractionNode getNode(String classID, String procletID, String blockID) {
 		for (InteractionNode node : this.getNodes()) {
 			if (node.getClassID().equals(classID) && 
 					node.getProcletID().equals(procletID) && 
@@ -104,7 +111,17 @@ public class InteractionGraph extends DirectedSparseGraph{
 		return true;
 	}
 	
-	public InteractionArc getArc(String tailClassID, String tailProcletID, String tailBlockID, String headClassID, String headProcletID, String headBlockID) {
+	/**
+     * Get an interaction arc by tail and head node identifiers.
+     * @param tailClassID the tail class ID
+     * @param tailProcletID the tail proclet ID
+     * @param tailBlockID the tail block ID
+     * @param headClassID the head class ID
+     * @param headProcletID the head proclet ID
+     * @param headBlockID the head block ID
+     * @return the InteractionArc if found, or null if not found
+     */
+    public InteractionArc getArc(String tailClassID, String tailProcletID, String tailBlockID, String headClassID, String headProcletID, String headBlockID) {
 		for (InteractionArc arc : this.getArcs()) {
 			if (arc.getTail().getClassID().equals(tailClassID) && 
 					arc.getTail().getProcletID().equals(tailProcletID) && 

@@ -140,7 +140,7 @@ public class BlockPI {
 					}
 				}
 				catch (Exception e) {
-					e.printStackTrace();
+					myLog.error("Exception in BlockPI wait loop", e);
 				}
 			} // while true
 			// woken up again
@@ -165,7 +165,7 @@ public class BlockPI {
 					boolean userDecision = true;
 					while (true) {
 						try {
-							System.out.println("user decision");
+							myLog.debug("user decision");
 							Thread.sleep(500);
 							if (BlockPI.isExceptionCaseSelectedUser(wir.getSpecURI(), wir.getCaseID(), wir.getTaskID())) {
 								myLog.debug("user decision:EXCEPTION");
@@ -179,7 +179,7 @@ public class BlockPI {
 							}
 						}
 						catch (Exception e) {
-							e.printStackTrace();
+							myLog.error("Exception in BlockPI user decision wait loop", e);
 						}
 					}
 					if (userDecision) {
@@ -195,7 +195,6 @@ public class BlockPI {
 						break;
 					}
 					else {
-						System.out.println("user wait longer");
 						myLog.debug("user wait longer");
 						BlockPI.deleteExceptionCaseSelected(wir.getSpecURI(),wir.getCaseID(),wir.getTaskID()+"TIME");
 						// wait again
@@ -271,7 +270,7 @@ public class BlockPI {
 										}
 									}
 									catch (Exception e) {
-										e.printStackTrace();
+										myLog.error("Exception in BlockPI inner wait loop", e);
 									}
 								} // while true
 						}
@@ -457,7 +456,7 @@ public class BlockPI {
 								trigger.send("something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in BlockPI graph extension", e);
 							}
 							// and continue building
 						}

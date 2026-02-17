@@ -791,8 +791,8 @@ public class YEngineRestorer {
                     if (item != null) list.add(item);
                 }
                 catch (ClassCastException cce) {
-                    // ignore this object
-                    _log.warn("Ignored object while restoring: " + cce.getMessage());
+                    _log.warn("Skipping object during engine restore - unexpected type '{}': {}",
+                            obj.getClass().getName(), cce.getMessage());
                 }
             }
         }

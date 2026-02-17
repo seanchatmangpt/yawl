@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,6 +32,7 @@ import java.util.Set;
  */
 public class PluginLoaderUtil {
 
+    private static final Logger _log = LogManager.getLogger(PluginLoaderUtil.class);
     private String _externalPaths;
 
     public PluginLoaderUtil() { }
@@ -54,6 +58,7 @@ public class PluginLoaderUtil {
             return clazz.getDeclaredConstructor().newInstance();
         }
         catch (Throwable t) {
+            _log.error("Failed to instantiate plugin class '{}': {}", clazz.getName(), t.getMessage(), t);
             return null;
         }
     }
@@ -66,7 +71,8 @@ public class PluginLoaderUtil {
                 instanceSet.add(clazz.getDeclaredConstructor().newInstance());
             }
             catch (Throwable t) {
-                // do nothing
+                _log.error("Failed to instantiate plugin class '{}' during bulk loading; skipping: {}",
+                        clazz.getName(), t.getMessage(), t);
             }
         }
         return instanceSet;

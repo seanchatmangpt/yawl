@@ -102,7 +102,7 @@ public class YNetRunner {
          this();
 
         // initialise and persist case identifier - if caseID is null, a new one is supplied
-        _caseIDForNet = new YIdentifier(caseID);   
+        _caseIDForNet = new YIdentifier(caseID);
         if (pmgr != null) pmgr.storeObject(_caseIDForNet);
 
         // get case data from external data gateway, if set for this specification
@@ -286,7 +286,7 @@ public class YNetRunner {
 
     public void setStartTime(long time) { _startTime = time ; }
 
-    
+
     /************************************************/
 
 
@@ -319,7 +319,7 @@ public class YNetRunner {
             if ((_engine != null) && isRootNet()) {
                 announceCaseCompletion();
                 if (endOfNetReached() && warnIfNetNotEmpty()) {
-                    _cancelling = true;                       // flag its not a deadlock                                   
+                    _cancelling = true;                       // flag its not a deadlock
                 }
 
                 // call the external data source, if its set for this specification
@@ -337,7 +337,7 @@ public class YNetRunner {
                         logData = new YLogDataItemList(new YLogDataItem("Predicate",
                                      "OnCompletion", predicate, "string"));
                     }
-                }                
+                }
                 YEventLogger.getInstance().logNetCompleted(_caseIDForNet, logData);
             }
             if (! _cancelling && deadLocked()) notifyDeadLock(pmgr);
@@ -629,7 +629,7 @@ public class YNetRunner {
                         YAnnouncement announcement = fireAtomicTask(atomic, groupID, pmgr);
                         if (announcement != null) {
                             _announcements.add(announcement);
-                        }    
+                        }
                         enabledTasks.add(atomic) ;
                     }
                 }
@@ -665,7 +665,7 @@ public class YNetRunner {
     private void fireCompositeTask(YCompositeTask task, YPersistenceManager pmgr)
                       throws YDataStateException, YStateException, YQueryException,
                              YPersistenceException {
-        
+
         if (! _busyTasks.contains(task)) {     // don't proceed if task already started
             _busyTasks.add(task);
             _busyTaskNames.add(task.getID());
@@ -711,11 +711,12 @@ public class YNetRunner {
             }
         }
         catch (YStateException yse) {
-            // ignore - task already removed due to alternate path or case completion
+            _logger.debug("Task already removed during net execution (alternate path or case completion): {}",
+                    yse.getMessage());
         }
     }
 
-    
+
     private void withdrawEnabledTask(YTask task, YPersistenceManager pmgr)
                       throws YPersistenceException {
 
@@ -772,8 +773,8 @@ public class YNetRunner {
                 allowDynamicCreation, false);
 
         if (atomicTask.getDataMappingsForEnablement().size() > 0) {
-            Element data = atomicTask.prepareEnablementData();            
-			      workItem.setData(pmgr, data);
+            Element data = atomicTask.prepareEnablementData();
+		      workItem.setData(pmgr, data);
         }
 
         // copy in relevant data from the task's decomposition
@@ -798,7 +799,7 @@ public class YNetRunner {
 
         // persist the changes
         if (pmgr != null) pmgr.updateObject(workItem);
-        
+
         return workItem;
     }
 
@@ -1167,7 +1168,7 @@ public class YNetRunner {
 
 
     // **** TIMER STATE VARIABLES **********//
-    
+
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
         _timerStates = new Hashtable<String, String>();
@@ -1205,7 +1206,7 @@ public class YNetRunner {
         }
     }
 
-    
+
     public Map<String, String> get_timerStates() {
         return _timerStates;
     }

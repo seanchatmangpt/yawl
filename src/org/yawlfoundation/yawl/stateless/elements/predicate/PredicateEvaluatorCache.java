@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.stateless.elements.predicate;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 
@@ -29,6 +31,7 @@ import java.util.Set;
  */
 public class PredicateEvaluatorCache {
 
+    private static final Logger _log = LogManager.getLogger(PredicateEvaluatorCache.class);
     private static Set<PredicateEvaluator> _evaluators;
 
 
@@ -70,7 +73,7 @@ public class PredicateEvaluatorCache {
                 }
             }
         } catch (Exception e) {
-            // fall through to null
+            _log.error("PredicateEvaluator lookup failed for predicate '{}': {}", predicate, e.getMessage(), e);
         }
         return null;
     }
