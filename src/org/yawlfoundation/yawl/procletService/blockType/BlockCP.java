@@ -426,7 +426,7 @@ public class BlockCP {
 			List<Element> children = eidData.getChildren("entity");
 			for (Element child : children) {
 				Element emid = child.getChild("entity_id");
-				String value = emid.getValue().trim();
+				String value = emid.getValue().strip();
 				returnList.add(new EntityMID(value));
 			}
 		}

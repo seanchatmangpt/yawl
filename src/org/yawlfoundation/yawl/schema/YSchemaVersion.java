@@ -96,7 +96,7 @@ public enum YSchemaVersion {
     public String releaseNS() { return releaseNS; }
 
     public String releaseSchemaLocation() {
-        return String.format("%s %s/%s", releaseNS, releaseNS, getSchemaFileName());
+        return "%s %s/%s".formatted(releaseNS, releaseNS, getSchemaFileName());
     }
 
 
@@ -131,7 +131,7 @@ public enum YSchemaVersion {
 
 
     public String getSchemaLocation() {
-        return String.format("%s %s", getNameSpace(), getSchemaURL());
+        return "%s %s".formatted(getNameSpace(), getSchemaURL());
     }
 
 
@@ -143,8 +143,8 @@ public enum YSchemaVersion {
     // generate version-specific header    
     public String getHeader() {
         return isBetaVersion() ?
-                String.format(headerTemplate, Beta7, betaNS, betaSchemaLocation) :
-                String.format(headerTemplate, _name, releaseNS, releaseSchemaLocation());
+                headerTemplate.formatted(Beta7, betaNS, betaSchemaLocation) :
+                headerTemplate.formatted(_name, releaseNS, releaseSchemaLocation());
     }
 
 

@@ -194,7 +194,7 @@ public class BlockPICreate {
 			for (Element child : children) {
 				myLog.debug("have entity");
 				Element emid = child.getChild("entity_id");
-				String value = emid.getValue().trim();
+				String value = emid.getValue().strip();
 				myLog.debug("value:" + value);
 				// check if this one occurs in eids
 				boolean match = false;

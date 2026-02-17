@@ -770,7 +770,7 @@ public class YLogServer {
                     instance.getDataItemID(),
                     instance.getDataItem().toXMLShort(),
                     dataTypeXML
-                ).trim();
+                ).strip();
     }
 
 

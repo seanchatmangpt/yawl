@@ -643,7 +643,7 @@ public class BlockPI {
 				for (Element entityElt : entitiesElts) {
 					// get the name
 					Element emid = entityElt.getChild("entity_id");
-					String value = emid.getValue().trim();
+					String value = emid.getValue().strip();
 					myLog.debug("value:" + value);
 					// check if the data of the wir we also have an emid with the same name
 					// also check if entityElt is RELEVANT!!! so is it contained in eids
@@ -660,7 +660,7 @@ public class BlockPI {
 						for (Element child : children) {
 							myLog.debug("have entity");
 							Element emidData = child.getChild("entity_id");
-							String valueData = emidData.getValue().trim();
+							String valueData = emidData.getValue().strip();
 							myLog.debug("entity_id:" + valueData);
 							if (valueData.equals(value)) {
 								// match
@@ -668,14 +668,14 @@ public class BlockPI {
 								// add the data
 								List<Element> nvsPerf = entityElt.getChildren("name_value_pair");
 								for (Element nvPerf : nvsPerf) {
-									String nameNvPerf = nvPerf.getChild("name").getValue().trim();
-									String valueNvPerf = nvPerf.getChild("value").getValue().trim();
+									String nameNvPerf = nvPerf.getChild("name").getValue().strip();
+									String valueNvPerf = nvPerf.getChild("value").getValue().strip();
 									// find out whether I have an nv in the wir with the same name
 									List<Element> nvsWir = child.getChildren("name_value_pair");
 									boolean match2 = false;
 									for (Element nvWir : nvsWir) {
-										String nameNvWir = nvWir.getChild("name").getValue().trim();
-										String valueNvWir = nvWir.getChild("value").getValue().trim();
+										String nameNvWir = nvWir.getChild("name").getValue().strip();
+										String valueNvWir = nvWir.getChild("value").getValue().strip();
 										if (nameNvWir.equals(nameNvPerf)) {
 											// have a match
 											match2 = true;
