@@ -702,7 +702,7 @@ public class YNetRunner {
         _enabledTasks.remove(task);
         _enabledTaskNames.remove(task.getID());
 
-        //  remove the withdrawn task from persistence
+        //  remove the withdrawn task from persistence and in-memory repository
         YWorkItem wItem = _workItemRepository.get(_caseID, task.getID());
         if (wItem != null) {               //may already have been removed by task.cancel
 
@@ -719,6 +719,9 @@ public class YNetRunner {
             if (wItem.hasTimerStarted()) {
                 YTimer.getInstance().cancelTimerTask(wItem.getIDString());
             }
+
+            // remove from in-memory repository so it won't appear as available
+            _workItemRepository.removeWorkItemFamily(wItem);
 
             if (pmgr != null) {
                 pmgr.deleteObject(wItem);
