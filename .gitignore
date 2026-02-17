@@ -39,3 +39,4 @@ build/3rdParty/
 .env.*
 !.env.example
 !.env.*.example
+javac.*.args
