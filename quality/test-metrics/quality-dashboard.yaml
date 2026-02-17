@@ -1,0 +1,220 @@
+# YAWL v6.0.0 Quality Dashboard Configuration
+# =============================================
+# Aggregates all quality signals into a unified dashboard view.
+# Rendered by: CI pipeline report job (see ci-cd/github-actions/workflows/)
+#
+# Signal sources:
+#   1. JaCoCo   - line/branch/method coverage per module
+#   2. PIT      - mutation kill rate per package
+#   3. Surefire - test count, pass rate, execution time
+#   4. OWASP DC - CVE count by severity
+#   5. ArchUnit - layer violation count
+#   6. Pact     - contract verification pass/fail per consumer-provider pair
+
+dashboard:
+  title: "YAWL v6.0.0 Quality Dashboard"
+  refresh_interval_minutes: 60
+
+  panels:
+
+    # ─── Test Health ──────────────────────────────────────────────────────
+    - id: test-health
+      title: "Test Health"
+      type: stat-group
+      metrics:
+        - id: test-count
+          label: "Total Tests"
+          source: surefire
+          query: "sum(tests)"
+          target: ">= 500"
+          threshold_warn: 450
+          threshold_fail: 400
+
+        - id: test-pass-rate
+          label: "Pass Rate"
+          source: surefire
+          query: "(tests - failures - errors) / tests * 100"
+          format: percentage
+          target: "100%"
+          threshold_warn: 98
+          threshold_fail: 95
+
+        - id: test-suite-duration
+          label: "Suite Duration"
+          source: surefire
+          query: "sum(time)"
+          format: seconds
+          target: "< 600s"
+          threshold_warn: 480
+          threshold_fail: 600
+
+    # ─── Coverage ─────────────────────────────────────────────────────────
+    - id: coverage
+      title: "Code Coverage (JaCoCo)"
+      type: gauge-group
+      metrics:
+        - id: line-coverage
+          label: "Line Coverage"
+          source: jacoco
+          query: "COVEREDRATIO[LINE]"
+          format: percentage
+          target: ">= 65%"
+          threshold_warn: 60
+          threshold_fail: 55
+
+        - id: branch-coverage
+          label: "Branch Coverage"
+          source: jacoco
+          query: "COVEREDRATIO[BRANCH]"
+          format: percentage
+          target: ">= 55%"
+          threshold_warn: 50
+          threshold_fail: 45
+
+        - id: method-coverage
+          label: "Method Coverage"
+          source: jacoco
+          query: "COVEREDRATIO[METHOD]"
+          format: percentage
+          target: ">= 68%"
+          threshold_warn: 63
+          threshold_fail: 58
+
+    # ─── Mutation Testing ─────────────────────────────────────────────────
+    - id: mutation
+      title: "Mutation Testing (PIT)"
+      type: gauge-group
+      metrics:
+        - id: project-kill-rate
+          label: "Project Kill Rate"
+          source: pitest
+          query: "killed / (killed + survived + noCoverage) * 100"
+          format: percentage
+          target: ">= 75%"
+          threshold_warn: 70
+          threshold_fail: 65
+
+        - id: engine-kill-rate
+          label: "Engine Kill Rate"
+          source: pitest
+          query: "killed[engine] / total[engine] * 100"
+          format: percentage
+          target: ">= 80%"
+          threshold_warn: 75
+          threshold_fail: 70
+
+        - id: survived-count
+          label: "Survived Mutants"
+          source: pitest
+          query: "count[status=SURVIVED]"
+          target: "Minimize"
+          threshold_warn: 100
+          threshold_fail: 200
+
+    # ─── Security ─────────────────────────────────────────────────────────
+    - id: security
+      title: "Security Vulnerabilities"
+      type: alert-table
+      metrics:
+        - id: critical-cves
+          label: "Critical CVEs (CVSS >= 9)"
+          source: owasp-dependency-check
+          query: "count[cvss >= 9.0]"
+          target: "0"
+          threshold_warn: 0
+          threshold_fail: 1
+
+        - id: high-cves
+          label: "High CVEs (CVSS 7-9)"
+          source: owasp-dependency-check
+          query: "count[cvss >= 7.0 AND cvss < 9.0]"
+          target: "0"
+          threshold_warn: 0
+          threshold_fail: 1
+
+        - id: zap-high-alerts
+          label: "ZAP High Risk Alerts"
+          source: owasp-zap
+          query: "count[riskcode=3]"
+          target: "0"
+          threshold_warn: 0
+          threshold_fail: 1
+
+    # ─── Architecture ─────────────────────────────────────────────────────
+    - id: architecture
+      title: "Architecture Compliance (ArchUnit)"
+      type: pass-fail-group
+      metrics:
+        - id: layer-violations
+          label: "Layer Isolation Violations"
+          source: archunit
+          query: "count[failed]"
+          target: "0"
+          threshold_fail: 1
+
+        - id: cycle-count
+          label: "Package Cycles"
+          source: archunit
+          query: "count[cycles]"
+          target: "0"
+          threshold_fail: 1
+
+        - id: boundary-violations
+          label: "Package Boundary Violations"
+          source: archunit
+          query: "count[boundary-failures]"
+          target: "0"
+          threshold_fail: 1
+
+    # ─── Contract Testing ─────────────────────────────────────────────────
+    - id: contracts
+      title: "Contract Verification (Pact)"
+      type: table
+      columns:
+        - Consumer
+        - Provider
+        - Status
+        - Last Verified
+      rows:
+        - consumer: "YawlControlPanel"
+          provider: "YawlEngineApi"
+        - consumer: "YawlBatchProcessor"
+          provider: "YawlStatelessApi"
+        - consumer: "YawlExternalAgent"
+          provider: "YawlIntegrationApi"
+
+  # ─── Quality Gate Definition ────────────────────────────────────────────
+  # Overall quality gate: ALL must pass for green status.
+  quality_gate:
+    name: "YAWL v6.0.0 Quality Gate"
+    conditions:
+      - metric: test-pass-rate
+        operator: ">="
+        threshold: 100
+      - metric: line-coverage
+        operator: ">="
+        threshold: 65
+      - metric: critical-cves
+        operator: "="
+        threshold: 0
+      - metric: high-cves
+        operator: "="
+        threshold: 0
+      - metric: layer-violations
+        operator: "="
+        threshold: 0
+      - metric: cycle-count
+        operator: "="
+        threshold: 0
+
+  # ─── Trend Tracking ─────────────────────────────────────────────────────
+  # Track weekly deltas on these metrics for regression detection.
+  trend_metrics:
+    - test-count
+    - test-pass-rate
+    - line-coverage
+    - branch-coverage
+    - project-kill-rate
+    - survived-count
+    - critical-cves
+    - high-cves

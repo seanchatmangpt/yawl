@@ -1,8 +1,11 @@
 # Architecture Decision Records (ADRs)
 
-**YAWL v5.2 Architecture Decisions**
+**YAWL v6.0.0 Architecture Decisions**
 
-This directory contains all architectural decisions for YAWL v5.2, documented using the ADR format.
+This directory contains all architectural decisions for YAWL, documented using the ADR format.
+ADRs are the authoritative record of _why_ the system is designed the way it is.
+
+**Machine-readable index**: [ADR-INDEX.json](ADR-INDEX.json) — supports search, filtering, and tooling integration.
 
 ---
 
@@ -14,11 +17,23 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 |-----|-------|--------|------|----------|
 | [ADR-001](ADR-001-dual-engine-architecture.md) | Dual Engine Architecture (Stateful + Stateless) | ACCEPTED | 2026-02-10 | Architecture |
 | [ADR-002](ADR-002-singleton-vs-instance-yengine.md) | Singleton vs Instance-based YEngine | ACCEPTED with CAVEATS | 2026-02-10 | Architecture |
+| [ADR-021](ADR-021-stateless-vs-stateful-engine-selection.md) | Automatic Engine Selection for v6.0.0 | ACCEPTED | 2026-02-17 | Architecture |
+
+### Build System & Platform
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
 | [ADR-003](ADR-003-maven-primary-ant-deprecated.md) | Maven Primary, Ant Deprecated | ACCEPTED | 2026-02-10 | Build System |
 | [ADR-004](ADR-004-spring-boot-34-java-25.md) | Spring Boot 3.4 + Java 25 | ACCEPTED | 2026-02-10 | Platform |
-| [ADR-005](ADR-005-spiffe-spire-zero-trust.md) | SPIFFE/SPIRE for Zero-Trust Identity | ACCEPTED | 2026-02-12 | Security |
 
-### Observability & Operations
+### Security & Identity
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-005](ADR-005-spiffe-spire-zero-trust.md) | SPIFFE/SPIRE for Zero-Trust Identity | ACCEPTED | 2026-02-12 | Security |
+| [ADR-017](ADR-017-authentication-and-sessions.md) | Authentication and Session Management for v6.0.0 | ACCEPTED | 2026-02-17 | Security |
+
+### Observability & Resilience
 
 | ADR | Title | Status | Date | Category |
 |-----|-------|--------|------|----------|
@@ -32,6 +47,34 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 |-----|-------|--------|------|----------|
 | [ADR-009](ADR-009-multi-cloud-strategy.md) | Multi-Cloud Strategy (GCP/AWS/Azure/Oracle) | ACCEPTED | 2026-02-13 | Cloud |
 | [ADR-010](ADR-010-virtual-threads-scalability.md) | Virtual Threads for Scalability | ACCEPTED | 2026-02-14 | Performance |
+| [ADR-014](ADR-014-clustering-and-horizontal-scaling.md) | Clustering and Horizontal Scaling Architecture | ACCEPTED | 2026-02-17 | Scalability |
+
+### API Design & Documentation
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-012](ADR-012-openapi-first-design.md) | OpenAPI-First API Design for v6.0.0 | ACCEPTED | 2026-02-17 | API Design |
+| [ADR-016](ADR-016-api-changelog-deprecation-policy.md) | API Changelog and Deprecation Policy | ACCEPTED | 2026-02-17 | API Governance |
+| [ADR-018](ADR-018-javadoc-to-openapi-generation.md) | JavaDoc-to-OpenAPI Documentation Generation | ACCEPTED | 2026-02-17 | Documentation |
+| [ADR-020](ADR-020-workflow-pattern-library.md) | Workflow Pattern Library Architecture | ACCEPTED | 2026-02-17 | Documentation |
+
+### Persistence & Data
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-015](ADR-015-persistence-layer-v6.md) | Persistence Layer Architecture for v6.0.0 | ACCEPTED | 2026-02-17 | Persistence |
+
+### Schema & Specification
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-013](ADR-013-schema-versioning-strategy.md) | YAWL Schema Versioning Strategy for v6.0.0 | ACCEPTED | 2026-02-17 | Schema |
+
+### Agent Architecture
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-019](ADR-019-autonomous-agent-framework.md) | Autonomous Agent Framework Architecture | ACCEPTED | 2026-02-17 | Agent Architecture |
 
 ### Migration & Compatibility
 
@@ -43,12 +86,15 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 
 ## ADR Status Definitions
 
-- **PROPOSED**: Under discussion, not yet decided
-- **ACCEPTED**: Approved and in implementation
-- **ACCEPTED with CAVEATS**: Approved with conditions or future changes
-- **APPROVED**: Approved but not yet implemented
-- **DEPRECATED**: No longer recommended
-- **SUPERSEDED**: Replaced by another ADR
+| Status | Meaning |
+|--------|---------|
+| **PROPOSED** | Under discussion, not yet decided |
+| **ACCEPTED** | Approved and in implementation |
+| **ACCEPTED with CAVEATS** | Approved with conditions or future changes |
+| **APPROVED** | Approved but not yet implemented |
+| **IN PROGRESS** | Actively being implemented |
+| **DEPRECATED** | No longer recommended; see superseding ADR |
+| **SUPERSEDED** | Replaced by another ADR (links to replacement) |
 
 ---
 
@@ -59,9 +105,11 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 **Architecture:**
 - ADR-001: Dual Engine Architecture
 - ADR-002: Singleton vs Instance-based YEngine
+- ADR-021: Automatic Engine Selection (v6.0)
 
 **Security:**
 - ADR-005: SPIFFE/SPIRE for Zero-Trust Identity
+- ADR-017: JWT Authentication and Session Management (v6.0)
 
 **Performance:**
 - ADR-007: Repository Pattern for Caching
@@ -69,6 +117,24 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 
 **Cloud & Deployment:**
 - ADR-009: Multi-Cloud Strategy
+- ADR-014: Clustering and Horizontal Scaling (v6.1)
+
+**API Design:**
+- ADR-012: OpenAPI-First Design (v6.0)
+- ADR-016: API Deprecation Policy (v6.0)
+- ADR-018: JavaDoc-to-OpenAPI Generation (v6.0)
+
+**Persistence:**
+- ADR-015: Persistence Layer — HikariCP, Flyway, Envers, Multi-Tenancy (v6.0)
+
+**Schema:**
+- ADR-013: Schema Versioning Strategy (v6.0)
+
+**Agent Architecture:**
+- ADR-019: Autonomous Agent Framework (v6.0)
+
+**Documentation:**
+- ADR-020: Workflow Pattern Library (v6.0)
 
 **Platform & Tools:**
 - ADR-003: Maven Primary, Ant Deprecated
@@ -83,14 +149,27 @@ This directory contains all architectural decisions for YAWL v5.2, documented us
 
 ## Reading Order for New Team Members
 
-1. **Start Here:** ADR-001 (Dual Engine Architecture)
-2. **Platform:** ADR-004 (Spring Boot + Java 25)
-3. **Build System:** ADR-003 (Maven Primary)
-4. **Security:** ADR-005 (SPIFFE/SPIRE)
-5. **Cloud Deployment:** ADR-009 (Multi-Cloud Strategy)
-6. **Performance:** ADR-010 (Virtual Threads)
-7. **Observability:** ADR-006 (OpenTelemetry)
-8. **Resilience:** ADR-008 (Circuit Breaking)
+**v5.x baseline (ADRs 001–011):**
+1. ADR-001: Dual Engine Architecture
+2. ADR-004: Spring Boot + Java 25
+3. ADR-003: Maven Primary
+4. ADR-005: SPIFFE/SPIRE
+5. ADR-009: Multi-Cloud Strategy
+6. ADR-010: Virtual Threads
+7. ADR-006: OpenTelemetry
+8. ADR-008: Circuit Breaking
+
+**v6.0 additions (ADRs 012–021):**
+9. ADR-012: OpenAPI-First Design
+10. ADR-013: Schema Versioning
+11. ADR-015: Persistence Layer
+12. ADR-017: JWT Authentication
+13. ADR-019: Autonomous Agent Framework
+14. ADR-021: Engine Selection
+15. ADR-014: Clustering (planned for v6.1)
+16. ADR-016: Deprecation Policy
+17. ADR-018: Doc Generation
+18. ADR-020: Pattern Library
 
 ---
 
@@ -133,39 +212,53 @@ When creating new ADRs, use this structure:
 **Approved by:** [Name/Team]
 **Date:** [YYYY-MM-DD]
 **Implementation Status:** [Status]
+**Review Date:** [YYYY-MM-DD]
 ```
+
+The machine-readable `ADR-INDEX.json` must be updated whenever a new ADR is added
+or an existing ADR's status changes.
 
 ---
 
 ## Related Documentation
 
 - **Architecture Overview:** `/home/user/yawl/docs/architecture/INDEX.md`
-- **Deployment Guides:** `/home/user/yawl/docs/deployment/`
-- **Migration Guides:** `/home/user/yawl/docs/migration/`
+- **API Specification:** `/home/user/yawl/docs/api/openapi-v6.yaml`
+- **API Changelog:** `/home/user/yawl/docs/api/CHANGELOG.md`
+- **Migration Guide:** `/home/user/yawl/docs/api/MIGRATION-5x-to-6.md`
+- **Pattern Library:** `/home/user/yawl/docs/patterns/README.md`
 - **Production Readiness:** `/home/user/yawl/docs/PRODUCTION_READINESS_CHECKLIST.md`
+- **ADR Machine Index:** `ADR-INDEX.json`
 
 ---
 
 ## Key Decisions Summary
 
 ### Technology Stack
-- **Language:** Java 25 (LTS)
-- **Framework:** Spring Boot 3.4
+- **Language:** Java 25 (LTS, preview features enabled)
+- **Framework:** Spring Boot 3.4+
 - **Build System:** Maven (Ant deprecated)
 - **Platform:** Jakarta EE 10
-- **Database:** Hibernate 6.5, PostgreSQL 13+
+- **Database:** Hibernate 6.6, PostgreSQL 13+, Flyway migrations
 
 ### Architecture Patterns
-- **Engines:** Dual (Stateful + Stateless)
+- **Engines:** Dual (Stateful + Stateless), automatic selection in v6.0
 - **Dependency Injection:** Instance-based (Singleton deprecated)
-- **Caching:** Repository pattern
+- **Caching:** Repository pattern (Caffeine)
 - **Resilience:** Circuit breaker (Resilience4j)
+- **Clustering:** Redis lease protocol (v6.1)
+
+### API Design
+- **Contract:** OpenAPI 3.1.0 (docs/api/openapi-v6.yaml)
+- **Authentication:** JWT HMAC-SHA256 session handles
+- **Deprecation:** 12-month notice period, RFC 8594 headers
 
 ### Cloud & Security
-- **Identity:** SPIFFE/SPIRE
+- **Service Identity:** SPIFFE/SPIRE
+- **User Auth:** JWT sessions
 - **Observability:** OpenTelemetry
 - **Deployment:** Multi-cloud (GCP, AWS, Azure, Oracle)
-- **Scalability:** Virtual threads (Project Loom)
+- **Scalability:** Virtual threads (Project Loom) + clustering (v6.1)
 
 ---
 
@@ -177,5 +270,5 @@ When creating new ADRs, use this structure:
 
 ---
 
-**Last Updated:** 2026-02-16
+**Last Updated:** 2026-02-17
 **Maintained by:** YAWL Architecture Team

@@ -1,0 +1,19 @@
+# Trivy CVE Ignore File for YAWL v6.0.0
+# ======================================
+# Format: CVE-ID [expiry-date] # reason
+#
+# MANDATORY: Every entry must include:
+#   1. The CVE identifier
+#   2. An expiry date (max 90 days from acceptance date)
+#   3. A rationale explaining why the risk is accepted
+#
+# Review schedule: quarterly security audit (see SECURITY.md)
+#
+# Entries without an expiry date or rationale will be treated as
+# unapproved suppressions and rejected by the audit script.
+#
+# Current entries (as of 2026-02-17):
+# None - all identified CVEs must be remediated or explicitly approved.
+#
+# Example format for future entries:
+# CVE-2026-12345 2026-05-17 # h2 test-scope only; not exposed in production image

@@ -1,0 +1,682 @@
+name: Release Automation (YAWL v6.0+)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'VERSION'
+      - 'pom.xml'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - prerelease
+      prerelease_label:
+        description: 'Pre-release label (alpha, beta, rc)'
+        required: false
+        type: choice
+        options:
+          - alpha
+          - beta
+          - rc
+      skip_gpg_sign:
+        description: 'Skip GPG signing (for testing)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  JAVA_VERSION: 25
+  MAVEN_OPTS: -Xmx3g -Djava.awt.headless=true
+
+jobs:
+  # ============================================================================
+  # Determine Release Version
+  # ============================================================================
+  determine-version:
+    name: Determine Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.new-version }}
+      previous-version: ${{ steps.semver.outputs.current-version }}
+      release-type: ${{ steps.semver.outputs.release-type }}
+      is-prerelease: ${{ steps.semver.outputs.is-prerelease }}
+      changelog-entry: ${{ steps.changelog.outputs.entry }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Current Version
+        id: current
+        run: |
+          VERSION=$(grep -oP '<version>\K[^<]+' pom.xml | head -1)
+          echo "current-version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Bump Version (Semantic Versioning)
+        id: semver
+        run: |
+          CURRENT=${{ steps.current.outputs.current-version }}
+          RELEASE_TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+          PRERELEASE_LABEL="${{ github.event.inputs.prerelease_label || '' }}"
+
+          # Parse version: MAJOR.MINOR.PATCH[-PRERELEASE]
+          if [[ $CURRENT =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[a-zA-Z0-9.]+)?$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            PRERELEASE="${BASH_REMATCH[4]}"
+          else
+            echo "ERROR: Invalid version format: $CURRENT"
+            exit 1
+          fi
+
+          case "$RELEASE_TYPE" in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              IS_PRERELEASE="false"
+              ;;
+            minor)
+              NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+              IS_PRERELEASE="false"
+              ;;
+            patch)
+              NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+              IS_PRERELEASE="false"
+              ;;
+            prerelease)
+              if [ -z "$PRERELEASE_LABEL" ]; then
+                echo "ERROR: prerelease_label required for prerelease type"
+                exit 1
+              fi
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH-$PRERELEASE_LABEL.1"
+              IS_PRERELEASE="true"
+              ;;
+            *)
+              echo "ERROR: Invalid release type: $RELEASE_TYPE"
+              exit 1
+              ;;
+          esac
+
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "current-version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "release-type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Release: $CURRENT → $NEW_VERSION"
+
+      - name: Generate Changelog Entry
+        id: changelog
+        run: |
+          NEW_VERSION="${{ steps.semver.outputs.new-version }}"
+          GIT_LOG=$(git log --oneline --no-decorate --since="1 week ago" --grep="^(feat|fix|docs|style|refactor|perf|test|chore)" -E || true)
+
+          if [ -z "$GIT_LOG" ]; then
+            ENTRY="## [$NEW_VERSION] - $(date +%Y-%m-%d)\n\nSee commits for details."
+          else
+            ENTRY="## [$NEW_VERSION] - $(date +%Y-%m-%d)\n\n### Changes\n$(echo "$GIT_LOG" | head -20 | sed 's/^/- /')"
+          fi
+
+          echo "entry<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$ENTRY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # ============================================================================
+  # Build Release Artifacts
+  # ============================================================================
+  build-release:
+    name: Build Release Artifacts
+    needs: determine-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Update Version in POM
+        run: |
+          NEW_VERSION="${{ needs.determine-version.outputs.version }}"
+          echo "Updating version to: $NEW_VERSION"
+
+          # Update parent POM
+          mvn versions:set -DnewVersion=$NEW_VERSION -DprocessAllModules -q
+
+      - name: Build with Maven
+        run: |
+          mvn clean package \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -Pprod \
+            -DskipTests=false
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          mvn org.cyclonedx:cyclonedx-maven-plugin:generateBom \
+            --batch-mode \
+            --no-transfer-progress \
+            -DoutputFormat=json,xml
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.determine-version.outputs.version }}
+          path: |
+            target/*.jar
+            yawl-*/target/*.jar
+            yawl-*/target/bom.*
+            target/bom.*
+          retention-days: 30
+
+      - name: Create Checksums
+        run: |
+          NEW_VERSION="${{ needs.determine-version.outputs.version }}"
+          mkdir -p checksums
+
+          # SHA-256 checksums for all JARs
+          find . -name "*.jar" -type f -path "*/target/*" ! -path "*/.m2/*" | while read jar; do
+            sha256sum "$jar" >> "checksums/checksums-$NEW_VERSION.sha256"
+          done
+
+          # Create SBOM checksums
+          find . -name "bom.json" -o -name "bom.xml" | while read sbom; do
+            sha256sum "$sbom" >> "checksums/sbom-checksums-$NEW_VERSION.sha256"
+          done
+
+      - name: Upload Checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums-${{ needs.determine-version.outputs.version }}
+          path: checksums/
+          retention-days: 30
+
+  # ============================================================================
+  # GPG Signing
+  # ============================================================================
+  sign-artifacts:
+    name: Sign Artifacts (GPG)
+    needs: [determine-version, build-release]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_gpg_sign != 'true'
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.determine-version.outputs.version }}
+          path: ./artifacts
+
+      - name: Download Checksums
+        uses: actions/download-artifact@v4
+        with:
+          name: checksums-${{ needs.determine-version.outputs.version }}
+          path: ./checksums
+
+      - name: Import GPG Key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --quiet
+          gpg --list-keys
+
+      - name: Sign Artifacts
+        run: |
+          NEW_VERSION="${{ needs.determine-version.outputs.version }}"
+
+          # Sign each JAR
+          find artifacts -name "*.jar" -type f | while read jar; do
+            gpg --batch --sign --armor \
+              --default-key "${{ secrets.GPG_KEY_ID }}" \
+              --output "${jar}.asc" \
+              "$jar"
+            echo "Signed: $jar"
+          done
+
+          # Sign checksums file
+          gpg --batch --sign --armor \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            --output "checksums/checksums-$NEW_VERSION.sha256.asc" \
+            "checksums/checksums-$NEW_VERSION.sha256"
+
+      - name: Upload Signatures
+        uses: actions/upload-artifact@v4
+        with:
+          name: signatures-${{ needs.determine-version.outputs.version }}
+          path: |
+            artifacts/*.asc
+            checksums/*.asc
+          retention-days: 30
+
+      - name: Verify Signatures
+        run: |
+          # Verify each signature
+          find artifacts -name "*.asc" -type f | while read sig; do
+            jar="${sig%.asc}"
+            echo "Verifying: $jar"
+            gpg --verify "$sig" "$jar" || exit 1
+          done
+          echo "All signatures verified successfully"
+
+  # ============================================================================
+  # Image Signing (Cosign)
+  # ============================================================================
+  sign-images:
+    name: Sign Container Images (Cosign)
+    needs: [determine-version, build-release]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        id: docker-build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.modernized
+          push: true
+          tags: ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.determine-version.outputs.version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.0'
+
+      - name: Sign Image with Cosign (Keyless)
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}"
+          SBOM_PATH="${{ github.workspace }}/target/bom.json"
+
+          # Generate and attach SBOM
+          if [ -f "$SBOM_PATH" ]; then
+            cosign attach sbom "$IMAGE" --sbom "$SBOM_PATH"
+          fi
+
+          # Sign image (keyless - uses GitHub OIDC)
+          cosign sign "$IMAGE"
+
+          echo "Image signed: $IMAGE"
+
+      - name: Verify Image Signature
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}"
+          cosign verify "$IMAGE"
+
+  # ============================================================================
+  # Create Git Release
+  # ============================================================================
+  create-release:
+    name: Create GitHub Release
+    needs: [determine-version, sign-artifacts, sign-images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: Create Release Notes
+        id: release-notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # YAWL v${{ needs.determine-version.outputs.version }} Release
+
+          **Release Type:** ${{ needs.determine-version.outputs.release-type }}
+          **Pre-release:** ${{ needs.determine-version.outputs.is-prerelease }}
+          **Build Date:** $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          **Commit:** ${{ github.sha }}
+
+          ## Changelog
+
+          ${{ needs.determine-version.outputs.changelog-entry }}
+
+          ## Download
+
+          - **JARs:** See artifacts section
+          - **Docker Image:** `ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}`
+          - **Checksums:** `checksums-${{ needs.determine-version.outputs.version }}.sha256`
+
+          ## Verification
+
+          ### GPG Signature Verification
+          ```bash
+          gpg --recv-keys ${{ secrets.GPG_KEY_ID }}
+          gpg --verify checksums-${{ needs.determine-version.outputs.version }}.sha256.asc
+          sha256sum -c checksums-${{ needs.determine-version.outputs.version }}.sha256
+          ```
+
+          ### Container Image Verification
+          ```bash
+          # Install cosign: https://github.com/sigstore/cosign
+          cosign verify ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+
+          # Download SBOM
+          cosign download sbom ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+          ```
+
+          ## Installation
+
+          ### Maven Dependency
+          ```xml
+          <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-engine</artifactId>
+            <version>${{ needs.determine-version.outputs.version }}</version>
+          </dependency>
+          ```
+
+          ### Docker Image
+          ```bash
+          docker pull ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+          docker run -p 8080:8080 ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+          ```
+
+          ### Helm Chart
+          ```bash
+          helm repo add yawl https://helm.yawlfoundation.org
+          helm install yawl yawl/yawl-parent --version ${{ needs.determine-version.outputs.version }}
+          ```
+
+          ## What's Changed
+
+          See full changelog: [CHANGELOG.md](../CHANGELOG.md)
+
+          EOF
+          cat RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.determine-version.outputs.version }}
+          name: Release ${{ needs.determine-version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ needs.determine-version.outputs.is-prerelease }}
+          files: |
+            release-artifacts/**/*.jar
+            release-artifacts/**/*.asc
+            release-artifacts/**/*.sha256
+            release-artifacts/**/*.xml
+            release-artifacts/**/*.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # Publish to Artifact Repository
+  # ============================================================================
+  publish-artifacts:
+    name: Publish to Nexus/Artifactory
+    needs: [determine-version, sign-artifacts]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Update Version
+        run: |
+          mvn versions:set \
+            -DnewVersion=${{ needs.determine-version.outputs.version }} \
+            -DprocessAllModules -q
+
+      - name: Configure Maven Settings
+        uses: whelk-io/maven-settings-xml-action@v21
+        with:
+          repositories: |
+            [
+              {
+                "id": "nexus",
+                "name": "Nexus Repository",
+                "url": "https://nexus.example.com/repository/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              }
+            ]
+          servers: |
+            [
+              {
+                "id": "nexus",
+                "username": "${{ secrets.NEXUS_USER }}",
+                "password": "${{ secrets.NEXUS_PASSWORD }}"
+              },
+              {
+                "id": "github",
+                "username": "${{ github.actor }}",
+                "password": "${{ secrets.GITHUB_TOKEN }}"
+              }
+            ]
+
+      - name: Publish to Repository
+        run: |
+          mvn deploy \
+            --batch-mode \
+            --no-transfer-progress \
+            --enable-preview \
+            -Pprod \
+            -DskipTests=true \
+            -DaltDeploymentRepository=nexus::default::https://nexus.example.com/repository/releases
+
+      - name: Publish SBOM
+        run: |
+          # Publish SBOM files to Nexus
+          find . -name "bom.json" -o -name "bom.xml" | while read sbom; do
+            MODULE=$(dirname "$sbom" | cut -d'/' -f1)
+            EXT="${sbom##*.}"
+
+            curl -u "${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASSWORD }}" \
+              -T "$sbom" \
+              "https://nexus.example.com/repository/sbom/$MODULE/${{ needs.determine-version.outputs.version }}/bom.$EXT"
+          done
+
+  # ============================================================================
+  # Promote to Staging
+  # ============================================================================
+  promote-staging:
+    name: Promote to Staging Environment
+    needs: [determine-version, publish-artifacts]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout GitOps Repo
+        uses: actions/checkout@v4
+        with:
+          repository: yawlfoundation/yawl-gitops
+          ref: main
+          token: ${{ secrets.GITOPS_DEPLOY_TOKEN }}
+
+      - name: Update Staging Deployment
+        run: |
+          # Update image tag in ArgoCD values
+          sed -i "s/tag:.*/tag: 'v${{ needs.determine-version.outputs.version }}'/" \
+            envs/staging/values.staging.yaml
+
+          # Update Kustomization
+          kustomize edit set image \
+            yawl-engine=ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
+
+      - name: Commit and Push
+        run: |
+          git config user.name "Release Bot"
+          git config user.email "release@yawlfoundation.org"
+
+          git add envs/staging/
+          git commit -m "chore: promote YAWL to v${{ needs.determine-version.outputs.version }} in staging"
+          git push
+
+      - name: ArgoCD Sync
+        run: |
+          # Trigger ArgoCD sync for staging
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "kind": "Application",
+              "name": "yawl-staging",
+              "revision": "HEAD"
+            }' \
+            https://argocd.example.com/api/v1/applications/yawl-staging/sync
+
+  # ============================================================================
+  # Notification
+  # ============================================================================
+  notify:
+    name: Send Notifications
+    needs: [determine-version, create-release, publish-artifacts]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [ "${{ needs.create-release.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack Notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ steps.status.outputs.emoji }} YAWL Release v${{ needs.determine-version.outputs.version }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ steps.status.outputs.status }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Type:*\n${{ needs.determine-version.outputs.release-type }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Actor:*\n@${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Release"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.determine-version.outputs.version }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }'
+
+      - name: Send Email Notification
+        if: github.event_name == 'workflow_dispatch'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "YAWL Release v${{ needs.determine-version.outputs.version }} - ${{ steps.status.outputs.status }}"
+          to: yawl-releases@yawlfoundation.org
+          from: "YAWL Release Bot <noreply@yawlfoundation.org>"
+          body: |
+            Release Information:
+            - Version: v${{ needs.determine-version.outputs.version }}
+            - Type: ${{ needs.determine-version.outputs.release-type }}
+            - Status: ${{ steps.status.outputs.status }}
+            - Release URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.determine-version.outputs.version }}

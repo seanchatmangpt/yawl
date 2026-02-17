@@ -1,0 +1,297 @@
+groups:
+  - name: yawl_slo_alerts
+    interval: 30s
+    rules:
+      # Case availability SLO alert
+      - alert: YawlCaseAvailabilityLow
+        expr: |
+          (sum(rate(yawl_case_completed_total[5m])) /
+           sum(rate(yawl_case_created_total[5m]))) < 0.99
+        for: 5m
+        labels:
+          severity: critical
+          service: yawl
+          slo_type: availability
+        annotations:
+          summary: "YAWL case availability below 99% ({{ $value | humanizePercentage }})"
+          description: "Case success rate has dropped below target SLO threshold"
+          dashboard: "http://grafana:3000/d/yawl-overview"
+          runbook: "https://wiki.company.com/yawl/low-availability"
+
+      # Case latency P95 alert
+      - alert: YawlCaseLatencyP95High
+        expr: |
+          histogram_quantile(0.95, sum(rate(yawl_case_duration_seconds_bucket[5m])) by (le))
+          > 7
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          slo_type: latency
+        annotations:
+          summary: "YAWL case latency P95 > 7s ({{ $value | humanizeDuration }})"
+          description: "Case execution time at 95th percentile exceeds SLO target"
+          dashboard: "http://grafana:3000/d/yawl-latency"
+          runbook: "https://wiki.company.com/yawl/high-latency"
+
+      # Case latency P99 alert
+      - alert: YawlCaseLatencyP99High
+        expr: |
+          histogram_quantile(0.99, sum(rate(yawl_case_duration_seconds_bucket[5m])) by (le))
+          > 15
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          slo_type: latency
+        annotations:
+          summary: "YAWL case latency P99 > 15s ({{ $value | humanizeDuration }})"
+          description: "Case execution time at 99th percentile exceeds SLO target"
+          dashboard: "http://grafana:3000/d/yawl-latency"
+
+      # Task throughput alert
+      - alert: YawlTaskThroughputLow
+        expr: |
+          sum(rate(yawl_task_executed_total[1m])) < 80
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          slo_type: throughput
+        annotations:
+          summary: "YAWL task throughput below 80/min ({{ $value | humanize }}/min)"
+          description: "Task execution rate has dropped significantly"
+          runbook: "https://wiki.company.com/yawl/low-throughput"
+
+      # Engine health SLO alert
+      - alert: YawlEngineHealthDegraded
+        expr: |
+          (count(up{job="yawl-engine"} == 1) / count(up{job="yawl-engine"})) < 0.99
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl
+          slo_type: availability
+        annotations:
+          summary: "YAWL engine health below 99% ({{ $value | humanizePercentage }})"
+          description: "More than 1% of YAWL engine instances are down"
+          runbook: "https://wiki.company.com/yawl/engine-health"
+
+  - name: yawl_operational_alerts
+    interval: 30s
+    rules:
+      # Queue depth critical
+      - alert: YawlQueueDepthCritical
+        expr: |
+          yawl_engine_queue_depth > 5000
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl
+          component: queue
+        annotations:
+          summary: "YAWL queue depth critical: {{ $value | humanize }} items"
+          description: "Work queue has exceeded critical threshold indicating processing bottleneck"
+          dashboard: "http://grafana:3000/d/yawl-queue"
+          runbook: "https://wiki.company.com/yawl/queue-backlog"
+
+      # No active workers
+      - alert: YawlNoActiveWorkers
+        expr: |
+          yawl_engine_threadpool_active_workers == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl
+          component: threadpool
+        annotations:
+          summary: "YAWL has no active worker threads"
+          description: "Engine thread pool has no active workers - cases cannot be processed"
+          runbook: "https://wiki.company.com/yawl/no-workers"
+
+      # High error rate
+      - alert: YawlHighErrorRate
+        expr: |
+          (sum(rate(yawl_case_failed_total[5m])) /
+           sum(rate(yawl_case_created_total[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: engine
+        annotations:
+          summary: "YAWL error rate > 5% ({{ $value | humanizePercentage }})"
+          description: "Case failure rate has increased significantly"
+          dashboard: "http://grafana:3000/d/yawl-errors"
+          runbook: "https://wiki.company.com/yawl/high-errors"
+
+      # Database connection pool exhausted
+      - alert: YawlDbPoolExhausted
+        expr: |
+          yawl_db_connection_pool_idle == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl
+          component: database
+        annotations:
+          summary: "YAWL database connection pool exhausted"
+          description: "All available database connections are in use"
+          runbook: "https://wiki.company.com/yawl/db-pool-exhausted"
+
+      # High memory usage
+      - alert: YawlMemoryPressure
+        expr: |
+          (process_resident_memory_bytes / process_virtual_memory_max_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: jvm
+        annotations:
+          summary: "YAWL memory usage > 85% ({{ $value | humanizePercentage }})"
+          description: "JVM heap pressure detected - OOM risk increasing"
+          runbook: "https://wiki.company.com/yawl/memory-pressure"
+
+      # High CPU usage
+      - alert: YawlEngineCpuHigh
+        expr: |
+          rate(process_cpu_seconds_total{job="yawl-engine"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: jvm
+        annotations:
+          summary: "YAWL engine CPU > 80% ({{ $value | humanize }}%)"
+          description: "CPU utilization is high - consider scaling up"
+          runbook: "https://wiki.company.com/yawl/cpu-high"
+
+      # GC pause time high
+      - alert: YawlGcPauseTimeHigh
+        expr: |
+          histogram_quantile(0.95, rate(jvm_gc_pause_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: jvm
+        annotations:
+          summary: "YAWL GC pause time P95 > 500ms ({{ $value | humanizeDuration }})"
+          description: "Long garbage collection pauses detected"
+          runbook: "https://wiki.company.com/yawl/gc-pause"
+
+      # Active cases too high
+      - alert: YawlActiveCasesTooHigh
+        expr: |
+          yawl_case_active > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: engine
+        annotations:
+          summary: "YAWL active cases > 10000 ({{ $value | humanize }})"
+          description: "Unusually high number of active cases in system"
+
+      # Database query latency high
+      - alert: YawlDbQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95, sum(rate(yawl_db_query_duration_seconds_bucket[5m])) by (le))
+          > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: database
+        annotations:
+          summary: "YAWL database query latency P95 > 1s ({{ $value | humanizeDuration }})"
+          description: "Database query performance has degraded"
+          runbook: "https://wiki.company.com/yawl/db-latency"
+
+      # Too many pending tasks
+      - alert: YawlPendingTasksHigh
+        expr: |
+          sum(yawl_task_pending) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: queue
+        annotations:
+          summary: "YAWL pending tasks > 5000 ({{ $value | humanize }})"
+          description: "Work queue has high number of pending tasks"
+          runbook: "https://wiki.company.com/yawl/pending-tasks"
+
+  - name: yawl_infrastructure_alerts
+    interval: 30s
+    rules:
+      # Pod restart count high
+      - alert: YawlPodRestarts
+        expr: |
+          rate(kube_pod_container_status_restarts_total{pod=~"yawl-engine.*"}[15m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: kubernetes
+        annotations:
+          summary: "YAWL pod restarting frequently"
+          description: "Pod restart rate indicates instability"
+          runbook: "https://wiki.company.com/yawl/pod-restarts"
+
+      # Pod OOMKilled
+      - alert: YawlPodOOMKilled
+        expr: |
+          increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",pod=~"yawl-engine.*"}[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl
+          component: kubernetes
+        annotations:
+          summary: "YAWL pod killed by OOMKiller"
+          description: "Pod was out of memory - increase memory limits"
+          runbook: "https://wiki.company.com/yawl/oom-killed"
+
+      # Node pressure
+      - alert: YawlNodeMemoryPressure
+        expr: |
+          kube_node_status_condition{condition="MemoryPressure",status="true",node=~"yawl-.*"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: kubernetes
+        annotations:
+          summary: "Node memory pressure detected"
+          description: "Node hosting YAWL has memory pressure"
+
+      # Pod CrashLoopBackOff
+      - alert: YawlPodCrashLoop
+        expr: |
+          kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",pod=~"yawl-engine.*"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl
+          component: kubernetes
+        annotations:
+          summary: "YAWL pod in CrashLoopBackOff"
+          description: "Pod is crashing repeatedly - check logs for errors"
+          runbook: "https://wiki.company.com/yawl/crash-loop"
+
+      # Persistent volume almost full
+      - alert: YawlPersistentVolumeAlmostFull
+        expr: |
+          (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"yawl-.*"} /
+           kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"yawl-.*"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl
+          component: kubernetes
+        annotations:
+          summary: "YAWL persistent volume {{ $labels.persistentvolumeclaim }} > 85% full"
+          description: "Storage capacity critical - may cause pod eviction"
+          runbook: "https://wiki.company.com/yawl/storage-full"

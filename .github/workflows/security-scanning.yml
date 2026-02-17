@@ -1,0 +1,283 @@
+# =============================================================================
+# YAWL v6.0.0 – Container Security Scanning & SBOM Pipeline
+# =============================================================================
+# Triggers: push to main/release branches, PR to main, scheduled daily
+# Gates:
+#   1. Trivy vulnerability scan (CRITICAL = fail, HIGH = warn)
+#   2. Trivy secret scan (any secret = fail)
+#   3. CycloneDX SBOM generation + upload to registry
+#   4. cosign image signing (keyless OIDC in CI)
+#   5. SBOM attestation attached to OCI image
+#   6. Grype secondary scan for cross-validation
+# =============================================================================
+name: Container Security Scanning
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily scan of latest image at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to scan (default: latest built)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write      # Required for keyless cosign OIDC signing
+  security-events: write  # Required for SARIF upload to GitHub Security
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/yawl/engine
+  JAVA_VERSION: "21"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build image with provenance
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (OCI labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.v6
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # SLSA provenance attestation
+          provenance: true
+          sbom: true
+
+  # ---------------------------------------------------------------------------
+  # Trivy vulnerability scan
+  # ---------------------------------------------------------------------------
+  trivy-scan:
+    name: Trivy Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+          exit-code: "1"
+          ignore-unfixed: false
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          trivyignores: ".trivyignore"
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-container
+
+      - name: Run Trivy misconfiguration scan (IaC)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "config"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-config.sarif"
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload IaC SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-iac
+
+      - name: Run Trivy secret scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          scanners: "secret"
+          format: "table"
+          exit-code: "1"
+
+  # ---------------------------------------------------------------------------
+  # Generate SBOM (CycloneDX + SPDX)
+  # ---------------------------------------------------------------------------
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Generate CycloneDX SBOM (Maven / source)
+        run: |
+          mvn org.cyclonedx:cyclonedx-maven-plugin:2.8.0:makeAggregateBom \
+            -DschemaVersion=1.4 \
+            -DincludeTestScope=false \
+            -DincludeBomSerialNumber=true \
+            -DoutputFormat=json \
+            -DoutputName=yawl-engine-${{ needs.build.outputs.version }}.cdx \
+            --batch-mode --no-transfer-progress
+
+      - name: Generate container SBOM (Trivy)
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          trivy image \
+            --format cyclonedx \
+            --output sbom/yawl-engine-${{ needs.build.outputs.version }}-container.cdx.json \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+
+          trivy image \
+            --format spdx-json \
+            --output sbom/yawl-engine-${{ needs.build.outputs.version }}-container.spdx.json \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ needs.build.outputs.version }}
+          path: |
+            target/*.cdx.json
+            sbom/*.cdx.json
+            sbom/*.spdx.json
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # Sign image with cosign (keyless OIDC)
+  # ---------------------------------------------------------------------------
+  sign:
+    name: Sign Container Image
+    runs-on: ubuntu-latest
+    needs: [build, trivy-scan, sbom]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: "v2.2.3"
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign image (keyless OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign sign --yes \
+            --annotations "org.opencontainers.image.version=${{ needs.build.outputs.version }}" \
+            --annotations "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --annotations "org.opencontainers.image.revision=${{ github.sha }}" \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ needs.build.outputs.version }}
+          path: sbom/
+
+      - name: Attach CycloneDX SBOM as attestation
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign attest --yes \
+            --predicate sbom/yawl-engine-${{ needs.build.outputs.version }}-container.cdx.json \
+            --type cyclonedx \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+
+      - name: Verify signature
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}.*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          echo "Image signature verified successfully"
+
+  # ---------------------------------------------------------------------------
+  # Grype secondary vulnerability scan (cross-validation)
+  # ---------------------------------------------------------------------------
+  grype-scan:
+    name: Grype Secondary Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Scan with Grype
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          fail-build: true
+          severity-cutoff: critical
+          output-format: sarif
+
+      - name: Upload Grype SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: grype-container

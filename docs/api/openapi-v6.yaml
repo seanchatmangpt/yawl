@@ -1,0 +1,1632 @@
+openapi: "3.1.0"
+
+info:
+  title: YAWL Workflow Engine REST API
+  description: |
+    The YAWL (Yet Another Workflow Language) v6.0.0 REST API provides comprehensive
+    workflow management capabilities based on rigorous Petri net semantics.
+
+    ## Architecture Overview
+
+    YAWL exposes four primary interface contracts:
+
+    - **Interface A** (`/ia`): Design-time operations — specification upload, validation, unload
+    - **Interface B** (`/ib`): Runtime client operations — work item lifecycle, case management
+    - **Interface X** (`/ix`): Extended operations — exception handling, suspension, compensation
+    - **Interface E** (`/ie`): Event subscriptions — real-time workflow event notifications
+
+    ## Authentication
+
+    All endpoints require a session handle obtained via `POST /ib/connect`.
+    The handle is passed as the `sessionHandle` query parameter on subsequent requests.
+
+    Session handles are opaque tokens issued by the engine and expire after a configurable
+    inactivity timeout (default: 60 minutes).
+
+    ## Content Negotiation
+
+    - Work item data payloads use `application/xml` (YAWL data schema)
+    - Control/metadata responses default to `application/json`
+    - Specification uploads use `application/xml` (YAWL Schema 4.0)
+
+    ## Error Model
+
+    All errors return `application/json` with a consistent `YawlApiError` schema.
+    HTTP status codes follow RFC 9110.
+
+    ## Versioning
+
+    The API version is embedded in the `X-YAWL-API-Version` response header.
+    Breaking changes increment the major version; this document covers v6.
+  version: "6.0.0"
+  contact:
+    name: YAWL Foundation
+    url: https://yawlfoundation.github.io
+    email: architecture@yawl.org
+  license:
+    name: GNU Lesser General Public License v3.0
+    url: https://www.gnu.org/licenses/lgpl-3.0.html
+
+servers:
+  - url: http://localhost:8080/yawl/api
+    description: Local development
+  - url: https://engine.yawl.internal/api
+    description: Internal production cluster
+  - url: "{scheme}://{host}:{port}/yawl/api"
+    description: Configurable deployment
+    variables:
+      scheme:
+        enum: [http, https]
+        default: https
+      host:
+        default: localhost
+      port:
+        default: "8080"
+
+tags:
+  - name: Session
+    description: Session lifecycle (connect, check, disconnect)
+  - name: WorkItems
+    description: Work item lifecycle operations (checkout, checkin, complete, suspend)
+  - name: Cases
+    description: Case instance management (launch, cancel, data retrieval)
+  - name: Specifications
+    description: Interface A — workflow specification management
+  - name: Extended
+    description: Interface X — exception handling, suspension, compensation
+  - name: Events
+    description: Interface E — event subscriptions and notifications
+  - name: Admin
+    description: Administrative and health operations
+
+paths:
+
+  # ─────────────────────────────────────────────────────────
+  # Interface B — Session Management
+  # ─────────────────────────────────────────────────────────
+
+  /ib/connect:
+    post:
+      operationId: connectSession
+      tags: [Session]
+      summary: Establish engine session
+      description: |
+        Authenticates credentials against the YAWL engine and issues a session handle.
+        The returned handle must accompany all subsequent requests as the `sessionHandle`
+        query parameter.
+
+        Session handles are opaque, base64-encoded tokens. They expire after the
+        engine-configured inactivity timeout (default 60 minutes).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectRequest"
+            examples:
+              admin:
+                summary: Admin login
+                value:
+                  userid: admin
+                  password: YAWL
+              service_account:
+                summary: Service account login
+                value:
+                  userid: worklist-service
+                  password: svc-password-redacted
+      responses:
+        "200":
+          description: Session established successfully
+          headers:
+            X-YAWL-API-Version:
+              $ref: "#/components/headers/XYawlApiVersion"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectResponse"
+              examples:
+                success:
+                  value:
+                    sessionHandle: "H4sIAAAAAAAAE6tWSkksSVSyUkopLUsB..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/disconnect:
+    post:
+      operationId: disconnectSession
+      tags: [Session]
+      summary: Terminate engine session
+      description: |
+        Invalidates the session handle and releases all server-side session resources.
+        Clients should always disconnect when done to avoid resource leaks.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      responses:
+        "200":
+          description: Session terminated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              examples:
+                disconnected:
+                  value:
+                    status: disconnected
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/session/check:
+    get:
+      operationId: checkSession
+      tags: [Session]
+      summary: Validate session handle
+      description: Returns engine metadata if the session handle is valid.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      responses:
+        "200":
+          description: Session is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────
+  # Interface B — Work Item Operations
+  # ─────────────────────────────────────────────────────────
+
+  /ib/workitems:
+    get:
+      operationId: getAllWorkItems
+      tags: [WorkItems]
+      summary: Get all live work items
+      description: |
+        Returns all work items currently active in the engine across all cases and
+        all specifications. Results can be filtered by status.
+
+        Work items represent individual task executions within a running case instance.
+        Each work item carries data bindings scoped to its task definition.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - name: status
+          in: query
+          required: false
+          description: Filter by execution status
+          schema:
+            $ref: "#/components/schemas/WorkItemStatus"
+        - name: specId
+          in: query
+          required: false
+          description: Filter by specification identifier
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of work item records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkItemRecord"
+              examples:
+                procurement_items:
+                  summary: Active procurement approval items
+                  value:
+                    - id: 10042
+                      specIdentifier: ProcurementProcess
+                      specVersion: "2.1"
+                      caseID: "CASE-2026-001"
+                      taskID: ApproveRequest
+                      taskName: Approve Purchase Request
+                      status: Executing
+                      resourceStatus: Started
+                      enablementTimeMs: "2026-02-17T09:00:00Z"
+                      startTimeMs: "2026-02-17T09:05:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}:
+    get:
+      operationId: getWorkItem
+      tags: [WorkItems]
+      summary: Get specific work item with data
+      description: |
+        Returns the work item descriptor including its current data binding as XML.
+        The XML payload is scoped to the task's input/output parameters as defined
+        in the specification's data binding expressions.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      responses:
+        "200":
+          description: Work item with data payload
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/WorkItemDataXml"
+              examples:
+                procurement_item:
+                  summary: Procurement approval task data
+                  value: |
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <workitem id="ITEM-10042">
+                      <taskid>ApproveRequest</taskid>
+                      <taskname>Approve Purchase Request</taskname>
+                      <caseid>CASE-2026-001</caseid>
+                      <status>Executing</status>
+                      <data>
+                        <requestAmount>5000.00</requestAmount>
+                        <vendor>Acme Corp</vendor>
+                        <description>Office Supplies</description>
+                        <requester>jane.smith</requester>
+                      </data>
+                    </workitem>
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}/checkout:
+    post:
+      operationId: checkoutWorkItem
+      tags: [WorkItems]
+      summary: Check out work item for execution
+      description: |
+        Transitions a work item from `Enabled` to `Executing` state and binds it to
+        the calling session's participant. This is the "start task" operation.
+
+        After checkout, the work item's data is locked for editing by the caller.
+        Other participants attempting checkout will receive `409 Conflict`.
+
+        The response includes the full task data payload for the participant to act on.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      responses:
+        "200":
+          description: Work item checked out, returns task data
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/WorkItemDataXml"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Work item already checked out by another participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YawlApiError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}/checkin:
+    post:
+      operationId: checkinWorkItem
+      tags: [WorkItems]
+      summary: Save intermediate work item state
+      description: |
+        Persists updated task data without completing the work item. Use this to
+        save progress during long-running human tasks.
+
+        The work item remains in `Executing` state. The XML data payload must
+        conform to the task's output parameter schema.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      requestBody:
+        required: true
+        description: Updated task data conforming to the task's output schema
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/TaskDataXml"
+            examples:
+              partial_approval:
+                summary: Partially completed approval task
+                value: |
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <data>
+                    <requestAmount>5000.00</requestAmount>
+                    <vendor>Acme Corp</vendor>
+                    <description>Office Supplies - Under Review</description>
+                    <reviewNotes>Awaiting budget confirmation</reviewNotes>
+                  </data>
+      responses:
+        "200":
+          description: Data saved, work item remains active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              examples:
+                saved:
+                  value:
+                    status: checked-in
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}/complete:
+    post:
+      operationId: completeWorkItem
+      tags: [WorkItems]
+      summary: Complete work item with final output data
+      description: |
+        Marks the work item as `Complete` and submits final output data back to
+        the engine. The engine evaluates output data bindings and propagates
+        data to subsequent tasks or the case-level net.
+
+        After completion, the Petri net token advances according to the task's
+        join and split semantics. This may enable new work items.
+
+        The XML payload must satisfy all required output parameter constraints.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      requestBody:
+        required: true
+        description: Final task output data
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/TaskDataXml"
+            examples:
+              approved:
+                summary: Approved purchase request
+                value: |
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <data>
+                    <requestAmount>5000.00</requestAmount>
+                    <vendor>Acme Corp</vendor>
+                    <description>Office Supplies - Approved</description>
+                    <approver>john.doe</approver>
+                    <approvalDate>2026-02-17</approvalDate>
+                    <decision>APPROVED</decision>
+                  </data>
+              rejected:
+                summary: Rejected purchase request
+                value: |
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <data>
+                    <requestAmount>5000.00</requestAmount>
+                    <vendor>Acme Corp</vendor>
+                    <decision>REJECTED</decision>
+                    <rejectionReason>Over budget threshold</rejectionReason>
+                  </data>
+      responses:
+        "200":
+          description: Work item completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              examples:
+                completed:
+                  value:
+                    status: completed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}/suspend:
+    post:
+      operationId: suspendWorkItem
+      tags: [WorkItems]
+      summary: Suspend an executing work item
+      description: |
+        Transitions a work item from `Executing` to `Suspended` state.
+        Suspended work items hold their data and can be resumed later.
+        Timer constraints are paused during suspension.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      responses:
+        "200":
+          description: Work item suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/workitems/{itemId}/resume:
+    post:
+      operationId: resumeWorkItem
+      tags: [WorkItems]
+      summary: Resume a suspended work item
+      description: |
+        Transitions a work item from `Suspended` back to `Executing` state.
+        Timer constraints resume from where they were paused.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      responses:
+        "200":
+          description: Work item resumed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ─────────────────────────────────────────────────────────
+  # Interface B — Case Operations
+  # ─────────────────────────────────────────────────────────
+
+  /ib/cases:
+    post:
+      operationId: launchCase
+      tags: [Cases]
+      summary: Launch a new case instance
+      description: |
+        Creates a new case instance from the specified workflow specification.
+        The specification must be loaded in the engine (see Interface A).
+
+        The optional `caseData` XML payload initialises case-level net variables.
+        Data must conform to the specification's net variable declarations.
+
+        Returns the case ID assigned to the new instance, which is used to
+        reference the case in subsequent operations.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LaunchCaseRequest"
+            examples:
+              procurement:
+                summary: Launch procurement workflow
+                value:
+                  specIdentifier: ProcurementProcess
+                  specVersion: "2.1"
+                  caseData: |
+                    <data>
+                      <requestAmount>5000.00</requestAmount>
+                      <vendor>Acme Corp</vendor>
+                      <requester>jane.smith</requester>
+                      <department>Engineering</department>
+                    </data>
+      responses:
+        "201":
+          description: Case launched, returns assigned case ID
+          headers:
+            Location:
+              description: URI of the new case resource
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseLaunchResponse"
+              examples:
+                launched:
+                  value:
+                    caseId: "CASE-2026-042"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Specification not found or not loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YawlApiError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/cases/{caseId}:
+    get:
+      operationId: getCase
+      tags: [Cases]
+      summary: Get case instance data and status
+      description: |
+        Returns the current state of the case including all case-level net variable
+        values and references to active work items.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Case data and current state
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/CaseDataXml"
+              examples:
+                running_case:
+                  value: |
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <case id="CASE-2026-042">
+                      <specid>ProcurementProcess</specid>
+                      <specversion>2.1</specversion>
+                      <status>Executing</status>
+                      <createtime>2026-02-17T09:00:00Z</createtime>
+                      <data>
+                        <requestAmount>5000.00</requestAmount>
+                        <vendor>Acme Corp</vendor>
+                        <status>PENDING_APPROVAL</status>
+                      </data>
+                      <workitems>
+                        <workitem id="ITEM-10042" status="Executing"/>
+                      </workitems>
+                    </case>
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/cases/{caseId}/cancel:
+    post:
+      operationId: cancelCase
+      tags: [Cases]
+      summary: Cancel a running case
+      description: |
+        Cancels the case instance and terminates all active work items within it.
+        This operation is irreversible. The case state is archived for audit purposes.
+
+        All tokens are removed from the Petri net. No compensation logic is invoked
+        (see Interface X for compensating transactions).
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Case cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              examples:
+                cancelled:
+                  value:
+                    status: cancelled
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ib/cases/{caseId}/workitems:
+    get:
+      operationId: getCaseWorkItems
+      tags: [Cases]
+      summary: Get all work items for a case
+      description: Returns all work items (active and completed) associated with the case.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/CaseId"
+        - name: activeOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, returns only active (non-completed) work items
+      responses:
+        "200":
+          description: Work items for the case
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkItemRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ─────────────────────────────────────────────────────────
+  # Interface A — Specification Management
+  # ─────────────────────────────────────────────────────────
+
+  /ia/specifications:
+    get:
+      operationId: getSpecifications
+      tags: [Specifications]
+      summary: List all loaded specifications
+      description: Returns metadata for all workflow specifications currently loaded in the engine.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      responses:
+        "200":
+          description: Array of specification summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpecificationSummary"
+              examples:
+                loaded_specs:
+                  value:
+                    - identifier: ProcurementProcess
+                      version: "2.1"
+                      uri: "ProcurementProcess.yawl"
+                      name: Purchase Order Workflow
+                      loadedAt: "2026-02-17T08:00:00Z"
+                    - identifier: OnboardingWorkflow
+                      version: "1.0"
+                      uri: "Onboarding.yawl"
+                      name: Employee Onboarding
+                      loadedAt: "2026-02-15T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: uploadSpecification
+      tags: [Specifications]
+      summary: Upload and load a workflow specification
+      description: |
+        Uploads a YAWL specification (XML conforming to YAWL Schema 4.0) and loads it
+        into the engine. The specification undergoes full structural validation before loading.
+
+        Specification identifiers are unique within the engine. Uploading a specification
+        with an existing identifier and different version registers a new version.
+        Uploading the identical version replaces it.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/SpecificationXml"
+      responses:
+        "201":
+          description: Specification loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecificationSummary"
+        "400":
+          description: Specification validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ia/specifications/{specId}:
+    get:
+      operationId: getSpecification
+      tags: [Specifications]
+      summary: Get specification metadata
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/SpecId"
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Specific version (defaults to latest)
+      responses:
+        "200":
+          description: Specification metadata and summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecificationDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      operationId: unloadSpecification
+      tags: [Specifications]
+      summary: Unload a specification from the engine
+      description: |
+        Removes the specification from the engine's loaded specification registry.
+        Running cases are not affected; they continue with the in-memory definition.
+        New cases cannot be launched from an unloaded specification.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/SpecId"
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Specific version to unload (defaults to latest)
+      responses:
+        "200":
+          description: Specification unloaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          description: Cannot unload — running cases reference this specification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YawlApiError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ia/specifications/{specId}/validate:
+    post:
+      operationId: validateSpecification
+      tags: [Specifications]
+      summary: Validate a specification without loading it
+      description: |
+        Runs full structural and semantic validation against YAWL Schema 4.0 and
+        the engine's Petri net verification rules. Returns detailed validation messages.
+
+        This is a dry-run — the specification is not loaded into the engine.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/SpecId"
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/SpecificationXml"
+      responses:
+        "200":
+          description: Validation result (may indicate warnings even on success)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          description: Specification is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ─────────────────────────────────────────────────────────
+  # Interface X — Extended Operations
+  # ─────────────────────────────────────────────────────────
+
+  /ix/workitems/{itemId}/exception:
+    post:
+      operationId: handleWorkItemException
+      tags: [Extended]
+      summary: Raise or handle a work item exception
+      description: |
+        Signals an exception condition on an executing work item. The exception
+        is routed to the configured exception handler (worklet service or custom handler).
+
+        Exception types follow YAWL exception taxonomy: constraint, resource,
+        deadline, and custom exceptions.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/ItemId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionRequest"
+      responses:
+        "200":
+          description: Exception handled or queued for handling
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExceptionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ix/cases/{caseId}/compensate:
+    post:
+      operationId: compensateCase
+      tags: [Extended]
+      summary: Trigger compensating transaction for a case
+      description: |
+        Initiates compensating workflow logic for a failed or cancelled case.
+        Requires a compensation specification to be defined in the original spec.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - $ref: "#/components/parameters/CaseId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompensationRequest"
+      responses:
+        "202":
+          description: Compensation initiated asynchronously
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ─────────────────────────────────────────────────────────
+  # Interface E — Event Subscriptions
+  # ─────────────────────────────────────────────────────────
+
+  /ie/subscriptions:
+    get:
+      operationId: getSubscriptions
+      tags: [Events]
+      summary: List active event subscriptions
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      responses:
+        "200":
+          description: Active subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventSubscription"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: createSubscription
+      tags: [Events]
+      summary: Subscribe to workflow events
+      description: |
+        Registers a webhook endpoint to receive real-time workflow event notifications.
+        Events are delivered via HTTP POST to the specified callback URL.
+
+        Supported event types: `caseStarted`, `caseCompleted`, `caseCancelled`,
+        `workItemEnabled`, `workItemStarted`, `workItemCompleted`, `workItemFailed`,
+        `timerExpired`, `constraintViolated`.
+
+        The engine retries failed deliveries with exponential backoff (max 3 retries).
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionRequest"
+            examples:
+              case_events:
+                summary: Subscribe to all case lifecycle events
+                value:
+                  callbackUrl: "https://my-service.example.com/yawl-events"
+                  eventTypes:
+                    - caseStarted
+                    - caseCompleted
+                    - caseCancelled
+                  specIdentifier: ProcurementProcess
+                  secret: "webhook-signing-secret"
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventSubscription"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ie/subscriptions/{subscriptionId}:
+    delete:
+      operationId: deleteSubscription
+      tags: [Events]
+      summary: Unsubscribe from events
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Subscription deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ─────────────────────────────────────────────────────────
+  # Admin / Health
+  # ─────────────────────────────────────────────────────────
+
+  /admin/health:
+    get:
+      operationId: healthCheck
+      tags: [Admin]
+      summary: Engine health check
+      description: Returns engine health status. Does not require session handle.
+      responses:
+        "200":
+          description: Engine is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                healthy:
+                  value:
+                    status: UP
+                    version: "6.0.0"
+                    uptime: 86400
+                    activeCase: 12
+                    activeSessions: 5
+        "503":
+          description: Engine is degraded or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /admin/metrics:
+    get:
+      operationId: getMetrics
+      tags: [Admin]
+      summary: Engine performance metrics
+      description: Returns Micrometer/Prometheus metrics snapshot.
+      parameters:
+        - $ref: "#/components/parameters/SessionHandle"
+      responses:
+        "200":
+          description: Metrics data in Prometheus exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+# ─────────────────────────────────────────────────────────
+# Components
+# ─────────────────────────────────────────────────────────
+
+components:
+
+  parameters:
+    SessionHandle:
+      name: sessionHandle
+      in: query
+      required: true
+      description: |
+        Opaque session token obtained from `POST /ib/connect`.
+        Expires after configurable inactivity timeout (default 60 minutes).
+      schema:
+        type: string
+        minLength: 10
+
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      description: Work item identifier (engine-assigned string ID)
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9_\\-\\.]+$"
+
+    CaseId:
+      name: caseId
+      in: path
+      required: true
+      description: Case instance identifier
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9_\\-\\.]+$"
+
+    SpecId:
+      name: specId
+      in: path
+      required: true
+      description: Specification identifier (from the specification's `id` attribute)
+      schema:
+        type: string
+
+  headers:
+    XYawlApiVersion:
+      description: YAWL API version that processed the request
+      schema:
+        type: string
+        example: "6.0.0"
+
+  schemas:
+
+    ConnectRequest:
+      type: object
+      required: [userid, password]
+      properties:
+        userid:
+          type: string
+          description: Engine user ID
+          minLength: 1
+          example: admin
+        password:
+          type: string
+          description: User password
+          format: password
+          minLength: 1
+          example: YAWL
+      additionalProperties: false
+
+    ConnectResponse:
+      type: object
+      required: [sessionHandle]
+      properties:
+        sessionHandle:
+          type: string
+          description: Opaque session token, valid for the configured session timeout
+          minLength: 10
+
+    SessionInfo:
+      type: object
+      properties:
+        userid:
+          type: string
+        sessionHandle:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        engineVersion:
+          type: string
+
+    WorkItemStatus:
+      type: string
+      enum:
+        - Enabled
+        - Fired
+        - Executing
+        - Complete
+        - Suspended
+        - Cancelled
+        - Failed
+      description: |
+        Work item execution status in the Petri net lifecycle:
+        - `Enabled`: Task is ready to start (token on input condition)
+        - `Fired`: Multi-instance task partially created
+        - `Executing`: Task is currently being processed
+        - `Complete`: Task finished (output data bound, token advanced)
+        - `Suspended`: Execution paused (timer paused, data preserved)
+        - `Cancelled`: Terminated before completion
+        - `Failed`: Execution failed due to exception
+
+    ResourceStatus:
+      type: string
+      enum:
+        - Unresourced
+        - Offered
+        - Allocated
+        - Started
+        - Suspended
+        - Complete
+      description: Work item resource allocation status
+
+    WorkItemRecord:
+      type: object
+      description: Represents a task instance (work item) within a running case
+      required: [id, specIdentifier, caseID, taskID, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Internal engine identifier (Hibernate primary key)
+          example: 10042
+        specIdentifier:
+          type: string
+          description: Specification identifier
+          example: ProcurementProcess
+        specVersion:
+          type: string
+          description: Specification version
+          example: "2.1"
+        specURI:
+          type: string
+          description: Specification URI
+          example: "ProcurementProcess.yawl"
+        caseID:
+          type: string
+          description: Case instance ID
+          example: "CASE-2026-001"
+        taskID:
+          type: string
+          description: Task definition ID (from specification)
+          example: ApproveRequest
+        uniqueID:
+          type: string
+          description: Globally unique work item identifier
+          example: "ApproveRequest:CASE-2026-001"
+        taskName:
+          type: string
+          description: Human-readable task name
+          example: Approve Purchase Request
+        documentation:
+          type: string
+          description: Task documentation string from specification
+        status:
+          $ref: "#/components/schemas/WorkItemStatus"
+        resourceStatus:
+          $ref: "#/components/schemas/ResourceStatus"
+        enablementTimeMs:
+          type: string
+          format: date-time
+          description: When the work item was enabled (token arrived)
+        firingTimeMs:
+          type: string
+          format: date-time
+          description: When the work item was fired (multi-instance creation time)
+        startTimeMs:
+          type: string
+          format: date-time
+          description: When execution started (checkout time)
+        completionTimeMs:
+          type: string
+          format: date-time
+          description: When execution completed
+        timerTrigger:
+          type: string
+          description: Timer trigger expression (ISO 8601 duration or cron)
+        timerExpiry:
+          type: string
+          format: date-time
+          description: When the task timer expires
+        allowsDynamicCreation:
+          type: boolean
+          description: Whether task permits dynamic work item creation
+        requiresManualResourcing:
+          type: boolean
+          description: Whether task requires manual resource allocation
+
+    WorkItemDataXml:
+      type: object
+      description: Work item with embedded data payload (XML format)
+      xml:
+        name: workitem
+
+    TaskDataXml:
+      type: object
+      description: Task data payload conforming to task parameter schema (XML format)
+      xml:
+        name: data
+
+    LaunchCaseRequest:
+      type: object
+      required: [specIdentifier]
+      properties:
+        specIdentifier:
+          type: string
+          description: Specification identifier to instantiate
+          example: ProcurementProcess
+        specVersion:
+          type: string
+          description: Version to use (defaults to latest loaded version)
+          example: "2.1"
+        caseData:
+          type: string
+          description: |
+            XML string initialising case-level net variables. Must conform to the
+            specification's net variable declarations.
+          example: |
+            <data>
+              <requestAmount>5000.00</requestAmount>
+              <vendor>Acme Corp</vendor>
+            </data>
+      additionalProperties: false
+
+    CaseLaunchResponse:
+      type: object
+      required: [caseId]
+      properties:
+        caseId:
+          type: string
+          description: Assigned case instance identifier
+          example: "CASE-2026-042"
+
+    CaseDataXml:
+      type: object
+      description: Case instance data and status (XML format)
+      xml:
+        name: case
+
+    SpecificationSummary:
+      type: object
+      required: [identifier, version, uri]
+      properties:
+        identifier:
+          type: string
+          example: ProcurementProcess
+        version:
+          type: string
+          example: "2.1"
+        uri:
+          type: string
+          example: "ProcurementProcess.yawl"
+        name:
+          type: string
+          example: Purchase Order Workflow
+        documentation:
+          type: string
+        loadedAt:
+          type: string
+          format: date-time
+        taskCount:
+          type: integer
+          description: Total number of task decompositions in the specification
+        netCount:
+          type: integer
+          description: Number of nets (root + composite tasks)
+
+    SpecificationDetail:
+      allOf:
+        - $ref: "#/components/schemas/SpecificationSummary"
+        - type: object
+          properties:
+            nets:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  isRoot:
+                    type: boolean
+                  taskCount:
+                    type: integer
+            runningCases:
+              type: integer
+              description: Number of currently running case instances
+
+    SpecificationXml:
+      type: object
+      description: YAWL specification XML conforming to YAWL Schema 4.0
+      xml:
+        name: specificationSet
+
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationMessage"
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationMessage"
+
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ValidationResult"
+        - type: object
+          required: [errors]
+          properties:
+            errors:
+              type: array
+              items:
+                $ref: "#/components/schemas/ValidationMessage"
+
+    ValidationMessage:
+      type: object
+      properties:
+        severity:
+          type: string
+          enum: [ERROR, WARNING, INFO]
+        code:
+          type: string
+          example: "YAWL-V-001"
+        message:
+          type: string
+        location:
+          type: string
+          description: XPath location in the specification document
+
+    ExceptionRequest:
+      type: object
+      required: [exceptionType]
+      properties:
+        exceptionType:
+          type: string
+          enum:
+            - constraint
+            - resource
+            - deadline
+            - external
+            - custom
+        message:
+          type: string
+          description: Exception message for the handler
+        data:
+          type: string
+          description: Optional XML data payload for the exception handler
+        handlerHint:
+          type: string
+          description: Preferred exception handler identifier (worklet name or custom handler ID)
+
+    ExceptionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [handled, queued, escalated]
+        handlerId:
+          type: string
+        message:
+          type: string
+
+    CompensationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Human-readable reason for compensation
+        compensationData:
+          type: string
+          description: Optional XML data for the compensation workflow
+
+    EventType:
+      type: string
+      enum:
+        - caseStarted
+        - caseCompleted
+        - caseCancelled
+        - workItemEnabled
+        - workItemStarted
+        - workItemCompleted
+        - workItemFailed
+        - workItemSuspended
+        - timerExpired
+        - constraintViolated
+        - exceptionRaised
+
+    EventSubscription:
+      type: object
+      required: [id, callbackUrl, eventTypes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        callbackUrl:
+          type: string
+          format: uri
+        eventTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventType"
+          minItems: 1
+        specIdentifier:
+          type: string
+          description: Filter events to this specification (null means all specifications)
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastDeliveryAt:
+          type: string
+          format: date-time
+
+    CreateSubscriptionRequest:
+      type: object
+      required: [callbackUrl, eventTypes]
+      properties:
+        callbackUrl:
+          type: string
+          format: uri
+          description: HTTPS endpoint to receive event payloads
+        eventTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventType"
+          minItems: 1
+        specIdentifier:
+          type: string
+          description: Scope subscription to a specific specification (optional)
+        secret:
+          type: string
+          description: |
+            HMAC-SHA256 signing secret. When present, the engine signs each event payload
+            and includes the signature in the `X-YAWL-Signature` header.
+          format: password
+      additionalProperties: false
+
+    StatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: completed
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [UP, DEGRADED, DOWN]
+        version:
+          type: string
+          example: "6.0.0"
+        uptime:
+          type: integer
+          description: Engine uptime in seconds
+        activeCases:
+          type: integer
+        activeSessions:
+          type: integer
+        database:
+          type: string
+          enum: [UP, DOWN]
+        components:
+          type: object
+          additionalProperties:
+            type: string
+
+    YawlApiError:
+      type: object
+      required: [error, status]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Work item ITEM-10042 not found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        code:
+          type: string
+          description: YAWL error code for programmatic handling
+          example: "YAWL-E-404"
+        requestId:
+          type: string
+          description: Correlation ID for log tracing (matches X-Request-ID header)
+        detail:
+          type: string
+          description: Extended diagnostic information (only in non-production environments)
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or payload
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/YawlApiError"
+          examples:
+            invalid_param:
+              value:
+                error: "Required parameter 'sessionHandle' is missing"
+                status: 400
+                code: "YAWL-E-400"
+
+    Unauthorized:
+      description: Invalid or expired session handle
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/YawlApiError"
+          examples:
+            expired_session:
+              value:
+                error: "Session handle is invalid or has expired"
+                status: 401
+                code: "YAWL-E-401"
+
+    NotFound:
+      description: Requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/YawlApiError"
+          examples:
+            not_found:
+              value:
+                error: "Resource not found"
+                status: 404
+                code: "YAWL-E-404"
+
+    InternalError:
+      description: Engine encountered an unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/YawlApiError"
+          examples:
+            server_error:
+              value:
+                error: "Engine internal error — see server logs for details"
+                status: 500
+                code: "YAWL-E-500"
+                requestId: "a3f7-bee2-4109"

@@ -1,0 +1,143 @@
+# =============================================================================
+# YAWL v6.0.0 – Kyverno Image Signing & Admission Control Policies
+# =============================================================================
+# Prerequisites:
+#   - Kyverno 1.11+ installed
+#   - cosign public key stored in ConfigMap yawl-cosign-public-key
+#   - Trivy scan results stored as OCI attestations
+# =============================================================================
+---
+# Require cosign-verified images for YAWL namespace
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-signed-images
+  annotations:
+    policies.kyverno.io/title: Require Signed YAWL Images
+    policies.kyverno.io/category: Software Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      All YAWL container images must be signed with cosign before admission.
+      Keyless signing via GitHub Actions OIDC is the preferred method.
+      The image digest (not tag) must be used in production workloads.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-yawl-image-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [yawl]
+      verifyImages:
+        - imageReferences:
+            # Match all YAWL service images (engine, resource-service, etc.)
+            - "*/yawl/*:*"
+            - "docker.io/yawl/*:*"
+          # Verify cosign signature
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    # Production public key (stored in ConfigMap, injected below)
+                    # In CI/CD: use keyless with OIDC
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      # Replace with actual cosign.pub contents after key generation:
+                      # cosign generate-key-pair
+                      # base64 cosign.pub
+                      -----END PUBLIC KEY-----
+                    signatureAlgorithm: sha256
+          # Also verify the CycloneDX SBOM attestation is present
+          attestations:
+            - predicateType: https://cyclonedx.org/bom
+              attestors:
+                - count: 1
+                  entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          # Same cosign.pub
+                          -----END PUBLIC KEY-----
+---
+# Require image digest (not mutable tag) in production
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-image-digest
+  annotations:
+    policies.kyverno.io/title: Require Image Digest for YAWL
+    policies.kyverno.io/category: Software Supply Chain Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >
+      YAWL production workloads must reference container images by digest (sha256:...)
+      to prevent tag mutation attacks. The tag may also be present for readability.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: require-digest
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [yawl]
+              selector:
+                matchLabels:
+                  # Only enforce on production-labelled pods
+                  app.kubernetes.io/part-of: yawl
+      validate:
+        message: "Images must reference a digest (sha256:...) in production namespace"
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.image }}"
+                    operator: NotIn
+                    value: ["*@sha256:*"]
+---
+# Require Trivy vulnerability scan attestation
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: yawl-require-vuln-scan
+  annotations:
+    policies.kyverno.io/title: Require Trivy Vulnerability Scan Attestation
+    policies.kyverno.io/category: Software Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      YAWL images must have a Trivy vulnerability scan result attached as an
+      OCI attestation (SARIF format) before admission. The scan must show
+      zero CRITICAL vulnerabilities.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-trivy-attestation
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [yawl]
+      verifyImages:
+        - imageReferences:
+            - "*/yawl/*:*"
+          attestations:
+            - predicateType: https://aquasecurity.github.io/trivy/vulnerability
+              conditions:
+                - all:
+                    # No CRITICAL vulnerabilities allowed
+                    - key: "{{ attestation.predicate.Results[].Vulnerabilities[?Severity == 'CRITICAL'] | length(@) }}"
+                      operator: Equals
+                      value: 0
+              attestors:
+                - count: 1
+                  entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          # cosign.pub
+                          -----END PUBLIC KEY-----
