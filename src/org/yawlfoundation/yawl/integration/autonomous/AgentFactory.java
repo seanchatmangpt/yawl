@@ -43,7 +43,7 @@ import java.io.IOException;
  *     .capability(new AgentCapability("Ordering", "procurement, purchase orders"))
  *     .engineUrl("http://localhost:8080/yawl")
  *     .username("admin")
- *     .password("YAWL")
+ *     .password(System.getenv("YAWL_PASSWORD"))  // supply via YAWL_PASSWORD env var
  *     .discoveryStrategy(new PollingDiscoveryStrategy())
  *     .eligibilityReasoner(new ZaiEligibilityReasoner(capability, zaiService))
  *     .decisionReasoner(new ZaiDecisionReasoner(zaiService))
@@ -93,7 +93,7 @@ public final class AgentFactory {
      *   <li><code>AGENT_CAPABILITY</code> - Domain capability (format: "DomainName: description")</li>
      *   <li><code>YAWL_ENGINE_URL</code> - YAWL engine URL (default: http://localhost:8080/yawl)</li>
      *   <li><code>YAWL_USERNAME</code> - YAWL username (default: admin)</li>
-     *   <li><code>YAWL_PASSWORD</code> - YAWL password (default: YAWL)</li>
+     *   <li><code>YAWL_PASSWORD</code> - YAWL password (required - no default; see SECURITY.md)</li>
      * </ul>
      * </p>
      *
@@ -122,7 +122,13 @@ public final class AgentFactory {
 
         String engineUrl = getEnv("YAWL_ENGINE_URL", "http://localhost:8080/yawl");
         String username = getEnv("YAWL_USERNAME", "admin");
-        String password = getEnv("YAWL_PASSWORD", "YAWL");
+        String password = System.getenv("YAWL_PASSWORD");
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable is required. " +
+                "No default password is permitted. " +
+                "See SECURITY.md for credential configuration procedures.");
+        }
 
         int port = parsePort(getEnv("AGENT_PORT", "8091"));
         long pollIntervalMs = parseLong(getEnv("POLL_INTERVAL_MS", "3000"));

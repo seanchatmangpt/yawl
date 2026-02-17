@@ -14,7 +14,7 @@ package org.yawlfoundation.yawl.integration.mcp.spring;
  *     enabled: true
  *     engine-url: http://localhost:8080/yawl
  *     username: ${YAWL_USERNAME:admin}
- *     password: ${YAWL_PASSWORD:YAWL}
+ *     password: ${YAWL_PASSWORD}  # required - no default; see SECURITY.md
  *     transport: stdio
  *     http:
  *       enabled: false
