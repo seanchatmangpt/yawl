@@ -1,0 +1,304 @@
+{{- /*
+  YAWL v6.0.0 – Engine StatefulSet (Clustered Mode)
+  --------------------------------------------------
+  Enabled when: .Values.engine.clustering.enabled = true
+  Disabled by default; Deployment (engine-deployment.yaml) is used for standalone mode.
+
+  StatefulSet provides:
+    - Stable network identity (engine-0, engine-1, ...) for cluster member discovery
+    - Ordered rolling update (engine-(n-1) updated before engine-n)
+    - Persistent volume per replica for JFR recordings and local spec cache
+
+  Clustering protocol:
+    YAWL engine cluster members discover each other via the headless Service
+    (yawl-engine-headless) using DNS SRV records. Each node registers its
+    stable hostname with the engine's built-in cluster registry on startup.
+*/ -}}
+{{- if and .Values.services.engine.enabled .Values.services.engine.clustering.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "yawl.name" . }}-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: engine
+  annotations:
+    helm.sh/chart: {{ include "yawl.chart" . }}
+    {{- with .Values.services.engine.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  # Ordered pod management: updates proceed engine-(n-1) → engine-0
+  podManagementPolicy: OrderedReady
+  serviceName: {{ include "yawl.name" . }}-engine-headless
+  replicas: {{ .Values.services.engine.replicaCount }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0   # set > 0 to perform canary rollouts
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: engine
+        app.kubernetes.io/part-of: yawl
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+        {{- with .Values.services.engine.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/actuator/prometheus"
+        {{- with .Values.services.engine.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # -----------------------------------------------------------------------
+      # Pod-level security context (runAsNonRoot enforced by Kyverno policy)
+      # -----------------------------------------------------------------------
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 60 }}
+      # -----------------------------------------------------------------------
+      # Init containers
+      # -----------------------------------------------------------------------
+      initContainers:
+        # Wait for PostgreSQL to be ready before engine starts
+        - name: wait-for-db
+          image: busybox:1.36
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z -w 2 ${DB_HOST} ${DB_PORT:-5432}; do
+                echo "[init] Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT:-5432}..."
+                sleep 3
+              done
+              echo "[init] PostgreSQL is reachable"
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "yawl.fullname" . }}-config
+                  key: DATABASE_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "yawl.fullname" . }}-config
+                  key: DATABASE_PORT
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+        {{- with .Values.initContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      # -----------------------------------------------------------------------
+      # Main engine container
+      # -----------------------------------------------------------------------
+      containers:
+        - name: engine
+          image: "{{ .Values.image.registry }}/{{ .Values.services.engine.image.repository | default "yawl/engine" }}:{{ .Values.services.engine.image.tag | default .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.services.engine.image.pullPolicy | default "IfNotPresent" }}
+          # Container-level security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 9090
+              protocol: TCP
+          env:
+            # Downward API
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            # Engine cluster identity derived from stable StatefulSet hostname
+            - name: ENGINE_CLUSTER_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ENGINE_CLUSTER_ENABLED
+              value: "true"
+            - name: ENGINE_CLUSTER_HEADLESS_SERVICE
+              value: {{ printf "%s-engine-headless.%s.svc.cluster.local" (include "yawl.name" .) (include "yawl.namespace" .) | quote }}
+            # Database credentials from Secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yawl.databaseSecretName" . }}
+                  key: password
+            {{- with .Values.services.engine.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+          # -----------------------------------------------------------------------
+          # Probes
+          # -----------------------------------------------------------------------
+          # Startup probe: generous timeout during cold start (JVM + DB migrations)
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18   # 18 × 10s = 3 minutes max startup
+            successThreshold: 1
+          # Liveness probe: restart pod if JVM deadlocks or enters fatal state
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          # Readiness probe: remove pod from load-balancing if not ready
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            {{- toYaml .Values.services.engine.resources | nindent 12 }}
+          # -----------------------------------------------------------------------
+          # Volume mounts
+          # -----------------------------------------------------------------------
+          volumeMounts:
+            # Writable tmp – required for JVM temp files (readOnlyRootFilesystem=true)
+            - name: tmp
+              mountPath: /app/tmp
+            # Writable logs – JFR recordings, heap dumps
+            - name: logs
+              mountPath: /app/logs
+            # ConfigMap-backed application config overlay
+            - name: app-config
+              mountPath: /app/config
+              readOnly: true
+            # Persistent volume for this replica (JFR long-term, spec cache)
+            - name: engine-data
+              mountPath: /app/data
+            {{- with .Values.services.engine.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        # Istio sidecar is injected automatically when namespace label
+        # istio-injection=enabled is set (see namespace.yaml)
+      # -----------------------------------------------------------------------
+      # Volumes (non-persistent)
+      # -----------------------------------------------------------------------
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: logs
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: app-config
+          configMap:
+            name: {{ include "yawl.fullname" . }}-app-config
+            defaultMode: 0444
+        {{- with .Values.services.engine.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      # -----------------------------------------------------------------------
+      # Scheduling
+      # -----------------------------------------------------------------------
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        # Hard anti-affinity: no two engine pods on same node
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+                  app.kubernetes.io/instance: {{ .Release.Name }}
+              topologyKey: kubernetes.io/hostname
+        {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
+  # -----------------------------------------------------------------------
+  # Per-replica persistent volume claim template
+  # -----------------------------------------------------------------------
+  volumeClaimTemplates:
+    - metadata:
+        name: engine-data
+        labels:
+          {{- include "yawl.labels" . | nindent 10 }}
+          app.kubernetes.io/component: engine-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.services.engine.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.services.engine.persistence.size | default "5Gi" }}
+{{- end }}

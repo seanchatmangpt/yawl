@@ -1,11 +1,12 @@
 apiVersion: v2
 name: yawl
-description: YAWL (Yet Another Workflow Language) - Multi-cloud Helm Chart for BPM/Workflow Engine
+description: YAWL v6.0.0 - Yet Another Workflow Language - Enterprise BPM/Workflow Engine (Petri-net semantics)
 type: application
-version: 5.2.0
-appVersion: "5.2"
-kubeVersion: ">=1.25.0-0"
+version: 6.0.0
+appVersion: "6.0.0"
+kubeVersion: ">=1.27.0-0"
 home: https://yawlfoundation.github.io/
+icon: https://yawlfoundation.github.io/images/yawl-logo.png
 sources:
   - https://github.com/yawlfoundation/yawl
 maintainers:
@@ -19,34 +20,46 @@ keywords:
   - petri-net
   - process-automation
   - workflow-engine
+  - loom
+  - virtual-threads
 annotations:
   artifacthub.io/category: integration-delivery
-  artifacthub.io/license: Apache-2.0
+  artifacthub.io/license: LGPL-3.0
   artifacthub.io/links: |
     - name: Documentation
-      url: https://yawlfoundation.github.io/yawl/v5.2/
+      url: https://yawlfoundation.github.io/yawl/v6.0/
     - name: GitHub
       url: https://github.com/yawlfoundation/yawl
+    - name: Changelog
+      url: https://github.com/yawlfoundation/yawl/blob/main/CHANGELOG.md
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "false"
-  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
     - kind: added
-      description: Multi-cloud Helm chart support (GCP, AWS, Azure, Oracle, IBM)
+      description: "v6.0.0 - Java 21 LTS with Virtual Threads (Project Loom)"
     - kind: added
-      description: CloudSQL proxy integration for GCP
+      description: "Multi-stage Docker build (dependency-cache / test / package / runtime)"
     - kind: added
-      description: AWS RDS proxy integration
+      description: "StatefulSet support for clustered engine deployments"
     - kind: added
-      description: Redis subchart for session management
+      description: "Istio service mesh integration (PeerAuthentication, DestinationRule)"
     - kind: added
-      description: PostgreSQL subchart for database
+      description: "Trivy scan gate + cosign image signing pipeline"
     - kind: added
-      description: Horizontal Pod Autoscaler support
+      description: "CycloneDX and SPDX SBOM generation"
     - kind: added
-      description: Pod Disruption Budget support
+      description: "OPA / Kyverno admission controller policies"
     - kind: added
-      description: Network Policy support
+      description: "PostgreSQL HA StatefulSet with streaming replication"
+    - kind: added
+      description: "Automated pg_basebackup + WAL-G backup strategy"
+    - kind: added
+      description: "Prometheus ServiceMonitor and Grafana dashboard ConfigMaps"
+    - kind: security
+      description: "Non-root UID 10001, read-only root filesystem, ALL caps dropped"
+    - kind: security
+      description: "Network policies: default-deny with explicit allow-list"
 
 dependencies:
   - name: postgresql
