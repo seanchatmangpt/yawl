@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MAVEN PLUGINS CONFIGURATION 2026
+  For: YAWL v5.2 (89 packages, Java 25)
+  Date: 2026-02-17
+
+  Usage: Copy sections into parent pom.xml <pluginManagement> and <plugins>
+
+  Structure:
+  1. PluginManagement: Centralized version declarations
+  2. Build/Plugins: Execution configuration
+  3. Profiles: Optional configurations
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.1.0</modelVersion>
+
+    <!-- PROPERTIES: Version centralization -->
+    <properties>
+        <!-- Build Properties -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Java Configuration -->
+        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+
+        <!-- Plugin Versions (2026 Latest) -->
+        <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+        <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
+        <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
+        <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
+        <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
+        <maven.clean.plugin.version>3.4.0</maven.clean.plugin.version>
+        <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+        <maven.install.plugin.version>3.1.2</maven.install.plugin.version>
+        <maven.deploy.plugin.version>3.1.2</maven.deploy.plugin.version>
+        <maven.site.plugin.version>3.12.1</maven.site.plugin.version>
+
+        <!-- Code Quality -->
+        <jacoco.maven.plugin.version>0.8.15</jacoco.maven.plugin.version>
+        <spotbugs.maven.plugin.version>4.8.2</spotbugs.maven.plugin.version>
+        <maven.pmd.plugin.version>3.25.0</maven.pmd.plugin.version>
+        <maven.checkstyle.plugin.version>3.3.1</maven.checkstyle.plugin.version>
+        <sonar.maven.plugin.version>3.11.0.3477</sonar.maven.plugin.version>
+
+        <!-- Testing -->
+        <junit.version>5.14.0</junit.version>
+        <testng.version>7.11.0</testng.version>
+
+        <!-- Other Tools -->
+        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
+        <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
+        <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
+    </properties>
+
+    <!-- =====================================================
+         PLUGIN MANAGEMENT: Version declarations
+         ===================================================== -->
+    <pluginManagement>
+        <plugins>
+            <!-- COMPILER: Java 25 compilation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <fork>true</fork>
+                    <compilerArgs>
+                        <!-- Lint warnings -->
+                        <arg>-Xlint:all</arg>
+                        <arg>-Xlint:-processing</arg>
+                        <!-- Treat warnings as errors -->
+                        <arg>-Werror</arg>
+                        <!-- Java 25 preview features (if needed) -->
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
+                    <!-- Error Prone integration (optional) -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>2.36.0</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- SUREFIRE: Unit test execution with parallelization -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+                <configuration>
+                    <!-- Parallel execution (methods level) -->
+                    <parallel>methods</parallel>
+                    <threadCount>1.5C</threadCount>
+
+                    <!-- Test includes/excludes -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*TestCase.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+
+                    <!-- Reporting -->
+                    <reportFormat>plain</reportFormat>
+                    <reportFormat>xml</reportFormat>
+
+                    <!-- Timeout per test method (5 seconds) -->
+                    <properties>
+                        <configurationParameters>
+                            junit.jupiter.execution.timeout.default=5s
+                        </configurationParameters>
+                    </properties>
+
+                    <!-- Rerun flaky tests -->
+                    <rerunFailingTestsCount>2</rerunFailingTestsCount>
+
+                    <!-- Fail fast -->
+                    <failIfNoTests>false</failIfNoTests>
+                    <skipAfterFailureCount>10</skipAfterFailureCount>
+                </configuration>
+            </plugin>
+
+            <!-- FAILSAFE: Integration test execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.plugin.version}</version>
+                <configuration>
+                    <!-- Parallel execution -->
+                    <parallel>classes</parallel>
+                    <threadCount>1.5C</threadCount>
+
+                    <!-- Test includes/excludes -->
+                    <includes>
+                        <include>**/*IntegrationTest.java</include>
+                        <include>**/*IT.java</include>
+                    </includes>
+
+                    <!-- Reporting -->
+                    <reportFormat>plain</reportFormat>
+                    <reportFormat>xml</reportFormat>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JAR: JAR packaging -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- ENFORCER: Build rules and constraints -->
+            <plugin>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven-environment</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <!-- Require Maven 4.0+ -->
+                                <requireMavenVersion>
+                                    <version>[4.0.0,)</version>
+                                    <message>Maven 4.0.0 or later required</message>
+                                </requireMavenVersion>
+
+                                <!-- Require Java 25+ -->
+                                <requireJavaVersion>
+                                    <version>[25,)</version>
+                                    <message>Java 25 or later required</message>
+                                </requireJavaVersion>
+
+                                <!-- Plugin version pinning (Maven 4 best practice) -->
+                                <requirePluginVersions>
+                                    <banLatest>true</banLatest>
+                                    <banRelease>true</banRelease>
+                                    <banSnapshots>true</banSnapshots>
+                                    <banTimestamps>true</banTimestamps>
+                                    <message>All plugins must have explicit versions</message>
+                                </requirePluginVersions>
+
+                                <!-- Dependency convergence -->
+                                <dependencyConvergence>
+                                    <message>Dependency versions must converge</message>
+                                </dependencyConvergence>
+
+                                <!-- Ban circular dependencies -->
+                                <banCircularDependencies/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JACOCO: Code coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.maven.plugin.version}</version>
+                <executions>
+                    <!-- Prepare agent for coverage collection -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- Generate coverage report after tests -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- Check coverage thresholds -->
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <!-- Package level: 75% line coverage minimum -->
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                        <exclude>*.integration.*</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.75</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Class level: 80% line coverage minimum -->
+                                <rule>
+                                    <element>CLASS</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+
+                                <!-- Method level: 70% coverage minimum -->
+                                <rule>
+                                    <element>METHOD</element>
+                                    <excludes>
+                                        <exclude>*Test</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- SPOTBUGS: Bug pattern detection -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.maven.plugin.version}</version>
+                <configuration>
+                    <effort>max</effort>
+                    <threshold>low</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <skipTests>true</skipTests>
+                    <!-- Optional: Exclude filter file -->
+                    <!-- <excludeFilterFile>${basedir}/.spotbugs-exclude.xml</excludeFilterFile> -->
+                </configuration>
+            </plugin>
+
+            <!-- PMD: Code smell detection -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${maven.pmd.plugin.version}</version>
+                <configuration>
+                    <rulesets>
+                        <ruleset>rulesets/java/basic.xml</ruleset>
+                        <ruleset>rulesets/java/empty-code-blocks.xml</ruleset>
+                        <ruleset>rulesets/java/errorprone.xml</ruleset>
+                        <ruleset>rulesets/java/performance.xml</ruleset>
+                        <ruleset>rulesets/java/quickstart.xml</ruleset>
+                    </rulesets>
+                    <failOnViolation>true</failOnViolation>
+                    <printFailingErrors>true</printFailingErrors>
+                    <excludeRoots>
+                        <excludeRoot>target/generated-sources</excludeRoot>
+                    </excludeRoots>
+                </configuration>
+            </plugin>
+
+            <!-- CHECKSTYLE: Code style enforcement -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven.checkstyle.plugin.version}</version>
+                <configuration>
+                    <!-- Google style guide -->
+                    <configLocation>google_checks.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <failOnViolation>true</failOnViolation>
+                </configuration>
+            </plugin>
+
+            <!-- SONARQUBE: Comprehensive code analysis -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.plugin.version}</version>
+            </plugin>
+
+            <!-- SHADE: Uber JAR creation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.plugin.version}</version>
+            </plugin>
+
+            <!-- ASSEMBLY: Distribution assembly -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.plugin.version}</version>
+            </plugin>
+
+            <!-- CLEAN: Build cleanup -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven.clean.plugin.version}</version>
+            </plugin>
+
+            <!-- RESOURCES: Resource handling -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven.resources.plugin.version}</version>
+            </plugin>
+
+            <!-- INSTALL: Local repository installation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>${maven.install.plugin.version}</version>
+            </plugin>
+
+            <!-- DEPLOY: Remote repository deployment -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven.deploy.plugin.version}</version>
+            </plugin>
+
+            <!-- SITE: Maven site generation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${maven.site.plugin.version}</version>
+            </plugin>
+
+            <!-- DEPENDENCY: Dependency analysis -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
+            </plugin>
+        </plugins>
+    </pluginManagement>
+
+    <!-- =====================================================
+         BUILD PLUGINS: Main build configuration
+         ===================================================== -->
+    <build>
+        <plugins>
+            <!-- Compiler (all projects inherit) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Surefire (all projects inherit) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <!-- Enforcer (all projects inherit) -->
+            <plugin>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+
+            <!-- JaCoCo (all projects inherit) -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- =====================================================
+         REPORTING: Test reports
+         ===================================================== -->
+    <reporting>
+        <plugins>
+            <!-- Surefire Report -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+            </plugin>
+
+            <!-- JaCoCo Report -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.maven.plugin.version}</version>
+            </plugin>
+
+            <!-- SpotBugs Report -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.maven.plugin.version}</version>
+            </plugin>
+
+            <!-- PMD Report -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${maven.pmd.plugin.version}</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <!-- =====================================================
+         PROFILES: Optional build configurations
+         ===================================================== -->
+    <profiles>
+        <!-- Profile: Fast build (skip analysis) -->
+        <profile>
+            <id>fast</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <skipITs>true</skipITs>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <rerunFailingTestsCount>0</rerunFailingTestsCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile: Static analysis only -->
+        <profile>
+            <id>analysis</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile: Full quality gates (with SonarQube) -->
+        <profile>
+            <id>quality</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
+
+<!--
+  USAGE EXAMPLES
+  ==============
+
+  # Standard build
+  mvn -T 1.5C clean package
+
+  # Fast build (skip tests)
+  mvn -T 1.5C -Pfast clean package -DskipTests
+
+  # With code coverage
+  mvn -T 1.5C clean test jacoco:check
+
+  # Static analysis only
+  mvn -Panalysis clean verify
+
+  # Full quality gates
+  mvn -Pquality clean verify
+
+  # Compile only
+  mvn -T 1.5C clean compile
+
+  # Unit tests parallel
+  mvn -T 1.5C clean test
+
+  # Integration tests
+  mvn -T 1.5C clean verify -DskipUnitTests
+
+  # SonarQube analysis
+  mvn -Pquality clean verify sonar:sonar \
+    -Dsonar.host.url=https://sonarqube.example.com \
+    -Dsonar.login=token123
+-->

@@ -247,6 +247,86 @@
           }
         }
       }
+    },
+    {
+      "name": "yawl-java25",
+      "command": "/yawl-java25",
+      "description": "Java 25 adoption and migration tools",
+      "script": ".claude/skills/yawl-java25.sh",
+      "agent": "yawl-engineer",
+      "examples": [
+        "/yawl-java25 --check-deprecated",
+        "/yawl-java25 --migrate-records",
+        "/yawl-java25 --parallel-build",
+        "/yawl-java25 --performance-report"
+      ],
+      "metadata": {
+        "priority": 2,
+        "category": "java25",
+        "javaVersions": ["25"],
+        "newFeatures": ["records", "sealed-classes", "virtual-threads", "scoped-values", "pattern-matching"]
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["check-deprecated", "migrate-records", "parallel-build", "performance-report", "security-check", "module-audit"],
+            "default": "check-deprecated",
+            "description": "Java 25 action"
+          },
+          "module": {
+            "type": "string",
+            "description": "Specific module to analyze"
+          },
+          "report": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate detailed report"
+          }
+        }
+      }
+    },
+    {
+      "name": "yawl-security",
+      "command": "/yawl-security",
+      "description": "Security validation and Java 25 compliance",
+      "script": ".claude/skills/yawl-security.sh",
+      "agent": "yawl-production-validator",
+      "examples": [
+        "/yawl-security --check",
+        "/yawl-security --sbom",
+        "/yawl-security --compliance",
+        "/yawl-security --tls-check"
+      ],
+      "metadata": {
+        "priority": 1,
+        "category": "security",
+        "javaVersions": ["25"],
+        "standards": ["OWASP", "NIST", "CNSA"]
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["check", "sbom", "compliance", "tls-check", "deprecated-api", "crypto-audit"],
+            "default": "check",
+            "description": "Security validation action"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["basic", "standard", "strict"],
+            "default": "standard",
+            "description": "Validation strictness"
+          },
+          "report": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate compliance report"
+          }
+        }
+      }
     }
   ]
 }
