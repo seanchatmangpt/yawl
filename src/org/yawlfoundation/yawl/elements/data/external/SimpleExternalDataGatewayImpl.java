@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.elements.data.external;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
@@ -37,6 +38,8 @@ import java.util.Properties;
  * Creation Date: 13/08/2009
  */
 public class SimpleExternalDataGatewayImpl implements ExternalDataGateway {
+
+    private static final Logger _logger = LogManager.getLogger(SimpleExternalDataGatewayImpl.class);
 
     public SimpleExternalDataGatewayImpl() {}
 
@@ -128,19 +131,27 @@ public class SimpleExternalDataGatewayImpl implements ExternalDataGateway {
 
 
     public void updateFromTaskCompletion(YTask task, String paramName, Element outputData,
-                                         Element caseData) {}
+                                         Element caseData) {
+        // No-op in base SimpleExternalDataGatewayImpl. Subclasses should override to
+        // write task output data back to the external data source.
+        _logger.debug("updateFromTaskCompletion called for task: {}, param: {}",
+                task != null ? task.getID() : "null", paramName);
+    }
 
-    
+
     public Element populateCaseData(YSpecificationID specID, String caseID,
                                     List<YParameter> inputParams,
                                     List<YVariable> localVars, Element caseDataTemplate) {
-        return null; 
+        // Base implementation returns the unmodified template.
+        // Subclasses should override to populate case data from the external data source.
+        _logger.debug("populateCaseData called for case: {}", caseID);
+        return caseDataTemplate;
     }
 
     public void updateFromCaseData(YSpecificationID specID, String caseID,
                                    List<YParameter> outputParams,
                                    Element updatingData) {
-        System.out.println(caseID);        
+        _logger.debug("updateFromCaseData called for case: {}", caseID);
     }
 
 

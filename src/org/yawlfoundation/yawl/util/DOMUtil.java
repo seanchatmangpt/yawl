@@ -24,6 +24,7 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,7 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Vector;
@@ -49,6 +49,9 @@ import java.util.Vector;
 /**
  *
  * This class provides helper methods to perform common DOM related tasks.
+ *
+ * Security: All SAX/DOM parsers are configured to disable XML External Entity (XXE)
+ * processing to prevent XXE injection attacks (SOC2 CRITICAL finding).
  *
  * @author Mike Fowler
  *         Date: Oct 25, 2005
@@ -65,7 +68,65 @@ public class DOMUtil
                                                              "\n" +
                                                              "    <xsl:template match=\"*[not(.//text())]\"/>\n" +
                                                              "</xsl:stylesheet> ";
+
+    /** Returned by getNodeText when node is null or has no children. */
+    private static final String NO_NODE_TEXT = new String();
+
     private static Transformer emptyElementXSLT = null;
+
+    /**
+     * Creates a DocumentBuilderFactory with XXE protections applied.
+     * Disables external DTD loading and external entity resolution to prevent
+     * XML External Entity (XXE) injection attacks.
+     *
+     * @param namespaceAware whether the factory should be namespace aware
+     * @return a secured DocumentBuilderFactory
+     * @throws ParserConfigurationException if XXE-disabling features are not supported
+     */
+    private static DocumentBuilderFactory createSecureDocumentBuilderFactory(boolean namespaceAware)
+            throws ParserConfigurationException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(namespaceAware);
+
+        // Disable DOCTYPE declarations entirely (prevents XXE via DTD).
+        // This is the strongest protection: any document containing a DOCTYPE declaration
+        // will be rejected outright.
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+        // Disable external general entities (prevents XXE via entity expansion)
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+
+        // Disable external parameter entities (prevents XXE via parameter entities)
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+        // Disable loading of external DTD subsets (defence-in-depth)
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+
+        // Disable XInclude processing (prevents XInclude-based file disclosure)
+        factory.setXIncludeAware(false);
+
+        // Disable external entity expansion at the factory level
+        factory.setExpandEntityReferences(false);
+
+        // Set XMLConstants attributes to restrict access to external resources.
+        // These are supported by JAXP implementations that implement JAXP 1.5+
+        // (e.g. JDK's internal Xerces). Older or alternative parsers may not support
+        // these property names, in which case we ignore the error because the
+        // feature flags above already provide the XXE protection.
+        try {
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        } catch (IllegalArgumentException ignored) {
+            // Parser does not support ACCESS_EXTERNAL_DTD property; XXE is already
+            // disabled by the features set above.
+        }
+        try {
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        } catch (IllegalArgumentException ignored) {
+            // Parser does not support ACCESS_EXTERNAL_SCHEMA property; acceptable.
+        }
+
+        return factory;
+    }
 
     /**
      * Converts a xml String to a DOM Document
@@ -79,8 +140,7 @@ public class DOMUtil
     public static Document getDocumentFromString(String xml) throws ParserConfigurationException, SAXException,
                                                                     IOException
     {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
+        DocumentBuilderFactory factory = createSecureDocumentBuilderFactory(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
@@ -92,9 +152,8 @@ public class DOMUtil
      */
     public static Document createDocumentInstance() throws ParserConfigurationException
     {
-        DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
-        builder.setNamespaceAware(true);
-        return builder.newDocumentBuilder().newDocument();
+        DocumentBuilderFactory factory = createSecureDocumentBuilderFactory(true);
+        return factory.newDocumentBuilder().newDocument();
     }
 
     /**
@@ -104,9 +163,8 @@ public class DOMUtil
      */
     public static Document createNamespacelessDocumentInstance() throws ParserConfigurationException
     {
-        DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
-        builder.setNamespaceAware(true);
-        return builder.newDocumentBuilder().newDocument();
+        DocumentBuilderFactory factory = createSecureDocumentBuilderFactory(true);
+        return factory.newDocumentBuilder().newDocument();
     }
 
     public static Document getNamespacelessDocumentFromDocument(Document dom) throws TransformerException, IOException, ParserConfigurationException, SAXException
@@ -116,8 +174,7 @@ public class DOMUtil
 
     public static Document getNamespacelessDocumentFromString(String xml) throws ParserConfigurationException, SAXException, IOException
     {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(false);
+        DocumentBuilderFactory factory = createSecureDocumentBuilderFactory(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
@@ -126,12 +183,14 @@ public class DOMUtil
      * Extracts to text from the supplied node and it's children.
      *
      * @param node to extract text from.
-     * @return String representation of the node text.
+     * @return String representation of the node text, or an empty string if node is null
+     *         or has no children.
      */
     public static String getNodeText(Node node)
     {
-
-        if (node == null || !node.hasChildNodes()) return "";
+        if (node == null || !node.hasChildNodes()) {
+            return NO_NODE_TEXT;
+        }
         StringBuilder result = new StringBuilder();
 
         NodeList list = node.getChildNodes();
