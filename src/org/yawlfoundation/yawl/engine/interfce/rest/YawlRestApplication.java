@@ -54,6 +54,9 @@ public class YawlRestApplication extends Application {
         // Interface X - Extended API (advanced operations)
         resources.add(InterfaceXRestResource.class);
 
+        // Security API (certificates, signatures)
+        resources.add(YawlSecurityRestResource.class);
+
         // Exception mappers for consistent error handling
         resources.add(YawlExceptionMapper.class);
 
