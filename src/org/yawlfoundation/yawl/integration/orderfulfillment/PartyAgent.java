@@ -13,17 +13,6 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.zai.ZaiService;
-import org.yawlfoundation.yawl.util.SafeNumberParser;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -32,6 +21,15 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
+
+import com.sun.net.httpserver.HttpServer;
 
 /**
  * Autonomous party agent for order fulfillment simulation.

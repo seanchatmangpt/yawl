@@ -1,17 +1,18 @@
 package org.yawlfoundation.yawl.integration.mcp.spring.resources;
 
-import io.modelcontextprotocol.spec.McpSchema;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpResource;
 import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpSessionManager;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * Spring-managed MCP resource for loaded YAWL specifications.

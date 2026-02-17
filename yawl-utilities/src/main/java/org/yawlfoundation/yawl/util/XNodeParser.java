@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.jdom2.Document;
-import org.jdom2.Element;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.apache.logging.log4j.LogManager;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Author: Michael Adams

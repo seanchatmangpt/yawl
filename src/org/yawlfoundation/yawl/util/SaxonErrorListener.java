@@ -18,10 +18,11 @@
 
 package org.yawlfoundation.yawl.util;
 
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.TransformerException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 
 /**
  * @author Michael Adams

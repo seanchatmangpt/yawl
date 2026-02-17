@@ -18,13 +18,14 @@
 
 package org.yawlfoundation.yawl.engine.time;
 
-import org.yawlfoundation.yawl.engine.*;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Set;
 
 import javax.xml.datatype.Duration;
-import java.time.Instant;
-import java.util.Set;
-import java.util.Date;
+
+import org.yawlfoundation.yawl.engine.*;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  * A timer associated with an Atomic Task.

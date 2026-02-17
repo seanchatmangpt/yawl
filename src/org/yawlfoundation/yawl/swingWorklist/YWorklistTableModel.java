@@ -18,12 +18,13 @@
 
 package org.yawlfoundation.yawl.swingWorklist;
 
-import org.jdom2.JDOMException;
-
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.io.IOException;
 import java.util.*;
+
+import javax.swing.table.AbstractTableModel;
+
+import org.jdom2.JDOMException;
 
 /**
  * 
@@ -82,7 +83,7 @@ public class YWorklistTableModel extends AbstractTableModel {
      */
     public synchronized Object getValueAt(int rowIndex, int columnIndex) {
         if (rowIndex < _rows.size()) {
-            Object[] row = new Vector<>(_rows.values()).get(rowIndex);
+            Object[] row = new ArrayList<>(_rows.values()).get(rowIndex);
             if (row.length > columnIndex) {
                 return row[columnIndex];
             }
@@ -100,7 +101,7 @@ public class YWorklistTableModel extends AbstractTableModel {
 
     public synchronized void addRow(String key, Object[] rowValues) {
         _rows.put(key, rowValues);
-        final int position = new Vector<>(_rows.keySet()).indexOf(key);
+        final int position = new ArrayList<>(_rows.keySet()).indexOf(key);
         EventQueue.invokeLater(new Thread() {
             public void run() {
                 fireTableRowsInserted(position, position);
@@ -137,7 +138,7 @@ public class YWorklistTableModel extends AbstractTableModel {
 
 
     public synchronized int getRowIndex(Object caseAndTaskID) {
-        return new Vector<>(_rows.keySet()).indexOf(caseAndTaskID);
+        return new ArrayList<>(_rows.keySet()).indexOf(caseAndTaskID);
     }
 
 

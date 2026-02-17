@@ -18,7 +18,9 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
-import net.sf.saxon.s9api.SaxonApiException;
+import java.net.URL;
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -38,13 +40,12 @@ import org.yawlfoundation.yawl.stateless.engine.time.YTimerVariable;
 import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.stateless.schema.YDataValidator;
 import org.yawlfoundation.yawl.engine.core.marking.IMarkingTask;
-import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.stateless.util.SaxonUtil;
+import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
-import java.net.URL;
-import java.util.*;
+import net.sf.saxon.s9api.SaxonApiException;
 
 /**
  * A superclass of any type of task in the YAWL language.
@@ -293,7 +294,7 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
         _i = id;
         _i.addLocation(this);
         long numToSpawn = determineHowManyInstancesToCreate();
-        List<YIdentifier> childIdentifiers = new Vector<YIdentifier>();
+        List<YIdentifier> childIdentifiers = new ArrayList<YIdentifier>();
         for (int i = 0; i < numToSpawn; i++) {
             YIdentifier childID = createFiredIdentifier();
 
@@ -365,7 +366,7 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
             throw new RuntimeException(this + " does not allow dynamic instance creation.");
         }
         if (t_addEnabled(siblingWithPermission)) {
-            List<Element> newData = new Vector<Element>();
+            List<Element> newData = new ArrayList<Element>();
             newData.add(newInstanceData);
             _multiInstanceSpecificParamsIterator = newData.iterator();
             YIdentifier newInstance = createFiredIdentifier();

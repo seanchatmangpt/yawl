@@ -81,8 +81,10 @@ public class YCaseImportExportService {
 
             for (YCase yCase : cases) {
                 String caseXML = exportCase(yCase);
-                writer.write(caseXML);
-                writer.newLine();
+                if (caseXML != null) {
+                    writer.write(caseXML);
+                    writer.newLine();
+                }
             }
         }
 
@@ -93,19 +95,20 @@ public class YCaseImportExportService {
     /**
      * Exports a single case to XML string.
      * @param yCase the case to export
-     * @return XML representation of the case
-     * @throws IOException if the case cannot be exported (including null runner or marshal failure)
+     * @return XML representation of the case, or null if export fails
      */
-    public String exportCase(YCase yCase) throws IOException {
-        YNetRunner runner = yCase.getRunner();
-        if (runner == null) {
-            throw new IOException("Cannot export case: runner is null for case " + yCase);
-        }
+    public String exportCase(YCase yCase) {
         try {
+            YNetRunner runner = yCase.getRunner();
+            if (runner == null) {
+                logger.warn("Cannot export case with null runner");
+                return null;
+            }
             return _exporter.marshal(runner);
         }
         catch (Exception e) {
-            throw new IOException("Failed to export case " + yCase + ": " + e.getMessage(), e);
+            logger.error("Failed to export case", e);
+            return null;
         }
     }
 
@@ -135,8 +138,10 @@ public class YCaseImportExportService {
 
             for (YCase yCase : filteredCases) {
                 String caseXML = exportCase(yCase);
-                writer.write(caseXML);
-                writer.newLine();
+                if (caseXML != null) {
+                    writer.write(caseXML);
+                    writer.newLine();
+                }
             }
         }
 
@@ -167,6 +172,9 @@ public class YCaseImportExportService {
             .orElseThrow(() -> new YStateException("Case not found: " + caseID));
 
         String caseXML = exportCase(targetCase);
+        if (caseXML == null) {
+            throw new IOException("Failed to export case: " + caseID);
+        }
 
         try (BufferedWriter writer = createWriter(filename)) {
             writer.write(createExportHeader());

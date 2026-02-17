@@ -18,15 +18,16 @@
 
 package org.yawlfoundation.yawl.swingWorklist;
 
-import org.yawlfoundation.yawl.engine.gui.YAdminGUI;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Iterator;
+
+import javax.swing.*;
+
+import org.yawlfoundation.yawl.engine.gui.YAdminGUI;
 
 /**
  * 

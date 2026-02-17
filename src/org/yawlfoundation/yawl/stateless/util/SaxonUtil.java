@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -18,7 +18,9 @@
 
 package org.yawlfoundation.yawl.stateless.util;
 
-import net.sf.saxon.s9api.*;
+import java.io.StringWriter;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Content;
@@ -30,26 +32,72 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SaxonErrorListener;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.io.StringWriter;
-import java.util.List;
+import net.sf.saxon.s9api.*;
 
 /**
+ * Utility class for XQuery evaluation using Saxon.
+ *
+ * <p>This class uses lazy initialization for the Saxon Processor to avoid
+ * NoClassDefFoundError during class loading if Saxon libraries are missing
+ * or misconfigured. The processor is only created when first needed, allowing
+ * the class to load successfully even if XQuery operations will later fail
+ * with a clear error message.</p>
+ *
  * @author Michael Adams
  * @date 10/07/2008
  */
 
 public class SaxonUtil {
 
-    private static final Processor _processor = new Processor(false);
-//    private static final Serializer _output = new Serializer();
- //   private static final XQueryCompiler _compiler = _processor.newXQueryCompiler();
-//    private static final DOMOutputter _domOutputter = new DOMOutputter();
+    /**
+     * Lazily-initialized Saxon processor holder.
+     *
+     * <p>Using lazy initialization avoids NoClassDefFoundError during class loading
+     * if Saxon libraries are missing or misconfigured. The processor is only created
+     * when first needed, allowing the class to load successfully even if Saxon
+     * operations will later fail with a clear error message.</p>
+     *
+     * <p>This holder class is thread-safe: the JVM guarantees that the static
+     * initializer runs exactly once when the class is first accessed.</p>
+     */
+    private static final class ProcessorHolder {
+        static final Processor INSTANCE;
+
+        static {
+            Processor processor;
+            try {
+                processor = new Processor(false);
+            } catch (Exception e) {
+                System.getLogger(SaxonUtil.class.getName())
+                        .log(System.Logger.Level.ERROR,
+                                "Failed to initialize Saxon processor. " +
+                                "XQuery operations will not be available.", e);
+                processor = null;
+            }
+            INSTANCE = processor;
+        }
+
+        private ProcessorHolder() { }
+    }
 
     private static final Logger _log = LogManager.getLogger(SaxonUtil.class);
 
-//    static {
-//        _compiler.setErrorListener(new SaxonErrorListener());
-//    }
+    /**
+     * Returns the lazily-initialized Saxon Processor, or throws an exception
+     * if the processor could not be initialized.
+     *
+     * @return the Saxon Processor instance
+     * @throws SaxonApiException if the processor is not available
+     */
+    private static Processor getProcessor() throws SaxonApiException {
+        Processor processor = ProcessorHolder.INSTANCE;
+        if (processor == null) {
+            throw new SaxonApiException(
+                    "Saxon processor is not available. " +
+                    "Ensure Saxon-HE/PE/EE is on the classpath.");
+        }
+        return processor;
+    }
 
 
     /**
@@ -68,7 +116,7 @@ public class SaxonUtil {
 
         // create a StringWriter to receive the output of the evaluation
         StringWriter writer = new StringWriter();
-        Serializer output = _processor.newSerializer(writer);
+        Serializer output = getProcessor().newSerializer(writer);
 
         // evaluate the query & return the result as a string
         evaluator.run(output);
@@ -119,15 +167,11 @@ public class SaxonUtil {
      */
     public static XQueryExecutable compileXQuery(String query)
             throws SaxonApiException {
-        XQueryCompiler compiler = _processor.newXQueryCompiler();
+        XQueryCompiler compiler = getProcessor().newXQueryCompiler();
         compiler.setErrorListener(new SaxonErrorListener());
         ((SaxonErrorListener) compiler.getErrorListener()).reset();
         return compiler.compile(query);
     }
-
-//    public static List<String> getCompilerMessages() {
-//        return ((SaxonErrorListener) _compiler.getErrorListener()).getAllMessages();
-//    }
 
 
     /******************************************************************************/
@@ -143,7 +187,7 @@ public class SaxonUtil {
         XQueryEvaluator evaluator = executable.load();
 
         // set the context to the data document
-        evaluator.setContextItem(_processor.newDocumentBuilder().wrap(domDoc));
+        evaluator.setContextItem(getProcessor().newDocumentBuilder().wrap(domDoc));
         return evaluator ;
     }
 
@@ -178,4 +222,3 @@ public class SaxonUtil {
     }
 
 }
-

@@ -297,4 +297,3 @@ public class ShowLayouts extends JApplet {
         jf.setVisible(true);
     }
 }
-

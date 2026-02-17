@@ -1,15 +1,11 @@
 package org.yawlfoundation.yawl.deployment;
 
+import java.io.*;
+import java.util.Properties;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Properties;
 
 /**
  * Deployment Readiness Tests

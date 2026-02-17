@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.worklist;
 
-import org.yawlfoundation.yawl.engine.interfce.TaskInformation;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.engine.interfce.TaskInformation;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
 /**

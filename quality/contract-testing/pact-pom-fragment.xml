@@ -1,0 +1,141 @@
+<!--
+    PASTE THESE ENTRIES INTO /home/user/yawl/pom.xml
+    =================================================
+
+    1. Add these properties to the <properties> section:
+        <pact.version>4.6.16</pact.version>
+
+    2. Add these dependencies to the <dependencyManagement> section
+       (keep all in test scope):
+
+    3. Add the 'contract' and 'contract-verify' profile blocks to <profiles>.
+-->
+
+<!-- ============================================================== -->
+<!-- DEPENDENCY MANAGEMENT entries to add                           -->
+<!-- ============================================================== -->
+
+<!-- Pact consumer DSL -->
+<dependency>
+    <groupId>au.com.dius.pact.consumer</groupId>
+    <artifactId>junit5</artifactId>
+    <version>${pact.version}</version>
+    <scope>test</scope>
+</dependency>
+<!-- Pact provider verification -->
+<dependency>
+    <groupId>au.com.dius.pact.provider</groupId>
+    <artifactId>junit5</artifactId>
+    <version>${pact.version}</version>
+    <scope>test</scope>
+</dependency>
+<!-- ArchUnit architecture enforcement -->
+<dependency>
+    <groupId>com.tngtech.archunit</groupId>
+    <artifactId>archunit-junit5</artifactId>
+    <version>1.3.0</version>
+    <scope>test</scope>
+</dependency>
+<!-- PIT mutation testing plugin (version in properties: pitest.plugin.version=1.16.1) -->
+<!-- PIT JUnit5 plugin (version in properties: pitest.junit5.plugin.version=1.2.1) -->
+
+<!-- ============================================================== -->
+<!-- PROFILES to add                                                 -->
+<!-- ============================================================== -->
+
+<!-- ================================================================ -->
+<!-- Contract profile: generates Pact consumer contracts              -->
+<!-- Usage: mvn -P contract clean test                                 -->
+<!--     -Dtest="EngineApiConsumerContractTest,..."                   -->
+<!-- Pact files written to: target/pacts/                             -->
+<!-- ================================================================ -->
+<profile>
+    <id>contract</id>
+    <properties>
+        <!-- Pact test configuration -->
+        <pact.rootDir>${project.build.directory}/pacts</pact.rootDir>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>au.com.dius.pact.provider</groupId>
+                <artifactId>maven</artifactId>
+                <version>${pact.version}</version>
+                <configuration>
+                    <pactBrokerUrl>${env.PACT_BROKER_URL}</pactBrokerUrl>
+                    <pactBrokerToken>${env.PACT_BROKER_TOKEN}</pactBrokerToken>
+                    <projectVersion>${project.version}</projectVersion>
+                    <tags>
+                        <tag>main</tag>
+                        <tag>${project.version}</tag>
+                    </tags>
+                    <trimSnapshot>true</trimSnapshot>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>publish-pacts</id>
+                        <!-- Bind to the 'verify' phase to publish after tests run -->
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>publish</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+
+<!-- ================================================================ -->
+<!-- contract-verify profile: verifies Pact contracts as provider     -->
+<!-- Usage: mvn -P contract-verify clean test                          -->
+<!--     -Dpact.broker.url=http://pact-broker:9292                    -->
+<!--     -Dpact.broker.token=${PACT_BROKER_TOKEN}                     -->
+<!-- ================================================================ -->
+<profile>
+    <id>contract-verify</id>
+    <properties>
+        <pact.broker.url>${env.PACT_BROKER_URL}</pact.broker.url>
+        <pact.broker.token>${env.PACT_BROKER_TOKEN}</pact.broker.token>
+        <pact.provider.version>${project.version}</pact.provider.version>
+        <pact.verifier.publishResults>true</pact.verifier.publishResults>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*ProviderContractTest.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <pact.provider.version>${project.version}</pact.provider.version>
+                        <pact.verifier.publishResults>true</pact.verifier.publishResults>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+
+<!-- ================================================================ -->
+<!-- architecture-test profile: runs ArchUnit tests in isolation       -->
+<!-- Usage: mvn -P architecture-test clean test                        -->
+<!-- ================================================================ -->
+<profile>
+    <id>architecture-test</id>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/architecture/**Test.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</profile>

@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.stateless.listener.event;
 
-import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 
 /**
  * @author Michael Adams

@@ -1,5 +1,9 @@
 package org.yawlfoundation.yawl.elements;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jdom2.Content;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -8,10 +12,6 @@ import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Provides for the persistence of in-progress multiple instance task output data -

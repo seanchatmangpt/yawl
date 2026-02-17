@@ -1,17 +1,18 @@
 package org.yawlfoundation.yawl.wsif;
 
-import org.jdom2.Document;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.jdom2.input.SAXBuilder;
 
-import javax.swing.*;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import javax.swing.*;
+
+import org.jdom2.Document;
+import org.jdom2.input.SAXBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
 
 /**
@@ -130,7 +131,9 @@ class TestWSIFInvoker {
             portName =
                     operationName.substring(operationName.indexOf("(") + 1, operationName.indexOf(")"));
             operationName = operationName.substring(0, operationName.indexOf("("));
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Intentionally ignored: operationName may not contain parentheses,
+            // in which case portName remains null and operationName is used as-is
         }
         String protocol = args.length > 2 ? args[2] : "";
         int shift = 2;

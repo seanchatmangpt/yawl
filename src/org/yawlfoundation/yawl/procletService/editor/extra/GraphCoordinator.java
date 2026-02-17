@@ -18,14 +18,12 @@
 
 package org.yawlfoundation.yawl.procletService.editor.extra;
 
+import javax.swing.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import javax.swing.*;
 
 public class GraphCoordinator extends InternalCoordinator {
     private static final Logger logger = LogManager.getLogger(GraphCoordinator.class);

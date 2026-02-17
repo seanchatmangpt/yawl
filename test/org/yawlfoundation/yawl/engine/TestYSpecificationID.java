@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.util.XNode;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for YSpecificationID Java 25 record conversion.

@@ -13,8 +13,6 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,6 +21,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * HTTP client for PM4Py A2A agent. Sends JSON messages and extracts text response.

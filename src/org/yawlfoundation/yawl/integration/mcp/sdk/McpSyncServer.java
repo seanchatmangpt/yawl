@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp.sdk;
 
+import io.modelcontextprotocol.spec.McpSchema;
+
 /**
  * MCP Synchronous Server lifecycle interface.
  *
@@ -49,7 +51,7 @@ public interface McpSyncServer extends AutoCloseable {
      * @param notification the notification object carrying level, logger name, and data
      */
     default void loggingNotification(McpSchema.LoggingMessageNotification notification) {
-        sendLogNotification(notification.getLevel().name(), notification.getData());
+        sendLogNotification(notification.level().name(), notification.data());
     }
 
     /**

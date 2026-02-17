@@ -18,12 +18,11 @@
 
 package org.yawlfoundation.yawl.procletService.editor.model;
 
+import javax.swing.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
-
-import javax.swing.*;
 
 public class ModelCoordinator extends InternalCoordinator {
     private static final Logger logger = LogManager.getLogger(ModelCoordinator.class);
@@ -106,5 +105,3 @@ public class ModelCoordinator extends InternalCoordinator {
   }
   
 }
-
-

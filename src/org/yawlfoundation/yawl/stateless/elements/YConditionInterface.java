@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
-import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.YStateException;
-
 import java.util.List;
+
+import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 
 /**
  * This interface expresses the ability to hold tokens (Identifiers), nothing more.

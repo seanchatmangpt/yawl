@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.schema.internal;
 
-import org.jdom2.Element;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdom2.Element;
 
 /**
  * An enumeration of available internal type definitions

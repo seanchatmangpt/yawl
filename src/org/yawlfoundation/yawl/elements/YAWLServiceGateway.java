@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.elements;
 
-import org.yawlfoundation.yawl.elements.data.YParameter;
-import org.yawlfoundation.yawl.util.YVerificationHandler;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.yawlfoundation.yawl.elements.data.YParameter;
+import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 /**
  * A decomposition associated with a Web Service Gateway.
@@ -59,6 +59,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * @return a List of error and/or warning messages. An empty list is returned if
      * the verification is successful.
      */
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
         for (YParameter parameter : _enablementParameters.values()) {
@@ -74,6 +75,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * Outputs this service gateway to an XML representation.
      * @return an XML (String) representation of this service gateway
      */
+    @Override
     public String toXML() {
         StringBuilder xml = new StringBuilder();
 

@@ -18,6 +18,15 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceB;
 
+import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -35,15 +44,6 @@ import org.yawlfoundation.yawl.unmarshal.YDecompositionParser;
 import org.yawlfoundation.yawl.util.HttpURLValidator;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
-
-import java.io.IOException;
-import java.net.ConnectException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
 
 
 /**
@@ -306,7 +306,7 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
     public YParameter[] getRequiredParamsForService(YAWLServiceReference yawlService)
                                                      throws IOException, JDOMException {
         List<YParameter> paramResults = new ArrayList<YParameter>();
-        Map<String, String> paramMap = new Hashtable<String, String>();
+        Map<String, String> paramMap = new HashMap<String, String>();
         paramMap.put("action", "ParameterInfoRequest");
         String parametersAsString = executeGet(yawlService.getURI(), paramMap);
 

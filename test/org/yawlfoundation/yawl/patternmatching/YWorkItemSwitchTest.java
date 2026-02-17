@@ -1,9 +1,10 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.elements.YTimerParameters;
+import org.yawlfoundation.yawl.engine.WorkItemCompletion;
+import org.yawlfoundation.yawl.engine.YWorkItemStatus;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for YWorkItem switch expressions
@@ -22,23 +23,23 @@ public class YWorkItemSwitchTest extends TestCase {
 
     // Test completion type to status mapping
     public void testCompletionTypeSwitch_Normal() {
-        YWorkItemStatus status = getCompletionStatus(YWorkItem.Completion.Normal);
+        YWorkItemStatus status = getCompletionStatus(WorkItemCompletion.Normal);
         assertEquals(YWorkItemStatus.statusComplete, status);
     }
 
     public void testCompletionTypeSwitch_Force() {
-        YWorkItemStatus status = getCompletionStatus(YWorkItem.Completion.Force);
+        YWorkItemStatus status = getCompletionStatus(WorkItemCompletion.Force);
         assertEquals(YWorkItemStatus.statusForcedComplete, status);
     }
 
     public void testCompletionTypeSwitch_Fail() {
-        YWorkItemStatus status = getCompletionStatus(YWorkItem.Completion.Fail);
+        YWorkItemStatus status = getCompletionStatus(WorkItemCompletion.Fail);
         assertEquals(YWorkItemStatus.statusFailed, status);
     }
 
     // Test all completion types are handled
     public void testCompletionTypeSwitch_Exhaustive() {
-        for (YWorkItem.Completion completion : YWorkItem.Completion.values()) {
+        for (WorkItemCompletion completion : WorkItemCompletion.values()) {
             YWorkItemStatus status = getCompletionStatus(completion);
             assertNotNull("Status should not be null for " + completion, status);
         }
@@ -72,44 +73,53 @@ public class YWorkItemSwitchTest extends TestCase {
 
     // Test completion enum values
     public void testCompletionEnum_AllValues() {
-        YWorkItem.Completion[] completions = YWorkItem.Completion.values();
-        assertEquals("Should have 3 completion types", 3, completions.length);
+        WorkItemCompletion[] completions = WorkItemCompletion.values();
+        assertEquals("Should have 4 completion types (Normal, Force, Fail, Invalid)", 4, completions.length);
 
         // Verify all expected values exist
         boolean hasNormal = false;
         boolean hasForce = false;
         boolean hasFail = false;
+        boolean hasInvalid = false;
 
-        for (YWorkItem.Completion c : completions) {
-            if (c == YWorkItem.Completion.Normal) hasNormal = true;
-            if (c == YWorkItem.Completion.Force) hasForce = true;
-            if (c == YWorkItem.Completion.Fail) hasFail = true;
+        for (WorkItemCompletion c : completions) {
+            if (c == WorkItemCompletion.Normal) hasNormal = true;
+            if (c == WorkItemCompletion.Force) hasForce = true;
+            if (c == WorkItemCompletion.Fail) hasFail = true;
+            if (c == WorkItemCompletion.Invalid) hasInvalid = true;
         }
 
         assertTrue("Should have Normal completion", hasNormal);
         assertTrue("Should have Force completion", hasForce);
         assertTrue("Should have Fail completion", hasFail);
+        assertTrue("Should have Invalid completion", hasInvalid);
     }
 
     // Test timer type enum values
     public void testTimerTypeEnum_AllValues() {
         YTimerParameters.TimerType[] timerTypes = YTimerParameters.TimerType.values();
-        assertEquals("Should have 3 timer types", 3, timerTypes.length);
+        assertEquals("Should have 5 timer types (Duration, Expiry, Interval, LateBound, Nil)", 5, timerTypes.length);
 
         // Verify all expected values exist
         boolean hasExpiry = false;
         boolean hasDuration = false;
         boolean hasInterval = false;
+        boolean hasLateBound = false;
+        boolean hasNil = false;
 
         for (YTimerParameters.TimerType t : timerTypes) {
             if (t == YTimerParameters.TimerType.Expiry) hasExpiry = true;
             if (t == YTimerParameters.TimerType.Duration) hasDuration = true;
             if (t == YTimerParameters.TimerType.Interval) hasInterval = true;
+            if (t == YTimerParameters.TimerType.LateBound) hasLateBound = true;
+            if (t == YTimerParameters.TimerType.Nil) hasNil = true;
         }
 
         assertTrue("Should have Expiry timer type", hasExpiry);
         assertTrue("Should have Duration timer type", hasDuration);
         assertTrue("Should have Interval timer type", hasInterval);
+        assertTrue("Should have LateBound timer type", hasLateBound);
+        assertTrue("Should have Nil timer type", hasNil);
     }
 
     // Test status values (used in switch results)
@@ -130,46 +140,58 @@ public class YWorkItemSwitchTest extends TestCase {
     // Test completion type ordering (enum ordinal)
     public void testCompletionEnum_Ordinals() {
         assertEquals("Normal should be ordinal 0",
-                    0, YWorkItem.Completion.Normal.ordinal());
+                    0, WorkItemCompletion.Normal.ordinal());
         assertEquals("Force should be ordinal 1",
-                    1, YWorkItem.Completion.Force.ordinal());
+                    1, WorkItemCompletion.Force.ordinal());
         assertEquals("Fail should be ordinal 2",
-                    2, YWorkItem.Completion.Fail.ordinal());
+                    2, WorkItemCompletion.Fail.ordinal());
+        assertEquals("Invalid should be ordinal 3",
+                    3, WorkItemCompletion.Invalid.ordinal());
     }
 
     // Test timer type ordering
     public void testTimerTypeEnum_Ordinals() {
-        assertEquals("Expiry should be ordinal 0",
-                    0, YTimerParameters.TimerType.Expiry.ordinal());
-        assertEquals("Duration should be ordinal 1",
-                    1, YTimerParameters.TimerType.Duration.ordinal());
+        assertEquals("Duration should be ordinal 0",
+                    0, YTimerParameters.TimerType.Duration.ordinal());
+        assertEquals("Expiry should be ordinal 1",
+                    1, YTimerParameters.TimerType.Expiry.ordinal());
         assertEquals("Interval should be ordinal 2",
                     2, YTimerParameters.TimerType.Interval.ordinal());
+        assertEquals("LateBound should be ordinal 3",
+                    3, YTimerParameters.TimerType.LateBound.ordinal());
+        assertEquals("Nil should be ordinal 4",
+                    4, YTimerParameters.TimerType.Nil.ordinal());
     }
 
     // Test valueOf conversions
     public void testCompletionEnum_ValueOf() {
-        assertEquals(YWorkItem.Completion.Normal,
-                    YWorkItem.Completion.valueOf("Normal"));
-        assertEquals(YWorkItem.Completion.Force,
-                    YWorkItem.Completion.valueOf("Force"));
-        assertEquals(YWorkItem.Completion.Fail,
-                    YWorkItem.Completion.valueOf("Fail"));
+        assertEquals(WorkItemCompletion.Normal,
+                    WorkItemCompletion.valueOf("Normal"));
+        assertEquals(WorkItemCompletion.Force,
+                    WorkItemCompletion.valueOf("Force"));
+        assertEquals(WorkItemCompletion.Fail,
+                    WorkItemCompletion.valueOf("Fail"));
+        assertEquals(WorkItemCompletion.Invalid,
+                    WorkItemCompletion.valueOf("Invalid"));
     }
 
     public void testTimerTypeEnum_ValueOf() {
-        assertEquals(YTimerParameters.TimerType.Expiry,
-                    YTimerParameters.TimerType.valueOf("Expiry"));
         assertEquals(YTimerParameters.TimerType.Duration,
                     YTimerParameters.TimerType.valueOf("Duration"));
+        assertEquals(YTimerParameters.TimerType.Expiry,
+                    YTimerParameters.TimerType.valueOf("Expiry"));
         assertEquals(YTimerParameters.TimerType.Interval,
                     YTimerParameters.TimerType.valueOf("Interval"));
+        assertEquals(YTimerParameters.TimerType.LateBound,
+                    YTimerParameters.TimerType.valueOf("LateBound"));
+        assertEquals(YTimerParameters.TimerType.Nil,
+                    YTimerParameters.TimerType.valueOf("Nil"));
     }
 
     // Test invalid valueOf
     public void testCompletionEnum_InvalidValueOf() {
         try {
-            YWorkItem.Completion.valueOf("Invalid");
+            WorkItemCompletion.valueOf("NotAValidValue");
             fail("Should throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // Expected
@@ -195,6 +217,13 @@ public class YWorkItemSwitchTest extends TestCase {
         }
     }
 
+    // Test Invalid completion type
+    public void testCompletionTypeSwitch_Invalid() {
+        YWorkItemStatus status = getCompletionStatus(WorkItemCompletion.Invalid);
+        // Invalid should map to failed or a default status
+        assertNotNull("Status should not be null for Invalid", status);
+    }
+
     public void testTimerTypeSwitch_NullEnum() {
         try {
             getTimerTypeName(null);
@@ -205,36 +234,39 @@ public class YWorkItemSwitchTest extends TestCase {
     }
 
     // Helper methods simulating actual switch expressions
-    private YWorkItemStatus getCompletionStatus(YWorkItem.Completion completion) {
+    private YWorkItemStatus getCompletionStatus(WorkItemCompletion completion) {
         return switch (completion) {
             case Normal -> YWorkItemStatus.statusComplete;
             case Force -> YWorkItemStatus.statusForcedComplete;
             case Fail -> YWorkItemStatus.statusFailed;
+            case Invalid -> YWorkItemStatus.statusFailed; // Invalid maps to failed
         };
     }
 
     private String getTimerTypeName(YTimerParameters.TimerType timerType) {
         return switch (timerType) {
-            case Expiry -> "Expiry";
             case Duration -> "Duration";
+            case Expiry -> "Expiry";
             case Interval -> "Interval";
+            case LateBound -> "LateBound";
+            case Nil -> "Nil";
         };
     }
 
     // Test that status values are used correctly
     public void testCompletionStatus_Semantics() {
         // Normal completion should result in complete status
-        YWorkItemStatus normalStatus = getCompletionStatus(YWorkItem.Completion.Normal);
+        YWorkItemStatus normalStatus = getCompletionStatus(WorkItemCompletion.Normal);
         assertTrue("Normal completion should be complete",
                   normalStatus.toString().contains("Complete"));
 
         // Force completion should result in forced complete status
-        YWorkItemStatus forceStatus = getCompletionStatus(YWorkItem.Completion.Force);
+        YWorkItemStatus forceStatus = getCompletionStatus(WorkItemCompletion.Force);
         assertTrue("Force completion should be forced complete",
                   forceStatus.toString().contains("Forced"));
 
         // Fail completion should result in failed status
-        YWorkItemStatus failStatus = getCompletionStatus(YWorkItem.Completion.Fail);
+        YWorkItemStatus failStatus = getCompletionStatus(WorkItemCompletion.Fail);
         assertTrue("Fail completion should be failed",
                   failStatus.toString().contains("Fail"));
     }

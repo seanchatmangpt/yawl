@@ -1,5 +1,10 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
@@ -7,11 +12,6 @@ import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
 import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
 import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Michael Adams

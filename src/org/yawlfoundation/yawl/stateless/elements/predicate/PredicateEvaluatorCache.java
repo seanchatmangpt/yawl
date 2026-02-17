@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.stateless.elements.predicate;
 
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache;
-
-import java.util.Set;
 
 /**
  * Stateless-engine thin wrapper around
@@ -47,8 +47,15 @@ public class PredicateEvaluatorCache
 
     private static final Logger _log = LogManager.getLogger(PredicateEvaluatorCache.class);
     private static Set<PredicateEvaluator> _evaluators;
+    private static final PredicateEvaluatorCache _instance = new PredicateEvaluatorCache();
 
     private PredicateEvaluatorCache() { }
+
+
+    @Override
+    protected Set<PredicateEvaluator> loadEvaluators() {
+        return PredicateEvaluatorFactory.getInstances();
+    }
 
 
     // -------------------------------------------------------------------------

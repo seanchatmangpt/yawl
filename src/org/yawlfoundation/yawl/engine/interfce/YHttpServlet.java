@@ -18,22 +18,22 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.yawlfoundation.yawl.util.PasswordEncryptor;
-import org.yawlfoundation.yawl.util.StringUtil;
-
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServlet;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.jar.Manifest;
+
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServlet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.util.PasswordEncryptor;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * An override of HttpServlet to include a few useful generic methods
@@ -53,6 +53,7 @@ public class YHttpServlet extends HttpServlet {
 
 
     // should be called by any sub-class that uses hibernate or sets timers
+    @Override
     public void destroy() {
         deregisterDbDrivers();
         interruptTimerThreads();

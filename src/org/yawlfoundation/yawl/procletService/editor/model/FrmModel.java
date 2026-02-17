@@ -18,21 +18,23 @@
 
 package org.yawlfoundation.yawl.procletService.editor.model;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+
+import javax.swing.*;
+
+import org.apache.commons.collections15.Transformer;
+import org.yawlfoundation.yawl.procletService.editor.DesignInternalFrame;
+import org.yawlfoundation.yawl.procletService.models.procletModel.*;
+
 import edu.uci.ics.jung.algorithms.layout.*;
 import edu.uci.ics.jung.algorithms.layout.SpringLayout;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
-import org.apache.commons.collections15.Transformer;
-import org.yawlfoundation.yawl.procletService.editor.DesignInternalFrame;
-import org.yawlfoundation.yawl.procletService.models.procletModel.*;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 public class FrmModel extends DesignInternalFrame {
   static final String TITLE = "Model";
@@ -697,7 +699,3 @@ private void initComponents() {
   }
 
 }
-
-
-
-

@@ -1,22 +1,6 @@
 package org.yawlfoundation.yawl.elements;
 
-import org.yawlfoundation.yawl.elements.data.YVariable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.data.YParameter;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.*;
-import org.yawlfoundation.yawl.unmarshal.YMarshal;
-import org.yawlfoundation.yawl.util.YVerificationHandler;
-import org.yawlfoundation.yawl.util.YVerificationMessage;
-import org.yawlfoundation.yawl.util.StringUtil;
-
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.yawlfoundation.yawl.engine.YNetData;
-import org.yawlfoundation.yawl.schema.YSchemaVersion;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +9,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.data.YParameter;
+import org.yawlfoundation.yawl.elements.data.YVariable;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.YNetData;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
+import org.yawlfoundation.yawl.util.YVerificationHandler;
+import org.yawlfoundation.yawl.util.YVerificationMessage;
 
 /**
  *

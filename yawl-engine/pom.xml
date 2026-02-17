@@ -137,15 +137,24 @@
         </resources>
 
         <testResources>
+            <!-- Test resources in package directories - preserves structure for getClass().getResource() -->
             <testResource>
                 <directory>../test</directory>
                 <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.yawl</include>
-                    <include>**/*.ywl</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.yawl</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.ywl</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/swingWorklist/**/*.xml</include>
+                    <!-- Engine tests also reference elements and unmarshal resources -->
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xml</include>
                 </includes>
+            </testResource>
+            <!-- Common test resources directory (root level) -->
+            <testResource>
+                <directory>../test/resources</directory>
             </testResource>
             <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
             <testResource>
@@ -165,6 +174,13 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/engine/**</include>
                         <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
+                        <!-- Logging classes that depend on engine - moved from yawl-utilities -->
+                        <include>**/org/yawlfoundation/yawl/logging/YEventLogger.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YEventKeyCache.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YLogPredicate.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YLogPredicateWorkItemParser.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YLogServer.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YXESBuilder.java</include>
                     </includes>
                     <excludes>
                         <exclude>**/*.xsd</exclude>
@@ -176,6 +192,7 @@
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/patternmatching/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
@@ -185,11 +202,45 @@
                         <testExclude>**/*.class</testExclude>
                     </testExcludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <excludes>
+                                <!-- Exclude tests from other modules -->
+                                <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/elements/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/integration/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/logging/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/schema/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/util/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>**/*.xml</exclude>
+                                <exclude>**/*.xsd</exclude>
+                                <exclude>**/*.properties</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/engine/**</include>
+                        <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
+                        <include>**/org/yawlfoundation/yawl/patternmatching/**</include>
+                    </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>

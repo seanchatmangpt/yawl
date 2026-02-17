@@ -18,6 +18,10 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceA;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
 import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -32,10 +36,6 @@ import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Defines the 'A' interface into the YAWL Engine corresponding to WfMC interface 5 -

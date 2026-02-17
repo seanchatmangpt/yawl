@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 /**
  * Walks the net in reverse to discover any task-level input data variables that map from
@@ -48,7 +48,7 @@ public class YNetLocalVarVerifier {
      */
     public YNetLocalVarVerifier(YNet net) {
         _net = net;
-        _uninitialisedLocalVars = new Hashtable<String, LocalTaskMap>();
+        _uninitialisedLocalVars = new HashMap<String, LocalTaskMap>();
         _log = LogManager.getLogger(this.getClass());
     }
 
@@ -489,7 +489,7 @@ public class YNetLocalVarVerifier {
         public LocalTaskMap(YVariable localVar) {
             _localVar = localVar;
             _inputTasks = new HashSet<YTask>();
-            _outputTasks = new Hashtable<YTask, Boolean>();
+            _outputTasks = new HashMap<YTask, Boolean>();
         }
 
         public YVariable getLocalVar() { return _localVar; }

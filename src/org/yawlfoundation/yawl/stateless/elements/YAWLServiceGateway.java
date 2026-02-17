@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
-import org.yawlfoundation.yawl.elements.YVerifiable;
-import org.yawlfoundation.yawl.util.YVerificationHandler;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.yawlfoundation.yawl.elements.YVerifiable;
+import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 /**
  * A decomposition associated with a Web Service Gateway.

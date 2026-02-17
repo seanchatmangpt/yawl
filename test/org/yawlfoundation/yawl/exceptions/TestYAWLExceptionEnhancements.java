@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.exceptions;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for enhanced YAWLException features (context and troubleshooting).

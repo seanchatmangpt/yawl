@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.logging;
 
-import org.yawlfoundation.yawl.util.XNode;
-
 import java.util.Comparator;
+
+import org.yawlfoundation.yawl.util.XNode;
 
 /**
  * Allows XES event nodes within a trace to be sorted based on timestamp

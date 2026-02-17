@@ -19,11 +19,11 @@
 package org.yawlfoundation.yawl.logging;
 
 
+import java.net.URL;
+
 import org.yawlfoundation.yawl.authentication.YClient;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.util.YPredicateParser;
-
-import java.net.URL;
 
 /**
  * Parses log predicates for work items in the stateful engine.

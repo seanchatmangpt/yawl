@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.util.*;
 
 /**
  * An extended map of key=attribute pairs.

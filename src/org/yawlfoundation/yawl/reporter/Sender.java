@@ -18,15 +18,15 @@
 
 package org.yawlfoundation.yawl.reporter;
 
-import org.apache.commons.codec.binary.Base64;
-import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.commons.codec.binary.Base64;
+import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 
 /**
  * Email sender using HTTP POST.

@@ -18,22 +18,42 @@
 
 package org.yawlfoundation.yawl.engine;
 
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+
 /**
- * 
+ * Unique identifier for a YWorkItem within the YAWL engine.
+ *
+ * <p>YWorkItemID combines three components to ensure uniqueness:
+ * <ul>
+ *   <li><b>Case ID</b> - The YIdentifier of the containing case</li>
+ *   <li><b>Task ID</b> - The identifier of the task within the net</li>
+ *   <li><b>Unique ID</b> - An auto-generated character sequence for uniqueness</li>
+ * </ul>
+ * </p>
+ *
+ * <p>The unique ID is generated using an incrementing alphanumeric sequence
+ * (0-9, A-Z, a-z) that ensures ordering across work items created in sequence.</p>
+ *
+ * <h2>Format</h2>
+ * <p>String representation follows the format: {@code caseID:taskID}</p>
+ *
+ * <h2>Usage</h2>
+ * <p>YWorkItemID is used as a key in work item repositories and for
+ * correlating work item events with their source items.</p>
+ *
  * @author Lachlan Aldred
- * @date 23/05/2003
+ * @see YWorkItem
+ * @see YIdentifier
  */
 public class YWorkItemID {
     private static final char[] _uniqifier = UniqueIDGenerator.newAlphas();
-    private char[] _uniqueID;
-    private YIdentifier _caseID;
-    private String _taskID;
+    private final char[] _uniqueID;
+    private final YIdentifier _caseID;
+    private final String _taskID;
 
 
     public YWorkItemID(YIdentifier caseID, String taskID) {

@@ -18,6 +18,11 @@
 
 package org.yawlfoundation.yawl.unmarshal;
 
+import java.time.LocalDate;
+import java.util.*;
+
+import javax.xml.XMLConstants;
+
 import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -26,13 +31,8 @@ import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
-import javax.xml.XMLConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.text.ParseException;
-import java.time.LocalDate;
-import java.util.*;
-
 
 /**
  * Parses, or builds, specification objects from XML doclets.
@@ -292,4 +292,3 @@ class YSpecificationParser {
 
 
 }
-

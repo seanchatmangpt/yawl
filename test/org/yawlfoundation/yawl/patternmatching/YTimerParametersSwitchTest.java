@@ -1,7 +1,8 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.YTimerParameters;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for YTimerParameters switch expressions
@@ -234,6 +235,8 @@ public class YTimerParametersSwitchTest extends TestCase {
                 }
                 yield "Interval: (not set)";
             }
+            case LateBound -> "LateBound: (deferred)";
+            case Nil -> "Nil: (no timer)";
         };
     }
 

@@ -1,0 +1,116 @@
+# Trivy Container Vulnerability Scanning Configuration for YAWL v6.0.0
+# ======================================================================
+# Scans container images built from /home/user/yawl/Dockerfile for:
+#   - OS package vulnerabilities (CVE database)
+#   - Application dependency vulnerabilities (matches Maven dependencies)
+#   - Container misconfigurations (CIS benchmarks)
+#   - Secrets leaked into image layers
+#
+# Usage:
+#   # Scan built image
+#   trivy image --config quality/security-scanning/trivy-scan-config.yaml \
+#       yawl-engine:6.0.0
+#
+#   # Scan filesystem before image build
+#   trivy filesystem --config quality/security-scanning/trivy-scan-config.yaml .
+#
+#   # Scan for misconfigurations
+#   trivy config --config quality/security-scanning/trivy-scan-config.yaml \
+#       --include-non-failures .
+
+# ─── Global scan settings ────────────────────────────────────────────────────
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Exit code 1 when CRITICAL or HIGH vulnerabilities are found (blocks pipeline).
+# MEDIUM findings are reported but do not block.
+exitCode: 1
+
+# Report format: table for human review, JSON for CI ingestion, SARIF for GitHub.
+format: table
+
+# Enable all scanner types
+scanners:
+  - vuln
+  - config
+  - secret
+  - license
+
+# ─── Vulnerability scan ──────────────────────────────────────────────────────
+vulnerability:
+  # Ignore unfixed vulnerabilities: they cannot be remediated without an upstream fix.
+  # Change to false when preparing a release to expose all findings.
+  ignoreUnfixed: true
+
+  # VEX (Vulnerability Exploitability eXchange): suppress known-unexploitable CVEs.
+  vexPath: quality/security-scanning/trivy-vex.json
+
+  # Types of libraries to scan
+  types:
+    - os
+    - library
+
+# ─── Misconfiguration scan ───────────────────────────────────────────────────
+misconfiguration:
+  includeNonFailures: false
+  # CIS Docker Benchmark checks
+  scanners:
+    - dockerfile
+
+# ─── Secret scan ─────────────────────────────────────────────────────────────
+secret:
+  # Custom allow-list for test fixtures that look like credentials but are not.
+  config: quality/security-scanning/trivy-secret-config.yaml
+
+# ─── Dependency scan ─────────────────────────────────────────────────────────
+# Trivy parses pom.xml to cross-reference Maven dependency CVEs.
+# This complements the OWASP Dependency-Check plugin in pom.xml.
+dependency-tree: true
+
+# ─── Report output ───────────────────────────────────────────────────────────
+output: target/trivy-reports/trivy-scan-result.txt
+
+# ─── Ignored CVEs ────────────────────────────────────────────────────────────
+# CVEs recorded here are accepted risks with documented rationale.
+# Format: CVE-YYYY-NNNNN: reason accepted
+# IMPORTANT: Entries must be reviewed and re-approved on each quarterly audit.
+ignorefile: quality/security-scanning/trivy-ignore.txt
+
+# ─── Java-specific settings ──────────────────────────────────────────────────
+java-db:
+  # Use trivy-java-db for accurate Java library CVE matching
+  dbRepository: "ghcr.io/aquasecurity/trivy-java-db:1"
+  updateInterval: 24h
+
+# ─── License policy ──────────────────────────────────────────────────────────
+license:
+  # Forbidden licenses: copyleft licenses not compatible with YAWL's LGPL license
+  forbidden:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+    - SSPL-1.0
+  # Restricted licenses: require legal review before inclusion
+  restricted:
+    - LGPL-2.0
+    - MPL-2.0
+    - CDDL-1.0
+  # Reciprocal licenses that are acceptable with documented approval
+  reciprocal:
+    - LGPL-2.1
+    - LGPL-3.0
+  # Notice-only: allowed but require attribution in distribution
+  notice:
+    - Apache-2.0
+    - MIT
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+    - CC0-1.0
+    - EPL-2.0
+    - MPL-2.0
+  # Unknown licenses must be manually reviewed
+  unencumbered:
+    - public-domain

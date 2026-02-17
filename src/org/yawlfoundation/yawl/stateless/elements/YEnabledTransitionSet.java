@@ -17,11 +17,10 @@
  */
 
 package org.yawlfoundation.yawl.stateless.elements;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.yawlfoundation.yawl.elements.YNetElement;
-
-import java.util.*;
 
 /**
  * This class collects the set of all currently enabled transitions (ie. tasks) of a net.

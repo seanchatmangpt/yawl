@@ -1,10 +1,11 @@
 package org.yawlfoundation.yawl.elements;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.jdom2.Document;
+import org.jdom2.Element;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YNetData;

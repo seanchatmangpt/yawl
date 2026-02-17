@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.yawlfoundation</groupId>
+        <artifactId>yawl-parent</artifactId>
+        <version>6.0.0-Alpha</version>
+    <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>yawl-elements</artifactId>
+    <packaging>jar</packaging>
+
+    <name>YAWL Elements</name>
+    <description>Workflow element definitions - core Petri net components, specifications, and process structures</description>
+
+    <dependencies>
+        <!-- YAWL Utilities (for exceptions) -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-utilities</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- XML Processing -->
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+        </dependency>
+
+        <!-- Apache Commons -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>xmlunit</groupId>
+            <artifactId>xmlunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
+
+        <resources>
+            <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->
+            <resource>
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.yawl</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xsd</include>
+                </includes>
+            </testResource>
+        </testResources>
+
+        <plugins>
+            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YDataStateException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YStateException*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YEngine*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YEngineID*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YSpecificationID*</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                    <!-- Only compile tests that depend on elements + utilities module classes -->
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Exclude conflicting logging bridge to prevent ExceptionInInitializerError -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

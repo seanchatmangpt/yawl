@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.engine;
 
-import org.yawlfoundation.yawl.elements.YSpecVersion;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.exceptions.YStateException;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.yawlfoundation.yawl.elements.YSpecVersion;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.exceptions.YStateException;
 
 
 /**

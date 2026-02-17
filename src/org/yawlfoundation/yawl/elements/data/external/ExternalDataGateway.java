@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.elements.data.external;
 
+import java.util.List;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
-
-import java.util.List;
 
 /**
  * Author: Michael Adams

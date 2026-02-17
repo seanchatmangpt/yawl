@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.stateless;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.exceptions.YDataStateException;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
@@ -24,6 +26,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 public class YSExample implements YCaseEventListener, YWorkItemEventListener,
         YLogEventListener, YTimerEventListener {
 
+    private static final Logger _log = LogManager.getLogger(YSExample.class);
     private final YStatelessEngine _engine;             // the 'interface' to the engine
     int _caseCount;
     long _startTime;
@@ -64,7 +67,7 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
             _caseRunner = _engine.launchCase(spec);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            _log.error("Failed to run case", e);
             System.exit(1);
         }
     }
@@ -90,7 +93,7 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            _log.error("Failed to run multiple cases", e);
             System.exit(1);
         }
     }
@@ -120,7 +123,7 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
         if (event.getEventType() == YEventType.CASE_IDLE_TIMEOUT) {
             try {
                 String caseXML = _engine.unloadCase(event.getCaseID());
-                System.out.println(caseXML);
+                _log.info("Unloaded case XML: {}", caseXML);
             }
             catch (YStateException e) {
                 throw new RuntimeException(e);
@@ -216,21 +219,18 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
             }
         }
         catch (YDataStateException ydse) {
-            print(null, "**Exception in handleWorkItemEvent: ",
-                                    "Item:", event.getWorkItem().getIDString());
-            ydse.printStackTrace();
+            _log.error("Exception in handleWorkItemEvent for item: {}",
+                    event.getWorkItem().getIDString(), ydse);
         }
         catch (YStateException yse) {
             if (! event.getWorkItem().hasCompletedStatus()) {
-                print(null, "**Exception in handleWorkItemEvent: ",
-                        "Item:", event.getWorkItem().getIDString());
-                yse.printStackTrace();
+                _log.error("Exception in handleWorkItemEvent for item: {}",
+                        event.getWorkItem().getIDString(), yse);
             }
         }
         catch (Exception e) {
-            print(null, "**Exception in handleWorkItemEvent: ",
-                    "Item:", event.getWorkItem().getIDString());
-            e.printStackTrace();
+            _log.error("Exception in handleWorkItemEvent for item: {}",
+                    event.getWorkItem().getIDString(), e);
         }
     }
 
@@ -284,7 +284,7 @@ public class YSExample implements YCaseEventListener, YWorkItemEventListener,
         for (String arg : args) {
             sb.append(arg).append(" ");
         }
-        System.out.println(sb);
+        _log.info(sb.toString());
     }
 
 

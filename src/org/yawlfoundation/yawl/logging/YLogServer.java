@@ -18,9 +18,14 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import jakarta.persistence.Query;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.instance.InstanceCache;
@@ -29,10 +34,6 @@ import org.yawlfoundation.yawl.logging.table.*;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * The server side of interface E. An API to retrieve data from the process event logs

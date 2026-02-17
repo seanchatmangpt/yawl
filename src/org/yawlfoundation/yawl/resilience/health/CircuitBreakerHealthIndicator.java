@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.resilience.health;
 
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
 /**
  * Health indicator for Resilience4j circuit breakers.

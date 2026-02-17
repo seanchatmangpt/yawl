@@ -20,12 +20,22 @@ package org.yawlfoundation.yawl.util;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -33,11 +43,19 @@ import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Currency;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class StringUtil {
@@ -208,7 +226,7 @@ public class StringUtil {
 
     /**
      * Utility routine which takes a decimal value as a string (e.g. 0.25 equating to 25p) and returns the
-     * value in UI currency format (e.g. £0.25).
+     * value in UI currency format (e.g. L0.25).
      *
      * @return A formatted currency
      */
@@ -705,7 +723,7 @@ public class StringUtil {
         if (list.size() == 1) return list.get(0).toString();
         StringBuilder sb = new StringBuilder();
         for (Object s : list) {
-            if (sb.length() > 0) sb.append(separator);     
+            if (sb.length() > 0) sb.append(separator);
             sb.append(s);
         }
         return sb.toString();

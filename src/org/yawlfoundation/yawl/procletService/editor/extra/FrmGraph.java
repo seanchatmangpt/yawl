@@ -19,13 +19,13 @@
 package org.yawlfoundation.yawl.procletService.editor.extra;
 
 
-import edu.uci.ics.jung.algorithms.layout.*;
-import edu.uci.ics.jung.algorithms.layout.SpringLayout;
-import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
-import edu.uci.ics.jung.visualization.VisualizationViewer;
-import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
-import edu.uci.ics.jung.visualization.decorators.EdgeShape;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+
+import javax.swing.*;
+
 import org.apache.commons.collections15.Transformer;
 import org.yawlfoundation.yawl.procletService.editor.DesignInternalFrame;
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionArc;
@@ -34,11 +34,13 @@ import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionGraphs
 import org.yawlfoundation.yawl.procletService.models.procletModel.PortConnections;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import edu.uci.ics.jung.algorithms.layout.*;
+import edu.uci.ics.jung.algorithms.layout.SpringLayout;
+import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 
 public class FrmGraph extends DesignInternalFrame {
 

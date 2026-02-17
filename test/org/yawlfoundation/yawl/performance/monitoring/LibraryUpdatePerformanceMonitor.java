@@ -10,6 +10,14 @@
 
 package org.yawlfoundation.yawl.performance.monitoring;
 
+import java.io.*;
+import java.lang.management.*;
+import java.nio.file.*;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
+
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.EngineClearer;
@@ -19,16 +27,6 @@ import org.yawlfoundation.yawl.engine.YWorkItemRepository;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.*;
-import java.lang.management.*;
-import java.nio.file.*;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 /**
  * Monitors performance impacts of library updates in YAWL.

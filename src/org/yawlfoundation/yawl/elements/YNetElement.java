@@ -46,16 +46,19 @@ public abstract class YNetElement implements Cloneable, Comparable {
     public void setID(String id) { _id = id; }
 
 
+    @Override
     public String toString() {
         String fullClassName = getClass().getName();
         String shortClassName = fullClassName.substring(fullClassName.lastIndexOf('.') + 2);
         return shortClassName + ":" + getID();
     }
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
 
+    @Override
     public int compareTo(Object o) {
         YNetElement ne = (YNetElement) o;
         return getID().compareTo(ne.getID());

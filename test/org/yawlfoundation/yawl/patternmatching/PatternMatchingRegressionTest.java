@@ -1,10 +1,12 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.*;
+import org.yawlfoundation.yawl.engine.WorkItemCompletion;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+
+import junit.framework.TestCase;
 
 /**
  * Regression tests for pattern matching conversions
@@ -238,8 +240,8 @@ public class PatternMatchingRegressionTest extends TestCase {
 
     // Test that all enum values are accounted for
     public void testEnumValues_NoChanges() {
-        // Completion enum
-        assertEquals(3, org.yawlfoundation.yawl.engine.YWorkItem.Completion.values().length);
+        // Completion enum (WorkItemCompletion has 4 values: Normal, Force, Fail, Invalid)
+        assertEquals(4, WorkItemCompletion.values().length);
 
         // Timer type enum
         assertEquals(3, org.yawlfoundation.yawl.elements.YTimerParameters.TimerType.values().length);

@@ -13,13 +13,12 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.integration.processmining.EventLogExporter;
-
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.integration.processmining.EventLogExporter;
 
 /**
  * Exports orderfulfillment XES log to file for process mining.

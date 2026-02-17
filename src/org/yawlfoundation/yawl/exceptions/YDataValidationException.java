@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-import org.jdom2.Element;
-
 import java.io.Serial;
+
+import org.jdom2.Element;
 
 /**
  * Exception thrown when data validation fails against a schema during YAWL execution.

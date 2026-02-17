@@ -13,15 +13,14 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.generators;
 
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
  * Template-based output generator for YAWL work items.

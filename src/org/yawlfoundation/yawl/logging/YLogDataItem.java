@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.io.Serializable;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.Serializable;
 
 /**
  * Immutable logging data item record.

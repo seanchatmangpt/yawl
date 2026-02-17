@@ -13,9 +13,9 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 
 /**
  * Configuration for generic autonomous agents.

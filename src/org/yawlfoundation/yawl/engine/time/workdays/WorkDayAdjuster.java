@@ -18,12 +18,13 @@
 
 package org.yawlfoundation.yawl.engine.time.workdays;
 
-import org.yawlfoundation.yawl.util.StringUtil;
-
-import javax.xml.datatype.Duration;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+
+import javax.xml.datatype.Duration;
+
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * @author Michael Adams
@@ -162,6 +163,7 @@ public class WorkDayAdjuster {
     public static void main(String[] a) {
         Duration d = StringUtil.strToDuration("P1M3DT5H30M");
         Duration e = new WorkDayAdjuster().adjust(d);
-        System.out.println("DURATION: " + e.toString());
+        org.apache.logging.log4j.LogManager.getLogger(WorkDayAdjuster.class).info(
+                "Adjusted duration: {}", e.toString());
     }
 }

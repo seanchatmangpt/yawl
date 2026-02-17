@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.engine.instance;
 
+import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YTask;
+import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.logging.YEventLogger;
 import org.yawlfoundation.yawl.schema.XSDType;
-import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-import org.yawlfoundation.yawl.elements.data.YParameter;
-import org.jdom2.Element;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * Author: Michael Adams

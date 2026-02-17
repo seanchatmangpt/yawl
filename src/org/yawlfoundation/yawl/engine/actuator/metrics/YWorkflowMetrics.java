@@ -18,7 +18,11 @@
 
 package org.yawlfoundation.yawl.engine.actuator.metrics;
 
-import io.micrometer.core.instrument.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import jakarta.annotation.PostConstruct;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -27,9 +31,7 @@ import org.yawlfoundation.yawl.engine.YNetRunnerRepository;
 import org.yawlfoundation.yawl.engine.YSpecificationTable;
 import org.yawlfoundation.yawl.engine.YWorkItemRepository;
 
-import jakarta.annotation.PostConstruct;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import io.micrometer.core.instrument.*;
 
 /**
  * Micrometer metrics for YAWL workflow execution.

@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.logging.table.YLogSpecification;
 import org.yawlfoundation.yawl.schema.YDataSchemaCache;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A cache of foreign keys for use in event log tables.

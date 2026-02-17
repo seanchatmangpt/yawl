@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.time.Instant;
+import java.util.*;
+
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.time.Instant;
-import java.util.*;
 
 /**
  * @author Michael Adams

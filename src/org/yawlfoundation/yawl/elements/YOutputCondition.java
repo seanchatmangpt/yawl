@@ -42,6 +42,7 @@ public final class YOutputCondition extends YCondition {
     }
 
 
+    @Override
     public void verify(YVerificationHandler handler) {
         if (getPostsetElements().size() != 0) {
             handler.error(this, this + " postset must be empty: " + getPostsetElements());
@@ -50,6 +51,7 @@ public final class YOutputCondition extends YCondition {
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YNet copyContainer = _net.getCloneContainer();
         if (copyContainer.getNetElements().containsKey(this.getID())) {

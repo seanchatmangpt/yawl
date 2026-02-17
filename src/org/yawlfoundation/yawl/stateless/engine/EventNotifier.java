@@ -1,9 +1,9 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
+import java.util.Set;
+
 import org.yawlfoundation.yawl.stateless.listener.*;
 import org.yawlfoundation.yawl.stateless.listener.event.*;
-
-import java.util.Set;
 
 /**
  * @author Michael Adams

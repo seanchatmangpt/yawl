@@ -18,15 +18,16 @@
 
 package org.yawlfoundation.yawl.twitterService;
 
+import java.io.IOException;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
+
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
-
-import java.io.IOException;
 
 /**
  * A simple service that provides for status updates to the YAWL Twitter account

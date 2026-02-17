@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.mailService;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import jakarta.mail.Message;
+
+import javax.mail.Message.RecipientType;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,12 +42,6 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
 import org.yawlfoundation.yawl.util.MailSettings;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import jakarta.mail.Message;
-import javax.mail.Message.RecipientType;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A service that provides for emails to be sent by tasks
@@ -405,8 +407,3 @@ public class MailService extends InterfaceBWebsideController {
     }
 
 }
-
-
-
-
-

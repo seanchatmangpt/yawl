@@ -1,12 +1,12 @@
 package org.yawlfoundation.yawl.integration.autonomous.observability;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Enhanced logging wrapper with structured logging support.

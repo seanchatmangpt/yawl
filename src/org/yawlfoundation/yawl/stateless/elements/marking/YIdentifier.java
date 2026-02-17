@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
+import java.util.*;
+
+import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YCondition;
 import org.yawlfoundation.yawl.stateless.elements.YInputCondition;
-import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
-
-import java.util.*;
 
 /**
  * This class has control over data structures that allow for
