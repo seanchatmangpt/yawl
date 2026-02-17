@@ -1,0 +1,27 @@
+flowchart TD
+    A[validate] --> B[compile]
+    B --> C[test]
+    C --> D[package]
+    D --> E[verify]
+    E --> F[install]
+    F --> G[deploy]
+
+    subgraph Quality Gates
+        C --> U[Surefire unit tests]
+        E --> I[Failsafe integration tests]
+        E --> S[SpotBugs]
+        E --> P[PMD]
+        E --> K[Checkstyle]
+    end
+
+    U --> OK{all green?}
+    I --> OK
+    S --> OK
+    P --> OK
+    K --> OK
+
+    OK -->|yes| PASS[proceed]
+    OK -->|no| STOP[stop-the-line]
+
+    style PASS fill:#166534,stroke:#14532d,color:#dcfce7
+    style STOP fill:#991b1b,stroke:#7f1d1d,color:#fecaca

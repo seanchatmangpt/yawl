@@ -1,0 +1,29 @@
+graph LR
+    subgraph Foundation
+        yawl-utilities
+        yawl-elements
+        yawl-authentication
+    end
+
+    subgraph Core
+        yawl-engine
+        yawl-stateless
+        yawl-security
+    end
+
+    subgraph Services
+        yawl-resourcing
+        yawl-worklet
+        yawl-scheduling
+        yawl-integration
+        yawl-monitoring
+    end
+
+    subgraph Presentation
+        yawl-webapps
+        yawl-control-panel
+    end
+
+    Foundation --> Core
+    Core --> Services
+    Services --> Presentation
