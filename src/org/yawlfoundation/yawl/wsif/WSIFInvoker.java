@@ -192,8 +192,8 @@ public class WSIFInvoker {
             boolean found = false;
             String[] outNames = new String[0];
             Class[] outTypes = new Class[0];
-            for (Iterator i = operationList.iterator(); i.hasNext();) {
-                Operation op = (Operation) i.next();
+            for (Object item : operationList) {
+                var op = (Operation) item;
                 String name = op.getName();
                 if (!name.equals(operationName)) {
                     continue;

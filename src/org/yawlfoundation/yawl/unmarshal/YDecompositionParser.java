@@ -654,7 +654,7 @@ public class YDecompositionParser {
                 for (var id : _removeSetIDs.get(externalTask)) {
                     removeSetObjects.add(decomposition.getNetElement(id));
                 }
-                if (removeSetObjects.size() > 0) {
+                if (!removeSetObjects.isEmpty()) {
                     externalTask.addRemovesTokensFrom(removeSetObjects);
                 }
             }
@@ -689,7 +689,7 @@ public class YDecompositionParser {
     private class Postset {
 
         // maps a String ID to a List of FlowStruct objects
-        Map<String, List<FlowStruct>> _postsetMap = new HashMap<String, List<FlowStruct>>();
+        Map<String, List<FlowStruct>> _postsetMap = new HashMap<>();
 
         public void add(String id, List<FlowStruct> postsetStruct) {
             var oldRefIDs = _postsetMap.get(id);

@@ -27,6 +27,7 @@ import org.yawlfoundation.yawl.schema.SchemaHandler;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +51,7 @@ public class YMarshal {
     private static List<YSpecification> buildSpecifications(
             Element specificationSetElem, Namespace ns, YSchemaVersion version)
             throws YSyntaxException {
-        var specifications = new java.util.ArrayList<YSpecification>();
+        var specifications = new ArrayList<YSpecification>();
 
         // parse each specification element into a YSpecification
         for (var xmlSpecification : specificationSetElem.getChildren("specification", ns)) {
@@ -103,7 +104,7 @@ public class YMarshal {
 
             // now check the specification file against its respective schema
             if (schemaValidate) {
-                SchemaHandler validator = new SchemaHandler(version.getSchemaURL());
+                var validator = new SchemaHandler(version.getSchemaURL());
                 if (! validator.compileAndValidate(specStr)) {
                     throw new YSyntaxException(
                       " The specification file failed to verify against YAWL's Schema:\n"

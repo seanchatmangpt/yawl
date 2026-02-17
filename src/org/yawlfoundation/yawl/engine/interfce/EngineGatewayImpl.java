@@ -717,7 +717,7 @@ public class EngineGatewayImpl implements EngineGateway {
         if (specification == null) {
             return failureMessage("No specification found for id: " + specID);
         }
-        Set<YSpecification> specs = new HashSet<YSpecification>();
+        Set<YSpecification> specs = new HashSet<>();
         specs.add(_engine.getSpecification(specID));
         return getDataForSpecifications(specs);
     }

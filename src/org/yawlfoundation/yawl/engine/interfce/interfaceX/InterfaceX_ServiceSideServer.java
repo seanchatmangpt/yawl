@@ -126,34 +126,39 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
         String taskList = request.getParameter("taskList");
         String resourceID = request.getParameter("resourceid");
 
-        switch (actionToNotifyType(request.getParameter("action"))) {
-            case InterfaceX_EngineSideClient.NOTIFY_CHECK_CASE_CONSTRAINTS:
-               _controller.handleCheckCaseConstraintEvent(
-                       new YSpecificationID(specID, specVersion, specURI),
-                       caseID, data, preCheck);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_CHECK_ITEM_CONSTRAINTS:
+        return switch (actionToNotifyType(request.getParameter("action"))) {
+            case InterfaceX_EngineSideClient.NOTIFY_CHECK_CASE_CONSTRAINTS -> {
+                _controller.handleCheckCaseConstraintEvent(
+                        new YSpecificationID(specID, specVersion, specURI),
+                        caseID, data, preCheck);
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_CHECK_ITEM_CONSTRAINTS -> {
                 _controller.handleCheckWorkItemConstraintEvent(wir, data, preCheck);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_WORKITEM_ABORT:
-               _controller.handleWorkItemAbortException(wir, data);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_TIMEOUT:
-               _controller.handleTimeoutEvent(wir, taskList);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_RESOURCE_UNAVAILABLE:
-               _controller.handleResourceUnavailableException(resourceID, wir, data, primary);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_CONSTRAINT_VIOLATION:
-               _controller.handleConstraintViolationException(wir, data);
-               break;
-            case InterfaceX_EngineSideClient.NOTIFY_CANCELLED_CASE:
-               _controller.handleCaseCancellationEvent(caseID);
-               break;
-            default: return "<failure>Unknown action: '" + request.getParameter("action") +
-                            "'</failure>"; 
-        }
-        return "<success/>";
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_WORKITEM_ABORT -> {
+                _controller.handleWorkItemAbortException(wir, data);
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_TIMEOUT -> {
+                _controller.handleTimeoutEvent(wir, taskList);
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_RESOURCE_UNAVAILABLE -> {
+                _controller.handleResourceUnavailableException(resourceID, wir, data, primary);
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_CONSTRAINT_VIOLATION -> {
+                _controller.handleConstraintViolationException(wir, data);
+                yield "<success/>";
+            }
+            case InterfaceX_EngineSideClient.NOTIFY_CANCELLED_CASE -> {
+                _controller.handleCaseCancellationEvent(caseID);
+                yield "<success/>";
+            }
+            default -> "<failure>Unknown action: '" + request.getParameter("action") + "'</failure>";
+        };
     }
 
     /** @return the 'action' converted to an 'int' notify type, or -1 if invalid */
