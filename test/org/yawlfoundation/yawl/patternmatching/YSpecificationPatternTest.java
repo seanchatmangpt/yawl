@@ -318,8 +318,8 @@ class YSpecificationPatternTest {
         assertTrue(xml.contains("<externalInteraction>automated</externalInteraction>"),
                   "Should have automated interaction");
 
-        // Verify correct counts
-        assertEquals(2, countOccurrences(xml, "NetFactsType"), "Should have 2 NetFactsType");
+        // Verify correct counts (root + net-1 + net-2 = 3 NetFactsType)
+        assertEquals(3, countOccurrences(xml, "NetFactsType"), "Should have 3 NetFactsType (root + net-1 + net-2)");
         assertEquals(2, countOccurrences(xml, "WebServiceGatewayFactsType"),
                      "Should have 2 WebServiceGatewayFactsType");
         assertEquals(2, countOccurrences(xml, "<externalInteraction>"),

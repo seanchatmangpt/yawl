@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
@@ -516,16 +515,21 @@ class NetRunnerBehavioralTest {
 
             engine.loadSpecification(specification);
 
-            YIdentifier caseID = engine.startCase(
+            engine.startCase(
                     specification.getSpecificationID(), null, null, null,
                     new YLogDataItemList(), null, false);
 
-            YNetRunner runner = engine.getNetRunnerRepository().get(caseID);
-            assertNotNull(runner, "NetRunner must exist for case");
-
-            // Execute to potential deadlock state
-            // A deadlocking spec will eventually have tokens but no enabled tasks
-            // The engine should detect and announce this
+            // When a deadlocking spec starts, the YAWL engine detects the deadlock
+            // synchronously during startCase(): continueIfPossible() finds no enabled
+            // transitions (AND-join requires ALL preset conditions to have tokens, but
+            // the initial marking only places a token in the input condition, not in
+            // the loop-back condition). The engine then calls removeCaseFromCaches(),
+            // removing the runner and case from all repositories.
+            // Verify by asserting the spec has no running cases.
+            Set<YIdentifier> runningCases = engine.getCasesForSpecification(
+                    specification.getSpecificationID());
+            assertTrue(runningCases.isEmpty(),
+                    "Deadlocking case must be removed from caches after detection");
         }
 
         /**
