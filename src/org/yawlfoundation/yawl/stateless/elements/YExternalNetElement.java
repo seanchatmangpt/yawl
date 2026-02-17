@@ -380,8 +380,8 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
             throw new RuntimeException();
         }
 
-        copy._postsetFlows = new HashMap<String, YFlow>();
-        copy._presetFlows = new HashMap<String, YFlow>();
+        copy._postsetFlows = new HashMap<>();
+        copy._presetFlows = new HashMap<>();
         for (YFlow flow : _postsetFlows.values()) {
             String nextElmID = flow.getNextElement().getID();
             YExternalNetElement nextElemClone = copy._net.getNetElement(nextElmID);
@@ -406,14 +406,13 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
             xml.append(StringUtil.wrapEscaped(_documentation, "documentation"));
 
         // using for(;;) to avoid concurrent modification exception with foreach
-        List<YFlow> postSetFlows = new ArrayList<YFlow>(_postsetFlows.values());
+        List<YFlow> postSetFlows = new ArrayList<>(_postsetFlows.values());
         for (int i = 0; i < postSetFlows.size(); i++) {
             YFlow flow = postSetFlows.get(i);
             String flowsToXML = flow.toXML();
             if (this instanceof YTask) {
                 YExternalNetElement nextElement = flow.getNextElement();
-                if (nextElement instanceof YCondition) {
-                    YCondition nextCondition = (YCondition) nextElement;
+                if (nextElement instanceof YCondition nextCondition) {
                     if (nextCondition.isImplicit()) {
                         YExternalNetElement declaredNextElement =
                                 nextCondition.getPostsetElements().iterator().next();
