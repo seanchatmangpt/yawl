@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 import java.util.concurrent.Executors;
 
 /**
@@ -649,7 +650,7 @@ public class YawlA2AServer {
         int port = 8081;
         String portEnv = System.getenv("A2A_PORT");
         if (portEnv != null && !portEnv.isEmpty()) {
-            port = Integer.parseInt(portEnv);
+            port = SafeNumberParser.parseIntOrThrow(portEnv, "A2A_PORT environment variable");
         }
 
         System.out.println("Starting YAWL A2A Server v" + SERVER_VERSION);

@@ -1,0 +1,63 @@
+File,Line,Pattern,Current_Behavior,Verdict,Fix_Strategy
+src/org/yawlfoundation/yawl/elements/YSpecVersion.java,62,Integer.parseInt,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YSpecVersion.java,63,Integer.parseInt,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YSpecVersion.java,65,Integer.parseInt,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YSpecVersion.java,81,Double.valueOf,Inside try-catch with Exception handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YMultiInstanceAttributes.java,147,Integer.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YMultiInstanceAttributes.java,153,Integer.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YMultiInstanceAttributes.java,159,Integer.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/elements/YMultiInstanceAttributes.java,268,Integer.valueOf,Inside try-catch context (XML text from schema),UNSAFE - bare parse in XML deserialization,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/Marshaller.java,130,Integer.parseInt,No try-catch - parsing XML attribute paramOrdering,UNSAFE - throws NumberFormatException on bad XML,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EngineBasedClient.java,390,Integer.parseInt,Inside try for IOException only - not NumberFormatException,UNSAFE - NumberFormatException escapes to thread,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,99,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,108,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,117,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,128,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,137,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,145,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,148,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,155,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,171,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,174,Long.valueOf,No guard - HTTP request parameter parsed directly,UNSAFE - throws on malformed HTTP parameter,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,238,Long.valueOf,Private method with no guard - caller has no protection,UNSAFE - propagates NFE,Use SafeNumberParser.parseLongOrDefault
+src/org/yawlfoundation/yawl/engine/interfce/interfaceX/InterfaceX_ServiceSideServer.java,162,Integer.parseInt,Inside try-catch with NumberFormatException handler returning -1,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/engine/instance/CaseInstance.java,205,Long.valueOf,No try-catch - bare parse of XML text,UNSAFE - throws on bad XML value,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/engine/instance/WorkItemInstance.java,388,Long.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/integration/a2a/YawlA2AServer.java,652,Integer.parseInt,No guard on environment variable parse,UNSAFE - throws if A2A_PORT is non-numeric,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/integration/autonomous/AgentFactory.java,344,Integer.parseInt,Inside try-catch - rethrows as IllegalStateException,SAFE - already guarded (wraps properly),No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/AgentFactory.java,355,Long.parseLong,Inside try-catch - rethrows as IllegalStateException,SAFE - already guarded (wraps properly),No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/config/AgentConfigLoader.java,305,Integer.parseInt,Inside try-catch - rethrows as IllegalStateException,SAFE - already guarded (wraps properly),No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/config/AgentConfigLoader.java,318,Long.parseLong,Inside try-catch - rethrows as IllegalStateException,SAFE - already guarded (wraps properly),No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/launcher/GenericWorkflowLauncher.java,293,Long.parseLong,Inside try-catch - rethrows as IllegalArgumentException,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/launcher/GenericWorkflowLauncher.java,344,Long.parseLong,Inside try-catch - rethrows as IllegalArgumentException,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/integration/autonomous/registry/AgentInfo.java,143,Integer.parseInt,No guard - bare parse on JSON-extracted string,UNSAFE - throws on malformed registry JSON,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/integration/autonomous/registry/AgentInfo.java,150,Long.parseLong,No guard - bare parse on JSON-extracted string,UNSAFE - throws on malformed registry JSON,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/integration/autonomous/registry/AgentRegistry.java,351,Integer.parseInt,Inside nested try-catch with error output and System.exit,SAFE - already guarded (CLI main method),No change needed
+src/org/yawlfoundation/yawl/integration/orderfulfillment/OrderfulfillmentLauncher.java,188,Long.parseLong,Inside try-catch - rethrows as IllegalArgumentException,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/integration/orderfulfillment/PartyAgent.java,345,Integer.parseInt,Inside try-catch with warn-and-continue log,UNSAFE - silent fallback (HYPER_STANDARDS violation),Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/integration/orderfulfillment/PermutationRunner.java,331,Long.parseLong,Inside try-catch returning null (acceptable for optional field),SAFE - returns null sentinel,No change needed
+src/org/yawlfoundation/yawl/logging/YEventLogger.java,378,Double.valueOf,Inside try-catch with Exception handler returning 0,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/logging/table/YLogEvent.java,157,Long.valueOf,Inside private method with try-catch returning -1,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/unmarshal/YDecompositionParser.java,426,Long.valueOf,No guard - XML deserialization of timer expiry,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/unmarshal/YDecompositionParser.java,442,Long.valueOf,No guard - XML deserialization of timer ticks,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/unmarshal/YDecompositionParser.java,467,Integer.valueOf,No guard - XML predicate ordering attribute,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/unmarshal/YDecompositionParser.java,569,Integer.valueOf,Guarded by StringUtil.isIntegerString check before call,SAFE - pre-validated,No change needed
+src/org/yawlfoundation/yawl/unmarshal/YDecompositionParser.java,599,Integer.parseInt,Guarded by StringUtil.isIntegerString check before call,SAFE - pre-validated,No change needed
+src/org/yawlfoundation/yawl/stateless/unmarshal/YDecompositionParser.java,414,Long.valueOf,No guard - XML deserialization of timer expiry,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/stateless/unmarshal/YDecompositionParser.java,430,Long.valueOf,No guard - XML deserialization of timer ticks,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/stateless/unmarshal/YDecompositionParser.java,455,Integer.valueOf,No guard - XML predicate ordering attribute,UNSAFE - throws on malformed schema data,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/stateless/unmarshal/YDecompositionParser.java,557,Integer.valueOf,Guarded by StringUtil.isIntegerString check before call,SAFE - pre-validated,No change needed
+src/org/yawlfoundation/yawl/stateless/unmarshal/YDecompositionParser.java,587,Integer.parseInt,Guarded by StringUtil.isIntegerString check before call,SAFE - pre-validated,No change needed
+src/org/yawlfoundation/yawl/util/CheckSumTask.java,182,Integer.parseInt,Inside try-catch with NumberFormatException handler returning 0,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/util/HibernateEngine.java,146,Long.parseLong,No guard - bare parse of Hibernate property value,UNSAFE - throws on bad config value,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/util/HibernateEngine.java,153,Long.parseLong,No guard - bare parse of Hibernate property value,UNSAFE - throws on bad config value,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/util/HikariCPConnectionProvider.java,120,Integer.parseInt,No guard - bare parse of isolation level config,UNSAFE - throws on bad config value,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/util/HikariCPConnectionProvider.java,234,Integer.parseInt,Inside getIntProperty - no guard,UNSAFE - throws on bad config value,Use SafeNumberParser.parseIntOrThrow
+src/org/yawlfoundation/yawl/util/HikariCPConnectionProvider.java,243,Long.parseLong,Inside getLongProperty - no guard,UNSAFE - throws on bad config value,Use SafeNumberParser.parseLongOrThrow
+src/org/yawlfoundation/yawl/util/StringUtil.java,511,Integer.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/util/StringUtil.java,521,Long.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/util/StringUtil.java,531,Double.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/wsif/WSIFController.java,102,Integer.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/wsif/WSIFController.java,105,Double.valueOf,Inside try-catch with NumberFormatException handler,SAFE - already guarded,No change needed
+src/org/yawlfoundation/yawl/wsif/WSIFInvoker.java,230,Double.valueOf,No guard - reflection-based type coercion,UNSAFE - throws on non-numeric string arg,Use SafeNumberParser.parseDoubleOrThrow
+src/org/yawlfoundation/yawl/wsif/WSIFInvoker.java,234,Integer.valueOf,No guard - reflection-based type coercion,UNSAFE - throws on non-numeric string arg,Use SafeNumberParser.parseIntOrThrow

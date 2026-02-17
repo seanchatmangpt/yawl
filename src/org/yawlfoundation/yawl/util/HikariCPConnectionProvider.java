@@ -117,7 +117,7 @@ public class HikariCPConnectionProvider implements ConnectionProvider, Configura
             // Isolation level
             String isolationStr = getProperty(configValues, "isolation");
             if (isolationStr != null) {
-                this.isolationLevel = Integer.parseInt(isolationStr);
+                this.isolationLevel = SafeNumberParser.parseIntOrThrow(isolationStr, "HikariCP isolation level configuration property");
                 config.setTransactionIsolation(getIsolationLevelName(this.isolationLevel));
             }
 
@@ -231,7 +231,7 @@ public class HikariCPConnectionProvider implements ConnectionProvider, Configura
         if (value == null) {
             value = (String) props.get(HIKARI_PREFIX + key);
         }
-        return value != null ? Integer.parseInt(value) : defaultValue;
+        return value != null ? SafeNumberParser.parseIntOrThrow(value, "HikariCP integer property") : defaultValue;
     }
 
     @SuppressWarnings("rawtypes")
@@ -240,7 +240,7 @@ public class HikariCPConnectionProvider implements ConnectionProvider, Configura
         if (value == null) {
             value = (String) props.get(HIKARI_PREFIX + key);
         }
-        return value != null ? Long.parseLong(value) : defaultValue;
+        return value != null ? SafeNumberParser.parseLongOrThrow(value, "HikariCP long property") : defaultValue;
     }
 
     @SuppressWarnings("rawtypes")

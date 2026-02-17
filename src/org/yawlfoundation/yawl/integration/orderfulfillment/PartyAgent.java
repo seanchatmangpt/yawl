@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -341,11 +342,7 @@ public final class PartyAgent {
         int port = 8091;
         String portStr = System.getenv("AGENT_PORT");
         if (portStr != null && !portStr.isEmpty()) {
-            try {
-                port = Integer.parseInt(portStr);
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid number in trace attribute: " + e.getMessage(), e);
-            }
+            port = SafeNumberParser.parseIntOrThrow(portStr, "AGENT_PORT environment variable");
         }
 
         AgentCapability capability;

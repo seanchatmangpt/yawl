@@ -22,6 +22,7 @@ import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 
@@ -202,7 +203,7 @@ public class CaseInstance implements YInstance {
         if (instance != null) {
             caseID = instance.getChildText("caseid");
             String startStr = instance.getChildText("starttime");
-            if (startStr != null) startTime = Long.valueOf(startStr);
+            if (startStr != null) startTime = SafeNumberParser.parseLongOrThrow(startStr, "case starttime in instance XML");
             String params = instance.getChildText("caseparams");
             if (params != null) caseParams = JDOMUtil.decodeEscapes(params);
             String specIdentifier = instance.getChildText("specidentifier");
