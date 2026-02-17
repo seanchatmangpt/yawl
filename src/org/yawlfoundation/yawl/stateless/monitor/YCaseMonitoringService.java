@@ -241,8 +241,8 @@ public class YCaseMonitoringService {
 
         @Override
         public String toString() {
-            return String.format("CaseStatistics[total=%d, active=%d, completed=%d, " +
-                               "cancelled=%d, avgCompletion=%.2fms]",
+            return ("CaseStatistics[total=%d, active=%d, completed=%d, " +
+                               "cancelled=%d, avgCompletion=%.2fms]").formatted(
                                totalCases, activeCases, completedCases,
                                cancelledCases, avgCompletionTimeMs);
         }
@@ -301,7 +301,7 @@ public class YCaseMonitoringService {
 
         @Override
         public String toString() {
-            return String.format("TaskMetrics[task=%s, count=%d, avg=%.2fms, min=%dms, max=%dms]",
+            return "TaskMetrics[task=%s, count=%d, avg=%.2fms, min=%dms, max=%dms]".formatted(
                                taskID, executionCount, (double) getAverageDurationMs(),
                                getMinDurationMs(), getMaxDurationMs());
         }

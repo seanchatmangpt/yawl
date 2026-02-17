@@ -342,8 +342,8 @@ public class YCaseImporter {
                         runner.setNet(net);
                     }
                     catch (CloneNotSupportedException cnse) {
-                        String msg = String.format("The decomposition" +
-                                "'%s' for  active case '%s' could not be set." +
+                        String msg = ("The decomposition" +
+                                "'%s' for  active case '%s' could not be set.").formatted(
                                 task.getDecompositionPrototype().getID(),
                                 runner.getCaseID().toString());
                         throw new YStateException(msg);
