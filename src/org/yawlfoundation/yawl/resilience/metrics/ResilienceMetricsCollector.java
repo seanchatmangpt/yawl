@@ -1,5 +1,8 @@
 package org.yawlfoundation.yawl.resilience.metrics;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadRegistry;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -8,9 +11,6 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Metrics collector for Resilience4j patterns.

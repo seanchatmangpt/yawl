@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.stateless.elements.e2wfoj;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.e2wfoj.CombinationGenerator;
 import org.yawlfoundation.yawl.elements.e2wfoj.RElement;
@@ -31,15 +39,6 @@ import org.yawlfoundation.yawl.stateless.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YNet;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.stateless.elements.marking.YMarking;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A Reset net formalisation of a YAWL net for OR-join analysis (stateless variant).

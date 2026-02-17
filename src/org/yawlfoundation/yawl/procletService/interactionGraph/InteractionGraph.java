@@ -18,8 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.interactionGraph;
 
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.graph.util.EdgeType;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionArc.ArcState;
 import org.yawlfoundation.yawl.procletService.persistence.DBConnection;
 import org.yawlfoundation.yawl.procletService.persistence.Item;
@@ -29,8 +30,8 @@ import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 import org.yawlfoundation.yawl.procletService.util.EntitySID;
 
-import java.util.ArrayList;
-import java.util.List;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
 
 // colset InteractionGraph = product EntityMID * InteractionNodes * InteractionArcs;
 

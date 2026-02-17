@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.procletService.editor;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 
 /**
@@ -122,4 +123,3 @@ public class MainFrame_AboutBox
     }
   }
 }
-

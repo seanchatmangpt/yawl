@@ -1,9 +1,5 @@
 package org.yawlfoundation.yawl.performance;
 
-import junit.framework.TestCase;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.sql.*;
@@ -13,6 +9,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import junit.framework.TestCase;
 
 /**
  * Performance Benchmark for Hibernate 6.5 and HikariCP Migration

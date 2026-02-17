@@ -1,9 +1,10 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
+import org.yawlfoundation.yawl.elements.YTimerParameters;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
-import org.yawlfoundation.yawl.elements.YTimerParameters;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for YWorkItem switch expressions

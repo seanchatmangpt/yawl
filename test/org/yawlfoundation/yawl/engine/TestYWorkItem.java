@@ -1,9 +1,10 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.yawlfoundation.yawl.authentication.YClient;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import org.yawlfoundation.yawl.authentication.YClient;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;

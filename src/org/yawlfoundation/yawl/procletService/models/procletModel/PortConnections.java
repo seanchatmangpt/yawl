@@ -18,14 +18,15 @@
 
 package org.yawlfoundation.yawl.procletService.models.procletModel;
 
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.graph.util.EdgeType;
-import org.yawlfoundation.yawl.procletService.persistence.DBConnection;
-import org.yawlfoundation.yawl.procletService.persistence.StoredPortConnection;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.yawlfoundation.yawl.procletService.persistence.DBConnection;
+import org.yawlfoundation.yawl.procletService.persistence.StoredPortConnection;
+
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
 
 public class PortConnections extends DirectedSparseGraph {
 	

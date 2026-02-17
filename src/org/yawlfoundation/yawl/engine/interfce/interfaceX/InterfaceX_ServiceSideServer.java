@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceX;
 
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.interfce.Marshaller;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
@@ -28,9 +28,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
+
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.Marshaller;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
  *  InterfaceX_ServiceSideServer passes exception event calls from the engine to the
@@ -81,7 +82,8 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            org.apache.logging.log4j.LogManager.getLogger(InterfaceX_ServiceSideServer.class).error(
+                    "Failed to initialize InterfaceX service controller", e);
         }
     }
 

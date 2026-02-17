@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YNetElementDocoParser;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 
 /**
@@ -318,6 +318,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
 
      /************************************************************************/
 
+    @Override
     public void verify(YVerificationHandler handler) {
         verifyPresetFlows(handler);
         verifyPostsetFlows(handler);
@@ -360,6 +361,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YExternalNetElement copy = (YExternalNetElement) super.clone();
         copy._net = _net.getCloneContainer();

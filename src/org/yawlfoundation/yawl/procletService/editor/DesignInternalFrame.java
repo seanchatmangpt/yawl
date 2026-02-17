@@ -18,15 +18,16 @@
 
 package org.yawlfoundation.yawl.procletService.editor;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collection;
+
+import javax.swing.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class DesignInternalFrame
     extends JInternalFrame implements ActionListener, MouseListener {
@@ -128,4 +129,3 @@ public abstract class DesignInternalFrame
     }
   }
 }
-

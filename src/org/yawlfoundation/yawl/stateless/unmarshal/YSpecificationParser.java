@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.stateless.unmarshal;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.XMLConstants;
+
 import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -30,14 +38,6 @@ import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.unmarshal.YMetaData;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import javax.xml.XMLConstants;
-import java.text.ParseException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -179,7 +179,8 @@ class YSpecificationParser {
             try {
                 metaData.setValidFrom(LocalDate.from(YMetaData.dateFormat.parse(validFrom)));
             } catch (Exception e) {
-                e.printStackTrace();
+                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
+                        "Failed to parse validFrom date: {}", validFrom, e);
             }
         }
         String validUntil = metaDataElem.getChildText("validUntil", _yawlNS);
@@ -187,7 +188,8 @@ class YSpecificationParser {
             try {
                 metaData.setValidUntil(LocalDate.from(YMetaData.dateFormat.parse(validUntil)));
             } catch (Exception e) {
-                e.printStackTrace();
+                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
+                        "Failed to parse validUntil date: {}", validUntil, e);
             }
         }
         String created = metaDataElem.getChildText("created", _yawlNS);
@@ -195,7 +197,8 @@ class YSpecificationParser {
             try {
                 metaData.setCreated(LocalDate.from(YMetaData.dateFormat.parse(created)));
             } catch (Exception e) {
-                e.printStackTrace();
+                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
+                        "Failed to parse created date: {}", created, e);
             }
         }
 
@@ -293,4 +296,3 @@ class YSpecificationParser {
 
 
 }
-

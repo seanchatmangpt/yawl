@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
 import org.yawlfoundation.yawl.stateless.elements.data.YVariable;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 /**
  * Walks the net in reverse to discover any task-level input data variables that map from

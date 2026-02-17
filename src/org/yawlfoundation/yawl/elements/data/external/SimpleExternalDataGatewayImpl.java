@@ -18,17 +18,17 @@
 
 package org.yawlfoundation.yawl.elements.data.external;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.logging.log4j.LogManager;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * Author: Michael Adams
@@ -124,7 +124,8 @@ public class SimpleExternalDataGatewayImpl implements ExternalDataGateway {
     public void updateFromCaseData(YSpecificationID specID, String caseID,
                                    List<YParameter> outputParams,
                                    Element updatingData) {
-        System.out.println(caseID);        
+        LogManager.getLogger(SimpleExternalDataGatewayImpl.class).debug(
+                "updateFromCaseData called for caseID: {}", caseID);
     }
 
 

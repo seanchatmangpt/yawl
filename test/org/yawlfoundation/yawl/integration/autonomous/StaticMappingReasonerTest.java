@@ -1,13 +1,14 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import junit.framework.TestCase;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.integration.autonomous.reasoners.StaticMappingReasoner;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.integration.autonomous.reasoners.StaticMappingReasoner;
+
+import junit.framework.TestCase;
 
 /**
  * Integration tests for StaticMappingReasoner using real WorkItemRecord objects.

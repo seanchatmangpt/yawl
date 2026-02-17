@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.util;
 
+import java.util.*;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
-
-import java.util.*;
 
 /**
  * 
@@ -64,7 +64,7 @@ public class YIdentifierBag {
 
 
     public List<YIdentifier> getIdentifiers() {
-        List<YIdentifier> idList = new Vector<YIdentifier>();
+        List<YIdentifier> idList = new ArrayList<YIdentifier>();
         for (YIdentifier identifier : _idToQtyMap.keySet()) {
             int amount = _idToQtyMap.get(identifier);
             for (int i = 0; i < amount; i++) {

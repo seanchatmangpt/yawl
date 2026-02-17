@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.elements.data.external;
 
-import org.yawlfoundation.yawl.util.PluginLoaderUtil;
-
 import java.util.Map;
 import java.util.Set;
+
+import org.yawlfoundation.yawl.util.PluginLoaderUtil;
 
 /**
  * This factory class creates and instantiates instances of the various external

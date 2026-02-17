@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.exceptions;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -21,6 +21,6 @@ class TestYConnectivityException {
 	{
 		YConnectivityException yce = new YConnectivityException(messageIn);
 		String messageOut = yce.getMessage();
-		this.assertEquals(messageOut, messageIn);
+		assertEquals(messageIn, messageOut);
 	}
 }

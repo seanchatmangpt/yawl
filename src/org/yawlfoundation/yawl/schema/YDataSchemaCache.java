@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Michael Adams

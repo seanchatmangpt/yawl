@@ -18,34 +18,7 @@
 
 package org.yawlfoundation.yawl.stateless.engine;
 
-import net.sf.saxon.s9api.SaxonApiException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.elements.YAttributeMap;
-import org.yawlfoundation.yawl.stateless.elements.YTimerParameters;
-import org.yawlfoundation.yawl.engine.WorkItemCompletion;
-import org.yawlfoundation.yawl.engine.YNetData;
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.YWorkItemStatus;
-import org.yawlfoundation.yawl.engine.time.YTimer;
-import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
-import org.yawlfoundation.yawl.exceptions.YStateException;
-import org.yawlfoundation.yawl.logging.YLogDataItem;
-import org.yawlfoundation.yawl.logging.YLogDataItemList;
-import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
-import org.yawlfoundation.yawl.stateless.elements.YTask;
-import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
-import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
-import org.yawlfoundation.yawl.stateless.listener.event.YLogEvent;
-import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
-import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
-import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicateWorkItemParser;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-import org.yawlfoundation.yawl.stateless.util.SaxonUtil;
-import org.yawlfoundation.yawl.util.StringUtil;
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 
 import java.net.URL;
 import java.time.Instant;
@@ -54,8 +27,37 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.elements.YAttributeMap;
+import org.yawlfoundation.yawl.engine.WorkItemCompletion;
+import org.yawlfoundation.yawl.engine.YNetData;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.YWorkItemStatus;
+import org.yawlfoundation.yawl.engine.time.YTimer;
+import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.logging.YLogDataItem;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
+import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
+import org.yawlfoundation.yawl.stateless.elements.YTask;
+import org.yawlfoundation.yawl.stateless.elements.YTimerParameters;
+import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
+import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YLogEvent;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
+import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
+import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicateWorkItemParser;
+import org.yawlfoundation.yawl.stateless.util.SaxonUtil;
+import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.StringUtil;
+
+import net.sf.saxon.s9api.SaxonApiException;
 
 /**
  * 
@@ -70,6 +72,9 @@ public class YWorkItem {
 
     private static final DateTimeFormatter _df =
             DateTimeFormatter.ofPattern("MMM:dd, yyyy H:mm:ss").withZone(ZoneId.systemDefault());
+
+    /** Lock for virtual thread safe parent/child operations */
+    private final ReentrantLock _parentLock = new ReentrantLock();
 
     private YWorkItemID _workItemID;
     private String _thisID = null;
@@ -199,7 +204,8 @@ public class YWorkItem {
         // edge case: no parent work item
         if (_parent == null) return;
 
-        synchronized(_parent) {                      // sequentially handle children
+        _parent._parentLock.lock();                      // sequentially handle children
+        try {
 
             // if all siblings are completed, then the parent is completed too
             boolean parentComplete = true;
@@ -216,6 +222,8 @@ public class YWorkItem {
             if (parentComplete) {
                 logStatusChange(_parent, createLogDataList(_status.name()));
             }
+        } finally {
+            _parent._parentLock.unlock();
         }
     }
 

@@ -33,7 +33,7 @@ public enum WorkItemCompletion {
     Fail(2),                      // a failed, and unsuccessful, completion
     Invalid(-1);
 
-    private int _ord;
+    private final int _ord;
 
     WorkItemCompletion(int i) { _ord = i; }
 

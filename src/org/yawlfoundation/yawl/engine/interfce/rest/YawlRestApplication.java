@@ -18,10 +18,11 @@
 
 package org.yawlfoundation.yawl.engine.interfce.rest;
 
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 /**
  * JAX-RS Application configuration for YAWL REST APIs.

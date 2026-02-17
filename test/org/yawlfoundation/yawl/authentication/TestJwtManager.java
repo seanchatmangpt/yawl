@@ -1,9 +1,11 @@
 package org.yawlfoundation.yawl.authentication;
 
-import io.jsonwebtoken.Claims;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import io.jsonwebtoken.Claims;
 
 /**
  * Unit tests for JwtManager.

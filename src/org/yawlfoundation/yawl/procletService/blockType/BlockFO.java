@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.blockType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -35,9 +38,6 @@ import org.yawlfoundation.yawl.procletService.state.Performative;
 import org.yawlfoundation.yawl.procletService.state.Performatives;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BlockFO {
 	
@@ -336,4 +336,3 @@ public class BlockFO {
 	}
 
 }
-

@@ -18,11 +18,6 @@
 
 package org.yawlfoundation.yawl.authentication;
 
-import org.yawlfoundation.yawl.elements.YAWLServiceReference;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.logging.table.YAuditEvent;
-import org.yawlfoundation.yawl.util.HibernateEngine;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -30,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -40,6 +34,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.yawlfoundation.yawl.elements.YAWLServiceReference;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.logging.table.YAuditEvent;
+import org.yawlfoundation.yawl.util.HibernateEngine;
 
 /**
  * Thread-safe session cache managing connections to the engine from custom services

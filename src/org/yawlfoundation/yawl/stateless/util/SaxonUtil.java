@@ -18,7 +18,9 @@
 
 package org.yawlfoundation.yawl.stateless.util;
 
-import net.sf.saxon.s9api.*;
+import java.io.StringWriter;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Content;
@@ -30,8 +32,7 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SaxonErrorListener;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.io.StringWriter;
-import java.util.List;
+import net.sf.saxon.s9api.*;
 
 /**
  * @author Michael Adams
@@ -178,4 +179,3 @@ public class SaxonUtil {
     }
 
 }
-

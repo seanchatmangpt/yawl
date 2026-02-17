@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * The unique identifier of a specification.

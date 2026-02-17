@@ -18,15 +18,15 @@
 
 package org.yawlfoundation.yawl.engine.instance;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
-
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages a dataset of all 'live' case instances, including their workitems (live and
@@ -210,4 +210,3 @@ public class InstanceCache extends ConcurrentHashMap<String, CaseInstance> {
     }
 
 }
-

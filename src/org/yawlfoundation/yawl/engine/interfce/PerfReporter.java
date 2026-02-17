@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.yawlfoundation.yawl.util.XNode;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.yawlfoundation.yawl.util.XNode;
 
 /**
  * @author Michael Adams

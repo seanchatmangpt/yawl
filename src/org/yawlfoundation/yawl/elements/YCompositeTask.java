@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -31,9 +34,6 @@ import org.yawlfoundation.yawl.logging.YLogDataItem;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 
@@ -50,6 +50,7 @@ public final class YCompositeTask extends YTask {
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YNet copyContainer = _net.getCloneContainer();
         if (copyContainer.getNetElements().containsKey(this.getID())) {
@@ -67,6 +68,7 @@ public final class YCompositeTask extends YTask {
      * @param id the task identifier
      * @throws YDataStateException
      */
+    @Override
     protected synchronized void startOne(YPersistenceManager pmgr, YIdentifier id)
             throws YDataStateException, YPersistenceException, YQueryException, YStateException {
 
@@ -84,6 +86,7 @@ public final class YCompositeTask extends YTask {
     }
 
 
+    @Override
     public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
         List<YNetRunner> cancelledRunners = new ArrayList<YNetRunner>();
         YIdentifier thisI = _i;
@@ -117,6 +120,7 @@ public final class YCompositeTask extends YTask {
 
 
     // overridden to allow passthrough of non-mandatory empty elements to subnet
+    @Override
     protected Element performDataExtraction(String expression, YParameter inputParam)
             throws YDataStateException, YQueryException {
 
@@ -157,6 +161,7 @@ public final class YCompositeTask extends YTask {
 
     /****** VERIFICATION ***************************************************/
 
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);   // check parent first
         if (_decompositionPrototype == null) {

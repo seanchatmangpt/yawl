@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.mailService;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 import org.yawlfoundation.yawl.util.MailSettings;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
-
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * An API to be used by clients that want to send email via the mail service.

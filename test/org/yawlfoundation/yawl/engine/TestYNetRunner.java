@@ -1,26 +1,26 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.yawlfoundation.yawl.elements.YAtomicTask;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.YCondition;
-import org.yawlfoundation.yawl.elements.YTask;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.unmarshal.YMarshal;
-import org.yawlfoundation.yawl.exceptions.*;
-import org.yawlfoundation.yawl.util.StringUtil;
-import org.yawlfoundation.yawl.logging.YLogDataItemList;
-
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.yawlfoundation.yawl.elements.YCondition;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.YTask;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  *
@@ -64,7 +64,7 @@ class TestYNetRunner {
             fail("Should have thrown YStateException for non-enabled task");
         } catch (YStateException e) {
             expectedException = e;
-            assertTrue(e.getMessage().contains("b-top"), "Exception message should mention task");
+            assertTrue(e.getMessage().contains("b-top"), "Exception message should mention task b-top");
         } catch (YDataStateException e) {
             e.printStackTrace();
             fail();
@@ -90,7 +90,7 @@ class TestYNetRunner {
         assertTrue(_id1.getLocations().contains(anonC));
         assertTrue(((YTask) _netRunner1._net.getNetElement("b-top")).t_enabled(null));
         assertTrue(_netRunner1.isAlive());
-        assertTrue("" + _id1.getLocations(), _netRunner1.getEnabledTasks().size() == 1);
+        assertTrue(_netRunner1.getEnabledTasks().size() == 1, "" + _id1.getLocations());
         YAtomicTask btop = (YAtomicTask) _netRunner1.getNetElement("b-top");
         List btopChildren = null;
         try {
@@ -121,10 +121,10 @@ class TestYNetRunner {
             }
             assertNotNull(f);
         }
-        assertTrue("locations (should be one or zero in here): " +_id1.getLocations(),
-                _id1.getLocations().size() == 1
+        assertTrue(_id1.getLocations().size() == 1
                 ||
-                _id1.getLocations().size() == 0);
+                _id1.getLocations().size() == 0,
+                "locations (should be one or zero in here): " +_id1.getLocations());
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {

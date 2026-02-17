@@ -18,16 +18,16 @@
 
 package org.yawlfoundation.yawl.engine;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
 
 /**
  * A cache of active net runners.

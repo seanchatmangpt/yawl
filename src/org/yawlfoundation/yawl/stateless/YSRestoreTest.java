@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.stateless;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItem;
@@ -20,6 +22,8 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 public class YSRestoreTest implements YCaseEventListener, YWorkItemEventListener,
          YTimerEventListener {
+
+    private static final Logger _log = LogManager.getLogger(YSRestoreTest.class);
 
     // for this simple test we'll use only two engines
     private final YStatelessEngine _engine1;
@@ -75,7 +79,7 @@ public class YSRestoreTest implements YCaseEventListener, YWorkItemEventListener
             _caseRunner = _engine1.launchCase(spec);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            _log.error("Failed to run case", e);
         }
     }
 
@@ -109,15 +113,15 @@ public class YSRestoreTest implements YCaseEventListener, YWorkItemEventListener
                     _caseRunner = _engine2.restoreCase(caseXML);
                 }
                 else {
-                    System.out.println("Engine 2 idle time out");
+                    _log.info("Engine 2 idle time out");
                     System.exit(1);
                 }
             }
             catch (YStateException e) {
-                e.printStackTrace();
+                _log.error("Failed to unload/restore case", e);
             }
             catch (YSyntaxException e) {
-                e.printStackTrace();
+                _log.error("Syntax error in case XML", e);
             }
         }
 
@@ -201,21 +205,18 @@ public class YSRestoreTest implements YCaseEventListener, YWorkItemEventListener
 
         // catches any data validation errors on checkout and/or checkin
         catch (YDataStateException ydse) {
-            print(null, "**Exception in handleWorkItemEvent: ",
-                                    "Item:", event.getWorkItem().getIDString());
-            ydse.printStackTrace();
+            _log.error("Exception in handleWorkItemEvent for item: {}",
+                    event.getWorkItem().getIDString(), ydse);
         }
         catch (YStateException yse) {
             if (! event.getWorkItem().hasCompletedStatus()) {
-                print(null, "**Exception in handleWorkItemEvent: ",
-                        "Item:", event.getWorkItem().getIDString());
-                yse.printStackTrace();
+                _log.error("Exception in handleWorkItemEvent for item: {}",
+                        event.getWorkItem().getIDString(), yse);
             }
         }
         catch (Exception e) {
-            print(null, "**Exception in handleWorkItemEvent: ",
-                    "Item:", event.getWorkItem().getIDString());
-            e.printStackTrace();
+            _log.error("Exception in handleWorkItemEvent for item: {}",
+                    event.getWorkItem().getIDString(), e);
         }
     }
 
@@ -272,7 +273,7 @@ public class YSRestoreTest implements YCaseEventListener, YWorkItemEventListener
         for (String arg : args) {
             sb.append(arg).append(" ");
         }
-        System.out.println(sb);
+        _log.info(sb.toString());
     }
 
 

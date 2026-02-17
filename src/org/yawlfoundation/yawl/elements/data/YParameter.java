@@ -86,6 +86,7 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
     }
 
 
+    @Override
     public String toXML() {
         String type = getParamTypeStr(_paramType);
         String attrs = getAttributes() != null ? getAttributes().toXML() : "";
@@ -121,11 +122,13 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
         return result ;
     }    
 
+    @Override
     public String toString() {
         return toXML();
     }
 
 
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
         if (super.isMandatory() && _initialValue != null) {

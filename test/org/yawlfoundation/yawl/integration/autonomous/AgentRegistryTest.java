@@ -1,14 +1,15 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import junit.framework.TestCase;
-import org.yawlfoundation.yawl.integration.a2a.A2AException;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.yawlfoundation.yawl.integration.a2a.A2AException;
+
+import junit.framework.TestCase;
 
 /**
  * Integration tests for AgentRegistry using real in-memory agent state.

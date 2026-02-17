@@ -18,12 +18,7 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,7 +30,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 /**
  * Tests for Interface_Client virtual threads implementation.
@@ -91,9 +92,9 @@ public class Interface_ClientVirtualThreadsTest {
 
         String result = client.executePost(serverUrl + "/test", params);
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Result should contain success", result.contains("success"));
-        assertEquals("Request count should be 1", 1, requestCount.get());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.contains("success"), "Result should contain success");
+        assertEquals(1, requestCount.get(), "Request count should be 1");
     }
 
     @Test
@@ -103,8 +104,8 @@ public class Interface_ClientVirtualThreadsTest {
 
         String result = client.executeGet(serverUrl + "/test", params);
 
-        assertNotNull("Result should not be null", result);
-        assertEquals("Request count should be 1", 1, requestCount.get());
+        assertNotNull(result, "Result should not be null");
+        assertEquals(1, requestCount.get(), "Request count should be 1");
     }
 
     @Test
@@ -115,13 +116,13 @@ public class Interface_ClientVirtualThreadsTest {
 
         CompletableFuture<String> future = client.executePostAsync(serverUrl + "/echo", params);
 
-        assertNotNull("Future should not be null", future);
-        assertFalse("Future should not be done immediately", future.isDone());
+        assertNotNull(future, "Future should not be null");
+        assertFalse(future.isDone(), "Future should not be done immediately");
 
         String result = future.get(5, TimeUnit.SECONDS);
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Result should contain echoed data", result.contains("42"));
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.contains("42"), "Result should contain echoed data");
     }
 
     @Test
@@ -133,7 +134,7 @@ public class Interface_ClientVirtualThreadsTest {
 
         String result = future.get(5, TimeUnit.SECONDS);
 
-        assertNotNull("Result should not be null", result);
+        assertNotNull(result, "Result should not be null");
     }
 
     @Test
@@ -156,13 +157,13 @@ public class Interface_ClientVirtualThreadsTest {
         boolean completed = latch.await(30, TimeUnit.SECONDS);
         long duration = System.currentTimeMillis() - startTime;
 
-        assertTrue("All requests should complete within timeout", completed);
-        assertEquals("All futures should be successful", concurrentRequests,
-            futures.stream().filter(f -> !f.isCompletedExceptionally()).count());
-        assertEquals("Request count should match", concurrentRequests, requestCount.get());
+        assertTrue(completed, "All requests should complete within timeout");
+        assertEquals(concurrentRequests,
+            futures.stream().filter(f -> !f.isCompletedExceptionally()).count(), "All futures should be successful");
+        assertEquals(concurrentRequests, requestCount.get(), "Request count should match");
 
         System.out.println("Completed " + concurrentRequests + " concurrent requests in " + duration + "ms");
-        assertTrue("Concurrent requests should complete efficiently (< 10s)", duration < 10000);
+        assertTrue(duration < 10000, "Concurrent requests should complete efficiently (< 10s)");
     }
 
     @Test
@@ -185,13 +186,13 @@ public class Interface_ClientVirtualThreadsTest {
         boolean completed = latch.await(60, TimeUnit.SECONDS);
         long duration = System.currentTimeMillis() - startTime;
 
-        assertTrue("All 1000 requests should complete", completed);
+        assertTrue(completed, "All 1000 requests should complete");
 
         long successCount = futures.stream()
             .filter(f -> !f.isCompletedExceptionally())
             .count();
 
-        assertTrue("Most requests should succeed (>95%)", successCount > 950);
+        assertTrue(successCount > 950, "Most requests should succeed (>95%)");
 
         System.out.println("Completed " + successCount + "/" + concurrentRequests +
             " high-concurrency requests in " + duration + "ms");
@@ -219,13 +220,13 @@ public class Interface_ClientVirtualThreadsTest {
 
         System.out.println("Completed " + concurrentRequests + " slow requests in " + duration + "ms");
 
-        assertTrue("Virtual threads should handle blocking I/O efficiently (< 5s for 50x100ms)",
-            duration < 5000);
+        assertTrue(duration < 5000,
+            "Virtual threads should handle blocking I/O efficiently (< 5s for 50x100ms)");
 
         long successCount = futures.stream()
             .filter(f -> !f.isCompletedExceptionally())
             .count();
-        assertEquals("All slow requests should succeed", concurrentRequests, successCount);
+        assertEquals(concurrentRequests, successCount, "All slow requests should succeed");
     }
 
     @Test
@@ -239,8 +240,8 @@ public class Interface_ClientVirtualThreadsTest {
             future.get(5, TimeUnit.SECONDS);
             fail("Should throw exception for nonexistent endpoint");
         } catch (Exception e) {
-            assertTrue("Exception should contain meaningful message",
-                e.getCause() != null || e.getMessage() != null);
+            assertTrue(e.getCause() != null || e.getMessage() != null,
+                "Exception should contain meaningful message");
         }
     }
 
@@ -251,10 +252,10 @@ public class Interface_ClientVirtualThreadsTest {
 
         for (int i = 0; i < 10; i++) {
             String result = client.executePost(serverUrl + "/test", params);
-            assertNotNull("Result should not be null for request " + i, result);
+            assertNotNull(result, "Result should not be null for request " + i);
         }
 
-        assertEquals("All 10 requests should be counted", 10, requestCount.get());
+        assertEquals(10, requestCount.get(), "All 10 requests should be counted");
     }
 
     /**

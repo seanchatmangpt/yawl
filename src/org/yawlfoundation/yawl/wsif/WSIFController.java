@@ -79,7 +79,7 @@ public class WSIFController extends InterfaceBWebsideController {
     }
 
     private Map<String, String> getOutputDataTypes(WorkItemRecord wir) throws IOException {
-        Map<String, String> dataTypes = new Hashtable<String, String>();
+        Map<String, String> dataTypes = new HashMap<String, String>();
         TaskInformation taskInfo = this.getTaskInformation(
                 new YSpecificationID(wir), wir.getTaskID(), _sessionHandle);
         if (taskInfo != null) {

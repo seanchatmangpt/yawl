@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceX;
 
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.jdom2.Document;
-
 import java.util.List;
+
+import org.jdom2.Document;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.YWorkItem;
 
 /**
  * Interface to be implemented by classes which register with the engine to receive

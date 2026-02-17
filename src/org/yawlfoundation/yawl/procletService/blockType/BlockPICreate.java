@@ -19,6 +19,9 @@
 package org.yawlfoundation.yawl.procletService.blockType;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -31,9 +34,6 @@ import org.yawlfoundation.yawl.procletService.state.Performative;
 import org.yawlfoundation.yawl.procletService.state.Performatives;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BlockPICreate {
 	

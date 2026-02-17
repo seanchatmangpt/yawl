@@ -18,6 +18,11 @@
 
 package org.yawlfoundation.yawl.stateless.engine;
 
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -39,10 +44,6 @@ import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YBuildProperties;
-
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A stateless version of the YAWL engine
@@ -66,7 +67,7 @@ public class YEngine {
 
     // used to prevent race condition between YStatelessEngine#unloadCase and
     // YWorkItemTimer#handleTimerExpiry
-    public final Object UNLOAD_MUTEX = new Object();
+    public final ReentrantLock UNLOAD_MUTEX = new ReentrantLock();
 
 
     /**

@@ -1,28 +1,5 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import io.a2a.A2A;
-import io.a2a.server.ServerCallContext;
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
-import io.a2a.server.events.InMemoryQueueManager;
-import io.a2a.server.events.MainEventBus;
-import io.a2a.server.events.MainEventBusProcessor;
-import io.a2a.server.requesthandlers.DefaultRequestHandler;
-import io.a2a.server.tasks.AgentEmitter;
-import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
-import io.a2a.server.tasks.InMemoryTaskStore;
-import io.a2a.spec.*;
-import io.a2a.transport.rest.handler.RestHandler;
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
-
-import io.a2a.server.auth.User;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,8 +9,32 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import org.yawlfoundation.yawl.util.SafeNumberParser;
 import java.util.concurrent.Executors;
+
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
+import io.a2a.A2A;
+import io.a2a.server.ServerCallContext;
+import io.a2a.server.agentexecution.AgentExecutor;
+import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.auth.User;
+import io.a2a.server.events.InMemoryQueueManager;
+import io.a2a.server.events.MainEventBus;
+import io.a2a.server.events.MainEventBusProcessor;
+import io.a2a.server.requesthandlers.DefaultRequestHandler;
+import io.a2a.server.tasks.AgentEmitter;
+import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
+import io.a2a.server.tasks.InMemoryTaskStore;
+import io.a2a.spec.*;
+import io.a2a.transport.rest.handler.RestHandler;
 
 /**
  * Agent-to-Agent (A2A) Server for YAWL using the official A2A Java SDK.

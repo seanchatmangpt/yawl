@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for general switch expression branch coverage

@@ -18,12 +18,20 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusIsParent;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
+
+import jakarta.persistence.Query;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-import org.apache.logging.log4j.ThreadContext;
-import jakarta.persistence.Query;
 import org.yawlfoundation.yawl.authentication.YClient;
 import org.yawlfoundation.yawl.authentication.YSession;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -35,16 +43,6 @@ import org.yawlfoundation.yawl.logging.table.*;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.internal.YInternalType;
 import org.yawlfoundation.yawl.util.HibernateEngine;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusIsParent;
 
 /**
  * Handles all process logging of case, subnet, workitem and workitem data events.

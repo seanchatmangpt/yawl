@@ -43,6 +43,9 @@ public class ThreadTest extends ThreadNotify{
              }
            }
            catch (InterruptedException e){
+               // InterruptedException is intentionally ignored: thread termination signal
+               // during wait() does not require special handling in this test utility
+               Thread.currentThread().interrupt();
            }
     	}
     }

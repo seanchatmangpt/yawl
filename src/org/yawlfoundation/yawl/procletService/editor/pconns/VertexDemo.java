@@ -577,4 +577,3 @@ public class VertexDemo extends JApplet {
         frame.setVisible(true);
     }
 }
-

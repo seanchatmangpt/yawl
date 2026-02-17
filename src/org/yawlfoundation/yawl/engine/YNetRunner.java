@@ -18,6 +18,11 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,17 +47,55 @@ import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.NullCheckModernizer;
 
-import java.net.URL;
-import java.util.*;
-
 /**
+ * Executes a YAWL workflow net instance (case) following Petri net semantics.
  *
+ * <p>YNetRunner is the core execution engine for individual workflow cases. It manages
+ * the lifecycle of a case from start to completion, coordinating task enablement,
+ * firing, and completion based on the control flow defined in the YNet specification.</p>
+ *
+ * <h2>Core Responsibilities</h2>
+ * <ul>
+ *   <li>Manage case identifier and net state</li>
+ *   <li>Track enabled, busy, and deadlocked tasks</li>
+ *   <li>Process task transitions (fire, start, complete)</li>
+ *   <li>Handle AND/OR/XOR split and join semantics</li>
+ *   <li>Support composite task sub-net execution</li>
+ *   <li>Manage timer states for time-aware tasks</li>
+ *   <li>Announce events to registered listeners</li>
+ * </ul>
+ *
+ * <h2>Execution Model</h2>
+ * <p>The runner uses a "kick" mechanism to progress the net:
+ * <ol>
+ *   <li>Check which tasks are enabled (tokens in preset conditions)</li>
+ *   <li>Fire newly enabled tasks (atomic or composite)</li>
+ *   <li>Process deferred choices and multi-instance tasks</li>
+ *   <li>Handle task completions and propagate tokens</li>
+ *   <li>Check for net completion or deadlock</li>
+ * </ol>
+ * </p>
+ *
+ * <h2>Thread Safety</h2>
+ * <p>This class uses a ReentrantLock for virtual thread-safe parent runner operations.
+ * Sub-net runners nested within composite tasks coordinate through the parent runner lock.</p>
+ *
+ * <h2>State Management</h2>
+ * <p>Execution status tracks suspend/resume states:
+ * <ul>
+ *   <li><b>Normal</b> - Standard execution</li>
+ *   <li><b>Suspending</b> - Transitioning to suspended state</li>
+ *   <li><b>Suspended</b> - Execution paused</li>
+ *   <li><b>Resuming</b> - Transitioning back to normal</li>
+ * </ul>
+ * </p>
  *
  * @author Lachlan Aldred
- *         Date: 16/04/2003
- *         Time: 16:08:01
- *
- * @author Michael Adams (for v2)
+ * @author Michael Adams (v2.0 enhancements)
+ * @see YNet
+ * @see YWorkItem
+ * @see YWorkItemRepository
+ * @see YIdentifier
  */
 public class YNetRunner {
 
@@ -61,6 +104,9 @@ public class YNetRunner {
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
+
+    /** Lock for virtual thread safe parent runner operations */
+    private final ReentrantLock _runnerLock = new ReentrantLock();
 
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
@@ -826,7 +872,8 @@ public class YNetRunner {
                 if (_containingCompositeTask != null) {
                     YNetRunner parentRunner = _engine.getNetRunner(_caseIDForNet.getParent());
                     if (parentRunner != null) {
-                        synchronized (parentRunner) {
+                        parentRunner._runnerLock.lock();
+                        try {
                             if (_containingCompositeTask.t_isBusy()) {
 
                                 warnIfNetNotEmpty();
@@ -844,6 +891,8 @@ public class YNetRunner {
                                         " composite task: {}, caseid for decomposed net: {}",
                                         atomicTask, _containingCompositeTask, _caseIDForNet);
                             }
+                        } finally {
+                            parentRunner._runnerLock.unlock();
                         }
                     }
                 }
@@ -1140,7 +1189,7 @@ public class YNetRunner {
     
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
-        _timerStates = new Hashtable<String, String>();
+        _timerStates = new ConcurrentHashMap<String, String>();
         for (YTask task : _netTasks) {
             if (task.getTimerVariable() != null) {
                 updateTimerState(task, YWorkItemTimer.State.dormant);
@@ -1238,5 +1287,3 @@ public class YNetRunner {
     }
 
 }
-
-

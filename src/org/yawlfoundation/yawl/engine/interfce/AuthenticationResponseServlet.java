@@ -18,7 +18,8 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
@@ -26,8 +27,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
+
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
 
 /**
  * 
@@ -60,7 +61,8 @@ public class AuthenticationResponseServlet extends HttpServlet {
                     userName, password, proxyHost, proxyPort);
             context.setAttribute("controller", _controller);
         } catch (Exception e) {
-            e.printStackTrace();
+            org.apache.logging.log4j.LogManager.getLogger(AuthenticationResponseServlet.class).error(
+                    "Failed to initialize authentication response servlet", e);
         }
     }
 

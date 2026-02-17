@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements.data;
 
+import java.util.Map;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.YAttributeMap;
@@ -33,8 +35,6 @@ import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.Map;
 
 /**
  * @author Lachlan Aldred
@@ -216,6 +216,7 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
     public int getOrdering() { return _ordering; }
 
 
+    @Override
     public int compareTo(YVariable other) {
         return this.getOrdering() - other.getOrdering();
     }
@@ -269,12 +270,14 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
     }
 
 
+    @Override
     public String toString() {
         return getClass().getName() +
                 ":" + ((_name != null) ? _name : _elementName + toXML());
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
@@ -407,6 +410,7 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
      * ***************************************************************************
      */
 
+    @Override
     public void verify(YVerificationHandler handler) {
 
         //check the initial & default values (if any)

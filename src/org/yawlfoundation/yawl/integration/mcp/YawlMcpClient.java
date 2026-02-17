@@ -1,6 +1,11 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
+import java.time.Duration;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
@@ -8,10 +13,6 @@ import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
 import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpSchema;
-
-import java.time.Duration;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Model Context Protocol (MCP) Client for YAWL using the official MCP Java SDK.

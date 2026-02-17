@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.yawlfoundation.yawl.util.StringUtil;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * Immutable timing information for a work item.

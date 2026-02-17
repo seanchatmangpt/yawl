@@ -18,13 +18,6 @@
 
 package org.yawlfoundation.yawl.stateless.monitor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.exceptions.YStateException;
-import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,6 +27,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
+import org.yawlfoundation.yawl.util.JDOMUtil;
 
 /**
  * Exports and imports case data for backup, recovery, and migration.

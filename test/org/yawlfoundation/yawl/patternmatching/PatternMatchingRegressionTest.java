@@ -1,10 +1,11 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.*;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+
+import junit.framework.TestCase;
 
 /**
  * Regression tests for pattern matching conversions

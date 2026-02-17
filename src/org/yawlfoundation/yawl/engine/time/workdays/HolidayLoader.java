@@ -19,16 +19,17 @@
 package org.yawlfoundation.yawl.engine.time.workdays;
 
 
+import java.io.IOException;
+import java.util.*;
+
+import javax.xml.soap.SOAPException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 import org.yawlfoundation.yawl.util.SoapClient;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
-
-import javax.xml.soap.SOAPException;
-import java.io.IOException;
-import java.util.*;
 
 /**
  * @author Michael Adams

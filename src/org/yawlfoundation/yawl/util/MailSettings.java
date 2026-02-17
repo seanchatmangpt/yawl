@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.util;
 
+import java.io.Serializable;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
-
-import java.io.Serializable;
 
 /**
  * Immutable mail settings record for SMTP configuration.
@@ -192,4 +192,3 @@ public record MailSettings(
                                newSubject, newContent);
     }
 }
-

@@ -1,17 +1,17 @@
 package org.yawlfoundation.yawl.integration.test;
 
-import io.a2a.spec.AgentCapabilities;
-import io.a2a.spec.AgentSkill;
-import io.modelcontextprotocol.spec.McpSchema;
-import org.yawlfoundation.yawl.integration.zai.ZaiService;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
-import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
-import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+
+import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
+import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.zai.ZaiService;
+
+import io.a2a.spec.AgentCapabilities;
+import io.a2a.spec.AgentSkill;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * Integration verification for MCP, A2A, and Z.AI services.

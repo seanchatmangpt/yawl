@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.util.Set;
+
 import org.jdom2.Document;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.announcement.YAnnouncement;
-
-import java.util.Set;
 
 
 /**

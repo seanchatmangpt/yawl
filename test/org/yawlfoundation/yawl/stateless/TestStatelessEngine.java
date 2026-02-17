@@ -1,10 +1,15 @@
 package org.yawlfoundation.yawl.stateless;
 
-import org.yawlfoundation.yawl.exceptions.YDataStateException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.exceptions.YDataStateException;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
@@ -18,10 +23,6 @@ import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.InputStream;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * JUnit tests for the stateless YAWL engine (YStatelessEngine).

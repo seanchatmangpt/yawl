@@ -1,5 +1,10 @@
 package org.yawlfoundation.yawl.stateless;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
@@ -18,16 +23,79 @@ import org.yawlfoundation.yawl.stateless.monitor.YCaseImporter;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitor;
 import org.yawlfoundation.yawl.stateless.unmarshal.YMarshal;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 /**
+ * A stateless facade for the YAWL workflow engine designed for modern deployment scenarios.
+ *
+ * <p>YStatelessEngine provides a simplified, stateless API for executing YAWL workflows.
+ * Unlike the traditional YEngine which maintains persistent state, this engine is designed
+ * for use in containerized environments where engine state is managed externally through
+ * case marshaling and restoration.</p>
+ *
+ * <h2>Key Features</h2>
+ * <ul>
+ *   <li>Stateless execution model suitable for cloud deployment</li>
+ *   <li>Case import/export for external state persistence</li>
+ *   <li>Event-driven architecture with listener support</li>
+ *   <li>Optional case monitoring with idle timeout detection</li>
+ *   <li>Support for multi-threaded event announcements</li>
+ * </ul>
+ *
+ * <h2>Basic Usage</h2>
+ * <pre>{@code
+ * // Create engine with case monitoring
+ * YStatelessEngine engine = new YStatelessEngine(60000); // 60 second idle timeout
+ *
+ * // Load specification
+ * YSpecification spec = engine.unmarshalSpecification(specXML);
+ *
+ * // Launch case
+ * YNetRunner runner = engine.launchCase(spec, "case-123", initialData);
+ *
+ * // Process work items
+ * for (YWorkItem item : runner.getEnabledWorkItems()) {
+ *     engine.startWorkItem(item);
+ *     engine.completeWorkItem(item, outputData, null);
+ * }
+ *
+ * // Export case state for persistence
+ * String caseXML = engine.unloadCase(runner.getCaseID());
+ *
+ * // Restore case later
+ * YNetRunner restored = engine.restoreCase(caseXML);
+ * }</pre>
+ *
+ * <h2>Event Listeners</h2>
+ * <p>The engine supports multiple listener types for monitoring workflow execution:
+ * <ul>
+ *   <li>{@link YCaseEventListener} - Case start, complete, cancel events</li>
+ *   <li>{@link YWorkItemEventListener} - Work item lifecycle events</li>
+ *   <li>{@link YExceptionEventListener} - Exception and error events</li>
+ *   <li>{@link YLogEventListener} - Audit logging events</li>
+ *   <li>{@link YTimerEventListener} - Timer expiry and state events</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Case Monitoring</h2>
+ * <p>When enabled, the case monitor tracks all active cases and can detect idle cases
+ * that have not processed any work items within the configured timeout period. Idle
+ * timeout events are announced to registered case event listeners.</p>
+ *
+ * <h2>Thread Safety</h2>
+ * <p>This class is thread-safe for case operations. Multiple cases can be processed
+ * concurrently. Case state operations (unload/restore) are synchronized to prevent
+ * race conditions.</p>
+ *
  * @author Michael Adams
- * @date 21/8/20
+ * @see YEngine
+ * @see YNetRunner
+ * @see YWorkItem
+ * @see YSpecification
  */
 public class YStatelessEngine {
 
+
+    /** Lock for virtual thread safe case unloading operations */
+    private final ReentrantLock _unloadLock = new ReentrantLock();
 
     private final YEngine _engine;
     private YCaseMonitor _caseMonitor;                        // watches for idle cases
@@ -526,13 +594,16 @@ public class YStatelessEngine {
         if (_caseMonitor == null) {
             throw new YStateException("This engine is not monitoring idle cases");
         }
-        synchronized (_engine.UNLOAD_MUTEX) {
+        _unloadLock.lock();
+        try {
             YCase yCase = _caseMonitor.unloadCase(caseID);           // notnull guaranteed
             yCase.removeWorkItemTimers();
             String caseXML = yCase.marshal();                        // ditto
             _engine.getAnnouncer().announceCaseEvent(
                     new YCaseEvent(YEventType.CASE_UNLOADED, yCase.getRunner()));
             return caseXML;
+        } finally {
+            _unloadLock.unlock();
         }
     }
 

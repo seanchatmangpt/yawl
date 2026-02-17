@@ -18,6 +18,10 @@
 
 package org.yawlfoundation.yawl.procletService;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -39,10 +43,6 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProcletService extends InterfaceBWebsideController  {
 
@@ -322,4 +322,3 @@ public class ProcletService extends InterfaceBWebsideController  {
     	System.out.println(newOne);
     }
 }
-

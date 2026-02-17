@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides for the persistence of the last allocated case id, and the generation

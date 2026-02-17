@@ -162,12 +162,24 @@
                         <!-- Exclude MCP client (uses client-side SDK not in stubs) -->
                         <exclude>**/mcp/YawlMcpClient.java</exclude>
                     </excludes>
+                    <testIncludes>
+                        <include>**/observability/**</include>
+                        <include>**/mcp/**</include>
+                        <include>**/spiffe/**</include>
+                        <include>**/dedup/**</include>
+                    </testIncludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <includes>
+                        <include>**/observability/**</include>
+                        <include>**/mcp/**</include>
+                        <include>**/spiffe/**</include>
+                        <include>**/dedup/**</include>
+                    </includes>
                     <excludes>
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>

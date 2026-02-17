@@ -18,13 +18,14 @@
 
 package org.yawlfoundation.yawl.procletService.editor;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import javax.swing.*;
 
 /**
  * <p>Title: TeamWorkFlow</p>
@@ -191,4 +192,3 @@ class WindowMenuItem
 interface WindowMenuListener {
   void itemSelected(JInternalFrame frame, boolean active);
 }
-

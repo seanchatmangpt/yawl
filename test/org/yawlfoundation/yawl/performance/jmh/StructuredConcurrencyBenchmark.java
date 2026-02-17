@@ -10,16 +10,16 @@
 
 package org.yawlfoundation.yawl.performance.jmh;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
 
 /**
  * JMH benchmark comparing StructuredTaskScope vs CompletableFuture.

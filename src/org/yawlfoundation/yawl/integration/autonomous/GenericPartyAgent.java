@@ -13,13 +13,6 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import com.sun.net.httpserver.HttpServer;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -28,6 +21,14 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
+import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
+import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
+
+import com.sun.net.httpserver.HttpServer;
 
 /**
  * Generic autonomous agent implementation using configurable strategies.

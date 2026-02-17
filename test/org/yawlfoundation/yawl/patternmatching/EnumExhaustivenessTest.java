@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.elements.YTimerParameters;
-import org.yawlfoundation.yawl.schema.YSchemaVersion;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YTimerParameters;
+import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.schema.YSchemaVersion;
 
 /**
  * Tests for enum exhaustiveness in switch expressions

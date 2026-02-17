@@ -18,13 +18,14 @@
 
 package org.yawlfoundation.yawl.util;
 
-import javax.xml.soap.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.xml.soap.*;
 
 /**
  * SOAP client for invoking external web services using Jakarta SOAP API.

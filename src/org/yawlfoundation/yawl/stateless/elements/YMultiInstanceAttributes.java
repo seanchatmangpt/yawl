@@ -263,7 +263,7 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
         try {
             copy = (YMultiInstanceAttributes) super.clone();
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
+            _log.error("Failed to clone YMultiInstanceAttributes for task: {}", _task, e);
         }
         return copy;
     }
@@ -275,4 +275,3 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
     }
 
 }//end class
-

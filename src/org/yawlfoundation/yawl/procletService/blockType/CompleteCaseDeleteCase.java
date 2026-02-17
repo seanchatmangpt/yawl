@@ -19,6 +19,9 @@
 package org.yawlfoundation.yawl.procletService.blockType;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -37,9 +40,6 @@ import org.yawlfoundation.yawl.procletService.persistence.Item;
 import org.yawlfoundation.yawl.procletService.persistence.StoredItem;
 import org.yawlfoundation.yawl.procletService.selectionProcess.ProcessEntityMID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class CompleteCaseDeleteCase {
 
@@ -395,11 +395,14 @@ public class CompleteCaseDeleteCase {
 	
 	public static void publishException (List ec) {
 		List<EntityMID> emids = (List<EntityMID>) ec.get(0);
-		String emidsStr = "";
+		StringBuilder emidsBuilder = new StringBuilder();
 		for (EntityMID emid : emids) {
-			emidsStr = emidsStr + emid.getValue() + ",";
+			if (emidsBuilder.length() > 0) {
+				emidsBuilder.append(",");
+			}
+			emidsBuilder.append(emid.getValue());
 		}
-		emidsStr = emidsStr.substring(0, emidsStr.length()-1);
+		String emidsStr = emidsBuilder.toString();
         DBConnection.insert(new StoredItem((WorkItemRecord) ec.get(1), emidsStr,
             Item.ExceptionCase));
 	}

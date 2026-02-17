@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.procletService.models.procletModel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionArc;
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionNode;
 import org.yawlfoundation.yawl.procletService.persistence.DBConnection;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProcletModels {
 	

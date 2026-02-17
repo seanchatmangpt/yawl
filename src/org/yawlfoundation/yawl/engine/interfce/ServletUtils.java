@@ -18,9 +18,6 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -30,6 +27,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 
@@ -112,7 +113,8 @@ public class ServletUtils {
             outputWriter.flush();
             outputWriter.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            org.apache.logging.log4j.LogManager.getLogger(ServletUtils.class).error(
+                    "Failed to write HTTP response", e);
         }
     }
 

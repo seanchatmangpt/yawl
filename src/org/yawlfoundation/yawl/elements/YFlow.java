@@ -31,8 +31,8 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
  */
 public class YFlow implements Comparable<YFlow> {
 
-    private YExternalNetElement _priorElement;
-    private YExternalNetElement _nextElement;
+    private final YExternalNetElement _priorElement;
+    private final YExternalNetElement _nextElement;
     private String _xpathPredicate;
     private Integer _evalOrdering;
     private boolean _isDefaultFlow;

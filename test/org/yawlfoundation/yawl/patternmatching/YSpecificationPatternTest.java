@@ -1,12 +1,12 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for YSpecification pattern matching in toXML()

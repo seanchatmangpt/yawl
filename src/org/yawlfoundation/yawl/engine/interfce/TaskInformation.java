@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.yawlfoundation.yawl.engine.YSpecificationID;
 
 /**
  * Immutable task information record.

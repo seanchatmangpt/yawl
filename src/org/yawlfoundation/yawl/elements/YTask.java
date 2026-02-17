@@ -18,7 +18,9 @@
 
 package org.yawlfoundation.yawl.elements;
 
-import net.sf.saxon.s9api.SaxonApiException;
+import java.net.URL;
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Content;
@@ -44,14 +46,66 @@ import org.yawlfoundation.yawl.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
-import java.net.URL;
-import java.util.*;
+import net.sf.saxon.s9api.SaxonApiException;
 
 /**
- * A superclass of any type of task in the YAWL language.
+ * Abstract base class for all tasks in a YAWL workflow net.
+ *
+ * <p>YTask is the fundamental unit of work in YAWL, supporting both atomic tasks
+ * (executed by external services) and composite tasks (decomposed into sub-nets).
+ * Tasks implement the full YAWL control flow patterns including AND/OR/XOR splits
+ * and joins, multi-instance execution, and cancellation regions.</p>
+ *
+ * <h2>Task Types</h2>
+ * <ul>
+ *   <li><b>YAtomicTask</b> - Executed by an external YAWL service or worklist</li>
+ *   <li><b>YCompositeTask</b> - Decomposes into a sub-net for nested process execution</li>
+ * </ul>
+ *
+ * <h2>Split/Join Semantics</h2>
+ * <p>Tasks support three types of splits and joins:
+ * <ul>
+ *   <li><b>AND</b> - All branches synchronized (parallel execution)</li>
+ *   <li><b>OR</b> - One or more branches activated (multi-choice)</li>
+ *   <li><b>XOR</b> - Exactly one branch activated (exclusive choice)</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Multi-Instance Support</h2>
+ * <p>Tasks can be configured for multiple instance execution with:
+ * <ul>
+ *   <li>Minimum/maximum instance bounds</li>
+ *   <li>Threshold for completion</li>
+ *   <li>Static or dynamic instance creation modes</li>
+ *   <li>MI-specific input splitting and output joining queries</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Internal Conditions</h2>
+ * <p>Each task maintains four internal conditions for state management:
+ * <ul>
+ *   <li><b>mi_active</b> - All active instances</li>
+ *   <li><b>mi_entered</b> - Instances that have entered the task</li>
+ *   <li><b>mi_executing</b> - Currently executing instances</li>
+ *   <li><b>mi_complete</b> - Completed instances</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Data Handling</h2>
+ * <p>Tasks support three types of data mappings:
+ * <ul>
+ *   <li><b>Enablement mappings</b> - Data available when task becomes enabled</li>
+ *   <li><b>Starting mappings</b> - Input data passed to decomposition</li>
+ *   <li><b>Completion mappings</b> - Output data from decomposition to net variables</li>
+ * </ul>
+ * </p>
  *
  * @author Lachlan Aldred
  * @author Michael Adams (v2.0 and later)
+ * @see YAtomicTask
+ * @see YCompositeTask
+ * @see YMultiInstanceAttributes
+ * @see YDecomposition
  */
 public abstract class YTask extends YExternalNetElement {
 
@@ -309,7 +363,7 @@ public abstract class YTask extends YExternalNetElement {
         _i = id;
         _i.addLocation(pmgr, this);
         long numToSpawn = determineHowManyInstancesToCreate();
-        List<YIdentifier> childIdentifiers = new Vector<YIdentifier>();
+        List<YIdentifier> childIdentifiers = new ArrayList<YIdentifier>();
         for (int i = 0; i < numToSpawn; i++) {
             YIdentifier childID = createFiredIdentifier(pmgr);
 
@@ -347,7 +401,7 @@ public abstract class YTask extends YExternalNetElement {
                 break;
             case YTask._XOR:
                 List<YExternalNetElement> conditions =
-                        new Vector<YExternalNetElement>(getPresetElements());
+                        new ArrayList<YExternalNetElement>(getPresetElements());
                 boolean done = false;
                 do {
                     int i = Math.abs(_random.nextInt()) % conditions.size();
@@ -1024,6 +1078,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YTask copy = (YTask) super.clone();
         copy._mi_active = new YInternalCondition(YInternalCondition._mi_active, copy);
@@ -1310,7 +1365,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     public List<YInternalCondition> getAllInternalConditions() {
-        List<YInternalCondition> icList = new Vector<YInternalCondition>();
+        List<YInternalCondition> icList = new ArrayList<YInternalCondition>();
         icList.add(_mi_active);
         icList.add(_mi_entered);
         icList.add(_mi_complete);
@@ -1337,6 +1392,7 @@ public abstract class YTask extends YExternalNetElement {
         _dataMappingsForTaskCompletion.putAll(map);
     }
 
+    @Override
     public String toXML() {
         StringBuilder xml = new StringBuilder();
         xml.append("<task id=\"").append(this.getID()).append("\"");
@@ -1675,6 +1731,7 @@ public abstract class YTask extends YExternalNetElement {
     //###########################  BEGIN VERIFICATION CODE  ################################
     //######################################################################################
 
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
         if (!(_splitType == _AND || _splitType == _OR || _splitType == _XOR)) {

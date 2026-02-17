@@ -18,27 +18,27 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.yawlfoundation.yawl.elements.YNetElement;
+import org.yawlfoundation.yawl.exceptions.YDataStateException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
 import org.yawlfoundation.yawl.stateless.elements.data.YVariable;
 import org.yawlfoundation.yawl.stateless.elements.data.external.ExternalDataGateway;
 import org.yawlfoundation.yawl.stateless.elements.data.external.ExternalDataGatewayFactory;
 import org.yawlfoundation.yawl.stateless.elements.e2wfoj.E2WFOJNet;
-import org.yawlfoundation.yawl.exceptions.YDataStateException;
-import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.elements.marking.YMarking;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 
@@ -332,7 +332,8 @@ public final class YNet extends YDecomposition {
             return temp;
         }
         catch (CloneNotSupportedException e) {
-            e.printStackTrace();
+            org.apache.logging.log4j.LogManager.getLogger(YNet.class).error(
+                    "Failed to clone YNet: {}", getID(), e);
         }
         return null;
     }
@@ -355,7 +356,7 @@ public final class YNet extends YDecomposition {
         }
 
         YMarking actualMarking = new YMarking(caseID);
-        List<YNetElement> locations = new Vector<YNetElement>(actualMarking.getLocations());
+        List<YNetElement> locations = new ArrayList<YNetElement>(actualMarking.getLocations());
         Set preSet = orJoinTask.getPresetElements();
         if (locations.containsAll(preSet)) {
             return true;

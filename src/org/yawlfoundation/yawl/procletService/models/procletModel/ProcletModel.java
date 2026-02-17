@@ -18,11 +18,14 @@
 
 package org.yawlfoundation.yawl.procletService.models.procletModel;
 
-import edu.uci.ics.jung.algorithms.layout.CircleLayout;
-import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.graph.util.EdgeType;
-import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.swing.*;
+
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletBlock.BlockType;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Direction;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Signature;
@@ -31,12 +34,11 @@ import org.yawlfoundation.yawl.procletService.persistence.StoredBlockRel;
 import org.yawlfoundation.yawl.procletService.persistence.StoredProcletBlock;
 import org.yawlfoundation.yawl.procletService.persistence.StoredProcletPort;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 
 public class ProcletModel extends DirectedSparseGraph {
 

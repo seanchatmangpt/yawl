@@ -1,12 +1,5 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import io.modelcontextprotocol.server.McpServerFeatures;
-import io.modelcontextprotocol.spec.McpSchema;
-import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +7,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+
+import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * Spring-managed registry for YAWL MCP tools.

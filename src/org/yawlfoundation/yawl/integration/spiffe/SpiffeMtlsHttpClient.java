@@ -1,6 +1,5 @@
 package org.yawlfoundation.yawl.integration.spiffe;
 
-import javax.net.ssl.*;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,6 +11,8 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+
+import javax.net.ssl.*;
 
 /**
  * SPIFFE mTLS HTTP Client for YAWL

@@ -1,20 +1,21 @@
 package org.yawlfoundation.yawl.engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Set;
+
 import org.jdom2.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Set;
 
 /**
  /**
@@ -64,7 +65,7 @@ class TestImproperCompletion{
                 new YLogDataItemList(), null, false);
            int numIter = 0;
         Set s = _engine.getCasesForSpecification(_specification.getSpecificationID());
-        assertTrue("s = " + s, s.contains(_id));
+        assertTrue(s.contains(_id), "s = " + s);
         while (numIter < 10 && (_workItemRepository.getEnabledWorkItems().size() > 0 ||
                 _workItemRepository.getFiredWorkItems().size() > 0 ||
                 _workItemRepository.getExecutingWorkItems().size() > 0)) {
@@ -92,6 +93,6 @@ class TestImproperCompletion{
         _engine.cancelCase(_id, null);
         s = _engine.getCasesForSpecification(_specification.getSpecificationID());
 //        System.out.println("3: " + _id);
-        assertFalse("s = " + s, s.contains(_id));
+        assertFalse(s.contains(_id), "s = " + s);
     }
 }

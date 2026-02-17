@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
+import java.util.*;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YCondition;
 import org.yawlfoundation.yawl.stateless.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YNet;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
-
-import java.util.*;
 
 /**
  *
@@ -42,7 +42,7 @@ public class YMarking {
     }
 
     public YMarking(List<YNetElement> locations) {
-        _locations = new Vector<YNetElement>(locations);
+        _locations = new ArrayList<YNetElement>(locations);
     }
 
 
@@ -190,8 +190,8 @@ public class YMarking {
         if (!(marking instanceof YMarking otherMarking)) {
             return false;
         }
-        List otherMarkingsLocations = new Vector(otherMarking.getLocations());
-        List myLocations = new Vector(_locations);
+        List otherMarkingsLocations = new ArrayList(otherMarking.getLocations());
+        List myLocations = new ArrayList(_locations);
         for (Iterator iterator = myLocations.iterator(); iterator.hasNext();) {
             YExternalNetElement netElement = (YExternalNetElement) iterator.next();
             if (otherMarkingsLocations.contains(netElement)) {
@@ -205,8 +205,8 @@ public class YMarking {
 
 
     public boolean strictlyGreaterThanOrEqualWithSupports(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List otherMarkingsLocations = new ArrayList(marking.getLocations());
+        List myLocations = new ArrayList(_locations);
         if (!(myLocations.containsAll(otherMarkingsLocations)
                 && otherMarkingsLocations.containsAll(myLocations))) {
             return false;
@@ -230,8 +230,8 @@ public class YMarking {
 
     //moe - ResetAnalyser
     public boolean isBiggerThan(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List otherMarkingsLocations = new ArrayList(marking.getLocations());
+        List myLocations = new ArrayList(_locations);
 
         //This test is for c1+c2+c3 bigger than c1+c2
         if ((myLocations.containsAll(otherMarkingsLocations)
@@ -250,8 +250,8 @@ public class YMarking {
     }
 
     public boolean strictlyLessThanWithSupports(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List otherMarkingsLocations = new ArrayList(marking.getLocations());
+        List myLocations = new ArrayList(_locations);
         if (!(myLocations.containsAll(otherMarkingsLocations)
                 && otherMarkingsLocations.containsAll(myLocations))) {
             return false;
@@ -332,17 +332,17 @@ public class YMarking {
     }
 
     public boolean equivalentTo(YMarking marking) {
-        Vector otherMarkingsLocations = new Vector(marking.getLocations());
+        List otherMarkingsLocations = new ArrayList(marking.getLocations());
 
         // short-circuit test if sizes differ
         if (otherMarkingsLocations.size() != _locations.size()) return false;
 
         // ok, same size so sort and compare for equality
-        Vector thisMarkingsLocations = new Vector(_locations);        // don't sort orig.
+        List thisMarkingsLocations = new ArrayList(_locations);        // don't sort orig.
         Collections.sort(otherMarkingsLocations);
         Collections.sort(thisMarkingsLocations);
 
-        // vectors are equal if each element pair is equal 
+        // lists are equal if each element pair is equal
         return thisMarkingsLocations.equals(otherMarkingsLocations);
     }
 }

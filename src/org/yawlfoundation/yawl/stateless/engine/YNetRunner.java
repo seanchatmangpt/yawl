@@ -19,6 +19,10 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
 
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -47,9 +51,6 @@ import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.net.URL;
-import java.util.*;
-
 /**
  *
  *
@@ -66,6 +67,9 @@ public class YNetRunner {
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
+
+    /** Lock for virtual thread safe parent runner operations */
+    private final ReentrantLock _runnerLock = new ReentrantLock();
 
     protected YNet _net;
     private Set<YTask> _netTasks;
@@ -577,7 +581,8 @@ public class YNetRunner {
             // wait if necessary for the runner busy tasks to synch (rarely required)
             int retries = 5;
             while (task.t_isBusy() && !_busyTasks.contains(task)) {
-                System.out.println("****RETRYING: " + task.getID() + " " + retries);
+                _logger.debug("Retrying busy task synchronization: {} (retries: {})",
+                        task.getID(), retries);
                 try {
                     Thread.sleep(5);
                 }
@@ -797,7 +802,8 @@ public class YNetRunner {
                 if (_containingCompositeTask != null) {
                     YNetRunner parentRunner = _containingCompositeTask.getNetRunner();
                     if (parentRunner != null) {
-                        synchronized (parentRunner) {
+                        parentRunner._runnerLock.lock();
+                        try {
                             if (_containingCompositeTask.t_isBusy()) {
 
                                 warnIfNetNotEmpty();
@@ -817,6 +823,8 @@ public class YNetRunner {
                                         " composite task: {}, caseid for decomposed net: {}",
                                         atomicTask, _containingCompositeTask, _caseIDForNet);
                             }
+                        } finally {
+                            parentRunner._runnerLock.unlock();
                         }
                     }
                 }
@@ -1173,5 +1181,3 @@ public class YNetRunner {
         return null;
     }
 }
-
-

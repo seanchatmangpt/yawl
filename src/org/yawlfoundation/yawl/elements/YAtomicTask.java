@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -28,8 +30,6 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 /**
  * A YAtomicTask object is the executable equivalent of the Atomic Task
@@ -71,6 +71,7 @@ public class YAtomicTask extends YTask {
      * 'executing'.
      * @throws YPersistenceException if there's a problem persisting the change.
      */
+    @Override
     protected void startOne(YPersistenceManager pmgr, YIdentifier id) throws YPersistenceException {
         this._mi_entered.removeOne(pmgr, id);
         this._mi_executing.add(pmgr, id);
@@ -91,6 +92,7 @@ public class YAtomicTask extends YTask {
      * @param pmgr an instantiated persistence manager object.
      * @throws YPersistenceException if there's a problem persisting the change.
      */
+    @Override
     public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
         cancelBusyWorkItem(pmgr);
         super.cancel(pmgr);
@@ -164,6 +166,7 @@ public class YAtomicTask extends YTask {
      * @return a (Object) clone of the task.
      * @throws CloneNotSupportedException if there's a problem cloning the task.
      */
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YNet copyContainer = _net.getCloneContainer();
         if (copyContainer.getNetElements().containsKey(this.getID())) {
@@ -219,6 +222,7 @@ public class YAtomicTask extends YTask {
      * @return a List of error and/or warning messages. An empty list is returned if
      * the atomic task verifies successfully.
      */
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
         if (_decompositionPrototype == null) {

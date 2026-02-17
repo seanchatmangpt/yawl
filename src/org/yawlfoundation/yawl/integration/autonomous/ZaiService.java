@@ -1,15 +1,17 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import org.yawlfoundation.yawl.integration.a2a.A2AException;
+
 import com.squareup.okhttp3.*;
+
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
-import org.yawlfoundation.yawl.integration.a2a.A2AException;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Z.AI Integration Service for YAWL autonomous agent reasoning.

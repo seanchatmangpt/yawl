@@ -13,11 +13,11 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.strategies;
 
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
 /**
  * Polling-based discovery strategy for YAWL work items.

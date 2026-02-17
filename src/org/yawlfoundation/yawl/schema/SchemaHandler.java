@@ -18,9 +18,13 @@
 
 package org.yawlfoundation.yawl.schema;
 
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-import org.yawlfoundation.yawl.util.StringUtil;
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -28,13 +32,10 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.*;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * This object acts as a reusable Schema validator for a given schema. Once
@@ -278,7 +279,7 @@ public class SchemaHandler {
      */
     private void assembleMap() {
         if (typeMap == null) {
-            typeMap = new Hashtable<String, Element>();
+            typeMap = new HashMap<String, Element>();
             if (schemaString != null) {
                 Element dataSchema = JDOMUtil.stringToElement(getSchema());
                 for (Element child : dataSchema.getChildren()) {

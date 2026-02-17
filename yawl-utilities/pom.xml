@@ -101,11 +101,39 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <testIncludes>
+                        <!-- Only include tests for utilities packages -->
+                        <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                        <include>**/org/yawlfoundation/yawl/logging/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
+                        <include>**/org/yawlfoundation/yawl/util/**</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/**</include>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                    </testIncludes>
+                    <testExcludes>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <exclude>**/*.txt</exclude>
+                        <exclude>**/*.class</exclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                        <include>**/org/yawlfoundation/yawl/logging/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
+                        <include>**/org/yawlfoundation/yawl/util/**</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/**</include>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                    </includes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

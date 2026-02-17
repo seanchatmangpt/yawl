@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.rmi.RemoteException;
+import java.util.*;
+
+import javax.xml.datatype.Duration;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -40,13 +48,6 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.unmarshal.YMetaData;
 import org.yawlfoundation.yawl.util.*;
-
-import javax.xml.datatype.Duration;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.rmi.RemoteException;
-import java.util.*;
 
 /**
  * This class allows access to all of the engines capabilities using Strings and
@@ -1071,7 +1072,7 @@ public class EngineGatewayImpl implements EngineGateway {
             if (e instanceof YPersistenceException persistEx) {
                 enginePersistenceFailure = true;
             }
-            e.printStackTrace();
+            LogManager.getLogger(EngineGatewayImpl.class).error("Failed to load specification", e);
             return failureMessage(e.getMessage());
         }
 

@@ -19,14 +19,15 @@
 package org.yawlfoundation.yawl.procletService.editor.pconns;
 
 
+import java.awt.*;
+import java.util.ArrayList;
+
+import javax.swing.*;
+
 import org.yawlfoundation.yawl.procletService.models.procletModel.PortConnection;
 import org.yawlfoundation.yawl.procletService.models.procletModel.PortConnections;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModels;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
 
 public class PConnEditFrame extends JDialog {
 	
@@ -202,4 +203,3 @@ public class PConnEditFrame extends JDialog {
     }
     
 }
-

@@ -1,12 +1,12 @@
 package org.yawlfoundation.yawl.engine;
 
+import java.util.Iterator;
+import java.util.Set;
+
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
-
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * @author Lachlan Aldred

@@ -17,20 +17,6 @@
  */
 package org.yawlfoundation.yawl.schema;
 
-import org.jdom2.Element;
-import org.w3c.dom.Document;
-import org.yawlfoundation.yawl.elements.data.YVariable;
-import org.yawlfoundation.yawl.exceptions.YDataValidationException;
-import org.yawlfoundation.yawl.schema.internal.YInternalType;
-import org.yawlfoundation.yawl.util.DOMUtil;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-import org.yawlfoundation.yawl.util.StringUtil;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +28,21 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
+import org.jdom2.Element;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.yawlfoundation.yawl.elements.data.YVariable;
+import org.yawlfoundation.yawl.exceptions.YDataValidationException;
+import org.yawlfoundation.yawl.schema.internal.YInternalType;
+import org.yawlfoundation.yawl.util.DOMUtil;
+import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * This class serves as a validation mechanism for the specification specific

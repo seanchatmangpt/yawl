@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.schema;
 
-import org.w3c.dom.ls.LSInput;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+
+import org.w3c.dom.ls.LSInput;
 
 /**
  * @author Michael Adams

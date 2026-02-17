@@ -49,6 +49,9 @@ public class ThreadNotify extends Thread{
              }
            }
            catch (InterruptedException e){
+               // InterruptedException is intentionally ignored: thread termination signal
+               // during wait() does not require special handling in this base utility class
+               Thread.currentThread().interrupt();
            }
     	//}
     }

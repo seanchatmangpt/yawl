@@ -1,7 +1,8 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.schema.XSDType;
+
+import junit.framework.TestCase;
 
 /**
  * Comprehensive tests for XSDType switch expressions

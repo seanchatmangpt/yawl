@@ -46,4 +46,3 @@ public interface JavaCPNInterface
     // A method to close a connection to an external process
     public void disconnect() throws IOException;
 }
-

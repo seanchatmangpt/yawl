@@ -126,12 +126,12 @@
                         <exclude>**/*.properties</exclude>
                     </excludes>
                     <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/stateless/**</testInclude>
+                        <include>**/org/yawlfoundation/yawl/stateless/**</include>
                     </testIncludes>
                     <testExcludes>
-                        <testExclude>**/*.xsd</testExclude>
-                        <testExclude>**/*.xml</testExclude>
-                        <testExclude>**/*.properties</testExclude>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
                     </testExcludes>
                 </configuration>
             </plugin>

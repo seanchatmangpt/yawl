@@ -13,12 +13,12 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import java.io.IOException;
+
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
-
-import java.io.IOException;
 
 /**
  * Factory for creating autonomous agents with various configurations.

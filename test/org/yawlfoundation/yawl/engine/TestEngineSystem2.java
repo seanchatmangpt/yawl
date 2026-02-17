@@ -1,9 +1,18 @@
 package org.yawlfoundation.yawl.engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.jdom2.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.yawlfoundation.yawl.elements.YCondition;
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -13,14 +22,6 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -63,9 +64,9 @@ class TestEngineSystem2 {
             //enabled btop
             Set currWorkItems = _workItemRepository.getEnabledWorkItems();
             YWorkItem anItem = (YWorkItem) currWorkItems.iterator().next();
-            assertTrue("currWorkItems "+ currWorkItems +
-                    " anItem.getTaskID() " + anItem.getTaskID(),
-                    currWorkItems.size() == 1 && anItem.getTaskID().equals("b-top"));
+            assertTrue(currWorkItems.size() == 1 && anItem.getTaskID().equals("b-top"),
+                    "currWorkItems "+ currWorkItems +
+                    " anItem.getTaskID() " + anItem.getTaskID());
             Thread.sleep(_sleepTime);
             //fire btop
             anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
@@ -77,7 +78,7 @@ class TestEngineSystem2 {
             currWorkItems = _workItemRepository.getEnabledWorkItems();
             assertTrue(currWorkItems.isEmpty());
             currWorkItems = _workItemRepository.getExecutingWorkItems();
-            assertTrue("" + currWorkItems.size(), currWorkItems.size() == 1);
+            assertTrue(currWorkItems.size() == 1, "" + currWorkItems.size());
             anItem = (YWorkItem) currWorkItems.iterator().next();
             Thread.sleep(_sleepTime);
             //complete btop
@@ -122,7 +123,7 @@ class TestEngineSystem2 {
             Thread.sleep(1000);
             YNetRunner bottomNetRunner2 = _engine.getNetRunner(_idForBottomNet);
             assertNull(bottomNetRunner2);
-            assertTrue("locations " + _idForBottomNet.getLocations(), bottomNetRunner.isCompleted());
+            assertTrue(bottomNetRunner.isCompleted(), "locations " + _idForBottomNet.getLocations());
             assertFalse(_netRunner.isAlive());
 //            assertTrue(bottomNetRunner.isAlive());
         } catch (InterruptedException e) {
@@ -163,7 +164,7 @@ class TestEngineSystem2 {
             currWorkItems = _workItemRepository.getEnabledWorkItems();
             assertTrue(currWorkItems.isEmpty());
             currWorkItems = _workItemRepository.getExecutingWorkItems();
-            assertTrue("" + currWorkItems.size(), currWorkItems.size() == 1);
+            assertTrue(currWorkItems.size() == 1, "" + currWorkItems.size());
             anItem = (YWorkItem) currWorkItems.iterator().next();
             Thread.sleep(_sleepTime);
             //complete btop
@@ -334,9 +335,9 @@ class TestEngineSystem2 {
                                 tokenFound = true;
                             }
                         }
-                        assertTrue("State misaligment found: task [" +
+                        assertTrue(tokenFound, "State misaligment found: task [" +
                                 task + "] is enabled but has no tokens in " +
-                                "its preset2.", tokenFound);
+                                "its preset2.");
                         //Check that there is one work enabled work item to match the enabled
                         //state of the task.
                         boolean workItemFound = false;
@@ -351,9 +352,9 @@ class TestEngineSystem2 {
                                 }
                                 workItemFound = true;
                             }
-                            assertTrue("State misaligment found: task [" +
+                            assertTrue(workItemFound, "State misaligment found: task [" +
                                 task + "] is enabled but there is no corresponding" +
-                                    " work item found.", workItemFound);
+                                    " work item found.");
                         }
                     //if the task is busy we test if the work items reflect this.
                     }else if (task.t_isBusy()) {
@@ -366,9 +367,8 @@ class TestEngineSystem2 {
                                 tokenFound = true;
                             }
                         }
-                        assertTrue("State misaligment found: task [" +
-                                task + "] is busy but there is no token inside it.",
-                                tokenFound);
+                        assertTrue(tokenFound, "State misaligment found: task [" +
+                                task + "] is busy but there is no token inside it.");
                         //Check that there is at least one fired or executing work item
                         //to match the busy state of the task.
                         int workItemCount = 0;
@@ -386,9 +386,9 @@ class TestEngineSystem2 {
                                 }
                                 workItemCount++;
                             }
-                            assertTrue("State misaligment found: task [" +
+                            assertTrue(workItemCount > 1, "State misaligment found: task [" +
                                 task + "] is enabled but there is no corresponding" +
-                                    " work item found.", workItemCount > 1);
+                                    " work item found.");
                         }
                     }
                     //the task must be inactive, we test if the work items reflect this.
@@ -403,9 +403,8 @@ class TestEngineSystem2 {
                                 tokenNotFound = false;
                             }
                         }
-                        assertTrue("State misaligment found: task [" +
-                                task + "] is inactive but there is a token inside it.",
-                                tokenNotFound);
+                        assertTrue(tokenNotFound, "State misaligment found: task [" +
+                                task + "] is inactive but there is a token inside it.");
                         //Check that there are no work items
                         //because the task is meant to be not enabled and not busy.
                         int workItemCount = 0;
@@ -414,9 +413,9 @@ class TestEngineSystem2 {
                             if(anItem.getTaskID().equals(task.getID())){
                                 workItemCount++;
                             }
-                            assertTrue("State misaligment found: task [" +
+                            assertTrue(workItemCount == 0, "State misaligment found: task [" +
                                 task + "] is not busy and not enabled but " +
-                                    "a work item found.", workItemCount == 0);
+                                    "a work item found.");
                         }
                    }
                 }

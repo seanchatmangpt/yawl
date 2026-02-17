@@ -1,13 +1,13 @@
 package org.yawlfoundation.yawl.unmarshal;
 
-import org.yawlfoundation.yawl.elements.YSpecVersion;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.yawlfoundation.yawl.elements.YSpecVersion;
 
 /**
  *
@@ -18,32 +18,36 @@ import java.util.Date;
  */
 class TestMetaDataMarshal{
     private YMetaData metaData;
+    private LocalDate today;
+    private LocalDate tomorrow;
 
     @BeforeEach
 
     void setUp(){
+        today = LocalDate.now();
+        tomorrow = today.plusDays(1);
         metaData = new YMetaData();
         metaData.addContributor("Lachlan Aldred");
         metaData.addContributor("Arthur ter Hofstede");
         metaData.addContributor("Lindsay Bradford");
         metaData.addContributor("Guy Redding");
         metaData.setCoverage("covers this example test");
-        metaData.setCreated(new Date());
+        metaData.setCreated(today);
         metaData.addCreator("Peter Pan");
         metaData.setDescription("This tests the metadata class");
         metaData.setStatus("This is not production class meta data");
         metaData.addSubject("testing");
         metaData.addSubject("and more testing");
         metaData.setTitle("Meta Data Test");
-        metaData.setValidFrom(new Date());
-        metaData.setValidUntil(new Date(new Date().getTime() + 86400000));
+        metaData.setValidFrom(today);
+        metaData.setValidUntil(tomorrow);
         metaData.setVersion(new YSpecVersion("1.1"));
     }
 
     @Test
 
     void testToXML(){
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         assertEquals("<metaData>" +
                 "<title>Meta Data Test</title>" +
                 "<creator>Peter Pan</creator>" +
@@ -55,9 +59,9 @@ class TestMetaDataMarshal{
                 "<contributor>Lindsay Bradford</contributor>" +
                 "<contributor>Guy Redding</contributor>" +
                 "<coverage>covers this example test</coverage>" +
-                "<validFrom>"+df.format(new Date())+"</validFrom>" +
-                "<validUntil>"+df.format(new Date(new Date().getTime() + 86400000))+"</validUntil>" +
-                "<created>"+df.format(new Date())+"</created>" +
+                "<validFrom>"+today.format(df)+"</validFrom>" +
+                "<validUntil>"+tomorrow.format(df)+"</validUntil>" +
+                "<created>"+today.format(df)+"</created>" +
                 "<version>1.1</version>" +
                 "<status>This is not production class meta data</status>" +
                 "<persistent>false</persistent>" +

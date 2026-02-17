@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.List;
+
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.YIdentifierBag;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.List;
 
 /**
  * 
@@ -60,6 +60,7 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
     }
 
 
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
     }
@@ -70,48 +71,59 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
     }
 
 
+    @Override
     public void add(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
         _bag.addIdentifier(pmgr, identifier);
     }
 
+    @Override
     public boolean contains(YIdentifier identifier) {
         return _bag.contains(identifier);
     }
 
+    @Override
     public boolean containsIdentifier() {
         return _bag.getIdentifiers().size() > 0;
     }
 
+    @Override
     public int getAmount(YIdentifier identifier) {
         return _bag.getAmount(identifier);
     }
 
+    @Override
     public List<YIdentifier> getIdentifiers() {
         return _bag.getIdentifiers();
     }
 
+    @Override
     public YIdentifier removeOne(YPersistenceManager pmgr) throws YPersistenceException {
         YIdentifier identifier = getIdentifiers().get(0);
         _bag.remove(pmgr, identifier, 1);
         return identifier;
     }
 
+    @Override
     public void removeOne(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
         _bag.remove(pmgr, identifier, 1);
     }
 
+    @Override
     public void remove(YPersistenceManager pmgr, YIdentifier identifier, int amount) throws YPersistenceException {
         _bag.remove(pmgr, identifier, amount);
     }
 
+    @Override
     public void removeAll(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
         _bag.remove(pmgr, identifier, _bag.getAmount(identifier));
     }
 
+    @Override
     public synchronized void removeAll(YPersistenceManager pmgr) throws YPersistenceException {
         _bag.removeAll(pmgr);
     }
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YNet copyContainer = _net.getCloneContainer();
         if (copyContainer.getNetElements().containsKey(this.getID())) {
@@ -123,6 +135,7 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
     }
 
 
+    @Override
     public String toXML() {
         String tag = "condition";
         if (this instanceof YInputCondition) {

@@ -1,14 +1,14 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
-
-import java.util.Timer;
-import java.util.TimerTask;
 
 
 /**

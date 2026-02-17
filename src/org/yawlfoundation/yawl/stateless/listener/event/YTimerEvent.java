@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.stateless.listener.event;
 
-import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 
 /**
  * @author Michael Adams

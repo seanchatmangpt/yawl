@@ -18,15 +18,15 @@
 
 package org.yawlfoundation.yawl.procletService;
 
-import org.yawlfoundation.yawl.procletService.blockType.BlockPICreate;
-import org.yawlfoundation.yawl.procletService.state.Performative;
-import org.yawlfoundation.yawl.procletService.state.Performatives;
-import org.yawlfoundation.yawl.procletService.util.ThreadNotify;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+
+import org.yawlfoundation.yawl.procletService.blockType.BlockPICreate;
+import org.yawlfoundation.yawl.procletService.state.Performative;
+import org.yawlfoundation.yawl.procletService.state.Performatives;
+import org.yawlfoundation.yawl.procletService.util.ThreadNotify;
 
 
 public class SingleInstanceClass {
@@ -210,4 +210,3 @@ public class SingleInstanceClass {
 	}
 	
 }
-

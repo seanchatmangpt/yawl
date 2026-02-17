@@ -1,14 +1,16 @@
 package org.yawlfoundation.yawl.stateless;
 
-import junit.framework.TestCase;
-import org.yawlfoundation.yawl.exceptions.YDataStateException;
-import org.yawlfoundation.yawl.exceptions.YEngineStateException;
-import org.yawlfoundation.yawl.exceptions.YQueryException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
-import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
 import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
@@ -17,11 +19,7 @@ import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
 
 /**
  * Integration tests for YStatelessEngine suspend/resume, cancel, marshal/restore,

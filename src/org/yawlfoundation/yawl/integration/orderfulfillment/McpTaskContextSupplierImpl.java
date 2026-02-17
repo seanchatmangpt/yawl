@@ -13,13 +13,13 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
-import io.modelcontextprotocol.spec.McpSchema;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * MCP-based task context supplier. Spawns YawlMcpServer via STDIO and fetches

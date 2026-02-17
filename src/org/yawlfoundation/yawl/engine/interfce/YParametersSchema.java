@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.yawlfoundation.yawl.elements.data.YParameter;
-
 import java.util.*;
+
+import org.yawlfoundation.yawl.elements.data.YParameter;
 
 /**
  * A container for the parameters of a task or net.

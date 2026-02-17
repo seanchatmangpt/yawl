@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.stateless.elements.predicate;
 
+import java.util.Set;
+
 import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-
-import java.util.Set;
 
 /**
  * @author Michael Adams
