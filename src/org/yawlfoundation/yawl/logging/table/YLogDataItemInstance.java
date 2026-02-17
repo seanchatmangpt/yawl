@@ -82,7 +82,7 @@ public class YLogDataItemInstance {
     }
 
     public void setName(String name) {
-        dataItem.setName(name);
+        dataItem = dataItem.withName(name);
     }
 
     public String getValue() {
@@ -90,7 +90,7 @@ public class YLogDataItemInstance {
     }
 
     public void setValue(String value) {
-        dataItem.setValue(value);
+        dataItem = dataItem.withValue(value);
     }
 
     public String getDataType() {
@@ -98,7 +98,7 @@ public class YLogDataItemInstance {
     }
 
     public void setDataType(String dataType) {
-        dataItem.setDataTypeName(dataType);
+        dataItem = dataItem.withDataTypeName(dataType);
     }
 
     public String getDescriptor() {
@@ -106,7 +106,7 @@ public class YLogDataItemInstance {
     }
 
     public void setDescriptor(String descriptor) {
-        dataItem.setDescriptor(descriptor);
+        dataItem = dataItem.withDescriptor(descriptor);
     }
 
     public boolean equals(Object other) {

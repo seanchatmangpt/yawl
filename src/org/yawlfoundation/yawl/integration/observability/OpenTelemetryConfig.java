@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.observability;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
@@ -17,7 +18,6 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.ResourceAttributes;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -88,14 +88,17 @@ public class OpenTelemetryConfig {
      * Creates resource with service metadata.
      */
     private Resource createResource() {
+        String hostname = System.getenv().getOrDefault("HOSTNAME", "unknown");
+        String environment = System.getenv().getOrDefault("ENVIRONMENT", "development");
+
         return Resource.getDefault().merge(
             Resource.create(
                 Attributes.builder()
-                    .put(ResourceAttributes.SERVICE_NAME, SERVICE_NAME)
-                    .put(ResourceAttributes.SERVICE_VERSION, SERVICE_VERSION)
-                    .put(ResourceAttributes.SERVICE_NAMESPACE, "yawl")
-                    .put(ResourceAttributes.DEPLOYMENT_ENVIRONMENT,
-                         System.getenv().getOrDefault("ENVIRONMENT", "development"))
+                    .put(AttributeKey.stringKey("service.name"), SERVICE_NAME)
+                    .put(AttributeKey.stringKey("service.version"), SERVICE_VERSION)
+                    .put(AttributeKey.stringKey("service.namespace"), "yawl")
+                    .put(AttributeKey.stringKey("service.instance.id"), hostname)
+                    .put(AttributeKey.stringKey("deployment.environment"), environment)
                     .build()
             )
         );

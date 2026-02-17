@@ -1,5 +1,16 @@
 # YAWL (Yet Another Workflow Language)
 
+![Version](https://img.shields.io/badge/version-6.0.0--Alpha-orange)
+![Java](https://img.shields.io/badge/Java-21%2B-blue)
+![License](https://img.shields.io/badge/license-LGPL--3.0-green)
+![Status](https://img.shields.io/badge/status-Alpha-yellow)
+
+**Latest Release:** v6.0.0-Alpha (February 16, 2026)
+**Contributors:** Sean Chatman & Claude Code Agent Team
+**Status:** Alpha - Community Preview & Testing
+
+> **⚠️ Alpha Release Notice:** This is an alpha release with modernized library dependencies and enhanced quality frameworks. Intended for community review and testing. See [CHANGELOG.md](CHANGELOG.md) for details.
+
 [YAWL](https://yawlfoundation.github.io) is a BPM/Workflow system, based on a concise and powerful modelling language, that handles complex data transformations, and full integration with organizational resources and external Web Services. 
 
 ### Major Features

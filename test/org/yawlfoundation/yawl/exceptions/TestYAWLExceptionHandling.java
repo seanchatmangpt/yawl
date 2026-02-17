@@ -1,25 +1,20 @@
 package org.yawlfoundation.yawl.exceptions;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.input.SAXBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.schema.SchemaHandler;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.io.File;
-import java.io.StringReader;
 import java.net.URL;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive exception handling tests for YAWL.
@@ -32,18 +27,13 @@ import java.util.List;
  * @author YAWL Test Team
  * Date: 2026-02-16
  */
-public class TestYAWLExceptionHandling extends TestCase {
+class TestYAWLExceptionHandling {
 
     private YEngine _engine;
     private YPersistenceManager _pmgr;
 
-    public TestYAWLExceptionHandling(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         _engine = YEngine.getInstance();
         _pmgr = _engine.getPersistenceManager();
     }
@@ -52,7 +42,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 1: YDataStateException recovery
      * Verifies graceful handling of invalid data state transitions
      */
-    public void testYDataStateExceptionRecovery() throws Exception {
+    @Test
+    void testYDataStateExceptionRecovery() throws Exception {
         URL fileURL = getClass().getResource("../engine/YAWL_Specification1.xml");
         if (fileURL == null) {
             return; // Skip if test spec not available
@@ -66,7 +57,7 @@ public class TestYAWLExceptionHandling extends TestCase {
         YIdentifier caseID = _engine.startCase(spec.getSpecificationID(),
                                                null, null, null, null, null, false);
 
-        assertNotNull("Case should start successfully", caseID);
+        assertNotNull(caseID, "Case should start successfully");
 
         try {
             // Attempt invalid data operation (empty/invalid XML data)
@@ -80,14 +71,14 @@ public class TestYAWLExceptionHandling extends TestCase {
             caseID = null;
 
             // If no exception thrown, verify engine state is still valid
-            assertTrue("Engine should remain operational", _engine != null);
+            assertNotNull(_engine, "Engine should remain operational");
 
         } catch (YDataStateException e) {
             // Expected exception - verify it contains useful information
-            assertNotNull("Exception should have message", e.getMessage());
-            assertTrue("Exception message should mention data",
-                     e.getMessage().toLowerCase().contains("data") ||
-                     e.getMessage().toLowerCase().contains("state"));
+            assertNotNull(e.getMessage(), "Exception should have message");
+            assertTrue(e.getMessage().toLowerCase().contains("data") ||
+                     e.getMessage().toLowerCase().contains("state"),
+                     "Exception message should mention data or state");
 
             // Verify engine can recover
             if (caseID != null) {
@@ -106,7 +97,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 2: Schema validation failure handling
      * Tests behavior when invalid YAWL specifications are loaded
      */
-    public void testSchemaValidationFailure() {
+    @Test
+    void testSchemaValidationFailure() {
         // Invalid YAWL XML - missing required elements
         String invalidXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
             "<specificationSet xmlns=\"http://www.yawlfoundation.org/yawlschema\" " +
@@ -129,18 +121,18 @@ public class TestYAWLExceptionHandling extends TestCase {
             }
         } catch (YSyntaxException e) {
             // Expected - syntax error in specification
-            assertNotNull("Exception should have message", e.getMessage());
-            assertTrue("Should mention specification or syntax error",
-                     e.getMessage().toLowerCase().contains("spec") ||
-                     e.getMessage().toLowerCase().contains("syntax"));
+            assertNotNull(e.getMessage(), "Exception should have message");
+            assertTrue(e.getMessage().toLowerCase().contains("spec") ||
+                     e.getMessage().toLowerCase().contains("syntax"),
+                     "Should mention specification or syntax error");
 
         } catch (YSchemaBuildingException e) {
             // Also acceptable - schema validation failed
-            assertNotNull("Exception should have message", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should have message");
 
         } catch (Exception e) {
             // Other exceptions also acceptable if they indicate validation failure
-            assertNotNull("Exception should provide information", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should provide information");
         }
     }
 
@@ -148,7 +140,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 3: Persistence exception handling
      * Tests recovery from database errors
      */
-    public void testPersistenceExceptionHandling() throws Exception {
+    @Test
+    void testPersistenceExceptionHandling() throws Exception {
         if (_pmgr == null || !_pmgr.isEnabled()) {
             return; // Skip if persistence disabled
         }
@@ -162,10 +155,10 @@ public class TestYAWLExceptionHandling extends TestCase {
 
         } catch (YPersistenceException e) {
             // Expected exception
-            assertNotNull("Exception should have message", e.getMessage());
-            assertTrue("Should mention query or error",
-                     e.getMessage().toLowerCase().contains("query") ||
-                     e.getMessage().toLowerCase().contains("error"));
+            assertNotNull(e.getMessage(), "Exception should have message");
+            assertTrue(e.getMessage().toLowerCase().contains("query") ||
+                     e.getMessage().toLowerCase().contains("error"),
+                     "Should mention query or error");
 
             // Verify rollback works
             try {
@@ -183,7 +176,6 @@ public class TestYAWLExceptionHandling extends TestCase {
                     "org.yawlfoundation.yawl.elements.YSpecification");
                 _pmgr.commit();
                 // Success - persistence manager recovered
-                assertTrue("Persistence manager should recover from errors", true);
             }
         } catch (YPersistenceException e) {
             fail("Persistence manager should recover after exception: " + e.getMessage());
@@ -194,7 +186,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 4: YStateException handling
      * Tests invalid state transition handling
      */
-    public void testYStateExceptionHandling() throws Exception {
+    @Test
+    void testYStateExceptionHandling() throws Exception {
         URL fileURL = getClass().getResource("../engine/YAWL_Specification1.xml");
         if (fileURL == null) {
             return;
@@ -221,15 +214,15 @@ public class TestYAWLExceptionHandling extends TestCase {
 
         } catch (YStateException e) {
             // Expected exception
-            assertNotNull("Exception should have message", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should have message");
 
         } catch (YEngineStateException e) {
             // Also acceptable - engine state error
-            assertNotNull("Exception should have message", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should have message");
 
         } catch (Exception e) {
             // Other exceptions acceptable if they indicate invalid state
-            assertNotNull("Exception should provide error information", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should provide error information");
         }
     }
 
@@ -237,7 +230,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 5: YQueryException handling
      * Tests query error scenarios
      */
-    public void testYQueryExceptionHandling() throws Exception {
+    @Test
+    void testYQueryExceptionHandling() throws Exception {
         if (_pmgr == null || !_pmgr.isEnabled()) {
             return;
         }
@@ -251,11 +245,11 @@ public class TestYAWLExceptionHandling extends TestCase {
             _pmgr.commit();
 
             // If query succeeds (returns empty), that's acceptable
-            assertNotNull("Query should return result or throw exception", results);
+            assertNotNull(results, "Query should return result or throw exception");
 
         } catch (YPersistenceException e) {
             // Expected - query error
-            assertNotNull("Exception should describe query error", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should describe query error");
 
             try {
                 _pmgr.rollbackTransaction();
@@ -269,7 +263,8 @@ public class TestYAWLExceptionHandling extends TestCase {
      * Test 6: Multiple cascading exceptions
      * Tests error handling when multiple errors occur
      */
-    public void testCascadingExceptions() throws Exception {
+    @Test
+    void testCascadingExceptions() throws Exception {
         if (_pmgr == null || !_pmgr.isEnabled()) {
             return;
         }
@@ -306,43 +301,45 @@ public class TestYAWLExceptionHandling extends TestCase {
             fail("Should recover after multiple errors: " + e.getMessage());
         }
 
-        assertTrue("Should encounter errors from invalid queries", errorCount > 0);
-        assertTrue("Persistence manager should recover after cascading errors",
-                 recoverySuccessful || errorCount == 0);
+        assertTrue(errorCount > 0, "Should encounter errors from invalid queries");
+        assertTrue(recoverySuccessful || errorCount == 0,
+                 "Persistence manager should recover after cascading errors");
     }
 
     /**
      * Test 7: Exception message quality
      * Verifies exceptions contain useful diagnostic information
      */
-    public void testExceptionMessageQuality() {
+    @Test
+    void testExceptionMessageQuality() {
         // Test YPersistenceException message
         YPersistenceException pe = new YPersistenceException("Database connection failed");
-        assertNotNull("Exception should have message", pe.getMessage());
-        assertTrue("Message should contain error description",
-                 pe.getMessage().contains("Database") ||
-                 pe.getMessage().contains("connection"));
+        assertNotNull(pe.getMessage(), "Exception should have message");
+        assertTrue(pe.getMessage().contains("Database") ||
+                 pe.getMessage().contains("connection"),
+                 "Message should contain error description");
 
         // Test with cause
         Exception cause = new Exception("Root cause: timeout");
         YPersistenceException peWithCause = new YPersistenceException("Operation failed", cause);
-        assertNotNull("Exception should have cause", peWithCause.getCause());
-        assertEquals("Cause should be preserved", cause, peWithCause.getCause());
+        assertNotNull(peWithCause.getCause(), "Exception should have cause");
+        assertEquals(cause, peWithCause.getCause(), "Cause should be preserved");
 
         // Test YStateException
         YStateException se = new YStateException("Invalid state transition");
-        assertNotNull("State exception should have message", se.getMessage());
+        assertNotNull(se.getMessage(), "State exception should have message");
 
         // Test YDataStateException
         YDataStateException dse = new YDataStateException("Invalid data format");
-        assertNotNull("Data state exception should have message", dse.getMessage());
+        assertNotNull(dse.getMessage(), "Data state exception should have message");
     }
 
     /**
      * Test 8: Null parameter handling
      * Tests graceful handling of null inputs
      */
-    public void testNullParameterHandling() throws Exception {
+    @Test
+    void testNullParameterHandling() throws Exception {
         if (_pmgr == null || !_pmgr.isEnabled()) {
             return;
         }
@@ -354,12 +351,11 @@ public class TestYAWLExceptionHandling extends TestCase {
             _pmgr.commit();
 
             // Null query should return null or throw exception
-            assertTrue("Null query should return null or throw",
-                     results == null);
+            assertNull(results, "Null query should return null or throw");
 
         } catch (YPersistenceException e) {
             // Also acceptable - exception for null query
-            assertNotNull("Exception should have message", e.getMessage());
+            assertNotNull(e.getMessage(), "Exception should have message");
             try {
                 _pmgr.rollbackTransaction();
             } catch (Exception rollbackError) {
@@ -373,15 +369,5 @@ public class TestYAWLExceptionHandling extends TestCase {
                 // Ignore
             }
         }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("YAWL Exception Handling Tests");
-        suite.addTestSuite(TestYAWLExceptionHandling.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
     }
 }

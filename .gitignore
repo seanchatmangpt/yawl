@@ -21,3 +21,15 @@ dependency-check-results.*
 
 # Maven Cache (if not using GitHub Actions)
 .m2/
+
+# Maven build output
+target/
+dependency-reduced-pom.xml
+*.class
+*.jar
+*.war
+*.ear
+
+# Build logs and temp files
+build-log.txt
+build/3rdParty/

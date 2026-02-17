@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class YSpecificationTable
         extends ConcurrentHashMap<String, YSpecificationTable.SpecList> {
 
+    private static final long serialVersionUID = 1L;
 
     public YSpecificationTable() { super(); }
 
@@ -161,6 +162,8 @@ public class YSpecificationTable
     /********************************************************************************/
 
     protected class SpecList extends ArrayList<YSpecification> {
+
+        private static final long serialVersionUID = 1L;
 
         // Constructor //
         public SpecList(YSpecification spec) {

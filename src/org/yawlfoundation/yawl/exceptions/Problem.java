@@ -18,22 +18,28 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Objects;
 
 /**
- * 
+ * Represents a problem or warning message generated during YAWL execution.
+ *
  * @author Lachlan Aldred
- * Date: 10/10/2005
- * Time: 19:47:43
- * 
+ * @since 10/10/2005
  */
 public class Problem implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 2L;
+
+    /** Message type indicating an empty resource set warning. */
+    public static final String EMPTY_RESOURCE_SET_MESSAGETYPE = "EmptyResourceSetType";
+
     private String _source;
     private Instant _problemTime;
     private String _messageType;
     private String _message;
-    public static final String EMPTY_RESOURCE_SET_MESSAGETYPE = "EmptyResourceSetType";
 
     public String getSource() {
         return _source;
@@ -67,14 +73,17 @@ public class Problem implements Serializable {
         this._message = message;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Problem warning)) return false;
 
-        return _problemTime.equals(warning._problemTime) && _source.equals(warning._source);
+        return Objects.equals(_problemTime, warning._problemTime)
+                && Objects.equals(_source, warning._source);
     }
 
+    @Override
     public int hashCode() {
-        return 29 * _source.hashCode() + _problemTime.hashCode();
+        return Objects.hash(_source, _problemTime);
     }
 }

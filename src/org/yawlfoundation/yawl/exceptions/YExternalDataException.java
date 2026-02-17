@@ -18,19 +18,50 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
+import java.io.Serial;
+
 /**
- * Author: Michael Adams
- * Creation Date: 29/09/2009
+ * Exception thrown when external data operations fail in the YAWL engine.
+ *
+ * @author Michael Adams
+ * @since 29/09/2009
  */
 public class YExternalDataException extends YAWLException {
+    @Serial
+    private static final long serialVersionUID = 2L;
 
-    public YExternalDataException(String msg) {
-        super(msg);
-    }
-
-
+    /**
+     * Constructs a new external data exception with no detail message.
+     */
     public YExternalDataException() {
         super();
     }
 
+    /**
+     * Constructs a new external data exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public YExternalDataException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new external data exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YExternalDataException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Constructs a new external data exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
+    public YExternalDataException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

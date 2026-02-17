@@ -30,6 +30,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -214,12 +215,7 @@ public class SchemaHandler {
      */
     public void setSchema(String schema) {
         schemaString = schema;
-        try {
-            schemaSource = stringToSource(schema);
-        }
-        catch (UnsupportedEncodingException uee) {
-            schemaSource = new StreamSource(new StringReader(schema));  // fallback
-        }
+        schemaSource = stringToSource(schema);
         errorHandler.reset();
         typeMap = null;
         compiled = false;
@@ -256,10 +252,9 @@ public class SchemaHandler {
      * Converts a string to a UTF-8 encoded InputSource
      * @param xml the XML string
      * @return a Source object to the String
-     * @throws UnsupportedEncodingException
      */
-    private Source stringToSource(String xml) throws UnsupportedEncodingException {
-        return new StreamSource(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+    private Source stringToSource(String xml) {
+        return new StreamSource(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
 

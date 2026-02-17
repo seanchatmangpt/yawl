@@ -24,10 +24,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -124,12 +124,7 @@ public class ServletUtils {
      */
     public static String urlEncode(String s) {
         if (s == null) return s;
-        try {
-            return URLEncoder.encode(s, "UTF-8");
-        }
-        catch (UnsupportedEncodingException uee) {
-            return s;
-        }
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     /**
@@ -140,12 +135,7 @@ public class ServletUtils {
      */
     public static String urlDecode(String s) {
         if (s == null) return s;
-        try {
-            return URLDecoder.decode(s, "UTF-8");
-        }
-        catch (UnsupportedEncodingException uee) {
-            return s;
-        }
+        return URLDecoder.decode(s, StandardCharsets.UTF_8);
     }
 
 
@@ -165,7 +155,7 @@ public class ServletUtils {
                 }
 
                 // convert the bytes to a string with the right charset
-                String paramStr = new String(contents, "UTF-8");
+                String paramStr = new String(contents, StandardCharsets.UTF_8);
 
         // split into params & rebuild map
         Map<String, String> result = new HashMap<String, String>();

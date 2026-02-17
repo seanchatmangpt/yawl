@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.util;
 
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -36,9 +36,9 @@ public class PasswordEncryptor {
     private PasswordEncryptor() { }
 
     public static synchronized String encrypt(String text)
-                        throws NoSuchAlgorithmException, UnsupportedEncodingException {
+                        throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA");
-        md.update(text.getBytes("UTF-8"));
+        md.update(text.getBytes(StandardCharsets.UTF_8));
         byte raw[] = md.digest();
         return new Base64(-1).encodeToString(raw);            // -1 means no line breaks
     }

@@ -18,29 +18,52 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-/*
- * 
- * @author Lachlan Aldred
- * 
-
- */
+import java.io.Serial;
 
 /**
- * Exception which indicates a failure has occured within the persistence layer of the YAWL engine.<P>
+ * Exception which indicates a failure has occurred within the persistence layer of the YAWL engine.
  *
- * Notes: This exception should be caught and handled as a fatal exception within the engine code. As it
- *        indicates some failure to persist a runtime object to storage, the usual action would be to gracefully
- *        terminate the engine without processing any other work.
+ * <p>This exception should be caught and handled as a fatal exception within the engine code. As it
+ * indicates some failure to persist a runtime object to storage, the usual action would be to gracefully
+ * terminate the engine without processing any other work.
+ *
+ * @author Lachlan Aldred
  */
 public class YPersistenceException extends YAWLException {
+    @Serial
+    private static final long serialVersionUID = 2L;
+
+    /**
+     * Constructs a new persistence exception with no detail message.
+     */
+    public YPersistenceException() {
+        super();
+    }
+
+    /**
+     * Constructs a new persistence exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
     public YPersistenceException(String message) {
         super(message);
     }
 
+    /**
+     * Constructs a new persistence exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
     public YPersistenceException(Throwable cause) {
         super(cause);
     }
 
+    /**
+     * Constructs a new persistence exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause   the cause of this exception
+     */
     public YPersistenceException(String message, Throwable cause) {
         super(message, cause);
     }

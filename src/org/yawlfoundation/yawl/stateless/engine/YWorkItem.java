@@ -943,8 +943,10 @@ public class YWorkItem {
             }
         }
         if (completionItem != null) {
-            completionItem.setValue(
+            YLogDataItem updatedItem = completionItem.withValue(
                     new YLogPredicateWorkItemParser(this).parse(completionItem.getValue()));
+            completionList.remove(completionItem);
+            completionList.add(updatedItem);
         }
         else {
             completionItem = getDecompLogPredicate(YWorkItemStatus.statusComplete);

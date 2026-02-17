@@ -11,4 +11,3 @@ org/yawlfoundation/yawl/authentication/CsrfProtectionFilter.class
 org/yawlfoundation/yawl/authentication/YClient.class
 org/yawlfoundation/yawl/authentication/YSession.class
 org/yawlfoundation/yawl/authentication/YSessionTimer.class
-org/yawlfoundation/yawl/authentication/YSessionTimer$TimeOut.class

@@ -85,7 +85,7 @@ public class YHttpServlet extends HttpServlet {
     protected String encryptPassword(String s) {
         try {
             return PasswordEncryptor.encrypt(s);
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException nsae) {
+        } catch (NoSuchAlgorithmException nsae) {
             // nothing to do - call will return 'incorrect password'
             return s;
         }

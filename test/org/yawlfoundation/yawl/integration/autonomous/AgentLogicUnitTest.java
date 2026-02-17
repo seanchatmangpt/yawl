@@ -1,8 +1,6 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
@@ -10,6 +8,8 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReas
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for autonomous agent core logic.
@@ -20,67 +20,87 @@ import java.util.List;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class AgentLogicUnitTest extends TestCase {
+class AgentLogicUnitTest {
 
-    public AgentLogicUnitTest(String name) {
-        super(name);
-    }
-
-    public void testAgentCapabilityCreation() {
+    @Test
+    void testAgentCapabilityCreation() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement, purchase orders, approvals");
 
-        assertEquals("Domain name should match", "Ordering", capability.getDomainName());
-        assertEquals("Description should match", "procurement, purchase orders, approvals",
-                capability.getDescription());
+        assertEquals("Ordering", capability.getDomainName(), "Domain name should match");
+        assertEquals("procurement, purchase orders, approvals",
+                capability.getDescription(), "Description should match");
     }
 
-    public void testAgentCapabilityValidation() {
+    @Test
+    void testAgentCapabilityValidation() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new AgentCapability(null, "description");
+        }, "Should reject null domain name");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new AgentCapability("", "description");
+        }, "Should reject empty domain name");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new AgentCapability("Ordering", null);
+        }, "Should reject null description");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new AgentCapability("Ordering", "   ");
+        }, "Should reject whitespace-only description");
+    }
+
+    @Test
+    void testAgentCapabilityValidationMessages() {
         try {
             new AgentCapability(null, "description");
             fail("Should reject null domain name");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention domain name", e.getMessage().contains("domainName"));
+            assertTrue(e.getMessage().contains("domainName"), "Error should mention domain name");
         }
 
         try {
             new AgentCapability("", "description");
             fail("Should reject empty domain name");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention domain name", e.getMessage().contains("domainName"));
+            assertTrue(e.getMessage().contains("domainName"), "Error should mention domain name");
         }
 
         try {
             new AgentCapability("Ordering", null);
             fail("Should reject null description");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention description", e.getMessage().contains("description"));
+            assertTrue(e.getMessage().contains("description"), "Error should mention description");
         }
 
         try {
             new AgentCapability("Ordering", "   ");
             fail("Should reject whitespace-only description");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention description", e.getMessage().contains("description"));
+            assertTrue(e.getMessage().contains("description"), "Error should mention description");
         }
     }
 
-    public void testAgentCapabilityTrimming() {
+    @Test
+    void testAgentCapabilityTrimming() {
         AgentCapability capability = new AgentCapability("  Ordering  ", "  procurement, orders  ");
 
-        assertEquals("Domain name should be trimmed", "Ordering", capability.getDomainName());
-        assertEquals("Description should be trimmed", "procurement, orders", capability.getDescription());
+        assertEquals("Ordering", capability.getDomainName(), "Domain name should be trimmed");
+        assertEquals("procurement, orders", capability.getDescription(), "Description should be trimmed");
     }
 
-    public void testAgentCapabilityToString() {
+    @Test
+    void testAgentCapabilityToString() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
 
         String result = capability.toString();
-        assertTrue("toString should contain domain name", result.contains("Ordering"));
-        assertTrue("toString should contain description", result.contains("procurement"));
-        assertEquals("Should format as 'domain: description'", "Ordering: procurement", result);
+        assertTrue(result.contains("Ordering"), "toString should contain domain name");
+        assertTrue(result.contains("procurement"), "toString should contain description");
+        assertEquals("Ordering: procurement", result, "Should format as 'domain: description'");
     }
 
-    public void testAgentConfigurationBuilder() {
+    @Test
+    void testAgentConfigurationBuilder() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
         TestDiscoveryStrategy discovery = new TestDiscoveryStrategy();
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
@@ -99,18 +119,19 @@ public class AgentLogicUnitTest extends TestCase {
                 .decisionReasoner(decision)
                 .build();
 
-        assertNotNull("Configuration should be created", config);
-        assertEquals("Capability should match", capability, config.getCapability());
-        assertEquals("Engine URL should match", "http://localhost:8080/yawl", config.getEngineUrl());
-        assertEquals("Username should match", "admin", config.getUsername());
-        assertEquals("Password should match", "password", config.getPassword());
-        assertEquals("Port should match", 8091, config.getPort());
-        assertEquals("Poll interval should match", 5000L, config.getPollIntervalMs());
-        assertEquals("Version should match", "5.2.0", config.getVersion());
-        assertEquals("Agent name should derive from capability", "Ordering", config.getAgentName());
+        assertNotNull(config, "Configuration should be created");
+        assertEquals(capability, config.getCapability(), "Capability should match");
+        assertEquals("http://localhost:8080/yawl", config.getEngineUrl(), "Engine URL should match");
+        assertEquals("admin", config.getUsername(), "Username should match");
+        assertEquals("password", config.getPassword(), "Password should match");
+        assertEquals(8091, config.getPort(), "Port should match");
+        assertEquals(5000L, config.getPollIntervalMs(), "Poll interval should match");
+        assertEquals("5.2.0", config.getVersion(), "Version should match");
+        assertEquals("Ordering", config.getAgentName(), "Agent name should derive from capability");
     }
 
-    public void testAgentConfigurationDefaults() {
+    @Test
+    void testAgentConfigurationDefaults() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
         TestDiscoveryStrategy discovery = new TestDiscoveryStrategy();
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
@@ -126,12 +147,13 @@ public class AgentLogicUnitTest extends TestCase {
                 .decisionReasoner(decision)
                 .build();
 
-        assertEquals("Default port should be 8091", 8091, config.getPort());
-        assertEquals("Default poll interval should be 3000ms", 3000L, config.getPollIntervalMs());
-        assertEquals("Default version should be 5.2.0", "5.2.0", config.getVersion());
+        assertEquals(8091, config.getPort(), "Default port should be 8091");
+        assertEquals(3000L, config.getPollIntervalMs(), "Default poll interval should be 3000ms");
+        assertEquals("5.2.0", config.getVersion(), "Default version should be 5.2.0");
     }
 
-    public void testAgentConfigurationRequiredFields() {
+    @Test
+    void testAgentConfigurationRequiredFields() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
         TestDiscoveryStrategy discovery = new TestDiscoveryStrategy();
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
@@ -148,7 +170,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require capability");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention capability", e.getMessage().contains("capability"));
+            assertTrue(e.getMessage().contains("capability"), "Error should mention capability");
         }
 
         try {
@@ -162,7 +184,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require engineUrl");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention engineUrl", e.getMessage().contains("engineUrl"));
+            assertTrue(e.getMessage().contains("engineUrl"), "Error should mention engineUrl");
         }
 
         try {
@@ -176,7 +198,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require username");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention username", e.getMessage().contains("username"));
+            assertTrue(e.getMessage().contains("username"), "Error should mention username");
         }
 
         try {
@@ -190,7 +212,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require password");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention password", e.getMessage().contains("password"));
+            assertTrue(e.getMessage().contains("password"), "Error should mention password");
         }
 
         try {
@@ -204,7 +226,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require discoveryStrategy");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention discoveryStrategy", e.getMessage().contains("discoveryStrategy"));
+            assertTrue(e.getMessage().contains("discoveryStrategy"), "Error should mention discoveryStrategy");
         }
 
         try {
@@ -218,7 +240,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require eligibilityReasoner");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention eligibilityReasoner", e.getMessage().contains("eligibilityReasoner"));
+            assertTrue(e.getMessage().contains("eligibilityReasoner"), "Error should mention eligibilityReasoner");
         }
 
         try {
@@ -232,11 +254,12 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should require decisionReasoner");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention decisionReasoner", e.getMessage().contains("decisionReasoner"));
+            assertTrue(e.getMessage().contains("decisionReasoner"), "Error should mention decisionReasoner");
         }
     }
 
-    public void testAgentConfigurationInvalidPollInterval() {
+    @Test
+    void testAgentConfigurationInvalidPollInterval() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
         TestDiscoveryStrategy discovery = new TestDiscoveryStrategy();
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
@@ -255,7 +278,7 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should reject zero poll interval");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention pollIntervalMs", e.getMessage().contains("pollIntervalMs"));
+            assertTrue(e.getMessage().contains("pollIntervalMs"), "Error should mention pollIntervalMs");
         }
 
         try {
@@ -271,11 +294,12 @@ public class AgentLogicUnitTest extends TestCase {
                     .build();
             fail("Should reject negative poll interval");
         } catch (IllegalStateException e) {
-            assertTrue("Error should mention pollIntervalMs", e.getMessage().contains("pollIntervalMs"));
+            assertTrue(e.getMessage().contains("pollIntervalMs"), "Error should mention pollIntervalMs");
         }
     }
 
-    public void testStrategyIntegration() {
+    @Test
+    void testStrategyIntegration() {
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
         TestDecisionReasoner decision = new TestDecisionReasoner();
 
@@ -284,14 +308,15 @@ public class AgentLogicUnitTest extends TestCase {
 
         eligibility.setEligible(true);
         boolean isEligible = eligibility.isEligible(workItem);
-        assertTrue("Should determine eligibility", isEligible);
+        assertTrue(isEligible, "Should determine eligibility");
 
         decision.setOutput("<output>approved</output>");
         String output = decision.produceOutput(workItem);
-        assertEquals("Should produce output", "<output>approved</output>", output);
+        assertEquals("<output>approved</output>", output, "Should produce output");
     }
 
-    public void testMultipleCapabilityFormats() {
+    @Test
+    void testMultipleCapabilityFormats() {
         AgentCapability cap1 = new AgentCapability("Ordering", "procurement, purchase orders");
         AgentCapability cap2 = new AgentCapability("Carrier", "shipping, logistics, delivery");
         AgentCapability cap3 = new AgentCapability("Finance", "accounting, invoicing, payments");
@@ -300,15 +325,16 @@ public class AgentLogicUnitTest extends TestCase {
         assertEquals("Carrier", cap2.getDomainName());
         assertEquals("Finance", cap3.getDomainName());
 
-        assertTrue("Should contain domain-specific terms",
-                cap1.getDescription().contains("procurement"));
-        assertTrue("Should contain domain-specific terms",
-                cap2.getDescription().contains("shipping"));
-        assertTrue("Should contain domain-specific terms",
-                cap3.getDescription().contains("accounting"));
+        assertTrue(cap1.getDescription().contains("procurement"),
+                "Should contain domain-specific terms");
+        assertTrue(cap2.getDescription().contains("shipping"),
+                "Should contain domain-specific terms");
+        assertTrue(cap3.getDescription().contains("accounting"),
+                "Should contain domain-specific terms");
     }
 
-    public void testConfigurationImmutability() {
+    @Test
+    void testConfigurationImmutability() {
         AgentCapability capability = new AgentCapability("Ordering", "procurement");
         TestDiscoveryStrategy discovery = new TestDiscoveryStrategy();
         TestEligibilityReasoner eligibility = new TestEligibilityReasoner();
@@ -325,7 +351,7 @@ public class AgentLogicUnitTest extends TestCase {
                 .build();
 
         AgentCapability retrievedCapability = config.getCapability();
-        assertSame("Should return same capability instance", capability, retrievedCapability);
+        assertSame(capability, retrievedCapability, "Should return same capability instance");
     }
 
     private static class TestDiscoveryStrategy implements DiscoveryStrategy {
@@ -359,15 +385,5 @@ public class AgentLogicUnitTest extends TestCase {
         public String produceOutput(WorkItemRecord workItem) {
             return output;
         }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Autonomous Agent Logic Unit Tests");
-        suite.addTestSuite(AgentLogicUnitTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

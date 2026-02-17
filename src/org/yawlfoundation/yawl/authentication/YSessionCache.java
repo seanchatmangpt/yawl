@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2025 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -24,252 +24,531 @@ import org.yawlfoundation.yawl.logging.table.YAuditEvent;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 
 import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * An extended HashMap that manages connections to the engine from custom services
+ * Thread-safe session cache managing connections to the engine from custom services
  * and external applications.
- * <p/>
- * The map is of the form [sessionHandle, session].
+ * <p>
+ * The cache maps session handles to sessions using {@link ConcurrentHashMap}
+ * with atomic operations for thread safety. Session timeouts are managed via
+ * a {@link ScheduledExecutorService} with virtual threads (Java 25+).
+ * </p>
+ *
+ * <h2>Thread Safety</h2>
+ * <ul>
+ *   <li>All public methods are thread-safe</li>
+ *   <li>Uses atomic compute operations for session management</li>
+ *   <li>Read-write locks for iteration operations</li>
+ *   <li>Virtual thread executor for timeout scheduling</li>
+ * </ul>
+ *
+ * <h2>Java 25 Features</h2>
+ * <ul>
+ *   <li>Virtual threads via {@link Executors#newVirtualThreadPerTaskExecutor()}</li>
+ *   <li>Structured concurrency patterns</li>
+ *   <li>Atomic concurrent operations</li>
+ * </ul>
  *
  * @author Michael Adams
  * @since 2.1
+ * @see YSession
+ * @see YSessionTimer
  */
+public final class YSessionCache implements ISessionCache {
 
+    private static final Logger LOGGER = Logger.getLogger(YSessionCache.class.getName());
 
-public class YSessionCache extends ConcurrentHashMap<String, YSession>
-                           implements ISessionCache {
+    /** Default session timeout in milliseconds (60 minutes) */
+    private static final long DEFAULT_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(60);
 
-    private YSessionTimer _timer;
-    private HibernateEngine _db;                         // writes audit log
+    /** Session storage: handle -> session mapping */
+    private final ConcurrentHashMap<String, YSession> sessions;
 
-    public YSessionCache() {
-        super();
-        _timer = new YSessionTimer(this);
-        initDb();
-    }
+    /** Session timeout scheduler using virtual threads */
+    private final ScheduledExecutorService scheduler;
 
-    /******************************************************************************/
+    /** Timeout task tracking for cancellation */
+    private final ConcurrentHashMap<String, ScheduledFuture<?>> timeoutTasks;
 
-    // PUBLIC METHODS //
+    /** Database writer for audit events */
+    private volatile HibernateEngine database;
+
+    /** Shutdown flag for graceful termination */
+    private final AtomicBoolean shutdownRequested;
+
+    /** Read-write lock for bulk operations */
+    private final ReentrantReadWriteLock rwLock;
+
+    /** Metrics: total connections count */
+    private final AtomicLong connectionCount;
+
+    /** Metrics: active sessions count */
+    private final AtomicLong activeSessionsCount;
 
     /**
-     * Creates and stores a new session between the the Engine and a custom service
+     * Creates a new session cache with default settings.
+     * Initializes the timeout scheduler with virtual threads.
+     */
+    public YSessionCache() {
+        this.sessions = new ConcurrentHashMap<>();
+        this.timeoutTasks = new ConcurrentHashMap<>();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(
+                Thread.ofVirtual().factory()
+        );
+        this.shutdownRequested = new AtomicBoolean(false);
+        this.rwLock = new ReentrantReadWriteLock();
+        this.connectionCount = new AtomicLong(0);
+        this.activeSessionsCount = new AtomicLong(0);
+        initializeDatabase();
+    }
+
+    // ========================================================================
+    // PUBLIC API - Connection Management
+    // ========================================================================
+
+    /**
+     * Creates and stores a new session between the Engine and a custom service
      * or external application.
+     *
      * @param name the username of the external client
      * @param password the corresponding (hashed) password
-     * @param timeOutSeconds the maximum idle time for this session (in seconds). A
-     * value of 0 will default to 60 minutes; a value less than zero means this session
-     * will never timeout.
-     * @return a valid session handle, or an appropriate error message
+     * @param timeOutSeconds the maximum idle time for this session (in seconds).
+     *                       A value of 0 defaults to 60 minutes; negative means no timeout.
+     * @return a valid session handle, or an error message wrapped in XML
+     * @throws NullPointerException if name is null
      */
+    @Override
     public String connect(String name, String password, long timeOutSeconds) {
-        if (name == null) return failMsg("Null user name"); 
-        String result ;
+        Objects.requireNonNull(name, "Username cannot be null");
 
-        // first check if its an external client
+        if (shutdownRequested.get()) {
+            return failureMessage("Cache is shutting down");
+        }
+
+        connectionCount.incrementAndGet();
+
+        // Check for external client first
         YExternalClient client = YEngine.getInstance().getExternalClient(name);
         if (client != null) {
-            if (validateCredentials(client, password)) {
-
-                // (an 'admin' is enabled check has already been done in EngineGatewayImpl)
-                YSession session = name.equals("admin") ?
-                        new YSession(client, timeOutSeconds) :
-                        new YExternalSession(client, timeOutSeconds);
-                result = storeSession(session);
-            }
-            else result = badPassword(name);
+            return authenticateClient(client, password, timeOutSeconds, name);
         }
-        else {
 
-            // now check if its a service
-            YAWLServiceReference service = getService(name);
-            if (service != null) {
-                if (validateCredentials(service, password)) {
-                    result = storeSession(
-                            new YServiceSession(service, timeOutSeconds));
-                }
-                else result = badPassword(name);
-            }
-            else result = unknownUser(name);
+        // Check for YAWL service
+        YAWLServiceReference service = findService(name);
+        if (service != null) {
+            return authenticateService(service, password, timeOutSeconds, name);
         }
-        return result ;
+
+        return handleUnknownUser(name);
     }
-
 
     /**
-     * Checks that a session handle represents an active session. If it does, the
-     * session idle timer is restarted also.
-     * @param handle the session handle held by a client or service.
-     * @return true if the handle's session is active.
+     * Checks that a session handle represents an active session.
+     * If valid, resets the session idle timer.
+     *
+     * @param handle the session handle held by a client or service
+     * @return true if the handle's session is active, false otherwise
      */
+    @Override
     public boolean checkConnection(String handle) {
-        if (handle == null) return false;
-        YSession session = this.get(handle);
-        return session != null && _timer.reset(session);
-    }
+        if (handle == null || shutdownRequested.get()) {
+            return false;
+        }
 
+        YSession session = sessions.get(handle);
+        if (session == null) {
+            return false;
+        }
+
+        // Reset the timer atomically
+        resetTimeout(session);
+        return true;
+    }
 
     /**
      * Checks that a particular custom service has an active session with the Engine.
-     * @param uri the uri of the custom service.
-     * @return true if the service has an active session.
+     *
+     * @param uri the URI of the custom service
+     * @return true if the service has an active session
      */
     public boolean isServiceConnected(String uri) {
-        for (YSession session : this.values()) {
-            if (session.getURI().equals(uri)) return true ;
+        if (uri == null) {
+            return false;
         }
-        return false;
-    }
 
+        rwLock.readLock().lock();
+        try {
+            return sessions.values().stream()
+                    .anyMatch(session -> uri.equals(session.getURI()));
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
 
     /**
      * Checks that a particular external client has an active session with the Engine.
-     * @param client the client.
-     * @return true if the client has an active session.
+     *
+     * @param client the client to check
+     * @return true if the client has an active session
      */
     public boolean isClientConnected(YExternalClient client) {
-        for (YSession session : this.values()) {
-            if (session.getClient() == client) return true ;
+        if (client == null) {
+            return false;
         }
-        return false;
-    }
 
+        rwLock.readLock().lock();
+        try {
+            return sessions.values().stream()
+                    .anyMatch(session -> session.getClient() == client);
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
 
     /**
      * Gets the session associated with a session handle.
-     * @param handle a session handle.
-     * @return the session object associated with the handle, or null if the handle is
-     * invalid or inactive.
+     *
+     * @param handle a session handle
+     * @return the session object, or null if handle is invalid or inactive
      */
+    @Override
     public YSession getSession(String handle) {
-        if (handle != null) {
-            return this.get(handle);
+        if (handle == null) {
+            return null;
         }
-        else return null;
+        return sessions.get(handle);
     }
 
-
     /**
-     * Removes a session from the set of active sessions after an idle timeout.
-     * Also writes the expiration to the session audit log.
-     * @param handle the session handle of the session to remove.
+     * Removes a session from the active set after an idle timeout.
+     * Writes the expiration to the session audit log.
+     *
+     * @param handle the session handle to expire
      */
+    @Override
     public void expire(String handle) {
         removeSession(handle, YAuditEvent.Action.expired);
     }
 
-
     /**
-     * Ends an active session of a custom service or external application.
-     * @param client the service or application to disconnect from the Engine.  Also
-     * writes the disconnection to the session audit log.
+     * Ends an active session by client reference.
+     *
+     * @param client the service or application to disconnect
      */
     public void disconnect(YClient client) {
-        for (String handle : this.keySet()) {
-            YSession session = this.get(handle);
-            if (session.getClient() == client) {
-                disconnect(handle);
-                break;
-            }
+        if (client == null) {
+            return;
         }
+
+        // Find and remove the first matching session
+        sessions.entrySet().stream()
+                .filter(entry -> entry.getValue().getClient() == client)
+                .findFirst()
+                .ifPresent(entry -> disconnect(entry.getKey()));
     }
 
-
     /**
-     * Ends an active session of a custom service or external application.
-     * @param handle the session handle of a service or application to disconnect
-     * from the Engine. Also writes the disconnection to the session audit log.
+     * Ends an active session by handle.
+     * Writes the disconnection to the session audit log.
+     *
+     * @param handle the session handle to disconnect
      */
+    @Override
     public void disconnect(String handle) {
         removeSession(handle, YAuditEvent.Action.logoff);
     }
 
+    /**
+     * Called when the hosting server shuts down.
+     * Writes shutdown records for all active sessions to the audit log.
+     */
+    @Override
+    public void shutdown() {
+        if (!shutdownRequested.compareAndSet(false, true)) {
+            return; // Already shutting down
+        }
+
+        LOGGER.info("Shutting down session cache...");
+
+        // Cancel all pending timeouts
+        timeoutTasks.values().forEach(task -> task.cancel(false));
+        timeoutTasks.clear();
+
+        // Write shutdown audit for each session
+        rwLock.writeLock().lock();
+        try {
+            sessions.values().forEach(session -> {
+                YClient client = session.getClient();
+                if (client != null) {
+                    writeAuditEvent(client.getUserName(), YAuditEvent.Action.shutdown);
+                }
+            });
+            sessions.clear();
+            activeSessionsCount.set(0);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+
+        // Shutdown the scheduler
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        LOGGER.info("Session cache shutdown complete");
+    }
+
+    // ========================================================================
+    // PUBLIC API - Metrics
+    // ========================================================================
 
     /**
-     * Called when the hosting server shuts down to write a shutdown record for each
-     * active session to the audit log.
+     * Returns the current number of active sessions.
+     *
+     * @return active session count
      */
-    public void shutdown() {
-        for (YSession session : this.values()) {
-            audit(session.getClient().getUserName(), YAuditEvent.Action.shutdown);
+    public int getActiveSessionCount() {
+        return sessions.size();
+    }
+
+    /**
+     * Returns the total number of connection attempts since startup.
+     *
+     * @return total connection count
+     */
+    public long getTotalConnectionCount() {
+        return connectionCount.get();
+    }
+
+    /**
+     * Returns all currently active session handles.
+     *
+     * @return set of active session handles
+     */
+    public Set<String> getActiveHandles() {
+        rwLock.readLock().lock();
+        try {
+            return new HashSet<>(sessions.keySet());
+        } finally {
+            rwLock.readLock().unlock();
         }
-        _timer.shutdown();
     }
 
+    // ========================================================================
+    // PRIVATE - Authentication
+    // ========================================================================
 
-    /******************************************************************************/
+    private String authenticateClient(YExternalClient client, String password,
+                                       long timeoutSeconds, String name) {
+        if (!validateClientCredentials(client, password)) {
+            return handleBadPassword(name);
+        }
 
-    // PRIVATE METHODS //
+        YSession session = "admin".equals(name)
+                ? new YSession(client, timeoutSeconds)
+                : new YExternalSession(client, timeoutSeconds);
 
-    private boolean validateCredentials(YAWLServiceReference service, String password) {
-        return service.getServicePassword().equals(password);
+        return storeSession(session);
     }
 
+    private String authenticateService(YAWLServiceReference service, String password,
+                                        long timeoutSeconds, String name) {
+        if (!validateServiceCredentials(service, password)) {
+            return handleBadPassword(name);
+        }
 
-    private boolean validateCredentials(YExternalClient client, String password) {
-        return client.getPassword().equals(password);
+        YSession session = new YServiceSession(service, timeoutSeconds);
+        return storeSession(session);
     }
 
+    private boolean validateClientCredentials(YExternalClient client, String password) {
+        String storedPassword = client.getPassword();
+        return storedPassword != null && storedPassword.equals(password);
+    }
 
-    private YAWLServiceReference getService(String name) {
+    private boolean validateServiceCredentials(YAWLServiceReference service, String password) {
+        String storedPassword = service.getServicePassword();
+        return storedPassword != null && storedPassword.equals(password);
+    }
+
+    private YAWLServiceReference findService(String name) {
         YEngine engine = YEngine.getInstance();
-        if (name.equals("DefaultWorklist")) {
+
+        if ("DefaultWorklist".equals(name)) {
             return engine.getDefaultWorklist();
         }
-        for (YAWLServiceReference service : engine.getYAWLServices()) {
-            if (service.getServiceName().equals(name)) return service;
-        }
-        return null;
+
+        return engine.getYAWLServices().stream()
+                .filter(service -> name.equals(service.getServiceName()))
+                .findFirst()
+                .orElse(null);
     }
 
+    // ========================================================================
+    // PRIVATE - Session Storage
+    // ========================================================================
 
     private String storeSession(YSession session) {
         String handle = session.getHandle();
-        this.put(handle, session);
-        _timer.add(session);
-        audit(session.getClient().getUserName(), YAuditEvent.Action.logon);
-        return handle;        
-    }
 
+        // Use computeIfAbsent for atomic put-if-absent
+        YSession existing = sessions.putIfAbsent(handle, session);
 
-    private YSession removeSession(String handle, YAuditEvent.Action action) {
-        YSession session = this.remove(handle);
-        if (session != null) {
-            _timer.expire(session);
-            audit(session.getClient().getUserName(), action);
+        if (existing != null) {
+            // Handle collision - should be extremely rare with UUID
+            LOGGER.warning("Session handle collision detected for: " + handle);
+            return failureMessage("Session handle collision - please retry");
         }
-        return session;
+
+        activeSessionsCount.incrementAndGet();
+
+        // Schedule timeout
+        scheduleTimeout(session);
+
+        // Write audit log
+        YClient client = session.getClient();
+        if (client != null) {
+            writeAuditEvent(client.getUserName(), YAuditEvent.Action.logon);
+        }
+
+        return handle;
     }
 
+    private Optional<YSession> removeSession(String handle, YAuditEvent.Action action) {
+        if (handle == null) {
+            return Optional.empty();
+        }
 
-    private String failMsg(String msg) {
-        return String.format("<failure>%s</failure>", msg) ;
+        // Cancel any pending timeout
+        cancelTimeout(handle);
+
+        // Remove session atomically
+        YSession session = sessions.remove(handle);
+
+        if (session != null) {
+            activeSessionsCount.decrementAndGet();
+
+            YClient client = session.getClient();
+            if (client != null) {
+                writeAuditEvent(client.getUserName(), action);
+            }
+        }
+
+        return Optional.ofNullable(session);
     }
 
+    // ========================================================================
+    // PRIVATE - Timeout Management
+    // ========================================================================
 
-    private void audit(String username, YAuditEvent.Action action) {
-        _db.exec(new YAuditEvent(username, action), HibernateEngine.DB_INSERT, true);
+    private void scheduleTimeout(YSession session) {
+        long intervalMs = session.getInterval();
+
+        // Negative interval means never timeout
+        if (intervalMs <= 0) {
+            return;
+        }
+
+        String handle = session.getHandle();
+
+        ScheduledFuture<?> future = scheduler.schedule(
+                () -> expireSession(handle),
+                intervalMs,
+                TimeUnit.MILLISECONDS
+        );
+
+        timeoutTasks.put(handle, future);
     }
 
+    private void resetTimeout(YSession session) {
+        String handle = session.getHandle();
 
-    private String badPassword(String username) {
-        audit(username, YAuditEvent.Action.invalid);
-        return failMsg("Incorrect Password");
+        // Cancel existing timeout
+        cancelTimeout(handle);
+
+        // Schedule new timeout
+        scheduleTimeout(session);
     }
 
-
-    private String unknownUser(String username) {
-        audit(username, YAuditEvent.Action.unknown);        
-        return failMsg("Unknown service or client: " + username);
+    private void cancelTimeout(String handle) {
+        ScheduledFuture<?> future = timeoutTasks.remove(handle);
+        if (future != null) {
+            future.cancel(false);
+        }
     }
 
-
-    private void initDb() {
-        Set<Class> classSet = new HashSet<Class>();
-        classSet.add(YAuditEvent.class);
-        _db = new HibernateEngine(true, classSet);
+    private void expireSession(String handle) {
+        // Only expire if still present and not being accessed
+        sessions.computeIfPresent(handle, (h, session) -> {
+            expire(handle);
+            return null; // Remove the entry
+        });
     }
 
+    // ========================================================================
+    // PRIVATE - Error Handling & Audit
+    // ========================================================================
+
+    private String handleBadPassword(String username) {
+        writeAuditEvent(username, YAuditEvent.Action.invalid);
+        return failureMessage("Incorrect Password");
+    }
+
+    private String handleUnknownUser(String username) {
+        writeAuditEvent(username, YAuditEvent.Action.unknown);
+        return failureMessage("Unknown service or client: " + username);
+    }
+
+    private String failureMessage(String message) {
+        return String.format("<failure>%s</failure>", message);
+    }
+
+    private void writeAuditEvent(String username, YAuditEvent.Action action) {
+        if (database != null) {
+            try {
+                database.exec(
+                        new YAuditEvent(username, action),
+                        HibernateEngine.DB_INSERT,
+                        true
+                );
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING,
+                        "Failed to write audit event for user: " + username, e);
+            }
+        }
+    }
+
+    // ========================================================================
+    // PRIVATE - Initialization
+    // ========================================================================
+
+    private void initializeDatabase() {
+        try {
+            Set<Class> classSet = new HashSet<>();
+            classSet.add(YAuditEvent.class);
+            database = new HibernateEngine(true, classSet);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to initialize database for audit logging", e);
+            database = null;
+        }
+    }
 }

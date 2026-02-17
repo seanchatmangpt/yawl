@@ -48,17 +48,18 @@ import java.util.*;
 import java.util.List;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 15/05/2003
  * Time: 16:32:43
- * 
+ *
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class YWorklistModel {
     private static final Logger logger = LogManager.getLogger(YWorklistModel.class);
     private YWorklistTableModel _availableWork;
     private YWorklistTableModel _myActiveTasks;
-    private Vector inSequenceWorkitemIDs = new Vector();
+    private Vector<String> inSequenceWorkitemIDs = new Vector<>();
     private DateFormat _formatter;
     private static ParamsDefinitions _paramsDefinitions = new ParamsDefinitions();
 
@@ -172,7 +173,7 @@ public class YWorklistModel {
 
 
     Object[] getActiveTableData(String caseIDStr, String taskIDStr) {
-        return (Object[]) _myActiveTasks._rows.get(caseIDStr + taskIDStr);
+        return _myActiveTasks._rows.get(caseIDStr + taskIDStr);
     }
 
     void setActiveTableData(Object[] data) {

@@ -643,13 +643,13 @@ public class YWorkItem {
 
     public YWorkItem get_parent() { return _parent; }
 
-    public Set get_children() { return _children; }
+    public Set<YWorkItem> get_children() { return _children; }
 
     public boolean hasChildren() { return _children != null; }
 
     public void add_child(YWorkItem child) { _children.add(child); }
 
-    public void add_children(Set children) { _children.addAll(children); }
+    public void add_children(Set<YWorkItem> children) { _children.addAll(children); }
 
     protected void setChildren(Set<YWorkItem> children) { _children = children; }
 
@@ -981,7 +981,7 @@ public class YWorkItem {
 
         // external predicate takes precedence over the internal one
         if (externalItem != null) {
-            externalItem.setValue(
+            externalItem = externalItem.withValue(
                     new YLogPredicateWorkItemParser(this).parse(externalItem.getValue()));
         }
         else {

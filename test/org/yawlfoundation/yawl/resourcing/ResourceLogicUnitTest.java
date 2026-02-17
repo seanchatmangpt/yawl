@@ -1,14 +1,14 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for resource allocation and work item distribution logic.
@@ -19,58 +19,58 @@ import java.util.Set;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class ResourceLogicUnitTest extends TestCase {
+class ResourceLogicUnitTest {
 
-    public ResourceLogicUnitTest(String name) {
-        super(name);
-    }
-
-    public void testWorkItemStatusTransitions() {
+    @Test
+    void testWorkItemStatusTransitions() {
         WorkItemRecord workItem = new WorkItemRecord();
         workItem.setStatus(WorkItemRecord.statusEnabled);
 
-        assertEquals("Initial status should be Enabled",
-                WorkItemRecord.statusEnabled, workItem.getStatus());
+        assertEquals(WorkItemRecord.statusEnabled, workItem.getStatus(),
+                "Initial status should be Enabled");
 
         workItem.setStatus(WorkItemRecord.statusExecuting);
-        assertEquals("Status should transition to Executing",
-                WorkItemRecord.statusExecuting, workItem.getStatus());
+        assertEquals(WorkItemRecord.statusExecuting, workItem.getStatus(),
+                "Status should transition to Executing");
 
         workItem.setStatus(WorkItemRecord.statusComplete);
-        assertEquals("Status should transition to Complete",
-                WorkItemRecord.statusComplete, workItem.getStatus());
+        assertEquals(WorkItemRecord.statusComplete, workItem.getStatus(),
+                "Status should transition to Complete");
     }
 
-    public void testWorkItemResourceStatusTransitions() {
+    @Test
+    void testWorkItemResourceStatusTransitions() {
         WorkItemRecord workItem = new WorkItemRecord();
 
-        assertEquals("Initial resource status should be Unresourced",
-                WorkItemRecord.statusResourceUnresourced, workItem.getResourceStatus());
+        assertEquals(WorkItemRecord.statusResourceUnresourced, workItem.getResourceStatus(),
+                "Initial resource status should be Unresourced");
 
         workItem.setResourceStatus(WorkItemRecord.statusResourceOffered);
-        assertEquals("Resource status should transition to Offered",
-                WorkItemRecord.statusResourceOffered, workItem.getResourceStatus());
+        assertEquals(WorkItemRecord.statusResourceOffered, workItem.getResourceStatus(),
+                "Resource status should transition to Offered");
 
         workItem.setResourceStatus(WorkItemRecord.statusResourceAllocated);
-        assertEquals("Resource status should transition to Allocated",
-                WorkItemRecord.statusResourceAllocated, workItem.getResourceStatus());
+        assertEquals(WorkItemRecord.statusResourceAllocated, workItem.getResourceStatus(),
+                "Resource status should transition to Allocated");
 
         workItem.setResourceStatus(WorkItemRecord.statusResourceStarted);
-        assertEquals("Resource status should transition to Started",
-                WorkItemRecord.statusResourceStarted, workItem.getResourceStatus());
+        assertEquals(WorkItemRecord.statusResourceStarted, workItem.getResourceStatus(),
+                "Resource status should transition to Started");
     }
 
-    public void testWorkItemIdentification() {
+    @Test
+    void testWorkItemIdentification() {
         WorkItemRecord workItem = new WorkItemRecord("123.456", "Approve_Order",
                 "http://localhost/spec.yawl", WorkItemRecord.statusEnabled);
 
-        assertEquals("Case ID should match", "123.456", workItem.getCaseID());
-        assertEquals("Task ID should match", "Approve_Order", workItem.getTaskID());
-        assertEquals("Spec URI should match", "http://localhost/spec.yawl", workItem.getSpecURI());
-        assertEquals("Status should match", WorkItemRecord.statusEnabled, workItem.getStatus());
+        assertEquals("123.456", workItem.getCaseID(), "Case ID should match");
+        assertEquals("Approve_Order", workItem.getTaskID(), "Task ID should match");
+        assertEquals("http://localhost/spec.yawl", workItem.getSpecURI(), "Spec URI should match");
+        assertEquals(WorkItemRecord.statusEnabled, workItem.getStatus(), "Status should match");
     }
 
-    public void testResourceAvailabilityCalculation() {
+    @Test
+    void testResourceAvailabilityCalculation() {
         List<Resource> resources = new ArrayList<>();
         resources.add(new Resource("user1", 5, 2));
         resources.add(new Resource("user2", 3, 3));
@@ -78,100 +78,109 @@ public class ResourceLogicUnitTest extends TestCase {
 
         List<Resource> available = filterAvailableResources(resources);
 
-        assertEquals("Should have 2 available resources", 2, available.size());
-        assertTrue("user1 should be available", containsResource(available, "user1"));
-        assertTrue("user3 should be available", containsResource(available, "user3"));
-        assertFalse("user2 should not be available", containsResource(available, "user2"));
+        assertEquals(2, available.size(), "Should have 2 available resources");
+        assertTrue(containsResource(available, "user1"), "user1 should be available");
+        assertTrue(containsResource(available, "user3"), "user3 should be available");
+        assertFalse(containsResource(available, "user2"), "user2 should not be available");
     }
 
-    public void testWorkItemAllocationLogic() {
+    @Test
+    void testWorkItemAllocationLogic() {
         WorkItemRecord workItem = createTestWorkItem("123.456", "Approve_Order");
         Resource resource = new Resource("user1", 5, 2);
 
         boolean allocated = allocateWorkItem(workItem, resource);
 
-        assertTrue("Work item should be allocated", allocated);
-        assertEquals("Work item should be in Allocated status",
-                WorkItemRecord.statusResourceAllocated, workItem.getResourceStatus());
+        assertTrue(allocated, "Work item should be allocated");
+        assertEquals(WorkItemRecord.statusResourceAllocated, workItem.getResourceStatus(),
+                "Work item should be in Allocated status");
     }
 
-    public void testWorkItemAllocationCapacityCheck() {
+    @Test
+    void testWorkItemAllocationCapacityCheck() {
         Resource resource = new Resource("user1", 3, 3);
 
-        assertFalse("Should not allocate when at capacity", canAllocate(resource));
+        assertFalse(canAllocate(resource), "Should not allocate when at capacity");
 
         Resource availableResource = new Resource("user2", 5, 2);
-        assertTrue("Should allocate when under capacity", canAllocate(availableResource));
+        assertTrue(canAllocate(availableResource), "Should allocate when under capacity");
     }
 
-    public void testMultipleWorkItemAllocation() {
+    @Test
+    void testMultipleWorkItemAllocation() {
         Resource resource = new Resource("user1", 5, 0);
 
         WorkItemRecord item1 = createTestWorkItem("123.1", "Task1");
         WorkItemRecord item2 = createTestWorkItem("123.2", "Task2");
         WorkItemRecord item3 = createTestWorkItem("123.3", "Task3");
 
-        assertTrue("First allocation should succeed", allocateWorkItem(item1, resource));
-        assertTrue("Second allocation should succeed", allocateWorkItem(item2, resource));
-        assertTrue("Third allocation should succeed", allocateWorkItem(item3, resource));
+        assertTrue(allocateWorkItem(item1, resource), "First allocation should succeed");
+        assertTrue(allocateWorkItem(item2, resource), "Second allocation should succeed");
+        assertTrue(allocateWorkItem(item3, resource), "Third allocation should succeed");
 
-        assertEquals("Resource should have 3 allocated items", 3, resource.getAllocatedCount());
+        assertEquals(3, resource.getAllocatedCount(), "Resource should have 3 allocated items");
     }
 
-    public void testResourceConstraintValidation() {
-        assertTrue("Valid resource name should pass", isValidResourceId("user123"));
-        assertTrue("Valid resource with underscore should pass", isValidResourceId("user_admin"));
-        assertFalse("Empty resource name should fail", isValidResourceId(""));
-        assertFalse("Null resource name should fail", isValidResourceId(null));
-        assertFalse("Whitespace resource name should fail", isValidResourceId("   "));
+    @Test
+    void testResourceConstraintValidation() {
+        assertTrue(isValidResourceId("user123"), "Valid resource name should pass");
+        assertTrue(isValidResourceId("user_admin"), "Valid resource with underscore should pass");
+        assertFalse(isValidResourceId(""), "Empty resource name should fail");
+        assertFalse(isValidResourceId(null), "Null resource name should fail");
+        assertFalse(isValidResourceId("   "), "Whitespace resource name should fail");
     }
 
-    public void testWorkItemStatusValidation() {
-        assertTrue("Enabled is valid status", isValidStatus(WorkItemRecord.statusEnabled));
-        assertTrue("Executing is valid status", isValidStatus(WorkItemRecord.statusExecuting));
-        assertTrue("Complete is valid status", isValidStatus(WorkItemRecord.statusComplete));
-        assertTrue("Fired is valid status", isValidStatus(WorkItemRecord.statusFired));
-        assertFalse("Invalid status should fail", isValidStatus("InvalidStatus"));
-        assertFalse("Null status should fail", isValidStatus(null));
+    @Test
+    void testWorkItemStatusValidation() {
+        assertTrue(isValidStatus(WorkItemRecord.statusEnabled), "Enabled is valid status");
+        assertTrue(isValidStatus(WorkItemRecord.statusExecuting), "Executing is valid status");
+        assertTrue(isValidStatus(WorkItemRecord.statusComplete), "Complete is valid status");
+        assertTrue(isValidStatus(WorkItemRecord.statusFired), "Fired is valid status");
+        assertFalse(isValidStatus("InvalidStatus"), "Invalid status should fail");
+        assertFalse(isValidStatus(null), "Null status should fail");
     }
 
-    public void testResourceStatusValidation() {
-        assertTrue("Offered is valid resource status",
-                isValidResourceStatus(WorkItemRecord.statusResourceOffered));
-        assertTrue("Allocated is valid resource status",
-                isValidResourceStatus(WorkItemRecord.statusResourceAllocated));
-        assertTrue("Started is valid resource status",
-                isValidResourceStatus(WorkItemRecord.statusResourceStarted));
-        assertFalse("Invalid resource status should fail",
-                isValidResourceStatus("InvalidResourceStatus"));
+    @Test
+    void testResourceStatusValidation() {
+        assertTrue(isValidResourceStatus(WorkItemRecord.statusResourceOffered),
+                "Offered is valid resource status");
+        assertTrue(isValidResourceStatus(WorkItemRecord.statusResourceAllocated),
+                "Allocated is valid resource status");
+        assertTrue(isValidResourceStatus(WorkItemRecord.statusResourceStarted),
+                "Started is valid resource status");
+        assertFalse(isValidResourceStatus("InvalidResourceStatus"),
+                "Invalid resource status should fail");
     }
 
-    public void testWorkItemDeallocation() {
+    @Test
+    void testWorkItemDeallocation() {
         Resource resource = new Resource("user1", 5, 2);
         WorkItemRecord workItem = createTestWorkItem("123.456", "Task1");
 
         allocateWorkItem(workItem, resource);
-        assertEquals("Should have 3 allocated items", 3, resource.getAllocatedCount());
+        assertEquals(3, resource.getAllocatedCount(), "Should have 3 allocated items");
 
         deallocateWorkItem(workItem, resource);
-        assertEquals("Should have 2 allocated items after deallocation",
-                2, resource.getAllocatedCount());
-        assertEquals("Work item should be unresourced",
-                WorkItemRecord.statusResourceUnresourced, workItem.getResourceStatus());
+        assertEquals(2, resource.getAllocatedCount(),
+                "Should have 2 allocated items after deallocation");
+        assertEquals(WorkItemRecord.statusResourceUnresourced, workItem.getResourceStatus(),
+                "Work item should be unresourced");
     }
 
-    public void testResourceCapacityEnforcement() {
+    @Test
+    void testResourceCapacityEnforcement() {
         Resource resource = new Resource("user1", 2, 2);
 
-        assertFalse("Should not allow allocation when at capacity", canAllocate(resource));
+        assertFalse(canAllocate(resource), "Should not allow allocation when at capacity");
 
         WorkItemRecord workItem = createTestWorkItem("123.456", "Task1");
         boolean allocated = allocateWorkItem(workItem, resource);
 
-        assertFalse("Allocation should fail when at capacity", allocated);
+        assertFalse(allocated, "Allocation should fail when at capacity");
     }
 
-    public void testWorkItemPriorityOrdering() {
+    @Test
+    void testWorkItemPriorityOrdering() {
         List<WorkItemRecord> workItems = new ArrayList<>();
         workItems.add(createPrioritizedWorkItem("123.1", "Task1", 2));
         workItems.add(createPrioritizedWorkItem("123.2", "Task2", 1));
@@ -179,12 +188,13 @@ public class ResourceLogicUnitTest extends TestCase {
 
         List<WorkItemRecord> sorted = sortByPriority(workItems);
 
-        assertEquals("Highest priority should be first", 3, getPriority(sorted.get(0)));
-        assertEquals("Medium priority should be second", 2, getPriority(sorted.get(1)));
-        assertEquals("Lowest priority should be last", 1, getPriority(sorted.get(2)));
+        assertEquals(3, getPriority(sorted.get(0)), "Highest priority should be first");
+        assertEquals(2, getPriority(sorted.get(1)), "Medium priority should be second");
+        assertEquals(1, getPriority(sorted.get(2)), "Lowest priority should be last");
     }
 
-    public void testResourceLoadBalancing() {
+    @Test
+    void testResourceLoadBalancing() {
         List<Resource> resources = new ArrayList<>();
         resources.add(new Resource("user1", 10, 7));
         resources.add(new Resource("user2", 10, 3));
@@ -192,19 +202,20 @@ public class ResourceLogicUnitTest extends TestCase {
 
         Resource leastLoaded = findLeastLoadedResource(resources);
 
-        assertEquals("Should select least loaded resource", "user3", leastLoaded.getId());
-        assertEquals("Least loaded should have 1 allocation", 1, leastLoaded.getAllocatedCount());
+        assertEquals("user3", leastLoaded.getId(), "Should select least loaded resource");
+        assertEquals(1, leastLoaded.getAllocatedCount(), "Least loaded should have 1 allocation");
     }
 
-    public void testWorkItemCaseIdExtraction() {
+    @Test
+    void testWorkItemCaseIdExtraction() {
         WorkItemRecord workItem = new WorkItemRecord();
         workItem.setCaseID("123.456.789");
 
         String caseId = workItem.getCaseID();
-        assertEquals("Should extract full case ID", "123.456.789", caseId);
+        assertEquals("123.456.789", caseId, "Should extract full case ID");
 
         String rootCaseId = extractRootCaseId(caseId);
-        assertEquals("Should extract root case ID", "123", rootCaseId);
+        assertEquals("123", rootCaseId, "Should extract root case ID");
     }
 
     private WorkItemRecord createTestWorkItem(String caseId, String taskId) {
@@ -364,15 +375,5 @@ public class ResourceLogicUnitTest extends TestCase {
                 allocatedCount--;
             }
         }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Resource Logic Unit Tests");
-        suite.addTestSuite(ResourceLogicUnitTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

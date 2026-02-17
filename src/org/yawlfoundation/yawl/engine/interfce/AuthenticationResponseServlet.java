@@ -37,7 +37,8 @@ import java.io.PrintWriter;
  */
 public class AuthenticationResponseServlet extends HttpServlet {
 
-    private InterfaceBWebsideController _controller;
+    private static final long serialVersionUID = 1L;
+    private transient InterfaceBWebsideController _controller;
 
     public void init(ServletConfig servletConfig) throws ServletException {
         super.init(servletConfig);
@@ -51,7 +52,7 @@ public class AuthenticationResponseServlet extends HttpServlet {
         String proxyHost = context.getInitParameter("ProxyHost");
         String proxyPort = context.getInitParameter("ProxyPort");
         try {
-            Class controllerClass = Class.forName(controllerClassName);
+            Class<?> controllerClass = Class.forName(controllerClassName);
             _controller = (InterfaceBWebsideController) controllerClass.getDeclaredConstructor().newInstance();
             //here the URL of the YAWL Engine get retrieved from the web.xml file.
             _controller.setUpInterfaceBClient(context.getInitParameter("InterfaceB_BackEnd"));

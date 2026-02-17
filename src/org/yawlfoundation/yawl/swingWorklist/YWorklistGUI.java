@@ -43,6 +43,7 @@ import java.io.IOException;
  * 
  */
 public class YWorklistGUI extends JPanel implements ActionListener, ListSelectionListener {
+    private static final long serialVersionUID = 1L;
     private YWorklistModel _worklistModel;
     private JTable _availableTable;
     private JTable _activeTable;

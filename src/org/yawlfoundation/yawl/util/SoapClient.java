@@ -22,7 +22,7 @@ import javax.xml.soap.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -101,7 +101,7 @@ public class SoapClient {
             throws SOAPException, IOException {
         MessageFactory factory = MessageFactory.newInstance();
         return factory.createMessage(new MimeHeaders(),
-                new ByteArrayInputStream(envelope.getBytes(Charset.forName("UTF-8"))));
+                new ByteArrayInputStream(envelope.getBytes(StandardCharsets.UTF_8)));
     }
 
 
@@ -129,7 +129,7 @@ public class SoapClient {
     private String getResponseValue(SOAPMessage response) throws SOAPException, IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         response.writeTo(os);
-        String s = new String(os.toByteArray(),"UTF-8");
+        String s = new String(os.toByteArray(), StandardCharsets.UTF_8);
         XNode root = new XNodeParser().parse(s);
         if (root == null) {
             return null;
