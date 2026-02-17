@@ -131,9 +131,9 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
         else if (this instanceof YOutputCondition) {
             tag = "outputCondition";
         }
-        StringBuilder xml = new StringBuilder(String.format("<%s id=\"%s\">", tag, getID()));
+        StringBuilder xml = new StringBuilder("<%s id=\"%s\">".formatted(tag, getID()));
         xml.append(super.toXML());
-        xml.append(String.format("</%s>", tag));
+        xml.append("</%s>".formatted(tag));
         return xml.toString();
     }
 }

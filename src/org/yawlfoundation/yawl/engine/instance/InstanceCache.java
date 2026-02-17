@@ -168,7 +168,7 @@ public class InstanceCache extends ConcurrentHashMap<String, CaseInstance> {
     // at the appropriate level of granularity
 
     public String marshalCases() {
-        String start = String.format("startuptime=\"%d\">", _startupTime);
+        String start = "startuptime=\"%d\">".formatted(_startupTime);
         StringBuilder result = new StringBuilder("<caseInstances ");
         result.append(start);
         for (CaseInstance instance : this.values()) {

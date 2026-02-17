@@ -85,7 +85,7 @@ public class CheckSummer {
                 md.update(buffer, 0, numOfBytesRead);
             }
             byte[] hash = md.digest();
-            return String.format("%032x", new BigInteger(1, hash));
+            return "%032x".formatted(new BigInteger(1, hash));
         }
         catch (NoSuchAlgorithmException nsae) {
             throw new IOException(nsae.getMessage());
@@ -108,7 +108,7 @@ public class CheckSummer {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(bytes);
             byte[] hash = md.digest();
-            return String.format("%032x", new BigInteger(1, hash));
+            return "%032x".formatted(new BigInteger(1, hash));
         }
         catch (NoSuchAlgorithmException nsae) {
             throw new IOException(nsae.getMessage());

@@ -133,7 +133,7 @@ public class SpiffeWorkloadApiClient implements AutoCloseable {
 
         lock.writeLock().lock();
         try {
-            String request = String.format("{\"audience\":[\"%s\"]}", escapeJson(audience));
+            String request = "{\"audience\":[\"%s\"]}".formatted(escapeJson(audience));
             String response = callWorkloadApi("FetchJWTSVID", request);
             SpiffeWorkloadIdentity identity = parseJwtResponse(response);
             identity.validate();

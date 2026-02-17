@@ -236,7 +236,7 @@ public class WorkItemInstance implements YInstance {
         age %= secsPerHour;
         long mins = age / 60;
         age %= 60;                                    // seconds leftover
-        return String.format("%d:%02d:%02d:%02d", days, hours, mins, age);
+        return "%d:%02d:%02d:%02d".formatted(days, hours, mins, age);
     }
 
 

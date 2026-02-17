@@ -226,7 +226,7 @@ public class MailService extends InterfaceBWebsideController {
                     .buildMailer();
 
             m.sendMail(email);
-            return String.format("Mail id <%s> successfully sent.", email.getId());
+            return "Mail id <%s> successfully sent.".formatted(email.getId());
         }
         catch (Exception e) {
             _logger.catching(e);

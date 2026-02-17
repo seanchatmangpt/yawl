@@ -73,7 +73,7 @@ public class Marshaller {
         }
         result.append("-->\n  ");
         String name = param.getPreferredName();
-        result.append(String.format("<%s></%s>", name, name));
+        result.append("<%s></%s>".formatted(name, name));
         return result.toString();
     }
 

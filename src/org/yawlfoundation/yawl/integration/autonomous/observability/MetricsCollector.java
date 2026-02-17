@@ -224,7 +224,7 @@ public class MetricsCollector {
                   .append("_sum")
                   .append(labels)
                   .append(" ")
-                  .append(String.format("%.3f", histogram.getSum()))
+                  .append("%.3f".formatted(histogram.getSum()))
                   .append("\n");
 
             output.append(histogram.name)

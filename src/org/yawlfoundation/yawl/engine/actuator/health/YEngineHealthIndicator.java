@@ -101,9 +101,9 @@ public class YEngineHealthIndicator implements HealthIndicator {
                 .withDetail("workItems", workItemCount)
                 .withDetail("maxWorkItems", MAX_WORK_ITEMS)
                 .withDetail("loadedSpecifications", loadedSpecifications)
-                .withDetail("caseLoad", String.format("%.2f%%", caseLoad * 100))
-                .withDetail("workItemLoad", String.format("%.2f%%", workItemLoad * 100))
-                .withDetail("overallLoad", String.format("%.2f%%", overallLoad * 100));
+                .withDetail("caseLoad", "%.2f%%".formatted(caseLoad * 100))
+                .withDetail("workItemLoad", "%.2f%%".formatted(workItemLoad * 100))
+                .withDetail("overallLoad", "%.2f%%".formatted(overallLoad * 100));
 
             if (overallLoad >= CRITICAL_LOAD_THRESHOLD) {
                 healthBuilder.down()

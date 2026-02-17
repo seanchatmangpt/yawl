@@ -106,7 +106,7 @@ public class YReadinessHealthIndicator implements HealthIndicator {
                     .withDetail("reason", "Engine overloaded")
                     .withDetail("activeCases", activeCases)
                     .withDetail("maxCases", MAX_ACTIVE_CASES)
-                    .withDetail("load", String.format("%.2f%%", load * 100))
+                    .withDetail("load", "%.2f%%".formatted(load * 100))
                     .build();
             }
 
@@ -114,7 +114,7 @@ public class YReadinessHealthIndicator implements HealthIndicator {
                 .withDetail("status", engineStatus.toString().toLowerCase())
                 .withDetail("ready", true)
                 .withDetail("activeCases", activeCases)
-                .withDetail("load", String.format("%.2f%%", load * 100))
+                .withDetail("load", "%.2f%%".formatted(load * 100))
                 .build();
 
         } catch (Exception e) {

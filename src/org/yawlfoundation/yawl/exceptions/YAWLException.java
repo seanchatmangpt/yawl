@@ -95,7 +95,7 @@ public class YAWLException extends Exception {
     public String toXML() {
         return """
             <%s>%s</%s>
-            """.formatted(this.getClass().getName(), toXMLGuts(), this.getClass().getName()).trim();
+            """.formatted(this.getClass().getName(), toXMLGuts(), this.getClass().getName()).strip();
     }
 
     protected String toXMLGuts() {

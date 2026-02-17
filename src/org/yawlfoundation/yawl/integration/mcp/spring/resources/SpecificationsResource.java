@@ -252,7 +252,7 @@ public class SpecificationsResource implements YawlMcpResource {
                 case '\n' -> "\\n";
                 case '\r' -> "\\r";
                 case '\t' -> "\\t";
-                default -> c < 0x20 ? String.format("\\u%04x", (int) c) : String.valueOf(c);
+                default -> c < 0x20 ? "\\u%04x".formatted((int) c) : String.valueOf(c);
             });
         }
         return sb.toString();
