@@ -151,6 +151,26 @@ If ANY guard is detected, the operation is **blocked** (exit 2) with violation d
 - Maven BOM (Bill of Materials) for dependency alignment
 - Profiles: `fast` (no analysis), `analysis` (static checks), `security` (SBOM + scanning)
 
+## Ψ (Observatory) — Observe ≺ Act
+
+**Ψ** = `docs/v6/latest/{facts/, diagrams/, receipts/}` | Ψ_refresh = `bash scripts/observatory/observatory.sh`
+**Ψ_read** = Read(`docs/v6/latest/INDEX.md`) → ∀q ∈ Q_codebase: answer(q) = Read(Ψ.facts[q]) ≻ grep(codebase)
+
+**AXIOM**: Context window is finite. Codebase is not. **Read facts, don't explore.**
+- 1 fact file ≈ 50 tokens. Grepping for same answer ≈ 5000 tokens. **Compression: 100×.**
+- If >3 files needed to answer a question → **build an instrument** (see `.claude/OBSERVATORY.md`)
+
+**Ψ.facts → Q mapping**:
+- `modules.json` → what modules? | `reactor.json` → build order, deps
+- `shared-src.json` → who owns which `src/` files? | `tests.json` → tests per module (scoped vs visible)
+- `dual-family.json` → stateful↔stateless | `duplicates.json` → duplicate FQCNs
+- `gates.json` → quality gates (default_active vs profile-gated) | `deps-conflicts.json` → version conflicts
+- `maven-hazards.json` → broken M2 artifacts
+
+**Ψ.verify**: `receipts/observatory.json` → SHA256 hashes for all outputs. Stale? Re-run.
+**Ψ.extend**: New question? Add `emit_X()` to `scripts/observatory/lib/emit-facts.sh`. See `.claude/OBSERVATORY.md § Φ`.
+**Ψ_∞**: Observatory FMEA's itself → `50-risk-surfaces.mmd`. Wrong output? Fix emit, re-run, verify.
+
 ## Γ (Architecture)
 
 **Γ(engine)** = {YEngine, YNetRunner, YWorkItem, YSpecification}
@@ -207,6 +227,8 @@ topology = hierarchical(μ) | mesh(integration)
 
 ## References
 
+- **Observatory**: `.claude/OBSERVATORY.md` (instrument protocol — read FIRST before exploring codebase)
+- **Observatory Index**: `docs/v6/latest/INDEX.md` (9 facts, 7 diagrams, FMEA table)
 - **Best Practices**: `.claude/BEST-PRACTICES-2026.md` (comprehensive 2026 guide)
 - **Quick Start**: `.claude/README-QUICK.md` (2-paragraph summary)
 - **Standards**: `.claude/HYPER_STANDARDS.md` (detailed guard examples)
