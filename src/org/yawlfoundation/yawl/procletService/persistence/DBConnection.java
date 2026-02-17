@@ -47,7 +47,7 @@ public class DBConnection {
          setLogLevel(LogManager.getLogger("com.zaxxer.hikari"), Level.INFO);
 
          // setup database connection
-         Set<Class> persistedClasses = new HashSet<Class>();
+         Set<Class> persistedClasses = new HashSet<>();
          persistedClasses.add(UniqueID.class);
          persistedClasses.add(StoredBlockRel.class);
          persistedClasses.add(StoredDecisions.class);

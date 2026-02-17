@@ -116,7 +116,7 @@ public abstract class AbstractCheckSumTask extends Task {
 
 
     protected List<File> getFileList(File f) {
-        List<File> fileList = new ArrayList<File>();
+        List<File> fileList = new ArrayList<>();
         if (! f.isDirectory()) {
             fileList.add(f);
         }
@@ -208,7 +208,7 @@ public abstract class AbstractCheckSumTask extends Task {
     protected abstract class FileLocations {
 
         protected XNode paths = new XNode("paths");    // default
-        protected Map<String, String> locations = new HashMap<String, String>();
+        protected Map<String, String> locations = new HashMap<>();
 
         public FileLocations(String fileName) {
             if (fileName != null) {

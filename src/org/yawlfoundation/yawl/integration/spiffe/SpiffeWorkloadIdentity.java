@@ -58,9 +58,7 @@ public class SpiffeWorkloadIdentity implements Serializable {
      * @throws IllegalArgumentException if spiffeId or x509Chain is invalid
      */
     public SpiffeWorkloadIdentity(String spiffeId, X509Certificate[] x509Chain) {
-        if (spiffeId == null || !spiffeId.startsWith(SPIFFE_SCHEME)) {
-            throw new IllegalArgumentException("Invalid SPIFFE ID format: " + spiffeId);
-        }
+        validateSpiffeId(spiffeId);
         if (x509Chain == null || x509Chain.length == 0) {
             throw new IllegalArgumentException("X.509 certificate chain is required");
         }
@@ -82,9 +80,7 @@ public class SpiffeWorkloadIdentity implements Serializable {
      * @throws IllegalArgumentException if any parameter is invalid
      */
     public SpiffeWorkloadIdentity(String spiffeId, String jwtToken, Instant expiresAt) {
-        if (spiffeId == null || !spiffeId.startsWith(SPIFFE_SCHEME)) {
-            throw new IllegalArgumentException("Invalid SPIFFE ID format: " + spiffeId);
-        }
+        validateSpiffeId(spiffeId);
         if (jwtToken == null || jwtToken.isEmpty()) {
             throw new IllegalArgumentException("JWT token is required");
         }
@@ -221,6 +217,28 @@ public class SpiffeWorkloadIdentity implements Serializable {
      */
     public boolean isTrustedBy(String trustDomain) {
         return this.trustDomain.equals(trustDomain);
+    }
+
+    /**
+     * Validate that a SPIFFE ID has the correct format: spiffe://trust-domain[/path]
+     * The trust domain must be non-empty.
+     *
+     * @param spiffeId the SPIFFE ID to validate
+     * @throws IllegalArgumentException if the format is invalid
+     */
+    private static void validateSpiffeId(String spiffeId) {
+        if (spiffeId == null || !spiffeId.startsWith(SPIFFE_SCHEME)) {
+            throw new IllegalArgumentException("Invalid SPIFFE ID format: " + spiffeId);
+        }
+        String withoutScheme = spiffeId.substring(SPIFFE_SCHEME.length());
+        int slashIndex = withoutScheme.indexOf('/');
+        String trustDomain = slashIndex >= 0
+            ? withoutScheme.substring(0, slashIndex)
+            : withoutScheme;
+        if (trustDomain.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Invalid SPIFFE ID format: trust domain is required in " + spiffeId);
+        }
     }
 
     /**

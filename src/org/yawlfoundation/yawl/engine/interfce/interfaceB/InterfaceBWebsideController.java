@@ -135,7 +135,9 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCancelledCaseEvent(String caseID) { }
+    public void handleCancelledCaseEvent(String caseID) {
+        _logger.trace("handleCancelledCaseEvent: caseID={}", caseID);
+    }
 
 
     /**
@@ -144,7 +146,9 @@ public abstract class InterfaceBWebsideController {
      * @param caseID the id of the case that has been cancelled
      * @param tasks the list of deadlocked task ids
      */
-    public void handleDeadlockedCaseEvent(String caseID, String tasks) { }
+    public void handleDeadlockedCaseEvent(String caseID, String tasks) {
+        _logger.trace("handleDeadlockedCaseEvent: caseID={}, tasks={}", caseID, tasks);
+    }
 
 
     /**
@@ -156,7 +160,9 @@ public abstract class InterfaceBWebsideController {
      * @param delayed true if this is a delayed case start, false if immediate
      */
     public void handleStartCaseEvent(YSpecificationID specID, String caseID,
-                                         String launchingService, boolean delayed) { }
+                                         String launchingService, boolean delayed) {
+        _logger.trace("handleStartCaseEvent: specID={}, caseID={}", specID, caseID);
+    }
 
     /**
      * Receives notification from the engine that an active case has been
@@ -165,7 +171,9 @@ public abstract class InterfaceBWebsideController {
      * @param caseID the id of the completed case.
      * @param casedata the set of net-level data for the case when it completes
      */
-    public void handleCompleteCaseEvent(String caseID, String casedata) { }
+    public void handleCompleteCaseEvent(String caseID, String casedata) {
+        _logger.trace("handleCompleteCaseEvent: caseID={}", caseID);
+    }
 
 
     /**
@@ -173,7 +181,9 @@ public abstract class InterfaceBWebsideController {
      * expired. Override this method to handle timer expiries on timed workitems.
      * @param expiredWorkItem the workitem that has an expired timer
      */
-    public void handleTimerExpiryEvent(WorkItemRecord expiredWorkItem) { }
+    public void handleTimerExpiryEvent(WorkItemRecord expiredWorkItem) {
+        _logger.trace("handleTimerExpiryEvent: itemID={}", expiredWorkItem.getID());
+    }
 
 
     /**
@@ -181,7 +191,9 @@ public abstract class InterfaceBWebsideController {
      * initialisation and is now in a running state. Override this method to
      * handle final service initialisation tasks that require a running engine
      */
-    public void handleEngineInitialisationCompletedEvent() { }
+    public void handleEngineInitialisationCompletedEvent() {
+        _logger.trace("handleEngineInitialisationCompletedEvent");
+    }
 
 
     /**
@@ -192,8 +204,11 @@ public abstract class InterfaceBWebsideController {
      * @param oldStatus the work item's previous status
      * @param newStatus the work item's new status
      */
-    public void handleWorkItemStatusChangeEvent(WorkItemRecord workItem, 
-                                                String oldStatus, String newStatus) { }
+    public void handleWorkItemStatusChangeEvent(WorkItemRecord workItem,
+                                                String oldStatus, String newStatus) {
+        _logger.trace("handleWorkItemStatusChangeEvent: itemID={}, {} -> {}",
+                workItem.getID(), oldStatus, newStatus);
+    }
 
 
     /**
@@ -201,7 +216,9 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseSuspendingEvent(String caseID) { }
+    public void handleCaseSuspendingEvent(String caseID) {
+        _logger.trace("handleCaseSuspendingEvent: caseID={}", caseID);
+    }
 
 
     /**
@@ -209,7 +226,9 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseSuspendedEvent(String caseID) { }
+    public void handleCaseSuspendedEvent(String caseID) {
+        _logger.trace("handleCaseSuspendedEvent: caseID={}", caseID);
+    }
 
 
     /**
@@ -217,14 +236,18 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseResumedEvent(String caseID) { }
+    public void handleCaseResumedEvent(String caseID) {
+        _logger.trace("handleCaseResumedEvent: caseID={}", caseID);
+    }
 
 
     /**
      * Receives notification when the environment is being shutdown. Override this
      * method to take any necessary finalisation action.
      */
-    public void destroy() { }
+    public void destroy() {
+        _logger.trace("destroy: service shutdown requested");
+    }
 
 
     /**
@@ -648,7 +671,7 @@ public abstract class InterfaceBWebsideController {
         if (!enabledWorkItem.getStatus().equals(WorkItemRecord.statusEnabled))
             throw new IllegalArgumentException("Param enabledWorkItem must be enabled.");
 
-        List<WorkItemRecord> instances = new ArrayList<WorkItemRecord>();
+        List<WorkItemRecord> instances = new ArrayList<>();
 
         // first of all checkout an enabled work item
         WorkItemRecord result = checkOut(enabledWorkItem.getID(), sessionHandle);

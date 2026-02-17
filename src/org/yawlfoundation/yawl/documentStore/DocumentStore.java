@@ -60,7 +60,7 @@ public class DocumentStore extends YHttpServlet {
         fixH2BinarySize(context);
 
         // setup database connection
-        Set<Class> persistedClasses = new HashSet<Class>();
+        Set<Class> persistedClasses = new HashSet<>();
         persistedClasses.add(YDocument.class);
         _db = new HibernateEngine(true, persistedClasses);
 

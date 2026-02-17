@@ -487,13 +487,15 @@ class SpiffeWorkloadIdentityTest {
     void testGetLifetimeElapsedPercent() {
         SpiffeWorkloadIdentity identity = new SpiffeWorkloadIdentity(VALID_SPIFFE_ID, validCertChain);
 
-        Instant issuedAt = Instant.now().minusSeconds(1800);
+        // validCertChain expires at now+3600s. To get ~50% elapsed:
+        // issuedAt = now - 3600s → total lifetime = 7200s, elapsed = 3600s → 50%
+        Instant issuedAt = Instant.now().minusSeconds(3600);
         double percent = identity.getLifetimeElapsedPercent(issuedAt);
 
         assertTrue(percent >= 0 && percent <= 100,
             "Percentage should be between 0 and 100");
         assertTrue(percent > 40 && percent < 60,
-            "With 30 mins elapsed out of 60 mins, should be around 50%");
+            "With 60 mins elapsed out of 120 mins, should be around 50%");
     }
 
     /**

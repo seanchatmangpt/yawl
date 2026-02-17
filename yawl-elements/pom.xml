@@ -96,6 +96,24 @@
                     <include>**/org/yawlfoundation/yawl/schema/**/*.xsd</include>
                 </includes>
             </testResource>
+            <testResource>
+                <!-- Copy YAWL schema XSD files to the path YSchemaVersion.getSchemaURL() expects:
+                     /org/yawlfoundation/yawl/unmarshal/YAWL_Schema*.xsd -->
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <!-- Copy unmarshal test XML files (e.g. MakeRecordings.xml) used by
+                     YMarshal.class.getResource("MakeRecordings.xml") in TestYSpecification -->
+                <directory>../test/org/yawlfoundation/yawl/unmarshal</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>*.xml</include>
+                </includes>
+            </testResource>
         </testResources>
 
         <plugins>

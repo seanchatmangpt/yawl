@@ -166,7 +166,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
         });
 
         for (YDecomposition decomposition : sortedDecompositions) {
-            if (! decomposition.getID().equals(_rootNet.getID())) {
+            if (! _rootNet.getID().equals(decomposition.getID())) {
                 String factsType = (decomposition instanceof YNet net) ? "NetFactsType" :
                                                         "WebServiceGatewayFactsType";
                 xml.append("<decomposition id=\"%s\" xsi:type=\"%s\"%s>".formatted(

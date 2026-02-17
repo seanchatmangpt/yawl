@@ -117,7 +117,7 @@ public class YAttributeMap extends TreeMap<String, String> {
      * @return a Set of populated JDOM Attribute objects.
      */
     public Set<Attribute> toJDOM() {
-        Set<Attribute> result = new HashSet<Attribute>();
+        Set<Attribute> result = new HashSet<>();
         for (String key : keySet()) {
             result.add(new Attribute(key, this.get(key)));
         }
@@ -162,12 +162,11 @@ public class YAttributeMap extends TreeMap<String, String> {
      * XML attribute format, otherwise an empty String.
      */
     public String toXML(String key) {
-        String xml = "";
         String value = getValue(key);
         if (value != null) {
-            xml = String.format("%s=\"%s\"", key, JDOMUtil.encodeAttributeEscapes(value));
+            return "%s=\"%s\"".formatted(key, JDOMUtil.encodeAttributeEscapes(value));
         }
-        return xml;
+        return String.valueOf(new char[0]);
     }
 
 
@@ -178,10 +177,9 @@ public class YAttributeMap extends TreeMap<String, String> {
      * XML element format, otherwise an empty String.
      */
     public String toXMLElement(String key) {
-        String xml = "";
         String value = getValue(key);
-        if (value != null) xml = StringUtil.wrap(JDOMUtil.encodeAttributeEscapes(value), key);
-        return xml;
+        if (value != null) return StringUtil.wrap(JDOMUtil.encodeAttributeEscapes(value), key);
+        return String.valueOf(new char[0]);
     }
 
     /**
@@ -190,11 +188,11 @@ public class YAttributeMap extends TreeMap<String, String> {
      * @return a space separated list of this attribute map's key="value" pairs.
      */
     public String toXML() {
-        String xml = "";
+        StringBuilder xml = new StringBuilder();
         for (String key : keySet()) {
-             xml += " " + toXML(key);
+             xml.append(" ").append(toXML(key));
         }
-        return xml;
+        return xml.toString();
     }
 
 
@@ -204,11 +202,11 @@ public class YAttributeMap extends TreeMap<String, String> {
      * &lt;key&gt;value&lt;/key&gt; pairs.
      */
     public String toXMLElements() {
-        String xml = "";
+        StringBuilder xml = new StringBuilder();
         for (String key : keySet()) {
-             xml += " " + toXMLElement(key);
+             xml.append(" ").append(toXMLElement(key));
         }
-        return xml;
+        return xml.toString();
     }
 
 

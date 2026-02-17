@@ -60,7 +60,7 @@ public class PluginLoaderUtil {
 
 
     public <T> Set<T> toInstanceSet(Collection<Class<T>> clazzSet) {
-        Set<T> instanceSet = new HashSet<T>();
+        Set<T> instanceSet = new HashSet<>();
         for (Class<T> clazz : clazzSet) {
             try {
                 instanceSet.add(clazz.getDeclaredConstructor().newInstance());

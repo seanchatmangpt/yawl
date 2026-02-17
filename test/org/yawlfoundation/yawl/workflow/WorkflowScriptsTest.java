@@ -29,9 +29,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class WorkflowScriptsTest {
 
-    private static final String PROJECT_ROOT = System.getProperty("user.dir");
-    private static final Path DEV_WORKFLOW_SCRIPT = Paths.get(PROJECT_ROOT, ".claude", "dev-workflow.sh");
-    private static final Path WATCH_TEST_SCRIPT = Paths.get(PROJECT_ROOT, ".claude", "watch-and-test.sh");
+    private static final Path PROJECT_ROOT = resolveProjectRoot();
+    private static final Path DEV_WORKFLOW_SCRIPT = PROJECT_ROOT.resolve(".claude").resolve("dev-workflow.sh");
+    private static final Path WATCH_TEST_SCRIPT = PROJECT_ROOT.resolve(".claude").resolve("watch-and-test.sh");
+
+    /**
+     * Resolves the YAWL project root directory, which contains the .claude/ directory.
+     * When running inside a Maven module (e.g. yawl-engine), the project root is the
+     * parent of user.dir. Falls back to user.dir if .claude already exists there.
+     */
+    private static Path resolveProjectRoot() {
+        Path moduleDir = Paths.get(System.getProperty("user.dir"));
+        if (Files.exists(moduleDir.resolve(".claude"))) {
+            return moduleDir;
+        }
+        Path parentDir = moduleDir.getParent();
+        if (parentDir != null && Files.exists(parentDir.resolve(".claude"))) {
+            return parentDir;
+        }
+        return moduleDir;
+    }
 
     /**
      * Verify dev-workflow.sh exists and is executable
@@ -63,7 +80,7 @@ public class WorkflowScriptsTest {
         ProcessBuilder pb = new ProcessBuilder(
             DEV_WORKFLOW_SCRIPT.toString(), "help"
         );
-        pb.directory(new File(PROJECT_ROOT));
+        pb.directory(PROJECT_ROOT.toFile());
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -100,7 +117,7 @@ public class WorkflowScriptsTest {
         ProcessBuilder pb = new ProcessBuilder(
             WATCH_TEST_SCRIPT.toString(), "--help"
         );
-        pb.directory(new File(PROJECT_ROOT));
+        pb.directory(PROJECT_ROOT.toFile());
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -137,7 +154,7 @@ public class WorkflowScriptsTest {
         ProcessBuilder pb = new ProcessBuilder(
             DEV_WORKFLOW_SCRIPT.toString(), "status"
         );
-        pb.directory(new File(PROJECT_ROOT));
+        pb.directory(PROJECT_ROOT.toFile());
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -168,7 +185,7 @@ public class WorkflowScriptsTest {
         ProcessBuilder pb = new ProcessBuilder(
             DEV_WORKFLOW_SCRIPT.toString(), "invalid-command-xyz"
         );
-        pb.directory(new File(PROJECT_ROOT));
+        pb.directory(PROJECT_ROOT.toFile());
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -229,7 +246,7 @@ public class WorkflowScriptsTest {
      */
     @Test
     public void testWorkflowScriptsReadmeExists() throws java.io.IOException {
-        Path readme = Paths.get(PROJECT_ROOT, ".claude", "WORKFLOW_SCRIPTS_README.md");
+        Path readme = PROJECT_ROOT.resolve(".claude").resolve("WORKFLOW_SCRIPTS_README.md");
         assertTrue(Files.exists(readme),
             "WORKFLOW_SCRIPTS_README.md should exist in .claude/");
 

@@ -384,7 +384,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
 
     public String getRootDataElementName() {
-        return _specification.getSchemaVersion().usesSimpleRootData() ? "data" : _id;
+        return (_specification.getSchemaVersion().usesSimpleRootData() || _id == null) ? "data" : _id;
     }
 
 }

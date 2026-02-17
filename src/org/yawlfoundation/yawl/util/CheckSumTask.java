@@ -230,7 +230,7 @@ public class CheckSumTask extends AbstractCheckSumTask {
 
 
         public void loadLocations(XNode root) {
-            _subMap = new HashMap<String, Map<String, String>>();
+            _subMap = new HashMap<>();
             XNode files = root.getChild("files");
             if (files != null) {
                 for (XNode subList : files.getChildren()) {
@@ -248,7 +248,7 @@ public class CheckSumTask extends AbstractCheckSumTask {
 
 
         private void loadSubList(XNode subList) {
-            Map<String, String> fileMap = new HashMap<String, String>();
+            Map<String, String> fileMap = new HashMap<>();
             _subMap.put(subList.getName(), fileMap);
             for (XNode fNode : subList.getChildren()) {
                 String name = fNode.getAttributeValue("name");

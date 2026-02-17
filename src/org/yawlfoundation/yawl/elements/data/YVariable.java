@@ -222,9 +222,7 @@ public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> 
 
 
     public String toXML() {
-        return """
-            <localVariable>%s</localVariable>
-            """.formatted(toXMLGuts());
+        return "<localVariable>%s</localVariable>".formatted(toXMLGuts());
     }
 
 
