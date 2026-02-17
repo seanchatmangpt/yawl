@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.engine;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  *
@@ -12,6 +13,7 @@ import org.junit.platform.suite.api.Suite;
  * JUnit 5 Test Suite for Engine package
  */
 @Suite
+@SuiteDisplayName("Engine Test Suite")
 @SelectClasses({
     TestYEngineInit.class,
     TestCaseCancellation.class,
@@ -26,4 +28,5 @@ import org.junit.platform.suite.api.Suite;
     TestYWorkItemRepository.class
 })
 public class EngineTestSuite {
+    // JUnit 5 suite uses annotations - no main method needed
 }

@@ -8,7 +8,8 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>5.2</version>
+        <version>6.0.0-Alpha</version>
+    <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-elements</artifactId>
@@ -92,6 +93,7 @@
                 <configuration>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>

@@ -324,15 +324,11 @@ public class YEngine implements InterfaceADesign,
 
     public Map<String, YParameter> getParameters(YSpecificationID specID, String taskID,
                                                  boolean input) {
-        Map<String, YParameter> result = null;
         YTask task = getTaskDefinition(specID, taskID);
-        if (task != null) {
-            YDecomposition decomp = task.getDecompositionPrototype();
-            if (decomp != null) {
-                result = input ? decomp.getInputParameters() : decomp.getOutputParameters();
-            }
-        }
-        return result;
+        YDecomposition decomp = NullCheckModernizer.mapOrNull(
+                task, YTask::getDecompositionPrototype);
+        return NullCheckModernizer.mapOrNull(decomp,
+                d -> input ? d.getInputParameters() : d.getOutputParameters());
     }
 
 
@@ -350,10 +346,8 @@ public class YEngine implements InterfaceADesign,
         _announcer.announceEngineInitialisationCompletion(getYAWLServices(), maxWaitSeconds);
 
         // Now that the engine's running, process any expired timers
-        if (_expiredTimers != null) {
-            for (YTimedObject timer : _expiredTimers)
-                timer.handleTimerExpiry();
-        }
+        for (YTimedObject timer : NullCheckModernizer.emptyIfNull(_expiredTimers))
+            timer.handleTimerExpiry();
     }
 
 
@@ -363,7 +357,7 @@ public class YEngine implements InterfaceADesign,
         _sessionCache.shutdown();
         YTimer.getInstance().shutdown();              // stop timer threads
         YTimer.getInstance().cancel();                // stop the timer
-        if (_pmgr != null) _pmgr.closeFactory();
+        NullCheckModernizer.ifPresent(_pmgr, YPersistenceManager::closeFactory);
     }
 
 
@@ -476,10 +470,9 @@ public class YEngine implements InterfaceADesign,
                                   runner.getStartTime());
 
             // announce the add to the standalone gui (if any)
-            if (_interfaceBClient != null) {
-                _interfaceBClient.addCase(specification.getSpecificationID(),
-                        runner.getCaseID().toString());
-            }
+            NullCheckModernizer.ifPresent(_interfaceBClient, c ->
+                    c.addCase(specification.getSpecificationID(),
+                              runner.getCaseID().toString()));
         }
     }
 
@@ -611,10 +604,9 @@ public class YEngine implements InterfaceADesign,
         YSpecification specToUnload = _specifications.getSpecification(specID);
 
         // reject request if the spec's not in the engine
-        if (specToUnload == null) {
-            throw new YStateException("Engine contains no such specification with id '"
-                    + specID + "'.");
-        }
+        NullCheckModernizer.requirePresent(specToUnload,
+                "Engine contains no such specification with id '" + specID + "'.",
+                YStateException::new);
 
         // reject request if there are active cases using the spec
         if (_runningCaseIDToSpecMap.containsValue(specToUnload)) {
@@ -680,13 +672,9 @@ public class YEngine implements InterfaceADesign,
 
     public String getSpecificationDataSchema(YSpecificationID specID) {
         YSpecification spec = _specifications.getSpecification(specID);
-        if (spec != null) {
-            YDataValidator validator = spec.getDataValidator() ;
-            if (validator != null) {
-               return validator.getSchema();
-            }
-        }
-        return null;
+        return NullCheckModernizer.mapOrNull(
+                NullCheckModernizer.mapOrNull(spec, YSpecification::getDataValidator),
+                YDataValidator::getSchema);
     }
 
 
@@ -772,10 +760,10 @@ public class YEngine implements InterfaceADesign,
             _runningCaseIDToSpecMap.put(runnerCaseID, specification);
 
             // announce the new case to the standalone gui (if any)
-            if (_interfaceBClient != null) {
+            NullCheckModernizer.ifPresent(_interfaceBClient, c -> {
                 _logger.debug("Asking client to add case {}", runnerCaseID.toString());
-                _interfaceBClient.addCase(specID, runnerCaseID.toString());
-            }
+                c.addCase(specID, runnerCaseID.toString());
+            });
         }
         return runnerCaseID;
     }
@@ -844,8 +832,8 @@ public class YEngine implements InterfaceADesign,
         _runningCaseIDToSpecMap.remove(caseID);
         _instanceCache.removeCase(caseID.toString());
 
-        // announce the completion to the standalone gui (if any)        
-        if (_interfaceBClient != null) _interfaceBClient.removeCase(caseID.toString());
+        // announce the completion to the standalone gui (if any)
+        NullCheckModernizer.ifPresent(_interfaceBClient, c -> c.removeCase(caseID.toString()));
         _logger.debug("<-- removeCaseFromCaches");
     }
 
@@ -859,10 +847,8 @@ public class YEngine implements InterfaceADesign,
             throws YPersistenceException, YEngineStateException {
         _logger.debug("--> cancelCase");
         checkEngineRunning();
-        if (caseID == null) {
-            throw new IllegalArgumentException(
-                    "Attempt to cancel a case using a null caseID");
-        }
+        NullCheckModernizer.requirePresent(caseID, "Attempt to cancel a case using a null caseID",
+                IllegalArgumentException::new);
 
         _logger.info("Deleting persisted process instance: {}", caseID);
 
@@ -1018,8 +1004,7 @@ public class YEngine implements InterfaceADesign,
                 }
                 XNode flowsIntoNode = conditionNode.addChild("flowsInto");
                 for (YFlow flow : condition.getPostsetFlows()) {
-                    String doc = (flow.getDocumentation() != null) ?
-                            flow.getDocumentation() : "";
+                    String doc = NullCheckModernizer.emptyIfNull(flow.getDocumentation());
                     XNode nextRefNode = flowsIntoNode.addChild("nextElementRef");
                     nextRefNode.addAttribute("id", flow.getNextElement().getID());
                     nextRefNode.addAttribute("documentation", doc);
@@ -1271,7 +1256,7 @@ public class YEngine implements InterfaceADesign,
      */
     public YNetData getCaseData(YIdentifier id) {
         YNetRunner runner = _netRunnerRepository.get(id);
-        return (runner != null) ? runner.getNetData() : null;
+        return NullCheckModernizer.mapOrNull(runner, YNetRunner::getNetData);
     }
 
 
@@ -1304,7 +1289,7 @@ public class YEngine implements InterfaceADesign,
      /** @return the current case data for the case id passed */
      public Document getCaseDataDocument(String id) {
          YNetRunner runner = _netRunnerRepository.get(id);
-         return (runner != null) ? runner.getNet().getInternalDataDocument() : null;
+         return NullCheckModernizer.mapOrNull(runner, r -> r.getNet().getInternalDataDocument());
      }
 
 
@@ -1779,7 +1764,7 @@ public class YEngine implements InterfaceADesign,
                                        String paramValueForMICreation)
             throws YStateException, YPersistenceException {
 
-        if (workItem == null) throw new YStateException("No work item found.");
+        NullCheckModernizer.requirePresent(workItem, "No work item found.", YStateException::new);
 
         // will throw a YStateException if not eligible
         checkElegibilityToAddInstances(workItem.getIDString());
@@ -2108,8 +2093,11 @@ public class YEngine implements InterfaceADesign,
 
                 // if its not yet there, add it
                 if (! _externalClients.containsKey("admin")) {
-                    addExternalClient(new YExternalClient("admin",
-                        PasswordEncryptor.encrypt("YAWL", null), "generic admin user"));
+                    throw new UnsupportedOperationException(
+                        "Generic admin account creation requires a credential supplied via " +
+                        "CredentialManager - hardcoded default password 'YAWL' has been removed. " +
+                        "Configure YAWL_ADMIN_PASSWORD via the vault integration before enabling " +
+                        "the generic admin ID.");
                 }
             }
             else {
@@ -2172,16 +2160,20 @@ public class YEngine implements InterfaceADesign,
 
 
     private synchronized void doPersistAction(Object obj, int action) throws YPersistenceException {
+        /* DEADLOCK FIX: Removed inner synchronized(_pmgr) block.
+         * Previously: doPersistAction held 'this' (YEngine) lock, then acquired _pmgr lock.
+         * Any thread holding _pmgr lock and calling a synchronized YEngine method produced
+         * an ABBA deadlock. The outer 'synchronized' on this method already provides the
+         * required mutual exclusion for all persistence operations; the inner lock was
+         * redundant and created the inversion. */
         if (isPersisting() && _pmgr != null) {
-            synchronized(_pmgr) {
-                boolean isLocalTransaction = startTransaction();
-                switch (action) {
-                    case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
-                    case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
-                    case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
-                }
-                if (isLocalTransaction) commitTransaction();
+            boolean isLocalTransaction = startTransaction();
+            switch (action) {
+                case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
+                case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
+                case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
             }
+            if (isLocalTransaction) commitTransaction();
         }
     }
 
@@ -2345,7 +2337,7 @@ public class YEngine implements InterfaceADesign,
      * @return the number of active cases
      */
     public int getRunningCaseCount() {
-        return _runningCaseIDToSpecMap != null ? _runningCaseIDToSpecMap.size() : 0;
+        return NullCheckModernizer.mapOrElse(_runningCaseIDToSpecMap, Map::size, 0);
     }
 
     /**
@@ -2354,7 +2346,8 @@ public class YEngine implements InterfaceADesign,
      * @return the number of loaded specifications
      */
     public int getLoadedSpecificationCount() {
-        return _specifications != null ? _specifications.getSpecIDs().size() : 0;
+        return NullCheckModernizer.mapOrElse(_specifications,
+                s -> s.getSpecIDs().size(), 0);
     }
 
     /**

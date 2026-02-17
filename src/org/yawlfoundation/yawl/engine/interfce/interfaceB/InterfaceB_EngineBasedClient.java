@@ -34,6 +34,7 @@ import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 import org.yawlfoundation.yawl.unmarshal.YDecompositionParser;
 import org.yawlfoundation.yawl.util.HttpURLValidator;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -387,7 +388,7 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
             String event = _paramsMap.get("action");
             try {
                 if (event.equals(ENGINE_INIT.label())) {
-                    int maxWait = Integer.parseInt(_paramsMap.get("maxWaitSeconds"));
+                    int maxWait = SafeNumberParser.parseIntOrThrow(_paramsMap.get("maxWaitSeconds"), "maxWaitSeconds engine-init parameter");
                     HttpURLValidator.pingUntilAvailable(_yawlService.getURI(), maxWait);
                 }
                 

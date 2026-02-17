@@ -33,7 +33,7 @@ class TestYInputCondition{
     void testInvalidInputCondition(){
         YVerificationHandler handler = new YVerificationHandler();
         _invalidInputCondition.verify(handler);
-        assertTrue("Should receive at least 1 error (input condition preset must be empty): " + handler.getMessages(),
-                handler.getMessageCount() >= 1);
+        assertTrue(handler.getMessageCount() >= 1,
+                "Should receive at least 1 error (input condition preset must be empty): " + handler.getMessages());
     }
 }

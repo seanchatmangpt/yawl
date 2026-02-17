@@ -1,43 +1,66 @@
----
-name: yawl-build
-description: Build YAWL project using Ant
-disable-model-invocation: true
-user-invocable: true
-allowed-tools: Bash(ant *)
----
+# YAWL Build Skill (Maven)
 
-# YAWL Build Skill
+**Command**: `/yawl-build`
 
-Build the YAWL project using Apache Ant.
+**Description**: Build YAWL modules using Maven. Provides convenient shortcuts for common build operations.
 
-## Usage
+## Aliases
+- `build` - Compile and package
+- `test` - Run test suite
+- `package` - Create distribution packages
 
-```
-/yawl-build [target]
-```
-
-## Targets
-
-- `compile` - Compile source code (default, ~18 seconds)
-- `buildAll` - Full build: compile + web + libraries (~2 minutes)
-- `clean` - Remove build artifacts
-- `buildWebApps` - Build web applications only
-
-## Current Build Status
-
-Branch: !`git branch --show-current`
-Last commit: !`git log -1 --oneline`
-Uncommitted changes: !`git status --short | wc -l` files
-
-## Execution
+## Examples
 
 ```bash
-cd "$CLAUDE_PROJECT_DIR"
-ant -f build/build.xml ${ARGUMENTS:-compile}
+# Compile source code
+/yawl-build compile
+
+# Run complete build with tests
+/yawl-build package
+
+# Build specific module
+/yawl-build --module=yawl-engine compile
+
+# Clean build artifacts
+/yawl-build clean
+
+# Build all WARs without tests
+/yawl-build buildWebApps
+
+# Generate Javadoc
+/yawl-build javadoc
 ```
 
-## Success Criteria
+## Supported Targets
 
-- Exit code 0
-- No compilation errors
-- JAR files created in output/
+| Target | Maven Goal | Description |
+|--------|-----------|-------------|
+| `compile` | `mvn clean compile` | Compile source code only |
+| `test` / `unitTest` | `mvn clean test` | Run JUnit test suite |
+| `package` / `build` / `buildAll` | `mvn clean package` | Full build with tests and package |
+| `buildWebApps` | `mvn clean package -DskipTests` | Build WAR files (skip tests) |
+| `clean` | `mvn clean` | Remove build artifacts |
+| `install` | `mvn clean install` | Build and install to local repo |
+| `javadoc` | `mvn javadoc:javadoc` | Generate API documentation |
+| `verify` | `mvn clean verify` | Build and verify |
+
+## Parameters
+
+- `--module=MODULE` - Build specific Maven module (e.g., `yawl-engine`)
+- `--verbose` - Enable verbose output with `-X` flag
+- `--quiet` - Suppress Maven output (default when not verbose)
+
+## Equivalent Commands
+
+Instead of using the skill, you can run Maven directly:
+
+```bash
+# Instead of /yawl-build compile
+mvn clean compile
+
+# Instead of /yawl-build test
+mvn clean test
+
+# Instead of /yawl-build --module=yawl-engine test
+mvn -pl yawl-engine clean test
+```

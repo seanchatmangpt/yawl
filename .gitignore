@@ -9,3 +9,33 @@ src/org/yawlfoundation/yawl/unmarshal/*.xsd
 !/src/org/yawlfoundation/yawl/balancer/output/
 logs/
 build/jar/*.jar
+
+# Build Performance Tracking
+build-performance.log
+build-performance.json
+build-timing-*.log
+
+# Dependency Check Reports
+dependency-check-report.*
+dependency-check-results.*
+
+# Maven Cache (if not using GitHub Actions)
+.m2/
+
+# Maven build output
+target/
+dependency-reduced-pom.xml
+*.class
+*.jar
+*.war
+*.ear
+
+# Build logs and temp files
+build-log.txt
+build/3rdParty/
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+!.env.*.example

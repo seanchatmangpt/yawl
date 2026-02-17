@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.engine.interfce.EngineGatewayImpl;
 import org.yawlfoundation.yawl.engine.interfce.YHttpServlet;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.logging.YLogServer;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import jakarta.servlet.ServletException;
@@ -96,7 +97,7 @@ public class YLogGateway extends YHttpServlet {
                 }
                 else if (action.equals("getNetInstancesOfSpecification")) {
                     if (key != null) {
-                        result = _logSvr.getNetInstancesOfSpecification(Long.valueOf(key)) ;
+                        result = _logSvr.getNetInstancesOfSpecification(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                     }
                     else {
                         YSpecificationID specID = getSpecificationID(req);
@@ -105,7 +106,7 @@ public class YLogGateway extends YHttpServlet {
                 }
                 else if (action.equals("getCompleteCaseLogsForSpecification")) {
                     if (key != null) {
-                        result = _logSvr.getCompleteCaseLogsForSpecification(Long.valueOf(key)) ;
+                        result = _logSvr.getCompleteCaseLogsForSpecification(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                     }
                     else {
                         YSpecificationID specID = getSpecificationID(req);
@@ -114,7 +115,7 @@ public class YLogGateway extends YHttpServlet {
                 }
                 else if (action.equals("getSpecificationStatistics")) {
                     if (key != null) {
-                        result = _logSvr.getSpecificationStatistics(Long.valueOf(key)) ;
+                        result = _logSvr.getSpecificationStatistics(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                     }
                     else {
                         long from = strToLong(req.getParameter("from"));
@@ -125,7 +126,7 @@ public class YLogGateway extends YHttpServlet {
                 }
                 else if (action.equals("getSpecificationCaseIDs")) {
                     if (key != null) {
-                        result = _logSvr.getSpecificationCaseIDs(Long.valueOf(key));
+                        result = _logSvr.getSpecificationCaseIDs(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter"));
                     }
                     else {
                         YSpecificationID specID = getSpecificationID(req);
@@ -134,7 +135,7 @@ public class YLogGateway extends YHttpServlet {
                 }
                 else if (action.equals("getCaseEvents")) {
                     if (key != null) {
-                        result = _logSvr.getCaseEvents(Long.valueOf(key));
+                        result = _logSvr.getCaseEvents(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter"));
                     }
                     else {
                         String caseID = req.getParameter("caseid") ;
@@ -142,17 +143,17 @@ public class YLogGateway extends YHttpServlet {
                     }
                 }
                 else if (action.equals("getDataForEvent")) {
-                    result = _logSvr.getDataForEvent(Long.valueOf(key)) ;
+                    result = _logSvr.getDataForEvent(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                 }
                 else if (action.equals("getDataTypeForDataItem")) {
-                    result = _logSvr.getDataTypeForDataItem(Long.valueOf(key)) ;
+                    result = _logSvr.getDataTypeForDataItem(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                 }
                 else if (action.equals("getTaskInstancesForCase")) {
                     String caseID = req.getParameter("caseid") ;
                     result = _logSvr.getTaskInstancesForCase(caseID);
                 }
                 else if (action.equals("getTaskInstancesForTask")) {
-                    result = _logSvr.getTaskInstancesForTask(Long.valueOf(key));
+                    result = _logSvr.getTaskInstancesForTask(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter"));
                 }
                 else if (action.equals("getCaseEvent")) {
                     String event = req.getParameter("event");
@@ -168,10 +169,10 @@ public class YLogGateway extends YHttpServlet {
                     result = _logSvr.getAllCasesCancelledByService(name) ;
                 }
                 else if (action.equals("getInstanceEvents")) {
-                    result = _logSvr.getInstanceEvents(Long.valueOf(key)) ;
+                    result = _logSvr.getInstanceEvents(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                 }
                 else if (action.equals("getServiceName")) {
-                    result = _logSvr.getServiceName(Long.valueOf(key)) ;
+                    result = _logSvr.getServiceName(SafeNumberParser.parseLongOrThrow(key, "log gateway key parameter")) ;
                 }
                 else if (action.equals("getCompleteCaseLog")) {
                     String caseID = req.getParameter("caseid") ;
@@ -234,11 +235,6 @@ public class YLogGateway extends YHttpServlet {
 
 
     private long strToLong(String s) {
-        try {
-            return Long.valueOf(s);
-        }
-        catch (NumberFormatException nfe) {
-            return -1;
-        }
+        return SafeNumberParser.parseLongOrDefault(s, -1L);
     }
 }

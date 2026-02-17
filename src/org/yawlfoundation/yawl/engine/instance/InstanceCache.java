@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InstanceCache extends ConcurrentHashMap<String, CaseInstance> {
 
+    private static final long serialVersionUID = 1L;
     long _startupTime;
 
     public InstanceCache() { _startupTime = System.currentTimeMillis(); }

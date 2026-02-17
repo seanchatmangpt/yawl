@@ -1,0 +1,605 @@
+# YAWL v6.0.0-Alpha Migration Guide
+
+**Version:** 6.0.0-Alpha
+**Date:** 2026-02-16
+**Status:** Alpha Release - Breaking Changes
+
+---
+
+## Overview
+
+YAWL v6.0.0-Alpha represents a major version release with significant modernization of the codebase, targeting Java 25 and Jakarta EE 10. This release introduces breaking changes that require migration effort for existing deployments.
+
+### What's New in v6.0.0-Alpha
+
+- **Java 25 Requirement**: Minimum Java version raised to 25 with preview features enabled
+- **Jakarta EE 10**: Complete migration from `javax.*` to `jakarta.*` namespace
+- **Maven-First Build System**: Maven is now the primary build system (Ant deprecated)
+- **YSpecificationID as Record**: Converted from class to Java 25 record type
+- **Modern Dependencies**: Major version upgrades across all dependencies
+- **Virtual Threads Support**: Full support for Java 25 virtual threads
+- **Enhanced Exception Handling**: All exceptions now support context and troubleshooting guidance
+- **OpenTelemetry Integration**: Built-in observability with OTLP export
+
+### Minimum Requirements
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| **Java** | 25+ | Requires `--enable-preview` flag |
+| **Maven** | 3.9+ | Maven 3.6.3 minimum, 3.9+ recommended |
+| **Hibernate** | 6.6.42.Final | ORM with Jakarta Persistence 3.2 |
+| **Jakarta EE** | 10.0.0 | Full namespace migration |
+| **Spring Boot** | 3.5.10 | For web deployments |
+
+---
+
+## Breaking Changes
+
+### 1. Jakarta EE Namespace Migration
+
+**Impact:** HIGH - All imports must be updated
+
+All `javax.*` packages have been migrated to `jakarta.*`. This affects:
+
+| Old Package | New Package |
+|-------------|-------------|
+| `javax.servlet.*` | `jakarta.servlet.*` |
+| `javax.mail.*` | `jakarta.mail.*` |
+| `javax.xml.bind.*` | `jakarta.xml.bind.*` |
+| `javax.persistence.*` | `jakarta.persistence.*` |
+| `javax.annotation.*` | `jakarta.annotation.*` |
+| `javax.faces.*` | `jakarta.faces.*` |
+| `javax.enterprise.*` | `jakarta.enterprise.*` |
+| `javax.ws.rs.*` | `jakarta.ws.rs.*` |
+
+**Migration Example:**
+
+```java
+// Before (v5.x)
+import javax.servlet.http.HttpServlet;
+import javax.persistence.Entity;
+import javax.xml.bind.annotation.XmlElement;
+
+// After (v6.0.0-Alpha)
+import jakarta.servlet.http.HttpServlet;
+import jakarta.persistence.Entity;
+import jakarta.xml.bind.annotation.XmlElement;
+```
+
+**Automated Migration:**
+
+```bash
+# Find and replace imports (Linux/macOS)
+find src -name "*.java" -exec sed -i '' \
+  -e 's/import javax\.servlet/import jakarta.servlet/g' \
+  -e 's/import javax\.mail/import jakarta.mail/g' \
+  -e 's/import javax\.xml\.bind/import jakarta.xml.bind/g' \
+  -e 's/import javax\.persistence/import jakarta.persistence/g' \
+  -e 's/import javax\.annotation/import jakarta.annotation/g' \
+  -e 's/import javax\.faces/import jakarta.faces/g' \
+  -e 's/import javax\.enterprise/import jakarta.enterprise/g' \
+  -e 's/import javax\.ws\.rs/import jakarta.ws.rs/g' \
+  {} +
+```
+
+### 2. YSpecificationID Converted to Record
+
+**Impact:** MEDIUM - API changes for specification ID handling
+
+`YSpecificationID` has been converted from a class to a Java 25 record. While backward compatibility methods are provided, some changes are required.
+
+**Before (v5.x):**
+
+```java
+YSpecificationID specId = new YSpecificationID();
+specId.setIdentifier("my-spec");
+specId.setVersion(new YSpecVersion("1.0"));
+specId.setUri("http://example.com/spec");
+
+String id = specId.getIdentifier();
+String version = specId.getVersion().getVersion();
+```
+
+**After (v6.0.0-Alpha):**
+
+```java
+// Create using canonical constructor
+YSpecificationID specId = new YSpecificationID(
+    "my-spec",                    // identifier
+    new YSpecVersion("1.0"),      // version
+    "http://example.com/spec"     // uri
+);
+
+// Or use convenience constructors
+YSpecificationID specId = new YSpecificationID("my-spec", "1.0", "http://example.com/spec");
+
+// Accessor methods (record-style, without "get" prefix)
+String id = specId.identifier();
+YSpecVersion version = specId.version();
+String uri = specId.uri();
+
+// Legacy getter methods still available for compatibility
+String idLegacy = specId.getIdentifier();
+YSpecVersion versionLegacy = specId.getVersion();
+String uriLegacy = specId.getUri();
+
+// Immutable updates - creates new instances
+YSpecificationID updated = specId.withVersion("2.0");
+YSpecificationID withNewUri = specId.withUri("http://new.example.com/spec");
+```
+
+**Key Changes:**
+
+| Feature | v5.x | v6.0.0-Alpha |
+|---------|------|--------------|
+| Mutability | Mutable class | Immutable record |
+| Setters | `setIdentifier()`, `setVersion()` | `withIdentifier()`, `withVersion()` (returns new instance) |
+| Default constructor | Available | Not available |
+| Pattern matching | Manual instanceof | Native record pattern matching |
+
+### 3. Removed Deprecated Methods
+
+**Impact:** MEDIUM - Compilation errors if using deprecated APIs
+
+The following deprecated methods have been removed:
+
+| Class | Removed Method | Replacement |
+|-------|---------------|-------------|
+| `YEngine` | `getRunningCases()` | `getRunningCasesYawlCase()`
+| `YNetRunner` | `getCaseID()` | `getCaseId()` |
+| `YPersistenceManager` | `getDBSession()` | `getSession()` |
+| `YSpecification` | `getRootNet()` | `getDecomposition()` |
+
+### 4. Hibernate 6.x Migration
+
+**Impact:** MEDIUM - ORM API changes
+
+Hibernate has been upgraded from 5.6.x to 6.6.x with Jakarta Persistence 3.2.
+
+**Key Changes:**
+
+```java
+// Before (v5.x - Hibernate 5.x)
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+Session session = sessionFactory.getCurrentSession();
+Query<YCase> query = session.createQuery("FROM YCase", YCase.class);
+
+// After (v6.0.0-Alpha - Hibernate 6.x)
+import org.hibernate.Session;
+import org.hibernate.query.SelectionQuery;
+Session session = sessionFactory.getCurrentSession();
+SelectionQuery<YCase> query = session.createSelectionQuery("FROM YCase", YCase.class);
+```
+
+**Configuration Changes:**
+
+```xml
+<!-- Before (v5.x) -->
+<property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
+
+<!-- After (v6.0.0-Alpha) -->
+<property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
+<!-- Dialect auto-detection is now default, explicit setting optional -->
+```
+
+---
+
+## Dependency Changes
+
+### New Dependency Versions
+
+| Dependency | v5.x Version | v6.0.0-Alpha Version | Notes |
+|------------|-------------|---------------------|-------|
+| **Java** | 21 | 25 | Preview features required |
+| **Spring Boot** | 3.2.5 | 3.5.10 | Major upgrade |
+| **Hibernate** | 5.6.14 | 6.6.42.Final | Major upgrade |
+| **Jakarta Servlet** | 5.0.0 | 6.1.0 | Namespace change |
+| **Jakarta Persistence** | 2.2.3 | 3.2.0 | Namespace change |
+| **Jakarta XML Bind** | 3.0.1 | 4.0.5 | Namespace change |
+| **Jakarta Mail** | 1.6.7 | 2.1.5 | Namespace change |
+| **Log4j 2** | 2.23.1 | 2.25.3 | Latest security fixes |
+| **Jackson** | 2.15.x | 2.19.4 | Latest features |
+| **H2 Database** | 2.1.214 | 2.4.240 | Latest |
+| **PostgreSQL** | 42.6.0 | 42.7.7 | Latest driver |
+| **MySQL** | 8.0.33 | 9.4.0 | Latest driver |
+| **OkHttp** | 4.12.0 | 5.1.0 | Major upgrade |
+| **OpenTelemetry** | 1.36.0 | 1.52.0 | Latest observability |
+| **JUnit Jupiter** | 5.10.x | 6.0.3 | Major upgrade |
+| **Saxon HE** | 11.x | 12.9 | XSLT/XQuery processor |
+| **Resilience4j** | 2.2.0 | 2.3.0 | Circuit breaker |
+| **Micrometer** | 1.12.x | 1.16.3 | Metrics |
+
+### Removed Dependencies
+
+| Dependency | Reason | Migration Path |
+|------------|--------|----------------|
+| `commons-lang` (2.x) | Superseded by commons-lang3 | Use `org.apache.commons.lang3` |
+| `concurrent` (1.3.4) | Pre-Java 5, obsolete | Use `java.util.concurrent` |
+| `axis` (1.1RC2) | Legacy SOAP | Use Jakarta REST or OkHttp |
+| `wsdl4j` | Legacy SOAP | Use modern HTTP clients |
+| `jaxrpc` | Legacy JAX-RPC | Use Jakarta REST |
+| `apache_soap` | Ancient SOAP library | Use Jakarta REST |
+
+### New Dependencies
+
+| Dependency | Version | Purpose |
+|------------|---------|---------|
+| `opentelemetry-exporter-otlp` | 1.52.0 | OTLP trace/metric export |
+| `opentelemetry-exporter-prometheus` | 1.59.0-alpha | Prometheus metrics |
+| `micrometer-registry-prometheus` | 1.16.3 | Prometheus integration |
+| `resilience4j-ratelimiter` | 2.3.0 | Rate limiting |
+| `jjwt-api` | 0.13.0 | JWT token handling |
+| `simple-java-mail` | 8.12.6 | Simplified email |
+
+---
+
+## Build System Changes
+
+### Ant to Maven Migration
+
+**Status:** Ant is deprecated, Maven is the primary build system
+
+| Aspect | Ant (Deprecated) | Maven (Primary) |
+|--------|-----------------|-----------------|
+| Build file | `build/build.xml` | `pom.xml` |
+| Dependencies | `build/ivy.xml` | `pom.xml` |
+| Status | Maintenance mode | Active development |
+| Deprecation date | 2026-02-15 | N/A |
+| Removal date | 2027-01-01 | N/A |
+
+### Build Commands
+
+**Before (v5.x - Ant):**
+
+```bash
+# Compile
+ant -f build/build.xml compile
+
+# Run tests
+ant -f build/build.xml unitTest
+
+# Package
+ant -f build/build.xml jar
+```
+
+**After (v6.0.0-Alpha - Maven):**
+
+```bash
+# Compile
+mvn clean compile
+
+# Run tests
+mvn clean test
+
+# Package (includes shade/fat JAR)
+mvn clean package
+
+# Full verification (compile + test + package)
+mvn clean verify
+
+# Skip tests for faster builds
+mvn clean package -DskipTests
+
+# Parallel builds (4 threads)
+mvn clean package -T 4
+```
+
+### Maven Profiles
+
+| Profile | Purpose | Usage |
+|---------|---------|-------|
+| `java25` | Default production profile (Java 25) | `mvn clean package -Pjava25` |
+| `java24` | Future compatibility testing | `mvn clean package -Pjava24` |
+| `prod` | Production build with security scan | `mvn clean verify -Pprod` |
+| `security-audit` | Full dependency vulnerability scan | `mvn clean verify -Psecurity-audit` |
+
+### New Maven Plugins
+
+| Plugin | Version | Purpose |
+|--------|---------|---------|
+| `maven-compiler-plugin` | 3.14.0 | Java 25 compilation with preview |
+| `maven-surefire-plugin` | 3.5.4 | Unit test execution |
+| `maven-shade-plugin` | 3.6.1 | Fat JAR creation |
+| `maven-enforcer-plugin` | 3.6.2 | Java/Maven version enforcement |
+| `dependency-check-maven` | 12.2.0 | OWASP security scanning |
+
+---
+
+## Configuration Changes
+
+### JVM Options
+
+**Required JVM flags for Java 25:**
+
+```bash
+# Required for preview features
+--enable-preview
+
+# Recommended for production
+-XX:+UseZGC -XX:+ZGenerational
+-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+
+# Virtual threads optimization
+-Djdk.virtualThreadScheduler.parallelism=200
+-Djdk.virtualThreadScheduler.maxPoolSize=256
+
+# Async logging
+-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
+-Dlog4j2.enable.threadlocals=true
+-Dlog4j2.enable.direct.encoders=true
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `YAWL_LOG_DIR` | `logs` | Log directory path |
+| `LOG_LEVEL_ROOT` | `INFO` | Root logging level |
+| `LOG_LEVEL_YAWL` | `DEBUG` | YAWL-specific logging level |
+| `LOG_LEVEL_HIBERNATE` | `WARN` | Hibernate logging level |
+| `DATABASE_TYPE` | `h2` | Database type (h2, postgresql, mysql) |
+| `HIBERNATE_DIALECT` | `H2Dialect` | Hibernate dialect class |
+| `NVD_API_KEY` | (none) | NVD API key for OWASP scans |
+
+### Log4j2 Configuration Updates
+
+The Log4j2 configuration (`build/properties/log4j2.xml`) has been updated with:
+
+- Async logging support
+- Rolling file appenders with size and time-based policies
+- Structured logging with trace/span IDs
+- JSON format for log aggregation
+- OpenTelemetry integration logs
+
+**New log level properties:**
+
+```properties
+# Root level
+log.level.root=INFO
+
+# YAWL components
+log.level.yawl=DEBUG
+log.level.hibernate=WARN
+log.level.worklet=INFO
+log.level.resource=INFO
+log.level.scheduling=INFO
+log.level.proclet=INFO
+
+# Integrations
+log.level.mcp=INFO
+log.level.a2a=INFO
+log.level.otel=INFO
+log.level.json=OFF
+
+# Log directory
+yawl.log.dir=logs
+```
+
+### Database Configuration
+
+**Hibernate 6.x dialect changes:**
+
+```xml
+<!-- H2 (default) -->
+<property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
+
+<!-- PostgreSQL -->
+<property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+
+<!-- MySQL -->
+<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+<!-- Oracle -->
+<property name="hibernate.dialect">org.hibernate.dialect.OracleDialect</property>
+```
+
+**HikariCP connection pool (new default):**
+
+```xml
+<property name="hibernate.connection.provider_class">
+    org.hibernate.hikaricp.internal.HikariCPConnectionProvider
+</property>
+<property name="hibernate.hikari.maximumPoolSize">20</property>
+<property name="hibernate.hikari.minimumIdle">5</property>
+<property name="hibernate.hikari.idleTimeout">300000</property>
+```
+
+---
+
+## Quick Start
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/yawlfoundation/yawl.git
+cd yawl
+
+# Checkout v6.0.0-Alpha
+git checkout v6.0.0-Alpha
+
+# Build with Maven
+mvn clean package
+
+# Run tests
+mvn clean test
+
+# Run the engine (with preview features)
+java --enable-preview -jar yawl-engine/target/yawl-engine-6.0.0-Alpha.jar
+```
+
+### Docker Deployment
+
+```bash
+# Build Docker image
+docker build -f Dockerfile.modernized -t yawl:6.0.0-Alpha .
+
+# Run container
+docker run -d \
+  --name yawl-engine \
+  -p 8080:8080 \
+  -e JAVA_OPTS="--enable-preview -XX:+UseZGC" \
+  yawl:6.0.0-Alpha
+
+# Check logs
+docker logs -f yawl-engine
+```
+
+### Running Tests
+
+```bash
+# All tests
+mvn clean test
+
+# Specific test class
+mvn test -Dtest=YEngineTest
+
+# Integration tests
+mvn verify -DskipUnitTests=true
+
+# With coverage
+mvn verify jacoco:report
+```
+
+---
+
+## Migration Checklist
+
+Use this checklist to track your migration progress:
+
+### Pre-Migration
+
+- [ ] Backup existing YAWL database
+- [ ] Document custom configurations
+- [ ] Review and test in non-production environment first
+- [ ] Ensure Java 25 is installed (`java --version`)
+
+### Code Changes
+
+- [ ] Update all `javax.*` imports to `jakarta.*`
+- [ ] Update `YSpecificationID` usage to record pattern
+- [ ] Replace deprecated method calls
+- [ ] Update Hibernate queries to use `SelectionQuery`
+- [ ] Remove usage of removed dependencies
+
+### Build Changes
+
+- [ ] Install Maven 3.9+
+- [ ] Update CI/CD pipelines to use Maven commands
+- [ ] Remove Ant build steps (optional, for migration period)
+- [ ] Update Dockerfiles to use `Dockerfile.modernized`
+
+### Configuration Changes
+
+- [ ] Update `hibernate.cfg.xml` for Hibernate 6.x
+- [ ] Update Log4j2 configuration
+- [ ] Set required environment variables
+- [ ] Update JVM startup scripts with `--enable-preview`
+
+### Testing
+
+- [ ] Run full test suite: `mvn clean test`
+- [ ] Verify workflow specifications load correctly
+- [ ] Test database connectivity with new drivers
+- [ ] Verify email functionality with Jakarta Mail
+- [ ] Test REST APIs with Jakarta REST
+
+### Deployment
+
+- [ ] Update deployment scripts
+- [ ] Configure OpenTelemetry exporters (if using)
+- [ ] Update monitoring dashboards for new metrics
+- [ ] Verify security scans pass: `mvn -Pprod verify`
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. ClassNotFoundException for javax.* classes
+
+**Cause:** Jakarta namespace migration incomplete
+
+**Solution:**
+```bash
+# Find remaining javax imports
+grep -r "import javax\." src/
+
+# Automated fix
+find src -name "*.java" -exec sed -i '' 's/import javax\./import jakarta./g' {} +
+```
+
+#### 2. YSpecificationID compilation errors
+
+**Cause:** Trying to use setters on record type
+
+**Solution:**
+```java
+// Replace setters with withXxx() methods
+// OLD: specId.setVersion("2.0");
+// NEW: specId = specId.withVersion("2.0");
+```
+
+#### 3. Hibernate query errors
+
+**Cause:** Hibernate 6.x API changes
+
+**Solution:**
+```java
+// Replace createQuery() with createSelectionQuery() for SELECT queries
+// OLD: session.createQuery("FROM YCase", YCase.class)
+// NEW: session.createSelectionQuery("FROM YCase", YCase.class)
+```
+
+#### 4. Preview feature errors
+
+**Cause:** Missing `--enable-preview` flag
+
+**Solution:**
+```bash
+# Add to all java commands
+java --enable-preview -jar yawl-engine.jar
+
+# Maven configuration (already in pom.xml)
+<compilerArgs>
+    <arg>--enable-preview</arg>
+</compilerArgs>
+```
+
+#### 5. Maven build fails with missing dependencies
+
+**Cause:** Stale Maven cache
+
+**Solution:**
+```bash
+# Clear cache and rebuild
+rm -rf ~/.m2/repository/org/yawlfoundation
+mvn clean install -U
+```
+
+---
+
+## Support Resources
+
+- **Documentation:** `/docs` directory
+- **API Reference:** `/docs/API-REFERENCE.md`
+- **Build Guide:** `/docs/BUILD_SYSTEM_MIGRATION_GUIDE.md`
+- **Troubleshooting:** `/docs/TROUBLESHOOTING-GUIDE.md`
+- **GitHub Issues:** https://github.com/yawlfoundation/yawl/issues
+- **YAWL Foundation:** https://yawlfoundation.github.io
+
+---
+
+## Version History
+
+| Version | Date | Notes |
+|---------|------|-------|
+| 6.0.0-Alpha | 2026-02-16 | Initial alpha release with breaking changes |
+| 5.2 | 2026-02-15 | Last stable release with Ant support |
+| 5.1 | 2025-12-01 | Java 21 baseline |
+
+---
+
+**End of Migration Guide**

@@ -1,9 +1,12 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for instanceof pattern variable conversions
@@ -17,16 +20,15 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
-public class InstanceofPatternTest extends TestCase {
+class InstanceofPatternTest {
 
     private YSpecification spec;
     private YNet rootNet;
     private YNet subNet;
     private YAWLServiceGateway gateway;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         spec = new YSpecification("test-spec");
         spec.setVersion(YSchemaVersion.FourPointZero);
 
@@ -41,62 +43,67 @@ public class InstanceofPatternTest extends TestCase {
     }
 
     // Test YSpecification.toXML() instanceof patterns
-    public void testToXML_NetPattern_RootNet() {
+    @Test
+    void testToXML_NetPattern_RootNet() {
         String xml = spec.toXML();
-        assertNotNull("XML should not be null", xml);
+        assertNotNull(xml, "XML should not be null");
 
         // Root net should be marked as root
-        assertTrue("Root net should have isRootNet=true",
-                  xml.contains("isRootNet=\"true\""));
-        assertTrue("Root net should be NetFactsType",
-                  xml.contains("xsi:type=\"NetFactsType\""));
-        assertTrue("Root net should be in XML",
-                  xml.contains("id=\"root-net\""));
+        assertTrue(xml.contains("isRootNet=\"true\""),
+                  "Root net should have isRootNet=true");
+        assertTrue(xml.contains("xsi:type=\"NetFactsType\""),
+                  "Root net should be NetFactsType");
+        assertTrue(xml.contains("id=\"root-net\""),
+                  "Root net should be in XML");
     }
 
-    public void testToXML_NetPattern_SubNet() {
+    @Test
+    void testToXML_NetPattern_SubNet() {
         String xml = spec.toXML();
-        assertNotNull("XML should not be null", xml);
+        assertNotNull(xml, "XML should not be null");
 
         // Sub net should be NetFactsType but not root
-        assertTrue("Sub net should be NetFactsType",
-                  xml.contains("xsi:type=\"NetFactsType\""));
-        assertTrue("Sub net should be in XML",
-                  xml.contains("id=\"sub-net\""));
+        assertTrue(xml.contains("xsi:type=\"NetFactsType\""),
+                  "Sub net should be NetFactsType");
+        assertTrue(xml.contains("id=\"sub-net\""),
+                  "Sub net should be in XML");
 
         // Count isRootNet - should only be one
         int rootNetCount = countOccurrences(xml, "isRootNet=\"true\"");
-        assertEquals("Should have exactly one root net", 1, rootNetCount);
+        assertEquals(1, rootNetCount, "Should have exactly one root net");
     }
 
-    public void testToXML_NotNetPattern_Gateway() {
+    @Test
+    void testToXML_NotNetPattern_Gateway() {
         String xml = spec.toXML();
-        assertNotNull("XML should not be null", xml);
+        assertNotNull(xml, "XML should not be null");
 
         // Gateway should be WebServiceGatewayFactsType
-        assertTrue("Gateway should be WebServiceGatewayFactsType",
-                  xml.contains("xsi:type=\"WebServiceGatewayFactsType\""));
-        assertTrue("Gateway should be in XML",
-                  xml.contains("id=\"gateway-decomp\""));
+        assertTrue(xml.contains("xsi:type=\"WebServiceGatewayFactsType\""),
+                  "Gateway should be WebServiceGatewayFactsType");
+        assertTrue(xml.contains("id=\"gateway-decomp\""),
+                  "Gateway should be in XML");
     }
 
-    public void testToXML_MixedDecompositions() {
+    @Test
+    void testToXML_MixedDecompositions() {
         String xml = spec.toXML();
 
         // Verify all decompositions are present
-        assertTrue("Should contain root net", xml.contains("id=\"root-net\""));
-        assertTrue("Should contain sub net", xml.contains("id=\"sub-net\""));
-        assertTrue("Should contain gateway", xml.contains("id=\"gateway-decomp\""));
+        assertTrue(xml.contains("id=\"root-net\""), "Should contain root net");
+        assertTrue(xml.contains("id=\"sub-net\""), "Should contain sub net");
+        assertTrue(xml.contains("id=\"gateway-decomp\""), "Should contain gateway");
 
         // Verify correct types
         int netTypeCount = countOccurrences(xml, "NetFactsType");
         int gatewayTypeCount = countOccurrences(xml, "WebServiceGatewayFactsType");
 
-        assertEquals("Should have 2 NetFactsType", 2, netTypeCount);
-        assertEquals("Should have 1 WebServiceGatewayFactsType", 1, gatewayTypeCount);
+        assertEquals(2, netTypeCount, "Should have 2 NetFactsType");
+        assertEquals(1, gatewayTypeCount, "Should have 1 WebServiceGatewayFactsType");
     }
 
-    public void testToXML_DecompositionSorting_NetsFirst() throws YPersistenceException {
+    @Test
+    void testToXML_DecompositionSorting_NetsFirst() throws YPersistenceException {
         // Add more decompositions with varying names
         YNet aNet = new YNet("a-net", spec);
         YNet zNet = new YNet("z-net", spec);
@@ -120,35 +127,37 @@ public class InstanceofPatternTest extends TestCase {
         int zGatewayPos = xml.indexOf("id=\"z-gateway\"");
 
         // All nets should come before gateways (except root which is always first)
-        assertTrue("Sub net should come before gateways", subPos < gatewayPos);
-        assertTrue("a-net should come before gateways", aNetPos < aGatewayPos);
-        assertTrue("z-net should come before gateways", zNetPos < zGatewayPos);
+        assertTrue(subPos < gatewayPos, "Sub net should come before gateways");
+        assertTrue(aNetPos < aGatewayPos, "a-net should come before gateways");
+        assertTrue(zNetPos < zGatewayPos, "z-net should come before gateways");
 
         // Within nets, should be sorted by ID (after root)
-        assertTrue("a-net should come before sub-net", aNetPos < subPos);
-        assertTrue("sub-net should come before z-net", subPos < zNetPos);
+        assertTrue(aNetPos < subPos, "a-net should come before sub-net");
+        assertTrue(subPos < zNetPos, "sub-net should come before z-net");
 
         // Within gateways, should be sorted by ID
-        assertTrue("a-gateway should come before gateway-decomp", aGatewayPos < gatewayPos);
-        assertTrue("gateway-decomp should come before z-gateway", gatewayPos < zGatewayPos);
+        assertTrue(aGatewayPos < gatewayPos, "a-gateway should come before gateway-decomp");
+        assertTrue(gatewayPos < zGatewayPos, "gateway-decomp should come before z-gateway");
     }
 
     // Test instanceof with null decomposition ID
-    public void testToXML_NullDecompositionID() throws YPersistenceException {
+    @Test
+    void testToXML_NullDecompositionID() throws YPersistenceException {
         // Create decomposition with null ID (edge case)
         YNet netWithNullId = new YNet(null, spec);
         spec.addDecomposition(netWithNullId);
 
         String xml = spec.toXML();
-        assertNotNull("XML should not be null even with null ID", xml);
+        assertNotNull(xml, "XML should not be null even with null ID");
 
         // Should still generate valid XML structure
-        assertTrue("Should contain decomposition element",
-                  xml.contains("<decomposition"));
+        assertTrue(xml.contains("<decomposition"),
+                  "Should contain decomposition element");
     }
 
     // Test multiple instanceof patterns in same method
-    public void testToXML_MultiplePatternMatches() {
+    @Test
+    void testToXML_MultiplePatternMatches() {
         // The toXML method has two instanceof patterns:
         // 1. In the comparator (d1 instanceof YNet, d2 instanceof YNet)
         // 2. In the loop (decomposition instanceof YNet)
@@ -156,70 +165,77 @@ public class InstanceofPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Both YNets and gateways should be properly typed
-        assertTrue("Should have NetFactsType for nets",
-                  xml.contains("xsi:type=\"NetFactsType\""));
-        assertTrue("Should have WebServiceGatewayFactsType for gateways",
-                  xml.contains("xsi:type=\"WebServiceGatewayFactsType\""));
+        assertTrue(xml.contains("xsi:type=\"NetFactsType\""),
+                  "Should have NetFactsType for nets");
+        assertTrue(xml.contains("xsi:type=\"WebServiceGatewayFactsType\""),
+                  "Should have WebServiceGatewayFactsType for gateways");
     }
 
     // Test instanceof with codelet (gateway-specific behavior)
-    public void testToXML_GatewayWithCodelet() {
+    @Test
+    void testToXML_GatewayWithCodelet() {
         gateway.setCodelet("test.codelet.Class");
         String xml = spec.toXML();
 
-        assertTrue("Gateway with codelet should have codelet element",
-                  xml.contains("<codelet>test.codelet.Class</codelet>"));
+        assertTrue(xml.contains("<codelet>test.codelet.Class</codelet>"),
+                  "Gateway with codelet should have codelet element");
     }
 
-    public void testToXML_GatewayWithoutCodelet() {
+    @Test
+    void testToXML_GatewayWithoutCodelet() {
         gateway.setCodelet(null);
         String xml = spec.toXML();
 
-        assertFalse("Gateway without codelet should not have codelet element",
-                   xml.contains("<codelet>"));
+        assertFalse(xml.contains("<codelet>"),
+                   "Gateway without codelet should not have codelet element");
     }
 
     // Test externalInteraction element (gateway-specific, not for nets)
-    public void testToXML_GatewayExternalInteraction_Manual() {
+    @Test
+    void testToXML_GatewayExternalInteraction_Manual() {
         gateway.setManualInteraction(true);
         String xml = spec.toXML();
 
-        assertTrue("Gateway requiring manual interaction should have manual tag",
-                  xml.contains("<externalInteraction>manual</externalInteraction>"));
+        assertTrue(xml.contains("<externalInteraction>manual</externalInteraction>"),
+                  "Gateway requiring manual interaction should have manual tag");
     }
 
-    public void testToXML_GatewayExternalInteraction_Automated() {
+    @Test
+    void testToXML_GatewayExternalInteraction_Automated() {
         gateway.setManualInteraction(false);
         String xml = spec.toXML();
 
-        assertTrue("Gateway not requiring manual interaction should have automated tag",
-                  xml.contains("<externalInteraction>automated</externalInteraction>"));
+        assertTrue(xml.contains("<externalInteraction>automated</externalInteraction>"),
+                  "Gateway not requiring manual interaction should have automated tag");
     }
 
-    public void testToXML_NetNoExternalInteraction() {
+    @Test
+    void testToXML_NetNoExternalInteraction() {
         String xml = spec.toXML();
 
         // Count externalInteraction elements - should only be for gateway
         int count = countOccurrences(xml, "<externalInteraction>");
 
-        assertEquals("Should have externalInteraction only for gateway", 1, count);
+        assertEquals(1, count, "Should have externalInteraction only for gateway");
     }
 
     // Edge case: Empty specification
-    public void testToXML_OnlyRootNet() {
+    @Test
+    void testToXML_OnlyRootNet() {
         YSpecification minimalSpec = new YSpecification("minimal");
         minimalSpec.setVersion(YSchemaVersion.FourPointZero);
         YNet minimal = new YNet("minimal-net", minimalSpec);
         minimalSpec.setRootNet(minimal);
 
         String xml = minimalSpec.toXML();
-        assertNotNull("Minimal spec XML should not be null", xml);
-        assertTrue("Should contain root net", xml.contains("id=\"minimal-net\""));
-        assertTrue("Should have isRootNet", xml.contains("isRootNet=\"true\""));
+        assertNotNull(xml, "Minimal spec XML should not be null");
+        assertTrue(xml.contains("id=\"minimal-net\""), "Should contain root net");
+        assertTrue(xml.contains("isRootNet=\"true\""), "Should have isRootNet");
     }
 
     // Edge case: Pattern matching with beta version (no externalInteraction)
-    public void testToXML_BetaVersionNoExternalInteraction() {
+    @Test
+    void testToXML_BetaVersionNoExternalInteraction() {
         YSpecification betaSpec = new YSpecification("beta-spec");
         betaSpec.setVersion(YSchemaVersion.Beta7);
         YNet betaNet = new YNet("beta-net", betaSpec);
@@ -230,8 +246,8 @@ public class InstanceofPatternTest extends TestCase {
         String xml = betaSpec.toXML();
 
         // Beta versions should NOT have externalInteraction element
-        assertFalse("Beta version should not have externalInteraction",
-                   xml.contains("<externalInteraction>"));
+        assertFalse(xml.contains("<externalInteraction>"),
+                   "Beta version should not have externalInteraction");
     }
 
     // Helper method
@@ -246,7 +262,8 @@ public class InstanceofPatternTest extends TestCase {
     }
 
     // Test pattern matching in comparator
-    public void testToXML_ComparatorPatternMatching() throws YPersistenceException {
+    @Test
+    void testToXML_ComparatorPatternMatching() throws YPersistenceException {
         // Add decompositions in non-sorted order
         YAWLServiceGateway g1 = new YAWLServiceGateway("z-first", spec);
         YNet n1 = new YNet("a-second", spec);
@@ -267,13 +284,13 @@ public class InstanceofPatternTest extends TestCase {
         int g2Pos = xml.indexOf("id=\"a-third\"");
 
         // All nets should come before all gateways (except root)
-        assertTrue("Net a-second should come before gateway z-first", n1Pos < g1Pos);
-        assertTrue("Net a-second should come before gateway a-third", n1Pos < g2Pos);
-        assertTrue("Net z-fourth should come before gateway z-first", n2Pos < g1Pos);
-        assertTrue("Net z-fourth should come before gateway a-third", n2Pos < g2Pos);
+        assertTrue(n1Pos < g1Pos, "Net a-second should come before gateway z-first");
+        assertTrue(n1Pos < g2Pos, "Net a-second should come before gateway a-third");
+        assertTrue(n2Pos < g1Pos, "Net z-fourth should come before gateway z-first");
+        assertTrue(n2Pos < g2Pos, "Net z-fourth should come before gateway a-third");
 
         // Within each group, should be sorted alphabetically
-        assertTrue("Net a-second should come before net z-fourth", n1Pos < n2Pos);
-        assertTrue("Gateway a-third should come before gateway z-first", g2Pos < g1Pos);
+        assertTrue(n1Pos < n2Pos, "Net a-second should come before net z-fourth");
+        assertTrue(g2Pos < g1Pos, "Gateway a-third should come before gateway z-first");
     }
 }

@@ -1,115 +1,315 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
+<!--
+  Log4j 2.25.x Configuration for YAWL
+
+  Features:
+  - Async logging for high-throughput workflow processing
+  - Rolling file appenders with size and time-based policies
+  - Structured logging support (enable with -Dlog4j.formatMsgNoLookups=false)
+  - Virtual thread compatible (no synchronized blocks in async loggers)
+  - GraalVM native image compatible
+
+  To enable async logging, add to JVM args:
+    -DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
+
+  For production, consider adding:
+    -Dlog4j2.enable.threadlocals=true
+    -Dlog4j2.enable.direct.encoders=true
+-->
+<Configuration status="WARN"
+               shutdownHook="enable"
+               shutdownTimeout="10"
+               dest="out">
+
     <Properties>
-        <Property name="layout">%d{DEFAULT} [%-5p] %-20c{1} :- %m%n</Property>
+        <!-- Default pattern for console and file output -->
+        <Property name="layout">%d{DEFAULT} [%-5p] [%t] %-20c{1} :- %m%n</Property>
+
+        <!-- Pattern for structured logging (ISO8601 with timezone) -->
+        <Property name="structuredLayout">%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%-5p] [%t] [%X{traceId:-},%X{spanId:-}] %-30c{1.} :- %m%n%throwable</Property>
+
+        <!-- JSON pattern for log aggregation systems (ELK, Splunk, etc.) -->
+        <Property name="jsonLayout">
+            {"timestamp":"%d{ISO8601_OFFSET_DATE_TIME_HHMM}","level":"%-5p","thread":"%t","logger":"%c{1.}","message":"%encode{%m}{JSON}","exception":"%encode{%throwable}{JSON}"}%n
+        </Property>
+
+        <!-- Log directory - can be overridden with -Dyawl.log.dir=/path -->
+        <Property name="logDir">${sys:yawl.log.dir:-logs}</Property>
+
+        <!-- Logging levels (can be overridden at runtime) -->
+        <Property name="rootLevel">${sys:log.level.root:-INFO}</Property>
+        <Property name="yawlLevel">${sys:log.level.yawl:-@YAWL_LOGGING_LEVEL@}</Property>
+        <Property name="hibernateLevel">${sys:log.level.hibernate:-@HIBERNATE_LOGGING_LEVEL@}</Property>
+        <Property name="workletLevel">${sys:log.level.worklet:-@WORKLET_LOGGING_LEVEL@}</Property>
+        <Property name="resourceLevel">${sys:log.level.resource:-@RESOURCE_LOGGING_LEVEL@}</Property>
+        <Property name="schedulingLevel">${sys:log.level.scheduling:-@SCHEDULING_LOGGING_LEVEL@}</Property>
+        <Property name="procletLevel">${sys:log.level.proclet:-@PROCLET_LOGGING_LEVEL@}</Property>
     </Properties>
+
     <Appenders>
+        <!-- Console appender with highlight colors for development -->
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="${layout}"/>
         </Console>
-        <RollingFile name="FILE_HIBERNATE"
-                     fileName="logs/yawl_hibernate.log"
-                     filePattern="logs/yawl_hibernate.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
-        <RollingFile name="FILE_PROCLET"
-                     fileName="logs/yawl_procletService.log"
-                     filePattern="logs/yawl_procletService.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
-        <RollingFile name="FILE_RESOURCING"
-                     fileName="logs/yawl_resourceService.log"
-                     filePattern="logs/yawl_resourceService.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
-        <RollingFile name="FILE_ROOT"
-                     fileName="logs/default.log"
-                     filePattern="logs/default.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
-        <RollingFile name="FILE_SCHEDULING"
-                     fileName="logs/yawl_schedulingService.log"
-                     filePattern="logs/yawl_schedulingService.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
-        <RollingFile name="FILE_WORKLET"
-                     fileName="logs/yawl_workletService.log"
-                     filePattern="logs/yawl_workletService.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-        </RollingFile>
+
+        <!-- Async console for high-throughput scenarios -->
+        <Async name="ASYNC_STDOUT">
+            <AppenderRef ref="STDOUT"/>
+        </Async>
+
+        <!-- YAWL Engine Log - Main application log -->
         <RollingFile name="FILE_YAWL"
-                     fileName="logs/yawl_engine.log"
-                     filePattern="logs/yawl_engine.%d{yyyy-dd-MM}.log">
-            <PatternLayout pattern="${layout}"/>
+                     fileName="${logDir}/yawl_engine.log"
+                     filePattern="${logDir}/yawl_engine.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
             <Policies>
-                <TimeBasedTriggeringPolicy />
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
             </Policies>
+            <DefaultRolloverStrategy max="30">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_engine.*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
-    </Appenders>
-    <Loggers>
-        <Logger name="org.hibernate"
-                level="@HIBERNATE_LOGGING_LEVEL@"
-                additivity="false">
+
+        <!-- Hibernate ORM Log -->
+        <RollingFile name="FILE_HIBERNATE"
+                     fileName="${logDir}/yawl_hibernate.log"
+                     filePattern="${logDir}/yawl_hibernate.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_hibernate.*.log.gz"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Worklet Service Log -->
+        <RollingFile name="FILE_WORKLET"
+                     fileName="${logDir}/yawl_workletService.log"
+                     filePattern="${logDir}/yawl_workletService.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_workletService.*.log.gz"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Resource Service Log -->
+        <RollingFile name="FILE_RESOURCING"
+                     fileName="${logDir}/yawl_resourceService.log"
+                     filePattern="${logDir}/yawl_resourceService.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_resourceService.*.log.gz"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Scheduling Service Log -->
+        <RollingFile name="FILE_SCHEDULING"
+                     fileName="${logDir}/yawl_schedulingService.log"
+                     filePattern="${logDir}/yawl_schedulingService.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_schedulingService.*.log.gz"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Proclet Service Log -->
+        <RollingFile name="FILE_PROCLET"
+                     fileName="${logDir}/yawl_procletService.log"
+                     filePattern="${logDir}/yawl_procletService.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="yawl_procletService.*.log.gz"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Default/Root Log -->
+        <RollingFile name="FILE_ROOT"
+                     fileName="${logDir}/default.log"
+                     filePattern="${logDir}/default.%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${structuredLayout}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="1"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="${logDir}" maxDepth="1">
+                    <IfFileName glob="default.*.log.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- JSON format appender for log aggregation (optional) -->
+        <!-- Enable with -Dyawl.json.logging=true -->
+        <RollingFile name="FILE_JSON"
+                     fileName="${logDir}/yawl_json.log"
+                     filePattern="${logDir}/yawl_json.%d{yyyy-MM-dd}-%i.log.gz"
+                     ignoreExceptions="true">
+            <PatternLayout pattern="${jsonLayout}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="7"/>
+        </RollingFile>
+
+        <!-- Async wrapper for YAWL file appender (high-throughput) -->
+        <Async name="ASYNC_YAWL"
+               bufferSize="262144"
+               includeCallerData="true"
+               blocking="true">
+            <AppenderRef ref="FILE_YAWL"/>
+        </Async>
+
+        <!-- Async wrapper for Hibernate -->
+        <Async name="ASYNC_HIBERNATE"
+               bufferSize="131072"
+               includeCallerData="false"
+               blocking="true">
             <AppenderRef ref="FILE_HIBERNATE"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- Hibernate ORM logging -->
+        <Logger name="org.hibernate"
+                level="${hibernateLevel}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_HIBERNATE"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
         <Logger name="org.hibernate.cache"
-                level="@HIBERNATE_LOGGING_LEVEL@"
+                level="${hibernateLevel}"
                 additivity="false">
-            <AppenderRef ref="FILE_HIBERNATE"/>
+            <AppenderRef ref="ASYNC_HIBERNATE"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
+        <Logger name="org.hibernate.SQL"
+                level="${sys:log.level.hibernate.sql:-OFF}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_HIBERNATE"/>
+        </Logger>
+
+        <!-- YAWL Engine - Main logger -->
         <Logger name="org.yawlfoundation.yawl"
-                level="@YAWL_LOGGING_LEVEL@"
+                level="${yawlLevel}"
                 additivity="false">
-            <AppenderRef ref="FILE_YAWL"/>
+            <AppenderRef ref="ASYNC_YAWL"/>
             <AppenderRef ref="STDOUT"/>
+            <!-- Enable JSON logging for aggregation systems -->
+            <AppenderRef ref="FILE_JSON" level="${sys:log.level.json:-OFF}"/>
         </Logger>
+
+        <!-- Proclet Service -->
         <Logger name="org.yawlfoundation.yawl.procletService"
-                level="@PROCLET_LOGGING_LEVEL@"
+                level="${procletLevel}"
                 additivity="false">
             <AppenderRef ref="FILE_PROCLET"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
+
+        <!-- Resource Service -->
         <Logger name="org.yawlfoundation.yawl.resourcing"
-                level="@RESOURCE_LOGGING_LEVEL@"
+                level="${resourceLevel}"
                 additivity="false">
             <AppenderRef ref="FILE_RESOURCING"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
+
+        <!-- Scheduling Service -->
         <Logger name="org.yawlfoundation.yawl.scheduling"
-                level="@SCHEDULING_LOGGING_LEVEL@"
+                level="${schedulingLevel}"
                 additivity="false">
             <AppenderRef ref="FILE_SCHEDULING"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
+
+        <!-- Worklet Service -->
         <Logger name="org.yawlfoundation.yawl.worklet"
-                level="@WORKLET_LOGGING_LEVEL@"
+                level="${workletLevel}"
                 additivity="false">
             <AppenderRef ref="FILE_WORKLET"/>
             <AppenderRef ref="STDOUT"/>
         </Logger>
-        <Root level="@ROOT_LOGGING_LEVEL@">
+
+        <!-- MCP Integration - verbose logging off by default -->
+        <Logger name="org.yawlfoundation.yawl.integration.mcp"
+                level="${sys:log.level.mcp:-INFO}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_YAWL"/>
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
+
+        <!-- A2A Integration -->
+        <Logger name="org.yawlfoundation.yawl.integration.a2a"
+                level="${sys:log.level.a2a:-INFO}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_YAWL"/>
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
+
+        <!-- Suppress verbose third-party logging -->
+        <Logger name="org.springframework" level="WARN" additivity="false">
+            <AppenderRef ref="FILE_ROOT"/>
+        </Logger>
+        <Logger name="org.apache.catalina" level="WARN" additivity="false">
+            <AppenderRef ref="FILE_ROOT"/>
+        </Logger>
+        <Logger name="com.zaxxer.hikari" level="INFO" additivity="false">
+            <AppenderRef ref="FILE_HIBERNATE"/>
+        </Logger>
+        <Logger name="io.opentelemetry" level="${sys:log.level.otel:-INFO}" additivity="false">
+            <AppenderRef ref="ASYNC_YAWL"/>
+        </Logger>
+
+        <!-- Root logger -->
+        <Root level="${rootLevel}">
             <AppenderRef ref="FILE_ROOT"/>
             <AppenderRef ref="STDOUT"/>
         </Root>
-     </Loggers>
+    </Loggers>
 </Configuration>

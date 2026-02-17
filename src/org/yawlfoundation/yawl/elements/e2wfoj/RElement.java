@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2025 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -18,112 +18,97 @@
 
 package org.yawlfoundation.yawl.elements.e2wfoj;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
+ * The base class for RTransition and RPlace.
  *
- * The base class for RTransition and RPlace 
- *
- **/
+ * @author YAWL Foundation
+ * @since 2.0
+ */
+public class RElement {
+    private String name;
+    private final Map<String, RFlow> presetFlows = new HashMap<>();
+    private final Map<String, RFlow> postsetFlows = new HashMap<>();
+    private final String id;
 
-   
-   public class RElement 
-   { private String _name;
-     private Map _presetFlows = new HashMap();
-     private Map _postsetFlows = new HashMap();
-     private String _id;
-     
-   public RElement(String id){
-   	_id = id;
-   }
-   
-   public String getID()
-	{
-		return _id;
-	}
-	
-   public void setName(String name){
-        _name = name;
+    public RElement(String id) {
+        this.id = id;
     }
-    
-   public String getName(){
-   	 return _name;
-   }
-   
-   public Map getPresetFlows()
-   { return _presetFlows;
-   }
-   public Map getPostsetFlows()
-   { return _postsetFlows;
-   }
-   
-   public void setPresetFlows(Map presetFlows)
-   { _presetFlows = new HashMap(presetFlows);
-    
-   }
-    public void setPostsetFlows(Map postsetFlows)
-   { _postsetFlows = new HashMap(postsetFlows);
-    
-   }
-   
-   public Set getPostsetElements() {
-        Set postsetElements = new HashSet();
-        Collection flowSet = _postsetFlows.values();
-        for (Iterator iterator = flowSet.iterator(); iterator.hasNext();) {
-            RFlow flow = (RFlow) iterator.next();
+
+    public String getID() {
+        return id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Map<String, RFlow> getPresetFlows() {
+        return presetFlows;
+    }
+
+    public Map<String, RFlow> getPostsetFlows() {
+        return postsetFlows;
+    }
+
+    public void setPresetFlows(Map<String, RFlow> flows) {
+        presetFlows.clear();
+        presetFlows.putAll(flows);
+    }
+
+    public void setPostsetFlows(Map<String, RFlow> flows) {
+        postsetFlows.clear();
+        postsetFlows.putAll(flows);
+    }
+
+    public Set<RElement> getPostsetElements() {
+        Set<RElement> postsetElements = new HashSet<>();
+        Collection<RFlow> flowSet = postsetFlows.values();
+        for (RFlow flow : flowSet) {
             postsetElements.add(flow.getNextElement());
         }
         return postsetElements;
     }
-    
-  public Set getPresetElements() {
-        Set presetElements = new HashSet();
-        Collection flowSet = _presetFlows.values();
-        for (Iterator iterator = flowSet.iterator(); iterator.hasNext();) {
-            RFlow flow = (RFlow) iterator.next();
+
+    public Set<RElement> getPresetElements() {
+        Set<RElement> presetElements = new HashSet<>();
+        Collection<RFlow> flowSet = presetFlows.values();
+        for (RFlow flow : flowSet) {
             presetElements.add(flow.getPriorElement());
         }
         return presetElements;
     }
-    
-   public void setPreset(RFlow flowsInto) {
-    if (flowsInto != null) {
-        _presetFlows.put(flowsInto.getPriorElement().getID(), flowsInto);
-        flowsInto.getPriorElement()._postsetFlows.put(flowsInto.getNextElement().getID(), flowsInto);
-     }
-    }
 
-    public void setPostset(RFlow flowsInto) {
-	    if (flowsInto != null) {
-	         _postsetFlows.put(flowsInto.getNextElement().getID(), flowsInto);
-	        flowsInto.getNextElement()._presetFlows.put(flowsInto.getPriorElement().getID(), flowsInto);
-	    }
-    }
-
-
-    public RElement getPostsetElement(String id) {
-/*        if (_postset.size() > 0) {
-            return (YExternalNetElement) this._postset.get(id);
-        } else*/ {
-            return ((RFlow) this._postsetFlows.get(id)).getNextElement();
+    public void setPreset(RFlow flowsInto) {
+        if (flowsInto != null) {
+            presetFlows.put(flowsInto.getPriorElement().getID(), flowsInto);
+            flowsInto.getPriorElement().postsetFlows.put(flowsInto.getNextElement().getID(), flowsInto);
         }
     }
 
-
-    /**
-     * Method getPresetElement.
-     * @param id
-     * @return YExternalNetElement
-     */
-    public RElement getPresetElement(String id){
-        return ((RFlow) _presetFlows.get(id)).getPriorElement();
+    public void setPostset(RFlow flowsInto) {
+        if (flowsInto != null) {
+            postsetFlows.put(flowsInto.getNextElement().getID(), flowsInto);
+            flowsInto.getNextElement().presetFlows.put(flowsInto.getPriorElement().getID(), flowsInto);
+        }
     }
 
+    public RElement getPostsetElement(String elementId) {
+        RFlow flow = postsetFlows.get(elementId);
+        return flow != null ? flow.getNextElement() : null;
+    }
 
-   }
-   
- 
-
- 
-
- 
+    public RElement getPresetElement(String elementId) {
+        RFlow flow = presetFlows.get(elementId);
+        return flow != null ? flow.getPriorElement() : null;
+    }
+}

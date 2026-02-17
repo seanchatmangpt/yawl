@@ -38,15 +38,9 @@ import java.util.List;
 public class SaxonUtil {
 
     private static final Processor _processor = new Processor(false);
-    private static final Serializer _output = _processor.newSerializer();
-    private static final XQueryCompiler _compiler = _processor.newXQueryCompiler();
     private static final DOMOutputter _domOutputter = new DOMOutputter();
 
     private static final Logger _log = LogManager.getLogger(SaxonUtil.class);
-
-    static {
-        _compiler.setErrorListener(new SaxonErrorListener());
-    }
 
 
     /**
@@ -65,10 +59,10 @@ public class SaxonUtil {
 
         // create a StringWriter to receive the output of the evaluation
         StringWriter writer = new StringWriter();
-        _output.setOutputWriter(writer);
+        Serializer output = _processor.newSerializer(writer);
 
         // evaluate the query & return the result as a string
-        evaluator.run(_output);
+        evaluator.run(output);
         String result = writer.toString();
         if (_log.isDebugEnabled()) log(result, null);
         return removeHeader(result);
@@ -116,12 +110,16 @@ public class SaxonUtil {
      */
     public static XQueryExecutable compileXQuery(String query)
             throws SaxonApiException {
-        ((SaxonErrorListener) _compiler.getErrorListener()).reset();
-        return _compiler.compile(query);
+        XQueryCompiler compiler = _processor.newXQueryCompiler();
+        compiler.setErrorListener(new SaxonErrorListener());
+        ((SaxonErrorListener) compiler.getErrorListener()).reset();
+        return compiler.compile(query);
     }
 
     public static List<String> getCompilerMessages() {
-        return ((SaxonErrorListener) _compiler.getErrorListener()).getAllMessages();
+        XQueryCompiler compiler = _processor.newXQueryCompiler();
+        compiler.setErrorListener(new SaxonErrorListener());
+        return ((SaxonErrorListener) compiler.getErrorListener()).getAllMessages();
     }
 
 

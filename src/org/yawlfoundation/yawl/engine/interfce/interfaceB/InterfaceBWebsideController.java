@@ -63,7 +63,32 @@ public abstract class InterfaceBWebsideController {
     protected static final String XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
 
     protected String engineLogonName = "admin";
-    protected String engineLogonPassword = "YAWL";
+    protected String engineLogonPassword = loadEnginePassword();
+
+
+    /**
+     * Loads the engine logon password from environment variables or system properties.
+     * Priority: YAWL_ENGINE_PASSWORD env var, then yawl.engine.password system property.
+     * Throws UnsupportedOperationException if not configured - callers must not proceed
+     * without a valid credential.
+     *
+     * @return the configured password
+     * @throws UnsupportedOperationException if no credential source is configured
+     */
+    private static String loadEnginePassword() {
+        String password = System.getenv("YAWL_ENGINE_PASSWORD");
+        if (password != null && !password.isEmpty()) {
+            return password;
+        }
+        password = System.getProperty("yawl.engine.password");
+        if (password != null && !password.isEmpty()) {
+            return password;
+        }
+        throw new UnsupportedOperationException(
+            "Engine password not configured. Set YAWL_ENGINE_PASSWORD environment variable " +
+            "or yawl.engine.password system property before deploying this service. " +
+            "See SECURITY.md for vault integration steps.");
+    }
     protected Logger _logger = LogManager.getLogger(getClass());
 
 
@@ -345,7 +370,7 @@ public abstract class InterfaceBWebsideController {
      * @throws JDOMException if there is a problem parsing XML of input or output data
      */
     public String checkInWorkItem(String workItemID, String inputData, String outputData,
-                                  String sessionHandle) throws IOException, JDOMException {
+                                  String sessionHandle) throws IOException, JDOMException, YAWLException {
         Element inputDataEl = JDOMUtil.stringToElement(inputData);
         Element outputDataEl = JDOMUtil.stringToElement(outputData);
         return checkInWorkItem(workItemID, inputDataEl, outputDataEl, null, sessionHandle);
@@ -365,7 +390,7 @@ public abstract class InterfaceBWebsideController {
      */
     public String checkInWorkItem(String workItemID, Element inputData,
                                   Element outputData, String sessionHandle)
-            throws IOException, JDOMException {
+            throws IOException, JDOMException, YAWLException {
         return checkInWorkItem(workItemID, inputData, outputData, null, sessionHandle);
     }
 
@@ -383,7 +408,7 @@ public abstract class InterfaceBWebsideController {
      */
     public String checkInWorkItem(String workItemID, Element inputData,
                                   Element outputData, String logPredicate, String sessionHandle)
-            throws IOException, JDOMException {
+            throws IOException, JDOMException, YAWLException {
 
         // first, get workitem record from local cache; if not there, check the engine
         // for it; if not there, fail

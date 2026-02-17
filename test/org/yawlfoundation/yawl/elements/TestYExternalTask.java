@@ -388,8 +388,8 @@ class TestYExternalTask{
         YVerificationHandler handler = new YVerificationHandler();
         specification.verify(handler);
         String verificationResult = handler.getMessages().get(0).getMessage();
-        assertTrue("Expected message about output parameter used twice: " + verificationResult,
-                verificationResult.contains("output parameter is used twice"));
+        assertTrue(verificationResult.contains("output parameter is used twice"),
+                "Expected message about output parameter used twice: " + verificationResult);
     }
 
     @Test

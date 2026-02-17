@@ -128,12 +128,20 @@ public class AgentRegistry {
      * @throws A2AException if registration fails
      */
     public void registerAgent(String agentId, String endpoint, List<String> capabilities, Map<String, Object> metadata) throws A2AException {
+        if (agentId == null || agentId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Agent ID cannot be null or empty");
+        }
+        if (agents.containsKey(agentId)) {
+            throw new A2AException(A2AException.ErrorCode.INVALID_MESSAGE,
+                "Agent already registered with ID: " + agentId);
+        }
         try {
             AgentEntry entry = new AgentEntry(agentId, endpoint, capabilities, metadata);
             agents.put(agentId, entry);
             System.out.println("Agent registered: " + agentId + " at " + endpoint);
         } catch (IllegalArgumentException e) {
-            throw new A2AException("Failed to register agent: " + e.getMessage(), e);
+            throw new A2AException(A2AException.ErrorCode.INVALID_MESSAGE,
+                "Failed to register agent: " + e.getMessage(), e);
         }
     }
 
@@ -161,7 +169,8 @@ public class AgentRegistry {
     public void updateHeartbeat(String agentId) throws A2AException {
         AgentEntry entry = agents.get(agentId);
         if (entry == null) {
-            throw new A2AException("Agent not found: " + agentId);
+            throw new A2AException(A2AException.ErrorCode.AGENT_CARD_NOT_FOUND,
+                "Agent not found: " + agentId);
         }
         entry.updateHeartbeat();
     }

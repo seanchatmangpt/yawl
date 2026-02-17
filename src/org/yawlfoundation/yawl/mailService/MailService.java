@@ -55,7 +55,7 @@ public class MailService extends InterfaceBWebsideController {
     // holds a session handle to the engine
     private String _handle = null;
 
-    private static MailService _instance;
+    private static final MailService _instance = new MailService();
     private final MailSettings _defaults = new MailSettings();
     private final Properties _extraProperties = new Properties();
 
@@ -63,7 +63,6 @@ public class MailService extends InterfaceBWebsideController {
     private MailService() { }
 
     public static MailService getInstance() {
-        if (_instance == null) _instance = new MailService();
         return _instance;
     }
 
@@ -163,19 +162,26 @@ public class MailService extends InterfaceBWebsideController {
 
 
     protected String sendMail(String settingsAsXml) {
-        MailSettings settings = new MailSettings();
-        settings.fromXML(settingsAsXml);
-        if (settings.host == null) settings.host = _defaults.host;
-        if (settings.port < 25) settings.port = _defaults.port;
-        if (settings.strategy == null) settings.strategy = _defaults.strategy;
-        if (settings.user == null) settings.user = _defaults.user;
-        if (settings.password == null) settings.password = _defaults.password;
-        if (settings.fromName == null) settings.fromName = _defaults.fromName;;
-        if (settings.fromAddress == null) settings.fromAddress = _defaults.fromAddress;
+        MailSettings parsed = MailSettings.fromXML(settingsAsXml);
+        MailSettings settings = new MailSettings(
+            parsed.host() != null ? parsed.host() : _defaults.host(),
+            parsed.port() >= 25 ? parsed.port() : _defaults.port(),
+            parsed.strategy() != null ? parsed.strategy() : _defaults.strategy(),
+            parsed.user() != null ? parsed.user() : _defaults.user(),
+            parsed.password() != null ? parsed.password() : _defaults.password(),
+            parsed.fromName() != null ? parsed.fromName() : _defaults.fromName(),
+            parsed.fromAddress() != null ? parsed.fromAddress() : _defaults.fromAddress(),
+            parsed.toName(),
+            parsed.toAddress(),
+            parsed.ccAddress(),
+            parsed.bccAddress(),
+            parsed.subject(),
+            parsed.content()
+        );
 
         _logger.debug("MailService.sendMail(String) calling sendMail(MailSettings)" +
                 " with settings = {}", settings.toXML());
-        
+
         return sendMail(settings);
     }
 
@@ -207,14 +213,14 @@ public class MailService extends InterfaceBWebsideController {
     private String sendMail(Email email, MailSettings settings) {
         _logger.debug(
                 "Sending mail with host={}, port={}, user={}, password={}, strategy={}",
-                settings.host, settings.port, settings.user,
-                StringUtils.isNotEmpty(settings.password) ? "***SECRET***" : "",
-                settings.strategy);
+                settings.host(), settings.port(), settings.user(),
+                StringUtils.isNotEmpty(settings.password()) ? "***SECRET***" : "",
+                settings.strategy());
 
         try {
             Mailer m = MailerBuilder
-                    .withSMTPServer(settings.host, settings.port, settings.user, settings.password)
-                    .withTransportStrategy(settings.strategy)
+                    .withSMTPServer(settings.host(), settings.port(), settings.user(), settings.password())
+                    .withTransportStrategy(settings.strategy())
                     .withProperties(_extraProperties)               // if TLS, "TLSv1.2"
                     .withDebugLogging(true)
                     .buildMailer();
@@ -233,20 +239,21 @@ public class MailService extends InterfaceBWebsideController {
         if (wir == null) throw new MailSettingsException("Work item is null.");
         Element data = wir.getDataList();
         if (data == null) _logger.throwing(new MailSettingsException("Work item contains no data."));
-        MailSettings settings = new MailSettings();
-        settings.host = getSetting(data, "host");
-        settings.port = getPort(data);
-        settings.strategy = getTransportStrategy(data);
-        settings.user = getSetting(data, "user", true);
-        settings.password = getSetting(data, "password", true);
-        settings.fromName = getSetting(data, "senderName");
-        settings.fromAddress = getSetting(data, "senderAddress");
-        settings.toName = getSetting(data, "recipientName", true);
-        settings.toAddress = getSetting(data, "recipientAddress");
-        settings.ccAddress = getSetting(data, "CC", true);
-        settings.bccAddress = getSetting(data, "BCC", true);
-        settings.subject = getSetting(data, "subject");
-        settings.content = getSetting(data, "content");
+        MailSettings settings = new MailSettings(
+            getSetting(data, "host"),
+            getPort(data),
+            getTransportStrategy(data),
+            getSetting(data, "user", true),
+            getSetting(data, "password", true),
+            getSetting(data, "senderName"),
+            getSetting(data, "senderAddress"),
+            getSetting(data, "recipientName", true),
+            getSetting(data, "recipientAddress"),
+            getSetting(data, "CC", true),
+            getSetting(data, "BCC", true),
+            getSetting(data, "subject"),
+            getSetting(data, "content")
+        );
         _logger.debug("MailService.buildSettings(WorkItemRecord) returning " + settings.toXML());
         return settings;
     }
@@ -255,14 +262,14 @@ public class MailService extends InterfaceBWebsideController {
     private Email buildEmail(MailSettings settings) {
         _logger.debug("start buildEmail(MailSettings) {}", settings.toXML());
 
-        String fromName = settings.fromName;
-        String fromAddress = settings.fromAddress;
-        String toName = StringUtils.defaultString(settings.toName);
+        String fromName = settings.fromName();
+        String fromAddress = settings.fromAddress();
+        String toName = StringUtils.defaultString(settings.toName());
         List<String> toAddresses = new ArrayList<>(Arrays.asList(
-                settings.toAddress.split(";")));
-        List<Recipient> ccRecipients = asRecipientList(settings.ccAddress,
+                settings.toAddress().split(";")));
+        List<Recipient> ccRecipients = asRecipientList(settings.ccAddress(),
                 Message.RecipientType.CC);
-        List<Recipient> bccRecipients = asRecipientList(settings.bccAddress,
+        List<Recipient> bccRecipients = asRecipientList(settings.bccAddress(),
                 Message.RecipientType.BCC);
 
         _logger.debug(
@@ -273,16 +280,16 @@ public class MailService extends InterfaceBWebsideController {
                         Collectors.joining(",")) + ">",
                 "<" + bccRecipients.stream().map(Recipient::getAddress).collect(
                         Collectors.joining(",")) + ">",
-                StringUtils.defaultString(settings.subject)));
+                StringUtils.defaultString(settings.subject())));
 
         EmailPopulatingBuilder emailBuilder = EmailBuilder.startingBlank()
                 .from(fromName, fromAddress)
                 .to(toName, toAddresses)
                 .cc(ccRecipients)
                 .bcc(bccRecipients)
-                .withSubject(settings.subject);
+                .withSubject(settings.subject());
 
-        String body = StringUtils.defaultString(settings.content);
+        String body = StringUtils.defaultString(settings.content());
         if (body.contains("<")) {
             emailBuilder = emailBuilder.withHTMLText(body);
         }
@@ -318,13 +325,13 @@ public class MailService extends InterfaceBWebsideController {
 
     private int getPort(Element data) throws MailSettingsException {
         int port = StringUtil.strToInt(getDataValue(data, "port"), -1);
-        if (port < 0) port = _defaults.port;
+        if (port < 0) port = _defaults.port();
         if (port < 0) throw new MailSettingsException("Invalid port value.");
         return port;
     }
 
     private TransportStrategy getTransportStrategy(String strategyString) {
-        if (StringUtil.isNullOrEmpty(strategyString)) return _defaults.strategy;
+        if (StringUtil.isNullOrEmpty(strategyString)) return _defaults.strategy();
         if ("PLAIN".equalsIgnoreCase(strategyString)) return TransportStrategy.SMTP;
         if ("SSL".equalsIgnoreCase(strategyString)) return TransportStrategy.SMTPS;
         if ("TLS".equalsIgnoreCase(strategyString)) {

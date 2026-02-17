@@ -4,8 +4,8 @@
     <metaData>
       <title>Minimal Spec</title>
       <creator>Stateless Test</creator>
-      <description>One atomic task for stateless engine tests.</description>
-      <version>0.1</version>
+      <description>One atomic task for stateless engine tests. task1 decomposes to a manual WebServiceGateway so it fires ITEM_ENABLED and waits for human resourcing.</description>
+      <version>0.3</version>
     </metaData>
     <decomposition id="MinimalNet" xsi:type="NetFactsType" isRootNet="true">
       <name>MinimalNet</name>
@@ -22,9 +22,14 @@
           </flowsInto>
           <join code="xor"/>
           <split code="and"/>
+          <decomposesTo id="task1Gateway"/>
         </task>
         <outputCondition id="end"/>
       </processControlElements>
+    </decomposition>
+    <decomposition id="task1Gateway" xsi:type="WebServiceGatewayFactsType">
+      <name>task1Gateway</name>
+      <externalInteraction>manual</externalInteraction>
     </decomposition>
   </specification>
 </specificationSet>

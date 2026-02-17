@@ -29,6 +29,7 @@ import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.unmarshal.YDecompositionParser;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class Marshaller {
             }
             String paramOrdering = paramElem.getChildText("ordering");
             if (paramOrdering != null) {
-                int order = Integer.parseInt(paramOrdering);
+                int order = SafeNumberParser.parseIntOrThrow(paramOrdering, "param ordering attribute in task XML");
                 param.setOrdering(order);
             }
         }
@@ -140,9 +141,7 @@ public class Marshaller {
                 taskDocumentation,
                 decompositionID);
 
-        taskInformation.setAttributes(attributemap);
-
-        return taskInformation;
+        return taskInformation.withAttributes(attributemap);
     }
 
 

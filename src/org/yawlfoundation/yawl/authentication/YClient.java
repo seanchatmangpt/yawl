@@ -78,10 +78,20 @@ public class YClient {
         return (getUserName() != null) ? getUserName().hashCode() : super.hashCode();
     }
 
+    /**
+     * Serializes this client to XML format.
+     * <p>
+     * SECURITY NOTE: Passwords are redacted in XML output to prevent credential exposure
+     * in logs and debugging output. The password field is represented as "[REDACTED]"
+     * rather than the actual value.
+     * </p>
+     *
+     * @return XML representation of this client with redacted password
+     */
     public String toXML() {
         XNode root = new XNode("client");
         root.addChild("username", _userName);
-        root.addChild("password", _password);
+        root.addChild("password", "[REDACTED]");
         root.addChild("documentation", _documentation);
         return root.toString();
     }

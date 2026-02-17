@@ -1,8 +1,10 @@
 package org.yawlfoundation.yawl.exceptions;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test cases for enhanced YAWLException features (context and troubleshooting).
@@ -10,16 +12,10 @@ import java.util.Map;
  * @author YAWL Development Team
  * @since 5.2
  */
-public class TestYAWLExceptionEnhancements extends TestCase {
+class TestYAWLExceptionEnhancements {
 
-    public TestYAWLExceptionEnhancements(String name) {
-        super(name);
-    }
-
-    /**
-     * Test adding context to an exception.
-     */
-    public void testWithContext() {
+    @Test
+    void testWithContext() {
         YAWLException exception = new YAWLException("Test error");
         exception.withContext("caseID", "case-123")
                  .withContext("taskID", "task-456");
@@ -31,10 +27,8 @@ public class TestYAWLExceptionEnhancements extends TestCase {
         assertEquals(2, context.size());
     }
 
-    /**
-     * Test that context is immutable when retrieved.
-     */
-    public void testContextIsImmutable() {
+    @Test
+    void testContextIsImmutable() {
         YAWLException exception = new YAWLException("Test error");
         exception.withContext("key", "value");
 
@@ -43,15 +37,13 @@ public class TestYAWLExceptionEnhancements extends TestCase {
 
         Map<String, String> retrievedContext = exception.getContext();
 
-        assertFalse("Context should not contain externally added keys",
-                   retrievedContext.containsKey("newkey"));
+        assertFalse(retrievedContext.containsKey("newkey"),
+                   "Context should not contain externally added keys");
         assertEquals(1, retrievedContext.size());
     }
 
-    /**
-     * Test adding troubleshooting guide.
-     */
-    public void testWithTroubleshootingGuide() {
+    @Test
+    void testWithTroubleshootingGuide() {
         YAWLException exception = new YAWLException("Database connection failed");
         exception.withTroubleshootingGuide("Check database URL and credentials");
 
@@ -60,10 +52,8 @@ public class TestYAWLExceptionEnhancements extends TestCase {
         assertEquals("Check database URL and credentials", guide);
     }
 
-    /**
-     * Test method chaining for context.
-     */
-    public void testMethodChaining() {
+    @Test
+    void testMethodChaining() {
         YAWLException exception = new YAWLException("Workflow error")
             .withContext("spec", "spec-1")
             .withContext("case", "case-1")
@@ -74,65 +64,55 @@ public class TestYAWLExceptionEnhancements extends TestCase {
         assertEquals(2, exception.getContext().size());
     }
 
-    /**
-     * Test toString includes context and troubleshooting.
-     */
-    public void testToStringIncludesContext() {
+    @Test
+    void testToStringIncludesContext() {
         YAWLException exception = new YAWLException("Test error");
         exception.withContext("caseID", "case-123")
                  .withTroubleshootingGuide("Check logs");
 
         String str = exception.toString();
 
-        assertTrue("toString should include context",
-                  str.contains("Context:"));
-        assertTrue("toString should include caseID",
-                  str.contains("caseID"));
-        assertTrue("toString should include troubleshooting",
-                  str.contains("Troubleshooting:"));
+        assertTrue(str.contains("Context:"),
+                  "toString should include context");
+        assertTrue(str.contains("caseID"),
+                  "toString should include caseID");
+        assertTrue(str.contains("Troubleshooting:"),
+                  "toString should include troubleshooting");
     }
 
-    /**
-     * Test toString without context or troubleshooting.
-     */
-    public void testToStringWithoutEnhancements() {
+    @Test
+    void testToStringWithoutEnhancements() {
         YAWLException exception = new YAWLException("Simple error");
 
         String str = exception.toString();
 
-        assertFalse("toString should not include context label",
-                   str.contains("Context:"));
-        assertFalse("toString should not include troubleshooting label",
-                   str.contains("Troubleshooting:"));
+        assertFalse(str.contains("Context:"),
+                   "toString should not include context label");
+        assertFalse(str.contains("Troubleshooting:"),
+                   "toString should not include troubleshooting label");
     }
 
-    /**
-     * Test empty context.
-     */
-    public void testEmptyContext() {
+    @Test
+    void testEmptyContext() {
         YAWLException exception = new YAWLException("Test error");
 
         Map<String, String> context = exception.getContext();
 
-        assertNotNull("Context should not be null", context);
-        assertTrue("Context should be empty", context.isEmpty());
+        assertNotNull(context, "Context should not be null");
+        assertTrue(context.isEmpty(), "Context should be empty");
     }
 
-    /**
-     * Test null troubleshooting guide.
-     */
-    public void testNullTroubleshootingGuide() {
+    @Test
+    void testNullTroubleshootingGuide() {
         YAWLException exception = new YAWLException("Test error");
 
         String guide = exception.getTroubleshootingGuide();
 
-        assertNull("Troubleshooting guide should be null by default", guide);
+        assertNull(guide, "Troubleshooting guide should be null by default");
     }
 
-    /**
-     * Test exception with cause and enhancements.
-     */
-    public void testExceptionWithCauseAndEnhancements() {
+    @Test
+    void testExceptionWithCauseAndEnhancements() {
         Exception cause = new RuntimeException("Original error");
         YAWLException exception = new YAWLException("Wrapper error", cause);
         exception.withContext("location", "module-A")
@@ -145,10 +125,8 @@ public class TestYAWLExceptionEnhancements extends TestCase {
                     exception.getTroubleshootingGuide());
     }
 
-    /**
-     * Test updating context multiple times.
-     */
-    public void testUpdateContextMultipleTimes() {
+    @Test
+    void testUpdateContextMultipleTimes() {
         YAWLException exception = new YAWLException("Test error");
 
         exception.withContext("key1", "value1");
@@ -162,10 +140,8 @@ public class TestYAWLExceptionEnhancements extends TestCase {
         assertEquals(2, exception.getContext().size());
     }
 
-    /**
-     * Test troubleshooting guide can be updated.
-     */
-    public void testUpdateTroubleshootingGuide() {
+    @Test
+    void testUpdateTroubleshootingGuide() {
         YAWLException exception = new YAWLException("Test error");
 
         exception.withTroubleshootingGuide("First guide");

@@ -23,6 +23,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,8 @@ import java.util.Map;
  * Time: 15:26:54
  */
 public class YAWLException extends Exception {
+    @Serial
+    private static final long serialVersionUID = 2L;
     protected static SAXBuilder _builder = new SAXBuilder();
     protected String _message;
     public static final String MESSAGE_NM = "message";
@@ -81,7 +84,7 @@ public class YAWLException extends Exception {
      * @since 1.4
      */
     public YAWLException(String message, Throwable cause) {
-        super(cause);
+        super(message, cause);
         _message = message;
     }
 

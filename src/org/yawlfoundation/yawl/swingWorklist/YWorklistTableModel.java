@@ -33,7 +33,8 @@ import java.util.*;
  * 
  */
 public class YWorklistTableModel extends AbstractTableModel {
-    protected Map _rows = new TreeMap();
+    private static final long serialVersionUID = 1L;
+    protected Map<String, Object[]> _rows = new TreeMap<>();
     private String[] _colNames;
 
     public YWorklistTableModel(String[] colNames) {
@@ -81,7 +82,7 @@ public class YWorklistTableModel extends AbstractTableModel {
      */
     public synchronized Object getValueAt(int rowIndex, int columnIndex) {
         if (rowIndex < _rows.size()) {
-            Object[] row = ((Object[]) new Vector(_rows.values()).get(rowIndex));
+            Object[] row = new Vector<>(_rows.values()).get(rowIndex);
             if (row.length > columnIndex) {
                 return row[columnIndex];
             }
@@ -97,9 +98,9 @@ public class YWorklistTableModel extends AbstractTableModel {
 */
 
 
-    public synchronized void addRow(Object key, Object[] rowValues) {
+    public synchronized void addRow(String key, Object[] rowValues) {
         _rows.put(key, rowValues);
-        final int position = new Vector(_rows.keySet()).indexOf(key);
+        final int position = new Vector<>(_rows.keySet()).indexOf(key);
         EventQueue.invokeLater(new Thread() {
             public void run() {
                 fireTableRowsInserted(position, position);
@@ -129,14 +130,14 @@ public class YWorklistTableModel extends AbstractTableModel {
     }
 
 
-    public synchronized Class getColumnClass(int c) {
+    public synchronized Class<?> getColumnClass(int c) {
         Object o = getValueAt(0, c);
         return o != null ? o.getClass() : null;
     }
 
 
     public synchronized int getRowIndex(Object caseAndTaskID) {
-        return new Vector(_rows.keySet()).indexOf(caseAndTaskID);
+        return new Vector<>(_rows.keySet()).indexOf(caseAndTaskID);
     }
 
 
@@ -144,7 +145,7 @@ public class YWorklistTableModel extends AbstractTableModel {
         return _colNames;
     }
 
-    public Map getRowMap() {
+    public Map<String, Object[]> getRowMap() {
         return _rows;
     }
 

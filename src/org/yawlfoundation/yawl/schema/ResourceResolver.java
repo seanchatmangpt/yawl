@@ -24,10 +24,10 @@ import org.w3c.dom.ls.LSResourceResolver;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -71,13 +71,13 @@ public class ResourceResolver implements LSResourceResolver {
 
 
     private String streamToString(InputStream is) {
-        Scanner s = new Scanner(is, "UTF-8").useDelimiter("\\A");
+        Scanner s = new Scanner(is, StandardCharsets.UTF_8.name()).useDelimiter("\\A");
         return s.hasNext() ? s.next() : null;
     }
 
 
-    private InputStream stringToStream(String s) throws UnsupportedEncodingException {
-        return new ByteArrayInputStream(s.getBytes("UTF-8"));
+    private InputStream stringToStream(String s) {
+        return new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
     }
 
 }

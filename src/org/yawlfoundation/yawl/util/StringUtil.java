@@ -29,6 +29,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -352,11 +353,7 @@ public class StringUtil {
      */
     public static String xmlEncode(String s) {
         if (s == null) return s;
-        try {
-            return URLEncoder.encode(s, "UTF-8");
-        } catch (UnsupportedEncodingException uee) {
-            return s;
-        }
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     /**
@@ -367,11 +364,7 @@ public class StringUtil {
      */
     public static String xmlDecode(String s) {
         if (s == null) return s;
-        try {
-            return URLDecoder.decode(s, "UTF-8");
-        } catch (UnsupportedEncodingException uee) {
-            return s;
-        }
+        return URLDecoder.decode(s, StandardCharsets.UTF_8);
     }
 
     public static boolean isIntegerString(String s) {
@@ -458,7 +451,7 @@ public class StringUtil {
             inStream.close();
 
             // convert the bytes to a UTF-8 string
-            return outStream.toString("UTF-8");
+            return outStream.toString(StandardCharsets.UTF_8);
 
         } catch (IOException ioe) {
             return null;

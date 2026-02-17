@@ -21,6 +21,7 @@ import java.util.List;
  * - Maven clean compile success
  * - Maven test execution
  * - Maven package (JAR creation)
+ * - Maven dependency caching
  * - Ant build compatibility
  * - Build output validation
  */
@@ -29,6 +30,7 @@ public class BuildSystemTest extends TestCase {
     private static final String PROJECT_ROOT = "/home/user/yawl";
     private static final String TARGET_DIR = PROJECT_ROOT + "/target";
     private static final String BUILD_DIR = PROJECT_ROOT + "/build";
+    private static final String MAVEN_CACHE_DIR = System.getProperty("user.home") + "/.m2/repository";
 
     public BuildSystemTest(String name) {
         super(name);
@@ -165,7 +167,82 @@ public class BuildSystemTest extends TestCase {
         assertEquals("Test source files should compile", 0, result.exitCode);
     }
 
+    public void testMavenCacheDirectoryExists() {
+        File cacheDir = new File(MAVEN_CACHE_DIR);
+        assertTrue("Maven cache directory should exist: " + MAVEN_CACHE_DIR,
+            cacheDir.exists());
+        assertTrue("Maven cache should be a directory",
+            cacheDir.isDirectory());
+    }
+
+    public void testMavenCacheIsWritable() {
+        File cacheDir = new File(MAVEN_CACHE_DIR);
+        if (cacheDir.exists()) {
+            assertTrue("Maven cache directory should be writable",
+                cacheDir.canWrite());
+        } else {
+            File m2Dir = new File(System.getProperty("user.home"), ".m2");
+            assertTrue("Parent .m2 directory should be writable if cache doesn't exist",
+                m2Dir.canWrite() || m2Dir.mkdirs());
+        }
+    }
+
+    public void testMavenCachePersistsDependencies() throws Exception {
+        File cacheDir = new File(MAVEN_CACHE_DIR);
+        assertTrue("Maven cache directory should exist", cacheDir.exists());
+
+        ProcessResult result = executeCommand("mvn dependency:resolve");
+        assertEquals("Maven dependency resolution should succeed", 0, result.exitCode);
+
+        int cachedJarCount = countFilesRecursively(cacheDir, ".jar");
+        assertTrue("Maven cache should contain JAR files after dependency resolution",
+            cachedJarCount > 0);
+    }
+
+    public void testMavenCacheHasExpectedStructure() {
+        File cacheDir = new File(MAVEN_CACHE_DIR);
+        if (cacheDir.exists()) {
+            File[] topLevelDirs = cacheDir.listFiles(File::isDirectory);
+            assertNotNull("Cache should have organization directories", topLevelDirs);
+
+            boolean hasCommonOrgs = false;
+            if (topLevelDirs != null) {
+                for (File dir : topLevelDirs) {
+                    String name = dir.getName();
+                    if (name.equals("org") || name.equals("com") || name.equals("io")) {
+                        hasCommonOrgs = true;
+                        break;
+                    }
+                }
+            }
+            assertTrue("Cache should contain common organization directories (org/com/io)",
+                hasCommonOrgs);
+        }
+    }
+
+    public void testMavenCachePerformanceImprovement() throws Exception {
+        long firstBuildTime = measureDependencyResolutionTime();
+        assertTrue("First build should complete within reasonable time (60s)",
+            firstBuildTime < 60000);
+
+        long secondBuildTime = measureDependencyResolutionTime();
+        assertTrue("Second build should be faster due to caching",
+            secondBuildTime <= firstBuildTime);
+
+        assertTrue("Cached build should complete quickly (30s)",
+            secondBuildTime < 30000);
+    }
+
     // Helper methods
+
+    private long measureDependencyResolutionTime() throws Exception {
+        long startTime = System.currentTimeMillis();
+        ProcessResult result = executeCommand("mvn dependency:resolve -q");
+        long endTime = System.currentTimeMillis();
+
+        assertEquals("Maven dependency resolution should succeed", 0, result.exitCode);
+        return endTime - startTime;
+    }
 
     private ProcessResult executeCommand(String command) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();

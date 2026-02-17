@@ -22,16 +22,29 @@ import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.Executors;
 
 /**
  * An client-side interface to communicate with the YAWL Document Store
  * @author Michael Adams
  * @date 21/11/11
+ * Migrated to java.net.http.HttpClient (2026-02-16)
  */
 public class DocumentStoreClient extends Interface_Client {
+
+    /**
+     * Shared HTTP client using virtual threads for network I/O.
+     */
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
+            .build();
 
     // the uri of the YAWL doc store. A default would be:
     // "http://localhost:8080/documentStore/"
@@ -69,7 +82,7 @@ public class DocumentStoreClient extends Interface_Client {
     public String connect(String userID, String password) throws IOException {
         byte[] bytes = toByteArray("connect", "", userID,
                 PasswordEncryptor.encrypt(password, null));
-        String result = executePost(bytes).toString("UTF-8");
+        String result = executePost(bytes).toString(StandardCharsets.UTF_8);
         return (successful(result)) ? stripOuterElement(result) : result;
     }
 
@@ -81,7 +94,7 @@ public class DocumentStoreClient extends Interface_Client {
      * @throws IOException if the service can't be reached
      */
     public boolean checkConnection(String handle) throws IOException {
-        String result = executePost(toByteArray("checkConnection", handle)).toString("UTF-8");
+        String result = executePost(toByteArray("checkConnection", handle)).toString(StandardCharsets.UTF_8);
         return successful(result) && stripOuterElement(result).equalsIgnoreCase("true");
     }
 
@@ -106,7 +119,7 @@ public class DocumentStoreClient extends Interface_Client {
      * @throws IOException if the service can't be reached
      */
     public String putDocument(YDocument doc, String handle) throws IOException {
-        return executePost(toByteArray(doc, "put", handle)).toString("UTF-8");
+        return executePost(toByteArray(doc, "put", handle)).toString(StandardCharsets.UTF_8);
     }
 
 
@@ -139,7 +152,7 @@ public class DocumentStoreClient extends Interface_Client {
         doc.setId(docID);
         return getDocument(doc, handle);
     }
-    
+
 
     /**
      * Removes a document from the Document Store
@@ -150,7 +163,7 @@ public class DocumentStoreClient extends Interface_Client {
      * @throws IOException if the service can't be reached
      */
     public String removeDocument(YDocument doc, String handle) throws IOException {
-        return executePost(toByteArray(doc, "remove", handle)).toString("UTF-8");
+        return executePost(toByteArray(doc, "remove", handle)).toString(StandardCharsets.UTF_8);
     }
 
     /**
@@ -183,7 +196,7 @@ public class DocumentStoreClient extends Interface_Client {
         YDocument doc = new YDocument();
         doc.setId(docID);
         doc.setCaseId(caseID);
-        return executePost(toByteArray(doc, "addcaseid", handle)).toString("UTF-8");
+        return executePost(toByteArray(doc, "addcaseid", handle)).toString(StandardCharsets.UTF_8);
     }
 
 
@@ -195,7 +208,7 @@ public class DocumentStoreClient extends Interface_Client {
      * @throws IOException if the service can't be reached
      */
     public String clearCase(YDocument doc, String handle) throws IOException {
-        return executePost(toByteArray(doc, "clearcase", handle)).toString("UTF-8");
+        return executePost(toByteArray(doc, "clearcase", handle)).toString(StandardCharsets.UTF_8);
     }
 
 
@@ -222,7 +235,7 @@ public class DocumentStoreClient extends Interface_Client {
      * @throws IOException if the service can't be reached
      */
     public String completeCase(YDocument doc, String handle) throws IOException {
-        return executePost(toByteArray(doc, "completecase", handle)).toString("UTF-8");
+        return executePost(toByteArray(doc, "completecase", handle)).toString(StandardCharsets.UTF_8);
     }
 
 
@@ -253,8 +266,8 @@ public class DocumentStoreClient extends Interface_Client {
         if (doc.getDocumentSize() > 0) d.write(doc.getDocument());
         return baos.toByteArray();
     }
-   
-    
+
+
     private byte[] toByteArray(String action, String handle, String... args) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream d = new DataOutputStream(baos);
@@ -267,40 +280,40 @@ public class DocumentStoreClient extends Interface_Client {
         }
         return baos.toByteArray();
     }
-    
-    
+
+
     private ByteArrayOutputStream executePost(byte[] bytes) throws IOException {
-        URL url = URI.create(_storeURI).toURL();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "multipart/form-data");
-        connection.setRequestProperty("Content-length", "" + bytes.length);
-        connection.setRequestProperty("Connection", "close");
-        connection.getOutputStream().write(bytes);
-        connection.getOutputStream().close();
-        ByteArrayOutputStream outStream = getOutStream(connection.getInputStream());
-        connection.disconnect();
-        return outStream;
-    }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(_storeURI))
+                .timeout(Duration.ofMinutes(2))
+                .header("Content-Type", "multipart/form-data")
+                .header("Content-length", String.valueOf(bytes.length))
+                .header("Connection", "close")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
+                .build();
 
+        try {
+            HttpResponse<byte[]> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.ofByteArray());
 
-    private ByteArrayOutputStream getOutStream(InputStream is) throws IOException {
-        final int BUF_SIZE = 32768;
+            byte[] responseBody = response.body();
+            if (responseBody == null) {
+                throw new IOException("No response from server (HTTP " + response.statusCode() + ")");
+            }
 
-        // read reply into a buffered byte stream - to preserve UTF-8
-        BufferedInputStream inStream = new BufferedInputStream(is);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream(BUF_SIZE);
-        byte[] buffer = new byte[BUF_SIZE];
+            if (response.statusCode() >= 400) {
+                throw new IOException("HTTP error " + response.statusCode() + ": " +
+                        new String(responseBody, StandardCharsets.UTF_8));
+            }
 
-        // read chunks from the input stream and write them out
-        int bytesRead;
-        while ((bytesRead = inStream.read(buffer, 0, BUF_SIZE)) > 0) {
-            outStream.write(buffer, 0, bytesRead);
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream(responseBody.length);
+            outStream.write(responseBody);
+            return outStream;
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("HTTP request interrupted", e);
         }
-        outStream.close();
-        inStream.close();
-
-        return outStream;
     }
 
 }

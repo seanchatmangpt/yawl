@@ -4,7 +4,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_Environment
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.tools.LaunchCaseTool;
 import org.yawlfoundation.yawl.integration.mcp.spring.resources.SpecificationsResource;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 import java.util.logging.Logger;
 
@@ -41,13 +41,13 @@ import java.util.logging.Logger;
  *   mcp:
  *     engine-url: http://localhost:8080/yawl
  *     username: ${YAWL_USERNAME:admin}
- *     password: ${YAWL_PASSWORD:YAWL}
+ *     password: ${YAWL_PASSWORD}  # required - no default; see SECURITY.md
  *     transport: stdio
  *
  * # Environment variables (alternative)
  * export YAWL_ENGINE_URL=http://localhost:8080/yawl
  * export YAWL_USERNAME=admin
- * export YAWL_PASSWORD=YAWL
+ * export YAWL_PASSWORD=<your-password>  # required - no default; see SECURITY.md
  * }</pre>
  *
  * <h2>Bean Configuration</h2>
@@ -159,7 +159,7 @@ public class YawlMcpSpringApplication {
             System.err.println("\nRequired environment variables:");
             System.err.println("  YAWL_ENGINE_URL - YAWL engine base URL (e.g., http://localhost:8080/yawl)");
             System.err.println("  YAWL_USERNAME   - YAWL admin username (default: admin)");
-            System.err.println("  YAWL_PASSWORD   - YAWL admin password (default: YAWL)");
+            System.err.println("  YAWL_PASSWORD   - YAWL admin password (required - no default; see SECURITY.md)");
             System.exit(1);
 
         } catch (RuntimeException e) {

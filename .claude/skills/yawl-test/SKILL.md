@@ -1,46 +1,86 @@
----
-name: yawl-test
-description: Run YAWL unit tests
-disable-model-invocation: true
-user-invocable: true
-allowed-tools: Bash(ant unitTest)
----
+# YAWL Test Skill (Maven)
 
-# YAWL Test Skill
+**Command**: `/yawl-test`
 
-Run the full YAWL unit test suite using JUnit.
+**Description**: Run YAWL test suites using Maven with optional coverage analysis.
 
-## Usage
+## Examples
 
-```
+```bash
+# Run all tests
 /yawl-test
+
+# Run tests for specific module
+/yawl-test --module=yawl-engine
+
+# Run tests with JaCoCo coverage report
+/yawl-test --coverage
+
+# Run tests with verbose output
+/yawl-test --verbose
+
+# Run specific module tests with coverage
+/yawl-test --module=yawl-elements --coverage
 ```
 
-## What It Does
+## Parameters
 
-1. Compiles test classes
-2. Runs all JUnit tests in test/
-3. Reports failures with details
-4. Generates test reports in output/test-results/
+- `--module=MODULE` - Run tests for specific Maven module only
+- `--coverage` - Generate JaCoCo code coverage report
+- `--verbose` - Enable verbose output
 
-## Execution
+## Test Suites
+
+The YAWL project includes comprehensive test coverage across 10+ modules:
+
+- `yawl-elements` - Workflow element tests
+- `yawl-engine` - Core engine tests (YEngine, YNetRunner)
+- `yawl-stateless` - Stateless engine tests
+- `yawl-resourcing` - Resource management tests
+- `yawl-worklet` - Worklet service tests
+- `yawl-scheduling` - Scheduling service tests
+- `yawl-integration` - MCP/A2A integration tests
+- `yawl-monitoring` - Monitoring service tests
+
+## Coverage Analysis
+
+When using `--coverage`, the skill generates a JaCoCo coverage report:
+- Report location: `target/site/jacoco/index.html`
+- Requires JaCoCo plugin configuration in pom.xml
+- Shows line and branch coverage metrics
+
+## Equivalent Commands
+
+Instead of using the skill, you can run Maven directly:
 
 ```bash
-cd "$CLAUDE_PROJECT_DIR"
-ant unitTest
+# Instead of /yawl-test
+mvn clean test
+
+# Instead of /yawl-test --module=yawl-engine
+mvn -pl yawl-engine clean test
+
+# Instead of /yawl-test --coverage
+mvn clean test jacoco:report
 ```
 
-## Success Criteria
+## Test Results
 
-- All tests pass (100% success rate)
-- No test failures or errors
-- Test report generated
+After running tests, results are available in:
+- `target/surefire-reports/` - JUnit test results
+- `target/site/jacoco/` - Coverage report (if `--coverage` used)
 
-## Before Committing
+## Troubleshooting
 
-This MUST pass before any git commit. The workflow is:
+**Tests failing due to database:**
+- The test environment uses H2 in-memory database
+- No external database setup required
+- Database is configured via Maven properties in pom.xml
 
-```bash
-ant compile && ant unitTest
-# If both succeed, then git commit
-```
+**Tests failing due to network:**
+- Some integration tests may require external connectivity
+- Run individual module tests to isolate failures
+- Check module-specific SKILL.md for additional setup
+
+**Out of memory errors:**
+- Increase heap size: `export MAVEN_OPTS="-Xmx2g"`

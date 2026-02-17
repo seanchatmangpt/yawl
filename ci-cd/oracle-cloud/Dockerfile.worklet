@@ -9,26 +9,28 @@ LABEL maintainer="YAWL Foundation"
 LABEL description="YAWL Worklet Service - Build Stage"
 LABEL version="5.2"
 
-# Install Ant
-ARG ANT_VERSION=1.10.14
+# Install Maven
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    maven \
     curl \
     ca-certificates \
-    && curl -fsSL https://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz | tar xz -C /opt \
-    && ln -s /opt/apache-ant-${ANT_VERSION} /opt/ant \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV ANT_HOME=/opt/ant
-ENV PATH="${ANT_HOME}/bin:${PATH}"
+ENV MAVEN_HOME=/usr/share/maven
+ENV PATH="${MAVEN_HOME}/bin:${PATH}"
 
 WORKDIR /build
 
-# Copy source code
-COPY . .
+# Copy Maven configuration and source code
+COPY pom.xml ./
+COPY src ./src
+COPY test ./test
+COPY build ./build
+COPY schema ./schema
 
-# Build WAR files
-RUN ant -f build/build.xml buildWebApps
+# Build with Maven
+RUN mvn clean package -DskipTests -B
 
 # Runtime stage
 FROM eclipse-temurin:25-jre-jammy
@@ -63,11 +65,8 @@ ENV PATH="${CATALINA_HOME}/bin:${PATH}"
 
 WORKDIR /app
 
-# Copy WAR files from builder
-COPY --from=builder /build/webapps/workletService.war ${CATALINA_HOME}/webapps/ROOT.war
-
-# Copy shared libraries
-COPY --from=builder /build/build/3rdParty/lib/*.jar ${CATALINA_HOME}/lib/
+# Copy WAR files from builder (Maven packages to target/)
+COPY --from=builder /build/target/*.war ${CATALINA_HOME}/webapps/ROOT.war
 
 # Create directories for logs and data
 RUN mkdir -p ${CATALINA_HOME}/logs ${CATALINA_HOME}/data \

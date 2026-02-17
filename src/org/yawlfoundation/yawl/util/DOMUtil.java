@@ -41,6 +41,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Vector;
 
@@ -80,7 +82,7 @@ public class DOMUtil
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+        return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
@@ -117,7 +119,7 @@ public class DOMUtil
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+        return builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
@@ -274,7 +276,7 @@ public class DOMUtil
 
             if(emptyElementXSLT == null)
             {
-                ByteArrayInputStream bais = new ByteArrayInputStream(EMPTY_ELEMENT_REMOVAL_XSLT.getBytes("UTF-8"));
+                ByteArrayInputStream bais = new ByteArrayInputStream(EMPTY_ELEMENT_REMOVAL_XSLT.getBytes(StandardCharsets.UTF_8));
                 StreamSource stream = new StreamSource(bais);
                 emptyElementXSLT = TransformerFactoryImpl.newInstance().newTransformer(stream);
 
@@ -288,7 +290,7 @@ public class DOMUtil
             emptyElementXSLT.transform(source, new StreamResult(baos));
 
 
-            Document dom = getDocumentFromString(baos.toString("UTF-8"));
+            Document dom = getDocumentFromString(baos.toString(StandardCharsets.UTF_8));
 
 
             return dom;
@@ -422,21 +424,19 @@ public class DOMUtil
      * Converts a XML String into an Input source with UTF-8 encoding
      * @param xml
      * @return an instantiated InputSource
-     * @throws UnsupportedEncodingException
      */
-    public static InputSource createUTF8InputSource(String xml) throws UnsupportedEncodingException
+    public static InputSource createUTF8InputSource(String xml)
     {
-        return new InputSource(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+        return new InputSource(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
      * Converts a Document dom into an Input source with UTF-8 encoding
      * @param node
      * @return an instantiated InputSource
-     * @throws UnsupportedEncodingException
      * @throws TransformerException
      */
-    public static InputSource createUTF8InputSource(Node node) throws UnsupportedEncodingException, TransformerException
+    public static InputSource createUTF8InputSource(Node node) throws TransformerException
     {
         return createUTF8InputSource(DOMUtil.getXMLStringFragmentFromNode(node));
     }

@@ -6,6 +6,7 @@ import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
@@ -14,7 +15,6 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import java.io.IOException;
 
@@ -246,8 +246,8 @@ public class YawlMcpServer {
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable is required.\n" +
-                "Set it with: export YAWL_PASSWORD=YAWL");
+                "YAWL_PASSWORD environment variable is required. " +
+                "See SECURITY.md for credential configuration procedures.");
         }
 
         System.err.println("Starting YAWL MCP Server v" + SERVER_VERSION);

@@ -25,6 +25,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.concurrent.Executors;
 
 /**
  * A simple static checker that (1) checks that the url string passed in is a valid
@@ -32,10 +37,22 @@ import java.net.URI;
  * <p/>
  * Author: Michael Adams
  * Creation Date: 7/05/2009
+ * Migrated to java.net.http.HttpClient: 2026-02-16
  */
 public class HttpURLValidator {
 
-    private static final int CONNECT_TIMEOUT = 1000;
+    private static final int CONNECT_TIMEOUT_MS = 1000;
+    private static final Duration CONNECT_TIMEOUT = Duration.ofMillis(CONNECT_TIMEOUT_MS);
+
+    /**
+     * Shared HTTP client using virtual threads for network I/O.
+     * Virtual threads provide efficient handling of concurrent URL validations.
+     */
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(CONNECT_TIMEOUT)
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
+            .build();
+
     private static boolean _cancelled = false;
 
     /**
@@ -55,19 +72,32 @@ public class HttpURLValidator {
 
     private static String validate(URL url) {
         try {
-            HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
-            httpConnection.setRequestMethod("HEAD");
-            httpConnection.setConnectTimeout(CONNECT_TIMEOUT);
-            int response = httpConnection.getResponseCode();
-            if ((response < 0) || (response >= 300))             // indicates some error
-                return getErrorMessage(response + " " + httpConnection.getResponseMessage());
-        } catch (SocketTimeoutException ste) {
-            return getErrorMessage("Error attempting to validate URL: " + ste.getMessage());
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(url.toURI())
+                    .timeout(CONNECT_TIMEOUT)
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            HttpResponse<Void> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+            int responseCode = response.statusCode();
+            if ((responseCode < 0) || (responseCode >= 300)) {
+                return getErrorMessage(responseCode + " " + response.toString());
+            }
+        } catch (java.net.http.HttpConnectTimeoutException cte) {
+            return getErrorMessage("Error attempting to validate URL: " + cte.getMessage());
+        } catch (java.net.http.HttpTimeoutException te) {
+            return getErrorMessage("Error attempting to validate URL: " + te.getMessage());
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return getErrorMessage("Error attempting to validate URL: interrupted");
         } catch (IOException ioe) {
             return getErrorMessage("Error attempting to validate URL: " + ioe.getMessage());
+        } catch (URISyntaxException use) {
+            return getErrorMessage("Error attempting to validate URL: " + use.getMessage());
         }
 
-        return "<success/>";                             // no errors and responded 'OK'
+        return "<success/>";
     }
 
 
@@ -159,9 +189,10 @@ public class HttpURLValidator {
                 if (validate(url).equals("<success/>")) return true;
                 try {
                     if (_cancelled) throw new InterruptedException();
-                    Thread.sleep(CONNECT_TIMEOUT);
+                    Thread.sleep(CONNECT_TIMEOUT_MS);
                     now = System.currentTimeMillis();
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     return false;
                 }
             }

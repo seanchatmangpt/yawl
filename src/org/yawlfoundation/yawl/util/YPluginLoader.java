@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -259,7 +260,7 @@ public class YPluginLoader extends URLClassLoader {
                 processJAR(mask, plugins, (JarURLConnection) connection);
             }
             else {    // single file or directory
-                String filePath = URLDecoder.decode(url.getPath(), "UTF-8");
+                String filePath = URLDecoder.decode(url.getPath(), StandardCharsets.UTF_8);
                 String[] fileList = new File(filePath).list();
                 if (fileList != null) {
                     for (String file : fileList) {

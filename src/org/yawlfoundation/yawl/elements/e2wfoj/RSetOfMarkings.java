@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2025 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -22,49 +22,47 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *  Data structure for Storage of RMarkings.
+ * Data structure for Storage of RMarkings.
  *
- **/
+ * @author YAWL Foundation
+ * @since 2.0
+ */
 public class RSetOfMarkings {
-    private Set _markings = new HashSet();
-
+    private final Set<RMarking> markings = new HashSet<>();
 
     public void addMarking(RMarking marking) {
-        _markings.add(marking);
+        markings.add(marking);
     }
 
-    public Set getMarkings() {
-        return new HashSet(_markings);
+    public Set<RMarking> getMarkings() {
+        return new HashSet<>(markings);
     }
 
     public int size() {
-        return _markings.size();
+        return markings.size();
     }
 
     public void removeAll() {
-        _markings.clear();
+        markings.clear();
     }
 
     public void removeMarking(RMarking marking) {
-        _markings.remove(marking);
+        markings.remove(marking);
     }
 
     public void addAll(RSetOfMarkings newmarkings) {
-        _markings.addAll(newmarkings.getMarkings());
-
+        markings.addAll(newmarkings.getMarkings());
     }
 
-    public boolean equals(RSetOfMarkings markings) {
-        Set markingsToCompare = markings.getMarkings();
-        if (_markings.size() != markingsToCompare.size()) {
+    public boolean equals(RSetOfMarkings other) {
+        if (other == null) {
             return false;
-        } else {
-            if (_markings.containsAll(markingsToCompare) &&
-                    (markingsToCompare.containsAll(_markings))) {
-                return true;
-            }
         }
-        return false;
+        Set<RMarking> markingsToCompare = other.getMarkings();
+        if (markings.size() != markingsToCompare.size()) {
+            return false;
+        }
+        return markings.containsAll(markingsToCompare) &&
+               markingsToCompare.containsAll(markings);
     }
-
 }

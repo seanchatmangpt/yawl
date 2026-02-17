@@ -4,9 +4,7 @@ import org.jdom2.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.state.TestYMarking;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.engine.TestEngineAgainstImproperCompletionOfASubnet;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
@@ -55,7 +53,7 @@ class TestYNet {
         _badNet = _badSpecification.getRootNet();
         _copy = null;
         _copy = (YNet) this._goodNet.clone();
-        URL fileURL = TestYMarking.class.getResource("YAWLOrJoinTestSpecificationLongLoops.xml");
+        URL fileURL = TestYNet.class.getResource("state/YAWLOrJoinTestSpecificationLongLoops.xml");
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = null;
         specification = (YSpecification) YMarshal.
@@ -90,8 +88,8 @@ class TestYNet {
         _id8.addLocation(null, (YCondition) _loopedNet.getNetElement("cC"));
         _id8.addLocation(null, (YCondition) _loopedNet.getNetElement("c{q_f}"));
 //        _id8.addLocation((YCondition)_loopedNet.getNetElement("c{YAtomicTask:a, YAtomicTask:d}"));
-        File file3 = new File(TestEngineAgainstImproperCompletionOfASubnet.class.getResource(
-                "ImproperCompletion.xml").getFile());
+        File file3 = new File(TestYNet.class.getResource(
+                "../engine/ImproperCompletion.xml").getFile());
         try {
             _weirdSpecification = (YSpecification) YMarshal.unmarshalSpecifications(
                     StringUtil.fileToString(file3.getAbsolutePath())).get(0);

@@ -66,6 +66,7 @@ import java.util.prefs.Preferences;
 public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
         ActionListener,
         ItemListener {
+    private static final long serialVersionUID = 1L;
     private String _loadWorkflowCommand = "Load Workflow";
     private String _unloadWorkflowCommand = "Unload Workflow";
     private String _exportToXMLCommand = "Export to XML";
@@ -323,7 +324,7 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
                 while (iter.hasNext()) {
                     YSpecification spec = _engineManagement.getSpecification((YSpecificationID) iter.next());
                     logger.debug("Loading spec {}", spec.getURI());
-                    _loadedSpecificationsTableModel.addRow(spec.getSpecificationID(), new Object[]{spec.getSpecificationID(), spec.getRootNet().getID()});
+                    _loadedSpecificationsTableModel.addRow(spec.getSpecificationID().getKey(), new Object[]{spec.getSpecificationID().getKey(), spec.getRootNet().getID()});
 
                     // Load up any active cases
                     Set cases = _engineManagement.getCasesForSpecification(spec.getSpecificationID());
@@ -568,7 +569,7 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
             for (YSpecificationID specID : newSpecIDs)
             {
                 spec = _engineManagement.getSpecification(specID);
-                _loadedSpecificationsTableModel.addRow(specID, new Object[]{specID, spec.getRootNet().getID()});
+                _loadedSpecificationsTableModel.addRow(specID.getKey(), new Object[]{specID.getKey(), spec.getRootNet().getID()});
             }
         }
 

@@ -1,11 +1,13 @@
 package org.yawlfoundation.yawl.database;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.*;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Database Compatibility Tests
@@ -21,21 +23,17 @@ import java.util.Properties;
  * - Connection pooling
  * - Prepared statements (SQL injection prevention)
  */
-public class DatabaseCompatibilityTest extends TestCase {
+public class DatabaseCompatibilityTest {
 
     private Connection connection;
 
-    public DatabaseCompatibilityTest(String name) {
-        super(name);
+    @BeforeEach
+    void setUp() throws Exception {
+        // Connection will be created in individual tests
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (connection != null && !connection.isClosed()) {
             try {
                 connection.close();
@@ -43,29 +41,30 @@ public class DatabaseCompatibilityTest extends TestCase {
                 // Ignore close errors during teardown
             }
         }
-        super.tearDown();
     }
 
-    public void testH2InMemoryConnection() throws Exception {
+    @Test
+    void testH2InMemoryConnection() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test;DB_CLOSE_DELAY=-1",
             "sa",
             ""
         );
 
-        assertNotNull("H2 connection should be established", connection);
-        assertFalse("Connection should be open", connection.isClosed());
+        assertNotNull(connection, "H2 connection should be established");
+        assertFalse(connection.isClosed(), "Connection should be open");
 
         Statement stmt = connection.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT 1");
-        assertTrue("Query should return results", rs.next());
-        assertEquals("Query result should be 1", 1, rs.getInt(1));
+        assertTrue(rs.next(), "Query should return results");
+        assertEquals(1, rs.getInt(1), "Query result should be 1");
 
         rs.close();
         stmt.close();
     }
 
-    public void testH2CreateTable() throws Exception {
+    @Test
+    void testH2CreateTable() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_create;DB_CLOSE_DELAY=-1",
             "sa",
@@ -84,13 +83,14 @@ public class DatabaseCompatibilityTest extends TestCase {
 
         DatabaseMetaData metadata = connection.getMetaData();
         ResultSet tables = metadata.getTables(null, null, "YAWL_SPECIFICATION", null);
-        assertTrue("Table should exist", tables.next());
+        assertTrue(tables.next(), "Table should exist");
 
         tables.close();
         stmt.close();
     }
 
-    public void testH2InsertAndQuery() throws Exception {
+    @Test
+    void testH2InsertAndQuery() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_insert;DB_CLOSE_DELAY=-1",
             "sa",
@@ -106,24 +106,25 @@ public class DatabaseCompatibilityTest extends TestCase {
         pstmt.setString(3, "Test specification");
 
         int rowsInserted = pstmt.executeUpdate();
-        assertEquals("One row should be inserted", 1, rowsInserted);
+        assertEquals(1, rowsInserted, "One row should be inserted");
 
         String selectSql = "SELECT * FROM yawl_specification WHERE id = ?";
         PreparedStatement selectStmt = connection.prepareStatement(selectSql);
         selectStmt.setString(1, "spec-001");
 
         ResultSet rs = selectStmt.executeQuery();
-        assertTrue("Record should be found", rs.next());
-        assertEquals("ID should match", "spec-001", rs.getString("id"));
-        assertEquals("Version should match", "1.0", rs.getString("version"));
-        assertEquals("Description should match", "Test specification", rs.getString("description"));
+        assertTrue(rs.next(), "Record should be found");
+        assertEquals("spec-001", rs.getString("id"), "ID should match");
+        assertEquals("1.0", rs.getString("version"), "Version should match");
+        assertEquals("Test specification", rs.getString("description"), "Description should match");
 
         rs.close();
         selectStmt.close();
         pstmt.close();
     }
 
-    public void testPreparedStatementSQLInjectionPrevention() throws Exception {
+    @Test
+    void testPreparedStatementSQLInjectionPrevention() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_injection;DB_CLOSE_DELAY=-1",
             "sa",
@@ -147,14 +148,15 @@ public class DatabaseCompatibilityTest extends TestCase {
         selectStmt.setString(1, maliciousInput);
 
         ResultSet rs = selectStmt.executeQuery();
-        assertFalse("Injection attack should not return results", rs.next());
+        assertFalse(rs.next(), "Injection attack should not return results");
 
         rs.close();
         selectStmt.close();
         pstmt.close();
     }
 
-    public void testTransactionCommit() throws Exception {
+    @Test
+    void testTransactionCommit() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_transaction;DB_CLOSE_DELAY=-1",
             "sa",
@@ -178,14 +180,15 @@ public class DatabaseCompatibilityTest extends TestCase {
         selectStmt.setString(1, "spec-003");
         ResultSet rs = selectStmt.executeQuery();
         rs.next();
-        assertEquals("Record should be committed", 1, rs.getInt(1));
+        assertEquals(1, rs.getInt(1), "Record should be committed");
 
         rs.close();
         selectStmt.close();
         pstmt.close();
     }
 
-    public void testTransactionRollback() throws Exception {
+    @Test
+    void testTransactionRollback() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_rollback;DB_CLOSE_DELAY=-1",
             "sa",
@@ -209,14 +212,15 @@ public class DatabaseCompatibilityTest extends TestCase {
         selectStmt.setString(1, "spec-004");
         ResultSet rs = selectStmt.executeQuery();
         rs.next();
-        assertEquals("Record should be rolled back", 0, rs.getInt(1));
+        assertEquals(0, rs.getInt(1), "Record should be rolled back");
 
         rs.close();
         selectStmt.close();
         pstmt.close();
     }
 
-    public void testBatchInsert() throws Exception {
+    @Test
+    void testBatchInsert() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_test_batch;DB_CLOSE_DELAY=-1",
             "sa",
@@ -236,33 +240,34 @@ public class DatabaseCompatibilityTest extends TestCase {
         }
 
         int[] results = pstmt.executeBatch();
-        assertEquals("100 rows should be inserted", 100, results.length);
+        assertEquals(100, results.length, "100 rows should be inserted");
 
         String countSql = "SELECT COUNT(*) FROM yawl_specification";
         Statement stmt = connection.createStatement();
         ResultSet rs = stmt.executeQuery(countSql);
         rs.next();
-        assertEquals("Should have 100 records", 100, rs.getInt(1));
+        assertEquals(100, rs.getInt(1), "Should have 100 records");
 
         rs.close();
         stmt.close();
         pstmt.close();
     }
 
-    public void testDerbyEmbeddedConnection() throws Exception {
+    @Test
+    void testDerbyEmbeddedConnection() throws Exception {
         try {
             // Derby embedded mode
             connection = DriverManager.getConnection(
                 "jdbc:derby:memory:yawl_derby_test;create=true"
             );
 
-            assertNotNull("Derby connection should be established", connection);
-            assertFalse("Connection should be open", connection.isClosed());
+            assertNotNull(connection, "Derby connection should be established");
+            assertFalse(connection.isClosed(), "Connection should be open");
 
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery("VALUES 1");
-            assertTrue("Query should return results", rs.next());
-            assertEquals("Query result should be 1", 1, rs.getInt(1));
+            assertTrue(rs.next(), "Query should return results");
+            assertEquals(1, rs.getInt(1), "Query result should be 1");
 
             rs.close();
             stmt.close();
@@ -272,25 +277,27 @@ public class DatabaseCompatibilityTest extends TestCase {
         }
     }
 
-    public void testHSQLDBInMemoryConnection() throws Exception {
+    @Test
+    void testHSQLDBInMemoryConnection() throws Exception {
         connection = DriverManager.getConnection(
             "jdbc:hsqldb:mem:yawl_hsqldb_test",
             "SA",
             ""
         );
 
-        assertNotNull("HSQLDB connection should be established", connection);
-        assertFalse("Connection should be open", connection.isClosed());
+        assertNotNull(connection, "HSQLDB connection should be established");
+        assertFalse(connection.isClosed(), "Connection should be open");
 
         Statement stmt = connection.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        assertTrue("Query should return results", rs.next());
+        assertTrue(rs.next(), "Query should return results");
 
         rs.close();
         stmt.close();
     }
 
-    public void testConnectionPooling() throws Exception {
+    @Test
+    void testConnectionPooling() throws Exception {
         // Test multiple connections
         Connection conn1 = DriverManager.getConnection(
             "jdbc:h2:mem:yawl_pool_test;DB_CLOSE_DELAY=-1",
@@ -303,16 +310,16 @@ public class DatabaseCompatibilityTest extends TestCase {
             ""
         );
 
-        assertNotNull("First connection should be established", conn1);
-        assertNotNull("Second connection should be established", conn2);
-        assertFalse("First connection should be open", conn1.isClosed());
-        assertFalse("Second connection should be open", conn2.isClosed());
+        assertNotNull(conn1, "First connection should be established");
+        assertNotNull(conn2, "Second connection should be established");
+        assertFalse(conn1.isClosed(), "First connection should be open");
+        assertFalse(conn2.isClosed(), "Second connection should be open");
 
         conn1.close();
         conn2.close();
 
-        assertTrue("First connection should be closed", conn1.isClosed());
-        assertTrue("Second connection should be closed", conn2.isClosed());
+        assertTrue(conn1.isClosed(), "First connection should be closed");
+        assertTrue(conn2.isClosed(), "Second connection should be closed");
     }
 
     private void createTestTable(Connection conn) throws SQLException {
@@ -326,15 +333,5 @@ public class DatabaseCompatibilityTest extends TestCase {
         Statement stmt = conn.createStatement();
         stmt.execute(createTableSql);
         stmt.close();
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Database Compatibility Tests");
-        suite.addTestSuite(DatabaseCompatibilityTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

@@ -1,0 +1,41 @@
+YAWL Version 6.0.0-Alpha
+========================
+
+Release Date: February 16, 2026
+Release Type: Alpha (Community Preview)
+
+Contributors:
+- Sean Chatman (Library Modernization Lead & Architecture Consultant)
+- Claude Code Agent Team, Anthropic (AI-Assisted Development & Code Quality Automation)
+
+Original Authors:
+- YAWL Foundation Team
+
+Description:
+This alpha release modernizes YAWL's library dependencies to their latest stable versions,
+establishes comprehensive validation frameworks, and improves code quality standards to
+100% HYPER_STANDARDS compliance.
+
+Major Changes:
+- 24 library updates to stable, secure versions
+- Performance monitoring framework
+- Production validation framework
+- Zero code quality violations
+- Architecture preserved and verified
+
+Status: Alpha Release
+- Intended for community review and testing
+- Not recommended for production use
+- Feedback welcome via GitHub issues
+
+Next Steps:
+- Beta release after community feedback
+- Release candidate for production validation
+- Stable 6.0.0 release
+
+For detailed changes, see CHANGELOG.md
+For technical details, see /validation/ and /performance-reports/
+
+---
+Built with Claude Code Agent Team
+https://claude.ai/code/
