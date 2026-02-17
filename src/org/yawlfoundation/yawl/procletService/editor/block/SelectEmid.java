@@ -32,7 +32,7 @@ public class SelectEmid extends JPanel implements ActionListener {
 
 	public SelectEmid() {
 		super(new BorderLayout());
-		List<EntityMID> emids = new ArrayList<EntityMID>();
+		List<EntityMID> emids = new ArrayList<>();
 		emids.add(new EntityMID("1"));
 		JComboBox petList = new JComboBox(emids.toArray());
 		petList.setSelectedIndex(0);

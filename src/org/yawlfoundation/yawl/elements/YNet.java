@@ -411,23 +411,25 @@ public final class YNet extends YDecomposition {
             xml.append(variable.toXML());
         }
         xml.append("<processControlElements>");
-        xml.append(_inputCondition.toXML());
+        if (_inputCondition != null) {
+            xml.append(_inputCondition.toXML());
 
-        Set<YExternalNetElement> visitedFw = new HashSet<>();
-        Set<YExternalNetElement> visitingFw = new HashSet<>();
-        visitingFw.add(_inputCondition);
-        do {
-            visitedFw.addAll(visitingFw);
-            visitingFw = getPostset(visitingFw);
-            visitingFw.removeAll(visitedFw);
-            xml.append(produceXMLStringForSet(visitingFw));
-        } while (visitingFw.size() > 0);
+            Set<YExternalNetElement> visitedFw = new HashSet<>();
+            Set<YExternalNetElement> visitingFw = new HashSet<>();
+            visitingFw.add(_inputCondition);
+            do {
+                visitedFw.addAll(visitingFw);
+                visitingFw = getPostset(visitingFw);
+                visitingFw.removeAll(visitedFw);
+                xml.append(produceXMLStringForSet(visitingFw));
+            } while (visitingFw.size() > 0);
 
-        Set<YExternalNetElement> remainingElements =
-                new HashSet<>(_netElements.values());
-        remainingElements.removeAll(visitedFw);
-        xml.append(produceXMLStringForSet(remainingElements));
-        xml.append(_outputCondition.toXML());
+            Set<YExternalNetElement> remainingElements =
+                    new HashSet<>(_netElements.values());
+            remainingElements.removeAll(visitedFw);
+            xml.append(produceXMLStringForSet(remainingElements));
+        }
+        if (_outputCondition != null) xml.append(_outputCondition.toXML());
         xml.append("</processControlElements>");
         if (_externalDataGateway != null) {
             xml.append(StringUtil.wrap(_externalDataGateway, "externalDataGateway"));

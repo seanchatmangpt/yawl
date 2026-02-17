@@ -34,7 +34,6 @@ org/yawlfoundation/yawl/elements/YNetLocalVarVerifier$LocalTaskMap.class
 org/yawlfoundation/yawl/elements/YInputCondition.class
 org/yawlfoundation/yawl/schema/YSchemaVersion.class
 org/yawlfoundation/yawl/elements/YAtomicTask.class
-org/yawlfoundation/yawl/util/PluginLoaderUtil.class
 org/yawlfoundation/yawl/elements/YTimerParameters$TimerType.class
 org/yawlfoundation/yawl/elements/e2wfoj/CombinationGenerator.class
 org/yawlfoundation/yawl/elements/data/external/HibernateEngine.class

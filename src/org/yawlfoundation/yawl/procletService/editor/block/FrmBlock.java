@@ -155,7 +155,7 @@ public class FrmBlock extends DesignInternalFrame {
 //				  if (obj instanceof InteractionNode) {
 //					  InteractionNode objNode = (InteractionNode) obj;
 //					  // first get all choice nodes
-//					  List<InteractionNode> nodesRel = new ArrayList<InteractionNode>();
+//					  List<InteractionNode> nodesRel = new ArrayList<>();
 //					  if (nonCreateItemItemList != null) {
 //						  for (List item : nonCreateItemItemList) {
 //							  InteractionNode node = (InteractionNode) item.get(3);
@@ -843,7 +843,7 @@ private void initComponents() {
 private void initPanel() {
 	// find source nodes
     // inform which emid is chosen and get options
-    List<InteractionNode> nodes = new ArrayList<InteractionNode>();
+    List<InteractionNode> nodes = new ArrayList<>();
     //create
     for (List item : this.createItemItemList) {
     	InteractionNode node = (InteractionNode) item.get(2);

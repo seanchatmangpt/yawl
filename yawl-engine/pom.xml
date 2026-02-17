@@ -128,6 +128,28 @@
             </resource>
         </resources>
 
+        <testResources>
+            <testResource>
+                <!-- Copy engine test XML specification files referenced by tests via
+                     getClass().getResource("YAWL_Specification2.xml") etc. -->
+                <directory>../test/org/yawlfoundation/yawl/engine</directory>
+                <targetPath>org/yawlfoundation/yawl/engine</targetPath>
+                <includes>
+                    <include>*.xml</include>
+                    <include>*.yawl</include>
+                    <include>*.ywl</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <!-- Copy YAWL schema XSD files needed by unmarshaller during tests -->
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

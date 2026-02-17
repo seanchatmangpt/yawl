@@ -514,7 +514,7 @@ public class MainScreen {
       public void actionPerformed(ActionEvent e) {
     	  // ask for which emid the graph should be shown
     	  // take from mem
-          java.util.List<EntityMID> emids = new ArrayList<EntityMID>();
+          java.util.List<EntityMID> emids = new ArrayList<>();
     	  InteractionGraphs igraphs = InteractionGraphs.getNewInstance();
     	  for (InteractionGraph graph : igraphs.getGraphs()) {
     		  EntityMID emid = graph.getEntityMID();
@@ -658,13 +658,21 @@ public class MainScreen {
           frames.activate(true, e.getInternalFrame());
         }
 
-        public void internalFrameDeiconified(InternalFrameEvent e) {}
+        public void internalFrameDeiconified(InternalFrameEvent e) {
+            frames.activate(true, e.getInternalFrame());
+        }
 
-        public void internalFrameIconified(InternalFrameEvent e) {}
+        public void internalFrameIconified(InternalFrameEvent e) {
+            frames.activate(false, e.getInternalFrame());
+        }
 
-        public void internalFrameClosing(InternalFrameEvent e) {}
+        public void internalFrameClosing(InternalFrameEvent e) {
+            frames.activate(false, e.getInternalFrame());
+        }
 
-        public void internalFrameOpened(InternalFrameEvent e) {}
+        public void internalFrameOpened(InternalFrameEvent e) {
+            frames.activate(true, e.getInternalFrame());
+        }
 
         public void internalFrameClosed(InternalFrameEvent e) {
           BlockCoordinator.finish();
@@ -697,13 +705,21 @@ public class MainScreen {
 	          frames.activate(true, e.getInternalFrame());
 	        }
 
-	        public void internalFrameDeiconified(InternalFrameEvent e) {}
+	        public void internalFrameDeiconified(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
-	        public void internalFrameIconified(InternalFrameEvent e) {}
+	        public void internalFrameIconified(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameClosing(InternalFrameEvent e) {}
+	        public void internalFrameClosing(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameOpened(InternalFrameEvent e) {}
+	        public void internalFrameOpened(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
 	        public void internalFrameClosed(InternalFrameEvent e) {
 	        	ExceptionChoiceCoordinator.finish();
@@ -744,13 +760,21 @@ public class MainScreen {
 	          frames.activate(true, e.getInternalFrame());
 	        }
 
-	        public void internalFrameDeiconified(InternalFrameEvent e) {}
+	        public void internalFrameDeiconified(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
-	        public void internalFrameIconified(InternalFrameEvent e) {}
+	        public void internalFrameIconified(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameClosing(InternalFrameEvent e) {}
+	        public void internalFrameClosing(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameOpened(InternalFrameEvent e) {}
+	        public void internalFrameOpened(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
 	        public void internalFrameClosed(InternalFrameEvent e) {
 	        	BlockExceptionChoiceCoordinator.finish();
@@ -792,13 +816,21 @@ public class MainScreen {
 	          frames.activate(true, e.getInternalFrame());
 	        }
 
-	        public void internalFrameDeiconified(InternalFrameEvent e) {}
+	        public void internalFrameDeiconified(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
-	        public void internalFrameIconified(InternalFrameEvent e) {}
+	        public void internalFrameIconified(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameClosing(InternalFrameEvent e) {}
+	        public void internalFrameClosing(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameOpened(InternalFrameEvent e) {}
+	        public void internalFrameOpened(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
 	        public void internalFrameClosed(InternalFrameEvent e) {
 	        	ExceptionChoiceCoordinator.finish();
@@ -829,13 +861,21 @@ public class MainScreen {
 	          frames.activate(true, e.getInternalFrame());
 	        }
 
-	        public void internalFrameDeiconified(InternalFrameEvent e) {}
+	        public void internalFrameDeiconified(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
-	        public void internalFrameIconified(InternalFrameEvent e) {}
+	        public void internalFrameIconified(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameClosing(InternalFrameEvent e) {}
+	        public void internalFrameClosing(InternalFrameEvent e) {
+	            frames.activate(false, e.getInternalFrame());
+	        }
 
-	        public void internalFrameOpened(InternalFrameEvent e) {}
+	        public void internalFrameOpened(InternalFrameEvent e) {
+	            frames.activate(true, e.getInternalFrame());
+	        }
 
 	        public void internalFrameClosed(InternalFrameEvent e) {
 	          BlockCoordinator.finish();

@@ -114,6 +114,15 @@
                     <include>*.xml</include>
                 </includes>
             </testResource>
+            <testResource>
+                <!-- Copy engine test XML files (e.g. ImproperCompletion.xml) referenced
+                     by TestYNet via getResource("../engine/ImproperCompletion.xml") -->
+                <directory>../test/org/yawlfoundation/yawl/engine</directory>
+                <targetPath>org/yawlfoundation/yawl/engine</targetPath>
+                <includes>
+                    <include>*.xml</include>
+                </includes>
+            </testResource>
         </testResources>
 
         <plugins>

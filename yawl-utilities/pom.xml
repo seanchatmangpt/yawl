@@ -81,6 +81,13 @@
                     <include>**/*.xml</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </resource>
         </resources>
 
         <testResources>
