@@ -194,7 +194,7 @@ public class FrmGraph extends DesignInternalFrame {
 		        vv.getRenderContext().setEdgeLabelTransformer(edgeLabel);
 		        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
 		        // options
-		        java.util.List<String> options = new ArrayList<String>();
+		        java.util.List<String> options = new ArrayList<>();
 		        options.add("FRLayout");
 		        options.add("KKLayout");
 		        options.add("CircleLayout");

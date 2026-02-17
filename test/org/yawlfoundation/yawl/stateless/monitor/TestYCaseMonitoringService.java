@@ -1,10 +1,13 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitoringService.CaseStatistics;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitoringService.TaskMetrics;
 
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test cases for YCaseMonitoringService.
@@ -12,17 +15,13 @@ import java.util.Map;
  * @author YAWL Development Team
  * @since 5.2
  */
-public class TestYCaseMonitoringService extends TestCase {
+public class TestYCaseMonitoringService {
 
     private YCaseMonitor caseMonitor;
     private YCaseMonitoringService monitoringService;
 
-    public TestYCaseMonitoringService(String name) {
-        super(name);
-    }
-
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() {
         caseMonitor = new YCaseMonitor(0);
         monitoringService = new YCaseMonitoringService(caseMonitor);
     }
@@ -30,54 +29,53 @@ public class TestYCaseMonitoringService extends TestCase {
     /**
      * Test creating service with null monitor throws exception.
      */
-    public void testNullMonitorThrowsException() {
-        try {
-            new YCaseMonitoringService(null);
-            fail("Should throw IllegalArgumentException for null monitor");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue("Exception message should mention null",
-                      e.getMessage().contains("null"));
-        }
+    @Test
+    void testNullMonitorThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> new YCaseMonitoringService(null),
+                "Should throw IllegalArgumentException for null monitor");
     }
 
     /**
      * Test getting statistics for empty monitor.
      */
-    public void testGetStatisticsEmpty() {
+    @Test
+    void testGetStatisticsEmpty() {
         CaseStatistics stats = monitoringService.getCaseStatistics();
 
-        assertNotNull("Statistics should not be null", stats);
-        assertEquals("Total cases should be 0", 0, stats.totalCases);
-        assertEquals("Active cases should be 0", 0, stats.activeCases);
-        assertEquals("Completed cases should be 0", 0, stats.completedCases);
-        assertTrue("Timestamp should be set", stats.timestamp > 0);
+        assertNotNull(stats, "Statistics should not be null");
+        assertEquals(0, stats.totalCases, "Total cases should be 0");
+        assertEquals(0, stats.activeCases, "Active cases should be 0");
+        assertEquals(0, stats.completedCases, "Completed cases should be 0");
+        assertTrue(stats.timestamp > 0, "Timestamp should be set");
     }
 
     /**
      * Test getting work item distribution for empty monitor.
      */
-    public void testGetWorkItemDistributionEmpty() {
+    @Test
+    void testGetWorkItemDistributionEmpty() {
         Map<String, Integer> distribution = monitoringService.getWorkItemDistribution();
 
-        assertNotNull("Distribution should not be null", distribution);
-        assertTrue("Distribution should be empty", distribution.isEmpty());
+        assertNotNull(distribution, "Distribution should not be null");
+        assertTrue(distribution.isEmpty(), "Distribution should be empty");
     }
 
     /**
      * Test getting task performance for empty monitor.
      */
-    public void testGetTaskPerformanceEmpty() {
+    @Test
+    void testGetTaskPerformanceEmpty() {
         Map<String, TaskMetrics> performance = monitoringService.getTaskPerformance();
 
-        assertNotNull("Performance map should not be null", performance);
-        assertTrue("Performance map should be empty", performance.isEmpty());
+        assertNotNull(performance, "Performance map should not be null");
+        assertTrue(performance.isEmpty(), "Performance map should be empty");
     }
 
     /**
      * Test TaskMetrics class.
      */
-    public void testTaskMetrics() {
+    @Test
+    void testTaskMetrics() {
         TaskMetrics metrics = new TaskMetrics("task-1");
 
         assertEquals("task-1", metrics.getTaskID());
@@ -90,7 +88,8 @@ public class TestYCaseMonitoringService extends TestCase {
     /**
      * Test TaskMetrics with duration data.
      */
-    public void testTaskMetricsWithDurations() {
+    @Test
+    void testTaskMetricsWithDurations() {
         TaskMetrics metrics = new TaskMetrics("task-1");
 
         metrics.addDuration(100L);
@@ -111,21 +110,23 @@ public class TestYCaseMonitoringService extends TestCase {
     /**
      * Test TaskMetrics toString.
      */
-    public void testTaskMetricsToString() {
+    @Test
+    void testTaskMetricsToString() {
         TaskMetrics metrics = new TaskMetrics("task-1");
         metrics.addDuration(150L);
         metrics.incrementCount();
 
         String str = metrics.toString();
 
-        assertTrue("String should contain task ID", str.contains("task-1"));
-        assertTrue("String should contain count", str.contains("count=1"));
+        assertTrue(str.contains("task-1"), "String should contain task ID");
+        assertTrue(str.contains("count=1"), "String should contain count");
     }
 
     /**
      * Test CaseStatistics toString.
      */
-    public void testCaseStatisticsToString() {
+    @Test
+    void testCaseStatisticsToString() {
         CaseStatistics stats = new CaseStatistics();
         stats.totalCases = 10;
         stats.activeCases = 5;
@@ -135,38 +136,41 @@ public class TestYCaseMonitoringService extends TestCase {
 
         String str = stats.toString();
 
-        assertTrue("String should contain total", str.contains("total=10"));
-        assertTrue("String should contain active", str.contains("active=5"));
-        assertTrue("String should contain completed", str.contains("completed=4"));
-        assertTrue("String should contain cancelled", str.contains("cancelled=1"));
+        assertTrue(str.contains("total=10"), "String should contain total");
+        assertTrue(str.contains("active=5"), "String should contain active");
+        assertTrue(str.contains("completed=4"), "String should contain completed");
+        assertTrue(str.contains("cancelled=1"), "String should contain cancelled");
     }
 
     /**
      * Test clearing metrics cache.
      */
-    public void testClearCache() {
+    @Test
+    void testClearCache() {
         monitoringService.clearCache();
         CaseStatistics stats = monitoringService.getCaseStatistics();
-        assertNotNull("Statistics should still be available after cache clear", stats);
+        assertNotNull(stats, "Statistics should still be available after cache clear");
     }
 
     /**
      * Test getting slowest cases with no cases.
      */
-    public void testGetSlowestCasesEmpty() {
+    @Test
+    void testGetSlowestCasesEmpty() {
         var slowest = monitoringService.getSlowestCases(5);
 
-        assertNotNull("Result should not be null", slowest);
-        assertTrue("Result should be empty", slowest.isEmpty());
+        assertNotNull(slowest, "Result should not be null");
+        assertTrue(slowest.isEmpty(), "Result should be empty");
     }
 
     /**
      * Test getting slowest cases with limit.
      */
-    public void testGetSlowestCasesWithLimit() {
+    @Test
+    void testGetSlowestCasesWithLimit() {
         var slowest = monitoringService.getSlowestCases(10);
 
-        assertNotNull("Result should not be null", slowest);
-        assertTrue("Result size should be <= limit", slowest.size() <= 10);
+        assertNotNull(slowest, "Result should not be null");
+        assertTrue(slowest.size() <= 10, "Result size should be <= limit");
     }
 }

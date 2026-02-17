@@ -47,7 +47,7 @@ public class BlockEditFrame extends JDialog {
 	private static BlockEditFrame instance = null;
 	
 	// predefined values
-	private String blockIDpv = "";
+	private String blockIDpv = String.valueOf(new char[0]);
 	private ProcletBlock.BlockType blockTypepv = null;
 	private boolean isCreatepv = false;
 	private int timeoutpv = 0;
@@ -98,13 +98,13 @@ public class BlockEditFrame extends JDialog {
         if (!this.blockIDpv.equals("")) {
         	blockIDtextField.setText(blockIDpv);
         }
-        java.util.List<String> values = new ArrayList<String>();
+        java.util.List<String> values = new ArrayList<>();
         values.add("INBOX");
         values.add("OUTBOX");
         values.add("CONFIGURATION");
         jComboBox1 = new javax.swing.JComboBox(values.toArray());
         // convert block type
-        String convertedValue = "";
+        String convertedValue = String.valueOf(new char[0]);
         if (this.blockTypepv != null) {
 	        if (this.blockTypepv.toString().equals("FO")) {
 	        	convertedValue = "OUTBOX";

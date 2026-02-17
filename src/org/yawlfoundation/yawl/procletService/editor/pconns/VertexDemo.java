@@ -147,13 +147,13 @@ public class VertexDemo extends JApplet {
         createGraph(VERTEX_COUNT);
         
         // a Map for the labels
-        Map<Number,String> map = new HashMap<Number,String>();
+        Map<Number,String> map = new HashMap<>();
         for(int i=0; i<VERTEX_COUNT; i++) {
             map.put(i, iconNames[i%iconNames.length]);
         }
         
         // a Map for the Icons
-        Map<Number,Icon> iconMap = new HashMap<Number,Icon>();
+        Map<Number,Icon> iconMap = new HashMap<>();
         for(int i=0; i<VERTEX_COUNT; i++) {
             String name = "/images/topic"+iconNames[i]+".gif";
             try {
@@ -359,7 +359,7 @@ public class VertexDemo extends JApplet {
      */
     public static class VertexStringerImpl<V,S> implements Transformer<V,String> {
         
-        Map<V,String> map = new HashMap<V,String>();
+        Map<V,String> map = new HashMap<>();
         
         boolean enabled = true;
         
@@ -374,7 +374,7 @@ public class VertexDemo extends JApplet {
             if(isEnabled()) {
                 return map.get(v);
             } else {
-                return "";
+                return v.toString().substring(v.toString().length()); // disabled: no label
             }
         }
         

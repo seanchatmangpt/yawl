@@ -61,7 +61,7 @@ public class PConnEditFrame extends JDialog {
         java.util.List<ProcletPort> ports = pmodelsInst.getPorts();
         // get only these ports which are not connected yet
         java.util.List<PortConnection> pconnsList = PortConnections.getInstance().getPortConnections();
-        java.util.List<ProcletPort> portsUnconn = new ArrayList<ProcletPort>();
+        java.util.List<ProcletPort> portsUnconn = new ArrayList<>();
         boolean found = false;
         for (ProcletPort port : ports) {
         	found = false;

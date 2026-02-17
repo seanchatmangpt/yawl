@@ -84,7 +84,6 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")  // prevent connection reuse under heavy load
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -118,7 +117,6 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -147,7 +145,6 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -175,7 +172,6 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 

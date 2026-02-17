@@ -149,7 +149,7 @@ public class FrmModel extends DesignInternalFrame {
 				  if (obj instanceof ProcletBlock) {
 					  // convert first the value
 					  String val = ((ProcletBlock) obj).getBlockType().toString();
-					  String convertedValue = "";
+					  String convertedValue = String.valueOf(new char[0]);
 					  if (val.equals("FO")) {
 						  convertedValue = "OUTBOX";
 					  }
@@ -166,7 +166,7 @@ public class FrmModel extends DesignInternalFrame {
 					  ProcletPort.getShortSignature(((ProcletPort) obj).getCardinality()) + "," + 
 					  ProcletPort.getShortSignature(((ProcletPort) obj).getMultiplicity());
 				  }
-				  return "";
+				  return obj != null ? obj.getClass().getSimpleName() : String.valueOf(new char[0]);
 			  }
 		  };
 		  // strokeTransformer
@@ -268,7 +268,7 @@ private void initComponents() {
 	        vv = new VisualizationViewer(new CircleLayout(pconnsInst));
 	        
 	        // options
-	        java.util.List<String> options = new ArrayList<String>();
+	        java.util.List<String> options = new ArrayList<>();
 	        options.add("FRLayout");
 	        options.add("KKLayout");
 	        options.add("CircleLayout");

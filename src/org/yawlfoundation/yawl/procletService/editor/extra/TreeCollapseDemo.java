@@ -250,7 +250,7 @@ public class TreeCollapseDemo extends JApplet {
     	}
     	
     	private Collection<Double> getDepths() {
-    		Set<Double> depths = new HashSet<Double>();
+    		Set<Double> depths = new HashSet<>();
     		Map<String,PolarPoint> polarLocations = radialLayout.getPolarLocations();
     		for(String v : graph.getVertices()) {
     			PolarPoint pp = polarLocations.get(v);
