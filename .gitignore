@@ -1,42 +1,220 @@
-.idea/*
+# =============================================================================
+# YAWL v6.0 - .gitignore
+# Covers: Maven builds, Java, IDE files, OS artefacts, Docker, local dev config
+# =============================================================================
+
+# =============================================================================
+# Maven build output
+# =============================================================================
+target/
+*/target/
+dependency-reduced-pom.xml
+
+# Maven wrapper (not used, but exclude generated wrappers if added)
+.mvn/wrapper/maven-wrapper.jar
+
+# Maven build logs
+maven_compile.log
+maven*.log
+build-log.txt
+
+# Maven cache (local only)
+.m2/
+
+# =============================================================================
+# Java compiled output
+# =============================================================================
+*.class
+*.jar
+!lib/**/*.jar
+*.war
+*.ear
+*.nar
+
+# =============================================================================
+# Build output directories (non-Maven)
+# =============================================================================
 classes/
 output/
 temp/
 build/logs/
-exampleSpecs/xml/*.xsd
-src/org/yawlfoundation/yawl/unmarshal/*.xsd
-
-!/src/org/yawlfoundation/yawl/balancer/output/
-logs/
+build/3rdParty/
 build/jar/*.jar
 
-# Build Performance Tracking
-build-performance.log
-build-performance.json
-build-timing-*.log
+# Ant build output
+ant_compile.log
 
-# Dependency Check Reports
-dependency-check-report.*
-dependency-check-results.*
+# =============================================================================
+# IDE - IntelliJ IDEA
+# Commit .idea/codeStyles/ and .idea/inspectionProfiles/ — they are
+# shared project settings.  Exclude personal and generated IDEA files.
+# =============================================================================
+.idea/*
+!.idea/codeStyles/
+!.idea/codeStyles/**
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/**
+*.iml
+*.ipr
+*.iws
+out/
 
-# Maven Cache (if not using GitHub Actions)
-.m2/
+# =============================================================================
+# IDE - Eclipse / STS
+# =============================================================================
+.classpath
+.project
+.settings/
+bin/
+.factorypath
 
-# Maven build output
-target/
-dependency-reduced-pom.xml
-*.class
-*.jar
-*.war
-*.ear
+# =============================================================================
+# IDE - VS Code
+# =============================================================================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
 
-# Build logs and temp files
-build-log.txt
-build/3rdParty/
+# =============================================================================
+# IDE - NetBeans
+# =============================================================================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+nbactions.xml
+nb-configuration.xml
 
-# Environment files with secrets
+# =============================================================================
+# OS artefacts
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# Local developer environment
+# =============================================================================
+# .env is generated from .env.example by setup-dev.sh
 .env
 .env.*
 !.env.example
 !.env.*.example
-target/
+
+# =============================================================================
+# Build performance and timing
+# =============================================================================
+build-performance.log
+build-performance.json
+build-timing-*.log
+
+# =============================================================================
+# OWASP / Security scan reports (generated artefacts)
+# =============================================================================
+dependency-check-report.*
+dependency-check-results.*
+
+# =============================================================================
+# Test result artefacts (generated at runtime)
+# =============================================================================
+test-results/
+surefire-reports/
+
+# =============================================================================
+# JaCoCo coverage (generated at runtime, stored in CI artefacts)
+# =============================================================================
+jacoco.exec
+jacoco*.xml
+*.exec
+
+# =============================================================================
+# Log files
+# =============================================================================
+logs/
+*.log
+!.claude/**/*.log
+
+# =============================================================================
+# YAWL specification generated schemas (derived from XSD, not source)
+# =============================================================================
+exampleSpecs/xml/*.xsd
+src/org/yawlfoundation/yawl/unmarshal/*.xsd
+
+# =============================================================================
+# Docker runtime state
+# =============================================================================
+docker-volumes/
+
+# =============================================================================
+# Kubernetes / Helm generated
+# =============================================================================
+helm/*/charts/
+helm/*/Chart.lock
+
+# =============================================================================
+# Terraform
+# =============================================================================
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+
+# =============================================================================
+# Python artefacts (migration scripts)
+# =============================================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# =============================================================================
+# Node / NPM (if any frontend tools are added)
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# Temporary compiler argument files (javac.*.args)
+# =============================================================================
+javac.*.args
+
+# =============================================================================
+# Backup files
+# =============================================================================
+*.bak
+*.bak.*
+*.backup
+*.orig
+pom.xml.bak
+pom.xml.backup
+pom-monolithic-backup.xml
+
+# =============================================================================
+# Performance reports (generated)
+# =============================================================================
+performance-reports/*.json
+performance-reports/*.csv
+
+# =============================================================================
+# SpotBugs reports
+# =============================================================================
+spotbugsXml.xml
+findbugs.xml
+
+# =============================================================================
+# Checksums (generated)
+# =============================================================================
+checksums/*.sha256
+checksums/*.md5

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  versions-maven-plugin rules for YAWL v6.0.0-Alpha
+
+  Controls which version patterns are suggested when running:
+    mvn versions:display-dependency-updates
+    mvn versions:display-plugin-updates
+
+  Rule priority (highest first): ignore > rule
+  Versions matching an <ignoreVersion> pattern are never suggested.
+-->
+<ruleset comparisonMethod="maven"
+         xmlns="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0
+                             https://www.mojohaus.org/versions-maven-plugin/rule-2.0.0.xsd">
+
+    <!--
+      Global ignore patterns applied to ALL dependencies and plugins.
+      We track stable releases only; alpha/beta/RC/milestone/snapshot
+      versions are noise for production dependency management.
+    -->
+    <ignoreVersions>
+        <ignoreVersion type="regex">.*[-.]alpha.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]beta.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]Alpha.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]Beta.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]RC.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]rc.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]M[0-9]+.*</ignoreVersion>
+        <ignoreVersion type="regex">.*[-.]m[0-9]+.*</ignoreVersion>
+        <ignoreVersion type="regex">.*-SNAPSHOT</ignoreVersion>
+        <ignoreVersion type="regex">.*\.Final-.*</ignoreVersion>
+    </ignoreVersions>
+
+    <!--
+      Per-artifact rules override global ignores where needed.
+    -->
+    <rules>
+
+        <!--
+          OpenTelemetry semconv: incubating sub-artifacts use "-alpha" suffix
+          as a permanent part of their stable release identifier, not a
+          pre-release indicator.  Allow them through.
+        -->
+        <rule groupId="io.opentelemetry.semconv"
+              artifactId="opentelemetry-semconv-incubating">
+            <ignoreVersions/>
+        </rule>
+
+        <!--
+          OpenTelemetry Prometheus exporter: permanently "-alpha" versioned
+          (the non-alpha artifact does not exist for this exporter).
+        -->
+        <rule groupId="io.opentelemetry"
+              artifactId="opentelemetry-exporter-prometheus">
+            <ignoreVersions/>
+        </rule>
+
+        <!--
+          OpenTelemetry Instrumentation BOM: uses "-alpha" suffix permanently.
+        -->
+        <rule groupId="io.opentelemetry.instrumentation"
+              artifactId="opentelemetry-instrumentation-bom-alpha">
+            <ignoreVersions/>
+        </rule>
+
+        <!--
+          Apache Commons Collections 4: 4.5.0-M2 is the latest release train.
+          Track M (milestone) releases for this artifact only.
+        -->
+        <rule groupId="org.apache.commons"
+              artifactId="commons-collections4">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*-SNAPSHOT</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+
+        <!--
+          Hibernate: ignore anything after ".Final" with extra qualifiers
+          (e.g. service packs that do not appear in Maven Central properly).
+        -->
+        <rule groupId="org.hibernate.orm">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*-SNAPSHOT</ignoreVersion>
+                <ignoreVersion type="regex">.*CR[0-9].*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+
+        <!--
+          A2A SDK: Alpha releases are the current stable track.
+        -->
+        <rule groupId="io.anthropic">
+            <ignoreVersions/>
+        </rule>
+
+    </rules>
+
+</ruleset>

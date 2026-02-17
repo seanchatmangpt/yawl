@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+  YAWL v5.2 Checkstyle Suppressions
+
+  These suppressions cover:
+  1. Legacy code that predates this style guide and is not being refactored
+  2. Generated code (JAXB, Hibernate proxies)
+  3. Test classes where style is relaxed
+  4. Package-info files (no class body)
+  5. Known large classes in the core engine that are under active refactoring
+
+  Every suppression MUST have a justification comment.
+  Suppressions without comments will be rejected in code review.
+-->
+<suppressions>
+
+    <!-- =====================================================================
+         GENERATED CODE - Never style-check generated sources
+         ===================================================================== -->
+
+    <!-- JAXB-generated ObjectFactory classes -->
+    <suppress files="ObjectFactory\.java" checks=".*"/>
+
+    <!-- JAXB-generated package-info.java - no class body -->
+    <suppress files="package-info\.java" checks="MissingJavadocType"/>
+
+    <!-- Hibernate-generated proxy classes -->
+    <suppress files=".*\$\$_hibernate_.*\.java" checks=".*"/>
+
+    <!-- =====================================================================
+         TEST CODE - Relaxed rules for test classes
+         ===================================================================== -->
+
+    <!-- Test classes: relax Javadoc, magic numbers, method length -->
+    <suppress files=".*Test\.java" checks="MissingJavadocType,MissingJavadocMethod,MagicNumber,MethodLength,JavadocParagraph"/>
+    <suppress files=".*TestSuite\.java" checks="MissingJavadocType,MissingJavadocMethod"/>
+    <suppress files=".*TestCase\.java" checks="MissingJavadocType,MissingJavadocMethod"/>
+
+    <!-- =====================================================================
+         CORE ENGINE - Large pre-existing classes under active refactoring
+         These suppressions are TEMPORARY and will be removed as classes are
+         refactored. Track progress in COVERAGE_IMPROVEMENT_PLAN.md.
+         ===================================================================== -->
+
+    <!-- YEngine: central coordinator, 1800+ lines, scheduled for decomposition -->
+    <suppress files="YEngine\.java" checks="MethodLength,CyclomaticComplexity,FileLength"/>
+
+    <!-- YNetRunner: Petri net execution, complex by nature -->
+    <suppress files="YNetRunner\.java" checks="MethodLength,CyclomaticComplexity"/>
+
+    <!-- YWorkItemRepository: complex state management -->
+    <suppress files="YWorkItemRepository\.java" checks="MethodLength,CyclomaticComplexity"/>
+
+    <!-- YPersistenceManager: Hibernate session management, API-constrained -->
+    <suppress files="YPersistenceManager\.java" checks="MethodLength,CyclomaticComplexity"/>
+
+    <!-- =====================================================================
+         LEGACY RESOURCING MODULE - Pre-Jakarta namespace, full review scheduled Q3
+         ===================================================================== -->
+    <suppress files="yawl-resourcing[/\\]src[/\\].*" checks="ImportOrder"/>
+
+    <!-- =====================================================================
+         SCHEMA-GENERATED ELEMENTS - XML binding classes
+         ===================================================================== -->
+    <suppress files="yawl-elements[/\\]src[/\\].*\.(ObjectFactory|.*Adapter)\.java" checks=".*"/>
+
+    <!-- =====================================================================
+         MAGIC NUMBERS - Permitted in constants-only files
+         ===================================================================== -->
+    <suppress files=".*Constants\.java" checks="MagicNumber"/>
+    <suppress files=".*Defaults\.java" checks="MagicNumber"/>
+
+    <!-- =====================================================================
+         PARAMETER COUNT - Builder pattern legitimately exceeds 7 parameters
+         ===================================================================== -->
+    <suppress files=".*Builder\.java" checks="ParameterNumber"/>
+
+</suppressions>

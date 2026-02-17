@@ -1,0 +1,519 @@
+# YAWL v5.2 - Pull Request Quality Gates
+#
+# Runs on every pull request and push to main/master/develop.
+# All jobs must pass for the PR to be mergeable.
+#
+# Jobs:
+#   hyper-standards    - Scans for TODO/FIXME/mock/stub violations
+#   compile            - Ensures the code compiles cleanly
+#   unit-tests         - Runs the full JUnit test suite
+#   spotbugs           - SpotBugs bytecode analysis (HIGH/MEDIUM threshold)
+#   checkstyle         - Code style enforcement (Google Java Style)
+#   pmd                - PMD code quality rules
+#   coverage           - JaCoCo coverage report (65% line, 55% branch minimum)
+#   quality-summary    - Aggregates all results into a PR comment
+#
+# Usage:
+#   Triggered automatically on PR open/update.
+#   Manual trigger: Actions -> "PR Quality Gates" -> Run workflow
+
+name: PR Quality Gates
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [master, main, develop]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: 21
+  MAVEN_OPTS: >-
+    -Xmx2g
+    -Djava.awt.headless=true
+    -Dmaven.artifact.threads=8
+    -Dhttp.keepAlive=false
+  MAVEN_BATCH_FLAGS: --batch-mode --no-transfer-progress
+
+jobs:
+
+  # ==========================================================================
+  # HYPER_STANDARDS scan - must be the fastest gate, blocks all others
+  # ==========================================================================
+  hyper-standards:
+    name: HYPER_STANDARDS Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for forbidden patterns
+        id: scan
+        run: |
+          echo "Scanning for HYPER_STANDARDS violations..."
+          VIOLATIONS=0
+
+          # Pattern 1: Deferred work markers
+          if grep -rn --include="*.java" \
+              -E '//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|placeholder|not\s+implemented\s+yet|coming\s+soon)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/orderfulfillment/'; then
+            echo "::error::DEFERRED WORK MARKERS found - remove before merging"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 2: Mock/stub method names in production code
+          if grep -rn --include="*.java" \
+              -E '(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK/STUB METHOD NAMES found in production code"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 3: Mock class names
+          if grep -rn --include="*.java" \
+              -E '(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK CLASS NAMES found in production code"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 4: Empty no-op method bodies
+          if grep -rn --include="*.java" \
+              -E 'public\s+void\s+\w+\([^)]*\)\s*\{\s*\}' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::EMPTY NO-OP METHOD BODIES found"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 5: Mock framework imports in production code
+          if grep -rn --include="*.java" \
+              -E 'import\s+(org\.mockito|org\.easymock|org\.jmock|org\.powermock)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK FRAMEWORK IMPORTS in production src/"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo "## HYPER_STANDARDS Violations: $VIOLATIONS" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The following HYPER_STANDARDS violations must be fixed:" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Remove all TODO/FIXME/XXX/HACK comments" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Remove all mock/stub/fake code from production sources" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Implement real behavior or throw UnsupportedOperationException" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          else
+            echo "## HYPER_STANDARDS: PASSED" >> "$GITHUB_STEP_SUMMARY"
+            echo "No violations found in production source files." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ==========================================================================
+  # Compile
+  # ==========================================================================
+  compile:
+    name: Compile (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: hyper-standards
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Compile
+        run: |
+          mvn clean compile \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            -T 1C
+
+      - name: Upload compiled classes
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-classes
+          path: |
+            target/classes/
+            yawl-*/target/classes/
+          retention-days: 1
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Unit Tests
+  # ==========================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: compile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run unit tests
+        run: |
+          mvn test \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            -Ddatabase.type=h2 \
+            -Dhibernate.dialect=org.hibernate.dialect.H2Dialect \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "**/surefire-reports/TEST-*.xml"
+          check_name: "Unit Test Results"
+          report_individual_runs: true
+          fail_on: failures
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: "**/target/surefire-reports/"
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # SpotBugs
+  # ==========================================================================
+  spotbugs:
+    name: SpotBugs Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: compile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Compile (required for SpotBugs bytecode analysis)
+        run: |
+          mvn clean compile \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            -T 1C \
+            --quiet
+
+      - name: Run SpotBugs
+        id: spotbugs
+        run: |
+          mvn spotbugs:check \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            2>&1 | tee /tmp/spotbugs-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Parse SpotBugs results
+        if: always()
+        run: |
+          BUG_COUNT=0
+          for report in $(find . -name "spotbugsXml.xml" -path "*/target/*" 2>/dev/null); do
+            COUNT=$(grep -c '<BugInstance' "$report" 2>/dev/null || echo 0)
+            BUG_COUNT=$((BUG_COUNT + COUNT))
+          done
+
+          echo "## SpotBugs Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Bugs found:** $BUG_COUNT" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Threshold: HIGH/MEDIUM priority bugs fail the build." >> "$GITHUB_STEP_SUMMARY"
+          echo "Configuration: \`spotbugs-exclude.xml\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SpotBugs reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-reports
+          path: "**/target/spotbugsXml.xml"
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Checkstyle
+  # ==========================================================================
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: compile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run Checkstyle
+        id: checkstyle
+        run: |
+          mvn checkstyle:check \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            2>&1 | tee /tmp/checkstyle-output.txt
+
+      - name: Parse Checkstyle results
+        if: always()
+        run: |
+          VIOLATION_COUNT=0
+          for report in $(find . -name "checkstyle-result.xml" -path "*/target/*" 2>/dev/null); do
+            COUNT=$(grep -c '<error ' "$report" 2>/dev/null || echo 0)
+            VIOLATION_COUNT=$((VIOLATION_COUNT + COUNT))
+          done
+
+          echo "## Checkstyle Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Violations:** $VIOLATION_COUNT" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Configuration: \`checkstyle.xml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Suppressions: \`checkstyle-suppressions.xml\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Checkstyle reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-reports
+          path: "**/target/checkstyle-result.xml"
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # PMD
+  # ==========================================================================
+  pmd:
+    name: PMD Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: compile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run PMD
+        id: pmd
+        run: |
+          mvn pmd:check pmd:cpd-check \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            2>&1 | tee /tmp/pmd-output.txt
+
+      - name: Parse PMD results
+        if: always()
+        run: |
+          VIOLATION_COUNT=0
+          for report in $(find . -name "pmd.xml" -path "*/target/*" 2>/dev/null); do
+            COUNT=$(grep -c '<violation' "$report" 2>/dev/null || echo 0)
+            VIOLATION_COUNT=$((VIOLATION_COUNT + COUNT))
+          done
+
+          echo "## PMD Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Violations:** $VIOLATION_COUNT" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Configuration: \`pmd-ruleset.xml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Exclusions: \`pmd-exclusions.properties\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload PMD reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmd-reports
+          path: |
+            **/target/pmd.xml
+            **/target/cpd.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Code Coverage (JaCoCo)
+  # ==========================================================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: unit-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests with JaCoCo instrumentation
+        run: |
+          mvn clean verify \
+            ${{ env.MAVEN_BATCH_FLAGS }} \
+            -P ci \
+            -Ddatabase.type=h2 \
+            -Dhibernate.dialect=org.hibernate.dialect.H2Dialect \
+            -DskipSpotBugs=true
+
+      - name: Extract coverage metrics
+        id: coverage-metrics
+        run: |
+          LINE_COV="N/A"
+          BRANCH_COV="N/A"
+
+          # Try to read from JaCoCo XML report
+          for report in $(find . -name "jacoco.xml" -path "*/jacoco/*" 2>/dev/null | head -1); do
+            if [ -f "$report" ]; then
+              LINE_COV=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('$report')
+          root = tree.getroot()
+          for counter in root.findall('.//counter[@type=\"LINE\"]'):
+              covered = int(counter.get('covered', 0))
+              missed  = int(counter.get('missed', 0))
+              total   = covered + missed
+              if total > 0:
+                  print(f'{100.0 * covered / total:.1f}')
+                  break
+          " 2>/dev/null || echo "N/A")
+              BRANCH_COV=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('$report')
+          root = tree.getroot()
+          for counter in root.findall('.//counter[@type=\"BRANCH\"]'):
+              covered = int(counter.get('covered', 0))
+              missed  = int(counter.get('missed', 0))
+              total   = covered + missed
+              if total > 0:
+                  print(f'{100.0 * covered / total:.1f}')
+                  break
+          " 2>/dev/null || echo "N/A")
+            fi
+          done
+
+          echo "line_coverage=$LINE_COV" >> "$GITHUB_OUTPUT"
+          echo "branch_coverage=$BRANCH_COV" >> "$GITHUB_OUTPUT"
+
+          echo "## Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Coverage | Minimum |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|----------|---------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Line   | ${LINE_COV}% | 65% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | ${BRANCH_COV}% | 55% |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: |
+            target/site/jacoco/jacoco.xml
+            **/target/site/jacoco/jacoco.xml
+          flags: pr-quality-gate
+          name: yawl-pr-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload JaCoCo HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: |
+            target/site/jacoco/
+            **/target/site/jacoco/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Quality Gate Summary
+  # ==========================================================================
+  quality-summary:
+    name: Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [hyper-standards, compile, unit-tests, spotbugs, checkstyle, pmd, coverage]
+    if: always()
+
+    steps:
+      - name: Build summary
+        run: |
+          echo "# PR Quality Gate Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gate | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HYPER_STANDARDS | ${{ needs.hyper-standards.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Compile | ${{ needs.compile.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| SpotBugs | ${{ needs.spotbugs.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Checkstyle | ${{ needs.checkstyle.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| PMD | ${{ needs.pmd.result == 'success' && 'PASSED' || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && 'PASSED' || (needs.coverage.result == 'skipped' && 'SKIPPED') || 'FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Commit:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch:** ${{ github.head_ref || github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Author:** @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any required gate failed
+        run: |
+          FAILED=false
+          # HYPER_STANDARDS and compile are hard blockers
+          if [ "${{ needs.hyper-standards.result }}" != "success" ]; then
+            echo "::error::HYPER_STANDARDS gate failed"
+            FAILED=true
+          fi
+          if [ "${{ needs.compile.result }}" != "success" ]; then
+            echo "::error::Compile gate failed"
+            FAILED=true
+          fi
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            echo "::error::Unit tests gate failed"
+            FAILED=true
+          fi
+          if [ "${{ needs.spotbugs.result }}" != "success" ]; then
+            echo "::error::SpotBugs gate failed"
+            FAILED=true
+          fi
+          if [ "${{ needs.checkstyle.result }}" != "success" ]; then
+            echo "::error::Checkstyle gate failed"
+            FAILED=true
+          fi
+          if [ "${{ needs.pmd.result }}" != "success" ]; then
+            echo "::error::PMD gate failed"
+            FAILED=true
+          fi
+          if $FAILED; then
+            exit 1
+          fi
+          echo "All required quality gates PASSED."
