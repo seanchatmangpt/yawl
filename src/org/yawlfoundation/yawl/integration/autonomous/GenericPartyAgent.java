@@ -99,33 +99,31 @@ public final class GenericPartyAgent implements AutonomousAgent {
 
     private void startDiscoveryLoop() {
         discoveryThread = Thread.ofVirtual()
-            .name("GenericPartyAgent-Discovery")
+            .name("discovery-" + config.getCapability().getDomainName())
             .start(() -> {
-            while (running.get()) {
-                try {
-                    runDiscoveryCycle();
-                } catch (Exception e) {
-                    System.err.println("Discovery cycle error: " + e.getMessage());
+                while (running.get()) {
+                    try {
+                        runDiscoveryCycle();
+                    } catch (Exception e) {
+                        System.err.println("Discovery cycle error: " + e.getMessage());
+                    }
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(config.getPollIntervalMs());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-                try {
-                    TimeUnit.MILLISECONDS.sleep(config.getPollIntervalMs());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }, "discovery-" + config.getCapability().getDomainName());
-        discoveryThread.setDaemon(false);
-        discoveryThread.start();
+            });
     }
 
     private void runDiscoveryCycle() throws IOException {
-        List<WorkItemRecord> items = discoveryStrategy.discoverWorkItems(interfaceBClient, sessionHandle);
+        var items = discoveryStrategy.discoverWorkItems(interfaceBClient, sessionHandle);
         if (items == null || items.isEmpty()) {
             return;
         }
 
-        for (WorkItemRecord wir : items) {
+        for (var wir : items) {
             if (!running.get()) {
                 break;
             }

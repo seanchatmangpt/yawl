@@ -47,7 +47,7 @@ public class YCaseImporter {
         _spec = unmarshalSpecification(root);
         List<YNetRunner> runners = unmarshalRunners(root);
         List<YWorkItem> workitems = unmarshalWorkItems(root);
-        runners.sort(new RunnerComparator());
+        runners.sort(Comparator.comparing(r -> r.getCaseID().toString()));
         attachRunners(runners, announcer);
         restoreWorkItems(workitems, runners);
         return runners;
@@ -153,7 +153,7 @@ public class YCaseImporter {
     
     private <T> void addChild(Map<String, Set<T>> parentChildMap, String parentID, T child) {
         if (parentID != null) {
-            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<T>());
+            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<>());
             children.add(child);
         }
     }
@@ -192,7 +192,7 @@ public class YCaseImporter {
     private YIdentifier unmarshalIdentifier(Element nIdentifier) {
         YIdentifier id = new YIdentifier(nIdentifier.getAttributeValue("id"));
         Element nLocations = nIdentifier.getChild("locations");
-        List<String> locations = new ArrayList<String>();
+        List<String> locations = new ArrayList<>();
         for (Element nLocation : nLocations.getChildren()) {
             locations.add(nLocation.getText());
         }
@@ -270,15 +270,6 @@ public class YCaseImporter {
     }
 
 
-    class RunnerComparator implements Comparator<YNetRunner> {
-
-        @Override
-        public int compare(YNetRunner r1, YNetRunner r2) {
-            return r1.getCaseID().toString().compareTo(r2.getCaseID().toString());
-        }
-    }
-
-
     /*******************************************************************************/
 
     private void attachRunners(List<YNetRunner> runners, YAnnouncer announcer)
@@ -319,7 +310,7 @@ public class YCaseImporter {
 
     private Map<String, YNetRunner> attachNets(List<YNetRunner> runners)
             throws YStateException {
-        Map<String, YNetRunner> result = new HashMap<>();
+        var result = new HashMap<String, YNetRunner>();
 
         // restore all root nets first
         for (YNetRunner runner : runners) {
@@ -401,7 +392,7 @@ public class YCaseImporter {
             YExternalNetElement element = net.getNetElement(name);
 
             if (element == null) {
-                name = name.substring(0, name.length() - 1);     // remove trailling ']'
+                name = name.substring(0, name.length() - 1);     // remove trailing ']'
                 String[] splitname = name.split(":");
 
                 if (parent != null) {
@@ -417,13 +408,12 @@ public class YCaseImporter {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask) {
-                    task = (YTask) element;
-                    task.setI(id);
-                    task.prepareDataDocsForTaskOutput();
-                    id.addLocation(task);
-                } else if (element instanceof YCondition) {
-                    ((YConditionInterface) element).add(id);
+                if (element instanceof YTask yTask) {
+                    yTask.setI(id);
+                    yTask.prepareDataDocsForTaskOutput();
+                    id.addLocation(yTask);
+                } else if (element instanceof YConditionInterface conditionInterface) {
+                    conditionInterface.add(id);
                 }
             }
         }
@@ -567,11 +557,10 @@ public class YCaseImporter {
      */
     private YTask getTask(String taskID) {
         for (YDecomposition decomposition : _spec.getDecompositions()) {
-            if (decomposition instanceof YNet) {
-                YNet net = (YNet) decomposition;
+            if (decomposition instanceof YNet net) {
                 YExternalNetElement element = net.getNetElement(taskID);
-                if (element instanceof YTask) {
-                    return (YTask) element;
+                if (element instanceof YTask task) {
+                    return task;
                 }
             }
         }

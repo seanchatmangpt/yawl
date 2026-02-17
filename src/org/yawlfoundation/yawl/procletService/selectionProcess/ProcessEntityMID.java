@@ -193,7 +193,7 @@ public class ProcessEntityMID {
 		myLog.debug("CHECKONEORQUESTGRAPHSOUT");
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionGraph> tempGraphs = igraphs.getTempGraphs();
-		List<InteractionArc> allArcs = new ArrayList<InteractionArc>();
+		List<InteractionArc> allArcs = new ArrayList<>();
 		// 09032010
 		// ignore arc which state FAILED
 		for (InteractionGraph graph : tempGraphs) {
@@ -204,7 +204,7 @@ public class ProcessEntityMID {
 			}
 		} 
 		ProcletModels pmodelsInst = ProcletModels.getInstance();
-		List<List> combis = new ArrayList<List> ();
+		List<List> combis = new ArrayList<>();
 		for (InteractionArc arc : allArcs) {
 			// if arc in same proclet then ignore
 			if (!arc.getTail().getProcletID().equals(arc.getHead().getProcletID())) {
@@ -248,7 +248,7 @@ public class ProcessEntityMID {
 	private boolean checkOneOrQuestGraphsIn() {
 		myLog.debug("CHECKONEORQUESTGRAPHSIN");
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
-		List<InteractionArc> allArcs = new ArrayList<InteractionArc>();
+		List<InteractionArc> allArcs = new ArrayList<>();
 		List<InteractionGraph> tempGraphs = igraphs.getTempGraphs();
 		// 09032010
 		// ignore arc which state FAILED
@@ -260,7 +260,7 @@ public class ProcessEntityMID {
 			}
 		} 
 		ProcletModels pmodelsInst = ProcletModels.getInstance();
-		List<List> combis = new ArrayList<List> ();
+		List<List> combis = new ArrayList<>();
 		for (InteractionArc arc : allArcs) {
 			if (!arc.getHead().getProcletID().equals(arc.getTail().getProcletID())) {
 				List item = new ArrayList();
@@ -369,14 +369,14 @@ public class ProcessEntityMID {
 	public List<List<List>> generateNextOptions (boolean exception) {
 		myLog.debug("GENERATE NEXT OPTIONS");
 		myLog.debug("wir:" + wir.toString());
-		List<List> resultsCR = new ArrayList<List>();
-		List<List> resultsNCR = new ArrayList<List>();
+		List<List> resultsCR = new ArrayList<>();
+		List<List> resultsNCR = new ArrayList<>();
 		ProcletModels pmodels = ProcletModels.getInstance();
 		PortConnections pconns = PortConnections.getInstance();
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		InteractionGraph graph = igraphs.getTempGraph(emid);
 		// limit options
-		List<InteractionNode> nodesRel = new ArrayList<InteractionNode>();
+		List<InteractionNode> nodesRel = new ArrayList<>();
 		List<String> actCases = ProcletService.getInstance().getRunningCaseIDs();
 
 		myLog.debug("actCases:" + actCases);
@@ -504,7 +504,7 @@ public class ProcessEntityMID {
 	public List<List> determineOptionsNonCrBlocks(List<List> options) {
 		myLog.debug("determineOptionsNonCrBlocks");
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
-		List<List> results = new ArrayList<List>();
+		List<List> results = new ArrayList<>();
 
 		List<String> pidsList = ProcletService.getInstance().getSpecURIsForRunningCases();
 		List<String> cidsList = ProcletService.getInstance().getRunningCaseIDs();
@@ -580,9 +580,9 @@ public class ProcessEntityMID {
 	}
 	
 	public static List<List<List>> getOptionsFromDB() {
-		List<List> cr = new ArrayList<List>();
-		List<List> intern = new ArrayList<List>();
-		List<List> fragment = new ArrayList<List>();
+		List<List> cr = new ArrayList<>();
+		List<List> intern = new ArrayList<>();
+		List<List> fragment = new ArrayList<>();
         List items = DBConnection.getObjectsForClass("StoredOptions");
         for (Object o : items) {
             StoredOptions item = (StoredOptions) o;
@@ -617,7 +617,7 @@ public class ProcessEntityMID {
 	}
 	
 	public static List<List> getDecisionsFromDB() {
-		List<List> results = new ArrayList<List>();
+		List<List> results = new ArrayList<>();
         List items = DBConnection.getObjectsForClass("StoredDecisions");
         for (Object o : items) {
             results.add(((StoredDecisions) o).getDecisionsAsList());

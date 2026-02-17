@@ -408,11 +408,10 @@ public class YNetRunner {
     private void notifyDeadLock() {
         Set<YTask> deadlockedTasks = new HashSet<>();
         for (Object o : _caseIDForNet.getLocations()) {
-            if (o instanceof YExternalNetElement) {
-                YExternalNetElement element = (YExternalNetElement) o;
+            if (o instanceof YExternalNetElement element) {
                 if (_net.getNetElements().containsValue(element)) {
-                    if (element instanceof YTask) {
-                        deadlockedTasks.add((YTask) element);
+                    if (element instanceof YTask task) {
+                        deadlockedTasks.add(task);
                     }
                     Set<YExternalNetElement> postset = element.getPostsetElements();
                     for (YExternalNetElement postsetElement : postset) {
@@ -604,7 +603,7 @@ public class YNetRunner {
 
     private void fireTasks(YEnabledTransitionSet enabledSet)
             throws YDataStateException, YStateException, YQueryException {
-        Set<YTask> enabledTasks = new HashSet<YTask>();
+        Set<YTask> enabledTasks = new HashSet<>();
 
         // A TaskGroup is a group of tasks that are all enabled by a single condition.
         // If the group has more than one task, it's a deferred choice, in which case:
@@ -839,14 +838,13 @@ public class YNetRunner {
 
         _cancelling = true;
         for (YExternalNetElement netElement : _net.getNetElements().values()) {
-            if (netElement instanceof YTask) {
-                YTask task = ((YTask) netElement);
+            if (netElement instanceof YTask task) {
                 if (task.t_isBusy()) {
                     task.cancel();
                 }
             }
-            else if (((YCondition) netElement).containsIdentifier()) {
-                ((YCondition) netElement).removeAll();
+            else if (netElement instanceof YCondition condition && condition.containsIdentifier()) {
+                condition.removeAll();
             }
         }
         _enabledTasks = new HashSet<>();
@@ -937,17 +935,17 @@ public class YNetRunner {
 
 
     private boolean warnIfNetNotEmpty() {
-        List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
+        List<YExternalNetElement> haveTokens = new ArrayList<>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
             if (! (element instanceof YOutputCondition)) {  // ignore end condition tokens
-                if ((element instanceof YCondition) && ((YCondition) element).containsIdentifier()) {
+                if (element instanceof YCondition condition && condition.containsIdentifier()) {
                     haveTokens.add(element);
                 }
-                else if ((element instanceof YTask) && ((YTask) element).t_isBusy()) {
+                else if (element instanceof YTask task && task.t_isBusy()) {
                     haveTokens.add(element);
 
                     // flag and announce any executing workitems
-                    YInternalCondition exeCondition = ((YTask) element).getMIExecuting();
+                    YInternalCondition exeCondition = task.getMIExecuting();
                     for (YIdentifier id : exeCondition.getIdentifiers()) {
                         YWorkItem executingItem = _workItemRepository.get(
                                 id.toString(), element.getID());
@@ -1021,7 +1019,7 @@ public class YNetRunner {
     public List<String> getTimeOutTaskSet(YWorkItem item) {
         YTask timeOutTask = (YTask) getNetElement(item.getTaskID());
         String nextTaskID = getFlowsIntoTaskID(timeOutTask);
-        ArrayList<String> result = new ArrayList<String>() ;
+        ArrayList<String> result = new ArrayList<>();
 
         if (nextTaskID != null) {
             for (YTask task : _netTasks) {
@@ -1040,7 +1038,7 @@ public class YNetRunner {
     /** returns the task id of the task that the specified task flows into
         In other words, gets the id of the next task in the process flow */
     private String getFlowsIntoTaskID(YTask task) {
-        if ((task != null) && (task instanceof YAtomicTask)) {
+        if (task instanceof YAtomicTask) {
             Element eTask = JDOMUtil.stringToElement(task.toXML());
             return eTask.getChild("flowsInto").getChild("nextElementRef").getAttributeValue("id");
         }
@@ -1052,7 +1050,7 @@ public class YNetRunner {
     
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
-        _timerStates = new HashMap<String, String>();
+        _timerStates = new HashMap<>();
         for (YTask task : _netTasks) {
             if (task.getTimerVariable() != null) {
                 updateTimerState(task, State.dormant);

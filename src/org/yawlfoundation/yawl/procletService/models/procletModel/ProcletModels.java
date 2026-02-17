@@ -29,7 +29,7 @@ public class ProcletModels {
 	
 	private String procletModelTN = "procletmodel";
 	private static ProcletModels pModels = null;
-	private static List<ProcletModel> pModelsList = new ArrayList<ProcletModel>();
+	private static List<ProcletModel> pModelsList = new ArrayList<>();
 	
 	private ProcletModels () {
 		
@@ -64,7 +64,7 @@ public class ProcletModels {
 	}
 	
 	public List<ProcletPort> getPorts() {
-		List<ProcletPort> portsTot = new ArrayList<ProcletPort>();
+		List<ProcletPort> portsTot = new ArrayList<>();
 		for (ProcletModel pmodel : this.pModelsList) {
 			List<ProcletPort> ports = pmodel.getPorts();
 			portsTot.addAll(ports);

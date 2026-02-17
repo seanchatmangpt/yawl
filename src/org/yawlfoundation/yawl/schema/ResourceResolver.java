@@ -42,7 +42,7 @@ public class ResourceResolver implements LSResourceResolver {
 
     private static final ResourceResolver INSTANCE = new ResourceResolver();
 
-    private ResourceResolver() { cache = new HashMap<URL, String>(); }
+    private ResourceResolver() { cache = new HashMap<>(); }
 
 
     public static ResourceResolver getInstance() { return INSTANCE; }
@@ -51,8 +51,8 @@ public class ResourceResolver implements LSResourceResolver {
     public LSInput resolveResource(String type, String namespaceURI,
                                    String publicId, String systemId, String baseURI) {
         try {
-            URL url = URI.create(namespaceURI + '/' + systemId).toURL();
-            String content = cache.get(url);
+            var url = URI.create(namespaceURI + '/' + systemId).toURL();
+            var content = cache.get(url);
             if (content == null) {
                 content = streamToString(URI.create(namespaceURI + '/' + systemId).toURL().openStream());
                 if (content != null) cache.put(url, content);

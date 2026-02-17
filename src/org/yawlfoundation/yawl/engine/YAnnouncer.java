@@ -50,7 +50,6 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
 public class YAnnouncer {
 
 
-    private static final Logger logger = LogManager.getLogger(YAnnouncer.class);
     private final ObserverGatewayController _controller;
     private final YEngine _engine;
     private final Logger _logger;
@@ -62,7 +61,7 @@ public class YAnnouncer {
     protected YAnnouncer(YEngine engine) {
         _engine = engine;
         _logger = LogManager.getLogger(this.getClass());
-        _interfaceXListeners = new HashSet<InterfaceX_EngineSideClient>();
+        _interfaceXListeners = new HashSet<>();
         _announcementContext = AnnouncementContext.NORMAL;
         _controller = new ObserverGatewayController();
 
@@ -462,7 +461,7 @@ public class YAnnouncer {
 
 
     private int reannounceWorkItems(Set<YWorkItem> workItems) throws YStateException {
-        Set<YAnnouncement> announcements = new HashSet<YAnnouncement>();
+        var announcements = new HashSet<YAnnouncement>();
         for (YWorkItem workitem : workItems) {
             YAnnouncement announcement = createAnnouncement(workitem, ITEM_ADD);
             if (announcement != null) announcements.add(announcement);

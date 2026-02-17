@@ -38,10 +38,10 @@ import java.util.Set;
 public class YIdentifier {
 
     // a location may be a condition or a task
-    private List<YNetElement> _locations = new ArrayList<YNetElement>();
+    private List<YNetElement> _locations = new ArrayList<>();
 
-    private List<String> locationNames = new ArrayList<String>();
-    private List<YIdentifier> _children = new ArrayList<YIdentifier>();
+    private List<String> locationNames = new ArrayList<>();
+    private List<YIdentifier> _children = new ArrayList<>();
     private YIdentifier _parent;
     private String id = null;
     private String _idString;
@@ -104,7 +104,7 @@ public class YIdentifier {
 
 
     public Set<YIdentifier> getDescendants() {
-        Set<YIdentifier> descendants = new HashSet<YIdentifier>();
+        var descendants = new HashSet<YIdentifier>();
         descendants.add(this);
 
         for (YIdentifier child : _children) {
@@ -120,7 +120,7 @@ public class YIdentifier {
     }
 
     public void clearChildren() {
-        _children = new ArrayList<YIdentifier>();
+        _children = new ArrayList<>();
     }
 
     public boolean removeChild(YIdentifier child) {

@@ -34,7 +34,7 @@ public class Report {
     private String _subject;
     private final Map<String, String> _content;
 
-    public Report() { _content = new TreeMap<String, String>(); }
+    public Report() { _content = new TreeMap<>(); }
 
     public Report(String subject) {
         this();
@@ -54,10 +54,10 @@ public class Report {
 
 
     public String getHTML() {
-        XNode html = new XNode("html");
-        for (String heading : _content.keySet()) {
-            html.addChild("h3", heading);
-            html.addChild("p", _content.get(heading));
+        var html = new XNode("html");
+        for (var entry : _content.entrySet()) {
+            html.addChild("h3", entry.getKey());
+            html.addChild("p", entry.getValue());
         }
         return html.toString();
     }
@@ -66,13 +66,13 @@ public class Report {
 
 
     public String toXML() {
-        XNode node = new XNode("report");
+        var node = new XNode("report");
         node.addChild("subject", _subject != null ? _subject : "No subject");
-        XNode content = node.addChild("content");
-        for (String heading : _content.keySet()) {
-            XNode entry = content.addChild("entry");
-            entry.addAttribute("header", heading);
-            entry.addChild("text", _content.get(heading));
+        var content = node.addChild("content");
+        for (var mapEntry : _content.entrySet()) {
+            var entry = content.addChild("entry");
+            entry.addAttribute("header", mapEntry.getKey());
+            entry.addChild("text", mapEntry.getValue());
         }
         return node.toString();
     }

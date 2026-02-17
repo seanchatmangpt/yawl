@@ -49,8 +49,8 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      */
     public YAWLServiceGateway(String id, YSpecification specification) {
         super(id, specification);
-        _yawlServices = new HashMap<String, YAWLServiceReference>();
-        _enablementParameters = new HashMap<String, YParameter>();
+        _yawlServices = new HashMap<>();
+        _enablementParameters = new HashMap<>();
     }
 
 
@@ -107,7 +107,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * associated gateway.
      */
     public YAWLServiceReference getYawlService() {
-        if (_yawlServices.values().size() > 0) {
+        if (!_yawlServices.isEmpty()) {
             return _yawlServices.values().iterator().next();
         }
         return null;

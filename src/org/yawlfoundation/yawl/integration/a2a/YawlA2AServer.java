@@ -373,17 +373,16 @@ public class YawlA2AServer {
         }
 
         private String handleListSpecifications() throws IOException {
-            List<SpecificationData> specs = interfaceBClient.getSpecificationList(
-                sessionHandle);
+            var specs = interfaceBClient.getSpecificationList(sessionHandle);
             if (specs == null || specs.isEmpty()) {
                 return "No workflow specifications currently loaded in the YAWL engine.";
             }
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.append("Loaded workflow specifications (").append(specs.size())
                 .append("):\n\n");
-            for (SpecificationData spec : specs) {
-                YSpecificationID specId = spec.getID();
+            for (var spec : specs) {
+                var specId = spec.getID();
                 sb.append("- ").append(specId.getIdentifier())
                     .append(" v").append(specId.getVersionAsString());
                 if (spec.getName() != null) {
@@ -422,19 +421,18 @@ public class YawlA2AServer {
         }
 
         private String handleCaseQuery(String userText) throws IOException {
-            String caseId = extractNumber(userText);
+            var caseId = extractNumber(userText);
             if (caseId != null) {
-                String state = interfaceBClient.getCaseState(caseId, sessionHandle);
-                List<WorkItemRecord> items = interfaceBClient.getWorkItemsForCase(
-                    caseId, sessionHandle);
+                var state = interfaceBClient.getCaseState(caseId, sessionHandle);
+                var items = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
 
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 sb.append("Case ").append(caseId).append(":\n");
                 sb.append("  State: ").append(state != null ? state : "unknown")
                     .append("\n");
                 if (items != null && !items.isEmpty()) {
                     sb.append("  Work Items (").append(items.size()).append("):\n");
-                    for (WorkItemRecord wir : items) {
+                    for (var wir : items) {
                         sb.append("    - ").append(wir.getID())
                             .append(" [").append(wir.getStatus()).append("]")
                             .append(" Task: ").append(wir.getTaskID())
@@ -446,29 +444,24 @@ public class YawlA2AServer {
                 return sb.toString();
             }
 
-            String allCases = interfaceBClient.getAllRunningCases(sessionHandle);
+            var allCases = interfaceBClient.getAllRunningCases(sessionHandle);
             return "Running cases:\n" + (allCases != null ? allCases : "None");
         }
 
         private String handleWorkItemQuery(String userText) throws IOException {
-            String caseId = extractNumber(userText);
-            List<WorkItemRecord> items;
-            if (caseId != null) {
-                items = interfaceBClient.getWorkItemsForCase(
-                    caseId, sessionHandle);
-            } else {
-                items = interfaceBClient.getCompleteListOfLiveWorkItems(
-                    sessionHandle);
-            }
+            var caseId = extractNumber(userText);
+            var items = caseId != null
+                ? interfaceBClient.getWorkItemsForCase(caseId, sessionHandle)
+                : interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandle);
 
             if (items == null || items.isEmpty()) {
                 return "No active work items"
                     + (caseId != null ? " for case " + caseId : "") + ".";
             }
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.append("Work Items (").append(items.size()).append("):\n\n");
-            for (WorkItemRecord wir : items) {
+            for (var wir : items) {
                 sb.append("- ID: ").append(wir.getID()).append("\n");
                 sb.append("  Case: ").append(wir.getCaseID()).append("\n");
                 sb.append("  Task: ").append(wir.getTaskID()).append("\n");
@@ -495,8 +488,8 @@ public class YawlA2AServer {
             if (message == null || message.parts() == null) {
                 throw new IllegalArgumentException("Message has no content parts");
             }
-            StringBuilder text = new StringBuilder();
-            for (Part<?> part : message.parts()) {
+            var text = new StringBuilder();
+            for (var part : message.parts()) {
                 if (part instanceof TextPart textPart) {
                     text.append(textPart.text());
                 }

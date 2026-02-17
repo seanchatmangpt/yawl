@@ -142,14 +142,13 @@ public final class AgentRegistry {
             }
 
             try {
-                String body = readRequestBody(exchange);
-                AgentInfo agentInfo = AgentInfo.fromJson(body);
+                var body = readRequestBody(exchange);
+                var agentInfo = AgentInfo.fromJson(body);
 
                 agents.put(agentInfo.getId(), agentInfo);
 
-                String response = String.format(
-                    "{\"status\":\"registered\",\"agentId\":\"%s\"}",
-                    agentInfo.getId());
+                var response = "{\"status\":\"registered\",\"agentId\":\"%s\"}"
+                    .formatted(agentInfo.getId());
 
                 logger.info("Registered agent: {} (total agents: {})",
                            agentInfo.getName(), agents.size());
@@ -159,7 +158,7 @@ public final class AgentRegistry {
             } catch (Exception e) {
                 logger.error("Error registering agent", e);
                 sendResponse(exchange, 400,
-                    String.format("{\"error\":\"%s\"}", escapeJson(e.getMessage())));
+                    "{\"error\":\"%s\"}".formatted(escapeJson(e.getMessage())));
             }
         }
     }
@@ -167,8 +166,8 @@ public final class AgentRegistry {
     private class AgentsHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            String path = exchange.getRequestURI().getPath();
-            String method = exchange.getRequestMethod();
+            var path = exchange.getRequestURI().getPath();
+            var method = exchange.getRequestMethod();
 
             if (path.equals("/agents")) {
                 if ("GET".equals(method)) {
@@ -177,9 +176,9 @@ public final class AgentRegistry {
                     sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
                 }
             } else {
-                String[] parts = path.split("/");
+                var parts = path.split("/");
                 if (parts.length >= 3) {
-                    String agentId = parts[2];
+                    var agentId = parts[2];
                     if (parts.length == 4 && "heartbeat".equals(parts[3])) {
                         if ("POST".equals(method)) {
                             handleHeartbeat(exchange, agentId);
@@ -202,47 +201,38 @@ public final class AgentRegistry {
         }
 
         private void handleListAgents(HttpExchange exchange) throws IOException {
-            List<AgentInfo> agentList = new ArrayList<>(agents.values());
-
-            StringBuilder json = new StringBuilder("[");
+            var agentList = new ArrayList<>(agents.values());
+            var json = new StringBuilder("[");
             for (int i = 0; i < agentList.size(); i++) {
-                if (i > 0) {
-                    json.append(",");
-                }
+                if (i > 0) json.append(",");
                 json.append(agentList.get(i).toJson());
             }
             json.append("]");
-
             sendResponse(exchange, 200, json.toString());
         }
 
         private void handleUnregister(HttpExchange exchange, String agentId) throws IOException {
-            AgentInfo removed = agents.remove(agentId);
-
+            var removed = agents.remove(agentId);
             if (removed != null) {
                 logger.info("Unregistered agent: {} (total agents: {})",
                            removed.getName(), agents.size());
                 sendResponse(exchange, 200,
-                    String.format("{\"status\":\"unregistered\",\"agentId\":\"%s\"}",
-                                agentId));
+                    "{\"status\":\"unregistered\",\"agentId\":\"%s\"}".formatted(agentId));
             } else {
                 sendResponse(exchange, 404,
-                    String.format("{\"error\":\"Agent not found\",\"agentId\":\"%s\"}",
-                                agentId));
+                    "{\"error\":\"Agent not found\",\"agentId\":\"%s\"}".formatted(agentId));
             }
         }
 
         private void handleHeartbeat(HttpExchange exchange, String agentId) throws IOException {
-            AgentInfo agent = agents.get(agentId);
-
+            var agent = agents.get(agentId);
             if (agent != null) {
                 agent.updateHeartbeat();
                 logger.debug("Heartbeat received from agent: {}", agentId);
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
             } else {
                 sendResponse(exchange, 404,
-                    String.format("{\"error\":\"Agent not found\",\"agentId\":\"%s\"}",
-                                agentId));
+                    "{\"error\":\"Agent not found\",\"agentId\":\"%s\"}".formatted(agentId));
             }
         }
     }
@@ -255,24 +245,22 @@ public final class AgentRegistry {
                 return;
             }
 
-            String query = exchange.getRequestURI().getQuery();
+            var query = exchange.getRequestURI().getQuery();
             if (query == null || !query.startsWith("domain=")) {
                 sendResponse(exchange, 400,
                     "{\"error\":\"Missing domain parameter\"}");
                 return;
             }
 
-            String domain = query.substring(7);
-            if (domain.isEmpty()) {
+            var domain = urlDecode(query.substring(7));
+            if (domain.isBlank()) {
                 sendResponse(exchange, 400,
                     "{\"error\":\"Empty domain parameter\"}");
                 return;
             }
 
-            domain = urlDecode(domain);
-
-            List<AgentInfo> matching = new ArrayList<>();
-            for (AgentInfo agent : agents.values()) {
+            var matching = new ArrayList<AgentInfo>();
+            for (var agent : agents.values()) {
                 if (agent.getCapability().getDomainName().equalsIgnoreCase(domain) ||
                     agent.getCapability().getDescription().toLowerCase()
                         .contains(domain.toLowerCase())) {
@@ -280,11 +268,9 @@ public final class AgentRegistry {
                 }
             }
 
-            StringBuilder json = new StringBuilder("[");
+            var json = new StringBuilder("[");
             for (int i = 0; i < matching.size(); i++) {
-                if (i > 0) {
-                    json.append(",");
-                }
+                if (i > 0) json.append(",");
                 json.append(matching.get(i).toJson());
             }
             json.append("]");
@@ -297,15 +283,13 @@ public final class AgentRegistry {
     }
 
     private String readRequestBody(HttpExchange exchange) throws IOException {
-        InputStream is = exchange.getRequestBody();
-        byte[] buffer = new byte[8192];
-        StringBuilder body = new StringBuilder();
-
+        var is = exchange.getRequestBody();
+        var buffer = new byte[8192];
+        var body = new StringBuilder();
         int bytesRead;
         while ((bytesRead = is.read(buffer)) != -1) {
             body.append(new String(buffer, 0, bytesRead, StandardCharsets.UTF_8));
         }
-
         return body.toString();
     }
 

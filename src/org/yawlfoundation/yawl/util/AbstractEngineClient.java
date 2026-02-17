@@ -199,8 +199,7 @@ public abstract class AbstractEngineClient {
      * @return true if Engine is contactable
      */
     public boolean engineIsAvailable() {
-        String errMsg = "Failed to locate a running YAWL engine at URL '" +
-                        _engineURI + "'. ";
+        var errMsg = "Failed to locate a running YAWL engine at URL '%s'. ".formatted(_engineURI);
         int timeout = 5;
         boolean available = false;
         try {
@@ -224,9 +223,9 @@ public abstract class AbstractEngineClient {
         synchronized(_mutex) {
             try {
                 // if not connected
-                if ((_sessionHandle == null) ||
-                        (_sessionHandle.length() == 0) ||
-                        (! checkConnection(_sessionHandle))) {
+                if (_sessionHandle == null ||
+                        _sessionHandle.isBlank() ||
+                        !checkConnection(_sessionHandle)) {
 
                     if (_interfaceBClient == null) setInterfaceBClient(null);
 
@@ -487,8 +486,8 @@ public abstract class AbstractEngineClient {
     }
 
     public Set<String> getAllRunningCaseIDs() {
-        Set<String> result = new HashSet<String>();
-        XNode node = getAllRunningCases();
+        Set<String> result = new HashSet<>();
+        var node = getAllRunningCases();
         if (node != null) {
             for (XNode specNode : node.getChildren()) {
                 for (XNode caseNode : specNode.getChildren()) {
@@ -500,12 +499,7 @@ public abstract class AbstractEngineClient {
     }
 
     public boolean isRunningCaseID(String caseID) {
-        for (String runningCaseID : getAllRunningCaseIDs()) {
-            if (runningCaseID.equals(caseID)) {
-                return true;
-            }
-        }
-        return false;
+        return getAllRunningCaseIDs().stream().anyMatch(caseID::equals);
     }
 
 
@@ -522,13 +516,13 @@ public abstract class AbstractEngineClient {
     }
 
     public String getTaskParamsAsXML(YSpecificationID specID, String taskID) throws IOException {
-        String xml = _interfaceBClient.getTaskInformationStr(specID, taskID, getSessionHandle());
+        var xml = _interfaceBClient.getTaskInformationStr(specID, taskID, getSessionHandle());
         if (xml != null) {
-            Element response = JDOMUtil.stringToElement(xml);
+            var response = JDOMUtil.stringToElement(xml);
             if (response != null) {
-                Element taskInfo = response.getChild("taskInfo");
+                var taskInfo = response.getChild("taskInfo");
                 if (taskInfo != null) {
-                    Element params = taskInfo.getChild("params");
+                    var params = taskInfo.getChild("params");
                     return JDOMUtil.elementToString(params);
                 }
             }
@@ -550,7 +544,7 @@ public abstract class AbstractEngineClient {
     public WorkItemRecord createNewWorkItemInstance(String id, String value) {
         WorkItemRecord result = null;
         try {
-            String xml = _interfaceBClient.createNewInstance(id, value, getSessionHandle());
+            var xml = _interfaceBClient.createNewInstance(id, value, getSessionHandle());
             if (successful(xml)) {
                 result = Marshaller.unmarshalWorkItem(StringUtil.unwrap(xml));
             }

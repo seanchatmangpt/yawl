@@ -102,8 +102,8 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeEngineCall(Callable<T> callable) throws Exception {
-        CircuitBreaker circuitBreaker = resilienceConfig.getEngineServiceCircuitBreaker();
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var circuitBreaker = resilienceConfig.getEngineServiceCircuitBreaker();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withCircuitBreaker(circuitBreaker)
@@ -122,8 +122,8 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeExternalCall(Callable<T> callable) throws Exception {
-        CircuitBreaker circuitBreaker = resilienceConfig.getExternalServiceCircuitBreaker();
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var circuitBreaker = resilienceConfig.getExternalServiceCircuitBreaker();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withCircuitBreaker(circuitBreaker)
@@ -141,8 +141,8 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeMcpCall(Callable<T> callable) throws Exception {
-        CircuitBreaker circuitBreaker = resilienceConfig.getMcpIntegrationCircuitBreaker();
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var circuitBreaker = resilienceConfig.getMcpIntegrationCircuitBreaker();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withCircuitBreaker(circuitBreaker)
@@ -160,8 +160,8 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeA2aCall(Callable<T> callable) throws Exception {
-        CircuitBreaker circuitBreaker = resilienceConfig.getA2aIntegrationCircuitBreaker();
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var circuitBreaker = resilienceConfig.getA2aIntegrationCircuitBreaker();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withCircuitBreaker(circuitBreaker)
@@ -179,9 +179,9 @@ public class YawlResilienceProvider {
      * @return CompletableFuture with the result
      */
     public <T> CompletableFuture<T> executeMultiAgentFanout(Supplier<T> supplier) {
-        RateLimiter rateLimiter = resilienceConfig.getDefaultRateLimiter();
-        Bulkhead bulkhead = resilienceConfig.getDefaultBulkhead();
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var rateLimiter = resilienceConfig.getDefaultRateLimiter();
+        var bulkhead = resilienceConfig.getDefaultBulkhead();
+        var retry = resilienceConfig.getDefaultRetry();
 
         Supplier<CompletionStage<T>> decoratedSupplier = Decorators.ofSupplier(() ->
             CompletableFuture.supplyAsync(supplier)
@@ -204,9 +204,9 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeWithCustomCircuitBreaker(String circuitBreakerName, Callable<T> callable) throws Exception {
-        CircuitBreaker circuitBreaker = resilienceConfig.getCircuitBreakerRegistry()
+        var circuitBreaker = resilienceConfig.getCircuitBreakerRegistry()
             .circuitBreaker(circuitBreakerName);
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withCircuitBreaker(circuitBreaker)
@@ -225,7 +225,7 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails
      */
     public <T> T executeWithRateLimit(Callable<T> callable) throws Exception {
-        RateLimiter rateLimiter = resilienceConfig.getDefaultRateLimiter();
+        var rateLimiter = resilienceConfig.getDefaultRateLimiter();
 
         return Decorators.ofCallable(callable)
             .withRateLimiter(rateLimiter)
@@ -243,7 +243,7 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails
      */
     public <T> T executeWithBulkhead(Callable<T> callable) throws Exception {
-        Bulkhead bulkhead = resilienceConfig.getDefaultBulkhead();
+        var bulkhead = resilienceConfig.getDefaultBulkhead();
 
         return Decorators.ofCallable(callable)
             .withBulkhead(bulkhead)
@@ -261,7 +261,7 @@ public class YawlResilienceProvider {
      * @throws Exception if the operation fails after retries
      */
     public <T> T executeWithRetry(Callable<T> callable) throws Exception {
-        Retry retry = resilienceConfig.getDefaultRetry();
+        var retry = resilienceConfig.getDefaultRetry();
 
         return Decorators.ofCallable(callable)
             .withRetry(retry)

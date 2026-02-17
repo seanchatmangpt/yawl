@@ -184,21 +184,16 @@ public final class AgentRegistryClient {
 
     private String sendPost(String urlString, String body) throws IOException {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            var request = HttpRequest.newBuilder()
                     .uri(URI.create(urlString))
                     .timeout(readTimeout)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
-
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IOException(String.format(
-                        "HTTP %d: %s", response.statusCode(), response.body()));
+                throw new IOException("HTTP %d: %s".formatted(response.statusCode(), response.body()));
             }
-
             return response.body();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -208,20 +203,15 @@ public final class AgentRegistryClient {
 
     private String sendGet(String urlString) throws IOException {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            var request = HttpRequest.newBuilder()
                     .uri(URI.create(urlString))
                     .timeout(readTimeout)
                     .GET()
                     .build();
-
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IOException(String.format(
-                        "HTTP %d: %s", response.statusCode(), response.body()));
+                throw new IOException("HTTP %d: %s".formatted(response.statusCode(), response.body()));
             }
-
             return response.body();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -231,20 +221,15 @@ public final class AgentRegistryClient {
 
     private String sendDelete(String urlString) throws IOException {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            var request = HttpRequest.newBuilder()
                     .uri(URI.create(urlString))
                     .timeout(readTimeout)
                     .DELETE()
                     .build();
-
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IOException(String.format(
-                        "HTTP %d: %s", response.statusCode(), response.body()));
+                throw new IOException("HTTP %d: %s".formatted(response.statusCode(), response.body()));
             }
-
             return response.body();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -253,7 +238,7 @@ public final class AgentRegistryClient {
     }
 
     private List<AgentInfo> parseAgentList(String json) {
-        List<AgentInfo> agents = new ArrayList<>();
+        var agents = new ArrayList<AgentInfo>();
 
         if (json == null || json.trim().isEmpty()) {
             return agents;

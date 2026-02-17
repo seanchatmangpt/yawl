@@ -115,9 +115,9 @@ public final class AgentInfo {
      * @return JSON string
      */
     public String toJson() {
-        return String.format(
-            "{\"id\":\"%s\",\"name\":\"%s\",\"capability\":{\"domainName\":\"%s\"," +
-            "\"description\":\"%s\"},\"host\":\"%s\",\"port\":%d,\"lastHeartbeat\":%d}",
+        return """
+            {"id":"%s","name":"%s","capability":{"domainName":"%s",\
+            "description":"%s"},"host":"%s","port":%d,"lastHeartbeat":%d}""".formatted(
             escapeJson(id),
             escapeJson(name),
             escapeJson(capability.getDomainName()),
@@ -224,7 +224,7 @@ public final class AgentInfo {
 
     @Override
     public String toString() {
-        return String.format("AgentInfo[id=%s, name=%s, capability=%s, host=%s:%d]",
-                           id, name, capability, host, port);
+        return "AgentInfo[id=%s, name=%s, capability=%s, host=%s:%d]"
+            .formatted(id, name, capability, host, port);
     }
 }

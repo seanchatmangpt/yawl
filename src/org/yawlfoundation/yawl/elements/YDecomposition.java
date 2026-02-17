@@ -285,7 +285,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
      * @return a map of them.
      */
     public Map<String, YParameter> getStateSpaceBypassParams() {
-        Map<String, YParameter> result = new HashMap<String, YParameter>();
+        var result = new HashMap<String, YParameter>();
         for (YParameter parameter : _outputParameters.values()) {
             if (parameter.bypassesDecompositionStateSpace()) {
                 result.put(parameter.getPreferredName(), parameter);
@@ -335,8 +335,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
         outputDoc.setRootElement(new Element(root.getName()));
 
         //now prepare a list of output params to iterate over.
-        List<YParameter> outputParamsList = new ArrayList<YParameter>(
-                                                        getOutputParameters().values());
+        var outputParamsList = new ArrayList<YParameter>(getOutputParameters().values());
         Collections.sort(outputParamsList);
 
         for (YParameter parameter : outputParamsList) {

@@ -124,9 +124,9 @@ public class YEngine implements InterfaceADesign,
         _instanceCache = new InstanceCache();
         _logger = LogManager.getLogger(YEngine.class);
         _netRunnerRepository = new YNetRunnerRepository();
-        _runningCaseIDToSpecMap = new ConcurrentHashMap<YIdentifier, YSpecification>();
-        _yawlServices = new ConcurrentHashMap<String, YAWLServiceReference>();
-        _externalClients = new ConcurrentHashMap<String, YExternalClient>();
+        _runningCaseIDToSpecMap = new ConcurrentHashMap<>();
+        _yawlServices = new ConcurrentHashMap<>();
+        _externalClients = new ConcurrentHashMap<>();
     }
 
 
@@ -537,7 +537,7 @@ public class YEngine implements InterfaceADesign,
 
         _logger.debug("--> addSpecifications");
 
-        List<YSpecificationID> result = new Vector<YSpecificationID>();
+        List<YSpecificationID> result = new ArrayList<>();
         List<YSpecification> newSpecifications;
         try {
             newSpecifications = YMarshal.unmarshalSpecifications(specStr);
@@ -707,12 +707,11 @@ public class YEngine implements InterfaceADesign,
      *         process specification with id = specID
      */
     public Set<YIdentifier> getCasesForSpecification(YSpecificationID specID) {
-        Set<YIdentifier> resultSet = new HashSet<YIdentifier>();
+        var resultSet = new HashSet<YIdentifier>();
         if (_specifications.contains(specID)) {
-            for (YIdentifier caseID : _runningCaseIDToSpecMap.keySet()) {
-                YSpecification specForCaseID = _runningCaseIDToSpecMap.get(caseID);
-                if (specForCaseID.getSpecificationID().equals(specID)) {
-                    resultSet.add(caseID);
+            for (var entry : _runningCaseIDToSpecMap.entrySet()) {
+                if (entry.getValue().getSpecificationID().equals(specID)) {
+                    resultSet.add(entry.getKey());
                 }
             }
         }
@@ -725,17 +724,10 @@ public class YEngine implements InterfaceADesign,
      * @return a map of [YSpecificationID, List<Yidentifier>]
      */
     public Map<YSpecificationID, List<YIdentifier>> getRunningCaseMap() {
-        Map<YSpecificationID, List<YIdentifier>> caseMap =
-                new HashMap<YSpecificationID, List<YIdentifier>>();
-        for (YIdentifier caseID : _runningCaseIDToSpecMap.keySet()) {
-            YSpecification specForCaseID = _runningCaseIDToSpecMap.get(caseID);
-            YSpecificationID specID = specForCaseID.getSpecificationID();
-            List<YIdentifier> list = caseMap.get(specID);
-            if (list == null) {
-                list = new ArrayList<YIdentifier>();
-                caseMap.put(specID, list);
-            }
-            list.add(caseID);
+        Map<YSpecificationID, List<YIdentifier>> caseMap = new HashMap<>();
+        for (var entry : _runningCaseIDToSpecMap.entrySet()) {
+            var specID = entry.getValue().getSpecificationID();
+            caseMap.computeIfAbsent(specID, k -> new ArrayList<>()).add(entry.getKey());
         }
         return caseMap;
     }
@@ -783,7 +775,7 @@ public class YEngine implements InterfaceADesign,
 
     protected Element formatCaseParams(String paramStr, YSpecification spec) throws YStateException {
         Element data = null;
-        if (paramStr != null && !"".equals(paramStr)) {
+        if (paramStr != null && !paramStr.isEmpty()) {
             data = JDOMUtil.stringToElement(paramStr);
             if (data == null) {
                 throw new YStateException("Invalid or malformed caseParams.");
@@ -957,7 +949,7 @@ public class YEngine implements InterfaceADesign,
 
 
     private Set<YNetElement> getCaseLocations(YIdentifier caseID) {
-        Set<YNetElement> allLocations = new HashSet<YNetElement>();
+        var allLocations = new HashSet<YNetElement>();
         for (YIdentifier identifier : caseID.getDescendants()) {
             allLocations.addAll(identifier.getLocations());
         }
@@ -1059,7 +1051,7 @@ public class YEngine implements InterfaceADesign,
      * @return List of running cases
 	   */
     public List<YIdentifier> getRunningCaseIDs() {
-        return new ArrayList<YIdentifier>(_runningCaseIDToSpecMap.keySet());
+        return new ArrayList<>(_runningCaseIDToSpecMap.keySet());
     }
 
 
@@ -1359,9 +1351,9 @@ public class YEngine implements InterfaceADesign,
 
    
     public Set<YWorkItem> getAvailableWorkItems() {
-        Set<YWorkItem> allItems = new HashSet<YWorkItem>();
-        Set<YWorkItem> enabledItems = _workItemRepository.getEnabledWorkItems();
-        Set<YWorkItem> firedItems = _workItemRepository.getFiredWorkItems();
+        var allItems = new HashSet<YWorkItem>();
+        var enabledItems = _workItemRepository.getEnabledWorkItems();
+        var firedItems = _workItemRepository.getFiredWorkItems();
 
         _logger.debug("--> getAvailableWorkItems: Enabled={}, Fired={}",
                 enabledItems.size(), firedItems.size());
@@ -1679,7 +1671,7 @@ public class YEngine implements InterfaceADesign,
         //   2. else if matching input param, use its value
         //   3. else if default value specified, use its value
         //   4. else use default value for the param's data type
-        List<YParameter> outParamList = new ArrayList<YParameter>(outputs.values());
+        var outParamList = new ArrayList<YParameter>(outputs.values());
         Collections.sort(outParamList);                        // get in right order
         for (YParameter outParam : outParamList) {
             String name = outParam.getName();
@@ -1956,7 +1948,7 @@ public class YEngine implements InterfaceADesign,
      * @return Set of services
      */
     public Set<YAWLServiceReference> getYAWLServices() {
-        return new HashSet<YAWLServiceReference>(_yawlServices.values());
+        return new HashSet<>(_yawlServices.values());
     }
 
 
@@ -2040,7 +2032,7 @@ public class YEngine implements InterfaceADesign,
     }
 
     public Set<YExternalClient> getExternalClients() {
-        return new HashSet<YExternalClient>(_externalClients.values());
+        return new HashSet<>(_externalClients.values());
     }
 
 
@@ -2211,7 +2203,7 @@ public class YEngine implements InterfaceADesign,
         if (_persisting) {
             try {
                 if (! id.get_idString().contains(".")) {  // only if the root case id
-                    String query = "delete from GroupedMIOutputData as m where m.uniqueIdentifier like '" +
+                    var query = "delete from GroupedMIOutputData as m where m.uniqueIdentifier like '" +
                             id.get_idString() + ":%'";
                     _pmgr.getSession().createQuery(query).executeUpdate();
                 }
@@ -2285,16 +2277,16 @@ public class YEngine implements InterfaceADesign,
 
         _logger.debug("*** DUMP OF ENGINE STARTS ***");
 
-        Set<YSpecificationID> specids = _specifications.getSpecIDs();
-        _logger.debug("\n*** DUMPING " + specids.size(), " SPECIFICATIONS ***");
+        var specids = _specifications.getSpecIDs();
+        _logger.debug("\n*** DUMPING {} SPECIFICATIONS ***", specids.size());
         int i = 0;
-        for(YSpecificationID specid : specids) {
-            YSpecification spec = _specifications.getSpecification(specid);
+        for (var specid : specids) {
+            var spec = _specifications.getSpecification(specid);
             if (spec != null) {
-                _logger.debug("Entry " + i++ + ":");
-                _logger.debug("    ID             " + spec.getURI());
-                _logger.debug("    Name           " + spec.getName());
-                _logger.debug("    Version   " + spec.getMetaData().getVersion());
+                _logger.debug("Entry {}:", i++);
+                _logger.debug("    ID             {}", spec.getURI());
+                _logger.debug("    Name           {}", spec.getName());
+                _logger.debug("    Version   {}", spec.getMetaData().getVersion());
             }
         }
         _logger.debug("*** DUMP OF SPECIFICATIONS ENDS ***");
@@ -2302,13 +2294,14 @@ public class YEngine implements InterfaceADesign,
 
         _logger.debug("*** DUMP OF RUNNING CASES TO SPEC MAP STARTS ***");
         int sub = 0;
-        for (YIdentifier key : _runningCaseIDToSpecMap.keySet()) {
+        for (var entry : _runningCaseIDToSpecMap.entrySet()) {
+            var key = entry.getKey();
             if (key != null) {
-                YSpecification spec = _runningCaseIDToSpecMap.get(key);
+                var spec = entry.getValue();
                 if (spec != null) {
-                    _logger.debug("Entry " + sub++ + " Key=" + key);
-                    _logger.debug("    ID             " + spec.getURI());
-                    _logger.debug("    Version        " + spec.getMetaData().getVersion());
+                    _logger.debug("Entry {} Key={}", sub++, key);
+                    _logger.debug("    ID             {}", spec.getURI());
+                    _logger.debug("    Version        {}", spec.getMetaData().getVersion());
                 }
             }
             else _logger.debug("key is NULL !!!");

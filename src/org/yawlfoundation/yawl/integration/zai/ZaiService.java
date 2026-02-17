@@ -71,17 +71,14 @@ public class ZaiService {
             throw new IllegalStateException("Service not initialized");
         }
 
-        List<Map<String, String>> messages = new ArrayList<>();
+        var messages = new ArrayList<Map<String, String>>();
 
-        // Add system prompt
         if (systemPrompt != null && !systemPrompt.isEmpty()) {
             messages.add(mapOf("role", "system", "content", systemPrompt));
         }
 
-        // Add conversation history
         messages.addAll(conversationHistory);
 
-        // Add current message
         messages.add(mapOf("role", "user", "content", message));
 
         try {
@@ -117,7 +114,7 @@ public class ZaiService {
      * Generate workflow decision based on data
      */
     public String makeWorkflowDecision(String decisionPoint, String inputData, List<String> options) {
-        StringBuilder prompt = new StringBuilder();
+        var prompt = new StringBuilder();
         prompt.append("Make a workflow decision:\n\n");
         prompt.append("Decision Point: ").append(decisionPoint).append("\n");
         prompt.append("Input Data: ").append(inputData).append("\n");
@@ -214,7 +211,7 @@ public class ZaiService {
      * Get available models
      */
     public static List<String> getAvailableModels() {
-        return Arrays.asList(
+        return List.of(
                 "GLM-4.7-Flash",
                 "glm-4.6",
                 "glm-4.5",

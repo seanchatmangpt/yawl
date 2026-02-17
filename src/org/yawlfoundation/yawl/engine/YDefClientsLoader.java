@@ -49,8 +49,8 @@ public class YDefClientsLoader {
 
     public YDefClientsLoader() {
         _log = LogManager.getLogger(this.getClass());
-        _clients = new HashSet<YExternalClient>();
-        _services = new HashSet<YAWLServiceReference>();
+        _clients = new HashSet<>();
+        _services = new HashSet<>();
         load();
     }
 
@@ -60,7 +60,7 @@ public class YDefClientsLoader {
     public Set<YAWLServiceReference> getLoadedServices() { return _services; }
 
     public Set<YClient> getAllLoaded() {
-        Set<YClient> allLoaded = new HashSet<YClient>();
+        var allLoaded = new HashSet<YClient>();
         allLoaded.addAll(_clients);
         allLoaded.addAll(_services);
         return allLoaded;
@@ -91,14 +91,14 @@ public class YDefClientsLoader {
 
 
     private void processLine(String rawLine) {
-        rawLine = rawLine.trim();
+        rawLine = rawLine.strip();
 
         // ignore comments and empty lines
-        if ((rawLine.length() == 0) || rawLine.startsWith("#")) return;
+        if (rawLine.isBlank() || rawLine.startsWith("#")) return;
 
         int headerEnd = rawLine.indexOf(':');
         if (headerEnd > -1) {
-            String[] parts = rawLine.substring(headerEnd + 1).split(",");
+            var parts = rawLine.substring(headerEnd + 1).split(",");
             if (rawLine.startsWith("extClient:") && (parts.length == 3)) {
                 _clients.add(new YExternalClient(parts[0].trim(),
                         PasswordEncryptor.encrypt(parts[1].trim(), null),

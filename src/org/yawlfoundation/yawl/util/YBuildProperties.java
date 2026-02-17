@@ -64,9 +64,10 @@ public class YBuildProperties {
     public String toXML() {
         XNode root = new XNode("buildproperties");
         for (Object o : _buildProps.keySet()) {
-            String key = (String) o;
-            String value = _buildProps.getProperty(key);
-            root.addChild(key, value);
+            if (o instanceof String key) {
+                var value = _buildProps.getProperty(key);
+                root.addChild(key, value);
+            }
         }
         return root.toString();
     }

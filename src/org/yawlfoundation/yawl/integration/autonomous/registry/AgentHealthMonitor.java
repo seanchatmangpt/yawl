@@ -100,17 +100,17 @@ public final class AgentHealthMonitor implements Runnable {
      * Check all registered agents and remove those with stale heartbeats.
      */
     private void checkAgentHealth() {
-        List<String> deadAgents = new ArrayList<>();
+        var deadAgents = new ArrayList<String>();
 
-        for (Map.Entry<String, AgentInfo> entry : agentRegistry.entrySet()) {
-            AgentInfo agent = entry.getValue();
+        for (var entry : agentRegistry.entrySet()) {
+            var agent = entry.getValue();
             if (!agent.isAlive(HEARTBEAT_TIMEOUT_MILLIS)) {
                 deadAgents.add(agent.getId());
             }
         }
 
-        for (String agentId : deadAgents) {
-            AgentInfo removed = agentRegistry.remove(agentId);
+        for (var agentId : deadAgents) {
+            var removed = agentRegistry.remove(agentId);
             if (removed != null) {
                 long timeSinceHeartbeat = System.currentTimeMillis() - removed.getLastHeartbeat();
                 logger.warn("Removed dead agent: {} (last heartbeat: {}ms ago)",

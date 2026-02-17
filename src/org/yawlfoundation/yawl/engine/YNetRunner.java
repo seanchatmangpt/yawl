@@ -56,7 +56,6 @@ import java.util.*;
 public class YNetRunner {
 
 
-    private static final Logger logger = LogManager.getLogger(YNetRunner.class);
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
@@ -64,17 +63,17 @@ public class YNetRunner {
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
     private Set<YTask> _netTasks;
-    private Set<YTask> _enabledTasks = new HashSet<YTask>();
-    private Set<YTask> _busyTasks = new HashSet<YTask>();
-    private final Set<YTask> _deadlockedTasks = new HashSet<YTask>();
+    private Set<YTask> _enabledTasks = new HashSet<>();
+    private Set<YTask> _busyTasks = new HashSet<>();
+    private final Set<YTask> _deadlockedTasks = new HashSet<>();
     private YIdentifier _caseIDForNet;
     private YSpecificationID _specID;
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
     private boolean _cancelling;
-    private Set<String> _enabledTaskNames = new HashSet<String>();
-    private Set<String> _busyTaskNames = new HashSet<String>();
+    private Set<String> _enabledTaskNames = new HashSet<>();
+    private Set<String> _busyTaskNames = new HashSet<>();
     private String _caseID = null;
     private String _containingTaskID = null;
     private YNetData _netdata = null;
@@ -149,7 +148,7 @@ public class YNetRunner {
         _netdata = new YNetData(_caseID);
         _net = (YNet) netPrototype.clone();
         _net.initializeDataStore(pmgr, _netdata);
-        _netTasks = new HashSet<YTask>(_net.getNetTasks());
+        _netTasks = new HashSet<>(_net.getNetTasks());
         _specID = _net.getSpecification().getSpecificationID();
         _startTime = System.currentTimeMillis();
         prepare(pmgr);
@@ -206,7 +205,7 @@ public class YNetRunner {
         _net = net;
         _specID = net.getSpecification().getSpecificationID();
         _net.restoreData(_netdata);
-        _netTasks = new HashSet<YTask>(_net.getNetTasks());
+        _netTasks = new HashSet<>(_net.getNetTasks());
     }
 
     public YNet getNet() {
@@ -368,7 +367,7 @@ public class YNetRunner {
 
     private void notifyDeadLock(YPersistenceManager pmgr)
             throws YPersistenceException {
-        Set<YExternalNetElement> notified = new HashSet<>();
+        var notified = new HashSet<YExternalNetElement>();
         for (Object o : _caseIDForNet.getLocations()) {
             if (o instanceof YExternalNetElement element) {
                 if (_net.getNetElements().values().contains(element)) {
@@ -595,7 +594,7 @@ public class YNetRunner {
     private void fireTasks(YEnabledTransitionSet enabledSet, YPersistenceManager pmgr)
             throws YDataStateException, YStateException, YQueryException,
                    YPersistenceException {
-        Set<YTask> enabledTasks = new HashSet<YTask>();
+        var enabledTasks = new HashSet<YTask>();
 
         // A TaskGroup is a group of tasks that are all enabled by a single condition.
         // If the group has more than one task, it's a deferred choice, in which case:
@@ -972,7 +971,7 @@ public class YNetRunner {
     }
 
     protected Set<YTask> getActiveTasks() {
-        Set<YTask> activeTasks = new HashSet<YTask>();
+        var activeTasks = new HashSet<YTask>();
         activeTasks.addAll(_busyTasks);
         activeTasks.addAll(_enabledTasks);
         return activeTasks;
@@ -995,7 +994,7 @@ public class YNetRunner {
 
 
     private boolean warnIfNetNotEmpty() {
-        List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
+        var haveTokens = new ArrayList<YExternalNetElement>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
             if (! (element instanceof YOutputCondition outputCond)) {  // ignore end condition tokens
                 if ((element instanceof YCondition cond) && cond.containsIdentifier()) {
@@ -1109,7 +1108,7 @@ public class YNetRunner {
     public List<String> getTimeOutTaskSet(YWorkItem item) {
         YTask timeOutTask = (YTask) getNetElement(item.getTaskID());
         String nextTaskID = getFlowsIntoTaskID(timeOutTask);
-        ArrayList<String> result = new ArrayList<String>() ;
+        var result = new ArrayList<String>();
 
         if (nextTaskID != null) {
             for (YTask task : _netTasks) {
@@ -1142,7 +1141,7 @@ public class YNetRunner {
     
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
-        _timerStates = new Hashtable<String, String>();
+        _timerStates = new HashMap<>();
         for (YTask task : _netTasks) {
             if (task.getTimerVariable() != null) {
                 updateTimerState(task, YWorkItemTimer.State.dormant);

@@ -46,7 +46,7 @@ public class Sender extends Interface_Client {
         if (_props == null) {
             throw new IOException("Failed to load sender parameters");
         }
-        Map<String, String> params = new HashMap<String, String>();
+        var params = new HashMap<String, String>();
         params.put("from",get("f"));
         params.put("to", get("t"));
         params.put("subject", subject);

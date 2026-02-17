@@ -98,17 +98,12 @@ public class YLogPredicate {
     }
 
     public String toXML() {
-        if ((_startPredicate == null) && (_completionPredicate == null)) {
+        if (_startPredicate == null && _completionPredicate == null) {
             return "<logPredicate/>";
         }
-
-        StringBuilder xml = new StringBuilder("<logPredicate>");
-        if (_startPredicate != null)
-            xml.append(StringUtil.wrapEscaped(_startPredicate, "start"));
-        if (_completionPredicate != null)
-            xml.append(StringUtil.wrapEscaped(_completionPredicate, "completion"));
-        xml.append("</logPredicate>");
-        return xml.toString();
+        var start = _startPredicate != null ? StringUtil.wrapEscaped(_startPredicate, "start") : "";
+        var completion = _completionPredicate != null ? StringUtil.wrapEscaped(_completionPredicate, "completion") : "";
+        return "<logPredicate>%s%s</logPredicate>".formatted(start, completion);
     }
 
 

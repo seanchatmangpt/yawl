@@ -59,7 +59,8 @@ public class YExternalSession extends YSession {
     public void setPassword(String password) throws YPersistenceException {
         if (_client != null) {
             _client.setPassword(password);
-            YEngine.getInstance().updateObject(_client);
+            var engine = YEngine.getInstance();
+            engine.updateObject(_client);
         }
     }
 

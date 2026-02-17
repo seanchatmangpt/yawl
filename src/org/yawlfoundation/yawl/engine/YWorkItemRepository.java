@@ -43,12 +43,10 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 public class YWorkItemRepository {
     private final Map<String, YWorkItem> _itemMap; //[case&taskIDStr=YWorkItem]
 
-    private static final Logger logger = LogManager.getLogger(YWorkItemRepository.class);
-    private final Logger _logger;
+    private static final Logger _logger = LogManager.getLogger(YWorkItemRepository.class);
 
     public YWorkItemRepository() {
         _itemMap = new ConcurrentHashMap<>(500);
-        _logger = LogManager.getLogger(YWorkItemRepository.class);
     }
 
 
@@ -78,7 +76,7 @@ public class YWorkItemRepository {
 
     public Set<YWorkItem> removeWorkItemFamily(YWorkItem workItem) {
         _logger.debug("--> removeWorkItemFamily: {}", workItem.getIDString());
-        Set<YWorkItem> removedSet = new HashSet<YWorkItem>();
+        var removedSet = new HashSet<YWorkItem>();
         YWorkItem parent = workItem.getParent() != null ? workItem.getParent() : workItem;
         Set<YWorkItem> children = parent.getChildren();
         if (children != null) {
@@ -98,7 +96,7 @@ public class YWorkItemRepository {
      * @param caseIDForNet
      */
     public Set<YWorkItem> cancelNet(YIdentifier caseIDForNet) {
-        Set<String> itemsToRemove = new HashSet<String>();
+        var itemsToRemove = new HashSet<String>();
         for (YWorkItem item : _itemMap.values()) {
             YIdentifier identifier = item.getWorkItemID().getCaseID();
             if (identifier.isImmediateChildOf(caseIDForNet) ||
@@ -112,7 +110,7 @@ public class YWorkItemRepository {
 
 
     private Set<YWorkItem> removeItems(Set<String> itemsToRemove) {
-        Set<YWorkItem> removedSet = new HashSet<YWorkItem>();
+        var removedSet = new HashSet<YWorkItem>();
         for (String workItemID : itemsToRemove) {
             YWorkItem item = _itemMap.remove(workItemID);
             if (item != null) removedSet.add(item);
@@ -142,7 +140,7 @@ public class YWorkItemRepository {
 
 
     public Set<YWorkItem> getExecutingWorkItems(String serviceName) {
-        Set<YWorkItem> executingItems = new HashSet<YWorkItem>();
+        var executingItems = new HashSet<YWorkItem>();
         for (YWorkItem workitem : getWorkItems(statusExecuting)) {
             if (workitem.getExternalClient().getUserName().equals(serviceName)) {
                 executingItems.add(workitem);
@@ -158,7 +156,7 @@ public class YWorkItemRepository {
 
 
     public Set<YWorkItem> getWorkItems(YWorkItemStatus status) {
-        Set<YWorkItem> itemSet = new HashSet<YWorkItem>();
+        var itemSet = new HashSet<YWorkItem>();
         for (YWorkItem workitem : _itemMap.values()) {
             if (workitem.getStatus() == status) {
                 itemSet.add(workitem);
@@ -176,7 +174,7 @@ public class YWorkItemRepository {
 
     // check that the items in the repository are in synch with the engine
     public void cleanseRepository() {
-        Set<String> itemsToRemove = new HashSet<String>();
+        var itemsToRemove = new HashSet<String>();
         for (YWorkItem workitem : _itemMap.values()) {
 
             // keep completed mi tasks in repository until parent completes
@@ -220,7 +218,7 @@ public class YWorkItemRepository {
             throw new IllegalArgumentException("the argument <caseID> is not valid.");
         }
 
-        Set<YWorkItem> removedItems = new HashSet<YWorkItem>();
+        var removedItems = new HashSet<YWorkItem>();
         for (YWorkItem item : getWorkItemsForCase(caseID)) {
             removedItems.addAll(removeWorkItemFamily(item));
         }
@@ -233,7 +231,7 @@ public class YWorkItemRepository {
             throw new IllegalArgumentException("the argument <caseID> is not valid.");
         }
         
-        List<YWorkItem> caseItems = new ArrayList<YWorkItem>();
+        var caseItems = new ArrayList<YWorkItem>();
         for (YWorkItem item : getWorkItems()) {
             YWorkItemID wid = item.getWorkItemID();
 
@@ -250,7 +248,7 @@ public class YWorkItemRepository {
 
 
     public Set<YWorkItem> getWorkItemsWithIdentifier(String idType, String id) {
-        Set<YWorkItem> matches = new HashSet<YWorkItem>() ;
+        var matches = new HashSet<YWorkItem>();
 
         // find out which items belong to the specified case/spec/task
         for (YWorkItem item : getWorkItems()) {
@@ -269,7 +267,7 @@ public class YWorkItemRepository {
     
 
     public Set<YWorkItem> getWorkItemsForService(String serviceURI) {
-        Set<YWorkItem> matches = new HashSet<YWorkItem>();
+        var matches = new HashSet<YWorkItem>();
         YAWLServiceReference defWorklist = YEngine.getInstance().getDefaultWorklist();
 
         // find out which items belong to the specified service
@@ -290,14 +288,13 @@ public class YWorkItemRepository {
 
     // called from YEngine#dump, logger isDebugEnabled
     public void dump(Logger logger) {
-        logger.debug("\n*** DUMPING " + _itemMap.size() +
-                     " ENTRIES IN ID_2_WORKITEMS_MAP ***");
+        logger.debug("\n*** DUMPING {} ENTRIES IN ID_2_WORKITEMS_MAP ***", _itemMap.size());
         int sub = 1;
-        for (String key : _itemMap.keySet()) {
-            YWorkItem workitem = _itemMap.get(key);
+        for (var entry : _itemMap.entrySet()) {
+            var workitem = entry.getValue();
             if (workitem != null) {
-                logger.debug("Entry " + sub++ + " Key=" + key);
-                logger.debug(("    WorkitemID        " + workitem.getIDString()));
+                logger.debug("Entry {} Key={}", sub++, entry.getKey());
+                logger.debug("    WorkitemID        {}", workitem.getIDString());
             }
         }
         logger.debug("*** DUMP OF CASE_2_NETRUNNER_MAP ENDS");

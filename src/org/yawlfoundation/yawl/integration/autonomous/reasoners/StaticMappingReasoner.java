@@ -85,16 +85,16 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
             throw new IllegalArgumentException("filePath is required");
         }
 
-        Properties props = new Properties();
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        var props = new Properties();
+        try (var reader = new BufferedReader(new FileReader(filePath))) {
             props.load(reader);
         }
 
-        for (String taskName : props.stringPropertyNames()) {
-            String capabilitiesStr = props.getProperty(taskName);
-            if (capabilitiesStr != null && !capabilitiesStr.trim().isEmpty()) {
-                Set<String> capabilities = parseCapabilities(capabilitiesStr);
-                taskToCapabilities.put(taskName.trim(), capabilities);
+        for (var taskName : props.stringPropertyNames()) {
+            var capabilitiesStr = props.getProperty(taskName);
+            if (capabilitiesStr != null && !capabilitiesStr.isBlank()) {
+                var capabilities = parseCapabilities(capabilitiesStr);
+                taskToCapabilities.put(taskName.strip(), capabilities);
             }
         }
     }
@@ -105,13 +105,13 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
      * @param capabilities set of capability names that can handle this task
      */
     public void addMapping(String taskName, Set<String> capabilities) {
-        if (taskName == null || taskName.trim().isEmpty()) {
+        if (taskName == null || taskName.isBlank()) {
             throw new IllegalArgumentException("taskName is required");
         }
         if (capabilities == null || capabilities.isEmpty()) {
             throw new IllegalArgumentException("capabilities cannot be empty");
         }
-        taskToCapabilities.put(taskName.trim(), new HashSet<>(capabilities));
+        taskToCapabilities.put(taskName.strip(), new HashSet<>(capabilities));
     }
 
     /**
@@ -120,14 +120,14 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
      * @param capabilitiesStr comma-separated capability names
      */
     public void addMapping(String taskName, String capabilitiesStr) {
-        if (taskName == null || taskName.trim().isEmpty()) {
+        if (taskName == null || taskName.isBlank()) {
             throw new IllegalArgumentException("taskName is required");
         }
-        if (capabilitiesStr == null || capabilitiesStr.trim().isEmpty()) {
+        if (capabilitiesStr == null || capabilitiesStr.isBlank()) {
             throw new IllegalArgumentException("capabilitiesStr is required");
         }
-        Set<String> capabilities = parseCapabilities(capabilitiesStr);
-        taskToCapabilities.put(taskName.trim(), capabilities);
+        var capabilities = parseCapabilities(capabilitiesStr);
+        taskToCapabilities.put(taskName.strip(), capabilities);
     }
 
     @Override
@@ -136,16 +136,16 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
             throw new IllegalArgumentException("workItem is required");
         }
 
-        String taskName = extractTaskName(workItem);
-        String normalizedCapability = capability.getDomainName().trim();
+        var taskName = extractTaskName(workItem);
+        var normalizedCapability = capability.getDomainName().strip();
 
-        Set<String> mappedCapabilities = taskToCapabilities.get(taskName);
+        var mappedCapabilities = taskToCapabilities.get(taskName);
         if (mappedCapabilities != null) {
             return mappedCapabilities.contains(normalizedCapability);
         }
 
-        for (Map.Entry<String, Set<String>> entry : taskToCapabilities.entrySet()) {
-            String pattern = entry.getKey();
+        for (var entry : taskToCapabilities.entrySet()) {
+            var pattern = entry.getKey();
             if (matchesPattern(taskName, pattern)) {
                 return entry.getValue().contains(normalizedCapability);
             }
@@ -189,12 +189,11 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
     }
 
     private static Set<String> parseCapabilities(String capabilitiesStr) {
-        Set<String> capabilities = new HashSet<>();
-        String[] parts = capabilitiesStr.split(",");
-        for (String part : parts) {
-            String trimmed = part.trim();
-            if (!trimmed.isEmpty()) {
-                capabilities.add(trimmed);
+        var capabilities = new HashSet<String>();
+        for (var part : capabilitiesStr.split(",")) {
+            var stripped = part.strip();
+            if (!stripped.isBlank()) {
+                capabilities.add(stripped);
             }
         }
         if (capabilities.isEmpty()) {

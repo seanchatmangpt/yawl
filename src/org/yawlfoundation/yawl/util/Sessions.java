@@ -201,9 +201,7 @@ public class Sessions {
      */
     private void startActivityTimer(final String handle) {
         final ScheduledFuture<?> inactivityTimer = scheduler.schedule(
-            new Runnable() {
-                public void run() { disconnect(handle); }
-            },
+            () -> disconnect(handle),
             60, TimeUnit.MINUTES);
         handleToTimer.put(handle, inactivityTimer);
     }

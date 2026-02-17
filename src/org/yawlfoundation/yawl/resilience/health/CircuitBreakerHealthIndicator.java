@@ -34,15 +34,15 @@ public class CircuitBreakerHealthIndicator {
      * @return health status object
      */
     public HealthStatus health() {
-        Map<String, CircuitBreakerStatus> circuitBreakers = new HashMap<>();
+        var circuitBreakers = new HashMap<String, CircuitBreakerStatus>();
         boolean hasOpenCircuit = false;
 
-        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
-            String name = circuitBreaker.getName();
-            CircuitBreaker.State state = circuitBreaker.getState();
-            CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();
+        for (var circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
+            var name = circuitBreaker.getName();
+            var state = circuitBreaker.getState();
+            var metrics = circuitBreaker.getMetrics();
 
-            CircuitBreakerStatus status = new CircuitBreakerStatus();
+            var status = new CircuitBreakerStatus();
             status.setState(state.toString());
             status.setFailureRate(metrics.getFailureRate());
             status.setSlowCallRate(metrics.getSlowCallRate());
@@ -58,7 +58,7 @@ public class CircuitBreakerHealthIndicator {
             }
         }
 
-        HealthStatus healthStatus = new HealthStatus();
+        var healthStatus = new HealthStatus();
         healthStatus.setStatus(hasOpenCircuit ? "DOWN" : "UP");
         healthStatus.setCircuitBreakers(circuitBreakers);
 
@@ -72,20 +72,18 @@ public class CircuitBreakerHealthIndicator {
      * @return health status object
      */
     public HealthStatus health(String name) {
-        Map<String, CircuitBreakerStatus> circuitBreakers = new HashMap<>();
-
-        if (!circuitBreakerRegistry.find(name).isPresent()) {
-            HealthStatus healthStatus = new HealthStatus();
+        if (circuitBreakerRegistry.find(name).isEmpty()) {
+            var healthStatus = new HealthStatus();
             healthStatus.setStatus("UNKNOWN");
             healthStatus.setMessage("Circuit breaker not found: " + name);
             return healthStatus;
         }
 
-        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(name);
-        CircuitBreaker.State state = circuitBreaker.getState();
-        CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();
+        var circuitBreaker = circuitBreakerRegistry.circuitBreaker(name);
+        var state = circuitBreaker.getState();
+        var metrics = circuitBreaker.getMetrics();
 
-        CircuitBreakerStatus status = new CircuitBreakerStatus();
+        var status = new CircuitBreakerStatus();
         status.setState(state.toString());
         status.setFailureRate(metrics.getFailureRate());
         status.setSlowCallRate(metrics.getSlowCallRate());
@@ -94,9 +92,10 @@ public class CircuitBreakerHealthIndicator {
         status.setNumberOfSuccessfulCalls(metrics.getNumberOfSuccessfulCalls());
         status.setNumberOfSlowCalls(metrics.getNumberOfSlowCalls());
 
+        var circuitBreakers = new HashMap<String, CircuitBreakerStatus>();
         circuitBreakers.put(name, status);
 
-        HealthStatus healthStatus = new HealthStatus();
+        var healthStatus = new HealthStatus();
         healthStatus.setStatus(
             (state == CircuitBreaker.State.OPEN || state == CircuitBreaker.State.FORCED_OPEN)
                 ? "DOWN" : "UP"

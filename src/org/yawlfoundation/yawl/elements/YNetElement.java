@@ -25,7 +25,7 @@ package org.yawlfoundation.yawl.elements;
  * @author Lachlan Aldred
  * 
  */
-public abstract class YNetElement implements Cloneable, Comparable {
+public abstract class YNetElement implements Cloneable, Comparable<YNetElement> {
     private String _id;
 
     /**
@@ -56,8 +56,7 @@ public abstract class YNetElement implements Cloneable, Comparable {
         return super.clone();
     }
 
-    public int compareTo(Object o) {
-        YNetElement ne = (YNetElement) o;
-        return getID().compareTo(ne.getID());
+    public int compareTo(YNetElement o) {
+        return getID().compareTo(o.getID());
     }
 }

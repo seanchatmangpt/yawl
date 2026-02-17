@@ -104,18 +104,17 @@ public class YMarking {
 
 
     private YSetOfMarkings doPrelimaryMarkingSetBasedOnJoinType(YTask task) {
-        Set preset = task.getPresetElements();
-        YSetOfMarkings markingSet = new YSetOfMarkings();
+        Set<YExternalNetElement> preset = task.getPresetElements();
+        var markingSet = new YSetOfMarkings();
         int joinType = task.getJoinType();
         switch (joinType) {
             case YTask._AND -> {
                 if (!nonOrJoinEnabled(task)) {
                     return null;
                 } else {
-                    YMarking returnedMarking = new YMarking(_locations);
-                    for (Iterator iterator = preset.iterator(); iterator.hasNext();) {
-                        YCondition condition = (YCondition) iterator.next();
-                        returnedMarking._locations.remove(condition);
+                    var returnedMarking = new YMarking(_locations);
+                    for (YExternalNetElement element : preset) {
+                        returnedMarking._locations.remove((YCondition) element);
                     }
                     markingSet.addMarking(returnedMarking);
                 }
@@ -126,10 +125,10 @@ public class YMarking {
                 if (!nonOrJoinEnabled(task)) {
                     return null;
                 }
-                for (Iterator iterator = preset.iterator(); iterator.hasNext();) {
-                    YCondition condition = (YCondition) iterator.next();
+                for (YExternalNetElement element : preset) {
+                    var condition = (YCondition) element;
                     if (_locations.contains(condition)) {
-                        YMarking returnedMarking = new YMarking(_locations);
+                        var returnedMarking = new YMarking(_locations);
                         returnedMarking._locations.remove(condition);
                         markingSet.addMarking(returnedMarking);
                     }
@@ -150,15 +149,14 @@ public class YMarking {
         if (_locations.contains(task)) {
             return true;
         }
-        Set preset = task.getPresetElements();
+        Set<YExternalNetElement> preset = task.getPresetElements();
         int joinType = task.getJoinType();
         return switch (joinType) {
             case YTask._AND -> _locations.containsAll(preset);
             case YTask._OR -> throw new RuntimeException("This method should never be called on an OR-Join");
             case YTask._XOR -> {
-                for (Iterator iterator = preset.iterator(); iterator.hasNext();) {
-                    YCondition condition = (YCondition) iterator.next();
-                    if (_locations.contains(condition)) {
+                for (YExternalNetElement element : preset) {
+                    if (_locations.contains((YCondition) element)) {
                         yield true;
                     }
                 }
@@ -187,29 +185,27 @@ public class YMarking {
         if (!(marking instanceof YMarking otherMarking)) {
             return false;
         }
-        List otherMarkingsLocations = new Vector(otherMarking.getLocations());
-        List myLocations = new Vector(_locations);
-        for (Iterator iterator = myLocations.iterator(); iterator.hasNext();) {
-            YExternalNetElement netElement = (YExternalNetElement) iterator.next();
+        List<YNetElement> otherMarkingsLocations = new ArrayList<>(otherMarking.getLocations());
+        List<YNetElement> myLocations = new ArrayList<>(_locations);
+        for (YNetElement netElement : myLocations) {
             if (otherMarkingsLocations.contains(netElement)) {
                 otherMarkingsLocations.remove(netElement);
             } else {
                 return false;
             }
         }
-        return otherMarkingsLocations.size() <= 0;
+        return otherMarkingsLocations.isEmpty();
     }
 
 
     public boolean strictlyGreaterThanOrEqualWithSupports(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List<YNetElement> otherMarkingsLocations = new ArrayList<>(marking.getLocations());
+        List<YNetElement> myLocations = new ArrayList<>(_locations);
         if (!(myLocations.containsAll(otherMarkingsLocations)
                 && otherMarkingsLocations.containsAll(myLocations))) {
             return false;
         }
-        for (Iterator iterator = otherMarkingsLocations.iterator(); iterator.hasNext();) {
-            YExternalNetElement netElement = (YExternalNetElement) iterator.next();
+        for (YNetElement netElement : otherMarkingsLocations) {
             if (myLocations.contains(netElement)) {
                 myLocations.remove(netElement);
             } else {
@@ -227,8 +223,8 @@ public class YMarking {
 
     //moe - ResetAnalyser
     public boolean isBiggerThan(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List<YNetElement> otherMarkingsLocations = new ArrayList<>(marking.getLocations());
+        List<YNetElement> myLocations = new ArrayList<>(_locations);
 
         //This test is for c1+c2+c3 bigger than c1+c2
         if ((myLocations.containsAll(otherMarkingsLocations)
@@ -247,30 +243,29 @@ public class YMarking {
     }
 
     public boolean strictlyLessThanWithSupports(YMarking marking) {
-        List otherMarkingsLocations = new Vector(marking.getLocations());
-        List myLocations = new Vector(_locations);
+        List<YNetElement> otherMarkingsLocations = new ArrayList<>(marking.getLocations());
+        List<YNetElement> myLocations = new ArrayList<>(_locations);
         if (!(myLocations.containsAll(otherMarkingsLocations)
                 && otherMarkingsLocations.containsAll(myLocations))) {
             return false;
         }
-        for (Iterator iterator = myLocations.iterator(); iterator.hasNext();) {
-            YExternalNetElement netElement = (YExternalNetElement) iterator.next();
+        for (YNetElement netElement : myLocations) {
             if (otherMarkingsLocations.contains(netElement)) {
                 otherMarkingsLocations.remove(netElement);
             } else {
                 return false;
             }
         }
-        return otherMarkingsLocations.size() > 0;
+        return !otherMarkingsLocations.isEmpty();
     }
 
 
     public boolean isBiggerEnablingMarkingThan(YMarking marking, YTask orJoin) {
-        Set preset = orJoin.getPresetElements();
-        Set thisMarkingsOccupiedPresetElements = new HashSet();
-        Set otherMarkingsOccupiedPresetElements = new HashSet();
-        for (Iterator presetIter = preset.iterator(); presetIter.hasNext();) {
-            YCondition condition = (YCondition) presetIter.next();
+        Set<YExternalNetElement> preset = orJoin.getPresetElements();
+        var thisMarkingsOccupiedPresetElements = new HashSet<YCondition>();
+        var otherMarkingsOccupiedPresetElements = new HashSet<YCondition>();
+        for (YExternalNetElement element : preset) {
+            var condition = (YCondition) element;
             if (this._locations.contains(condition)) {
                 thisMarkingsOccupiedPresetElements.add(condition);
             }
@@ -316,7 +311,7 @@ public class YMarking {
     
     
     private Set<YExternalNetElement> getLocationsAsSet() {
-        Set<YExternalNetElement> set = new HashSet<YExternalNetElement>();
+        var set = new HashSet<YExternalNetElement>();
         for (YNetElement element : _locations) {
             set.add((YExternalNetElement) element);
         }
@@ -329,17 +324,17 @@ public class YMarking {
     }
 
     public boolean equivalentTo(YMarking marking) {
-        Vector otherMarkingsLocations = new Vector(marking.getLocations());
+        List<YNetElement> otherMarkingsLocations = new ArrayList<>(marking.getLocations());
 
         // short-circuit test if sizes differ
         if (otherMarkingsLocations.size() != _locations.size()) return false;
 
         // ok, same size so sort and compare for equality
-        Vector thisMarkingsLocations = new Vector(_locations);        // don't sort orig.
+        List<YNetElement> thisMarkingsLocations = new ArrayList<>(_locations);    // don't sort orig.
         Collections.sort(otherMarkingsLocations);
         Collections.sort(thisMarkingsLocations);
 
-        // vectors are equal if each element pair is equal 
+        // lists are equal if each element pair is equal
         return thisMarkingsLocations.equals(otherMarkingsLocations);
     }
 }

@@ -47,12 +47,12 @@ public enum YInternalType {
 
     private final YDataType _type;
 
-    private static Map<String, YInternalType> _fromStringMap =
-            new HashMap<String, YInternalType>();
+    private static final Map<String, YInternalType> _fromStringMap =
+            new HashMap<>();
 
 
     static {
-        for (YInternalType type : values()) {
+        for (var type : values()) {
             _fromStringMap.put(type.name(), type);
         }
     }

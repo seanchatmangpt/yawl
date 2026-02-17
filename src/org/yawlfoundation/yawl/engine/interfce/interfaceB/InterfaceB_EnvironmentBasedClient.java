@@ -1205,11 +1205,11 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
      * @return a list of WorkItemRecord objects
      */
     private List<WorkItemRecord> unPackWorkItemList(String xml) {
-        List<WorkItemRecord> result = new ArrayList<WorkItemRecord>();
+        var result = new ArrayList<WorkItemRecord>();
         if (xml != null && successful(xml)) {
-            Document doc = JDOMUtil.stringToDocument(xml);
+            var doc = JDOMUtil.stringToDocument(xml);
             if (doc != null) {
-                for (Element item : doc.getRootElement().getChildren()) {
+                for (var item : doc.getRootElement().getChildren()) {
                     result.add(Marshaller.unmarshalWorkItem(item));
                 }
             }

@@ -47,7 +47,7 @@ public class CaseExporter {
 
 
     public String export(YIdentifier caseID) {
-        return export(Collections.<YIdentifier>singletonList(caseID));
+        return export(List.of(caseID));
     }
 
 
@@ -221,9 +221,9 @@ public class CaseExporter {
 
     private List<YIdentifier> csvToIdentifierList(String csv) {
         if (csv == null) return Collections.emptyList();
-        List<YIdentifier> caseList = new ArrayList<>();
-        String[] caseArray = csv.split("\\s*,\\s*");
-        for (String caseStr : caseArray) {
+        var caseList = new ArrayList<YIdentifier>();
+        var caseArray = csv.split("\\s*,\\s*");
+        for (var caseStr : caseArray) {
             if (StringUtil.isNullOrEmpty(caseStr)) continue;
             if (caseStr.contains("-")) {
                 caseList.addAll(getCasesInRange(caseStr));

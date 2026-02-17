@@ -38,10 +38,10 @@ import java.util.List;
 public class ErrorHandler implements org.xml.sax.ErrorHandler
 {
     // Contains all warnings since the last reset.
-    private List<String> warnings = new ArrayList<String>();
+    private List<String> warnings = new ArrayList<>();
 
     // Contains all errors since the last reset.
-    private List<String> errors = new ArrayList<String>();
+    private List<String> errors = new ArrayList<>();
 
 
     /**
@@ -70,7 +70,7 @@ public class ErrorHandler implements org.xml.sax.ErrorHandler
      * @return true if there were no errors, false otherwise
      */
     public boolean isValid() {
-        return errors.size() == 0;
+        return errors.isEmpty();
     }
 
     /**
@@ -95,8 +95,7 @@ public class ErrorHandler implements org.xml.sax.ErrorHandler
      * @see org.xml.sax.SAXParseException
      */
     public void warning(SAXParseException e) throws SAXException {
-        warnings.add("Warning: " + e.getLineNumber() + ":" + e.getColumnNumber() +
-                      ": " + e.getMessage());
+        warnings.add("Warning: %d:%d: %s".formatted(e.getLineNumber(), e.getColumnNumber(), e.getMessage()));
     }
 
     /**
@@ -125,8 +124,7 @@ public class ErrorHandler implements org.xml.sax.ErrorHandler
      * @see org.xml.sax.SAXParseException
      */
     public void error(SAXParseException e) throws SAXException {
-        errors.add("Error: " + e.getLineNumber() + ":" + e.getColumnNumber() +
-                    ": " + e.getMessage());
+        errors.add("Error: %d:%d: %s".formatted(e.getLineNumber(), e.getColumnNumber(), e.getMessage()));
     }
 
     /**
@@ -158,8 +156,7 @@ public class ErrorHandler implements org.xml.sax.ErrorHandler
      * @see org.xml.sax.SAXParseException
      */
     public void fatalError(SAXParseException e) throws SAXException {
-        errors.add("Fatal Error: " + e.getLineNumber() + ":" + e.getColumnNumber() +
-                   ": " + e.getMessage());
+        errors.add("Fatal Error: %d:%d: %s".formatted(e.getLineNumber(), e.getColumnNumber(), e.getMessage()));
         throw e;
     }
 }

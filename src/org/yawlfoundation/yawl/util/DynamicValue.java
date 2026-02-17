@@ -68,10 +68,7 @@ public class DynamicValue {
                         result = method.invoke(_target);
                         break;
                     }
-                    catch (IllegalAccessException e) {
-                        // fall through to empty string
-                    }
-                    catch (InvocationTargetException e) {
+                    catch (IllegalAccessException | InvocationTargetException e) {
                         // fall through to empty string
                     }
                 }

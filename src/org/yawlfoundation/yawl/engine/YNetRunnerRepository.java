@@ -43,7 +43,7 @@ public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRun
 
     public YNetRunnerRepository() {
         super();
-        _idMap = new ConcurrentHashMap<String, YIdentifier>();
+        _idMap = new ConcurrentHashMap<>();
     }
 
 
@@ -83,8 +83,8 @@ public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRun
 
 
     public List<YNetRunner> getAllRunnersForCase(YIdentifier primaryCaseID) {
-        List<YNetRunner> runners = new ArrayList<YNetRunner>();
-        for (YNetRunner runner : this.values()) {
+        var runners = new ArrayList<YNetRunner>();
+        for (var runner : this.values()) {
             if (primaryCaseID.equalsOrIsAncestorOf(runner.getCaseID())) {
                 runners.add(runner);
             }
@@ -122,12 +122,12 @@ public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRun
     public void dump(Logger logger) {
         logger.debug("\n*** DUMPING {} ENTRIES IN CASE_2_NETRUNNER MAP ***", this.size());
         int sub = 1;
-        for (YIdentifier key : this.keySet()) {
+        for (var key : this.keySet()) {
              if (key == null) {
                  logger.debug("Key = NULL !!!");
              }
              else {
-                 YNetRunner runner = this.get(key);
+                 var runner = this.get(key);
                  if (runner != null) {
                      logger.debug("Entry {} Key={}", sub++, key.get_idString());
                      logger.debug("    CaseID        {}", runner.get_caseID());

@@ -23,7 +23,12 @@ import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 
@@ -32,7 +37,7 @@ import java.util.*;
  * 
  */
 public class YIdentifierBag {
-    private Map<YIdentifier, Integer> _idToQtyMap = new HashMap<YIdentifier, Integer>();
+    private Map<YIdentifier, Integer> _idToQtyMap = new HashMap<>();
     public YNetElement _condition;
 
 
@@ -50,11 +55,7 @@ public class YIdentifierBag {
 
 
     public int getAmount(YIdentifier identifier) {
-        int amount = 0;
-        if (_idToQtyMap.containsKey(identifier)) {
-            amount = _idToQtyMap.get(identifier);
-        }
-        return amount;
+        return _idToQtyMap.getOrDefault(identifier, 0);
     }
 
 
@@ -64,11 +65,11 @@ public class YIdentifierBag {
 
 
     public List<YIdentifier> getIdentifiers() {
-        List<YIdentifier> idList = new Vector<YIdentifier>();
-        for (YIdentifier identifier : _idToQtyMap.keySet()) {
-            int amount = _idToQtyMap.get(identifier);
+        List<YIdentifier> idList = new ArrayList<>();
+        for (Map.Entry<YIdentifier, Integer> entry : _idToQtyMap.entrySet()) {
+            var amount = entry.getValue();
             for (int i = 0; i < amount; i++) {
-                idList.add(identifier);
+                idList.add(entry.getKey());
             }
         }
         return idList;
@@ -78,42 +79,38 @@ public class YIdentifierBag {
     public void remove(YPersistenceManager pmgr, YIdentifier identifier, int amountToRemove)
             throws YPersistenceException {
         if (_idToQtyMap.containsKey(identifier)) {
-            int amountExisting = _idToQtyMap.get(identifier);
+            var amountExisting = _idToQtyMap.get(identifier);
             if (amountToRemove <= 0) {
-                throw new RuntimeException("Cannot remove " + amountToRemove
-                        + " from YIdentifierBag:" + _condition + " " + identifier.toString());
+                throw new RuntimeException(
+                        "Cannot remove %d from YIdentifierBag:%s %s"
+                        .formatted(amountToRemove, _condition, identifier));
             }
             else if (amountToRemove > amountExisting) {
-                throw new RuntimeException("Cannot remove " + amountToRemove
-                        + " tokens from YIdentifierBag:" + _condition
-                        + " - this bag only contains " + amountExisting
-                        + " identifiers of type " + identifier.toString());
-
+                throw new RuntimeException(
+                        "Cannot remove %d tokens from YIdentifierBag:%s - this bag only contains %d identifiers of type %s"
+                        .formatted(amountToRemove, _condition, amountExisting, identifier));
             }
 
-            int amountLeft = amountExisting - amountToRemove;
+            var amountLeft = amountExisting - amountToRemove;
             if (amountLeft > 0) {
                 _idToQtyMap.put(identifier, amountLeft);
             }
             else {
                 _idToQtyMap.remove(identifier);
-            } 
+            }
             identifier.removeLocation(pmgr, _condition);
         }
         else {
-            throw new RuntimeException("Cannot remove " + amountToRemove
-                    + " tokens from YIdentifierBag:" + _condition
-                    + " - this bag contains no"
-                    + " identifiers of type " + identifier.toString()
-                    + ".  It does have " + this.getIdentifiers()
-                    + " (locations of " + identifier + ":" + identifier.getLocations() + " )"
-            );
+            throw new RuntimeException(
+                    "Cannot remove %d tokens from YIdentifierBag:%s - this bag contains no identifiers of type %s. It does have %s (locations of %s:%s)"
+                    .formatted(amountToRemove, _condition, identifier,
+                               getIdentifiers(), identifier, identifier.getLocations()));
         }
     }
 
 
     public void removeAll(YPersistenceManager pmgr) throws YPersistenceException {
-        Set<YIdentifier> identifiers = new HashSet<YIdentifier>(_idToQtyMap.keySet());
+        Set<YIdentifier> identifiers = new HashSet<>(_idToQtyMap.keySet());
         for (YIdentifier identifier : identifiers) {
             while (identifier.getLocations().contains(_condition)) {
                 identifier.clearLocation(pmgr, _condition);

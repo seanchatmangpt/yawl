@@ -571,7 +571,7 @@ public class YEngine {
         //   2. else if matching input param, use its value
         //   3. else if default value specified, use its value
         //   4. else use default value for the param's data type
-        List<YParameter> outParamList = new ArrayList<YParameter>(outputs.values());
+        List<YParameter> outParamList = new ArrayList<>(outputs.values());
         Collections.sort(outParamList);                        // get in right order
         for (YParameter outParam : outParamList) {
             String name = outParam.getName();
@@ -717,7 +717,8 @@ public class YEngine {
                 if ((parent != null) && (parent.getChildren().size() == 1)) {
                     runner.cancelTask(workItem.getTaskID());
                 }
-                else ((YAtomicTask) workItem.getTask()).cancel(workItem.getCaseID());
+                else if (workItem.getTask() instanceof YAtomicTask atomicTask)
+                    atomicTask.cancel(workItem.getCaseID());
 
                 runner.kick();
                 announceEvents(runner);

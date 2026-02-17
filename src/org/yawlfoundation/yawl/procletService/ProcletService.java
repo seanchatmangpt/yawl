@@ -107,46 +107,40 @@ public class ProcletService extends InterfaceBWebsideController  {
                 String blockID = changeTaskID(taskID);
                 wir.setCaseID(procletID);
                 wir.setTaskID(blockID);
-                ProcletModels pmodels = ProcletModels.getInstance();
-                ProcletModel pmodel = pmodels.getProcletClass(classID);
+                var pmodels = ProcletModels.getInstance();
+                var pmodel = pmodels.getProcletClass(classID);
                 if (pmodel != null) {
-                    ProcletBlock block = pmodel.getBlock(blockID);
+                    var block = pmodel.getBlock(blockID);
                     if (block != null) {
-                        if (block.getBlockType().equals(ProcletBlock.BlockType.CP)) {
-                            myLog.debug("block type is CP");
-                            InteractionGraphs.getNewInstance();
-                            BlockCP bcp = new BlockCP(wir,block);
-                            bcp.processWIR();
-                        }
-                        else if (block.getBlockType().equals(ProcletBlock.BlockType.FO)) {
-
-                            // reset graphs
-                            myLog.debug("block type is FO");
-                            InteractionGraphs.getNewInstance();
-                            BlockFO bfo = new BlockFO(wir,block);
-                            bfo.checkSourceNodeExecuted(classID, procletID, blockID);
-                            List<List> relations = BlockFO.calculateRelations(wir);
-                            myLog.debug("relations: " + relations);
-                            InteractionGraphs.getInstance().updateGraphPerfOut(relations);
-                            InteractionGraphs.getInstance().updateGraphFO(classID, procletID, blockID);
-                            InteractionGraphs.getInstance().persistGraphs();
-                            List<Performative> perfs = BlockFO.calcPerformativesOut(wir);
-                            myLog.debug("performatives: " + perfs);
-
-                            SingleInstanceClass sic = SingleInstanceClass.getInstance();
-                            myLog.debug("notify performativeListeners");
-                            sic.notifyPerformativeListeners(perfs);
-                        }
-                        else if (block.getBlockType().equals(ProcletBlock.BlockType.PI)) {
-                            myLog.debug("block type is PI");
-                            InteractionGraphs.getNewInstance();
-                            BlockPI bpi = new BlockPI(wir,block);
-                            bpi.processWIR();
-                            // persist the graphs
-                            InteractionGraphs.getInstance().persistGraphs();
+                        switch (block.getBlockType()) {
+                            case CP -> {
+                                myLog.debug("block type is CP");
+                                InteractionGraphs.getNewInstance();
+                                new BlockCP(wir, block).processWIR();
+                            }
+                            case FO -> {
+                                myLog.debug("block type is FO");
+                                InteractionGraphs.getNewInstance();
+                                var bfo = new BlockFO(wir, block);
+                                bfo.checkSourceNodeExecuted(classID, procletID, blockID);
+                                var relations = BlockFO.calculateRelations(wir);
+                                myLog.debug("relations: " + relations);
+                                InteractionGraphs.getInstance().updateGraphPerfOut(relations);
+                                InteractionGraphs.getInstance().updateGraphFO(classID, procletID, blockID);
+                                InteractionGraphs.getInstance().persistGraphs();
+                                var perfs = BlockFO.calcPerformativesOut(wir);
+                                myLog.debug("performatives: " + perfs);
+                                SingleInstanceClass.getInstance().notifyPerformativeListeners(perfs);
+                            }
+                            case PI -> {
+                                myLog.debug("block type is PI");
+                                InteractionGraphs.getNewInstance();
+                                new BlockPI(wir, block).processWIR();
+                                InteractionGraphs.getInstance().persistGraphs();
+                            }
                         }
                     }
-                    else myLog.debug("No proclet block found in class '" + classID + "" +
+                    else myLog.debug("No proclet block found in class '" + classID +
                             "' for work item: " + wir.getID());
                 }
                 else myLog.debug("No proclet class found for work item: " + wir.getID());
@@ -193,17 +187,17 @@ public class ProcletService extends InterfaceBWebsideController  {
         String newID = null;
         try {
             connect();
-            
-            //first check whether this model is already loaded into the engine
+
+            // first check whether this model is already loaded into the engine
             YSpecificationID yidSelected = null;
-            List<SpecificationData> specList = getSpecificationPrototypesList(_handle);
-            for (SpecificationData specData : specList) {
+            var specList = getSpecificationPrototypesList(_handle);
+            for (var specData : specList) {
                 if (specData.getID().getUri().equals(classID)) {
                     yidSelected = specData.getID();
                 }
             }
             if (yidSelected != null) {
-                String dataReturn = StringUtil.wrap(data, yidSelected.getUri());
+                var dataReturn = StringUtil.wrap(data, yidSelected.getUri());
                 myLog.debug("dataReturn is " + dataReturn);
                 newID = _interfaceBClient.launchCase(
                         new YSpecificationID(yidSelected.getIdentifier(),
@@ -240,29 +234,21 @@ public class ProcletService extends InterfaceBWebsideController  {
     
     public static String changeTaskID (String taskID) {
     	int last = taskID.lastIndexOf("_");
-    	String newID = taskID;
-    	if (last >= 0) {
-    		newID = taskID.substring(0,last);
-    	}
-    	return newID;
+    	return (last >= 0) ? taskID.substring(0, last) : taskID;
     }
-    
-    public static String changeCaseID (String caseID){
+
+    public static String changeCaseID (String caseID) {
     	int index = caseID.indexOf(".");
-    	String newStr = caseID;
-    	if (index > 0) {
-    		newStr = caseID.substring(0,index);
-    	}
-    	return newStr;
+    	return (index > 0) ? caseID.substring(0, index) : caseID;
     }
 
     public List<String> getSpecURIsForRunningCases() {
-        List<String> uris = new ArrayList<String>();
+        List<String> uris = new ArrayList<>();
 
         if (connect()) {
-            XNode cases = getAllRunningCases();
+            var cases = getAllRunningCases();
             if (cases != null) {
-                for (XNode node : cases.getChildren()) {
+                for (var node : cases.getChildren()) {
                     uris.add(node.getAttributeValue("uri"));
                 }
             }
@@ -271,12 +257,12 @@ public class ProcletService extends InterfaceBWebsideController  {
     }
 
     public List<String> getRunningCaseIDs() {
-        List<String> caseIDs = new ArrayList<String>();
+        List<String> caseIDs = new ArrayList<>();
 
         if (connect()) {
-            XNode cases = getAllRunningCases();
+            var cases = getAllRunningCases();
             if (cases != null) {
-                for (XNode node : cases.getChildren()) {
+                for (var node : cases.getChildren()) {
                     caseIDs.add(node.getChildText("caseID"));
                 }
             }

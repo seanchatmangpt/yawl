@@ -153,19 +153,16 @@ public final class YSpecification implements Cloneable, YVerifiable {
         xml.append("</decomposition>");
 
         // sort decompositions by YNet, then ID
-        List<YDecomposition> sortedDecompositions  =
-                new ArrayList<YDecomposition>(_decompositions.values());
-        Collections.sort(sortedDecompositions, new Comparator<YDecomposition>() {
-            public int compare(YDecomposition d1, YDecomposition d2) {
-                    if (d1 instanceof YNet net1) {
-                        if (! (d2 instanceof YNet)) return -1;   // d1 is YNet, d2 is not
-                    }
-                    else if (d2 instanceof YNet net2) return 1;       // d2 is YNet, d1 is not
+        var sortedDecompositions = new ArrayList<YDecomposition>(_decompositions.values());
+        sortedDecompositions.sort((d1, d2) -> {
+            if (d1 instanceof YNet) {
+                if (!(d2 instanceof YNet)) return -1;    // d1 is YNet, d2 is not
+            }
+            else if (d2 instanceof YNet) return 1;       // d2 is YNet, d1 is not
 
-                    if (d1.getID() == null) return -1;           // either both are YNets
-                    if (d2.getID() == null) return 1;            // or both are not
-                    return d1.getID().compareTo(d2.getID());     // so sort on ids
-                }
+            if (d1.getID() == null) return -1;           // either both are YNets
+            if (d2.getID() == null) return 1;            // or both are not
+            return d1.getID().compareTo(d2.getID());     // so sort on ids
         });
 
         for (YDecomposition decomposition : sortedDecompositions) {
@@ -223,7 +220,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
     }
 
     public Set<YDecomposition> getDecompositions() {
-        return new HashSet<YDecomposition>(_decompositions.values());
+        return new HashSet<>(_decompositions.values());
     }
 
     public YDecomposition removeDecomposition(String decompositionID) {

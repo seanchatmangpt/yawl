@@ -116,21 +116,17 @@ public class DemoService extends InterfaceBWebsideController {
         _log.debug("Holding work item for {} ms....", randomMillisecs);
         
         final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-        ses.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkInWorkItem(wir.getID(), wir.getDataList(),
-                                    getOutputData(wir.getTaskID(), randomMillisecs), null,  _handle);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                _count++;
-                if (_count % 1000 == 0) System.out.println(_count + " items in " +
-                        (System.currentTimeMillis() - startTime) + " msecs.");
+        ses.schedule(() -> {
+            try {
+                checkInWorkItem(wir.getID(), wir.getDataList(),
+                                getOutputData(wir.getTaskID(), randomMillisecs), null, _handle);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
+            _count++;
+            if (_count % 1000 == 0) System.out.println(_count + " items in " +
+                    (System.currentTimeMillis() - startTime) + " msecs.");
         }, randomMillisecs, TimeUnit.MILLISECONDS);
     }
 

@@ -76,8 +76,8 @@ public class ResilienceConfig {
     }
 
     private void createEngineServiceCircuitBreaker() {
-        YawlResilienceProperties.CircuitBreakerConfig config = properties.getEngineService();
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        var config = properties.getEngineService();
+        var circuitBreakerConfig = CircuitBreakerConfig.custom()
             .failureRateThreshold(config.getFailureRateThreshold())
             .slowCallRateThreshold(config.getSlowCallRateThreshold())
             .slowCallDurationThreshold(config.getSlowCallDurationThreshold())
@@ -96,8 +96,8 @@ public class ResilienceConfig {
     }
 
     private void createExternalServiceCircuitBreaker() {
-        YawlResilienceProperties.CircuitBreakerConfig config = properties.getExternalService();
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        var config = properties.getExternalService();
+        var circuitBreakerConfig = CircuitBreakerConfig.custom()
             .failureRateThreshold(config.getFailureRateThreshold())
             .slowCallRateThreshold(config.getSlowCallRateThreshold())
             .slowCallDurationThreshold(config.getSlowCallDurationThreshold())
@@ -116,8 +116,8 @@ public class ResilienceConfig {
     }
 
     private void createMcpIntegrationCircuitBreaker() {
-        YawlResilienceProperties.CircuitBreakerConfig config = properties.getMcpIntegration();
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        var config = properties.getMcpIntegration();
+        var circuitBreakerConfig = CircuitBreakerConfig.custom()
             .failureRateThreshold(config.getFailureRateThreshold())
             .slowCallRateThreshold(config.getSlowCallRateThreshold())
             .slowCallDurationThreshold(config.getSlowCallDurationThreshold())
@@ -136,8 +136,8 @@ public class ResilienceConfig {
     }
 
     private void createA2aIntegrationCircuitBreaker() {
-        YawlResilienceProperties.CircuitBreakerConfig config = properties.getA2aIntegration();
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        var config = properties.getA2aIntegration();
+        var circuitBreakerConfig = CircuitBreakerConfig.custom()
             .failureRateThreshold(config.getFailureRateThreshold())
             .slowCallRateThreshold(config.getSlowCallRateThreshold())
             .slowCallDurationThreshold(config.getSlowCallDurationThreshold())
@@ -156,8 +156,8 @@ public class ResilienceConfig {
     }
 
     private void createDefaultRetry() {
-        YawlResilienceProperties.RetryConfig config = properties.getRetry();
-        RetryConfig retryConfig = RetryConfig.custom()
+        var config = properties.getRetry();
+        var retryConfig = RetryConfig.custom()
             .maxAttempts(config.getMaxAttempts())
             .waitDuration(config.getWaitDuration())
             .intervalFunction(io.github.resilience4j.core.IntervalFunction
@@ -175,8 +175,8 @@ public class ResilienceConfig {
     }
 
     private void createDefaultRateLimiter() {
-        YawlResilienceProperties.RateLimiterConfig config = properties.getRateLimiter();
-        RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
+        var config = properties.getRateLimiter();
+        var rateLimiterConfig = RateLimiterConfig.custom()
             .limitForPeriod(config.getLimitForPeriod())
             .limitRefreshPeriod(config.getLimitRefreshPeriod())
             .timeoutDuration(config.getTimeoutDuration())
@@ -188,8 +188,8 @@ public class ResilienceConfig {
     }
 
     private void createDefaultBulkhead() {
-        YawlResilienceProperties.BulkheadConfig config = properties.getBulkhead();
-        BulkheadConfig bulkheadConfig = BulkheadConfig.custom()
+        var config = properties.getBulkhead();
+        var bulkheadConfig = BulkheadConfig.custom()
             .maxConcurrentCalls(config.getMaxConcurrentCalls())
             .maxWaitDuration(config.getMaxWaitDuration())
             .build();
@@ -200,8 +200,8 @@ public class ResilienceConfig {
     }
 
     private void createDefaultTimeLimiter() {
-        YawlResilienceProperties.TimeLimiterConfig config = properties.getTimeLimiter();
-        TimeLimiterConfig timeLimiterConfig = TimeLimiterConfig.custom()
+        var config = properties.getTimeLimiter();
+        var timeLimiterConfig = TimeLimiterConfig.custom()
             .timeoutDuration(config.getTimeoutDuration())
             .cancelRunningFuture(config.isCancelRunningFuture())
             .build();

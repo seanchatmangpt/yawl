@@ -33,7 +33,7 @@ import java.util.*;
  */
 public class SpecHistory {
 
-    private final Map<String, Set<Object[]>> _dataMap = new HashMap<String, Set<Object[]>>();
+    private final Map<String, Set<Object[]>> _dataMap = new HashMap<>();
     private final Map<Long, List<Long>> _casePredicateMap = new HashMap<>();
     private final Logger _log = LogManager.getLogger(this.getClass());
 
@@ -80,7 +80,7 @@ public class SpecHistory {
 
     private XNode processResults(List events, boolean withData) {
         _log.debug("XES #process: begins");
-        Map<String, XNode> caseMap = new TreeMap<String, XNode>();
+        var caseMap = new TreeMap<String, XNode>();
         for (Object o : events) {
             Object[] array = (Object[]) o;
             YLogNetInstance netInstance = (YLogNetInstance) array[0];
@@ -110,7 +110,7 @@ public class SpecHistory {
         }
 
         XNode cases = new XNode("cases");
-        List<XNode> caseNodes = new ArrayList<XNode>(caseMap.values());
+        var caseNodes = new ArrayList<XNode>(caseMap.values());
         caseNodes.sort((n1, n2) -> {
             String c1 = n1.getAttributeValue("id");
             String c2 = n2.getAttributeValue("id");
@@ -206,7 +206,7 @@ public class SpecHistory {
         Set<Object[]> arraySet = _dataMap.get(eventNode.getAttributeValue("id"));
         if (arraySet == null) return;
 
-        List<YLogDataItemInstance> instances = new ArrayList<>();
+        var instances = new ArrayList<YLogDataItemInstance>();
         for (Object[] array : arraySet) {
             YLogDataItemInstance dataItemInstance = (YLogDataItemInstance) array[0];
             String descriptor = dataItemInstance.getDescriptor();

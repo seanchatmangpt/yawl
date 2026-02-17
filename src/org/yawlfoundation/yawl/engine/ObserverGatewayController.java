@@ -62,7 +62,7 @@ public class ObserverGatewayController {
      * Constructor
      */
     public ObserverGatewayController() {
-        _gateways = new HashMap<String, Set<ObserverGateway>>();
+        _gateways = new HashMap<>();
         _executor = Executors.newVirtualThreadPerTaskExecutor();
     }
 
@@ -77,11 +77,7 @@ public class ObserverGatewayController {
         if (scheme == null) {
             throw new YAWLException("Cannot add: ObserverGateway has a null scheme.");
         }
-        Set<ObserverGateway> schemeGateways = _gateways.get(scheme);
-        if (schemeGateways == null) {
-            schemeGateways = new HashSet<ObserverGateway>();
-            _gateways.put(scheme, schemeGateways);
-        }
+        var schemeGateways = _gateways.computeIfAbsent(scheme, k -> new HashSet<>());
         schemeGateways.add(gateway);
     }
 
@@ -129,15 +125,13 @@ public class ObserverGatewayController {
      */
     protected void announce(final YAnnouncement announcement) {
         if (announcement == null) return;
-        _executor.execute(new Runnable() {
-            public void run() {
-                String scheme = announcement.getScheme();
-                for (ObserverGateway gateway : getGatewaysForScheme(scheme)) {
-                    switch (announcement.getEvent()) {
-                        case ITEM_ADD -> gateway.announceFiredWorkItem(announcement);
-                        case ITEM_CANCEL -> gateway.announceCancelledWorkItem(announcement);
-                        case TIMER_EXPIRED -> gateway.announceTimerExpiry(announcement);
-                    }
+        _executor.execute(() -> {
+            var scheme = announcement.getScheme();
+            for (var gateway : getGatewaysForScheme(scheme)) {
+                switch (announcement.getEvent()) {
+                    case ITEM_ADD -> gateway.announceFiredWorkItem(announcement);
+                    case ITEM_CANCEL -> gateway.announceCancelledWorkItem(announcement);
+                    case TIMER_EXPIRED -> gateway.announceTimerExpiry(announcement);
                 }
             }
         });
@@ -154,11 +148,9 @@ public class ObserverGatewayController {
      */
     public void notifyCaseCompletion(final YAWLServiceReference service,
                                      final YIdentifier caseID, final Document caseData) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (ObserverGateway gateway : getGatewaysForScheme(service.getScheme())) {
-                    gateway.announceCaseCompletion(service, caseID, caseData);
-                }
+        _executor.execute(() -> {
+            for (var gateway : getGatewaysForScheme(service.getScheme())) {
+                gateway.announceCaseCompletion(service, caseID, caseData);
             }
         });
     }
@@ -173,19 +165,17 @@ public class ObserverGatewayController {
      * @param delayed true if this is a delayed case launch, false if immediate
      */
     public void notifyCaseStarting(final Set<YAWLServiceReference> services,
-                                   final YSpecificationID specID, 
-                                   final YIdentifier caseID, 
+                                   final YSpecificationID specID,
+                                   final YIdentifier caseID,
                                    final String launchingService,
                                    final boolean delayed) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseStarted(
-                                getServicesForScheme(services, scheme), specID, caseID,
-                                launchingService, delayed);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseStarted(
+                            getServicesForScheme(services, scheme), specID, caseID,
+                            launchingService, delayed);
                 }
             }
         });
@@ -199,14 +189,12 @@ public class ObserverGatewayController {
      */
     public void notifyCaseCompletion(final Set<YAWLServiceReference> services,
                                      final YIdentifier caseID, final Document caseData) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseCompletion(
-                                getServicesForScheme(services, scheme), caseID, caseData);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseCompletion(
+                            getServicesForScheme(services, scheme), caseID, caseData);
                 }
             }
         });
@@ -224,15 +212,13 @@ public class ObserverGatewayController {
                                            final YWorkItem workItem,
                                            final YWorkItemStatus oldStatus,
                                            final YWorkItemStatus newStatus) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceWorkItemStatusChange(
-                                getServicesForScheme(services, scheme), workItem,
-                                oldStatus, newStatus);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceWorkItemStatusChange(
+                            getServicesForScheme(services, scheme), workItem,
+                            oldStatus, newStatus);
                 }
             }
         });
@@ -246,14 +232,12 @@ public class ObserverGatewayController {
      */
     public void notifyCaseSuspending(final YIdentifier caseID,
                                      final Set<YAWLServiceReference> services) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseSuspending(
-                                getServicesForScheme(services, scheme), caseID);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseSuspending(
+                            getServicesForScheme(services, scheme), caseID);
                 }
             }
         });
@@ -267,14 +251,12 @@ public class ObserverGatewayController {
      */
     public void notifyCaseSuspended(final YIdentifier caseID,
                                     final Set<YAWLServiceReference> services) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseSuspended(
-                                getServicesForScheme(services, scheme), caseID);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseSuspended(
+                            getServicesForScheme(services, scheme), caseID);
                 }
             }
         });
@@ -288,14 +270,12 @@ public class ObserverGatewayController {
      */
     public void notifyCaseResumption(final YIdentifier caseID,
                                      final Set<YAWLServiceReference> services) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseResumption(
-                                getServicesForScheme(services, scheme), caseID);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseResumption(
+                            getServicesForScheme(services, scheme), caseID);
                 }
             }
         });
@@ -310,15 +290,13 @@ public class ObserverGatewayController {
      */
     public void notifyEngineInitialised(final Set<YAWLServiceReference> services,
                                         final int maxWaitSeconds) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceEngineInitialised(
-                                getServicesForScheme(services, scheme),
-                                maxWaitSeconds);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceEngineInitialised(
+                            getServicesForScheme(services, scheme),
+                            maxWaitSeconds);
                 }
             }
         });
@@ -332,14 +310,12 @@ public class ObserverGatewayController {
      */
     public void notifyCaseCancellation(final Set<YAWLServiceReference> services,
                                        final YIdentifier id) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceCaseCancellation(
-                                getServicesForScheme(services, scheme), id);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceCaseCancellation(
+                            getServicesForScheme(services, scheme), id);
                 }
             }
         });
@@ -354,14 +330,12 @@ public class ObserverGatewayController {
      */
     public void notifyDeadlock(final Set<YAWLServiceReference> services,
                                final YIdentifier id, final Set<YTask> tasks) {
-        _executor.execute(new Runnable() {
-            public void run() {
-                for (Set<ObserverGateway> gateways : _gateways.values()) {
-            	    for (ObserverGateway gateway : gateways) {
-                        String scheme = gateway.getScheme();
-                        gateway.announceDeadlock(
-                                getServicesForScheme(services, scheme), id, tasks);
-                    }
+        _executor.execute(() -> {
+            for (var gateways : _gateways.values()) {
+                for (var gateway : gateways) {
+                    var scheme = gateway.getScheme();
+                    gateway.announceDeadlock(
+                            getServicesForScheme(services, scheme), id, tasks);
                 }
             }
         });
@@ -392,7 +366,7 @@ public class ObserverGatewayController {
      */
     private Set<ObserverGateway> getGatewaysForScheme(String scheme) {
         return _gateways.containsKey(scheme) ? _gateways.get(scheme) :
-                Collections.<ObserverGateway>emptySet();
+                Collections.emptySet();
     }
 
 
@@ -404,8 +378,8 @@ public class ObserverGatewayController {
      */
     private Set<YAWLServiceReference> getServicesForScheme(
             Set<YAWLServiceReference> services, String scheme) {
-        Set<YAWLServiceReference> matches = new HashSet<YAWLServiceReference>();
-        for (YAWLServiceReference service : services) {
+        var matches = new HashSet<YAWLServiceReference>();
+        for (var service : services) {
             if (service.getScheme().equals(scheme)) {
                 matches.add(service);
             }

@@ -38,9 +38,9 @@ public class SaxonErrorListener implements ErrorListener {
     }
 
     public final void reset() {
-        warnings = new ArrayList<TransformerException>();
-        errors = new ArrayList<TransformerException>();
-        fatals = new ArrayList<TransformerException>();
+        warnings = new ArrayList<>();
+        errors = new ArrayList<>();
+        fatals = new ArrayList<>();
     }
 
 
@@ -70,8 +70,7 @@ public class SaxonErrorListener implements ErrorListener {
     }
 
     public List<String> getAllMessages() {
-        List<String> messages = new ArrayList<String>();
-        messages.addAll(getWarningMessages());
+        List<String> messages = new ArrayList<>(getWarningMessages());
         messages.addAll(getErrorMessages());
         messages.addAll(getFatalMessages());
         return messages;
@@ -79,10 +78,8 @@ public class SaxonErrorListener implements ErrorListener {
 
 
     private List<String> getMessages(List<TransformerException> list) {
-        List<String> messages = new ArrayList<String>();
-        for (TransformerException e : list) {
-             messages.add(e.getMessageAndLocation());
-        }
-        return messages;
+        return list.stream()
+                .map(TransformerException::getMessageAndLocation)
+                .toList();
     }
 }

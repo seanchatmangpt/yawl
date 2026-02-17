@@ -22,17 +22,17 @@ import org.yawlfoundation.yawl.procletService.util.*;
 
 //colset InteractionArc = record tail:InteractionNode * head:InteractionNode * entityID:EntityID * arcstate:ArcState;
 public class InteractionArc {
-	
+
 	// colset ArcState = with UNPRODUCED | SENT | CONSUMED | EXECUTED_NONE | EXECUTED_SOURCE | EXECUTED_BOTH | FAILED;
 	public enum ArcState {
 		UNPRODUCED, SENT, CONSUMED, EXECUTED_NONE, EXECUTED_SOURCE, EXECUTED_BOTH, FAILED;
 	}
-	
+
 	private InteractionNode tail = null;
 	private InteractionNode head = null;
 	private EntityID eid = null;
 	private ArcState as = null;
-	
+
 	public InteractionArc (InteractionNode tail, InteractionNode head, EntityID eid,
 			ArcState as) {
 		this.tail = tail;
@@ -40,92 +40,66 @@ public class InteractionArc {
 		this.eid = eid;
 		this.as = as;
 	}
-	
+
 	public InteractionNode getTail () {
 		return this.tail;
 	}
-	
+
 	public InteractionNode getHead() {
 		return this.head;
 	}
-	
+
 	public EntityID getEntityID() {
 		return this.eid;
 	}
-	
+
 	public ArcState getArcState() {
 		return this.as;
 	}
-	
+
 	public String getArcStateShort() {
-		if (this.as.equals(ArcState.CONSUMED)) {
-			return "C";
-		}
-		else if (this.as.equals(ArcState.SENT)) {
-			return "S";
-		}
-		else if (this.as.equals(ArcState.UNPRODUCED)) {
-			return "U";
-		}
-		else if (this.as.equals(ArcState.FAILED)) {
-			return "F";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_BOTH)) {
-			return "EB";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_SOURCE)) {
-			return "ES";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_NONE)) {
-			return "EN";
-		}
-		return "";
+		return switch (this.as) {
+			case CONSUMED        -> "C";
+			case SENT            -> "S";
+			case UNPRODUCED      -> "U";
+			case FAILED          -> "F";
+			case EXECUTED_BOTH   -> "EB";
+			case EXECUTED_SOURCE -> "ES";
+			case EXECUTED_NONE   -> "EN";
+		};
 	}
-	
+
 	public void setTail (InteractionNode tail) {
 		this.tail = tail;
 	}
-	
+
 	public void setHead(InteractionNode head) {
 		this.head = head;
 	}
-	
+
 	public void setEntityID(EntityID eid) {
 		this.eid = eid;
 	}
-	
+
 	public void setArcState(ArcState as) {
 		this.as = as;
 	}
-	
+
 	public static ArcState getArcStateFromString (String as) {
-		// UNPRODUCED, SENT, CONSUMED, NR;
-		if (as.equals("UNPRODUCED")) {
-			return ArcState.UNPRODUCED;
-		}
-		if (as.equals("SENT")) {
-			return ArcState.SENT;
-		}
-		if (as.equals("CONSUMED")) {
-			return ArcState.CONSUMED;
-		}
-		if (as.equals("EXECUTED_NONE")) {
-			return ArcState.EXECUTED_NONE;
-		}
-		if (as.equals("EXECUTED_SOURCE")) {
-			return ArcState.EXECUTED_SOURCE;
-		}
-		if (as.equals("EXECUTED_BOTH")) {
-			return ArcState.EXECUTED_BOTH;
-		}
-		if (as.equals("FAILED")) {
-			return ArcState.FAILED;
-		}
-		return null;
+		return switch (as) {
+			case "UNPRODUCED"      -> ArcState.UNPRODUCED;
+			case "SENT"            -> ArcState.SENT;
+			case "CONSUMED"        -> ArcState.CONSUMED;
+			case "EXECUTED_NONE"   -> ArcState.EXECUTED_NONE;
+			case "EXECUTED_SOURCE" -> ArcState.EXECUTED_SOURCE;
+			case "EXECUTED_BOTH"   -> ArcState.EXECUTED_BOTH;
+			case "FAILED"          -> ArcState.FAILED;
+			default                -> null;
+		};
 	}
-	
+
 	public String toString() {
-		return "ARC:tail:" + this.tail + ",head:" + this.head + ",eid:" + this.eid + 
+		return "ARC:tail:" + this.tail + ",head:" + this.head + ",eid:" + this.eid +
 		"as:" + this.as;
 	}
 }

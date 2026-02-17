@@ -62,14 +62,14 @@ public class YEventKeyCache {
 
     protected YEventKeyCache() {
         dataSchema = new YDataSchemaCache();
-        services = new ConcurrentHashMap<String, Long>();
-        rootNets = new ConcurrentHashMap<YSpecificationID, Long>();
-        nets = new ConcurrentHashMap<YSpecificationID, Map<String, Long>>();
-        tasks = new ConcurrentHashMap<Long, Map<String, Long>>();
-        specEntries = new ConcurrentHashMap<YSpecificationID, YLogSpecification>();
-        netInstances = new ConcurrentHashMap<YIdentifier, Long>();
-        taskInstances = new ConcurrentHashMap<YIdentifier, Map<Long, Long>>();
-        dataDefn = new ConcurrentHashMap<String, Map<String, Long>>();
+        services = new ConcurrentHashMap<>();
+        rootNets = new ConcurrentHashMap<>();
+        nets = new ConcurrentHashMap<>();
+        tasks = new ConcurrentHashMap<>();
+        specEntries = new ConcurrentHashMap<>();
+        netInstances = new ConcurrentHashMap<>();
+        taskInstances = new ConcurrentHashMap<>();
+        dataDefn = new ConcurrentHashMap<>();
     }
 
 
@@ -149,7 +149,7 @@ public class YEventKeyCache {
     private <K, S, V> V putID(Map<K, Map<S, V>> map, K key, S subKey, V value) {
         Map<S, V> subMap = map.get(key);
         if (subMap == null) {
-            subMap = new ConcurrentHashMap<S, V>();
+            subMap = new ConcurrentHashMap<>();
             map.put(key, subMap);
         }
         return subMap.put(subKey, value);

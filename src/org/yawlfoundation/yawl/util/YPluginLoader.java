@@ -62,13 +62,13 @@ public class YPluginLoader extends URLClassLoader {
      */
     public <T> Set<Class<T>> load(Class<T> mask) {
         try {
-            Set<Class<T>> plugins = new HashSet<Class<T>>();
+            Set<Class<T>> plugins = new HashSet<>();
             loadPackageMatches(mask, plugins);   // load internal package classes
 
             // now add external matching classes, if any
             for (String path : _pathList) {
                 if (! path.endsWith(File.separator)) path += File.separator;
-                File f = new File(path);
+                var f = new File(path);
                 addURL(f.toURI().toURL());         // add dir to search path
 
                 for (File file : getFileSet(f)) {
@@ -76,7 +76,7 @@ public class YPluginLoader extends URLClassLoader {
                         processJAR(mask, plugins, file);
                     }
                     else {
-                        String fileName = file.getAbsolutePath().replace(path, "");
+                        var fileName = file.getAbsolutePath().replace(path, "");
                         addIfMatch(mask, plugins, fileName);
                     }
                 }
@@ -91,7 +91,7 @@ public class YPluginLoader extends URLClassLoader {
 
 
     public <T> Map<String, Class<T>> loadAsMap(Class<T> mask) {
-        Map<String, Class<T>> map = new HashMap<String, Class<T>>();
+        Map<String, Class<T>> map = new HashMap<>();
         for (Class<T> clazz : load(mask)) {
             map.put(clazz.getName(), clazz);
         }
@@ -108,7 +108,7 @@ public class YPluginLoader extends URLClassLoader {
      */
     public <T> Set<Class<T>> loadInternal(Class<T> mask) {
         try {
-            Set<Class<T>> plugins = new HashSet<Class<T>>();
+            Set<Class<T>> plugins = new HashSet<>();
             loadPackageMatches(mask, plugins);
             return plugins;
         }
@@ -235,7 +235,7 @@ public class YPluginLoader extends URLClassLoader {
 
     // walks the tree from 'dir' to build a set of files found (no dirs included)
     private Set<File> getFileSet(File dir) {
-        Set<File> fileTree = new HashSet<File>();
+        Set<File> fileTree = new HashSet<>();
         File[] entries = dir.listFiles();
         if (entries != null) {
             for (File entry : entries) {

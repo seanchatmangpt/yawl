@@ -237,7 +237,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     protected Set<String> getParamNamesForTaskStarting() {
-        return new HashSet<String>(_dataMappingsForTaskStarting.keySet());
+        return new HashSet<>(_dataMappingsForTaskStarting.keySet());
     }
 
 
@@ -292,7 +292,7 @@ public abstract class YTask extends YExternalNetElement {
         _i = id;
         _i.addLocation(this);
         long numToSpawn = determineHowManyInstancesToCreate();
-        List<YIdentifier> childIdentifiers = new Vector<YIdentifier>();
+        List<YIdentifier> childIdentifiers = new Vector<>();
         for (int i = 0; i < numToSpawn; i++) {
             YIdentifier childID = createFiredIdentifier();
 
@@ -364,7 +364,7 @@ public abstract class YTask extends YExternalNetElement {
             throw new RuntimeException(this + " does not allow dynamic instance creation.");
         }
         if (t_addEnabled(siblingWithPermission)) {
-            List<Element> newData = new Vector<Element>();
+            List<Element> newData = new Vector<>();
             newData.add(newInstanceData);
             _multiInstanceSpecificParamsIterator = newData.iterator();
             YIdentifier newInstance = createFiredIdentifier();
@@ -534,7 +534,7 @@ public abstract class YTask extends YExternalNetElement {
     private void addDefaultValuesAsRequired(Document dataDoc) {
         if (dataDoc == null) return;
         Element dataElem = dataDoc.getRootElement();
-        List<YParameter> outputParams = new ArrayList<YParameter>(
+        List<YParameter> outputParams = new ArrayList<>(
                 _decompositionPrototype.getOutputParameters().values());
         Collections.sort(outputParams);
         for (int index = 0; index < outputParams.size(); index++) {
@@ -691,10 +691,10 @@ public abstract class YTask extends YExternalNetElement {
         }
         //remove tokens from cancellation set
         for (YExternalNetElement netElement : _removeSet) {
-            if (netElement instanceof YTask) {
-                ((YTask) netElement).cancel();
-            } else if (netElement instanceof YCondition) {
-                ((YCondition) netElement).removeAll();
+            if (netElement instanceof YTask t) {
+                t.cancel();
+            } else if (netElement instanceof YCondition c) {
+                c.removeAll();
             }
         }
         purgeLocations();
@@ -784,7 +784,7 @@ public abstract class YTask extends YExternalNetElement {
 
 
     private Set<String> getLocalVariablesForTaskCompletion() {
-        Set<String> localVars = new HashSet<String>();
+        Set<String> localVars = new HashSet<>();
         for (String query : _dataMappingsForTaskCompletion.keySet()) {
             if (!ExternalDataGatewayFactory.isExternalDataMappingExpression(query)) {
                 localVars.add(_dataMappingsForTaskCompletion.get(query));
@@ -988,7 +988,7 @@ public abstract class YTask extends YExternalNetElement {
 
         Element dataForChildCase = produceDataRootElement();
         List<YParameter> inputParams =
-                new ArrayList<YParameter>(_decompositionPrototype.getInputParameters().values());
+                new ArrayList<>(_decompositionPrototype.getInputParameters().values());
         Collections.sort(inputParams);
         for (YParameter parameter : inputParams) {
             String inputParamName = parameter.getPreferredName();
@@ -1471,8 +1471,7 @@ public abstract class YTask extends YExternalNetElement {
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");
@@ -1553,7 +1552,7 @@ public abstract class YTask extends YExternalNetElement {
         }
         if (_splitType == _OR || _splitType == _XOR) {
             int defaultCount = 0;
-            List<YFlow> postsetFlows = new ArrayList<>(getPostsetFlows());
+            var postsetFlows = new ArrayList<>(getPostsetFlows());
             Collections.sort(postsetFlows);
             int lastOrdering = Integer.MIN_VALUE;
             for (YFlow flow : postsetFlows) {
@@ -1638,7 +1637,7 @@ public abstract class YTask extends YExternalNetElement {
         //catch the case where several expressions map to the same decomposition input param
         //The only case where the schema misses this is where the multi-instance input
         //is the same as one the regular variable mappings
-        int numOfUniqueParamsMappedTo = new HashSet<String>(
+        int numOfUniqueParamsMappedTo = new HashSet<>(
                 _dataMappingsForTaskStarting.values()).size();
         int numParams = _dataMappingsForTaskStarting.size();
         if (numOfUniqueParamsMappedTo != numParams) {
@@ -1652,7 +1651,7 @@ public abstract class YTask extends YExternalNetElement {
         //already mapped to by the said task.
         //The only case where the schema misses this is where the multi-instance output
         //is applied to the same net variable as one of regular outputs.
-        int numOfUniqueNetVarsMappedTo = new HashSet<String>(
+        int numOfUniqueNetVarsMappedTo = new HashSet<>(
                 _dataMappingsForTaskCompletion.values()).size();
         numParams = _dataMappingsForTaskCompletion.size();
         if (numOfUniqueNetVarsMappedTo != numParams) {

@@ -153,7 +153,7 @@ public class YAWLException extends Exception {
      * @return an immutable copy of the context map
      */
     public Map<String, String> getContext() {
-        return new HashMap<>(_context);
+        return Map.copyOf(_context);
     }
 
     /**

@@ -67,7 +67,7 @@ public class ZaiHttpClient {
         String requestBody = buildChatRequestBody(model, messages, temperature, maxTokens);
 
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(readTimeout)
                     .header("Content-Type", "application/json")
@@ -75,8 +75,7 @@ public class ZaiHttpClient {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 400) {
                 throw new IOException("API error (HTTP " + response.statusCode() + "): " + response.body());
@@ -94,7 +93,7 @@ public class ZaiHttpClient {
      */
     private String buildChatRequestBody(String model, List<Map<String, String>> messages,
                                          double temperature, int maxTokens) throws IOException {
-        Map<String, Object> request = new HashMap<>();
+        var request = new HashMap<String, Object>();
         request.put("model", model);
         request.put("messages", messages);
         request.put("temperature", temperature);
@@ -108,11 +107,10 @@ public class ZaiHttpClient {
      */
     public String extractContent(String jsonResponse) {
         try {
-            JsonNode root = objectMapper.readTree(jsonResponse);
-            JsonNode choices = root.path("choices");
+            var root = objectMapper.readTree(jsonResponse);
+            var choices = root.path("choices");
             if (choices.isArray() && choices.size() > 0) {
-                JsonNode message = choices.get(0).path("message");
-                JsonNode content = message.path("content");
+                var content = choices.get(0).path("message").path("content");
                 if (!content.isMissingNode()) {
                     return content.asText();
                 }

@@ -67,7 +67,8 @@ public class YServiceSession extends YSession {
     public void setPassword(String password) throws YPersistenceException {
         if (_service != null) {
             _service.setServicePassword(password);
-            YEngine.getInstance().updateObject(_service);
+            var engine = YEngine.getInstance();
+            engine.updateObject(_service);
         }
     }
 

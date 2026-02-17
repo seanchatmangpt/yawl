@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * YAWL Engine Adapter
@@ -43,10 +44,10 @@ public class YawlEngineAdapter {
      * @throws IllegalArgumentException if any parameter is null or empty
      */
     public YawlEngineAdapter(String engineUrl, String username, String password) {
-        if (engineUrl == null || engineUrl.trim().isEmpty()) {
+        if (engineUrl == null || engineUrl.isBlank()) {
             throw new IllegalArgumentException("YAWL engine URL is required");
         }
-        if (username == null || username.trim().isEmpty()) {
+        if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("YAWL username is required");
         }
         if (password == null) {
@@ -81,13 +82,13 @@ public class YawlEngineAdapter {
         String username = System.getenv("YAWL_USERNAME");
         String password = System.getenv("YAWL_PASSWORD");
 
-        if (engineUrl == null || engineUrl.isEmpty()) {
+        if (engineUrl == null || engineUrl.isBlank()) {
             throw new IllegalStateException(
                 "YAWL_ENGINE_URL environment variable not set.\n" +
                 "Set it with: export YAWL_ENGINE_URL=http://localhost:8080/yawl"
             );
         }
-        if (username == null || username.isEmpty()) {
+        if (username == null || username.isBlank()) {
             throw new IllegalStateException(
                 "YAWL_USERNAME environment variable not set.\n" +
                 "Set it with: export YAWL_USERNAME=admin"
@@ -254,7 +255,7 @@ public class YawlEngineAdapter {
         ensureConnected();
 
         try {
-            List<WorkItemRecord> items = interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandleB);
+            var items = interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandleB);
             return items != null ? items : new ArrayList<>();
 
         } catch (IOException e) {
@@ -278,7 +279,7 @@ public class YawlEngineAdapter {
         ensureConnected();
 
         try {
-            List<WorkItemRecord> items = interfaceBClient.getWorkItemsForCase(caseId, sessionHandleB);
+            var items = interfaceBClient.getWorkItemsForCase(caseId, sessionHandleB);
             return items != null ? items : new ArrayList<>();
 
         } catch (IOException e) {
@@ -392,11 +393,10 @@ public class YawlEngineAdapter {
     public Map<String, Object> completeTask(String caseId, String taskId, String outputData) throws A2AException {
         ensureConnected();
 
-        // Find the work item
-        List<WorkItemRecord> workItems = getWorkItemsForCase(caseId);
+        var workItems = getWorkItemsForCase(caseId);
         WorkItemRecord targetItem = null;
 
-        for (WorkItemRecord item : workItems) {
+        for (var item : workItems) {
             if (item.getTaskID().equals(taskId)) {
                 targetItem = item;
                 break;
@@ -492,19 +492,14 @@ public class YawlEngineAdapter {
         ensureConnected();
 
         try {
-            List<org.yawlfoundation.yawl.engine.interfce.SpecificationData> specs =
-                interfaceBClient.getSpecificationList(sessionHandleB);
-
-            List<String> names = new ArrayList<>();
-            if (specs != null) {
-                for (org.yawlfoundation.yawl.engine.interfce.SpecificationData spec : specs) {
-                    YSpecificationID specId = spec.getID();
-                    if (specId != null) {
-                        names.add(specId.getIdentifier());
-                    }
-                }
+            var specs = interfaceBClient.getSpecificationList(sessionHandleB);
+            if (specs == null) {
+                return List.of();
             }
-            return names;
+            return specs.stream()
+                .filter(s -> s.getID() != null)
+                .map(s -> s.getID().getIdentifier())
+                .collect(Collectors.toList());
 
         } catch (IOException e) {
             throw new A2AException(

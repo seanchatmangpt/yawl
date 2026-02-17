@@ -75,12 +75,12 @@ public final class ZaiDecisionReasoner implements DecisionReasoner {
             throw new IllegalArgumentException("workItem is required");
         }
 
-        String taskName = extractTaskName(workItem);
-        String decompositionRoot = taskName.replace(' ', '_');
-        String inputXml = getInputXml(workItem);
-        String workItemId = workItem.getID();
+        var taskName = extractTaskName(workItem);
+        var decompositionRoot = taskName.replace(' ', '_');
+        var inputXml = getInputXml(workItem);
+        var workItemId = workItem.getID();
 
-        String mcpGuideText = (mcpGuide != null && !mcpGuide.isEmpty())
+        var mcpGuideText = (mcpGuide != null && !mcpGuide.isBlank())
             ? "=== MCP Task Completion Guide ===\n" + mcpGuide + "\n\n"
             : "";
 

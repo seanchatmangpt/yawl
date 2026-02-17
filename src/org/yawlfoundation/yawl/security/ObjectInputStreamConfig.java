@@ -129,7 +129,7 @@ public class ObjectInputStreamConfig {
      * @return ObjectInputFilter with YAWL allowlist + additional packages
      */
     public static ObjectInputFilter createCustomAllowlist(String additionalPackages) {
-        if (additionalPackages == null || additionalPackages.trim().isEmpty()) {
+        if (additionalPackages == null || additionalPackages.isBlank()) {
             return createYAWLAllowlist();
         }
 

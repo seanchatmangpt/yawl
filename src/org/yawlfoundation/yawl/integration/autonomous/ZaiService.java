@@ -176,11 +176,9 @@ public class ZaiService {
      * Builds JSON payload for Z.AI API request.
      */
     private String buildJsonPayload(String prompt, String model) {
-        return String.format(
-            "{\"model\":\"%s\",\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}],\"temperature\":0.7,\"max_tokens\":2000}",
-            escapeJson(model),
-            escapeJson(prompt)
-        );
+        return """
+            {"model":"%s","messages":[{"role":"user","content":"%s"}],"temperature":0.7,"max_tokens":2000}
+            """.formatted(escapeJson(model), escapeJson(prompt)).strip();
     }
 
     /**

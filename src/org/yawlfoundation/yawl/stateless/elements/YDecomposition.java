@@ -228,8 +228,8 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
 
     private String paramMapToXML(Map<String, YParameter> paramMap) {
-        StringBuilder result = new StringBuilder() ;
-        List<YParameter> parameters = new ArrayList<YParameter>(paramMap.values());
+        StringBuilder result = new StringBuilder();
+        List<YParameter> parameters = new ArrayList<>(paramMap.values());
         Collections.sort(parameters);
         for (YParameter parameter : parameters) {
             result.append(parameter.toXML());
@@ -271,7 +271,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
      * @return a map of them.
      */
     public Map<String, YParameter> getStateSpaceBypassParams() {
-        Map<String, YParameter> result = new HashMap<String, YParameter>();
+        Map<String, YParameter> result = new HashMap<>();
         for (YParameter parameter : _outputParameters.values()) {
             if (parameter.bypassesDecompositionStateSpace()) {
                 result.put(parameter.getPreferredName(), parameter);
@@ -290,7 +290,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
     public Object clone() throws CloneNotSupportedException {
         YDecomposition copy = (YDecomposition) super.clone();
-        copy._inputParameters = new HashMap<String, YParameter>();
+        copy._inputParameters = new HashMap<>();
         for (YParameter parameter : _inputParameters.values()) {
             YParameter copyParam = (YParameter) parameter.clone();
             copy.addInputParameter(copyParam);
@@ -321,8 +321,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
         outputDoc.setRootElement(new Element(root.getName()));
 
         //now prepare a list of output params to iterate over.
-        List<YParameter> outputParamsList = new ArrayList<YParameter>(
-                                                        getOutputParameters().values());
+        List<YParameter> outputParamsList = new ArrayList<>(getOutputParameters().values());
         Collections.sort(outputParamsList);
 
         for (YParameter parameter : outputParamsList) {

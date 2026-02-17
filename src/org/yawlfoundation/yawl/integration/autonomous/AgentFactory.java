@@ -127,20 +127,20 @@ public final class AgentFactory {
         int port = parsePort(getEnv("AGENT_PORT", "8091"));
         long pollIntervalMs = parseLong(getEnv("POLL_INTERVAL_MS", "3000"));
 
-        String zaiKey = System.getenv("ZAI_API_KEY");
-        if (zaiKey == null || zaiKey.trim().isEmpty()) {
+        var zaiKey = System.getenv("ZAI_API_KEY");
+        if (zaiKey == null || zaiKey.isBlank()) {
             throw new IllegalStateException(
                 "ZAI_API_KEY environment variable is required for autonomous agent reasoning.\n" +
                 "Set ZAI_API_KEY to your Z.AI API key to enable AI-based eligibility and decision reasoning.");
         }
 
-        ZaiService zaiService = new ZaiService(zaiKey);
+        var zaiService = new ZaiService(zaiKey);
 
-        DiscoveryStrategy discoveryStrategy = createDefaultDiscoveryStrategy();
-        EligibilityReasoner eligibilityReasoner = createDefaultEligibilityReasoner(capability, zaiService);
-        DecisionReasoner decisionReasoner = createDefaultDecisionReasoner(zaiService);
+        var discoveryStrategy = createDefaultDiscoveryStrategy();
+        var eligibilityReasoner = createDefaultEligibilityReasoner(capability, zaiService);
+        var decisionReasoner = createDefaultDecisionReasoner(zaiService);
 
-        AgentConfiguration config = AgentConfiguration.builder()
+        var config = AgentConfiguration.builder()
             .capability(capability)
             .engineUrl(engineUrl)
             .username(username)
@@ -181,25 +181,25 @@ public final class AgentFactory {
             ZaiService zaiService) {
 
         return workItem -> {
-            String taskName = workItem.getTaskName();
-            if (taskName == null || taskName.isEmpty()) {
+            var taskName = workItem.getTaskName();
+            if (taskName == null || taskName.isBlank()) {
                 taskName = workItem.getTaskID();
             }
 
-            String inputSummary = summarizeWorkItemInput(workItem);
+            var inputSummary = summarizeWorkItemInput(workItem);
 
-            String prompt = String.format(
-                "You are an autonomous agent with this domain capability: %s\n\n" +
-                "Work item to evaluate:\n" +
-                "- Task: %s\n" +
-                "- Case: %s\n" +
-                "- Input data summary: %s\n\n" +
-                "Should this agent handle this work item? Answer with exactly YES or NO. " +
-                "If YES, add a brief reason in one sentence. If NO, add a brief reason.",
-                capability.getDescription(),
-                taskName,
-                workItem.getCaseID(),
-                inputSummary);
+            var prompt = """
+                You are an autonomous agent with this domain capability: %s
+
+                Work item to evaluate:
+                - Task: %s
+                - Case: %s
+                - Input data summary: %s
+
+                Should this agent handle this work item? Answer with exactly YES or NO. \
+                If YES, add a brief reason in one sentence. If NO, add a brief reason."""
+                .formatted(capability.getDescription(), taskName,
+                           workItem.getCaseID(), inputSummary);
 
             zaiService.setSystemPrompt(
                 "You are a workflow routing assistant. You decide if an agent should " +
@@ -207,8 +207,8 @@ public final class AgentFactory {
                 "work item's task. Be concise. Answer YES or NO first.");
 
             try {
-                String response = zaiService.chat(prompt);
-                return response != null && response.trim().toUpperCase().startsWith("YES");
+                var response = zaiService.chat(prompt);
+                return response != null && response.strip().toUpperCase().startsWith("YES");
             } catch (Exception e) {
                 return false;
             }
@@ -227,14 +227,14 @@ public final class AgentFactory {
      */
     private static DecisionReasoner createDefaultDecisionReasoner(ZaiService zaiService) {
         return workItem -> {
-            String taskName = workItem.getTaskName();
-            if (taskName == null || taskName.isEmpty()) {
+            var taskName = workItem.getTaskName();
+            if (taskName == null || taskName.isBlank()) {
                 taskName = workItem.getTaskID();
             }
-            String decompositionRoot = taskName.replace(' ', '_');
-            String inputXml = getWorkItemInputXml(workItem);
+            var decompositionRoot = taskName.replace(' ', '_');
+            var inputXml = getWorkItemInputXml(workItem);
 
-            String prompt = buildDecisionPrompt(workItem, taskName, decompositionRoot, inputXml);
+            var prompt = buildDecisionPrompt(workItem, taskName, decompositionRoot, inputXml);
 
             zaiService.setSystemPrompt(
                 "You are a YAWL workflow output generator. Produce valid XML for workflow tasks. " +
@@ -259,22 +259,26 @@ public final class AgentFactory {
             String decompositionRoot,
             String inputXml) {
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Produce valid XML output for this YAWL workflow task.\n\n");
-        sb.append("Work Item ID: ").append(workItem.getID()).append("\n");
-        sb.append("Task name: ").append(taskName).append("\n");
-        sb.append("Decomposition root element (use this as the XML root): ").append(decompositionRoot).append("\n\n");
-        sb.append("Input data:\n").append(inputXml).append("\n\n");
-        sb.append("Expected output format:\n");
-        sb.append("1. Root element MUST be <").append(decompositionRoot).append(">\n");
-        sb.append("2. Include required output parameters by task type:\n");
-        sb.append("   - Approval tasks: Approved/Approval/POApproval etc. as boolean true\n");
-        sb.append("   - Document tasks: document structure matching input schema\n");
-        sb.append("   - Create tasks: created entity with valid structure\n");
-        sb.append("3. Data validation: XML must be well-formed; element names match YAWL spec\n");
-        sb.append("4. Return ONLY the XML output, no explanation, no markdown, no code block.\n");
-        sb.append("5. Common issues: avoid extra whitespace; use correct namespaces if specified.");
-        return sb.toString();
+        return """
+            Produce valid XML output for this YAWL workflow task.
+
+            Work Item ID: %s
+            Task name: %s
+            Decomposition root element (use this as the XML root): %s
+
+            Input data:
+            %s
+
+            Expected output format:
+            1. Root element MUST be <%s>
+            2. Include required output parameters by task type:
+               - Approval tasks: Approved/Approval/POApproval etc. as boolean true
+               - Document tasks: document structure matching input schema
+               - Create tasks: created entity with valid structure
+            3. Data validation: XML must be well-formed; element names match YAWL spec
+            4. Return ONLY the XML output, no explanation, no markdown, no code block.
+            5. Common issues: avoid extra whitespace; use correct namespaces if specified."""
+            .formatted(workItem.getID(), taskName, decompositionRoot, inputXml, decompositionRoot);
     }
 
     /**
@@ -286,8 +290,8 @@ public final class AgentFactory {
             if (dataList == null) {
                 return "(no input data)";
             }
-            String xml = org.yawlfoundation.yawl.util.JDOMUtil.elementToStringDump(dataList);
-            if (xml == null || xml.isEmpty()) {
+            var xml = org.yawlfoundation.yawl.util.JDOMUtil.elementToStringDump(dataList);
+            if (xml == null || xml.isBlank()) {
                 return "(empty input)";
             }
             return xml.length() > 500 ? xml.substring(0, 500) + "..." : xml;
@@ -305,7 +309,7 @@ public final class AgentFactory {
             if (dataList == null) {
                 return "<data/>";
             }
-            String xml = org.yawlfoundation.yawl.util.JDOMUtil.elementToStringDump(dataList);
+            var xml = org.yawlfoundation.yawl.util.JDOMUtil.elementToStringDump(dataList);
             return xml != null ? xml : "<data/>";
         } catch (Exception e) {
             return "<data/>";
@@ -316,10 +320,10 @@ public final class AgentFactory {
      * Extract XML from ZAI response.
      */
     private static String extractXml(String response, String expectedRoot) {
-        if (response == null || response.trim().isEmpty()) {
+        if (response == null || response.isBlank()) {
             throw new IllegalArgumentException("Empty response from ZAI");
         }
-        String s = response.trim();
+        var s = response.strip();
         int start = s.indexOf("<");
         int end = s.lastIndexOf(">");
         if (start >= 0 && end > start) {
@@ -332,8 +336,8 @@ public final class AgentFactory {
      * Get environment variable with default fallback.
      */
     private static String getEnv(String name, String defaultValue) {
-        String value = System.getenv(name);
-        return (value != null && !value.trim().isEmpty()) ? value : defaultValue;
+        var value = System.getenv(name);
+        return (value != null && !value.isBlank()) ? value.strip() : defaultValue;
     }
 
     /**

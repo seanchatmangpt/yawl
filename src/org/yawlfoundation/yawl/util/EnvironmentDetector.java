@@ -114,17 +114,22 @@ public class EnvironmentDetector {
      * @return multi-line string with environment details
      */
     public static String getEnvironmentInfo() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("YAWL Environment Information:\n");
-        sb.append("  Environment: ").append(isClaudeCodeRemote() ? "Claude Code Web (Remote)" : "Local Development").append("\n");
-        sb.append("  Type: ").append(getEnvironmentType()).append("\n");
-        sb.append("  Database: ").append(getRecommendedDatabaseType()).append("\n");
-        sb.append("  Ephemeral DB: ").append(useEphemeralDatabase()).append("\n");
-        sb.append("  Skip Integration Tests: ").append(skipIntegrationTests()).append("\n");
-        if (REMOTE_SESSION_ID != null) {
-            sb.append("  Session ID: ").append(REMOTE_SESSION_ID).append("\n");
-        }
-        return sb.toString();
+        var base = """
+                YAWL Environment Information:
+                  Environment: %s
+                  Type: %s
+                  Database: %s
+                  Ephemeral DB: %s
+                  Skip Integration Tests: %s
+                """.formatted(
+                isClaudeCodeRemote() ? "Claude Code Web (Remote)" : "Local Development",
+                getEnvironmentType(),
+                getRecommendedDatabaseType(),
+                useEphemeralDatabase(),
+                skipIntegrationTests());
+        return REMOTE_SESSION_ID != null
+                ? base + "  Session ID: " + REMOTE_SESSION_ID + "\n"
+                : base;
     }
 
     /**

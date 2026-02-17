@@ -35,7 +35,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 public class ProcletModel extends DirectedSparseGraph {
@@ -86,27 +85,15 @@ public class ProcletModel extends DirectedSparseGraph {
 //			this.removeEdge(bpe);
 //		}
 		// search for the isolated ports
-		List<ProcletPort> portsRem = new ArrayList<ProcletPort>();
-		Collection ports = this.getVertices();
-		Iterator it = ports.iterator();
-		while (it.hasNext()) {
-			Object item = it.next();
-			// check out whether it is port or a ip
-			if (item instanceof ProcletPort) {
-				ProcletPort port = (ProcletPort) item;
+		List<ProcletPort> portsRem = new ArrayList<>();
+		for (Object item : this.getVertices()) {
+			if (item instanceof ProcletPort port) {
 				boolean found = false;
 				// check out whether it is in an edge
-				Collection edges = this.getEdges();
-				Iterator it2 = edges.iterator();
-				while (it2.hasNext()) {
-					Object item2 = it2.next();
-					if (item2 instanceof BlockPortEdge) {
-						BlockPortEdge bpe = (BlockPortEdge) item2;
-						if (bpe.getPort().equals(port)) {
-							// found
-							found = true;
-							break;
-						}
+				for (Object item2 : this.getEdges()) {
+					if (item2 instanceof BlockPortEdge bpe && bpe.getPort().equals(port)) {
+						found = true;
+						break;
 					}
 				}
 				if (!found) {
@@ -115,7 +102,7 @@ public class ProcletModel extends DirectedSparseGraph {
 				}
 			}
 		}
-		for (ProcletPort port : portsRem) {
+		for (var port : portsRem) {
 			this.removeVertex(port);
 		}
 	}
@@ -182,13 +169,10 @@ public class ProcletModel extends DirectedSparseGraph {
 	}
 	
 	public List<ProcletBlock> getBlocks() {
-		Collection col = this.getVertices();
-		List<ProcletBlock> blocks = new ArrayList<ProcletBlock> ();
-		Iterator it = col.iterator();
-		while (it.hasNext()) {
-			Object obj = it.next();
-			if (obj instanceof ProcletBlock) {
-				blocks.add((ProcletBlock)obj);
+		List<ProcletBlock> blocks = new ArrayList<>();
+		for (Object obj : this.getVertices()) {
+			if (obj instanceof ProcletBlock block) {
+				blocks.add(block);
 			}
 		}
 		return blocks;
@@ -205,63 +189,45 @@ public class ProcletModel extends DirectedSparseGraph {
 	}
 	
 	public List<ProcletPort> getPortsBlock (ProcletBlock block) {
-		List<ProcletPort> ports = new ArrayList<ProcletPort> ();
-		Collection edges = this.getEdges();
-		Iterator it = edges.iterator();
-		while (it.hasNext()) {
-			Object edge = it.next();
-			if (edge instanceof BlockPortEdge && 
-					((BlockPortEdge)edge).getBlock().equals(block)) {
-				ports.add(((BlockPortEdge)edge).getPort());
+		List<ProcletPort> ports = new ArrayList<>();
+		for (Object edge : this.getEdges()) {
+			if (edge instanceof BlockPortEdge bpe && bpe.getBlock().equals(block)) {
+				ports.add(bpe.getPort());
 			}
 		}
 		return ports;
 	}
-	
+
 	public List<BlockPortEdge> getBlockPortEdges () {
-		List<BlockPortEdge> bpe = new ArrayList<BlockPortEdge>();
-		Collection edges = this.getEdges();
-		Iterator it = edges.iterator();
-		while (it.hasNext()) {
-			Object edge = it.next();
-			if (edge instanceof BlockPortEdge) {
-				bpe.add((BlockPortEdge)edge);
+		List<BlockPortEdge> bpe = new ArrayList<>();
+		for (Object edge : this.getEdges()) {
+			if (edge instanceof BlockPortEdge blockPortEdge) {
+				bpe.add(blockPortEdge);
 			}
 		}
 		return bpe;
 	}
-	
+
 	public List<BlockRel> getBRels () {
-		List<BlockRel> bRels = new ArrayList<BlockRel> ();
-		Collection col = this.getEdges();
-		Iterator it = col.iterator();
-		while (it.hasNext()) {
-			Object edge = it.next();
-			if (edge instanceof BlockRel) {
-				bRels.add((BlockRel)edge);
+		List<BlockRel> bRels = new ArrayList<>();
+		for (Object edge : this.getEdges()) {
+			if (edge instanceof BlockRel brel) {
+				bRels.add(brel);
 			}
 		}
 		return bRels;
 	}
 	
 	public void deleteAllVertices (){
-		Collection vertices = this.getVertices();
-		List<Object> verticesRem = new ArrayList<Object> ();
-		for (Object ver : vertices) {
-			verticesRem.add(ver);
-		}
-		for (Object obj : verticesRem) {
+		var verticesRem = new ArrayList<>(this.getVertices());
+		for (var obj : verticesRem) {
 			this.removeVertex(obj);
 		}
 	}
-	
+
 	public void deleteAllEdges (){
-		Collection edges = this.getVertices();
-		List<Object> edgesRem = new ArrayList<Object> ();
-		for (Object edge : edges) {
-			edgesRem.add(edge);
-		}
-		for (Object obj : edgesRem) {
+		var edgesRem = new ArrayList<>(this.getVertices());
+		for (var obj : edgesRem) {
 			this.removeEdge(obj);
 		}
 	}

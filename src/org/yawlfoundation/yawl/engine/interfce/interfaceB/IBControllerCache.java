@@ -39,14 +39,10 @@ import java.util.Map;
  * 
  */
 public class IBControllerCache {
-    private Map<String, WorkItemRecord> _workItemCache =
-            new HashMap<String, WorkItemRecord>();
-    private Map<String, TaskInformation> _taskInfoCache =
-            new HashMap<String, TaskInformation>();
-    private Map<String, String> _itemIDToDataMap =
-            new HashMap<String, String>();
-    private Map<String, SpecificationData> _specDataCache =
-            new HashMap<String, SpecificationData>();
+    private Map<String, WorkItemRecord> _workItemCache = new HashMap<>();
+    private Map<String, TaskInformation> _taskInfoCache = new HashMap<>();
+    private Map<String, String> _itemIDToDataMap = new HashMap<>();
+    private Map<String, SpecificationData> _specDataCache = new HashMap<>();
 
 
     public IBControllerCache() { }
@@ -76,8 +72,8 @@ public class IBControllerCache {
 
 
     public void unloadTaskInformation(YSpecificationID specID) {
-        String specKey = specID.toKeyString() + ":";
-        List<String> toRemove = new ArrayList<String>();
+        var specKey = specID.toKeyString() + ":";
+        var toRemove = new ArrayList<String>();
         for (String key : _taskInfoCache.keySet()) {
             if (key.startsWith(specKey)) {
                 toRemove.add(key);            // avoid concurrency exceptions

@@ -476,10 +476,10 @@ public final class YSessionCache implements ISessionCache {
     // ========================================================================
 
     private String storeSession(YSession session) {
-        String handle = session.getHandle();
+        var handle = session.getHandle();
 
         // Use computeIfAbsent for atomic put-if-absent
-        YSession existing = sessions.putIfAbsent(handle, session);
+        var existing = sessions.putIfAbsent(handle, session);
 
         if (existing != null) {
             // Handle collision - should be extremely rare with UUID
@@ -510,7 +510,7 @@ public final class YSessionCache implements ISessionCache {
         cancelTimeout(handle);
 
         // Remove session atomically
-        YSession session = sessions.remove(handle);
+        var session = sessions.remove(handle);
 
         if (session != null) {
             activeSessionsCount.decrementAndGet();
@@ -529,16 +529,16 @@ public final class YSessionCache implements ISessionCache {
     // ========================================================================
 
     private void scheduleTimeout(YSession session) {
-        long intervalMs = session.getInterval();
+        var intervalMs = session.getInterval();
 
         // Negative interval means never timeout
         if (intervalMs <= 0) {
             return;
         }
 
-        String handle = session.getHandle();
+        var handle = session.getHandle();
 
-        ScheduledFuture<?> future = scheduler.schedule(
+        var future = scheduler.schedule(
                 () -> expireSession(handle),
                 intervalMs,
                 TimeUnit.MILLISECONDS
@@ -548,7 +548,7 @@ public final class YSessionCache implements ISessionCache {
     }
 
     private void resetTimeout(YSession session) {
-        String handle = session.getHandle();
+        var handle = session.getHandle();
 
         // Cancel existing timeout
         cancelTimeout(handle);
@@ -558,7 +558,7 @@ public final class YSessionCache implements ISessionCache {
     }
 
     private void cancelTimeout(String handle) {
-        ScheduledFuture<?> future = timeoutTasks.remove(handle);
+        var future = timeoutTasks.remove(handle);
         if (future != null) {
             future.cancel(false);
         }
@@ -611,7 +611,7 @@ public final class YSessionCache implements ISessionCache {
 
     private void initializeDatabase() {
         try {
-            Set<Class> classSet = new HashSet<>();
+            var classSet = new HashSet<Class<?>>();
             classSet.add(YAuditEvent.class);
             database = new HibernateEngine(true, classSet);
         } catch (Exception e) {

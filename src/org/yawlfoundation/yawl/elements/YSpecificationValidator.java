@@ -124,8 +124,8 @@ public class YSpecificationValidator {
         }
 
         for (YDecomposition decomp : decomps) {
-            if (decomp instanceof YNet) {
-                validateNet((YNet) decomp);
+            if (decomp instanceof YNet net) {
+                validateNet(net);
             }
         }
     }
@@ -169,8 +169,8 @@ public class YSpecificationValidator {
         }
 
         for (YExternalNetElement element : elementsMap.values()) {
-            if (element instanceof YTask) {
-                validateTaskConnectivity((YTask) element, net.getID());
+            if (element instanceof YTask task) {
+                validateTaskConnectivity(task, net.getID());
             }
         }
     }
@@ -218,7 +218,7 @@ public class YSpecificationValidator {
             return "No validation errors found.";
         }
 
-        StringBuilder report = new StringBuilder();
+        var report = new StringBuilder();
         report.append("Validation Errors (").append(_errors.size()).append("):\n");
         report.append("Specification: ").append(getSpecID()).append("\n\n");
 

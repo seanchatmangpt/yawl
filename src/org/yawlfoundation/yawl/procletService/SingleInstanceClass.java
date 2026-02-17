@@ -25,7 +25,6 @@ import org.yawlfoundation.yawl.procletService.util.ThreadNotify;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -33,13 +32,13 @@ public class SingleInstanceClass {
 
 	private static final SingleInstanceClass singleInstance = new SingleInstanceClass();
 
-	private List<ThreadNotify> registeredClasses = new ArrayList<ThreadNotify>();
-	private HashMap<ThreadNotify,InternalRunner> mapping = new HashMap<ThreadNotify,InternalRunner>();
-	private HashMap<ThreadNotify,Boolean> mappingDone = new HashMap<ThreadNotify,Boolean>();
-	private Object mutex = new Object();
-	private Object mutex2 = new Object();
-	private Object mutex3 = new Object();
-	private List<String> blockedCases = new ArrayList<String>();
+	private final List<ThreadNotify> registeredClasses = new ArrayList<>();
+	private final HashMap<ThreadNotify, InternalRunner> mapping = new HashMap<>();
+	private final HashMap<ThreadNotify, Boolean> mappingDone = new HashMap<>();
+	private final Object mutex = new Object();
+	private final Object mutex2 = new Object();
+	private final Object mutex3 = new Object();
+	private final List<String> blockedCases = new ArrayList<>();
 
 	private SingleInstanceClass() {
 		super();
@@ -104,37 +103,27 @@ public class SingleInstanceClass {
 		// fill mappingDone
 		synchronized(mutex) {
 			// first add performatives
-			Performatives perfsInst = Performatives.getInstance();
-			for (Performative perf : perfs) {
+			var perfsInst = Performatives.getInstance();
+			for (var perf : perfs) {
 				perfsInst.addPerformative(perf);
 			}
 			// first process the creation of new classes
-			BlockPICreate bpc = BlockPICreate.getInstance();
-			bpc.checkForCreationProclets();
+			BlockPICreate.getInstance().checkForCreationProclets();
 			// notify the listeners
-			for (ThreadNotify tn : this.registeredClasses) {
+			for (var tn : this.registeredClasses) {
 				this.mappingDone.put(tn, false);
 			}
-			for (ThreadNotify tn : registeredClasses) {
+			for (var tn : registeredClasses) {
 				tn.notification(false);
 			}
 			this.mapping.clear();
 			this.registeredClasses.clear();
-			// 	wait for all
+			// wait for all
 			while (true) {
 				try {
-					Thread.currentThread().sleep(500);
-					// 	everybody done
-					boolean done = true;
-					Iterator<ThreadNotify> it = this.mappingDone.keySet().iterator();
-					while (it.hasNext()) {
-						ThreadNotify notif = it.next();
-						boolean d = this.mappingDone.get(notif);
-						if (!d) {
-							done = false;
-							break;
-						}
-					}
+					Thread.sleep(500);
+					// everybody done
+					boolean done = this.mappingDone.values().stream().allMatch(Boolean::booleanValue);
 					if (done) {
 						break;
 					}

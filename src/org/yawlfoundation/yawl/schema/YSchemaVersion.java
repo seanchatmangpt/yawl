@@ -64,11 +64,11 @@ public enum YSchemaVersion {
 
 
     private static final Map<String, YSchemaVersion> _fromStringMap =
-            new HashMap<String, YSchemaVersion>();
+            new HashMap<>();
 
 
     static {
-        for (YSchemaVersion version : values()) {
+        for (var version : values()) {
             _fromStringMap.put(version.toString(), version);
         }
     }

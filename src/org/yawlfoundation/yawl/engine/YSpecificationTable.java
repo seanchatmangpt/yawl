@@ -124,8 +124,8 @@ public class YSpecificationTable
 
 
     public Set<YSpecificationID> getSpecIDs() {
-        Set<YSpecificationID> set = new HashSet<YSpecificationID>();
-        for (SpecList list : this.values()) {
+        var set = new HashSet<YSpecificationID>();
+        for (var list : this.values()) {
             set.addAll(list.getSpecificationIDs());
         }
         return set;
@@ -182,8 +182,8 @@ public class YSpecificationTable
 
 
         public Set<YSpecificationID> getSpecificationIDs() {
-            Set<YSpecificationID> set = new HashSet<YSpecificationID>();
-            for (YSpecification ySpec : this) {
+            var set = new HashSet<YSpecificationID>();
+            for (var ySpec : this) {
                 set.add(ySpec.getSpecificationID());
             }
             return set;

@@ -197,9 +197,9 @@ public class YAtomicTask extends YTask {
         if (null == getDecompositionPrototype()) {
             return null;
         }
-        Element enablementData = produceDataRootElement();
-        YAWLServiceGateway serviceGateway = (YAWLServiceGateway) _decompositionPrototype;
-        List<YParameter> enablementParams =
+        var enablementData = produceDataRootElement();
+        var serviceGateway = (YAWLServiceGateway) _decompositionPrototype;
+        var enablementParams =
                 new ArrayList<YParameter>(serviceGateway.getEnablementParameters().values());
         Collections.sort(enablementParams);
         for (YParameter parameter : enablementParams) {

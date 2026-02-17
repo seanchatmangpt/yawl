@@ -28,7 +28,13 @@ import org.yawlfoundation.yawl.util.XNodeParser;
 
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Michael Adams
@@ -39,7 +45,7 @@ public class HolidayLoader {
     private static final String ENDPOINT = "http://kayaposoft.com/enrico/ws/v1.0/index.php";
     private static final String NAMESPACE = "http://www.kayaposoft.com/enrico/ws/v1.0/";
     private static final String OPERATION = "getPublicHolidaysForYear";
-    private static final List<String> KEYS = Arrays.asList("year", "country", "region");
+    private static final List<String> KEYS = List.of("year", "country", "region");
 
     private Logger _log;
     private Map<Integer, List<Holiday>> _yearHolidayMap;
@@ -104,7 +110,7 @@ public class HolidayLoader {
         }
         String country = holidayRegion.getCountry();
         String region = holidayRegion.getRegion();
-        List<String> argValues = Arrays.asList(year, country, region);
+        var argValues = List.of(year, country, region);
         List<Holiday> holidays = parseResponse(getResponse(argValues));
         persist(persister, holidays);
         return holidays;
@@ -129,7 +135,7 @@ public class HolidayLoader {
         if (error != null) {
             throw new IOException(error);
         }
-        List<Holiday> holidays = new ArrayList<Holiday>();
+        List<Holiday> holidays = new ArrayList<>();
         for (XNode holidayNode : root.getChildren()) {
             holidays.add(new Holiday(holidayNode));
         }
@@ -147,15 +153,15 @@ public class HolidayLoader {
 
 
     private Map<Integer, List<Holiday>> restore() {
-        HibernateEngine persister = getPersister();
-        Map<Integer, List<Holiday>> holidayMap = new HashMap<Integer, List<Holiday>>();
+        var persister = getPersister();
+        Map<Integer, List<Holiday>> holidayMap = new HashMap<>();
         for (Object o : persister.getObjectsForClass("Holiday")) {
             Holiday holiday = (Holiday) o;
             int year = holiday.getYear();
             if (year > -1) {
                 List<Holiday> holidays = holidayMap.get(year);
                 if (holidays == null) {
-                    holidays = new ArrayList<Holiday>();
+                    holidays = new ArrayList<>();
                     holidayMap.put(year, holidays);
                 }
                 holidays.add(holiday);
@@ -205,9 +211,7 @@ public class HolidayLoader {
 
 
     private HibernateEngine getPersister() {
-        Set<Class> classSet = new HashSet<Class>();
-        classSet.add(Holiday.class);
-        classSet.add(HolidayRegion.class);
+        Set<Class> classSet = new HashSet<>(Set.of(Holiday.class, HolidayRegion.class));
         return new HibernateEngine(true, classSet);
     }
 

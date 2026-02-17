@@ -22,6 +22,7 @@ import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Author: Michael Adams
@@ -50,11 +51,10 @@ public class YLogDataItemList extends ArrayList<YLogDataItem> {
     
 
     public String toXML() {
-        String items = this.stream()
+        var items = this.stream()
             .map(YLogDataItem::toXML)
-            .collect(java.util.stream.Collectors.joining());
-        return """
-            <logdataitemlist>%s</logdataitemlist>""".formatted(items);
+            .collect(Collectors.joining());
+        return "<logdataitemlist>%s</logdataitemlist>".formatted(items);
     }
 
 

@@ -88,7 +88,7 @@ public class XSDType {
     public static final int ANY_URI              = 44;
 
 
-    public static enum RestrictionFacet { minExclusive, maxExclusive,
+    public enum RestrictionFacet { minExclusive, maxExclusive,
             minInclusive, maxInclusive, minLength, maxLength, length,
             totalDigits, fractionDigits, whiteSpace, pattern, enumeration }
 
@@ -201,11 +201,11 @@ public class XSDType {
     }
 
     public static List<String> getBuiltInTypeList() {
-        return new ArrayList<String>(_typeList);                        // send a copy  
+        return new ArrayList<>(_typeList);                              // send a copy
     }
 
     public static String[] getBuiltInTypeArray() {
-        return _typeList.toArray(new String[_typeList.size()]);
+        return _typeList.toArray(String[]::new);
     }
 
 
@@ -277,8 +277,8 @@ public class XSDType {
 
 
     private static List<String> makeList() {
-        List<String> typeList = new ArrayList<String>();
-        for (int i = ANY_TYPE; i<= ANY_URI; i++) {
+        var typeList = new ArrayList<String>();
+        for (int i = ANY_TYPE; i <= ANY_URI; i++) {
             typeList.add(getString(i));
         }
         return typeList;

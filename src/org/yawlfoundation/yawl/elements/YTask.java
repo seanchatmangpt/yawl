@@ -871,7 +871,7 @@ public abstract class YTask extends YExternalNetElement {
 
         // get & sort the flows according to their evaluation ordering,
         // and with the default flow occurring last.
-        List<YFlow> flows = new ArrayList<YFlow>(getPostsetFlows());
+        var flows = new ArrayList<YFlow>(getPostsetFlows());
         Collections.sort(flows);
 
         for (YFlow flow : flows) {
@@ -899,7 +899,7 @@ public abstract class YTask extends YExternalNetElement {
 
         // get & sort the flows according to their evaluation ordering,
         // and with the default flow occurring last.
-        List<YFlow> flows = new ArrayList<YFlow>(getPostsetFlows());
+        var flows = new ArrayList<YFlow>(getPostsetFlows());
         Collections.sort(flows);
 
         for (YFlow flow : flows) {
@@ -1301,12 +1301,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     public List<YInternalCondition> getAllInternalConditions() {
-        List<YInternalCondition> icList = new Vector<YInternalCondition>();
-        icList.add(_mi_active);
-        icList.add(_mi_entered);
-        icList.add(_mi_complete);
-        icList.add(_mi_executing);
-        return icList;
+        return new ArrayList<>(List.of(_mi_active, _mi_entered, _mi_complete, _mi_executing));
     }
 
     /**
@@ -1351,8 +1346,8 @@ public abstract class YTask extends YExternalNetElement {
             xml.append(getConfiguration());
         }
 
-        StringBuilder removeTokensFromFlow = new StringBuilder();
-        List<YExternalNetElement> removeList = new ArrayList<YExternalNetElement>(_removeSet);
+        var removeTokensFromFlow = new StringBuilder();
+        var removeList = new ArrayList<YExternalNetElement>(_removeSet);
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
@@ -1671,7 +1666,7 @@ public abstract class YTask extends YExternalNetElement {
         }
         if (_splitType == _OR || _splitType == _XOR) {
             int defaultCount = 0;
-            List<YFlow> postsetFlows = new ArrayList<YFlow>(getPostsetFlows());
+            var postsetFlows = new ArrayList<YFlow>(getPostsetFlows());
             Collections.sort(postsetFlows);
             int lastOrdering = Integer.MIN_VALUE;
             for (YFlow flow : postsetFlows) {

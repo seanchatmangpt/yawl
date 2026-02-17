@@ -75,39 +75,40 @@ public class ServletUtils {
         try {
             PrintWriter outputWriter = response.getWriter();
 
-            String outputStr = "<html><head><title>404 Not Found</title>" +
-                    "<style>" +
-                    "<!--body {font-family: arial,sans-serif}div.nav {margin-top: 1ex}" +
-                    "div.nav A {font-size: 10pt; font-family: arial,sans-serif}" +
-                    "span.nav {font-size: 10pt; font-family: arial,sans-serif; font-weight: bold}" +
-                    "div.nav A,span.big {font-size: 12pt; color: #0000cc}" +
-                    "div.nav A {font-size: 10pt; color: black}" +
-                    "A.l:link {color: #6f6f6f}A.u:link {color: green}//-->" +
-                    "</style>" +
-                    "</head><body text=#000000 bgcolor=#ffffff>" +
-                    "<table border=0 cellpadding=2 cellspacing=0 width=100%>" +
-                    "<tr>" +
-                    "   <td rowspan=3 width=1% nowrap>" +
-                    "   <b><font face=times color=Green size=10>Y</font>" +
-                    "   <font face=times color=Yellow size=10>A</font>" +
-                    "   <font face=times color=Blue size=10>W</font>" +
-                    "   <font face=times color=Orange size=10>L</font>" +
-                    "   &nbsp;&nbsp;</b>" +
-                    "   <td>&nbsp;</td>" +
-                    "</tr><tr>" +
-                    "   <td bgcolor=#3366cc>" +
-                    "   <font face=arial,sans-serif color=#ffffff><b>Error</b></td>" +
-                    "</tr><tr>" +
-                    "   <td>&nbsp;</td>" +
-                    "</tr>" +
-                    "</table>" +
-                    "<blockquote>" +
-                    "<H1>Not Found</H1>The requested URL <code>" + request.getRequestURI() +
-                    "<code> was not found on this server.<p>" +
-                    "</blockquote>" +
-                    "<table width=100% cellpadding=0 cellspacing=0>" +
-                    "<tr><td bgcolor=#3366cc><img alt=\"\" width=1 height=4></td></tr>" +
-                    "</table></body></html>";
+            String outputStr = """
+                    <html><head><title>404 Not Found</title>\
+                    <style>\
+                    <!--body {font-family: arial,sans-serif}div.nav {margin-top: 1ex}\
+                    div.nav A {font-size: 10pt; font-family: arial,sans-serif}\
+                    span.nav {font-size: 10pt; font-family: arial,sans-serif; font-weight: bold}\
+                    div.nav A,span.big {font-size: 12pt; color: #0000cc}\
+                    div.nav A {font-size: 10pt; color: black}\
+                    A.l:link {color: #6f6f6f}A.u:link {color: green}//-->\
+                    </style>\
+                    </head><body text=#000000 bgcolor=#ffffff>\
+                    <table border=0 cellpadding=2 cellspacing=0 width=100%>\
+                    <tr>\
+                       <td rowspan=3 width=1% nowrap>\
+                       <b><font face=times color=Green size=10>Y</font>\
+                       <font face=times color=Yellow size=10>A</font>\
+                       <font face=times color=Blue size=10>W</font>\
+                       <font face=times color=Orange size=10>L</font>\
+                       &nbsp;&nbsp;</b>\
+                       <td>&nbsp;</td>\
+                    </tr><tr>\
+                       <td bgcolor=#3366cc>\
+                       <font face=arial,sans-serif color=#ffffff><b>Error</b></td>\
+                    </tr><tr>\
+                       <td>&nbsp;</td>\
+                    </tr>\
+                    </table>\
+                    <blockquote>\
+                    <H1>Not Found</H1>The requested URL <code>""" + request.getRequestURI() + """
+                    <code> was not found on this server.<p>\
+                    </blockquote>\
+                    <table width=100% cellpadding=0 cellspacing=0>\
+                    <tr><td bgcolor=#3366cc><img alt="" width=1 height=4></td></tr>\
+                    </table></body></html>""";
             outputWriter.print(outputStr);
             outputWriter.flush();
             outputWriter.close();
@@ -158,7 +159,7 @@ public class ServletUtils {
                 String paramStr = new String(contents, StandardCharsets.UTF_8);
 
         // split into params & rebuild map
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         String[] params = paramStr.split("&");
         for (String param : params) {
             String[] parts = param.split("=");

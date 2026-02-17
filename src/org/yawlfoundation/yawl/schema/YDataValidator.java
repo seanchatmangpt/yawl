@@ -89,9 +89,7 @@ public class YDataValidator {
      */
     public void validate(YVariable variable, Element data, String source)
             throws YDataValidationException {
-        List<YVariable> vars = new ArrayList<YVariable>(1);
-        vars.add(variable);
-        validate(vars, data, source);
+        validate(List.of(variable), data, source);
     }
 
     /**
@@ -107,23 +105,23 @@ public class YDataValidator {
     public void validate(Collection vars, Element data, String source)
             throws YDataValidationException {
         try {
-            String schema = ensurePrefixedSchema(handler.getSchema());
-            Document xsd = createSecureDocument(schema);
-            String ns = XMLConstants.W3C_XML_SCHEMA_NS_URI;
+            var schema = ensurePrefixedSchema(handler.getSchema());
+            var xsd = createSecureDocument(schema);
+            var ns = XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
             //need to determine the prefix for the schema namespace
-            String prefix = ensureValidPrefix(xsd.lookupPrefix(ns));
-            org.w3c.dom.Element element = xsd.createElementNS(ns, prefix + "element");
+            var prefix = ensureValidPrefix(xsd.lookupPrefix(ns));
+            var element = xsd.createElementNS(ns, prefix + "element");
             element.setAttribute("name", data.getName());
-            org.w3c.dom.Element complex = xsd.createElementNS(ns, prefix + "complexType");
-            org.w3c.dom.Element sequence = xsd.createElementNS(ns, prefix + "sequence");
-            ArrayList varList = new ArrayList(vars);
+            var complex = xsd.createElementNS(ns, prefix + "complexType");
+            var sequence = xsd.createElementNS(ns, prefix + "sequence");
+            var varList = new ArrayList(vars);
             Collections.sort(varList);               // sort on YParameter ordering value
             for (Object obj : varList) {
                 YVariable var = (YVariable) obj;
-                org.w3c.dom.Element child = xsd.createElementNS(ns, prefix + "element");
+                var child = xsd.createElementNS(ns, prefix + "element");
                 child.setAttribute("name", var.getName());
-                String type = var.getDataTypeName();
+                var type = var.getDataTypeName();
                 if (XSDType.isBuiltInType(type)) {
                     type = prefix + type;
                 }

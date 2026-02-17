@@ -38,7 +38,7 @@ public class YConnectivityException extends YSyntaxException {
      * @param destination the destination net element
      */
     public YConnectivityException(YExternalNetElement source, YExternalNetElement destination) {
-        super("YAWL Syntax does not permit " + source + " to be connected with " + destination);
+        super("YAWL Syntax does not permit %s to be connected with %s".formatted(source, destination));
     }
 
     /**

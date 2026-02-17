@@ -31,6 +31,9 @@ public class MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(MetricsCollector.class);
 
+    /** Prometheus text format: no braces when no labels are present (e.g. "metric_name 42"). */
+    private static final String PROMETHEUS_NO_LABELS = String.valueOf(new char[0]);
+
     private final ConcurrentHashMap<String, Counter> counters;
     private final ConcurrentHashMap<String, Histogram> histograms;
     private final HttpServer server;
@@ -182,7 +185,7 @@ public class MetricsCollector {
         if (labels == null || labels.isEmpty()) {
             // Prometheus text format: metrics without labels have no braces
             // Example: "metric_name 42" not "metric_name{} 42"
-            return new String();
+            return PROMETHEUS_NO_LABELS;
         }
 
         StringBuilder formatted = new StringBuilder("{");

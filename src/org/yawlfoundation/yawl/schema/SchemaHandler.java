@@ -31,7 +31,7 @@ import javax.xml.validation.Validator;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -186,7 +186,7 @@ public class SchemaHandler {
      * @return all messages from the last validation/compilation
      */
     public List<String> getMessages() {
-        List<String> messages = errorHandler.getErrors();
+        var messages = errorHandler.getErrors();
         messages.addAll(errorHandler.getWarnings());
         if (exceptionMessage != null) messages.add(exceptionMessage);
         return messages;
@@ -196,8 +196,8 @@ public class SchemaHandler {
      * @return all messages since the last validation/compilation
      */
     public String getConcatenatedMessage() {
-        StringBuilder builder = new StringBuilder();
-        for (String msg : getMessages()) {
+        var builder = new StringBuilder();
+        for (var msg : getMessages()) {
             builder.append(msg).append("\n");
         }
         return builder.toString();
@@ -278,11 +278,11 @@ public class SchemaHandler {
      */
     private void assembleMap() {
         if (typeMap == null) {
-            typeMap = new Hashtable<String, Element>();
+            typeMap = new HashMap<>();
             if (schemaString != null) {
-                Element dataSchema = JDOMUtil.stringToElement(getSchema());
-                for (Element child : dataSchema.getChildren()) {
-                    String name = child.getAttributeValue("name");
+                var dataSchema = JDOMUtil.stringToElement(getSchema());
+                for (var child : dataSchema.getChildren()) {
+                    var name = child.getAttributeValue("name");
                     if (name != null) {
                         typeMap.put(name, child);
                     }

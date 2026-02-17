@@ -43,51 +43,47 @@ import java.util.List;
 
 public class CompleteCaseDeleteCase {
 
-	private String procletID = "";
-	
-	private Logger myLog = LogManager.getLogger(CompleteCaseDeleteCase.class);
-	
+	private final String procletID;
+
+	private final Logger myLog = LogManager.getLogger(CompleteCaseDeleteCase.class);
+
 	public CompleteCaseDeleteCase (String procletID) {
 		this.procletID = procletID;
 	}
-	
+
 	public String getClassIDfromGraphs () {
-		InteractionGraphs igraphs = InteractionGraphs.getInstance();
-		for (InteractionGraph graph : igraphs.getGraphs()) {
-			for (InteractionNode node : graph.getNodes()) {
+		for (var graph : InteractionGraphs.getInstance().getGraphs()) {
+			for (var node : graph.getNodes()) {
 				if (node.getProcletID().equals(this.procletID)) {
 					return node.getClassID();
 				}
 			}
 		}
-		return "";
+		return null;
 	}
-	
+
 	public void removeFromGraphs (String procletID) {
-		InteractionGraphs igraphs = InteractionGraphs.getInstance();
-		for (InteractionGraph graph : igraphs.getGraphs()) {
-			List<InteractionNode> remNodes = new ArrayList<InteractionNode> ();
-			for (InteractionNode node : graph.getNodes()) {
+		for (var graph : InteractionGraphs.getInstance().getGraphs()) {
+			List<InteractionNode> remNodes = new ArrayList<>();
+			for (var node : graph.getNodes()) {
 				if (node.getProcletID().startsWith(procletID)) {
 					remNodes.add(node);
 				}
 			}
-			// remove from graph
-			for (InteractionNode node : remNodes) {
+			for (var node : remNodes) {
 				graph.deleteNode(node);
 			}
 		}
 	}
-	
+
 	// first calculateFailingArcs before REMOVAL!
 	public List<InteractionArc> calcFailingArcs () {
 		myLog.debug("CALCFAILINGARCS");
-		List<InteractionArc> failingArcs = new ArrayList<InteractionArc> ();
-		InteractionGraphs igraphs = InteractionGraphs.getInstance();
-		for (InteractionGraph graph : igraphs.getGraphs()) {
-			for (InteractionArc arc : graph.getArcs()) {
+		List<InteractionArc> failingArcs = new ArrayList<>();
+		for (var graph : InteractionGraphs.getInstance().getGraphs()) {
+			for (var arc : graph.getArcs()) {
 				myLog.debug("arc:" + arc);
-				if (arc.getHead().getProcletID().equals(this.procletID)  
+				if (arc.getHead().getProcletID().equals(this.procletID)
 						&& (arc.getArcState().equals(ArcState.UNPRODUCED) ||
 								arc.getArcState().equals(ArcState.SENT))) {
 					failingArcs.add(arc);
@@ -96,7 +92,7 @@ public class CompleteCaseDeleteCase {
 						arc.getArcState().equals(ArcState.UNPRODUCED)) {
 					failingArcs.add(arc);
 				}
-				if (arc.getTail().getProcletID().equals(this.procletID) 
+				if (arc.getTail().getProcletID().equals(this.procletID)
 						&& (arc.getArcState().equals(ArcState.EXECUTED_NONE) ||
 								arc.getArcState().equals(ArcState.EXECUTED_SOURCE))
 						&& arc.getHead().getProcletID().equals(this.procletID)) {
@@ -106,15 +102,14 @@ public class CompleteCaseDeleteCase {
 		}
 		return failingArcs;
 	}
-	
+
 	public List<EntityMID> emidsFromArcsNoDupl(List<InteractionArc> arcs) {
-		List<EntityMID> emids = new ArrayList<EntityMID>();
-		for (InteractionArc arc : arcs) {
-			EntityMID emid = arc.getEntityID().getEmid();
+		List<EntityMID> emids = new ArrayList<>();
+		for (var arc : arcs) {
+			var emid = arc.getEntityID().getEmid();
 			boolean exists = false;
-			for (EntityMID check : emids) {
+			for (var check : emids) {
 				if (check.getValue().equals(emid.getValue())) {
-					// already exists
 					exists = true;
 				}
 			}
@@ -124,64 +119,59 @@ public class CompleteCaseDeleteCase {
 		}
 		return emids;
 	}
-	
+
 	public List<Object> exceptionCase (List<EntityMID> emids, String classID) {
-		List<Object> returnList = new ArrayList<Object>();
+		List<Object> returnList = new ArrayList<>();
 
 		// get exception block
-		ProcletModels pmodels = ProcletModels.getInstance();
-		ProcletModel pmodel = pmodels.getProcletClass(classID);
-		ProcletBlock blockExc = pmodel.getBlock("exception");
-		WorkItemRecord wir = new WorkItemRecord(procletID,"exception",classID, "");
+		var pmodel = ProcletModels.getInstance().getProcletClass(classID);
+		var blockExc = pmodel.getBlock("exception");
+		var wir = new WorkItemRecord(procletID, "exception", classID, "");
 
 		returnList.add(emids);
 		returnList.add(wir);
 		returnList.add(blockExc);
 		return returnList;
 	}
-	
+
 	public void removalCaseCompletionCase () {
 		// check first if deletion is allowed
 		while (SingleInstanceClass.getInstance().isCaseBlocked(procletID)) {
 			try {
 				Thread.sleep(500);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 		SingleInstanceClass.getInstance().blockCase(procletID);
-		String classID = this.getClassIDfromGraphs();
-		List<InteractionArc> failingArcs = this.calcFailingArcs();
+		var classID = this.getClassIDfromGraphs();
+		var failingArcs = this.calcFailingArcs();
 
-			// set state of failing arcs to FAILED
-		for (InteractionArc arc : failingArcs) {
+		// set state of failing arcs to FAILED
+		for (var arc : failingArcs) {
 			arc.setArcState(ArcState.FAILED);
 		}
 		InteractionGraphs.getInstance().persistGraphs();
 
 		myLog.debug("failing arcs:" + failingArcs);
-		if (failingArcs.size() > 0) {
+		if (!failingArcs.isEmpty() && classID != null) {
 			myLog.debug("work needs to be done");
-			List<EntityMID> emids = this.emidsFromArcsNoDupl(failingArcs);
+			var emids = this.emidsFromArcsNoDupl(failingArcs);
 			myLog.debug("emids:" + emids);
-			List exceptionCase = this.exceptionCase(emids, classID);
+			var exceptionCase = this.exceptionCase(emids, classID);
 			myLog.debug("exception case:" + exceptionCase);
 			publishException(exceptionCase);
 
 			// take on from here
 			myLog.debug("handleException:" + classID + "," + this.procletID + "," + emids);
-			handleException(classID,this.procletID,"exception",emids); 
+			handleException(classID, this.procletID, "exception", emids);
 
 			// persist the graphs
-			InteractionGraphs igraphsInst = InteractionGraphs.getInstance();
-			igraphsInst.persistGraphs();
-		}
-		else {
+			InteractionGraphs.getInstance().persistGraphs();
+		} else {
 			// nothing to be done
 			myLog.debug("nothing to be done");
-
-		    // only remove nodes from the graph
+			// only remove nodes from the graph
 			InteractionGraphs.getInstance().persistGraphs();
 			myLog.debug("no affected emids because of completion case / removal case");
 		}
@@ -191,7 +181,7 @@ public class CompleteCaseDeleteCase {
 		InteractionGraphs.getNewInstance().deleteTempGraphsFromDB();
 		SingleInstanceClass.getInstance().unblockCase(procletID);
 	}
-	
+
 	private void handleException(String classID, String procletID, String blockID, List<EntityMID> emids) {
 		WorkItemRecord wir = null;
 		boolean ignore = false;
@@ -200,13 +190,11 @@ public class CompleteCaseDeleteCase {
 				Thread.sleep(500);
 				if (isExceptionCaseSelectedUser(classID, procletID, blockID)) {
 					break;
-				}
-				else if (isExceptionCaseSelectedUser("none", "none", blockID)) {
+				} else if (isExceptionCaseSelectedUser("none", "none", blockID)) {
 					ignore = true;
 					break;
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -214,10 +202,9 @@ public class CompleteCaseDeleteCase {
 		if (!emids.isEmpty() && !ignore) {
 
 			// first connect
-			Trigger trigger = new Trigger();
+			var trigger = new Trigger();
 			trigger.initiate();
 			while (true) {
-				String selectedEmidStr = "";
 				if (!firstPass) {
 					deleteAvailableEmidsCaseExceptionToUser(classID, procletID, blockID);
 					pushAvailableEmidsCaseExceptionToUser(classID, procletID, blockID, emids);
@@ -225,99 +212,81 @@ public class CompleteCaseDeleteCase {
 				trigger.send("BLAAT3");
 
 				// time check for selection
-				selectedEmidStr = trigger.receive();
+				var selectedEmidStr = trigger.receive();
 
-				// take selected one
-				// enter phase of editing graph
+				// take selected one - enter phase of editing graph
 				if (!selectedEmidStr.equals("EXIT")) {
 					EntityMID emidSel = null;
-					for (EntityMID emid : emids) {
+					for (var emid : emids) {
 						if (emid.getValue().equals(selectedEmidStr)) {
 							emidSel = emid;
 						}
 					}
-					String id = BlockCP.getUniqueID();
-					wir = new WorkItemRecord(procletID,blockID,classID, "");
-					ProcletModels pmodelsInst = ProcletModels.getInstance();
-					ProcletModel pmodel = pmodelsInst.getProcletClass(classID);
-					ProcletBlock block = pmodel.getBlock(blockID);
-					ProcessEntityMID pemid = new ProcessEntityMID(wir, block,
-							emidSel, id);
+					var id = BlockCP.getUniqueID();
+					wir = new WorkItemRecord(procletID, blockID, classID, "");
+					var pmodel = ProcletModels.getInstance().getProcletClass(classID);
+					var block = pmodel.getBlock(blockID);
+					var pemid = new ProcessEntityMID(wir, block, emidSel, id);
 
 					// process user request
 					pemid.initialGraphs(true);
-					InteractionGraphs igraphs2 = InteractionGraphs.getInstance();
-					igraphs2.persistGraphs();
+					InteractionGraphs.getInstance().persistGraphs();
 					while (true) {
-						List<List<List>> result = pemid.generateNextOptions(true);
-						List<List> ncrBlocks = pemid
-								.determineOptionsNonCrBlocks(result.get(1));
-						List<List<List>> options = new ArrayList<List<List>>();
+						var result = pemid.generateNextOptions(true);
+						var ncrBlocks = pemid.determineOptionsNonCrBlocks(result.get(1));
+						List<List<List>> options = new ArrayList<>();
 						options.add(result.get(0));
 						options.add(ncrBlocks);
 
-						// send this to user/ together with an update of the graph
+						// send this to user together with an update of the graph
 						ProcessEntityMID.deleteOptionsFromDB();
 						ProcessEntityMID.sendOptionsToDB(options);
 
-						// inform user that options are send
+						// inform user that options are sent
 						trigger.send("something");
 
-						// get answer back which is either commit or finish selection
-						String userDecision = trigger.receive();
+						// get answer back: either commit or finish selection
+						var userDecision = trigger.receive();
 
-						// transfer to user if ok then continue else start all over again
 						if (userDecision.equals("commit")) {
-
-							// commit button
 							boolean checks = pemid.doChecks();
 							if (checks) {
 								// checks ok
 								deleteEmidCaseExceptionToUser(selectedEmidStr);
 
-									// delete emid also from list
+								// delete emid also from list
 								EntityMID emidToRemove = null;
-								for (EntityMID emid : emids) {
+								for (var emid : emids) {
 									if (emid.getValue().equals(selectedEmidStr)) {
 										emidToRemove = emid;
-									}	
+									}
 								}
 								emids.remove(emidToRemove);
 								firstPass = true;
 
-									// commit graphs
-								InteractionGraphs igraphs = InteractionGraphs.getInstance();
-
-								// remove CP nodes from the interaction graph of the entity which have
-								// no incoming or outgoing arcs
-								for (InteractionGraph graph : igraphs.getGraphs()) {
+								// commit graphs - remove CP nodes with no incoming or outgoing arcs
+								var igraphs = InteractionGraphs.getInstance();
+								for (var graph : igraphs.getGraphs()) {
 									if (graph.getEntityMID().getValue().equals(emidToRemove.getValue() + "TEMP")) {
-
-										// find if there are outgoing CP arcs with no outgoing or incoming arcs
-										List<InteractionNode> nodesRemove = new ArrayList<InteractionNode>();
-										for (InteractionNode node : graph.getNodes()) {
+										List<InteractionNode> nodesRemove = new ArrayList<>();
+										for (var node : graph.getNodes()) {
 											boolean found = false;
-											for (InteractionArc arc : graph.getArcs()) {
-												if ((arc.getTail().getClassID().equals(node.getClassID()) && 
-														arc.getTail().getProcletID().equals(node.getProcletID()) && 
-														arc.getTail().getBlockID().equals(node.getBlockID())) || 
-														(arc.getHead().getClassID().equals(node.getClassID()) && 
-														arc.getHead().getProcletID().equals(node.getProcletID()) && 
+											for (var arc : graph.getArcs()) {
+												if ((arc.getTail().getClassID().equals(node.getClassID()) &&
+														arc.getTail().getProcletID().equals(node.getProcletID()) &&
+														arc.getTail().getBlockID().equals(node.getBlockID())) ||
+														(arc.getHead().getClassID().equals(node.getClassID()) &&
+														arc.getHead().getProcletID().equals(node.getProcletID()) &&
 														arc.getHead().getBlockID().equals(node.getBlockID()))) {
-													// found
 													found = true;
 													break;
 												}
 											}
 											if (!found) {
-
-													// remove node
 												nodesRemove.add(node);
 											}
 										}
-
-											// remove the nodes for the graph
-										for (InteractionNode node : nodesRemove) {
+										for (var node : nodesRemove) {
 											graph.deleteNode(node);
 										}
 									}
@@ -326,17 +295,14 @@ public class CompleteCaseDeleteCase {
 								// done removing nodes
 								igraphs.commitTempGraphEmid(emidToRemove.getValue());
 
-									// delete everything from DB
+								// delete everything from DB
 								ProcessEntityMID.deleteOptionsFromDB();
 								ProcessEntityMID.deleteDecisionsFromDB();
 								trigger.send("ok");
 								break;
-							}
-                            else {
-								// user continues or graphs are wrong
-								// put old graphs back
-								InteractionGraphs igraphs = InteractionGraphs
-										.getInstance();
+							} else {
+								// user continues or graphs are wrong - put old graphs back
+								var igraphs = InteractionGraphs.getInstance();
 								igraphs.deleteTempGraphs();
 								igraphs.deleteTempGraphsFromDB();
 								igraphs.persistGraphs();
@@ -348,37 +314,31 @@ public class CompleteCaseDeleteCase {
 								break;
 							}
 						} else if (userDecision.equals("finishSelection")) {
-							// finish button hitted
-							List decisions = ProcessEntityMID.getDecisionsFromDB();
+							// finish button pressed
+							var decisions = ProcessEntityMID.getDecisionsFromDB();
 							try {
 								pemid.extendGraph(decisions);
 
 								// commit temp graph
-								InteractionGraphs igraphs = InteractionGraphs.getInstance();
-								igraphs.persistGraphs();
+								InteractionGraphs.getInstance().persistGraphs();
 								ProcessEntityMID.deleteDecisionsFromDB();
 								trigger.send("something");
-							}
-							catch (Exception e) {
+							} catch (Exception e) {
 								e.printStackTrace();
 							}
 							// and continue building
 						}
-						else {
-							// nothing to be done
-						}
+						// else: nothing to be done
 					}
-					// get new id
-					String newID = pemid.getUID();
-					// update db
+					// get new id and update db
+					var newID = pemid.getUID();
 					BlockCP.updateUniqueID(newID);
 					pemid.commitGraphs();
-				}
-                else {
+				} else {
 					myLog.debug("EXIT received");
 					// "EXIT" received -> done - delete everything from DB
 					InteractionGraphs.getInstance().commitTempGraphs();
-					ProcessEntityMID.sendPerformatives(true,wir);
+					ProcessEntityMID.sendPerformatives(true, wir);
 					ProcessEntityMID.deleteOptionsFromDB();
 					ProcessEntityMID.deleteDecisionsFromDB();
 					trigger.close();
@@ -392,147 +352,139 @@ public class CompleteCaseDeleteCase {
 			CompleteCaseDeleteCase.deleteExceptionCaseSelected("none", "none", "exception");
 		}
 	}
-	
+
 	public static void publishException (List ec) {
 		List<EntityMID> emids = (List<EntityMID>) ec.get(0);
-		String emidsStr = "";
-		for (EntityMID emid : emids) {
-			emidsStr = emidsStr + emid.getValue() + ",";
+		var sb = new StringBuilder();
+		for (var emid : emids) {
+			if (!sb.isEmpty()) sb.append(',');
+			sb.append(emid.getValue());
 		}
-		emidsStr = emidsStr.substring(0, emidsStr.length()-1);
-        DBConnection.insert(new StoredItem((WorkItemRecord) ec.get(1), emidsStr,
-            Item.ExceptionCase));
+		DBConnection.insert(new StoredItem((WorkItemRecord) ec.get(1), sb.toString(),
+				Item.ExceptionCase));
 	}
-	
+
 	public static void deleteException (String classID, String procletID, String blockID) {
-        StoredItem item = DBConnection.getStoredItem(classID, procletID, blockID,
-                Item.ExceptionCase);
-        if (item != null) DBConnection.delete(item);
+		var item = DBConnection.getStoredItem(classID, procletID, blockID, Item.ExceptionCase);
+		if (item != null) DBConnection.delete(item);
 	}
 
-    public static List getExceptions () {
-        List resultFin = new ArrayList();
-        List items = DBConnection.getStoredItems(Item.ExceptionCase);
-        for (Object o : items) {
-            StoredItem item = (StoredItem) o;
-            String emidsStr = item.getEmid();
+	public static List getExceptions () {
+		List resultFin = new ArrayList();
+		List items = DBConnection.getStoredItems(Item.ExceptionCase);
+		for (Object o : items) {
+			var item = (StoredItem) o;
+			var emidsStr = item.getEmid();
 
-            // split the string
-            List<EntityMID> emids = new ArrayList<EntityMID>();
-            String[] split = emidsStr.split(",");
-            for (String t : split) {
-                emids.add(new EntityMID(t));
-            }
-            List result = new ArrayList();
-            result.add(emids);
-            result.add(item.getClassID());
-            result.add(item.getProcletID());
-            result.add(item.getBlockID());
-            resultFin.add(result);
-        }
-        return resultFin;
-    }
-	
+			// split the string
+			List<EntityMID> emids = new ArrayList<>();
+			for (var t : emidsStr.split(",")) {
+				emids.add(new EntityMID(t));
+			}
+			List result = new ArrayList();
+			result.add(emids);
+			result.add(item.getClassID());
+			result.add(item.getProcletID());
+			result.add(item.getBlockID());
+			resultFin.add(result);
+		}
+		return resultFin;
+	}
+
 	public static List<InteractionNode> getExceptionCasesSelected () {
-		List<InteractionNode> nodes = new ArrayList<InteractionNode>();
-        List items = DBConnection.getStoredItems(Item.ExceptionCaseSelection);
-        for (Object o : items) {
-            StoredItem item = (StoredItem) o;
-            if (item.isSelected()) {
-                nodes.add(item.newInteractionNode());
-            }
-        }
+		List<InteractionNode> nodes = new ArrayList<>();
+		List items = DBConnection.getStoredItems(Item.ExceptionCaseSelection);
+		for (Object o : items) {
+			var item = (StoredItem) o;
+			if (item.isSelected()) {
+				nodes.add(item.newInteractionNode());
+			}
+		}
 		return nodes;
 	}
-	
+
 	public static void publishExceptionCase(String classID, String procletID, String blockID) {
-        StoredItem item = new StoredItem(classID, procletID, blockID,
-                Item.ExceptionCaseSelection);
-        item.setSelected(true);
-        DBConnection.insert(item);
+		var item = new StoredItem(classID, procletID, blockID, Item.ExceptionCaseSelection);
+		item.setSelected(true);
+		DBConnection.insert(item);
 	}
-	
+
 	public static boolean isExceptionCaseSelectedUser(String classID, String procletID, String blockID) {
-        StoredItem item = DBConnection.getSelectedStoredItem(classID, procletID, blockID,
-                Item.ExceptionCaseSelection);
-        return (item != null);
+		var item = DBConnection.getSelectedStoredItem(classID, procletID, blockID,
+				Item.ExceptionCaseSelection);
+		return (item != null);
 	}
-	
+
 	public static void setExceptionCaseSelected(String classID, String procletID, String blockID) {
 		DBConnection.setStoredItemSelected(classID, procletID, blockID,
-                Item.ExceptionCaseSelection);
+				Item.ExceptionCaseSelection);
 	}
-	
+
 	public static InteractionNode getExceptionCaseSelected() {
-        List items = DBConnection.getStoredItems(Item.ExceptionCaseSelection);
-        for (Object o : items) {
-            if (((StoredItem) o).isSelected()) {
-                return ((StoredItem) o).newInteractionNode();
-            }
-        }
+		List items = DBConnection.getStoredItems(Item.ExceptionCaseSelection);
+		for (Object o : items) {
+			if (((StoredItem) o).isSelected()) {
+				return ((StoredItem) o).newInteractionNode();
+			}
+		}
 		return null;
 	}
-	
+
 	public static void deleteExceptionCaseSelected(String classID, String procletID, String blockID) {
-        StoredItem item = DBConnection.getStoredItem(classID, procletID, blockID, 
-                Item.ExceptionCaseSelection);
-        if (item != null) DBConnection.delete(item);
+		var item = DBConnection.getStoredItem(classID, procletID, blockID,
+				Item.ExceptionCaseSelection);
+		if (item != null) DBConnection.delete(item);
 	}
-	
+
 	private void pushAvailableEmidsCaseExceptionToUser(String classID, String procletID,
-                                                       String blockID, List<EntityMID> emids) {
-	    for (EntityMID emid : emids) {
-            DBConnection.insert(new StoredItem(classID, procletID, blockID, emid.getValue(),
-                    Item.EmidExceptionCaseSelection));
-        }
+	                                                    String blockID, List<EntityMID> emids) {
+		for (var emid : emids) {
+			DBConnection.insert(new StoredItem(classID, procletID, blockID, emid.getValue(),
+					Item.EmidExceptionCaseSelection));
+		}
 	}
-	
+
 	private void deleteEmidCaseExceptionToUser(String emidStr) {
-        String query = "delete from StoredItem as s where s.emid='" + emidStr +
-                "' and s.itemType=" + Item.EmidExceptionCaseSelection.ordinal();
-        DBConnection.execUpdate(query);
+		var query = "delete from StoredItem as s where s.emid='" + emidStr +
+				"' and s.itemType=" + Item.EmidExceptionCaseSelection.ordinal();
+		DBConnection.execUpdate(query);
 	}
-	
+
 	public static void deleteAllEmidsCaseExceptionToUser() {
 		DBConnection.deleteAll(Item.EmidExceptionCaseSelection);
 	}
-	
+
 	private void deleteAvailableEmidsCaseExceptionToUser(String classID, String procletID, String blockID) {
-        StoredItem item = DBConnection.getStoredItem(classID, procletID, blockID,
-                Item.EmidExceptionCaseSelection);
-        if (item != null) DBConnection.delete(item);
-	}
-	
-	public static List<EntityMID> getAvailableEmidsCaseExceptionToUser() {
-		List<EntityMID> emidList = new ArrayList<EntityMID>();
-        List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelection);
-        for (Object o : items) {
-            emidList.add(((StoredItem) o).newEntityMID());
-        }
-		return emidList;
-	}
-	
-	public static void setEmidSelectedCaseException(EntityMID emid) {
-        List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelection);
-        for (Object o : items) {
-            StoredItem item = (StoredItem) o;
-            if (item.getEmid().equals(emid.getValue())) {
-                item.setSelected(true);
-                DBConnection.update(item);
-            }
-        }
+		var item = DBConnection.getStoredItem(classID, procletID, blockID,
+				Item.EmidExceptionCaseSelection);
+		if (item != null) DBConnection.delete(item);
 	}
 
-	
-	public static void main(String [] args) { 
-//		String test = "1";
-//		String[] split = test.split(",");
-//		for (int i=0; i<split.length; i++) {
-//			String t = split[i];
-//		}
-		CompleteCaseDeleteCase.deleteException("visit","p2","exception");
+	public static List<EntityMID> getAvailableEmidsCaseExceptionToUser() {
+		List<EntityMID> emidList = new ArrayList<>();
+		List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelection);
+		for (Object o : items) {
+			emidList.add(((StoredItem) o).newEntityMID());
+		}
+		return emidList;
+	}
+
+	public static void setEmidSelectedCaseException(EntityMID emid) {
+		List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelection);
+		for (Object o : items) {
+			var item = (StoredItem) o;
+			if (item.getEmid().equals(emid.getValue())) {
+				item.setSelected(true);
+				DBConnection.update(item);
+			}
+		}
+	}
+
+
+	public static void main(String [] args) {
+		CompleteCaseDeleteCase.deleteException("visit", "p2", "exception");
 		List exc = CompleteCaseDeleteCase.getExceptions();
 		System.out.println();
 	}
-	
+
 }

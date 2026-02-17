@@ -7,8 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -41,11 +39,8 @@ import java.util.Set;
 public class CsrfProtectionFilter implements Filter {
     
 
-    private static final Logger logger = LogManager.getLogger(CsrfProtectionFilter.class);
     private static final Logger _logger = LogManager.getLogger(CsrfProtectionFilter.class);
-    private static final Set<String> SAFE_METHODS = new HashSet<>(
-        Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE")
-    );
+    private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
     
     private Set<String> excludedPaths = new HashSet<>();
     
@@ -64,12 +59,12 @@ public class CsrfProtectionFilter implements Filter {
      */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        String excluded = filterConfig.getInitParameter("excludedPaths");
-        if (excluded != null && !excluded.trim().isEmpty()) {
-            String[] paths = excluded.split(",");
+        var excluded = filterConfig.getInitParameter("excludedPaths");
+        if (excluded != null && !excluded.isBlank()) {
+            var paths = excluded.split(",");
             for (String path : paths) {
-                String trimmed = path.trim();
-                if (!trimmed.isEmpty()) {
+                var trimmed = path.strip();
+                if (!trimmed.isBlank()) {
                     excludedPaths.add(trimmed);
                 }
             }
@@ -97,8 +92,8 @@ public class CsrfProtectionFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        var httpRequest = (HttpServletRequest) request;
+        var httpResponse = (HttpServletResponse) response;
         
         if (SAFE_METHODS.contains(httpRequest.getMethod())) {
             chain.doFilter(request, response);
@@ -148,12 +143,12 @@ public class CsrfProtectionFilter implements Filter {
                                      .toLowerCase();              // Case-insensitive matching
         
         for (String excluded : excludedPaths) {
-            if (excluded == null || excluded.isEmpty()) {
+            if (excluded == null || excluded.isBlank()) {
                 continue;
             }
-            String normalizedExcluded = excluded.trim()
-                                               .replaceAll("//+", "/")
-                                               .toLowerCase();
+            var normalizedExcluded = excluded.strip()
+                                             .replaceAll("//+", "/")
+                                             .toLowerCase();
             if (normalizedPath.startsWith(normalizedExcluded)) {
                 return true;
             }

@@ -564,15 +564,15 @@ public class WorkItemRecord implements Cloneable {
 
     private String attributeTableToString() {
         if (_attributeTable == null || _attributeTable.isEmpty()) {
-            return new String();  // Return empty but valid XML attribute string
+            return String.valueOf(new char[0]);  // empty XML attribute string - no attributes present
         }
 
-        StringBuilder xml = new StringBuilder();
-        for (String key : _attributeTable.keySet()) {
+        var xml = new StringBuilder();
+        for (var entry : _attributeTable.entrySet()) {
             xml.append(" ")
-               .append(key)
+               .append(entry.getKey())
                .append("=\"")
-               .append(JDOMUtil.encodeAttributeEscapes(_attributeTable.get(key)))
+               .append(JDOMUtil.encodeAttributeEscapes(entry.getValue()))
                .append("\"");
         }
         return xml.toString();
@@ -635,7 +635,7 @@ public class WorkItemRecord implements Cloneable {
 
 
     private void set_extendedAttributes(String attrStr) {
-        _attributeTable = new HashMap<String, String>();
+        _attributeTable = new HashMap<>();
 
         // split into key, value, key, value, ...
         String[] attributes = attrStr.split("\\s*=\\s*\"|\\s*\"\\s*");

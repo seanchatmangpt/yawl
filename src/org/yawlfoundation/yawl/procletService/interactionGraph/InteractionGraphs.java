@@ -46,7 +46,7 @@ public class InteractionGraphs {
 	private String interactionArcTN = "interactionarc";
 	
 	private static InteractionGraphs igraphs = null;
-	private List<InteractionGraph> igraphsList = new ArrayList<InteractionGraph> ();
+	private List<InteractionGraph> igraphsList = new ArrayList<>();
 	
 	private Logger myLog = LogManager.getLogger(InteractionGraphs.class);
 	

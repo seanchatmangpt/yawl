@@ -315,17 +315,17 @@ public class YawlMcpClient implements AutoCloseable {
                 + " v" + serverInfo.version());
 
             System.out.println("\nAvailable tools:");
-            for (McpSchema.Tool tool : client.listTools()) {
+            for (var tool : client.listTools()) {
                 System.out.println("  - " + tool.name() + ": " + tool.description());
             }
 
             System.out.println("\nAvailable resources:");
-            for (McpSchema.Resource resource : client.listResources()) {
+            for (var resource : client.listResources()) {
                 System.out.println("  - " + resource.uri() + ": " + resource.description());
             }
 
             System.out.println("\nAvailable prompts:");
-            for (McpSchema.Prompt prompt : client.listPrompts()) {
+            for (var prompt : client.listPrompts()) {
                 System.out.println("  - " + prompt.name() + ": " + prompt.description());
             }
         } finally {

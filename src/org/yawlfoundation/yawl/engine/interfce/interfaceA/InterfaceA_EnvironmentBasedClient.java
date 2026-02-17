@@ -155,13 +155,13 @@ public class InterfaceA_EnvironmentBasedClient extends Interface_Client {
      * @return the set of active yawl services
      */
     public Set<YAWLServiceReference> getRegisteredYAWLServices(String sessionHandle) {
-        Set<YAWLServiceReference> result = new HashSet<YAWLServiceReference>();
+        Set<YAWLServiceReference> result = new HashSet<>();
         try {
             String xml = getRegisteredYAWLServicesAsXML(sessionHandle);
             if (xml != null && successful(xml)) {
-                Document doc = JDOMUtil.stringToDocument(xml);
+                var doc = JDOMUtil.stringToDocument(xml);
 
-                for (Element service : doc.getRootElement().getChildren()) {
+                for (var service : doc.getRootElement().getChildren()) {
                     result.add(YAWLServiceReference.unmarshal(JDOMUtil.elementToString(service)));
                 }
             }
@@ -307,14 +307,14 @@ public class InterfaceA_EnvironmentBasedClient extends Interface_Client {
      * @throws IOException if bad connection.
      */
     public Set<YExternalClient> getClientAccounts(String sessionHandle) throws IOException {
-        Set<YExternalClient> accounts = new HashSet<YExternalClient>();
-        Map<String, String> params = prepareParamMap("getAccounts", sessionHandle);
+        Set<YExternalClient> accounts = new HashSet<>();
+        var params = prepareParamMap("getAccounts", sessionHandle);
         String result = executeGet(_backEndURIStr, params);
 
         if (successful(result)) {
-            Document doc = JDOMUtil.stringToDocument(result);
+            var doc = JDOMUtil.stringToDocument(result);
             if (doc != null) {
-                for (Element e : doc.getRootElement().getChildren()) {
+                for (var e : doc.getRootElement().getChildren()) {
                     accounts.add(new YExternalClient(e));
                 }
             }

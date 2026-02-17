@@ -35,27 +35,27 @@ import java.util.*;
  */
 public class YParametersSchema {
 
-    private Map<String, YParameter> _inputParams = new HashMap<String, YParameter>();
-    private Map<String, YParameter> _outputParams = new HashMap<String, YParameter>();
+    private Map<String, YParameter> _inputParams = new HashMap<>();
+    private Map<String, YParameter> _outputParams = new HashMap<>();
     private String _formalInputParam;
 
 
     public List<YParameter> getInputParams() {
-        List<YParameter> list = new ArrayList<YParameter>(_inputParams.values());
+        var list = new ArrayList<YParameter>(_inputParams.values());
         Collections.sort(list);
         return list;
     }
 
 
     public List<YParameter> getOutputParams() {
-        List<YParameter> list = new ArrayList<YParameter>(_outputParams.values());
+        var list = new ArrayList<YParameter>(_outputParams.values());
         Collections.sort(list);
         return list;
     }
 
 
     public List<YParameter> getInputOnlyParams() {
-        List<YParameter> inputOnlyList = new ArrayList<YParameter>();
+        var inputOnlyList = new ArrayList<YParameter>();
         for (YParameter param : getInputParams()) {
              if (! _outputParams.containsKey(param.getName())) {
                 inputOnlyList.add(param);
@@ -66,7 +66,7 @@ public class YParametersSchema {
 
 
     public List<YParameter> getOutputOnlyParams() {
-        List<YParameter> outputOnlyList = new ArrayList<YParameter>();
+        var outputOnlyList = new ArrayList<YParameter>();
         for (YParameter param : getOutputParams()) {
              if (! _inputParams.containsKey(param.getName())) {
                 outputOnlyList.add(param);
@@ -77,7 +77,7 @@ public class YParametersSchema {
 
 
     public List<YParameter> getInputOutputParams() {
-        List<YParameter> inputOutputList = new ArrayList<YParameter>();
+        var inputOutputList = new ArrayList<YParameter>();
         for (YParameter param : getInputParams()) {
              if (_outputParams.containsKey(param.getName())) {
                 inputOutputList.add(param);

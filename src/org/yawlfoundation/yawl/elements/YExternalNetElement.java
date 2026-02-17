@@ -151,7 +151,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of succeeding elements
      */
     public Set<YExternalNetElement> getPostsetElements() {
-        Set<YExternalNetElement> postsetElements = new HashSet<YExternalNetElement>();
+        var postsetElements = new HashSet<YExternalNetElement>();
         for (YFlow flow : _postsetFlows.values()) {
             postsetElements.add(flow.getNextElement());
         }
@@ -164,7 +164,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of preceding elements
      */
     public Set<YExternalNetElement> getPresetElements() {
-        Set<YExternalNetElement> presetElements = new HashSet<YExternalNetElement>();
+        var presetElements = new HashSet<YExternalNetElement>();
         for (YFlow flow : _presetFlows.values()) {
             presetElements.add(flow.getPriorElement());
         }
@@ -376,15 +376,15 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
             throw new RuntimeException();
         }
 
-        copy._postsetFlows = new HashMap<String, YFlow>();
-        copy._presetFlows = new HashMap<String, YFlow>();
+        copy._postsetFlows = new HashMap<>();
+        copy._presetFlows = new HashMap<>();
         for (YFlow flow : _postsetFlows.values()) {
             String nextElmID = flow.getNextElement().getID();
             YExternalNetElement nextElemClone = copy._net.getNetElement(nextElmID);
             if (nextElemClone == null) {
                 nextElemClone = (YExternalNetElement) flow.getNextElement().clone();
             }
-            YFlow clonedFlow = new YFlow(copy, nextElemClone);
+            var clonedFlow = new YFlow(copy, nextElemClone);
             clonedFlow.setEvalOrdering(flow.getEvalOrdering());
             clonedFlow.setIsDefaultFlow(flow.isDefaultFlow());
             clonedFlow.setXpathPredicate(flow.getXpathPredicate());
@@ -402,7 +402,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
             xml.append(StringUtil.wrapEscaped(_documentation, "documentation"));
 
         // using for(;;) to avoid concurrent modification exception with foreach
-        List<YFlow> postSetFlows = new ArrayList<YFlow>(_postsetFlows.values());
+        var postSetFlows = new ArrayList<YFlow>(_postsetFlows.values());
         for (int i = 0; i < postSetFlows.size(); i++) {
             YFlow flow = postSetFlows.get(i);
             String flowsToXML = flow.toXML();

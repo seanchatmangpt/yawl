@@ -53,7 +53,7 @@ public enum YEngineEvent {
     public boolean isBroadcast() { return _broadcast; }
 
     public static YEngineEvent fromString(String s) {
-        for (YEngineEvent event : YEngineEvent.values()) {
+        for (var event : YEngineEvent.values()) {
             if (event.label().equals(s)) {
                 return event;
             }

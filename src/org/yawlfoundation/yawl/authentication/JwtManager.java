@@ -38,7 +38,6 @@ import java.util.Date;
 public class JwtManager {
     
 
-    private static final Logger logger = LogManager.getLogger(JwtManager.class);
     private static final Logger _logger = LogManager.getLogger(JwtManager.class);
     private static final SecretKey KEY = loadSigningKey();
     private static final long EXPIRATION_HOURS = 24;

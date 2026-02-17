@@ -27,7 +27,6 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import javax.xml.XMLConstants;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -42,13 +41,13 @@ import java.util.*;
 class YSpecificationParser {
     private YSpecification _specification;
     private YDecompositionParser[] _decompositionParser;
-    private Map<String, String> _decompAndTypeMap = new HashMap<String, String>();
+    private Map<String, String> _decompAndTypeMap = new HashMap<>();
     private Namespace _yawlNS;
-    private List<String> _emptyComplexTypeFlagTypes = new ArrayList<String>();
+    private List<String> _emptyComplexTypeFlagTypes = new ArrayList<>();
 
     private static final String _schema4SchemaURI = XMLConstants.W3C_XML_SCHEMA_NS_URI;
     private static final String _defaultSchema =
-                           "<xs:schema xmlns:xs=\"" + _schema4SchemaURI + "\"/>";
+            "<xs:schema xmlns:xs=\"" + _schema4SchemaURI + "\"/>";
 
     static final String INITIAL_VERSION = "0.1";              // initial spec version
 
@@ -69,15 +68,13 @@ class YSpecificationParser {
 
     private void parseSpecification(Element specificationElem, YSchemaVersion version)
             throws YSyntaxException {
-        List<Element> decompositionElems =
-                specificationElem.getChildren("decomposition", _yawlNS);
-        for (Element decompositionElem : decompositionElems) {
-            Namespace xsiNameSpc = decompositionElem.getNamespace("xsi");
-            String decompID = decompositionElem.getAttributeValue("id");
-            Attribute type = decompositionElem.getAttribute("type", xsiNameSpc);
+        var decompositionElems = specificationElem.getChildren("decomposition", _yawlNS);
+        for (var decompositionElem : decompositionElems) {
+            var xsiNameSpc = decompositionElem.getNamespace("xsi");
+            var decompID = decompositionElem.getAttributeValue("id");
+            var type = decompositionElem.getAttribute("type", xsiNameSpc);
             if (type != null) {
-                String decompType = type.getValue();
-                _decompAndTypeMap.put(decompID, decompType);
+                _decompAndTypeMap.put(decompID, type.getValue());
             }
         }
         String uriString = specificationElem.getAttributeValue("uri");
@@ -192,9 +189,8 @@ class YSpecificationParser {
         }
 
         String version = metaDataElem.getChildText("version", _yawlNS);
-        if(version != null && version.trim().length() > 0)
-        {
-            metaData.setVersion(new YSpecVersion(version.trim()));
+        if (version != null && !version.isBlank()) {
+            metaData.setVersion(new YSpecVersion(version.strip()));
         }
         else metaData.setVersion(new YSpecVersion(INITIAL_VERSION));
 
@@ -204,17 +200,8 @@ class YSpecificationParser {
          *      a custom service processing workitems from this specification needs to perform any
          *      "persistence" activities.
          */
-        {
-            String persistentText = metaDataElem.getChildText("persistent", _yawlNS);
-            if (persistentText == null)
-            {
-                metaData.setPersistent(false);
-            }
-            else
-            {
-                metaData.setPersistent(persistentText.trim().equalsIgnoreCase("TRUE"));
-            }
-        }
+        var persistentText = metaDataElem.getChildText("persistent", _yawlNS);
+        metaData.setPersistent(persistentText != null && persistentText.strip().equalsIgnoreCase("TRUE"));
 
         String uniqueID = metaDataElem.getChildText("identifier", _yawlNS);
         if (uniqueID != null)
@@ -260,12 +247,11 @@ class YSpecificationParser {
     }
 
     private void linkDecompositions() {
-        for (YDecompositionParser parser : _decompositionParser) {
-            Map<YTask, String> decomposesToIDs = parser.getDecomposesToIDs();
-            for (YTask task : decomposesToIDs.keySet()) {
-                String decompID = decomposesToIDs.get(task);
-                YDecomposition implementation = _specification.getDecomposition(decompID);
-                task.setDecompositionPrototype(implementation);
+        for (var parser : _decompositionParser) {
+            var decomposesToIDs = parser.getDecomposesToIDs();
+            for (var entry : decomposesToIDs.entrySet()) {
+                var implementation = _specification.getDecomposition(entry.getValue());
+                entry.getKey().setDecompositionPrototype(implementation);
             }
         }
     }

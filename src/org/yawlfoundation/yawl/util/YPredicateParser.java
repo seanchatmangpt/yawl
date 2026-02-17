@@ -129,11 +129,7 @@ public class YPredicateParser {
      */
     protected String namesToCSV(Set<String> names) {
         if (names == null) return "Nil";
-        String csv = "" ;
-        for (String name : names) {
-             csv += name + ", ";
-        }
-        return csv;
+        return String.join(", ", names);
     }
 
 

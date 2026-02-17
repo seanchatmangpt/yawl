@@ -50,8 +50,8 @@ public class CaseImporter {
 
     public int add(String caseListXML) throws YEngineStateException, YPersistenceException {
         XNode root = parse(caseListXML);
-        List<YNetRunner> runners = new ArrayList<YNetRunner>();
-        List<YWorkItem> workitems = new ArrayList<YWorkItem>();
+        var runners = new ArrayList<YNetRunner>();
+        var workitems = new ArrayList<YWorkItem>();
         for (XNode caseNode : root.getChildren()) {
             runners.addAll(makeRunnerList(caseNode));
             workitems.addAll(makeWorkItemList(caseNode));
@@ -95,10 +95,9 @@ public class CaseImporter {
         if (nRunnerList == null) {
             throw new YEngineStateException("No net runners found to import for case");
         }
-        List<YNetRunner> allRunners = new ArrayList<YNetRunner>();
-        List<YIdentifier> parents = new ArrayList<YIdentifier>();
-        Map<String, Set<YIdentifier>> parentChildMap =
-                new HashMap<String, Set<YIdentifier>>();
+        var allRunners = new ArrayList<YNetRunner>();
+        var parents = new ArrayList<YIdentifier>();
+        Map<String, Set<YIdentifier>> parentChildMap = new HashMap<>();
         for (XNode nRunner : nRunnerList.getChildren()) {
             YNetRunner runner = makeRunner(nRunner);
             allRunners.add(runner);
@@ -138,9 +137,9 @@ public class CaseImporter {
         if (nWIList == null) {
             throw new YEngineStateException("No workitems found to import for case");
         }
-        Map<String, Set<YWorkItem>> parentChildMap = new HashMap<String, Set<YWorkItem>>();
-        Set<YWorkItem> parents = new HashSet<YWorkItem>();
-        List<YWorkItem> allItems = new ArrayList<YWorkItem>();
+        Map<String, Set<YWorkItem>> parentChildMap = new HashMap<>();
+        var parents = new HashSet<YWorkItem>();
+        var allItems = new ArrayList<YWorkItem>();
         for (XNode nItem : nWIList.getChildren()) {
             YWorkItem item = makeWorkItem(nItem);
             allItems.add(item);
@@ -178,12 +177,7 @@ public class CaseImporter {
 
     private <T> void addChild(Map<String, Set<T>> parentChildMap, String parentID, T child) {
         if (parentID != null) {
-            Set<T> children = parentChildMap.get(parentID);
-            if (children == null) {
-                children = new HashSet<T>();
-                parentChildMap.put(parentID, children);
-            }
-            children.add(child);
+            parentChildMap.computeIfAbsent(parentID, k -> new HashSet<>()).add(child);
         }
     }
 
@@ -209,7 +203,7 @@ public class CaseImporter {
             String pid = parent.getId();
             Set<YIdentifier> children = parentChildMap.get(pid);
             if (children != null) {
-                parent.set_children(new Vector<YIdentifier>(children));
+                parent.set_children(new ArrayList<>(children));
                 for (YIdentifier child : children) {
                     child.set_parent(parent);
                 }
@@ -240,7 +234,7 @@ public class CaseImporter {
 
 
     private Map<String,String> makeTimerStates(XNode nStates) {
-        Map<String,String> stateMap = new HashMap<String, String>();
+        var stateMap = new HashMap<String, String>();
         for (XNode nState : nStates.getChildren()) {
              stateMap.put(nState.getChildText("taskName"),
                      nState.getChildText("state"));
@@ -252,7 +246,7 @@ public class CaseImporter {
     private YIdentifier makeIdentifier(XNode nIdentifier) {
         YIdentifier id = new YIdentifier(nIdentifier.getAttributeValue("id"));
         XNode nLocations = nIdentifier.getChild("locations");
-        List<String> locations = new ArrayList<String>();
+        var locations = new ArrayList<String>();
         for (XNode nLocation : nLocations.getChildren()) {
             locations.add(nLocation.getText());
         }
@@ -260,7 +254,7 @@ public class CaseImporter {
 
         XNode nChildren = nIdentifier.getChild("children");
         if (nChildren != null) {
-            List<YIdentifier> list = new ArrayList<YIdentifier>();
+            var list = new ArrayList<YIdentifier>();
             for (XNode nChild : nChildren.getChildren()) {
                 YIdentifier childID = makeIdentifier(nChild);
                 childID.set_parent(id);
@@ -315,8 +309,8 @@ public class CaseImporter {
 
 
     private Set<String> toSet(XNode node) {
-        Set<String> set = new HashSet<String>();
-        for (XNode child : node.getChildren()) {
+        var set = new HashSet<String>();
+        for (var child : node.getChildren()) {
             set.add(child.getText());
         }
         return set;
@@ -324,7 +318,7 @@ public class CaseImporter {
 
 
     private Set<String> getBusyTaskNames(XNode node) {
-        Set<String> taskNames = new HashSet<String>();
+        var taskNames = new HashSet<String>();
         for (XNode nTask : node.getChildren()) {
             taskNames.add(nTask.getChild("name").getText());
 

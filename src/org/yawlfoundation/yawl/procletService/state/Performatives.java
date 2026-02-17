@@ -95,45 +95,36 @@ public class Performatives {
 	
 	public static List<Performative> createPerformatives (List<List<List>> relationExtsList, List dataRels, WorkItemRecord wir) {
 		myLog.debug("CREATEPERFORMATIVES");
-		List<Performative> perfs = new ArrayList<Performative> ();
-		for (List<List> rl : relationExtsList) {
-			List relationExt = rl.get(0);
+		List<Performative> perfs = new ArrayList<>();
+		for (var rl : relationExtsList) {
+			var relationExt = rl.get(0);
 			String sender = (String) relationExt.get(5);
-			//String receiver = (String) relationExt.get(3);
-			// determine receivers
-			// 20022010
-			List<String> receivers = new ArrayList<String>();
-			for (List relationExt1 : rl) {
+			List<String> receivers = new ArrayList<>();
+			for (var relationExt1 : rl) {
 				String receiver = (String) relationExt1.get(3);
-				// 09032010
 				// do not add if already in
 				if (!receivers.contains(receiver)) {
 					receivers.add(receiver);
 				}
 			}
-			ProcletPort port = (ProcletPort) relationExt.get(4);
-			PortConnection pconn = PortConnections.getInstance().getPortConnectionIPort(port.getPortID());
-			List<EntityID> eids =  new ArrayList();
-			for (List relation : rl) {
-				EntityID eid = (EntityID) relation.get(1);
-				eids.add(eid);
+			var port = (ProcletPort) relationExt.get(4);
+			var pconn = PortConnections.getInstance().getPortConnectionIPort(port.getPortID());
+			List<EntityID> eids = new ArrayList<>();
+			for (var relation : rl) {
+				eids.add((EntityID) relation.get(1));
 			}
-			// create performative
-			// calculate content
-			// assume unique emid for eids
-			String content = calculateContent(eids,wir);
-			Performative perf = new Performative(pconn.getChannel(),sender,receivers,"",content,
-					"",ProcletPort.Direction.OUT,eids);
+			// create performative - calculate content assuming unique emid for eids
+			var content = calculateContent(eids, wir);
+			var perf = new Performative(pconn.getChannel(), sender, receivers, "", content,
+					"", ProcletPort.Direction.OUT, eids);
 			myLog.debug("perf:" + perf);
 			myLog.debug("perfs:" + perfs);
-			// 20022010
 			// if perf has multiple receivers, duplicate
-			if (receivers.size()>1) {
-				for (int i=0; i<receivers.size()-1;i++) {
-					Performative perfNew = new Performative(perf.getChannel(),perf.getSender(),perf.getReceivers(),
-							perf.getAction(),perf.getContent(),perf.getScope(),perf.getDirection(),
-							perf.getEntityIDs());
-					perfs.add(perfNew);
+			if (receivers.size() > 1) {
+				for (int i = 0; i < receivers.size() - 1; i++) {
+					perfs.add(new Performative(perf.getChannel(), perf.getSender(), perf.getReceivers(),
+							perf.getAction(), perf.getContent(), perf.getScope(), perf.getDirection(),
+							perf.getEntityIDs()));
 				}
 			}
 			perfs.add(perf);
@@ -143,14 +134,11 @@ public class Performatives {
 	}
 	
 	public static List<EntityID> parseEntityIDsStr(String eidsStr) {
-		List<EntityID> eids = new ArrayList<EntityID> ();
-		if (!eidsStr.equals("")) {
-			String[] split = eidsStr.split(",");
-			for (int i=0; i<split.length;i=i+2) {
-				String first = split[i];
-				String second = split[i+1];
-				EntityID eid = new EntityID(first,second);
-				eids.add(eid);
+		List<EntityID> eids = new ArrayList<>();
+		if (!eidsStr.isBlank()) {
+			var split = eidsStr.split(",");
+			for (int i = 0; i < split.length; i += 2) {
+				eids.add(new EntityID(split[i], split[i + 1]));
 			}
 		}
 		return eids;
@@ -252,14 +240,12 @@ public class Performatives {
 	}
 	
 	public static String parseEntityIDs (List<EntityID> eids) {
-		String returnString = "";
-		for (EntityID eid : eids) {
-			returnString = returnString + eid + ",";
+		var sb = new StringBuilder();
+		for (var eid : eids) {
+			if (!sb.isEmpty()) sb.append(',');
+			sb.append(eid);
 		}
-		if (returnString.length()>0) {
-			returnString = returnString.substring(0, returnString.length()-1);
-		}
-		return returnString;
+		return sb.toString();
 	}
 	
 	public boolean buildFromDB() {
@@ -277,14 +263,8 @@ public class Performatives {
 	
 	public void persistPerformatives () {
 		this.deletePerfsFromDB();
-		for (Performative perf : perfs) {
-			String receiversStr = "";
-			for (String receiverStr : perf.getReceivers()) {
-				receiversStr = receiversStr + receiverStr + ",";
-			}
-			// remove last comma
-			receiversStr = receiversStr.substring(0, receiversStr.length()-1);
-
+		for (var perf : perfs) {
+			String receiversStr = String.join(",", perf.getReceivers());
             DBConnection.insert(new StoredPerformative(perf.getTime(),
 				perf.getChannel(), perf.getSender(), receiversStr,
 				perf.getAction(), perf.getContent(),

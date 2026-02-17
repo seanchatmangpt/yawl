@@ -201,28 +201,24 @@ public class YEventLogger {
     public void logSubNetCreated(final YSpecificationID ySpecID,
                                  final YNetRunner runner, final String engineTaskID, final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    // get the required foreign key values
-                    YIdentifier subnetID = runner.getCaseID();
-                    long netID = YEventLogger.this.getNetID(ySpecID, runner.getNet().getID());
-                    long taskID = YEventLogger.this.getTaskID(ySpecID, engineTaskID, netID);
-                    long rootNetInstanceID = YEventLogger.this.getRootNetInstanceID(subnetID);
+            _executor.execute(() -> {
+                // get the required foreign key values
+                YIdentifier subnetID = runner.getCaseID();
+                long netID = getNetID(ySpecID, runner.getNet().getID());
+                long taskID = getTaskID(ySpecID, engineTaskID, netID);
+                long rootNetInstanceID = getRootNetInstanceID(subnetID);
 
-                    // log the composite task enablement first
-                    long parentTaskInstanceID = YEventLogger.this.getTaskInstanceID(subnetID, taskID);
-                    if (parentTaskInstanceID < 0) {
-                        parentTaskInstanceID = YEventLogger.this.insertTaskInstance(subnetID.toString(),
-                                taskID, -1, YEventLogger.this.getNetInstanceID(subnetID.getParent()));
-                    }
-                    YEventLogger.this.logEvent(parentTaskInstanceID, NET_UNFOLD, null, -1, rootNetInstanceID);
-
-                    // now log the subnet launch
-                    long netInstanceID = YEventLogger.this.insertNetInstance(subnetID, netID,
-                            parentTaskInstanceID);
-                    YEventLogger.this.logEvent(netInstanceID, NET_START, datalist, -1, rootNetInstanceID);
+                // log the composite task enablement first
+                long parentTaskInstanceID = getTaskInstanceID(subnetID, taskID);
+                if (parentTaskInstanceID < 0) {
+                    parentTaskInstanceID = insertTaskInstance(subnetID.toString(),
+                            taskID, -1, getNetInstanceID(subnetID.getParent()));
                 }
+                logEvent(parentTaskInstanceID, NET_UNFOLD, null, -1, rootNetInstanceID);
+
+                // now log the subnet launch
+                long netInstanceID = insertNetInstance(subnetID, netID, parentTaskInstanceID);
+                logEvent(netInstanceID, NET_START, datalist, -1, rootNetInstanceID);
             });
         }
     }
@@ -237,15 +233,12 @@ public class YEventLogger {
     public void logCaseCancelled(final YIdentifier caseID,
                                  final YLogDataItemList datalist, final String serviceRef) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    long netInstanceID = YEventLogger.this.getNetInstanceID(caseID);
-                    long serviceID = YEventLogger.this.getServiceID(serviceRef);
-                    YEventLogger.this.logEvent(netInstanceID, CASE_CANCEL, datalist, serviceID,
-                            YEventLogger.this.getRootNetInstanceID(caseID));
-                    _keyCache.removeCase(caseID);
-                }
+            _executor.execute(() -> {
+                long netInstanceID = getNetInstanceID(caseID);
+                long serviceID = getServiceID(serviceRef);
+                logEvent(netInstanceID, CASE_CANCEL, datalist, serviceID,
+                        getRootNetInstanceID(caseID));
+                _keyCache.removeCase(caseID);
             });
         }
     }
@@ -260,23 +253,19 @@ public class YEventLogger {
     public void logNetCompleted(final YIdentifier engineNetID,
                                 final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    String event;
-                    long rootNetInstanceID = YEventLogger.this.getRootNetInstanceID(engineNetID);
-                    long netInstanceID = YEventLogger.this.getNetInstanceID(engineNetID);
+            _executor.execute(() -> {
+                long rootNetInstanceID = getRootNetInstanceID(engineNetID);
+                long netInstanceID = getNetInstanceID(engineNetID);
 
-                    // a root net has no parent
-                    if (engineNetID.getParent() != null) {
-                        event = NET_COMPLETE;
-                    }
-                    else {
-                        event = CASE_COMPLETE;
-                        _keyCache.removeCase(engineNetID);
-                    }
-                    YEventLogger.this.logEvent(netInstanceID, event, datalist, -1, rootNetInstanceID);
+                // a root net has no parent
+                String event;
+                if (engineNetID.getParent() != null) {
+                    event = NET_COMPLETE;
+                } else {
+                    event = CASE_COMPLETE;
+                    _keyCache.removeCase(engineNetID);
                 }
+                logEvent(netInstanceID, event, datalist, -1, rootNetInstanceID);
             });
         }
     }
@@ -285,20 +274,16 @@ public class YEventLogger {
      public void logNetCancelled(final YSpecificationID ySpecID, final YNetRunner runner,
                                  final String engineTaskID, final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    // get the required foreign key values
-                    YIdentifier subnetID = runner.getCaseID();
-                    long netID = YEventLogger.this.getNetID(ySpecID, runner.getNet().getID());
-                    long taskID = YEventLogger.this.getTaskID(ySpecID, engineTaskID, netID);
-                    long rootNetInstanceID = YEventLogger.this.getRootNetInstanceID(subnetID);
+            _executor.execute(() -> {
+                // get the required foreign key values
+                YIdentifier subnetID = runner.getCaseID();
+                long netID = getNetID(ySpecID, runner.getNet().getID());
+                long taskID = getTaskID(ySpecID, engineTaskID, netID);
+                long rootNetInstanceID = getRootNetInstanceID(subnetID);
 
-                    // log the composite task cancellation
-                    long parentTaskInstanceID = YEventLogger.this.getTaskInstanceID(subnetID, taskID);
-                    YEventLogger.this.logEvent(parentTaskInstanceID, NET_CANCEL, datalist, -1,
-                            rootNetInstanceID);
-                }
+                // log the composite task cancellation
+                long parentTaskInstanceID = getTaskInstanceID(subnetID, taskID);
+                logEvent(parentTaskInstanceID, NET_CANCEL, datalist, -1, rootNetInstanceID);
             });
         }
     }
@@ -350,14 +335,11 @@ public class YEventLogger {
     public void logDataEvent(final YWorkItem workitem, final String descriptor,
                              final YLogDataItemList datalist) {
         if (loggingEnabled() && (datalist.size() > 0)) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    long instanceID = YEventLogger.this.getOrCreateTaskInstanceID(workitem);
-                    YEventLogger.this.populateDataListSchemas(workitem.getSpecificationID(), datalist);
-                    YEventLogger.this.logEvent(instanceID, descriptor, datalist, -1,
-                            YEventLogger.this.getRootNetInstanceID(workitem.getCaseID()));
-                }
+            _executor.execute(() -> {
+                long instanceID = getOrCreateTaskInstanceID(workitem);
+                populateDataListSchemas(workitem.getSpecificationID(), datalist);
+                logEvent(instanceID, descriptor, datalist, -1,
+                        getRootNetInstanceID(workitem.getCaseID()));
             });
         }
     }
@@ -398,7 +380,7 @@ public class YEventLogger {
     }
 
     private String getWarnMsg(String value) {
-        return String.format("WARNING: Exception writing %s to the process logs.", value);
+        return "WARNING: Exception writing %s to the process logs.".formatted(value);
     }
 
 
@@ -414,7 +396,7 @@ public class YEventLogger {
 
         YLogSpecification specEntry = _keyCache.specEntries.get(ySpecID);
         if (specEntry == null) {
-            String where = String.format("%s='%s' AND tbl.version='%s'", field,
+            var where = "%s='%s' AND tbl.version='%s'".formatted(field,
                     ySpecID.getKey(), ySpecID.getVersionAsString());
             specEntry = (YLogSpecification) selectScalarWhere(
                     "YLogSpecification", where);
@@ -476,7 +458,7 @@ public class YEventLogger {
         long specKey = getSpecificationKey(ySpecID);
         long netID = _keyCache.getNetID(ySpecID, netName);
         if (netID < 0) {
-            String where = String.format("name='%s' AND tbl.specKey=%d", netName, specKey);
+            var where = "name='%s' AND tbl.specKey=%d".formatted(netName, specKey);
             YLogNet net = (YLogNet) selectScalarWhere("YLogNet", where);
             netID = (net != null) ? net.getNetID() : insertNet(netName, specKey);
             _keyCache.putNetID(ySpecID, netName, netID);
@@ -510,8 +492,7 @@ public class YEventLogger {
         long netID = getNetID(ySpecID, task._net.getID());
         long taskID = _keyCache.getTaskID(netID, engineTaskID);
         if (taskID < 0) {
-            String where = String.format("name='%s' AND tbl.parentNetID=%d",
-                    engineTaskID, netID);
+            var where = "name='%s' AND tbl.parentNetID=%d".formatted(engineTaskID, netID);
             YLogTask logTask = (YLogTask) selectScalarWhere("YLogTask", where);
             taskID = (logTask != null) ? logTask.getTaskID() :
                     insertTask(engineTaskID, netID, childNetID);
@@ -539,7 +520,7 @@ public class YEventLogger {
     private long getNetInstanceID(YIdentifier engineID) {
         Long result = _keyCache.netInstances.get(engineID);
         if (result == null) {
-            String where = String.format("engineInstanceID='%s'", engineID.toString());
+            var where = "engineInstanceID='%s'".formatted(engineID.toString());
             YLogNetInstance instance =
                     (YLogNetInstance) selectScalarWhere("YLogNetInstance", where);
             result = (instance != null) ? instance.getNetInstanceID() : -1;
@@ -593,7 +574,7 @@ public class YEventLogger {
     private long getTaskInstanceID(YIdentifier engineID, long taskID) {
         long taskInstanceID = _keyCache.getTaskInstanceID(engineID, taskID);
         if (taskInstanceID < 0) {
-            String where = String.format("engineInstanceID='%s' AND tbl.taskID=%d",
+            var where = "engineInstanceID='%s' AND tbl.taskID=%d".formatted(
                                         engineID.toString(), taskID);
             YLogTaskInstance instance =
                     (YLogTaskInstance) selectScalarWhere("YLogTaskInstance", where);
@@ -616,13 +597,9 @@ public class YEventLogger {
 
 
     private long getServiceID(YClient client) {
-        long result = -1;
-        if (client != null) {
-            String uri = (client instanceof YAWLServiceReference) ?
-                         ((YAWLServiceReference) client).getURI() : null;
-            result = getServiceID(client.getUserName(), uri) ;
-        }
-        return result;
+        if (client == null) return -1;
+        var uri = (client instanceof YAWLServiceReference ref) ? ref.getURI() : null;
+        return getServiceID(client.getUserName(), uri);
     }
 
 
@@ -635,8 +612,9 @@ public class YEventLogger {
     private long getServiceID(String name, String url) {
         Long serviceID = _keyCache.services.get((url != null) ? url : name);
         if (serviceID == null) {
-            String template = (url != null) ? "name='%s' AND tbl.url='%s'" : "name='%s'";
-            String where = String.format(template, name, url);
+            var where = (url != null)
+                ? "name='%s' AND tbl.url='%s'".formatted(name, url)
+                : "name='%s'".formatted(name);
             YLogService instance = (YLogService) selectScalarWhere("YLogService", where);
             serviceID = (instance != null) ? instance.getServiceID() : insertService(name, url);
             _keyCache.services.put((url != null) ? url : name, serviceID);
@@ -928,7 +906,7 @@ public class YEventLogger {
 
     protected HibernateEngine getDb() {
         if (_db == null) {
-            Set<Class> classSet = new HashSet<Class>(Arrays.asList(LOG_CLASSES));
+            var classSet = new HashSet<Class>(Arrays.asList(LOG_CLASSES));
             _db = new HibernateEngine(true, classSet);
         }
         return _db;

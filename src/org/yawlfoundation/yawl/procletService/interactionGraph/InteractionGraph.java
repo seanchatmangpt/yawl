@@ -76,10 +76,10 @@ public class InteractionGraph extends DirectedSparseGraph{
 	}
 	
 	public List<InteractionNode> getNodes() {
-		List<InteractionNode> nodes = new ArrayList<InteractionNode> ();
+		List<InteractionNode> nodes = new ArrayList<>();
 		for (Object node : this.getVertices()) {
-			if (node instanceof InteractionNode) {
-				nodes.add((InteractionNode)node);
+			if (node instanceof InteractionNode n) {
+				nodes.add(n);
 			}
 		}
 		return nodes;
@@ -138,25 +138,23 @@ public class InteractionGraph extends DirectedSparseGraph{
 	}
 	
 	public List<InteractionArc> getArcs () {
-		List<InteractionArc> arcs = new ArrayList<InteractionArc> ();
+		List<InteractionArc> arcs = new ArrayList<>();
 		for (Object obj : this.getEdges()) {
-			if (obj instanceof InteractionArc) {
-				arcs.add((InteractionArc) obj);
+			if (obj instanceof InteractionArc arc) {
+				arcs.add(arc);
 			}
 		}
 		return arcs;
 	}
-	
+
 	public List<InteractionArc> getArcsTail(String classID, String procletID, String blockID) {
-		List<InteractionArc> arcs = new ArrayList<InteractionArc> ();
+		List<InteractionArc> arcs = new ArrayList<>();
 		for (Object obj : this.getEdges()) {
-			if (obj instanceof InteractionArc) {
-				InteractionArc arc = (InteractionArc) obj;
-				if (arc.getTail().getClassID().equals(classID) && 
-						arc.getTail().getProcletID().equals(procletID) && 
-						arc.getTail().getBlockID().equals(blockID)) {
-					arcs.add(arc);
-				}
+			if (obj instanceof InteractionArc arc &&
+					arc.getTail().getClassID().equals(classID) &&
+					arc.getTail().getProcletID().equals(procletID) &&
+					arc.getTail().getBlockID().equals(blockID)) {
+				arcs.add(arc);
 			}
 		}
 		return arcs;

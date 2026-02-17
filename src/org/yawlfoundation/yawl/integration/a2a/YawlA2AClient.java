@@ -81,9 +81,9 @@ public class YawlA2AClient implements AutoCloseable {
 
         Message userMessage = A2A.toUserMessage(text);
 
-        AtomicReference<String> result = new AtomicReference<>();
-        AtomicReference<Throwable> error = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
+        var result = new AtomicReference<String>();
+        var error = new AtomicReference<Throwable>();
+        var latch = new CountDownLatch(1);
 
         a2aClient.sendMessage(userMessage,
             List.of((event, card) -> {
@@ -217,8 +217,8 @@ public class YawlA2AClient implements AutoCloseable {
         if (message == null || message.parts() == null) {
             throw new RuntimeException("Message has no content parts");
         }
-        StringBuilder text = new StringBuilder();
-        for (Part<?> part : message.parts()) {
+        var text = new StringBuilder();
+        for (var part : message.parts()) {
             if (part instanceof TextPart textPart) {
                 text.append(textPart.text());
             }
@@ -254,7 +254,7 @@ public class YawlA2AClient implements AutoCloseable {
             System.out.println("Provider: " + card.provider().organization());
 
             System.out.println("\nSkills:");
-            for (AgentSkill skill : client.getSkills()) {
+            for (var skill : client.getSkills()) {
                 System.out.println("  - " + skill.name() + ": " + skill.description());
             }
 

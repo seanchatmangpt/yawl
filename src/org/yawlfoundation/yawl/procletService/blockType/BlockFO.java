@@ -126,7 +126,7 @@ public class BlockFO {
 		// MULTICAST!!!
 
 		myLog.debug("CALCPERFORMATIVESOUT");
-		List<List<List>> relationsExtList = new ArrayList<List<List>>();
+		List<List<List>> relationsExtList = new ArrayList<>();
 		List<List> relationsExt  = calculateRelations(wir);
 		myLog.debug("relationsExt:" + relationsExt);
 		// PER PORT!!

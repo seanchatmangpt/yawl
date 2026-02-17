@@ -33,8 +33,8 @@ public class YVerificationHandler {
     private List<YVerificationMessage> _warnings;
 
     public YVerificationHandler() {
-        _errors = new ArrayList<YVerificationMessage>();
-        _warnings = new ArrayList<YVerificationMessage>();
+        _errors = new ArrayList<>();
+        _warnings = new ArrayList<>();
     }
 
 
@@ -70,8 +70,7 @@ public class YVerificationHandler {
 
 
     public List<YVerificationMessage> getMessages() {
-        List<YVerificationMessage> messages = new ArrayList<YVerificationMessage>();
-        messages.addAll(_errors);
+        List<YVerificationMessage> messages = new ArrayList<>(_errors);
         messages.addAll(_warnings);
         return messages;
     }

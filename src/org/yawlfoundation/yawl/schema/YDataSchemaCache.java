@@ -53,12 +53,8 @@ public class YDataSchemaCache extends ConcurrentHashMap<String, YDataSchemaCache
 
 
     public Element getSchemaType(YSpecificationID specID, String typeName) {
-        Element result = null;
-        SchemaMap map = this.get(getKey(specID));
-        if (map != null) {
-            result = map.get(typeName);
-        }
-        return result;
+        var map = this.get(getKey(specID));
+        return map != null ? map.get(typeName) : null;
     }
 
 
@@ -73,14 +69,14 @@ public class YDataSchemaCache extends ConcurrentHashMap<String, YDataSchemaCache
 
 
     protected SchemaMap assembleMap(String schema) {
-        SchemaMap map = new SchemaMap();
+        var map = new SchemaMap();
         if (schema != null) {
-            Element dataSchema = JDOMUtil.stringToElement(schema);
-            for (Element child : dataSchema.getChildren()) {
-                String name = child.getAttributeValue("name");
+            var dataSchema = JDOMUtil.stringToElement(schema);
+            for (var child : dataSchema.getChildren()) {
+                var name = child.getAttributeValue("name");
                 if (name != null) {
                     map.put(name, child);
-                }    
+                }
             }
         }
         return map;

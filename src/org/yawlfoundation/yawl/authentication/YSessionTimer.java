@@ -97,16 +97,16 @@ public class YSessionTimer {
             return false;
         }
 
-        long intervalMs = session.getInterval();
+        var intervalMs = session.getInterval();
 
         // Negative interval means never timeout
         if (intervalMs <= 0) {
             return true;
         }
 
-        String handle = session.getHandle();
+        var handle = session.getHandle();
 
-        ScheduledFuture<?> future = SHARED_SCHEDULER.schedule(
+        var future = SHARED_SCHEDULER.schedule(
                 () -> {
                     try {
                         cache.expire(handle);
@@ -119,7 +119,7 @@ public class YSessionTimer {
                 TimeUnit.MILLISECONDS
         );
 
-        ScheduledFuture<?> existing = sessionTasks.put(session, future);
+        var existing = sessionTasks.put(session, future);
 
         // Cancel any previously scheduled task (shouldn't happen in normal use)
         if (existing != null && !existing.isDone()) {
@@ -156,7 +156,7 @@ public class YSessionTimer {
             return false;
         }
 
-        ScheduledFuture<?> task = sessionTasks.remove(session);
+        var task = sessionTasks.remove(session);
 
         if (task != null && !task.isDone()) {
             task.cancel(false);

@@ -70,16 +70,16 @@ public class ZaiFunctionService {
      * Initialize with explicit configuration
      */
     public ZaiFunctionService(String zaiApiKey, String yawlEngineUrl, String username, String password) {
-        if (zaiApiKey == null || zaiApiKey.isEmpty()) {
+        if (zaiApiKey == null || zaiApiKey.isBlank()) {
             throw new IllegalArgumentException("ZAI_API_KEY is required");
         }
-        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
+        if (yawlEngineUrl == null || yawlEngineUrl.isBlank()) {
             throw new IllegalArgumentException("YAWL_ENGINE_URL is required (e.g., http://localhost:8080/yawl)");
         }
-        if (username == null || username.isEmpty()) {
+        if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("YAWL_USERNAME is required");
         }
-        if (password == null || password.isEmpty()) {
+        if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("YAWL_PASSWORD is required");
         }
 
@@ -101,11 +101,11 @@ public class ZaiFunctionService {
     }
 
     private static String getRequiredEnv(String name) {
-        String value = System.getenv(name);
-        if (value == null || value.isEmpty()) {
+        var value = System.getenv(name);
+        if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " environment variable not set");
         }
-        return value;
+        return value.strip();
     }
 
     private void connectToYawlEngine() {
@@ -154,7 +154,7 @@ public class ZaiFunctionService {
             String specId = (String) args.get("spec_identifier");
             String xesPath = (String) args.get("xes_path");
             String skill = (String) args.get("skill");
-            if (skill == null || skill.isEmpty()) skill = "performance";
+            if (skill == null || skill.isBlank()) skill = "performance";
             if (specId != null && !specId.isEmpty()) {
                 EventLogExporter exporter = null;
                 try {
@@ -210,7 +210,7 @@ public class ZaiFunctionService {
 
         String functionPrompt = buildFunctionSelectionPrompt(userMessage);
 
-        List<Map<String, String>> messages = new ArrayList<>();
+        var messages = new ArrayList<Map<String, String>>();
         messages.add(mapOf("role", "system", "content", getSystemPrompt()));
         messages.add(mapOf("role", "user", "content", functionPrompt));
 
@@ -233,7 +233,7 @@ public class ZaiFunctionService {
     }
 
     private String buildFunctionSelectionPrompt(String userMessage) {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.append("User request: ").append(userMessage).append("\n\n");
         sb.append("Available functions:\n");
         for (String funcName : functionHandlers.keySet()) {
@@ -344,15 +344,15 @@ public class ZaiFunctionService {
     private String getWorkflowStatus(String caseId) throws IOException {
         ensureConnection();
 
-        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        var workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
 
         if (workItems == null) {
             return "{\"error\": \"Case not found: " + caseId + "\"}";
         }
 
-        StringBuilder tasksJson = new StringBuilder("[");
+        var tasksJson = new StringBuilder("[");
         boolean first = true;
-        for (WorkItemRecord item : workItems) {
+        for (var item : workItems) {
             if (!first) tasksJson.append(",");
             tasksJson.append("{\"task_id\": \"").append(item.getTaskID())
                     .append("\", \"status\": \"").append(item.getStatus())
@@ -369,14 +369,14 @@ public class ZaiFunctionService {
     private String completeTask(String caseId, String taskId, String outputData) throws IOException {
         ensureConnection();
 
-        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        var workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
 
         if (workItems == null || workItems.isEmpty()) {
             return "{\"error\": \"No work items found for case: " + caseId + "\"}";
         }
 
         WorkItemRecord targetItem = null;
-        for (WorkItemRecord item : workItems) {
+        for (var item : workItems) {
             if (item.getTaskID().equals(taskId)) {
                 targetItem = item;
                 break;
@@ -387,16 +387,16 @@ public class ZaiFunctionService {
             return "{\"error\": \"Task not found: " + taskId + " in case: " + caseId + "\"}";
         }
 
-        String workItemID = targetItem.getID();
-        String dataToSend = outputData != null ? wrapDataInXML(outputData) :
+        var workItemID = targetItem.getID();
+        var dataToSend = outputData != null ? wrapDataInXML(outputData) :
                 (targetItem.getDataList() != null ? targetItem.getDataList().toString() : null);
 
-        String checkoutResult = interfaceBClient.checkOutWorkItem(workItemID, sessionHandle);
+        var checkoutResult = interfaceBClient.checkOutWorkItem(workItemID, sessionHandle);
         if (checkoutResult == null || checkoutResult.contains("failure") || checkoutResult.contains("error")) {
             return "{\"error\": \"Failed to checkout work item: " + checkoutResult + "\"}";
         }
 
-        String checkinResult = interfaceBClient.checkInWorkItem(workItemID, dataToSend, sessionHandle);
+        var checkinResult = interfaceBClient.checkInWorkItem(workItemID, dataToSend, sessionHandle);
         if (checkinResult == null || !checkinResult.contains("success")) {
             return "{\"error\": \"Failed to complete task: " + checkinResult + "\"}";
         }
@@ -408,12 +408,12 @@ public class ZaiFunctionService {
     private String listWorkflows() throws IOException {
         ensureConnection();
 
-        List<SpecificationData> specs = interfaceBClient.getSpecificationList(sessionHandle);
+        var specs = interfaceBClient.getSpecificationList(sessionHandle);
 
-        StringBuilder json = new StringBuilder("{\"workflows\": [");
+        var json = new StringBuilder("{\"workflows\": [");
         boolean first = true;
         if (specs != null) {
-            for (SpecificationData spec : specs) {
+            for (var spec : specs) {
                 if (!first) json.append(",");
                 String name = spec.getName() != null ? spec.getName() : spec.getSpecURI();
                 json.append("\"").append(name).append("\"");
@@ -446,7 +446,7 @@ public class ZaiFunctionService {
     }
 
     private List<String> extractSpecificationNames(String specsXML) {
-        List<String> names = new ArrayList<>();
+        var names = new ArrayList<String>();
 
         int pos = 0;
         while (true) {
@@ -456,9 +456,7 @@ public class ZaiFunctionService {
             int specEnd = specsXML.indexOf("</specIdentifier>", specStart);
             if (specEnd == -1) break;
 
-            String specContent = specsXML.substring(specStart + 16, specEnd);
-            names.add(specContent.trim());
-
+            names.add(specsXML.substring(specStart + 16, specEnd).strip());
             pos = specEnd;
         }
 
@@ -474,7 +472,7 @@ public class ZaiFunctionService {
     }
 
     public Set<String> getRegisteredFunctions() {
-        return functionHandlers.keySet();
+        return Set.copyOf(functionHandlers.keySet());
     }
 
     public void disconnect() {
@@ -492,9 +490,9 @@ public class ZaiFunctionService {
         if (map == null || map.isEmpty()) {
             return "{}";
         }
-        StringBuilder sb = new StringBuilder("{");
+        var sb = new StringBuilder("{");
         boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+        for (var entry : map.entrySet()) {
             if (!first) sb.append(",");
             sb.append("\"").append(entry.getKey()).append("\":");
             sb.append("\"").append(entry.getValue()).append("\"");
@@ -505,7 +503,7 @@ public class ZaiFunctionService {
     }
 
     private Map<String, String> mapOf(String... keyValues) {
-        Map<String, String> map = new HashMap<>();
+        var map = new HashMap<String, String>();
         for (int i = 0; i < keyValues.length - 1; i += 2) {
             map.put(keyValues[i], keyValues[i + 1]);
         }
@@ -526,12 +524,12 @@ public class ZaiFunctionService {
      * Main method for testing
      */
     public static void main(String[] args) {
-        ZaiFunctionService service = new ZaiFunctionService();
+        var service = new ZaiFunctionService();
 
         System.out.println("Registered functions: " + service.getRegisteredFunctions());
 
         System.out.println("\n=== Testing List Workflows ===");
-        String result = service.processWithFunctions("What workflows are available?");
+        var result = service.processWithFunctions("What workflows are available?");
         System.out.println(result);
 
         System.out.println("\n=== Testing Start Workflow ===");

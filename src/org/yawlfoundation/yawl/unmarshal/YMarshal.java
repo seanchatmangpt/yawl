@@ -27,7 +27,6 @@ import org.yawlfoundation.yawl.schema.SchemaHandler;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,11 +50,11 @@ public class YMarshal {
     private static List<YSpecification> buildSpecifications(
             Element specificationSetElem, Namespace ns, YSchemaVersion version)
             throws YSyntaxException {
-        List<YSpecification> specifications = new ArrayList<YSpecification>();
+        var specifications = new java.util.ArrayList<YSpecification>();
 
         // parse each specification element into a YSpecification
-        for (Element xmlSpecification : specificationSetElem.getChildren("specification", ns)) {
-            YSpecificationParser specParser = new YSpecificationParser(xmlSpecification, version);
+        for (var xmlSpecification : specificationSetElem.getChildren("specification", ns)) {
+            var specParser = new YSpecificationParser(xmlSpecification, version);
             specifications.add(specParser.getSpecification());
         }
         return specifications;
@@ -93,11 +92,11 @@ public class YMarshal {
         List<YSpecification> result = null;
 
         // first check if the xml string is well formed and build a document
-        Document document = JDOMUtil.stringToDocument(specStr);
+        var document = JDOMUtil.stringToDocument(specStr);
         if (document != null) {
-            Element specificationSetEl = document.getRootElement();
-            YSchemaVersion version = getVersion(specificationSetEl);
-            Namespace ns = specificationSetEl.getNamespace();
+            var specificationSetEl = document.getRootElement();
+            var version = getVersion(specificationSetEl);
+            var ns = specificationSetEl.getNamespace();
 
             // strip layout element, if any (the engine doesn't use it)
             specificationSetEl.removeChild("layout", ns);
@@ -131,7 +130,7 @@ public class YMarshal {
      */
     public static String marshal(List<YSpecification> specificationList,
                                  YSchemaVersion version) {
-        StringBuilder xml = new StringBuilder(version.getHeader());
+        var xml = new StringBuilder(version.getHeader());
         for (YSpecification specification : specificationList) {
             xml.append(specification.toXML());
         }
@@ -148,9 +147,7 @@ public class YMarshal {
      * @return the XML Document, rendered as a String
      */
     public static String marshal(YSpecification specification) {
-        List<YSpecification> spLst = new ArrayList<YSpecification>();
-        spLst.add(specification);
-        return marshal(spLst, specification.getSchemaVersion());
+        return marshal(List.of(specification), specification.getSchemaVersion());
     }
 
 

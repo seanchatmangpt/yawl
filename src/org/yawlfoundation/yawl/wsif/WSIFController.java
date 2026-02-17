@@ -33,7 +33,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +54,7 @@ import java.util.Map;
 public class WSIFController extends InterfaceBWebsideController {
 
     private String _sessionHandle = null;
-    private Logger _log = LogManager.getLogger(this.getClass());
+    private final Logger _log = LogManager.getLogger(this.getClass());
 
     private static final String WSDL_LOCATION_PARAMNAME = "YawlWSInvokerWSDLLocation";
     private static final String WSDL_PORTNAME_PARAMNAME = "YawlWSInvokerPortName";
@@ -79,13 +79,13 @@ public class WSIFController extends InterfaceBWebsideController {
     }
 
     private Map<String, String> getOutputDataTypes(WorkItemRecord wir) throws IOException {
-        Map<String, String> dataTypes = new Hashtable<String, String>();
-        TaskInformation taskInfo = this.getTaskInformation(
+        Map<String, String> dataTypes = new HashMap<>();
+        var taskInfo = this.getTaskInformation(
                 new YSpecificationID(wir), wir.getTaskID(), _sessionHandle);
         if (taskInfo != null) {
-            YParametersSchema schema = taskInfo.getParamSchema();
+            var schema = taskInfo.getParamSchema();
             if (schema != null) {
-                for (YParameter param : schema.getOutputParams()) {
+                for (var param : schema.getOutputParams()) {
                     dataTypes.put(param.getPreferredName(), param.getDataTypeName());
                 }
             }
@@ -99,23 +99,16 @@ public class WSIFController extends InterfaceBWebsideController {
         }
         try {
             if (type.endsWith("integer")) {
-               return String.valueOf(Integer.valueOf(value));
+                return String.valueOf(Integer.parseInt(value));
+            } else if (type.endsWith("double")) {
+                return String.valueOf(Double.parseDouble(value));
+            } else if (type.endsWith("float")) {
+                return String.valueOf(Float.parseFloat(value));
+            } else {
+                return value;
             }
-            else if (type.endsWith("double")) {
-               return String.valueOf(Double.valueOf(value));
-            }
-            else if (type.endsWith("float")) {
-               return String.valueOf(Float.valueOf(value));
-            }
-            else return value;    // we tried!
-        }
-        catch (NumberFormatException nfe) {
-            if (type.endsWith("integer")) {
-                return "0";
-            }
-            else {
-                return "0.0";
-            }
+        } catch (NumberFormatException nfe) {
+            return type.endsWith("integer") ? "0" : "0.0";
         }
     }
 

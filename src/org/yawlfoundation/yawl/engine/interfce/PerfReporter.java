@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public class PerfReporter {
 
-    private static final Map<String, List<TimeSpan>> _requestMap = new HashMap<String, List<TimeSpan>>();
+    private static final Map<String, List<TimeSpan>> _requestMap = new HashMap<>();
     private static long _previousTimestamp = 0;
 
 
@@ -77,7 +77,7 @@ public class PerfReporter {
 
     private static List<TimeSpan> getOrAdd(String action) {
         if (! _requestMap.containsKey(action)) {
-            _requestMap.put(action, new ArrayList<TimeSpan>());
+            _requestMap.put(action, new ArrayList<>());
         }
         return _requestMap.get(action);
     }

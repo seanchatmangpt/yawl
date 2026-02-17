@@ -83,14 +83,21 @@ public class YDataStateException extends YAWLException {
     }
 
     public String getMessage() {
-        return
-                _message +
-                "\nTask [" + _source + "]" +
-                "\nXQuery [" + _queryString + "] " +
-                "\nDocument [" + (_queriedData != null ? _out.outputString(_queriedData): "") + "]" +
-                "\nSchema for Expected [" + (_schema != null ? _out.outputString(_schema): "") + "]" +
-                "\nBut received [" + (_dataInput != null ? _out.outputString(_dataInput) : "") + "]" +
-                "\nValidation error message [" + _xercesErrors + "]";
+        return """
+                %s
+                Task [%s]
+                XQuery [%s]
+                Document [%s]
+                Schema for Expected [%s]
+                But received [%s]
+                Validation error message [%s]""".formatted(
+                _message,
+                _source,
+                _queryString,
+                _queriedData != null ? _out.outputString(_queriedData) : "",
+                _schema != null ? _out.outputString(_schema) : "",
+                _dataInput != null ? _out.outputString(_dataInput) : "",
+                _xercesErrors);
     }
 
     public Element get_dataInput() {

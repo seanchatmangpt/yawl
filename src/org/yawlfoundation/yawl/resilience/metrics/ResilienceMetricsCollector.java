@@ -53,13 +53,13 @@ public class ResilienceMetricsCollector {
      * @return map of circuit breaker name to metrics
      */
     public Map<String, CircuitBreakerMetrics> collectCircuitBreakerMetrics() {
-        Map<String, CircuitBreakerMetrics> metrics = new HashMap<>();
+        var metrics = new HashMap<String, CircuitBreakerMetrics>();
 
-        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
-            String name = circuitBreaker.getName();
-            CircuitBreaker.Metrics cbMetrics = circuitBreaker.getMetrics();
+        for (var circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
+            var name = circuitBreaker.getName();
+            var cbMetrics = circuitBreaker.getMetrics();
 
-            CircuitBreakerMetrics metric = new CircuitBreakerMetrics();
+            var metric = new CircuitBreakerMetrics();
             metric.setName(name);
             metric.setState(circuitBreaker.getState().toString());
             metric.setFailureRate(cbMetrics.getFailureRate());
@@ -84,13 +84,13 @@ public class ResilienceMetricsCollector {
      * @return map of retry name to metrics
      */
     public Map<String, RetryMetrics> collectRetryMetrics() {
-        Map<String, RetryMetrics> metrics = new HashMap<>();
+        var metrics = new HashMap<String, RetryMetrics>();
 
-        for (Retry retry : retryRegistry.getAllRetries()) {
-            String name = retry.getName();
-            Retry.Metrics retryMetrics = retry.getMetrics();
+        for (var retry : retryRegistry.getAllRetries()) {
+            var name = retry.getName();
+            var retryMetrics = retry.getMetrics();
 
-            RetryMetrics metric = new RetryMetrics();
+            var metric = new RetryMetrics();
             metric.setName(name);
             metric.setNumberOfSuccessfulCallsWithoutRetryAttempt(
                 retryMetrics.getNumberOfSuccessfulCallsWithoutRetryAttempt());
@@ -113,13 +113,13 @@ public class ResilienceMetricsCollector {
      * @return map of rate limiter name to metrics
      */
     public Map<String, RateLimiterMetrics> collectRateLimiterMetrics() {
-        Map<String, RateLimiterMetrics> metrics = new HashMap<>();
+        var metrics = new HashMap<String, RateLimiterMetrics>();
 
-        for (RateLimiter rateLimiter : rateLimiterRegistry.getAllRateLimiters()) {
-            String name = rateLimiter.getName();
-            RateLimiter.Metrics rlMetrics = rateLimiter.getMetrics();
+        for (var rateLimiter : rateLimiterRegistry.getAllRateLimiters()) {
+            var name = rateLimiter.getName();
+            var rlMetrics = rateLimiter.getMetrics();
 
-            RateLimiterMetrics metric = new RateLimiterMetrics();
+            var metric = new RateLimiterMetrics();
             metric.setName(name);
             metric.setAvailablePermissions(rlMetrics.getAvailablePermissions());
             metric.setNumberOfWaitingThreads(rlMetrics.getNumberOfWaitingThreads());
@@ -136,13 +136,13 @@ public class ResilienceMetricsCollector {
      * @return map of bulkhead name to metrics
      */
     public Map<String, BulkheadMetrics> collectBulkheadMetrics() {
-        Map<String, BulkheadMetrics> metrics = new HashMap<>();
+        var metrics = new HashMap<String, BulkheadMetrics>();
 
-        for (Bulkhead bulkhead : bulkheadRegistry.getAllBulkheads()) {
-            String name = bulkhead.getName();
-            Bulkhead.Metrics bhMetrics = bulkhead.getMetrics();
+        for (var bulkhead : bulkheadRegistry.getAllBulkheads()) {
+            var name = bulkhead.getName();
+            var bhMetrics = bulkhead.getMetrics();
 
-            BulkheadMetrics metric = new BulkheadMetrics();
+            var metric = new BulkheadMetrics();
             metric.setName(name);
             metric.setAvailableConcurrentCalls(bhMetrics.getAvailableConcurrentCalls());
             metric.setMaxAllowedConcurrentCalls(bhMetrics.getMaxAllowedConcurrentCalls());
@@ -159,7 +159,7 @@ public class ResilienceMetricsCollector {
      * @return comprehensive metrics snapshot
      */
     public ResilienceMetricsSnapshot collectAll() {
-        ResilienceMetricsSnapshot snapshot = new ResilienceMetricsSnapshot();
+        var snapshot = new ResilienceMetricsSnapshot();
         snapshot.setCircuitBreakers(collectCircuitBreakerMetrics());
         snapshot.setRetries(collectRetryMetrics());
         snapshot.setRateLimiters(collectRateLimiterMetrics());

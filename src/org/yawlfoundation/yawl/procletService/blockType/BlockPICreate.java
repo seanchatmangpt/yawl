@@ -66,7 +66,7 @@ public class BlockPICreate {
 		// get all arcs for which the procletid of the head is <= 0
 		Performatives perfsInst = Performatives.getInstance();
 		ProcletModels pmodels = ProcletModels.getInstance();
-		List<InteractionArc> relevantArcs = new ArrayList<InteractionArc>();
+		List<InteractionArc> relevantArcs = new ArrayList<>();
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionGraph> graphs = igraphs.getGraphs();
 		for (InteractionGraph graph : graphs) {
@@ -80,7 +80,7 @@ public class BlockPICreate {
 		}
 		myLog.debug("relevantArcs:" + relevantArcs);
 		// check for which ones we have performatives
-		List<InteractionArc> createArcs = new ArrayList<InteractionArc>();
+		List<InteractionArc> createArcs = new ArrayList<>();
 		for (InteractionArc relArc : relevantArcs) {
 			EntityID eid = relArc.getEntityID();
 			for (Performative perf : perfsInst.getPerformatives()) {
@@ -110,8 +110,8 @@ public class BlockPICreate {
 	private void createProclets(List<InteractionArc> enabledArcs) {
 		myLog.debug("create proclets");
 		// delete perfs
-		List<Performative> relPerfs = new ArrayList<Performative> ();
-		List<EntityID> eids = new ArrayList<EntityID> ();
+		List<Performative> relPerfs = new ArrayList<>();
+		List<EntityID> eids = new ArrayList<>();
 		Performatives perfsInst = Performatives.getInstance();
 		myLog.debug("perfs CreateProclets:" + perfsInst.getPerformatives());
 		for (InteractionArc arc : enabledArcs) {
@@ -183,7 +183,7 @@ public class BlockPICreate {
 	
 	private String removeUnneededData (String s, List<EntityID> eids) {
 		myLog.debug("REMOVEUNNEEDEDDATA");
-		List<Element> eltsRemove = new ArrayList<Element>();
+		List<Element> eltsRemove = new ArrayList<>();
 		Element dataList = JDOMUtil.stringToElement(s).clone();
 		myLog.debug("dataList:" + JDOMUtil.elementToString(dataList));
 		//Element eidData = dataList.getChild("entity");
@@ -242,7 +242,7 @@ public class BlockPICreate {
 		    "</name_value_pair>" +
 		  "</entity>" +
 		"</entities>";
-		   	List<EntityID> eids = new ArrayList<EntityID>();
+		   	List<EntityID> eids = new ArrayList<>();
 		   	//eids.add(new EntityID("ronny","1"));
 		   	String data = bpic.removeUnneededData(s, eids);
 		   	bpic.checkForCreationProclets();

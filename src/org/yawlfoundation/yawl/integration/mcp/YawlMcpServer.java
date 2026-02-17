@@ -74,14 +74,14 @@ public class YawlMcpServer {
      * @param password YAWL admin password
      */
     public YawlMcpServer(String yawlEngineUrl, String username, String password) {
-        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
+        if (yawlEngineUrl == null || yawlEngineUrl.isBlank()) {
             throw new IllegalArgumentException(
                 "YAWL engine URL is required (e.g. http://localhost:8080/yawl)");
         }
-        if (username == null || username.isEmpty()) {
+        if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("YAWL username is required");
         }
-        if (password == null || password.isEmpty()) {
+        if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("YAWL password is required");
         }
 
@@ -108,8 +108,8 @@ public class YawlMcpServer {
         connectToEngine();
 
         ZaiFunctionService zaiFunctionService = null;
-        String zaiApiKey = System.getenv("ZAI_API_KEY");
-        if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
+        var zaiApiKey = System.getenv("ZAI_API_KEY");
+        if (zaiApiKey != null && !zaiApiKey.isBlank()) {
             try {
                 zaiFunctionService = new ZaiFunctionService(
                     zaiApiKey, yawlEngineUrl, yawlUsername, yawlPassword);
@@ -118,11 +118,10 @@ public class YawlMcpServer {
             }
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
-        JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(mapper);
-        StdioServerTransportProvider transportProvider =
-            new StdioServerTransportProvider(jsonMapper);
+        var jsonMapper = new JacksonMcpJsonMapper(mapper);
+        var transportProvider = new StdioServerTransportProvider(jsonMapper);
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
@@ -229,22 +228,22 @@ public class YawlMcpServer {
      *   YAWL_PASSWORD   - YAWL admin password (required)
      */
     public static void main(String[] args) {
-        String engineUrl = System.getenv("YAWL_ENGINE_URL");
-        if (engineUrl == null || engineUrl.isEmpty()) {
+        var engineUrl = System.getenv("YAWL_ENGINE_URL");
+        if (engineUrl == null || engineUrl.isBlank()) {
             throw new IllegalStateException(
                 "YAWL_ENGINE_URL environment variable is required.\n" +
                 "Set it with: export YAWL_ENGINE_URL=http://localhost:8080/yawl");
         }
 
-        String username = System.getenv("YAWL_USERNAME");
-        if (username == null || username.isEmpty()) {
+        var username = System.getenv("YAWL_USERNAME");
+        if (username == null || username.isBlank()) {
             throw new IllegalStateException(
                 "YAWL_USERNAME environment variable is required.\n" +
                 "Set it with: export YAWL_USERNAME=admin");
         }
 
-        String password = System.getenv("YAWL_PASSWORD");
-        if (password == null || password.isEmpty()) {
+        var password = System.getenv("YAWL_PASSWORD");
+        if (password == null || password.isBlank()) {
             throw new IllegalStateException(
                 "YAWL_PASSWORD environment variable is required.\n" +
                 "Set it with: export YAWL_PASSWORD=YAWL");
@@ -254,7 +253,7 @@ public class YawlMcpServer {
         System.err.println("Engine URL: " + engineUrl);
         System.err.println("Transport: STDIO (official MCP SDK 0.17.2)");
 
-        YawlMcpServer server = new YawlMcpServer(engineUrl, username, password);
+        var server = new YawlMcpServer(engineUrl, username, password);
 
         Runtime.getRuntime().addShutdownHook(
             Thread.ofVirtual().unstarted(() -> {

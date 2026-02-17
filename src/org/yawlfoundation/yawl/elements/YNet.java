@@ -131,7 +131,7 @@ public final class YNet extends YDecomposition {
     }
 
     public List<YTask> getNetTasks() {
-        List<YTask> result = new ArrayList<YTask>();
+        var result = new ArrayList<YTask>();
         for (YNetElement element : _netElements.values()) {
             if (element instanceof YTask task)
                 result.add(task);
@@ -355,9 +355,9 @@ public final class YNet extends YDecomposition {
             throw new RuntimeException(orJoinTask + " is not an OR-Join.");
         }
 
-        YMarking actualMarking = new YMarking(caseID);
+        var actualMarking = new YMarking(caseID);
         List<YNetElement> locations = new Vector<YNetElement>(actualMarking.getLocations());
-        Set preSet = orJoinTask.getPresetElements();
+        Set<YExternalNetElement> preSet = orJoinTask.getPresetElements();
         if (locations.containsAll(preSet)) {
             return true;
         }
@@ -437,13 +437,11 @@ public final class YNet extends YDecomposition {
 
 
     private String produceXMLStringForSet(Set<YExternalNetElement> elements) {
-        List<YExternalNetElement> elementList = new ArrayList<YExternalNetElement>(elements);
-        Collections.sort(elementList, new Comparator<YExternalNetElement>() {
-            public int compare(YExternalNetElement e1, YExternalNetElement e2) {
-                if ((e1 == null) || (e1.getID() == null)) return -1;
-                if ((e2 == null) || (e2.getID() == null)) return 1;
-                return e1.getID().compareTo(e2.getID());
-            }
+        var elementList = new ArrayList<YExternalNetElement>(elements);
+        elementList.sort((e1, e2) -> {
+            if ((e1 == null) || (e1.getID() == null)) return -1;
+            if ((e2 == null) || (e2.getID() == null)) return 1;
+            return e1.getID().compareTo(e2.getID());
         });
         StringBuilder xml = new StringBuilder();
         for (YExternalNetElement element : elementList) {
@@ -462,12 +460,8 @@ public final class YNet extends YDecomposition {
 
 
     private List<YVariable> getLocalVarsSorted() {
-        List<YVariable> variables = new ArrayList<YVariable>(_localVariables.values());
-        Collections.sort(variables, new Comparator<YVariable>() {
-            public int compare(YVariable var1, YVariable var2) {
-                return var1.getOrdering() - var2.getOrdering();
-            }
-        });
+        var variables = new ArrayList<YVariable>(_localVariables.values());
+        variables.sort(Comparator.comparingInt(YVariable::getOrdering));
         return variables;
     }
 
@@ -546,7 +540,7 @@ public final class YNet extends YDecomposition {
 
     // only called when a case successfully completes
     public void postCaseDataToExternal(String caseID) throws YStateException {
-        ExternalDataGateway gateway = getInstantiatedExternalDataGateway();
+        var gateway = getInstantiatedExternalDataGateway();
         if (gateway != null) {
             try {
                 gateway.updateFromCaseData(getSpecification().getSpecificationID(),

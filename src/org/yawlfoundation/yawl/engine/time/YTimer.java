@@ -36,7 +36,7 @@ public class YTimer extends Timer {
 
     private YTimer() {
         super(true) ;
-        _runners = new HashMap<String, TimeKeeper>();
+        _runners = new HashMap<>();
     }
 
 
@@ -52,7 +52,7 @@ public class YTimer extends Timer {
 
     public YTimedObject cancelTimerTask(String itemID) {
         YTimedObject result = null;
-        TimeKeeper timer = _runners.get(itemID);
+        var timer = _runners.get(itemID);
         if (timer != null) {
             result = timer.getOwner();
             timer.cancel();                           // cancel the scheduled timertask
@@ -63,7 +63,7 @@ public class YTimer extends Timer {
     }
 
     public void cancelTimersForCase(String caseID) {
-        Set<String> toRemove = new HashSet<String>();
+        Set<String> toRemove = new HashSet<>();
         for (String itemID : _runners.keySet()) {
             if (itemID.startsWith(caseID + ":") || itemID.startsWith(caseID + ".")) {
                 toRemove.add(itemID);
@@ -78,7 +78,7 @@ public class YTimer extends Timer {
     public void cancelAll() {
 
         // avoid concurrency issues
-        Set<String> timedIDs = new HashSet<String>(_runners.keySet());
+        Set<String> timedIDs = new HashSet<>(_runners.keySet());
         for (String id : timedIDs) {
             cancelTimerTask(id);
         }

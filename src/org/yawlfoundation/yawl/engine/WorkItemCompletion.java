@@ -37,8 +37,7 @@ public enum WorkItemCompletion {
 
     WorkItemCompletion(int i) { _ord = i; }
 
-    private static final Map<Integer, WorkItemCompletion> _fromMap =
-            new HashMap<Integer, WorkItemCompletion>(4);
+    private static final Map<Integer, WorkItemCompletion> _fromMap = new HashMap<>(4);
 
     static {
         for (WorkItemCompletion completion : values()) {
