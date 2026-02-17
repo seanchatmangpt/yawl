@@ -58,13 +58,13 @@ class TaskLifecycleBehavioralTest {
     private YSpecification specification;
 
     @BeforeEach
-    void setUp() throws YEngineStateException {
+    void setUp() throws YEngineStateException, YPersistenceException {
         engine = YEngine.getInstance();
         EngineClearer.clear(engine);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() throws YPersistenceException, YEngineStateException {
         EngineClearer.clear(engine);
     }
 
