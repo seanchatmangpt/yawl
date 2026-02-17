@@ -37,7 +37,7 @@ fi
 UNTRACKED=$(git ls-files --others --exclude-standard)
 if [ -n "$UNTRACKED" ]; then
   echo "" >&2
-  echo -e "${YELLOW}ℹ️  Note: There are untracked files (not critical):${NC}" >&2
+  echo -e "${YELLOW}There are untracked files in the repository. Please commit and push these changes to the remote branch.${NC}" >&2
   echo "$UNTRACKED" | head -5 >&2
   echo "" >&2
 fi
