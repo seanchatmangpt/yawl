@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.engine.interfce;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.util.Argon2PasswordEncryptor;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 import org.yawlfoundation.yawl.util.StringUtil;
 
@@ -28,7 +29,6 @@ import jakarta.servlet.http.HttpServlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -82,13 +82,24 @@ public class YHttpServlet extends HttpServlet {
     }
 
 
+    /**
+     * Hashes a password for storage or authentication using Argon2id.
+     *
+     * <p>SOC2 CRITICAL#4 remediation (2026-02-17): Migrated from the cryptographically
+     * broken SHA-1 ({@link PasswordEncryptor}) to Argon2id ({@link Argon2PasswordEncryptor})
+     * with OWASP-recommended cost factors. The deprecated {@code PasswordEncryptor.encrypt()}
+     * call has been replaced with {@code Argon2PasswordEncryptor.hash()}.
+     *
+     * <p>Backward compatibility: {@link org.yawlfoundation.yawl.authentication.YSessionCache}
+     * detects hash type by prefix and verifies both Argon2id and SHA-1 hashes during
+     * the migration window. Once all hashes are rotated, SHA-1 support will be removed.
+     *
+     * @param s the plaintext password to hash
+     * @return the Argon2id PHC string (e.g. {@code $argon2id$v=19$m=19456,t=2,p=1$...$...})
+     * @throws UnsupportedOperationException if the argon2-jvm library is missing
+     */
     protected String encryptPassword(String s) {
-        try {
-            return PasswordEncryptor.encrypt(s);
-        } catch (NoSuchAlgorithmException nsae) {
-            // nothing to do - call will return 'incorrect password'
-            return s;
-        }
+        return Argon2PasswordEncryptor.hash(s);
     }
 
 

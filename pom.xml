@@ -1418,6 +1418,8 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
+                        <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
+                        <arg>--add-exports=java.base/sun.security.tools.keytool=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -1428,7 +1430,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
+                    <argLine>--enable-preview --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-exports=java.base/sun.security.tools.keytool=ALL-UNNAMED</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>

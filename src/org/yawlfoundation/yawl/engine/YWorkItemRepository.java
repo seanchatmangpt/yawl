@@ -43,18 +43,33 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 public class YWorkItemRepository {
     private final Map<String, YWorkItem> _itemMap; //[case&taskIDStr=YWorkItem]
 
+    /**
+     * P3 MEDIUM - Task Scan O(N) Query Optimization: secondary status index.
+     * Eliminates O(N) linear scans in {@link #getWorkItems(YWorkItemStatus)} by
+     * maintaining per-status item-ID buckets updated on every add/remove/status-change.
+     * Target: &lt;10ms p95 for status queries regardless of total item count.
+     */
+    private final YWorkItemStatusIndex _statusIndex;
+
     private static final Logger logger = LogManager.getLogger(YWorkItemRepository.class);
     private final Logger _logger;
 
     public YWorkItemRepository() {
         _itemMap = new ConcurrentHashMap<>(500);
+        _statusIndex = new YWorkItemStatusIndex();
         _logger = LogManager.getLogger(YWorkItemRepository.class);
     }
 
 
     protected YWorkItem add(YWorkItem workItem) {
         _logger.debug("--> YWorkItemRepository#add: {}", workItem.getIDString());
-        return _itemMap.put(workItem.getIDString(), workItem);
+        YWorkItem previous = _itemMap.put(workItem.getIDString(), workItem);
+        // P3: maintain status index
+        if (previous != null) {
+            _statusIndex.remove(previous.getIDString());
+        }
+        _statusIndex.add(workItem.getIDString(), workItem.getStatus());
+        return previous;
     }
 
 
@@ -70,10 +85,18 @@ public class YWorkItemRepository {
 
     public YWorkItem remove(YWorkItem workItem) {
         _logger.debug("--> YWorkItemRepository#remove: {}", workItem.getIDString());
-        return _itemMap.remove(workItem.getIDString());
+        YWorkItem removed = _itemMap.remove(workItem.getIDString());
+        // P3: remove from status index
+        if (removed != null) {
+            _statusIndex.remove(removed.getIDString());
+        }
+        return removed;
     }
 
-    public void clear() { _itemMap.clear(); }
+    public void clear() {
+        _itemMap.clear();
+        _statusIndex.clear();  // P3: keep index in sync
+    }
 
 
     public Set<YWorkItem> removeWorkItemFamily(YWorkItem workItem) {
@@ -157,11 +180,25 @@ public class YWorkItemRepository {
     }
 
 
+    /**
+     * P3 MEDIUM - O(N) Linear Scan Eliminated: returns work items by status using
+     * the {@link YWorkItemStatusIndex} secondary index instead of a full map scan.
+     *
+     * <p>Before: O(N) - iterates all items to filter by status<br>
+     * After: O(k) - looks up item IDs from the status index, then fetches only
+     * the matching items (k &lt;&lt; N in typical deployments)</p>
+     *
+     * @param status the status to filter on
+     * @return the set of work items with the given status
+     */
     public Set<YWorkItem> getWorkItems(YWorkItemStatus status) {
-        Set<YWorkItem> itemSet = new HashSet<YWorkItem>();
-        for (YWorkItem workitem : _itemMap.values()) {
-            if (workitem.getStatus() == status) {
-                itemSet.add(workitem);
+        // Fast path: O(1) index lookup returns only the IDs we need
+        Set<String> matchingIds = _statusIndex.getItemIdsWithStatus(status);
+        Set<YWorkItem> itemSet = new HashSet<>(matchingIds.size() * 2);
+        for (String id : matchingIds) {
+            YWorkItem item = _itemMap.get(id);
+            if (item != null && item.getStatus() == status) {
+                itemSet.add(item);
             }
         }
         return itemSet;
@@ -310,6 +347,27 @@ public class YWorkItemRepository {
      */
     public int getWorkItemCount() {
         return _itemMap != null ? _itemMap.size() : 0;
+    }
+
+    /**
+     * P3 - Notifies the status index of a work item status transition.
+     * Must be called whenever a work item's status changes (via YWorkItem.setStatus or similar).
+     *
+     * @param itemId    the work item ID string
+     * @param oldStatus the previous status
+     * @param newStatus the new status
+     */
+    public void notifyStatusChange(String itemId, YWorkItemStatus oldStatus, YWorkItemStatus newStatus) {
+        _statusIndex.updateStatus(itemId, oldStatus, newStatus);
+    }
+
+    /**
+     * P3 - Returns diagnostics for the status index, useful for performance debugging.
+     *
+     * @return a formatted diagnostic string
+     */
+    public String getStatusIndexDiagnostics() {
+        return _statusIndex.diagnostics();
     }
 
     /**

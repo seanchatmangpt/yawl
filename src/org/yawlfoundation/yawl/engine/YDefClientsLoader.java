@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.authentication.YClient;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
-import org.yawlfoundation.yawl.util.PasswordEncryptor;
+import org.yawlfoundation.yawl.util.Argon2PasswordEncryptor;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,6 +36,12 @@ import java.util.Set;
 /**
  * Registers the default service and external client accounts when they have not been
  * previously persisted (ie. on first startup) or when persistence is disabled.
+ *
+ * <p>SOC2 CRITICAL#4 remediation (2026-02-17): password hashing migrated from the
+ * cryptographically broken SHA-1 ({@code PasswordEncryptor}) to Argon2id
+ * ({@link Argon2PasswordEncryptor}) with OWASP-recommended cost factors
+ * (memory=19 MiB, iterations=2, parallelism=1). The deprecated
+ * {@code PasswordEncryptor} is no longer imported or used here.
  *
  * @author Michael Adams
  * @date 27/01/2011
@@ -101,14 +107,14 @@ public class YDefClientsLoader {
             String[] parts = rawLine.substring(headerEnd + 1).split(",");
             if (rawLine.startsWith("extClient:") && (parts.length == 3)) {
                 _clients.add(new YExternalClient(parts[0].trim(),
-                        PasswordEncryptor.encrypt(parts[1].trim(), null),
+                        hashPassword(parts[1].trim()),
                         parts[2].trim()));
                 return;
             }
             else if (rawLine.startsWith("service:") && (parts.length == 5)) {
                 YAWLServiceReference service = new YAWLServiceReference(
                         parts[3].trim(), null, parts[0].trim(),
-                        PasswordEncryptor.encrypt(parts[1].trim(), null),
+                        hashPassword(parts[1].trim()),
                         parts[2].trim());
                 service.setAssignable(parts[4].trim().equalsIgnoreCase("true"));
                 _services.add(service);
@@ -116,6 +122,21 @@ public class YDefClientsLoader {
             }
         }
         _log.warn("Could not load default external client - malformed entry: {}", rawLine);
+    }
+
+
+    /**
+     * Hashes a plaintext password using Argon2id (OWASP 2024 recommended algorithm).
+     *
+     * <p>SOC2 CRITICAL#4: Replaces the deprecated SHA-1 PasswordEncryptor.encrypt().
+     * Argon2id parameters: memory=19 MiB, iterations=2, parallelism=1 (OWASP minimum).
+     *
+     * @param plaintext the plaintext password from defaultClients.properties
+     * @return the Argon2id PHC string, safe for storage in the credential store
+     * @throws UnsupportedOperationException if the argon2-jvm library is not on the classpath
+     */
+    private String hashPassword(String plaintext) {
+        return Argon2PasswordEncryptor.hash(plaintext);
     }
     
 }

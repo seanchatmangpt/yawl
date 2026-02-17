@@ -113,7 +113,10 @@
 </center>
         <%
         
-		}catch(Exception e){}
+		}catch(Exception e){
+            log("ERROR: Failed to send email: " + e.getMessage(), e);
+            out.println("<p style='color:red;'>Error sending email: " + e.getMessage() + "</p>");
+        }
         %>
 </body>
 </html>

@@ -276,13 +276,13 @@ public class DOMUtil
         else transformer.setOutputProperty("omit-xml-declaration", "no");
         transformer.transform(source, new StreamResult(baos));
 
-        try
-        {
-            return baos.toString(encoding);
+        if ("UTF-8".equalsIgnoreCase(encoding) || "UTF8".equalsIgnoreCase(encoding)) {
+            return baos.toString(StandardCharsets.UTF_8);
         }
-        catch (UnsupportedEncodingException e) //I would prefer to propagate the exception, but it breaks to many contracts
-        {
-            return baos.toString();
+        try {
+            return baos.toString(encoding);
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("Unsupported encoding requested: " + encoding, e);
         }
     }
 
@@ -321,13 +321,13 @@ public class DOMUtil
         else transformer.setOutputProperty("omit-xml-declaration", "no");
         transformer.transform(source, new StreamResult(baos));
 
-        try
-        {
-            return baos.toString(encoding);
+        if ("UTF-8".equalsIgnoreCase(encoding) || "UTF8".equalsIgnoreCase(encoding)) {
+            return baos.toString(StandardCharsets.UTF_8);
         }
-        catch (UnsupportedEncodingException e) //I would prefer to propagate the exception, but it breaks to many contracts
-        {
-            return baos.toString();
+        try {
+            return baos.toString(encoding);
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("Unsupported encoding requested: " + encoding, e);
         }
     }
 

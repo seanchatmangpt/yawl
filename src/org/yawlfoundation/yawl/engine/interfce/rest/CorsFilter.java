@@ -88,7 +88,15 @@ public class CorsFilter implements Filter {
 
         String credentials = filterConfig.getInitParameter("allowCredentials");
         if (credentials != null && !credentials.trim().isEmpty()) {
-            allowCredentials = Boolean.parseBoolean(credentials.trim());
+            boolean requestedCredentials = Boolean.parseBoolean(credentials.trim());
+            if (requestedCredentials && allowedOrigins.isEmpty()) {
+                throw new ServletException(
+                        "CORS misconfiguration: 'allowCredentials=true' requires at least one " +
+                        "explicitly configured origin in 'allowedOrigins'. Wildcard '*' is not " +
+                        "permitted. Configure specific trusted origins (comma-separated) via the " +
+                        "'allowedOrigins' init-param before enabling credentials.");
+            }
+            allowCredentials = requestedCredentials;
         }
 
         _logger.info("CORS filter initialized: allowCredentials={}", allowCredentials);
