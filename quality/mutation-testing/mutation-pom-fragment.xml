@@ -1,0 +1,150 @@
+<!--
+    PASTE THIS PROFILE BLOCK INTO /home/user/yawl/pom.xml INSIDE <profiles>.
+    It adds two profiles: 'mutation' (full run) and 'mutation-incremental' (history-based).
+
+    Required property additions to <properties> section:
+        <pitest.plugin.version>1.16.1</pitest.plugin.version>
+        <pitest.junit5.plugin.version>1.2.1</pitest.junit5.plugin.version>
+-->
+
+<!-- ================================================================ -->
+<!-- Mutation profile: full PIT mutation coverage run                  -->
+<!-- Usage: mvn -P mutation clean test-compile                         -->
+<!--             org.pitest:pitest-maven:mutationCoverage              -->
+<!-- Thresholds: 80% kill rate for engine core; 75% project-wide      -->
+<!-- ================================================================ -->
+<profile>
+    <id>mutation</id>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>${pitest.plugin.version}</version>
+                <dependencies>
+                    <!-- JUnit 5 support for PIT -->
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>${pitest.junit5.plugin.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!--
+                        STRONGER mutator set covers:
+                          - Conditional boundaries (< vs <=, > vs >=)
+                          - Arithmetic operators
+                          - Return value mutations
+                          - Void method call removal
+                          - Inline constant mutations
+                          - Constructor call removal
+                        These are the mutation classes that reveal missing
+                        boundary and logic assertions in Petri-net code.
+                    -->
+                    <mutators>
+                        <mutator>STRONGER</mutator>
+                    </mutators>
+
+                    <!-- Parallelism: 4 threads matches surefire threadCount -->
+                    <threads>4</threads>
+
+                    <!-- History file enables incremental analysis on subsequent runs -->
+                    <historyInputFile>${project.build.directory}/pit-history.bin</historyInputFile>
+                    <historyOutputFile>${project.build.directory}/pit-history.bin</historyOutputFile>
+
+                    <!-- Output formats: HTML for developers, XML for CI ingestion -->
+                    <outputFormats>
+                        <outputFormat>HTML</outputFormat>
+                        <outputFormat>XML</outputFormat>
+                    </outputFormats>
+                    <reportsDirectory>${project.build.directory}/pit-reports</reportsDirectory>
+
+                    <!-- JVM args to support Java 21 preview features -->
+                    <jvmArgs>
+                        <jvmArg>--enable-preview</jvmArg>
+                        <jvmArg>-XX:+UseG1GC</jvmArg>
+                        <jvmArg>-Xmx2g</jvmArg>
+                    </jvmArgs>
+
+                    <!-- Timeout: 3x normal test execution; accommodates engine startup -->
+                    <timeoutFactor>3.0</timeoutFactor>
+                    <timeoutConstant>10000</timeoutConstant>
+
+                    <!--
+                        THRESHOLDS
+                        75% project-wide mutation kill rate
+                        70% line coverage (minimum for PIT to find mutations)
+                        Engine-specific 80% threshold is enforced in
+                        MutationCoverageVerifier (see quality/mutation-testing/).
+                    -->
+                    <mutationThreshold>75</mutationThreshold>
+                    <coverageThreshold>70</coverageThreshold>
+
+                    <!-- Target production packages only -->
+                    <targetClasses>
+                        <param>org.yawlfoundation.yawl.engine.*</param>
+                        <param>org.yawlfoundation.yawl.elements.*</param>
+                        <param>org.yawlfoundation.yawl.stateless.*</param>
+                        <param>org.yawlfoundation.yawl.authentication.*</param>
+                        <param>org.yawlfoundation.yawl.integration.*</param>
+                        <param>org.yawlfoundation.yawl.unmarshal.*</param>
+                        <param>org.yawlfoundation.yawl.schema.*</param>
+                        <param>org.yawlfoundation.yawl.util.*</param>
+                        <param>org.yawlfoundation.yawl.logging.*</param>
+                        <param>org.yawlfoundation.yawl.exceptions.*</param>
+                        <param>org.yawlfoundation.yawl.resilience.*</param>
+                        <param>org.yawlfoundation.yawl.security.*</param>
+                    </targetClasses>
+
+                    <excludedClasses>
+                        <param>org.yawlfoundation.yawl.swingWorklist.*</param>
+                        <param>org.yawlfoundation.yawl.procletService.*</param>
+                        <param>org.yawlfoundation.yawl.smsModule.*</param>
+                        <param>org.yawlfoundation.yawl.twitterService.*</param>
+                        <param>org.yawlfoundation.yawl.mailSender.*</param>
+                        <param>org.yawlfoundation.yawl.mailService.*</param>
+                        <param>*ObjectFactory*</param>
+                        <param>*package-info*</param>
+                    </excludedClasses>
+
+                    <excludedTests>
+                        <param>org.yawlfoundation.yawl.performance.*</param>
+                        <param>org.yawlfoundation.yawl.build.*</param>
+                        <param>org.yawlfoundation.yawl.deployment.*</param>
+                        <param>org.yawlfoundation.yawl.database.*</param>
+                    </excludedTests>
+
+                    <!-- Fail the build if thresholds are not met -->
+                    <failWhenNoMutations>true</failWhenNoMutations>
+
+                    <!-- Verbose XML includes per-mutation status for dashboard ingestion -->
+                    <verbose>false</verbose>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>mutation-coverage</id>
+                        <!-- Does not bind to a lifecycle phase by default;
+                             invoke explicitly: org.pitest:pitest-maven:mutationCoverage -->
+                        <goals>
+                            <goal>mutationCoverage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+
+<!-- ================================================================ -->
+<!-- mutation-incremental: activates history-based diff analysis       -->
+<!-- Usage: mvn -P mutation,mutation-incremental ...                   -->
+<!-- This profile modifies only the withHistory flag; the full         -->
+<!-- 'mutation' profile must also be active.                           -->
+<!-- ================================================================ -->
+<profile>
+    <id>mutation-incremental</id>
+    <properties>
+        <!-- Instructs PIT to skip re-running unchanged class/test pairs -->
+        <pitest.withHistory>true</pitest.withHistory>
+    </properties>
+</profile>

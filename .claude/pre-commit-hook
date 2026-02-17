@@ -6,7 +6,7 @@ echo "Running YAWL code quality validation..."
 echo ""
 
 # Run validation
-./.claude/validate-no-mocks.sh
+./.claude/hooks/validate-no-mocks.sh
 
 if [ $? -ne 0 ]; then
     echo ""

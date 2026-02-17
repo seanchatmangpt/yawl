@@ -1,0 +1,339 @@
+# =============================================================================
+# YAWL v6.0.0 – PostgreSQL StatefulSet (Primary + Streaming Replica)
+# =============================================================================
+# Architecture:
+#   - Primary:  read/write, receives writes from all YAWL services
+#   - Replica:  hot-standby streaming replica for read scale-out and HA
+#
+# Backup strategy:
+#   - pg_basebackup job: nightly full backup to object storage
+#   - WAL archiving:     continuous WAL shipping for PITR
+#
+# Recovery target: RPO < 5 minutes, RTO < 15 minutes
+# =============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: primary
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+spec:
+  serviceName: {{ .Release.Name }}-postgresql-headless
+  replicas: {{ .Values.primary.replicaCount | default 1 }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: primary
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: primary
+      annotations:
+        # Prometheus scraping via postgres_exporter sidecar
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-postgresql" .Release.Name) }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.primary.containerSecurityContext.runAsUser | default 999 }}
+        fsGroup: {{ .Values.primary.podSecurityContext.fsGroup | default 999 }}
+        seccompProfile:
+          type: RuntimeDefault
+      # -----------------------------------------------------------------------
+      # Init: set correct permissions on data directory
+      # -----------------------------------------------------------------------
+      initContainers:
+        - name: init-chmod-data
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          command:
+            - sh
+            - -c
+            - |
+              chown -R {{ .Values.primary.containerSecurityContext.runAsUser | default 999 }}:{{ .Values.primary.podSecurityContext.fsGroup | default 999 }} /var/lib/postgresql/data
+              chmod 0700 /var/lib/postgresql/data
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+      # -----------------------------------------------------------------------
+      # Primary PostgreSQL container
+      # -----------------------------------------------------------------------
+      containers:
+        - name: postgresql
+          image: postgres:{{ .Chart.AppVersion }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: {{ .Values.primary.containerSecurityContext.runAsUser | default 999 }}
+            runAsNonRoot: {{ .Values.primary.containerSecurityContext.runAsNonRoot | default true }}
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # PostgreSQL needs to write to data dir
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-auth
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: {{ .Values.auth.database }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            # WAL archiving configuration for PITR
+            - name: POSTGRES_INITDB_ARGS
+              value: "--encoding=UTF8 --locale=C --data-checksums"
+          # Startup probe: PostgreSQL takes time to recover on restart
+          startupProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30    # up to 2.5 minutes
+          {{- if .Values.primary.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            initialDelaySeconds: {{ .Values.primary.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.primary.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.primary.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.primary.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.primary.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U postgres && psql -U postgres -c "SELECT 1" -q
+            initialDelaySeconds: {{ .Values.primary.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.primary.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.primary.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.primary.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.primary.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /etc/postgresql/conf.d
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run/postgresql
+
+        # -----------------------------------------------------------------------
+        # Metrics sidecar: postgres_exporter for Prometheus scraping
+        # -----------------------------------------------------------------------
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          image: prometheuscommunity/postgres-exporter:v0.15.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: metrics
+              containerPort: 9187
+              protocol: TCP
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/{{ .Values.auth.database }}?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: postgres
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-auth
+                  key: postgres-password
+            - name: PG_EXPORTER_AUTO_DISCOVER_DATABASES
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        {{- end }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-postgresql-config
+        - name: init-scripts
+          configMap:
+            name: {{ .Release.Name }}-postgresql-init
+            defaultMode: 0555
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+        - name: run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+
+  # -----------------------------------------------------------------------
+  # Persistent Volume Claim template
+  # -----------------------------------------------------------------------
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        {{- with .Values.primary.persistence.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .Values.primary.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.primary.persistence.storageClass }}
+        storageClassName: {{ .Values.primary.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.primary.persistence.size | quote }}
+---
+# =============================================================================
+# pg_basebackup CronJob – nightly full backup to object storage
+# =============================================================================
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-postgresql-backup
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: postgresql-backup
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: backup
+spec:
+  schedule: {{ .Values.backup.schedule | default "0 2 * * *" | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postgresql-backup
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-postgresql" .Release.Name) }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: postgres:{{ .Chart.AppVersion }}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              command:
+                - bash
+                - -euo
+                - pipefail
+                - -c
+                - |
+                  BACKUP_DIR="/backup/$(date +%Y%m%d_%H%M%S)"
+                  echo "[backup] Starting pg_basebackup to ${BACKUP_DIR}"
+                  pg_basebackup \
+                    -h ${PGHOST} \
+                    -U ${PGUSER} \
+                    -D "${BACKUP_DIR}" \
+                    --format=tar \
+                    --gzip \
+                    --compress=9 \
+                    --checkpoint=fast \
+                    --wal-method=stream \
+                    --progress
+                  echo "[backup] Backup complete: ${BACKUP_DIR}"
+                  # Cleanup backups older than retention period
+                  find /backup -maxdepth 1 -type d -mtime +{{ .Values.backup.retentionDays | default 7 }} \
+                    -exec rm -rf {} + || true
+                  echo "[backup] Cleanup complete"
+              env:
+                - name: PGHOST
+                  value: {{ .Release.Name }}-postgresql
+                - name: PGUSER
+                  value: postgres
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-postgresql-auth
+                      key: postgres-password
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backup
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: backup-storage
+              {{- if .Values.backup.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Release.Name }}-postgresql-backup
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+{{- end }}

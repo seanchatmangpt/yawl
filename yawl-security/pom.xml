@@ -9,7 +9,6 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-security</artifactId>
@@ -42,7 +41,7 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
 

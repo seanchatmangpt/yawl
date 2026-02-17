@@ -1,0 +1,227 @@
+{{- /*
+  YAWL v6.0.0 – Istio Service Mesh Integration
+  ----------------------------------------------
+  Enabled when: .Values.istio.enabled = true
+
+  Resources created:
+    - PeerAuthentication   : enforce STRICT mTLS within the yawl namespace
+    - DestinationRule      : connection pooling + outlier detection per service
+    - VirtualService       : traffic routing + retry/timeout policy for engine
+    - AuthorizationPolicy  : deny-all default + explicit allow rules
+*/ -}}
+{{- if .Values.istio.enabled }}
+---
+# ---------------------------------------------------------------------------
+# PeerAuthentication: enforce STRICT mTLS for all pods in the yawl namespace
+# ---------------------------------------------------------------------------
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "yawl.fullname" . }}-mtls
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio
+spec:
+  # Apply to entire namespace
+  mtls:
+    mode: STRICT
+---
+# ---------------------------------------------------------------------------
+# DestinationRule: engine service connection pooling and circuit breaking
+# ---------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ include "yawl.name" . }}-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-engine
+spec:
+  host: {{ include "yawl.name" . }}-engine.{{ include "yawl.namespace" . }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+        maxRetries: 3
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+    # Outlier detection: eject pods that return 5xx errors
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+    # TLS mode driven by PeerAuthentication above
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+    - name: stable
+      labels:
+        version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+    - name: canary
+      labels:
+        track: canary
+---
+# ---------------------------------------------------------------------------
+# DestinationRule: resource-service
+# ---------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ include "yawl.name" . }}-resource-service
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-resource-service
+spec:
+  host: {{ include "yawl.name" . }}-resource-service.{{ include "yawl.namespace" . }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 200
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 60s
+    tls:
+      mode: ISTIO_MUTUAL
+---
+# ---------------------------------------------------------------------------
+# VirtualService: engine – retries, timeouts, fault injection gate
+# ---------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "yawl.name" . }}-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-vs-engine
+spec:
+  hosts:
+    - {{ include "yawl.name" . }}-engine
+    - {{ include "yawl.name" . }}-engine.{{ include "yawl.namespace" . }}.svc.cluster.local
+  http:
+    # Health and metrics routes – no timeout, no retries needed
+    - match:
+        - uri:
+            prefix: /actuator/health
+        - uri:
+            prefix: /actuator/prometheus
+      route:
+        - destination:
+            host: {{ include "yawl.name" . }}-engine
+            port:
+              number: {{ .Values.services.engine.service.port }}
+      timeout: 5s
+    # Case management routes – longer timeout (workflow operations can be slow)
+    - match:
+        - uri:
+            prefix: /yawl/ia
+        - uri:
+            prefix: /yawl/ib
+      route:
+        - destination:
+            host: {{ include "yawl.name" . }}-engine
+            subset: stable
+            port:
+              number: {{ .Values.services.engine.service.port }}
+          weight: {{ .Values.istio.canary.stableWeight | default 100 }}
+        {{- if .Values.istio.canary.enabled }}
+        - destination:
+            host: {{ include "yawl.name" . }}-engine
+            subset: canary
+            port:
+              number: {{ .Values.services.engine.service.port }}
+          weight: {{ .Values.istio.canary.weight | default 0 }}
+        {{- end }}
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+    # Default route for all other engine traffic
+    - route:
+        - destination:
+            host: {{ include "yawl.name" . }}-engine
+            subset: stable
+            port:
+              number: {{ .Values.services.engine.service.port }}
+      timeout: 15s
+      retries:
+        attempts: 2
+        perTryTimeout: 5s
+        retryOn: "5xx,reset,connect-failure"
+---
+# ---------------------------------------------------------------------------
+# AuthorizationPolicy: default deny-all within namespace
+# ---------------------------------------------------------------------------
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "yawl.fullname" . }}-deny-all
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-authz
+spec:
+  # Empty spec with no rules = deny all (explicit default-deny)
+  {}
+---
+# ---------------------------------------------------------------------------
+# AuthorizationPolicy: allow ingress → engine (HTTP)
+# ---------------------------------------------------------------------------
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "yawl.fullname" . }}-allow-ingress-engine
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-authz
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "yawl.name" . }}-engine
+  rules:
+    - from:
+        - source:
+            namespaces:
+              - {{ .Values.istio.ingressNamespace | default "istio-system" }}
+              - {{ include "yawl.namespace" . }}
+      to:
+        - operation:
+            ports: ["8080", "9090"]
+---
+# ---------------------------------------------------------------------------
+# AuthorizationPolicy: allow inter-service communication within yawl namespace
+# ---------------------------------------------------------------------------
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "yawl.fullname" . }}-allow-internal
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: istio-authz
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces:
+              - {{ include "yawl.namespace" . }}
+      to:
+        - operation:
+            ports: ["8080", "9090", "5432", "6379"]
+{{- end }}

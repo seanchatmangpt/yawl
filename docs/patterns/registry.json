@@ -1,0 +1,387 @@
+{
+  "version": "6.0.0",
+  "lastUpdated": "2026-02-17",
+  "totalPatterns": 20,
+  "patterns": [
+    {
+      "id": "WCP-01",
+      "name": "Sequence",
+      "aliases": ["Serial Flow", "Linear Workflow", "Sequential Execution"],
+      "category": "control-flow",
+      "subcategory": "basic",
+      "path": "control-flow/WCP-01-sequence",
+      "tags": ["sequence", "serial", "linear", "basic"],
+      "useCases": [
+        "document approval pipeline",
+        "onboarding checklist",
+        "order processing"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["SEQUENCE"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "Tasks execute in strict sequential order. Each task must complete before the next begins."
+    },
+    {
+      "id": "WCP-02",
+      "name": "Parallel Split",
+      "aliases": ["AND Split", "Fork", "Concurrent Start"],
+      "category": "control-flow",
+      "subcategory": "branching",
+      "path": "control-flow/WCP-02-parallel-split",
+      "tags": ["parallel", "concurrent", "fork", "and-split"],
+      "useCases": [
+        "concurrent document review",
+        "parallel background checks",
+        "simultaneous notifications"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["AND_SPLIT"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "A case branches into multiple parallel paths that execute concurrently."
+    },
+    {
+      "id": "WCP-03",
+      "name": "Synchronisation",
+      "aliases": ["AND Join", "Merge", "Barrier", "All-Complete"],
+      "category": "control-flow",
+      "subcategory": "merge",
+      "path": "control-flow/WCP-03-synchronisation",
+      "tags": ["sync", "join", "and-join", "barrier"],
+      "useCases": [
+        "wait for all approvals",
+        "all-department sign-off",
+        "aggregate parallel results"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["AND_JOIN"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "All parallel branches must complete before the workflow continues."
+    },
+    {
+      "id": "WCP-04",
+      "name": "Exclusive Choice",
+      "aliases": ["XOR Split", "Conditional Routing", "If-Else Branch", "Decision Point"],
+      "category": "control-flow",
+      "subcategory": "branching",
+      "path": "control-flow/WCP-04-exclusive-choice",
+      "tags": ["xor", "exclusive", "conditional", "routing", "decision"],
+      "useCases": [
+        "approval routing by amount",
+        "exception severity routing",
+        "document type classification"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["XOR_SPLIT"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "Exactly one of N alternative paths is selected based on a guard condition."
+    },
+    {
+      "id": "WCP-05",
+      "name": "Simple Merge",
+      "aliases": ["XOR Join", "Passive Join", "Convergence"],
+      "category": "control-flow",
+      "subcategory": "merge",
+      "path": "control-flow/WCP-05-simple-merge",
+      "tags": ["merge", "xor-join", "convergence", "passive"],
+      "useCases": [
+        "merge after exclusive choice",
+        "re-entry after exception path"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["XOR_JOIN"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "Merges multiple incoming branches; exactly one branch will arrive at runtime."
+    },
+    {
+      "id": "WCP-06",
+      "name": "Multi-Choice",
+      "aliases": ["OR Split", "Inclusive Choice", "Some-Of-N"],
+      "category": "control-flow",
+      "subcategory": "branching",
+      "path": "control-flow/WCP-06-multi-choice",
+      "tags": ["or-split", "multi-choice", "inclusive", "some-of-n"],
+      "useCases": [
+        "notify selected departments",
+        "conditional parallel reviews",
+        "optional process steps"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["OR_SPLIT"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "One or more of N alternative paths is activated based on guard conditions."
+    },
+    {
+      "id": "WCP-07",
+      "name": "Structured Synchronising Merge",
+      "aliases": ["OR Join", "Discriminator", "Some-Of-N Merge"],
+      "category": "control-flow",
+      "subcategory": "merge",
+      "path": "control-flow/WCP-07-structured-sync-merge",
+      "tags": ["or-join", "sync-merge", "structured", "some-of-n"],
+      "useCases": [
+        "merge after multi-choice",
+        "wait for at least one branch"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["OR_JOIN"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "Merges after a multi-choice split, synchronising all active branches."
+    },
+    {
+      "id": "WCP-21",
+      "name": "Critical Section",
+      "aliases": ["Mutex", "Exclusive Execution Region", "Non-Concurrent Execution"],
+      "category": "control-flow",
+      "subcategory": "concurrency",
+      "path": "control-flow/WCP-21-critical-section",
+      "tags": ["mutex", "exclusive", "critical-section", "serialise"],
+      "useCases": [
+        "single-user resource access",
+        "serialised database updates",
+        "rate-limited external API calls"
+      ],
+      "complexity": "ADVANCED",
+      "petriNetElements": ["CRITICAL_SECTION"],
+      "composedFrom": [],
+      "since": "5.0.0",
+      "description": "Ensures a region of the workflow executes exclusively — no other case instance can be in the same region simultaneously."
+    },
+    {
+      "id": "WCP-38",
+      "name": "Cancelling Task",
+      "aliases": ["Abort Task", "Forced Termination"],
+      "category": "control-flow",
+      "subcategory": "cancellation",
+      "path": "control-flow/WCP-38-cancelling-task",
+      "tags": ["cancel", "abort", "termination", "cancelling"],
+      "useCases": [
+        "customer withdrawal cancels pending tasks",
+        "SLA breach cancels remaining steps"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["CANCELLATION_SET"],
+      "composedFrom": [],
+      "since": "4.0.0",
+      "description": "Completion of one task cancels a set of other tasks in the same case."
+    },
+    {
+      "id": "ENT-APPROVAL",
+      "name": "Single Approver Workflow",
+      "aliases": ["Sequential Approval", "One-Step Approval", "Linear Approval"],
+      "category": "enterprise",
+      "subcategory": "approval",
+      "path": "enterprise/approval-workflow",
+      "tags": ["approval", "single", "human-task", "review"],
+      "useCases": [
+        "expense approval",
+        "leave request",
+        "document sign-off"
+      ],
+      "complexity": "BASIC",
+      "petriNetElements": ["SEQUENCE"],
+      "composedFrom": ["WCP-01"],
+      "since": "6.0.0",
+      "description": "A human task requires approval from a single designated approver. Includes approved/rejected routing."
+    },
+    {
+      "id": "ENT-PARALLEL-APPROVAL",
+      "name": "Parallel Multi-Approver Workflow",
+      "aliases": ["Concurrent Approval", "All-Must-Approve", "Committee Approval"],
+      "category": "enterprise",
+      "subcategory": "approval",
+      "path": "enterprise/parallel-approval",
+      "tags": ["approval", "parallel", "multi-approver", "concurrent", "and-split"],
+      "useCases": [
+        "purchase order approval (finance + manager)",
+        "contract review (legal + commercial)",
+        "policy change (multiple department heads)"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["AND_SPLIT", "AND_JOIN"],
+      "composedFrom": ["WCP-02", "WCP-03"],
+      "since": "6.0.0",
+      "description": "Multiple approvers review in parallel; all must approve before the workflow advances. Any rejection can optionally terminate remaining approvals."
+    },
+    {
+      "id": "ENT-CONDITIONAL-ROUTING",
+      "name": "Conditional Routing Workflow",
+      "aliases": ["Rule-Based Routing", "Threshold Routing", "Tiered Approval"],
+      "category": "enterprise",
+      "subcategory": "routing",
+      "path": "enterprise/conditional-routing",
+      "tags": ["routing", "conditional", "threshold", "tiered", "xor-split"],
+      "useCases": [
+        "invoice routing by amount (manager/director/VP)",
+        "support ticket routing by severity",
+        "risk assessment routing"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["XOR_SPLIT", "XOR_JOIN"],
+      "composedFrom": ["WCP-04", "WCP-05"],
+      "since": "6.0.0",
+      "description": "Routes a case to different processing paths based on evaluated conditions. Includes guard expressions and a convergence merge."
+    },
+    {
+      "id": "ENT-ESCALATION",
+      "name": "Escalation Chain Workflow",
+      "aliases": ["SLA Escalation", "Timeout Escalation", "Deadline Routing"],
+      "category": "enterprise",
+      "subcategory": "escalation",
+      "path": "enterprise/escalation-chain",
+      "tags": ["escalation", "sla", "timeout", "deadline", "timer"],
+      "useCases": [
+        "SLA-bound support ticket escalation",
+        "overdue approval escalation",
+        "unresponsive approver notification chain"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["XOR_SPLIT", "TIMER"],
+      "composedFrom": ["WCP-04", "WCP-38"],
+      "since": "6.0.0",
+      "description": "A task has a deadline timer. If the task is not completed in time, it is automatically escalated to the next level in an escalation chain."
+    },
+    {
+      "id": "ENT-SLA-ENFORCEMENT",
+      "name": "SLA Timer Enforcement",
+      "aliases": ["Deadline Enforcement", "Time-Bound Task", "Hard Timeout"],
+      "category": "enterprise",
+      "subcategory": "timers",
+      "path": "enterprise/sla-timer-enforcement",
+      "tags": ["sla", "timer", "deadline", "enforcement", "timeout"],
+      "useCases": [
+        "regulatory compliance windows",
+        "customer SLA enforcement",
+        "time-limited data access"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["TIMER", "CANCELLATION_SET", "XOR_SPLIT"],
+      "composedFrom": ["WCP-04", "WCP-38"],
+      "since": "6.0.0",
+      "description": "Enforces an absolute deadline on a workflow segment. On expiry, the in-progress work is cancelled and a violation path is activated."
+    },
+    {
+      "id": "ENT-COMPENSATION",
+      "name": "Compensating Transaction Workflow",
+      "aliases": ["Saga Pattern", "Undo Chain", "Rollback Workflow"],
+      "category": "enterprise",
+      "subcategory": "exception",
+      "path": "enterprise/compensating-transaction",
+      "tags": ["compensation", "saga", "undo", "rollback", "exception"],
+      "useCases": [
+        "order fulfilment with payment reversal on failure",
+        "hotel + flight booking with atomic cancel",
+        "multi-system data update with rollback"
+      ],
+      "complexity": "ADVANCED",
+      "petriNetElements": ["CANCELLATION_SET", "XOR_SPLIT", "SEQUENCE"],
+      "composedFrom": ["WCP-04", "WCP-38"],
+      "since": "6.0.0",
+      "description": "Implements the Saga pattern: a sequence of steps where each step has a corresponding compensating action. On failure at any step, compensating actions are invoked in reverse order."
+    },
+    {
+      "id": "ENT-LOOPING-REVIEW",
+      "name": "Looping Review Cycle",
+      "aliases": ["Review-Revise Loop", "Iterative Approval", "Rework Loop"],
+      "category": "enterprise",
+      "subcategory": "loops",
+      "path": "enterprise/looping-review",
+      "tags": ["loop", "review", "rework", "iterative", "rejection-loop"],
+      "useCases": [
+        "document revision cycle (submit-review-revise)",
+        "code review with rework iterations",
+        "grant application review and resubmission"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["XOR_SPLIT", "LOOP"],
+      "composedFrom": ["WCP-04"],
+      "since": "6.0.0",
+      "description": "A review task can return a document to the submitter for revision. The submit-review cycle repeats until approved or a maximum iteration count is reached."
+    },
+    {
+      "id": "ENT-MULTI-INSTANCE",
+      "name": "Multi-Instance Review",
+      "aliases": ["Dynamic Multi-Instance", "One-Per-Item Review", "Batch Task"],
+      "category": "enterprise",
+      "subcategory": "multi-instance",
+      "path": "enterprise/multi-instance-review",
+      "tags": ["multi-instance", "batch", "dynamic", "parallel-items"],
+      "useCases": [
+        "review each line item in an order",
+        "process each file in a batch",
+        "approve each candidate in a shortlist"
+      ],
+      "complexity": "ADVANCED",
+      "petriNetElements": ["MULTI_INSTANCE_TASK"],
+      "composedFrom": [],
+      "since": "6.0.0",
+      "description": "A task is instantiated once for each element in a collection. Instances execute in parallel. The workflow continues when a threshold number of instances complete."
+    },
+    {
+      "id": "AGT-AGENT-ASSISTED",
+      "name": "Agent-Assisted Task",
+      "aliases": ["AI-Augmented Task", "Copilot Task"],
+      "category": "agent-patterns",
+      "subcategory": "decision-support",
+      "path": "agent-patterns/agent-assisted-task",
+      "tags": ["agent", "ai", "decision-support", "human-in-loop"],
+      "useCases": [
+        "AI drafts response; human reviews and submits",
+        "agent summarises data; human approves",
+        "AI flags anomalies; human investigates"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["SEQUENCE"],
+      "composedFrom": ["WCP-01"],
+      "since": "6.0.0",
+      "requiresSchema": "6.0",
+      "description": "An autonomous agent performs preliminary work (draft, analysis, recommendation) and an output. A human then reviews and either accepts or modifies before completing the task."
+    },
+    {
+      "id": "AGT-LLM-DECISION",
+      "name": "LLM Decision Point",
+      "aliases": ["AI Routing", "Intelligent Classifier", "NLP-Based Routing"],
+      "category": "agent-patterns",
+      "subcategory": "autonomous-routing",
+      "path": "agent-patterns/llm-decision-point",
+      "tags": ["llm", "ai", "routing", "classification", "nlp"],
+      "useCases": [
+        "classify incoming customer requests",
+        "route support tickets by content analysis",
+        "automated document categorisation"
+      ],
+      "complexity": "ADVANCED",
+      "petriNetElements": ["XOR_SPLIT"],
+      "composedFrom": ["WCP-04"],
+      "since": "6.0.0",
+      "requiresSchema": "6.0",
+      "description": "An LLM agent analyses task input data and selects one of N routing branches. The agent's decision produces a structured output that drives an XOR split."
+    },
+    {
+      "id": "AGT-HUMAN-AGENT-HANDOFF",
+      "name": "Human-Agent Handoff",
+      "aliases": ["Escalate to Human", "Human Override", "Fallback to Human"],
+      "category": "agent-patterns",
+      "subcategory": "fallback",
+      "path": "agent-patterns/human-agent-handoff",
+      "tags": ["handoff", "fallback", "human-in-loop", "escalation", "agent-failure"],
+      "useCases": [
+        "agent fails, task assigned to human",
+        "low-confidence agent decision escalated",
+        "agent timeout, human takes over"
+      ],
+      "complexity": "INTERMEDIATE",
+      "petriNetElements": ["XOR_SPLIT", "XOR_JOIN"],
+      "composedFrom": ["WCP-04", "WCP-05"],
+      "since": "6.0.0",
+      "requiresSchema": "6.0",
+      "description": "An agent attempts the task. On failure, low confidence, or timeout, the task is automatically handed off to a human participant. Both paths converge at the same completion point."
+    }
+  ]
+}

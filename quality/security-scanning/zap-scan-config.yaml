@@ -1,0 +1,181 @@
+# OWASP ZAP DAST Configuration for YAWL v6.0.0
+# =============================================
+# ZAP Automation Framework plan for active and passive scanning of
+# the YAWL engine REST endpoints.
+#
+# Usage:
+#   docker run -v $(pwd):/zap/wrk -t ghcr.io/zaproxy/zaproxy:stable \
+#     zap.sh -cmd -autorun /zap/wrk/quality/security-scanning/zap-scan-config.yaml
+#
+# For CI integration see: .github/workflows/security-scan.yaml
+# Suppressed false positives: owasp-suppressions.xml (existing file in repo root)
+
+env:
+  contexts:
+    - name: "YAWL Engine API"
+      urls:
+        - "http://localhost:8080"
+      includePaths:
+        - "http://localhost:8080/engine/.*"
+        - "http://localhost:8080/stateless/.*"
+        - "http://localhost:8080/mcp/.*"
+        - "http://localhost:8080/a2a/.*"
+      excludePaths:
+        - "http://localhost:8080/actuator/.*"
+        - "http://localhost:8080/swagger-ui/.*"
+        - "http://localhost:8080/v3/api-docs/.*"
+      authentication:
+        method: "json"
+        parameters:
+          loginUrl: "http://localhost:8080/auth/login"
+          loginRequestData: >
+            {"username":"zaptest@yawl.test","password":"${ZAP_TEST_PASSWORD}"}
+          loginIndicatorRegex: "\"sessionToken\""
+          logoutIndicatorRegex: "\"error\""
+        verification:
+          method: "response"
+          loggedInRegex: "\\Qsession\\E"
+          loggedOutRegex: "\\Q401\\E"
+      sessionManagement:
+        method: "httpAuth"
+        parameters: {}
+      technology:
+        include:
+          - "Db.H2"
+          - "Language.Java"
+          - "OS.Linux"
+          - "WS.REST"
+
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  # ─── Passive scan: safe for all environments ─────────────────────────────
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+      maxBodySizeInBytesToScan: 10000
+      enableTags: false
+
+  # ─── Spider: discover all API endpoints ──────────────────────────────────
+  - type: spider
+    name: "YAWL API Spider"
+    parameters:
+      context: "YAWL Engine API"
+      url: "http://localhost:8080"
+      maxDuration: 5
+      maxDepth: 10
+      maxChildren: 20
+      acceptCookies: true
+      handleODataParametersVisited: false
+      handleParameters: "USE_ALL"
+      parseComments: true
+      parseGit: false
+      parseSitemapXml: true
+      parseRobotsTxt: false
+      parseSVNEntries: false
+
+  # ─── OpenAPI import: ensure all endpoints are covered ────────────────────
+  - type: openapi
+    parameters:
+      apiUrl: "http://localhost:8080/v3/api-docs"
+      context: "YAWL Engine API"
+      targetUrl: "http://localhost:8080"
+
+  # ─── Wait for passive scan completion ────────────────────────────────────
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  # ─── Active scan: targeted attack simulation ─────────────────────────────
+  - type: activeScan
+    name: "YAWL Active Security Scan"
+    parameters:
+      context: "YAWL Engine API"
+      policy: "YAWL-API-Scan-Policy"
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 60
+      addQueryParam: false
+      defaultPolicy: "API-Scan-Policy"
+      delayInMs: 0
+      handleAntiCSRFTokens: true
+      injectPluginIdInHeader: false
+      scanHeadersAllRequests: false
+      threadPerHost: 4
+
+  # ─── Alert filters: suppress false positives known for YAWL ─────────────
+  - type: alertFilter
+    parameters:
+      deleteGlobalAlerts: false
+    rules:
+      # X-Content-Type-Options: not applicable for API-only endpoints
+      - ruleId: 10021
+        newRisk: "False Positive"
+        url: "http://localhost:8080/engine/.*"
+        parameter: ""
+        evidence: ""
+        methods:
+          - "GET"
+          - "POST"
+      # Content Security Policy: API endpoints do not serve HTML
+      - ruleId: 10038
+        newRisk: "False Positive"
+        url: "http://localhost:8080/.*"
+        parameter: ""
+        evidence: ""
+        methods: []
+
+  # ─── Report generation ───────────────────────────────────────────────────
+  - type: report
+    parameters:
+      template: "traditional-json-plus"
+      reportDir: "target/zap-reports"
+      reportFile: "zap-scan-result"
+      reportTitle: "YAWL v6.0.0 DAST Security Scan"
+      reportDescription: "OWASP ZAP active and passive scan results"
+      displayReport: false
+    risks:
+      - "high"
+      - "medium"
+      - "low"
+    confidences:
+      - "user_confirmed"
+      - "high"
+      - "medium"
+    sections:
+      - "siteRiskCounts"
+      - "summaries"
+      - "alerts"
+      - "statistics"
+
+  - type: report
+    parameters:
+      template: "traditional-html-plus"
+      reportDir: "target/zap-reports"
+      reportFile: "zap-scan-result"
+      reportTitle: "YAWL v6.0.0 DAST Security Scan"
+      reportDescription: "OWASP ZAP active and passive scan results"
+      displayReport: false
+
+  # ─── Fail the build on HIGH or MEDIUM findings ───────────────────────────
+  - type: outputSummary
+    parameters:
+      format: "Long"
+    summaries:
+      - name: "High Risk Alerts"
+        riskCode: 3
+        confidenceCode: -1
+        maxAlerts: 0
+        action: "passFail"
+        issue: "High-risk security vulnerabilities found - pipeline halted"
+        solution: "Remediate high-risk vulnerabilities before deployment"
+      - name: "Medium Risk Alerts"
+        riskCode: 2
+        confidenceCode: 2
+        maxAlerts: 0
+        action: "passFail"
+        issue: "Medium-risk security vulnerabilities with high confidence found"
+        solution: "Review and remediate before production deployment"

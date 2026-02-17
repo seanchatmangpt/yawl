@@ -1,0 +1,92 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <!--
+      YAWL v6.0 IntelliJ IDEA Inspection Profile
+      Enforces HYPER_STANDARDS: no mocks, no stubs, no TODOs.
+      Java 21 + Jakarta EE 10 + Hibernate 6.
+    -->
+    <option name="myName" value="Project Default" />
+
+    <!-- ================================================================
+         Code quality - real implementations required
+    ================================================================ -->
+
+    <!-- Flag TODO/FIXME comments as errors, not warnings -->
+    <inspection_tool class="CommentedOutCode" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="TodoComment" enabled="true" level="ERROR" enabled_by_default="true">
+      <option name="todoPattern" value="\btodo\b.*|fixme.*|xxx.*|hack.*|stub.*|placeholder.*" />
+    </inspection_tool>
+
+    <!-- ================================================================
+         Java correctness inspections
+    ================================================================ -->
+    <inspection_tool class="ConstantConditions" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="NullableProblems" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="UnnecessaryNullCheck" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="RedundantCast" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="UnnecessaryLocalVariable" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="UnusedDeclaration" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="EmptyMethod" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="EmptyCatchBlock" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="EmptyFinallyBlock" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="EmptyTryBlock" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Exception handling - no swallowing exceptions
+    ================================================================ -->
+    <inspection_tool class="ThrowFromFinallyBlock" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CatchMayIgnoreException" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="UnusedCatchParameter" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="IgnoreResultOfCall" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Resource management - try-with-resources
+    ================================================================ -->
+    <inspection_tool class="UseOfSystemOutOrSystemErr" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CallToSimpleGetterFromWithinClass" enabled="false" level="WARNING" enabled_by_default="false" />
+
+    <!-- ================================================================
+         Java modernisation - use Java 21+ features
+    ================================================================ -->
+    <inspection_tool class="CanBeFinal" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="Convert2Diamond" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="Convert2Lambda" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="Convert2MethodRef" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ConvertToStringSwitch" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="TryFinallyCanBeTryWithResources" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Collection and stream operations
+    ================================================================ -->
+    <inspection_tool class="CollectionAddAllCanBeReplacedWithConstructor" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="SizeReplaceableByIsEmpty" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="RedundantCollectionOperation" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Security - no plain text credentials, proper input validation
+    ================================================================ -->
+    <inspection_tool class="HardcodedPasswords" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Hibernate / JPA specific
+    ================================================================ -->
+    <inspection_tool class="SpringCachingOperationsInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+
+    <!-- ================================================================
+         Naming conventions
+    ================================================================ -->
+    <inspection_tool class="ClassNamingConvention" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="MethodNamingConvention" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="FieldNamingConvention" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="LocalVariableNamingConvention" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="ParameterNamingConvention" enabled="true" level="WARNING" enabled_by_default="true" />
+
+    <!-- ================================================================
+         Disable noisy / low-value inspections for this codebase
+    ================================================================ -->
+    <inspection_tool class="MagicNumber" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="FieldMayBeFinal" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="DuplicatedCode" enabled="false" level="WARNING" enabled_by_default="false" />
+
+  </profile>
+</component>

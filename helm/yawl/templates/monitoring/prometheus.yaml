@@ -1,0 +1,237 @@
+{{- /*
+  YAWL v6.0.0 – Prometheus Monitoring Integration
+  -------------------------------------------------
+  Enabled when: .Values.monitoring.enabled = true
+
+  Resources:
+    - ServiceMonitor  : Prometheus Operator scrape config for all YAWL services
+    - PrometheusRule  : alerting rules (SLO-based + operational)
+    - ConfigMap       : Grafana dashboard
+*/ -}}
+{{- if .Values.monitoring.enabled }}
+---
+# ---------------------------------------------------------------------------
+# ServiceMonitor: scrape all YAWL services via Spring Boot Actuator /prometheus
+# ---------------------------------------------------------------------------
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yawl.fullname" . }}
+  namespace: {{ .Values.monitoring.namespace | default (include "yawl.namespace" .) }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+    {{- with .Values.monitoring.serviceMonitorLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "yawl.namespace" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: yawl
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: management
+      path: /actuator/prometheus
+      scheme: http
+      interval: {{ .Values.monitoring.scrapeInterval | default "30s" }}
+      scrapeTimeout: {{ .Values.monitoring.scrapeTimeout | default "10s" }}
+      honorLabels: true
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+          targetLabel: yawl_component
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+---
+# ---------------------------------------------------------------------------
+# PrometheusRule: SLO-based alerting for YAWL engine
+# ---------------------------------------------------------------------------
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "yawl.fullname" . }}-alerts
+  namespace: {{ .Values.monitoring.namespace | default (include "yawl.namespace" .) }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+    {{- with .Values.monitoring.ruleLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    # ---- Engine availability SLO ------------------------------------------
+    - name: yawl.engine.slo
+      interval: 30s
+      rules:
+        - record: yawl:engine_availability_5m
+          expr: |
+            avg_over_time(
+              up{job=~".*yawl.*", yawl_component="engine"}[5m]
+            )
+
+        - alert: YAWLEngineDown
+          expr: up{job=~".*yawl.*", yawl_component="engine"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "YAWL Engine instance {{ $labels.pod }} is down"
+            description: "Engine pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been unreachable for > 1 minute."
+            runbook: "https://yawlfoundation.github.io/yawl/v6.0/runbooks/engine-down"
+
+        - alert: YAWLEngineSLOBreach
+          expr: |
+            yawl:engine_availability_5m < 0.995
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "YAWL Engine availability below 99.5% SLO"
+            description: "Engine availability: {{ $value | humanizePercentage }} (threshold: 99.5%)"
+
+    # ---- Engine performance -----------------------------------------------
+    - name: yawl.engine.performance
+      interval: 30s
+      rules:
+        - alert: YAWLCaseCreationLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              rate(yawl_case_creation_duration_seconds_bucket[5m])
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAWL case creation p99 latency exceeds 500ms SLA"
+            description: "p99 case creation latency: {{ $value | humanizeDuration }}"
+
+        - alert: YAWLWorkItemCheckoutLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              rate(yawl_workitem_checkout_duration_seconds_bucket[5m])
+            ) > 0.2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAWL work-item checkout p99 latency exceeds 200ms SLA"
+            description: "p99 checkout latency: {{ $value | humanizeDuration }}"
+
+        - alert: YAWLHighErrorRate
+          expr: |
+            rate(yawl_engine_errors_total[5m]) > 0.05
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAWL Engine error rate > 5%"
+            description: "Error rate: {{ $value | humanizePercentage }}"
+
+    # ---- JVM health -------------------------------------------------------
+    - name: yawl.jvm
+      interval: 60s
+      rules:
+        - alert: YAWLJVMHeapExhausted
+          expr: |
+            (
+              jvm_memory_used_bytes{area="heap", job=~".*yawl.*"}
+            /
+              jvm_memory_max_bytes{area="heap", job=~".*yawl.*"}
+            ) > 0.90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "YAWL JVM heap usage > 90% on {{ $labels.pod }}"
+            description: "Heap: {{ $value | humanizePercentage }}. Pod: {{ $labels.pod }}"
+
+        - alert: YAWLVirtualThreadsPinned
+          expr: |
+            rate(jvm_threads_states_threads{state="pinned", job=~".*yawl.*"}[5m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAWL virtual threads pinned (carrier thread blocked)"
+            description: "Pinned virtual threads detected – review synchronized blocks"
+
+    # ---- Database pool ----------------------------------------------------
+    - name: yawl.database
+      interval: 30s
+      rules:
+        - alert: YAWLConnectionPoolExhausted
+          expr: |
+            hikaricp_connections_pending{job=~".*yawl.*"} > 5
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAWL HikariCP connection pool queue > 5 waiters"
+            description: "Pending connections: {{ $value }}. Consider increasing maximumPoolSize."
+---
+# ---------------------------------------------------------------------------
+# ConfigMap: Grafana dashboard for YAWL Engine
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yawl.fullname" . }}-grafana-dashboard
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+    grafana_dashboard: "1"
+data:
+  yawl-engine.json: |
+    {
+      "title": "YAWL Engine v6.0.0",
+      "uid": "yawl-engine-v6",
+      "version": 1,
+      "schemaVersion": 38,
+      "refresh": "30s",
+      "tags": ["yawl", "bpm", "workflow"],
+      "panels": [
+        {
+          "id": 1,
+          "title": "Engine Availability (5m)",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "targets": [{"expr": "yawl:engine_availability_5m * 100", "legendFormat": "Availability %"}],
+          "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "red", "value": 0}, {"color": "yellow", "value": 99}, {"color": "green", "value": 99.5}]}}}
+        },
+        {
+          "id": 2,
+          "title": "Active Cases",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "targets": [{"expr": "yawl_active_cases_total", "legendFormat": "Active Cases"}]
+        },
+        {
+          "id": 3,
+          "title": "Case Creation Latency (p50/p99)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, rate(yawl_case_creation_duration_seconds_bucket[5m]))", "legendFormat": "p50"},
+            {"expr": "histogram_quantile(0.99, rate(yawl_case_creation_duration_seconds_bucket[5m]))", "legendFormat": "p99"}
+          ]
+        },
+        {
+          "id": 4,
+          "title": "JVM Heap Usage",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "targets": [
+            {"expr": "jvm_memory_used_bytes{area=\"heap\", job=~\".*yawl.*\"} / 1e6", "legendFormat": "Heap Used (MB)"},
+            {"expr": "jvm_memory_max_bytes{area=\"heap\", job=~\".*yawl.*\"} / 1e6", "legendFormat": "Heap Max (MB)"}
+          ]
+        }
+      ]
+    }
+{{- end }}

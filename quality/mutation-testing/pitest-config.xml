@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PIT Mutation Testing Configuration for YAWL v6.0.0
+    ====================================================
+    Consumed by the Maven 'mutation' profile in pom.xml.
+
+    Run:
+        mvn -P mutation clean test-compile org.pitest:pitest-maven:mutationCoverage
+        mvn -P mutation clean test-compile org.pitest:pitest-maven:mutationCoverage -DwithHistory
+-->
+<pitestConfiguration>
+    <mutators>
+        <mutator>STRONGER</mutator>
+    </mutators>
+
+    <targetClasses>
+        <param>org.yawlfoundation.yawl.engine.*</param>
+        <param>org.yawlfoundation.yawl.elements.*</param>
+        <param>org.yawlfoundation.yawl.stateless.*</param>
+        <param>org.yawlfoundation.yawl.authentication.*</param>
+        <param>org.yawlfoundation.yawl.integration.*</param>
+        <param>org.yawlfoundation.yawl.unmarshal.*</param>
+        <param>org.yawlfoundation.yawl.schema.*</param>
+        <param>org.yawlfoundation.yawl.util.*</param>
+        <param>org.yawlfoundation.yawl.logging.*</param>
+        <param>org.yawlfoundation.yawl.exceptions.*</param>
+        <param>org.yawlfoundation.yawl.resilience.*</param>
+        <param>org.yawlfoundation.yawl.security.*</param>
+    </targetClasses>
+
+    <excludedClasses>
+        <param>org.yawlfoundation.yawl.swingWorklist.*</param>
+        <param>org.yawlfoundation.yawl.procletService.*</param>
+        <param>org.yawlfoundation.yawl.smsModule.*</param>
+        <param>org.yawlfoundation.yawl.twitterService.*</param>
+        <param>org.yawlfoundation.yawl.mailSender.*</param>
+        <param>org.yawlfoundation.yawl.mailService.*</param>
+        <param>*ObjectFactory*</param>
+        <param>*package-info*</param>
+    </excludedClasses>
+
+    <targetTests>
+        <param>org.yawlfoundation.yawl.engine.*Test*</param>
+        <param>org.yawlfoundation.yawl.elements.*Test*</param>
+        <param>org.yawlfoundation.yawl.stateless.*Test*</param>
+        <param>org.yawlfoundation.yawl.authentication.*Test*</param>
+        <param>org.yawlfoundation.yawl.integration.*Test*</param>
+        <param>org.yawlfoundation.yawl.unmarshal.*Test*</param>
+        <param>org.yawlfoundation.yawl.schema.*Test*</param>
+        <param>org.yawlfoundation.yawl.util.*Test*</param>
+        <param>org.yawlfoundation.yawl.logging.*Test*</param>
+        <param>org.yawlfoundation.yawl.resilience.*Test*</param>
+        <param>org.yawlfoundation.yawl.security.*Test*</param>
+    </targetTests>
+
+    <excludedTests>
+        <param>org.yawlfoundation.yawl.performance.*</param>
+        <param>org.yawlfoundation.yawl.build.*</param>
+        <param>org.yawlfoundation.yawl.deployment.*</param>
+        <param>org.yawlfoundation.yawl.database.*</param>
+    </excludedTests>
+
+    <!-- 80% kill rate required for core engine; 75% overall project threshold -->
+    <mutationThreshold>75</mutationThreshold>
+    <coverageThreshold>70</coverageThreshold>
+</pitestConfiguration>
