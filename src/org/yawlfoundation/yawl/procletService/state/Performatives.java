@@ -42,7 +42,7 @@ import java.util.List;
 public class Performatives {
 	
 	private static Performatives perfsSingle = null;
-	private List<Performative> perfs = new ArrayList<Performative> ();
+	private List<Performative> perfs = new ArrayList<>();
     
     private static Logger myLog = LogManager.getLogger(Performatives.class);
 	
@@ -90,7 +90,7 @@ public class Performatives {
 	}
 	
 	public void deleteAllPerformatives () {
-		perfs = new ArrayList<Performative>();
+		perfs = new ArrayList<>();
 	}
 	
 	public static List<Performative> createPerformatives (List<List<List>> relationExtsList, List dataRels, WorkItemRecord wir) {

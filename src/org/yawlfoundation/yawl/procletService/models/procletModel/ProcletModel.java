@@ -74,7 +74,7 @@ public class ProcletModel extends DirectedSparseGraph {
 			this.removeEdge(brel);
 		}
 		// ports
-//		List<BlockPortEdge> bportsRem = new ArrayList<BlockPortEdge>();
+//		List<BlockPortEdge> bportsRem = new ArrayList<>();
 //		List<BlockPortEdge> bports = this.getBlockPortEdges();
 //		for (BlockPortEdge bpe : bports) {
 //			if (bpe.getBlock().equals(block)) {
@@ -109,7 +109,7 @@ public class ProcletModel extends DirectedSparseGraph {
 	
 	public void deletePort(ProcletPort port) {
 		this.removeVertex(port);
-		List<BlockPortEdge> bportsRem = new ArrayList<BlockPortEdge>();
+		List<BlockPortEdge> bportsRem = new ArrayList<>();
 		List<BlockPortEdge> bports = this.getBlockPortEdges();
 		for (BlockPortEdge bpe : bports) {
 			if (bpe.getPort().equals(port)) {
@@ -149,7 +149,7 @@ public class ProcletModel extends DirectedSparseGraph {
 	}
 	
 	public List<ProcletPort> getPorts () {
-		List<ProcletPort> ports = new ArrayList<ProcletPort> ();
+		List<ProcletPort> ports = new ArrayList<>();
 		List<BlockPortEdge> bpes = this.getBlockPortEdges();
 		for (BlockPortEdge bpe : bpes) {
 			ProcletPort port = bpe.getPort();

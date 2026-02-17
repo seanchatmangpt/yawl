@@ -90,9 +90,9 @@ public final class ZaiEligibilityReasoner implements EligibilityReasoner {
         String inputSummary = summarizeInput(workItem);
 
         String systemPrompt = replaceVariables(systemPromptTemplate,
-            capability.getDescription(), taskName, caseId, inputSummary);
+            capability.description(), taskName, caseId, inputSummary);
         String userPrompt = replaceVariables(userPromptTemplate,
-            capability.getDescription(), taskName, caseId, inputSummary);
+            capability.description(), taskName, caseId, inputSummary);
 
         zaiService.setSystemPrompt(systemPrompt);
 

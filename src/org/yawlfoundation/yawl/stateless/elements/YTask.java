@@ -830,7 +830,7 @@ public abstract class YTask extends YExternalNetElement {
 
         // get & sort the flows according to their evaluation ordering,
         // and with the default flow occurring last.
-        List<YFlow> flows = new ArrayList<YFlow>(getPostsetFlows());
+        List<YFlow> flows = new ArrayList<>(getPostsetFlows());
         Collections.sort(flows);
 
         for (YFlow flow : flows) {
@@ -1267,8 +1267,7 @@ public abstract class YTask extends YExternalNetElement {
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
-            if (netElement instanceof YCondition) {
-                YCondition maybeImplicit = (YCondition) netElement;
+            if (netElement instanceof YCondition maybeImplicit) {
                 if (maybeImplicit.isImplicit()) {
                     removeTokensFromFlow.append("<removesTokensFromFlow>");
                     YExternalNetElement pre = maybeImplicit.getPresetElements().iterator().next();
