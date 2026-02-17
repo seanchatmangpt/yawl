@@ -700,7 +700,7 @@ public class EngineGatewayImpl implements EngineGateway {
         if (isFailureMessage(sessionMessage)) return sessionMessage;
 
         Set<YSpecificationID> specIDs = _engine.getLoadedSpecificationIDs();
-        Set<YSpecification> specs = new HashSet<YSpecification>();
+        Set<YSpecification> specs = new HashSet<>();
         for (YSpecificationID ySpecID : specIDs) {
             specs.add(_engine.getSpecification(ySpecID));
         }

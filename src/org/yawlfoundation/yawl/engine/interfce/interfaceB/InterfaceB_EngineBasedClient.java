@@ -272,7 +272,7 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
                                Set<YTask> tasks) {
         Map<String, String> paramsMap = prepareParamMap(CASE_DEADLOCKED);
         paramsMap.put("caseID", id.toString());
-        Set<String> list = new HashSet<String>();
+        Set<String> list = new HashSet<>();
         for (YTask task : tasks) list.add(task.getID());
         paramsMap.put("tasks", list.toString());
         for (YAWLServiceReference service : services) {
@@ -304,22 +304,22 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
      */
     public YParameter[] getRequiredParamsForService(YAWLServiceReference yawlService)
                                                      throws IOException, JDOMException {
-        List<YParameter> paramResults = new ArrayList<YParameter>();
-        Map<String, String> paramMap = new Hashtable<String, String>();
+        var paramResults = new ArrayList<YParameter>();
+        var paramMap = new Hashtable<String, String>();
         paramMap.put("action", "ParameterInfoRequest");
         String parametersAsString = executeGet(yawlService.getURI(), paramMap);
 
         // above should have returned a xml doc containing params descriptions
         // of required params to operate custom service.
-        Element eParams = JDOMUtil.stringToElement(parametersAsString);
+        var eParams = JDOMUtil.stringToElement(parametersAsString);
         if (eParams != null) {
-            for (Element paramElem : eParams.getChildren()) {
+            for (var paramElem : eParams.getChildren()) {
                 YParameter param = new YParameter(null, paramElem.getName());
                 YDecompositionParser.parseParameter(paramElem, param, null, false);
                 paramResults.add(param);
             }
         }
-        return paramResults.toArray(new YParameter[paramResults.size()]);
+        return paramResults.toArray(new YParameter[0]);
     }
 
 

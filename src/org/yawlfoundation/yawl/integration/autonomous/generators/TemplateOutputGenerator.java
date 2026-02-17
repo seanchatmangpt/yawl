@@ -60,7 +60,7 @@ public final class TemplateOutputGenerator {
      * @param defaultTemplate template to use when no task-specific template exists
      */
     public TemplateOutputGenerator(String defaultTemplate) {
-        if (defaultTemplate == null || defaultTemplate.trim().isEmpty()) {
+        if (defaultTemplate == null || defaultTemplate.isBlank()) {
             throw new IllegalArgumentException("defaultTemplate is required");
         }
         this.taskTemplates = new HashMap<>();
@@ -78,10 +78,10 @@ public final class TemplateOutputGenerator {
             throw new IllegalArgumentException("workItem is required");
         }
 
-        String taskName = extractTaskName(workItem);
-        String template = taskTemplates.getOrDefault(taskName, defaultTemplate);
+        var taskName = extractTaskName(workItem);
+        var template = taskTemplates.getOrDefault(taskName, defaultTemplate);
 
-        Map<String, String> variables = buildVariableMap(workItem);
+        var variables = buildVariableMap(workItem);
         return substituteVariables(template, variables);
     }
 
@@ -96,11 +96,11 @@ public final class TemplateOutputGenerator {
         if (workItem == null) {
             throw new IllegalArgumentException("workItem is required");
         }
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
 
-        Map<String, String> variables = buildVariableMap(workItem);
+        var variables = buildVariableMap(workItem);
         return substituteVariables(template, variables);
     }
 
@@ -110,13 +110,13 @@ public final class TemplateOutputGenerator {
      * @param template XML template with ${variable} placeholders
      */
     public void addTaskTemplate(String taskName, String template) {
-        if (taskName == null || taskName.trim().isEmpty()) {
+        if (taskName == null || taskName.isBlank()) {
             throw new IllegalArgumentException("taskName is required");
         }
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
-        taskTemplates.put(taskName.trim(), template);
+        taskTemplates.put(taskName.strip(), template);
     }
 
     /**
@@ -127,23 +127,23 @@ public final class TemplateOutputGenerator {
      * @throws IOException if templates cannot be read
      */
     public void loadTemplatesFromDirectory(String templateDir) throws IOException {
-        if (templateDir == null || templateDir.trim().isEmpty()) {
+        if (templateDir == null || templateDir.isBlank()) {
             throw new IllegalArgumentException("templateDir is required");
         }
 
-        java.io.File dir = new java.io.File(templateDir);
+        var dir = new java.io.File(templateDir);
         if (!dir.exists() || !dir.isDirectory()) {
             throw new IOException("Template directory does not exist: " + templateDir);
         }
 
-        java.io.File[] files = dir.listFiles((d, name) -> name.endsWith(".xml"));
+        var files = dir.listFiles((d, name) -> name.endsWith(".xml"));
         if (files == null) {
             throw new IOException("Cannot read template directory: " + templateDir);
         }
 
-        for (java.io.File file : files) {
-            String taskName = file.getName().replace(".xml", "");
-            String template = readFile(file.getAbsolutePath());
+        for (var file : files) {
+            var taskName = file.getName().replace(".xml", "");
+            var template = readFile(file.getAbsolutePath());
             addTaskTemplate(taskName, template);
         }
     }
@@ -156,14 +156,14 @@ public final class TemplateOutputGenerator {
      * @throws IOException if file cannot be read
      */
     public void loadTemplateFromFile(String taskName, String filePath) throws IOException {
-        if (taskName == null || taskName.trim().isEmpty()) {
+        if (taskName == null || taskName.isBlank()) {
             throw new IllegalArgumentException("taskName is required");
         }
-        if (filePath == null || filePath.trim().isEmpty()) {
+        if (filePath == null || filePath.isBlank()) {
             throw new IllegalArgumentException("filePath is required");
         }
 
-        String template = readFile(filePath);
+        var template = readFile(filePath);
         addTaskTemplate(taskName, template);
     }
 
@@ -171,7 +171,7 @@ public final class TemplateOutputGenerator {
      * Set default template for tasks without specific templates.
      */
     public void setDefaultTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
         this.defaultTemplate = template;
@@ -192,20 +192,20 @@ public final class TemplateOutputGenerator {
     }
 
     private static String extractTaskName(WorkItemRecord workItem) {
-        String taskName = workItem.getTaskName();
-        if (taskName == null || taskName.isEmpty()) {
+        var taskName = workItem.getTaskName();
+        if (taskName == null || taskName.isBlank()) {
             taskName = workItem.getTaskID();
         }
         return taskName;
     }
 
     private static Map<String, String> buildVariableMap(WorkItemRecord workItem) {
-        Map<String, String> variables = new HashMap<>();
+        var variables = new HashMap<String, String>();
 
-        String taskName = extractTaskName(workItem);
-        String taskId = workItem.getTaskID();
-        String caseId = workItem.getCaseID();
-        String decompositionRoot = taskName.replace(' ', '_');
+        var taskName = extractTaskName(workItem);
+        var taskId = workItem.getTaskID();
+        var caseId = workItem.getCaseID();
+        var decompositionRoot = taskName.replace(' ', '_');
 
         variables.put("taskName", taskName);
         variables.put("taskId", taskId);
@@ -221,14 +221,14 @@ public final class TemplateOutputGenerator {
     private static void extractInputVariables(WorkItemRecord workItem,
                                              Map<String, String> variables) {
         try {
-            Element dataList = workItem.getDataList();
+            var dataList = workItem.getDataList();
             if (dataList == null) {
                 return;
             }
 
-            for (Element child : dataList.getChildren()) {
-                String name = child.getName();
-                String value = child.getTextTrim();
+            for (var child : dataList.getChildren()) {
+                var name = child.getName();
+                var value = child.getTextTrim();
                 if (!value.isEmpty()) {
                     variables.put("input." + name, value);
                     variables.put(name, value);
@@ -245,10 +245,10 @@ public final class TemplateOutputGenerator {
     private static void extractNestedElements(Element parent,
                                              String prefix,
                                              Map<String, String> variables) {
-        for (Element child : parent.getChildren()) {
-            String name = child.getName();
-            String fullPath = prefix + "." + name;
-            String value = child.getTextTrim();
+        for (var child : parent.getChildren()) {
+            var name = child.getName();
+            var fullPath = prefix + "." + name;
+            var value = child.getTextTrim();
 
             if (!value.isEmpty()) {
                 variables.put(fullPath, value);
@@ -262,12 +262,11 @@ public final class TemplateOutputGenerator {
 
     private static String substituteVariables(String template,
                                              Map<String, String> variables) {
-        String result = template;
+        var result = template;
 
-        for (Map.Entry<String, String> entry : variables.entrySet()) {
-            String placeholder = "${" + entry.getKey() + "}";
-            String value = entry.getValue();
-            result = result.replace(placeholder, escapeXml(value));
+        for (var entry : variables.entrySet()) {
+            var placeholder = "${" + entry.getKey() + "}";
+            result = result.replace(placeholder, escapeXml(entry.getValue()));
         }
 
         result = removeUnresolvedVariables(result);
@@ -292,8 +291,8 @@ public final class TemplateOutputGenerator {
     }
 
     private static String readFile(String filePath) throws IOException {
-        StringBuilder content = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        var content = new StringBuilder();
+        try (var reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 content.append(line).append("\n");

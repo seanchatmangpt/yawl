@@ -115,7 +115,7 @@ public class ProcletModels {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
 		// step1, 
-		List<PortConnection> intermediate = new ArrayList<PortConnection>();
+		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : oPorts) {
 			for (PortConnection pconn : pconns) {
 				if (port.getPortID().equals(pconn.getIPort().getPortID())) {
@@ -145,7 +145,7 @@ public class ProcletModels {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
 		// step1, 
-		List<PortConnection> intermediate = new ArrayList<PortConnection>();
+		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : iPorts) {
 			for (PortConnection pconn : pconns) {
 				if (port.getPortID().equals(pconn.getOPort().getPortID())) {

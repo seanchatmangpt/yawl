@@ -56,7 +56,7 @@ public class WSIFInvoker {
         System.out.println("port name = " + portName);
         System.out.println("operation name = " + operationName);
 
-        List<String> argsV = new ArrayList<String>();
+        List<String> argsV = new ArrayList<>();
         for (Element element : inputDataDoc.getChildren()) {
             argsV.add(element.getText());
         }
@@ -128,8 +128,8 @@ public class WSIFInvoker {
             // Really there should be a way to specify the portType
             // for now just try to find one with the portName
             if (portTypes.size() > 1 && portName != null) {
-                for (Iterator i = portTypes.keySet().iterator(); i.hasNext();) {
-                    QName qn = (QName) i.next();
+                for (Object key : portTypes.keySet()) {
+                    var qn = (QName) key;
                     System.out.println("qn.getLocalPart() = " + qn.getLocalPart());
                     if (portName.equals(qn.getLocalPart())) {
                         portTypeName = qn.getLocalPart();
@@ -160,17 +160,15 @@ public class WSIFInvoker {
 
                 // try to find input and output names for the operation specified
                 boolean found = false;
-                for (Iterator i = operationList.iterator(); i.hasNext();) {
-                    Operation op = (Operation) i.next();
+                for (Object item : operationList) {
+                    var op = (Operation) item;
                     String name = op.getName();
                     if (!name.equals(operationName)) {
                         continue;
                     }
                     if (found) {
                         throw new RuntimeException(
-                                "Operation '" +
-                                operationName +
-                                "' is overloaded. " +
+                                "Operation '" + operationName + "' is overloaded. " +
                                 "Please specify the operation in the form " +
                                 "'operationName:inputMessageName:outputMesssageName'" +
                                 " to distinguish it");
@@ -231,7 +229,7 @@ public class WSIFInvoker {
                     } else if (c.equals(Float.TYPE)) {
                         value = Float.valueOf(arg);
                     } else if (c.equals(Integer.TYPE)) {
-                        value = Integer.valueOf(arg);
+                        value = Integer.parseInt(arg);
                     } else if (c.equals(Boolean.TYPE)) {
                         value = Boolean.valueOf(arg);
                     } else {

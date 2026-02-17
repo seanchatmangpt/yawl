@@ -168,7 +168,7 @@ public class YWorkItemRepository {
 
     public Set<YWorkItem> getWorkItems() {
         cleanseRepository();
-        return new HashSet<YWorkItem>(_itemMap.values());
+        return new HashSet<>(_itemMap.values());
     }
 
 
@@ -203,7 +203,7 @@ public class YWorkItemRepository {
 
     public Set<YWorkItem> getChildrenOf(String workItemID) {
         YWorkItem item = _itemMap.get(workItemID);
-        return (item != null) ? item.getChildren() : new HashSet<YWorkItem>();
+        return (item != null) ? item.getChildren() : new HashSet<>();
     }
 
     /**

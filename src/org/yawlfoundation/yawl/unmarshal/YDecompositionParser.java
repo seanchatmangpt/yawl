@@ -141,16 +141,16 @@ public class YDecompositionParser {
         if (documentation != null) {
             decomposition.setDocumentation(documentation);
         }
-        List<Element> inputParamElems = decompElem.getChildren("inputParam", _yawlNS);
+        var inputParamElems = decompElem.getChildren("inputParam", _yawlNS);
         for (int i = 0; i < inputParamElems.size(); i++) {
-            YParameter yparameter = new YParameter(_decomposition, YParameter._INPUT_PARAM_TYPE);
+            var yparameter = new YParameter(_decomposition, YParameter._INPUT_PARAM_TYPE);
             yparameter.setOrdering(i);
             parseParameter(inputParamElems.get(i), yparameter, _yawlNS, isBeta2Version());
             decomposition.addInputParameter(yparameter);
         }
-        List<Element> outputParamElems = decompElem.getChildren("outputParam", _yawlNS);
+        var outputParamElems = decompElem.getChildren("outputParam", _yawlNS);
         for (int i = 0; i < outputParamElems.size(); i++) {
-            YParameter yparameter = new YParameter(_decomposition, YParameter._OUTPUT_PARAM_TYPE);
+            var yparameter = new YParameter(_decomposition, YParameter._OUTPUT_PARAM_TYPE);
             yparameter.setOrdering(i);
             parseParameter(outputParamElems.get(i), yparameter, _yawlNS, isBeta2Version());
             decomposition.addOutputParameter(yparameter);
@@ -168,10 +168,10 @@ public class YDecompositionParser {
             YAWLServiceReference yawlService = new YAWLServiceReference(yawlServiceID, webServiceGateway);
             webServiceGateway.setYawlService(yawlService);
         }
-        List<Element> enablementParamElems = decompositionElem.getChildren("enablementParam", _yawlNS);
+        var enablementParamElems = decompositionElem.getChildren("enablementParam", _yawlNS);
         for (int i = 0; i < enablementParamElems.size(); i++) {
-            Element enablementParamElem = enablementParamElems.get(i);
-            YParameter parameter = new YParameter(_decomposition, YParameter._ENABLEMENT_PARAM_TYPE);
+            var enablementParamElem = enablementParamElems.get(i);
+            var parameter = new YParameter(_decomposition, YParameter._ENABLEMENT_PARAM_TYPE);
             parameter.setOrdering(i);
             parseParameter(enablementParamElem, parameter, _yawlNS, isBeta2Version());
             webServiceGateway.setEnablementParameter(parameter);

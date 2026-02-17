@@ -781,18 +781,17 @@ public class YEngineRestorer {
     
 
     private <T> List<T> restoreObjects(Class<T> clazz, String queryString) throws YPersistenceException {
-        List<T> list = new ArrayList<T>();
-        Query query = _pmgr.createQuery(queryString);
-        List results = query.getResultList();
+        var list = new ArrayList<T>();
+        var query = _pmgr.createQuery(queryString);
+        var results = query.getResultList();
         if (results != null) {
-            for (Object obj : results) {
+            for (var obj : results) {
                 try {
                     T item = clazz.cast(obj);
                     if (item != null) list.add(item);
                 }
                 catch (ClassCastException cce) {
-                    // ignore this object
-                    _log.warn("Ignored object while restoring: " + cce.getMessage());
+                    _log.warn("Ignored object while restoring: {}", cce.getMessage());
                 }
             }
         }

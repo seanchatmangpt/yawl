@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Holds the Specification Metadata
@@ -43,10 +44,10 @@ public class YMetaData {
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
 
     private String title;
-    private List<String> creators = new ArrayList<String>();
-    private List<String> subjects = new ArrayList<String>();
+    private List<String> creators = new ArrayList<>();
+    private List<String> subjects = new ArrayList<>();
     private String description;
-    private List<String> contributors = new ArrayList<String>();
+    private List<String> contributors = new ArrayList<>();
     private String coverage;
     private LocalDate validFrom;
     private LocalDate validUntil;
@@ -179,14 +180,14 @@ public class YMetaData {
         String titleXML = this.title != null ? StringUtil.wrapEscaped(title, "title") : "";
         String creatorsXML = creators.stream()
             .map(c -> StringUtil.wrapEscaped(c, "creator"))
-            .collect(java.util.stream.Collectors.joining());
+            .collect(Collectors.joining());
         String subjectsXML = subjects.stream()
             .map(s -> StringUtil.wrapEscaped(s, "subject"))
-            .collect(java.util.stream.Collectors.joining());
+            .collect(Collectors.joining());
         String descriptionXML = description != null ? StringUtil.wrapEscaped(description, "description") : "";
         String contributorsXML = contributors.stream()
             .map(c -> StringUtil.wrapEscaped(c, "contributor"))
-            .collect(java.util.stream.Collectors.joining());
+            .collect(Collectors.joining());
         String coverageXML = coverage != null ? StringUtil.wrapEscaped(coverage, "coverage") : "";
         String validFromXML = validFrom != null ? StringUtil.wrap(dateFormat.format(validFrom), "validFrom") : "";
         String validUntilXML = validUntil != null ? StringUtil.wrap(dateFormat.format(validUntil), "validUntil") : "";

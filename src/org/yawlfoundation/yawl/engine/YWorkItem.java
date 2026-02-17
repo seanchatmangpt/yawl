@@ -228,8 +228,7 @@ public class YWorkItem {
             return _timerParameters.parseYTimerType(timerParams);
         }
         catch (Exception iae) {
-            _log.warn("Unable to set timer for workitem '" + getIDString() +
-                      "' - " + iae.getMessage()) ;
+            _log.warn("Unable to set timer for workitem '{}' - {}", getIDString(), iae.getMessage());
             return false ;
 
         }
@@ -279,7 +278,7 @@ public class YWorkItem {
 
             // if this parent has no children yet, create the set and log it
             if (_children == null) {
-                _children = new HashSet<YWorkItem>();
+                _children = new HashSet<>();
                 _eventLog.logWorkItemEvent(this, _status, createLogDataList("createChild"));
             }
 

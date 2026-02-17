@@ -63,7 +63,7 @@ public class InteractionGraph extends DirectedSparseGraph{
 	public void deleteNode (InteractionNode node) {
 		this.removeVertex(node);
 		// remove also edges having this node
-		List<InteractionArc> removeArcs = new ArrayList<InteractionArc> ();
+		List<InteractionArc> removeArcs = new ArrayList<>();
 		List<InteractionArc> arcs = this.getArcs();
 		for (InteractionArc arc : arcs) {
 			if (arc.getHead().equals(node) || arc.getTail().equals(node)) {

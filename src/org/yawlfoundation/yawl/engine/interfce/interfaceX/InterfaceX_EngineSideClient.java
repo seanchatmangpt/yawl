@@ -232,7 +232,7 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
         // POST the event
         public void run() {
 
-            Map<String, String> paramsMap = new HashMap<String, String>();
+            var paramsMap = new HashMap<String, String>();
             try {
 
                 // all events have an event type
@@ -240,28 +240,26 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
 
                 // additional params as required
                 switch (_command) {
-                    case NOTIFY_CHECK_CASE_CONSTRAINTS:
+                    case NOTIFY_CHECK_CASE_CONSTRAINTS -> {
                         paramsMap.put("specID", _specID.getIdentifier());
                         paramsMap.put("specVersion", _specID.getVersionAsString());
                         paramsMap.put("specURI", _specID.getUri());
                         paramsMap.put("caseID", _caseID);
                         paramsMap.put("preCheck", String.valueOf(_preCheck));
                         paramsMap.put("data", _dataStr);
-                        break ;
-                    case NOTIFY_CHECK_ITEM_CONSTRAINTS:
+                    }
+                    case NOTIFY_CHECK_ITEM_CONSTRAINTS -> {
                         paramsMap.put("workItem", _workItem.toXML());
                         paramsMap.put("preCheck", String.valueOf(_preCheck));
                         paramsMap.put("data", JDOMUtil.documentToString(_dataDoc));
-                        break ;
-                    case NOTIFY_CANCELLED_CASE:
+                    }
+                    case NOTIFY_CANCELLED_CASE ->
                         paramsMap.put("caseID", _caseID);
-                        break ;
-                    case NOTIFY_WORKITEM_ABORT:
-                    case NOTIFY_TIMEOUT:
+                    case NOTIFY_WORKITEM_ABORT, NOTIFY_TIMEOUT -> {
                         paramsMap.put("workItem", _workItem.toXML());
                         if (_taskList != null)
                             paramsMap.put("taskList", _taskList.toString());
-                        break ;
+                    }
                 }
 
                 // run the post with the appropriate params
