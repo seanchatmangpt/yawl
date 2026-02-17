@@ -1,6 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.server;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * YAWL MCP Server Capabilities Configuration.
