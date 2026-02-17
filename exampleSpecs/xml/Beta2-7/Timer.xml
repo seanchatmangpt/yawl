@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl d:/yawl/schema/YAWL_Schema.xsd">
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
 	<specification uri="Timer.xml">
 		<name>Invoke TimeService</name>
 		<documentation> Example calling of the Time Service </documentation>
