@@ -1,0 +1,19 @@
+{
+  "gates": [
+    {"name":"spotbugs","phase":"verify","enabled":true,"plugin":"spotbugs-maven-plugin"},
+    {"name":"pmd","phase":"verify","enabled":true,"plugin":"maven-pmd-plugin"},
+    {"name":"checkstyle","phase":"verify","enabled":true,"plugin":"maven-checkstyle-plugin"},
+    {"name":"jacoco","phase":"verify","enabled":true,"plugin":"jacoco-maven-plugin"},
+    {"name":"owasp-dependency-check","phase":"verify","enabled":true,"plugin":"dependency-check-maven"},
+    {"name":"enforcer","phase":"validate","enabled":true,"plugin":"maven-enforcer-plugin"}
+  ],
+  "skip_flags": [
+    {"flag":"-DskipTests=true","risk":"RED","disables":"surefire+failsafe"},
+    {"flag":"-Dspotbugs.skip=true","risk":"YELLOW","disables":"spotbugs"},
+    {"flag":"-Dpmd.skip=true","risk":"YELLOW","disables":"pmd"},
+    {"flag":"-Dcheckstyle.skip=true","risk":"YELLOW","disables":"checkstyle"},
+    {"flag":"-DskipITs=true","risk":"RED","disables":"failsafe"},
+    {"flag":"-Denforcer.skip=true","risk":"RED","disables":"enforcer"}
+  ],
+  "profiles": ["schatman","claude-code-team","central","enforce-build-environment","prepare-agent","report","java21","java24","ci","spotbugs-check","prod","spotbugs-check","security-audit","analysis","jacoco-prepare","jacoco-report","jacoco-check","spotbugs-check","checkstyle-check","pmd-check"]
+}

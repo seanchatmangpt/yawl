@@ -1,0 +1,53 @@
+%%{ init: { 'theme': 'base' } }%%
+graph LR
+    classDef phase fill:#4a5568,stroke:#2d3748,color:#fff
+    classDef gate fill:#38a169,stroke:#2f855a,color:#fff
+    classDef skip fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef warn fill:#d69e2e,stroke:#b7791f,color:#fff
+
+    %% Maven Lifecycle Phases
+    VALIDATE[validate]:::phase
+    COMPILE[compile]:::phase
+    TEST[test]:::phase
+    PACKAGE[package]:::phase
+    VERIFY[verify]:::phase
+    INSTALL[install]:::phase
+
+    VALIDATE --> COMPILE --> TEST --> PACKAGE --> VERIFY --> INSTALL
+
+    %% Gates bound to phases
+    ENFORCER["enforcer<br/>dependency rules"]:::gate
+    SUREFIRE["surefire<br/>unit tests"]:::gate
+    JACOCO["jacoco<br/>coverage"]:::gate
+    SPOTBUGS["spotbugs<br/>bug detection"]:::gate
+    PMD_GATE["pmd<br/>code quality"]:::gate
+    CHECKSTYLE["checkstyle<br/>style rules"]:::gate
+    FAILSAFE["failsafe<br/>integration tests"]:::gate
+    OWASP["owasp<br/>dependency check"]:::gate
+
+    VALIDATE --> ENFORCER
+    TEST --> SUREFIRE
+    VERIFY --> JACOCO
+    VERIFY --> SPOTBUGS
+    VERIFY --> PMD_GATE
+    VERIFY --> CHECKSTYLE
+    VERIFY --> FAILSAFE
+    VERIFY --> OWASP
+
+    %% Skip flags (risk indicators)
+    subgraph SkipFlags["Skip Flags = Risk"]
+        SKIP_TESTS["-DskipTests=true"]:::skip
+        SKIP_ITS["-DskipITs=true"]:::skip
+        SKIP_SB["-Dspotbugs.skip"]:::warn
+        SKIP_PMD["-Dpmd.skip"]:::warn
+        SKIP_CS["-Dcheckstyle.skip"]:::warn
+        SKIP_ENF["-Denforcer.skip"]:::skip
+    end
+
+    SKIP_TESTS -.->|disables| SUREFIRE
+    SKIP_TESTS -.->|disables| FAILSAFE
+    SKIP_ITS -.->|disables| FAILSAFE
+    SKIP_SB -.->|disables| SPOTBUGS
+    SKIP_PMD -.->|disables| PMD_GATE
+    SKIP_CS -.->|disables| CHECKSTYLE
+    SKIP_ENF -.->|disables| ENFORCER

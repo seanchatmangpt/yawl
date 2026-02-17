@@ -1,0 +1,68 @@
+%%{ init: { 'theme': 'base' } }%%
+graph TB
+    classDef stateful fill:#4a5568,stroke:#2d3748,color:#fff
+    classDef stateless fill:#805ad5,stroke:#6b46c1,color:#fff
+    classDef mirror fill:#d69e2e,stroke:#b7791f,color:#fff
+
+    subgraph Stateful["org.yawlfoundation.yawl.engine"]
+        sYEngine[YEngine]:::stateful
+        sYNetRunner[YNetRunner]:::stateful
+        sYWorkItem[YWorkItem]:::stateful
+        sYWorkItemID[YWorkItemID]:::stateful
+        sYAnnouncer[YAnnouncer]:::stateful
+        sYNetRunnerRepo[YNetRunnerRepository]:::stateful
+        sYWorkItemRepo[YWorkItemRepository]:::stateful
+        sYTimerVar[YTimerVariable]:::stateful
+        sYWorkItemTimer[YWorkItemTimer]:::stateful
+    end
+
+    subgraph Stateless["org.yawlfoundation.yawl.stateless.engine"]
+        slYEngine[YEngine]:::stateless
+        slYNetRunner[YNetRunner]:::stateless
+        slYWorkItem[YWorkItem]:::stateless
+        slYWorkItemID[YWorkItemID]:::stateless
+        slYAnnouncer[YAnnouncer]:::stateless
+        slYNetRunnerRepo[YNetRunnerRepository]:::stateless
+        slYWorkItemRepo[YWorkItemRepository]:::stateless
+        slYTimerVar[YTimerVariable]:::stateless
+        slYWorkItemTimer[YWorkItemTimer]:::stateless
+    end
+
+    %% Mirror relationships (MIRROR_REQUIRED policy)
+    sYEngine <-.->|mirror| slYEngine
+    sYNetRunner <-.->|mirror| slYNetRunner
+    sYWorkItem <-.->|mirror| slYWorkItem
+    sYWorkItemID <-.->|mirror| slYWorkItemID
+    sYAnnouncer <-.->|mirror| slYAnnouncer
+    sYNetRunnerRepo <-.->|mirror| slYNetRunnerRepo
+    sYWorkItemRepo <-.->|mirror| slYWorkItemRepo
+    sYTimerVar <-.->|mirror| slYTimerVar
+    sYWorkItemTimer <-.->|mirror| slYWorkItemTimer
+
+    subgraph StatefulElements["org.yawlfoundation.yawl.elements"]
+        eYNet[YNet]:::stateful
+        eYTask[YTask]:::stateful
+        eYAtomicTask[YAtomicTask]:::stateful
+        eYCompositeTask[YCompositeTask]:::stateful
+        eYCondition[YCondition]:::stateful
+        eYFlow[YFlow]:::stateful
+        eYDecomp[YDecomposition]:::stateful
+    end
+
+    subgraph StatelessElements["org.yawlfoundation.yawl.stateless.elements"]
+        slYNet[YNet]:::stateless
+        slYTask[YTask]:::stateless
+        slYAtomicTask[YAtomicTask]:::stateless
+        slYCompositeTask[YCompositeTask]:::stateless
+        slYCondition[YCondition]:::stateless
+        slYFlow[YFlow]:::stateless
+        slYDecomp[YDecomposition]:::stateless
+    end
+
+    eYNet <-.->|mirror| slYNet
+    eYTask <-.->|mirror| slYTask
+    eYAtomicTask <-.->|mirror| slYAtomicTask
+    eYCompositeTask <-.->|mirror| slYCompositeTask
+    eYCondition <-.->|mirror| slYCondition
+    eYFlow <-.->|mirror| slYFlow
+    eYDecomp <-.->|mirror| slYDecomp
