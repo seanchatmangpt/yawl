@@ -101,6 +101,19 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/authentication/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/logging/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>

@@ -203,7 +203,7 @@ class YSpecificationPatternTest {
         spec.setRootNet(rootNet);
 
         YAWLServiceGateway gateway = new YAWLServiceGateway("gateway", spec);
-        gateway.setManualInteraction(true);
+        gateway.setExternalInteraction(true);
         spec.addDecomposition(gateway);
 
         String xml = spec.toXML();
@@ -225,7 +225,7 @@ class YSpecificationPatternTest {
         betaSpec.setRootNet(rootNet);
 
         YAWLServiceGateway gateway = new YAWLServiceGateway("gateway", betaSpec);
-        gateway.setManualInteraction(true);
+        gateway.setExternalInteraction(true);
         betaSpec.addDecomposition(gateway);
 
         String xml = betaSpec.toXML();
@@ -286,8 +286,8 @@ class YSpecificationPatternTest {
         YAWLServiceGateway g2 = new YAWLServiceGateway("gateway-2", spec);
 
         g1.setCodelet("Codelet1");
-        g1.setManualInteraction(true);
-        g2.setManualInteraction(false);
+        g1.setExternalInteraction(true);
+        g2.setExternalInteraction(false);
 
         spec.addDecomposition(g2);
         spec.addDecomposition(n2);

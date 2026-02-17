@@ -42,7 +42,7 @@ class TestYFlowsInto{
     @Test
 
     void testToString(){
-        assertTrue(_flowsInto.toString(), _flowsInto.toString().startsWith("Flow"));
+        assertTrue(_flowsInto.toString().startsWith("Flow"), _flowsInto.toString());
     }
 
     @Test

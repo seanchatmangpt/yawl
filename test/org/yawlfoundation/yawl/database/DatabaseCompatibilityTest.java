@@ -114,9 +114,9 @@ public class DatabaseCompatibilityTest {
 
         ResultSet rs = selectStmt.executeQuery();
         assertTrue(rs.next(), "Record should be found");
-        assertEquals("spec-001", rs.getString("id"), "ID should match");
-        assertEquals("1.0", rs.getString("version"), "Version should match");
-        assertEquals("Test specification", rs.getString("description"), "Description should match");
+        assertEquals(rs.getString("id"), "ID should match", "spec-001");
+        assertEquals(rs.getString("version"), "Version should match", "1.0");
+        assertEquals(rs.getString("description"), "Description should match", "Test specification");
 
         rs.close();
         selectStmt.close();

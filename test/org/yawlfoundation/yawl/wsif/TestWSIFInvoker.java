@@ -48,7 +48,7 @@ class TestWSIFInvoker {
             e.printStackTrace();
         }
         assertTrue(map.size() == 1);
-        assertTrue(map.toString(), map.containsKey("return"));
+        assertTrue(map.containsKey("return"), map.toString());
     }
 
     @Test
@@ -67,7 +67,7 @@ class TestWSIFInvoker {
         }
 //        System.out.println("map = " + map);
         assertTrue(map.size() == 1);
-        assertTrue(map.toString(), map.containsKey("Result"));
+        assertTrue(map.containsKey("Result"), map.toString());
     }
 
     @Test
@@ -87,9 +87,9 @@ class TestWSIFInvoker {
         }
 //        System.out.println("map = " + map);
         assertTrue(map.size() == 1);
-        assertTrue(map.toString(), map.containsKey("return"));
+        assertTrue(map.containsKey("return"), map.toString());
         Float result =  (Float) map.get("return");
-        assertTrue(map.toString(), "29.95".equals(result.toString()));
+        assertTrue("29.95".equals(result.toString()), map.toString());
     }
 
     public static Map invokeOldWay(String [] args){

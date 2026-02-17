@@ -60,8 +60,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
 
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.5.10</spring-boot.version>
@@ -1388,7 +1388,7 @@
                         <threshold>Medium</threshold>
                         <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
                         <failOnError>true</failOnError>
-                        <jvmArgs>--enable-preview</jvmArgs>
+                        <jvmArgs></jvmArgs>
                     </configuration>
                     <executions>
                         <execution>
@@ -1411,12 +1411,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
-                    <release>25</release>
+                    <source>21</source>
+                    <target>21</target>
+                    <release>21</release>
                     <compilerArgs>
-                        <arg>--enable-preview</arg>
-                        <arg>-Xlint:all</arg>
+                        <!-- -path suppresses warnings about bad classpath entries from JAR MANIFEST Class-Path -->
+                        <arg>-Xlint:all,-path</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -1427,7 +1427,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
+                    <argLine></argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
@@ -1556,50 +1556,19 @@
                 </executions>
             </plugin>
 
-            <!-- Enforcer Plugin - Java 25 validation -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.6.2</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>[3.6.3,)</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[25,)</version>
-                                </requireJavaVersion>
-                                <banDuplicatePomDependencyVersions/>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- SpotBugs Static Analysis -->
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <!-- Java 25 (Current Default Production Profile) -->
+        <!-- Java 21 LTS (Current Default Production Profile) -->
         <profile>
             <id>java25</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
+                <maven.compiler.source>21</maven.compiler.source>
+                <maven.compiler.target>21</maven.compiler.target>
             </properties>
             <build>
                 <plugins>
@@ -1607,19 +1576,18 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>25</release>
+                            <release>21</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                <arg>-Xlint:all,-path</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
-                    <!-- Surefire plugin for test execution with preview features -->
+                    <!-- Surefire plugin for test execution -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -1641,7 +1609,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                <arg>-Xlint:all,-path</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

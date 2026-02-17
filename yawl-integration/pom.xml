@@ -145,6 +145,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <!-- Use source/target instead of release to allow add-exports for sun.security -->
+                    <release combine.self="override"/>
+                    <source>21</source>
+                    <target>21</target>
+                    <compilerArgs>
+                        <!-- -path suppresses warnings about bad classpath entries from JAR MANIFEST Class-Path -->
+                        <!-- SpiffeWorkloadIdentityTest uses sun.security internal classes for cert generation -->
+                        <arg>-Xlint:all,-path</arg>
+                        <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
+                        <arg>--add-exports=java.base/sun.security.tools.keytool=ALL-UNNAMED</arg>
+                    </compilerArgs>
                     <excludes>
                         <!-- A2A SDK not on Maven Central - excluded until available -->
                         <exclude>**/a2a/**</exclude>
@@ -166,6 +177,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>--add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-exports=java.base/sun.security.tools.keytool=ALL-UNNAMED</argLine>
                     <excludes>
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>

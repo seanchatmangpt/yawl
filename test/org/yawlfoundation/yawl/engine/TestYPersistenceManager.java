@@ -111,7 +111,8 @@ public class TestYPersistenceManager extends TestCase {
 
         // Verify case persisted to database
         _pmgr.startTransaction();
-        List<YNetRunner> runners = _pmgr.getObjectsForClass("YNetRunner");
+        @SuppressWarnings("unchecked")
+        List<YNetRunner> runners = (List<YNetRunner>) _pmgr.getObjectsForClass("YNetRunner");
         _pmgr.commit();
 
         assertNotNull("Should retrieve YNetRunner from database", runners);
@@ -154,7 +155,8 @@ public class TestYPersistenceManager extends TestCase {
 
             // Verify state persisted
             _pmgr.startTransaction();
-            List<YWorkItem> persistedItems = _pmgr.getObjectsForClassWhere(
+            @SuppressWarnings("unchecked")
+            List<YWorkItem> persistedItems = (List<YWorkItem>) _pmgr.getObjectsForClassWhere(
                 "YWorkItem", "_thisID='" + itemID + "'");
             _pmgr.commit();
 
@@ -183,7 +185,8 @@ public class TestYPersistenceManager extends TestCase {
 
         // Query database for case data
         _pmgr.startTransaction();
-        List<YNetRunner> runners = _pmgr.getObjectsForClassWhere(
+        @SuppressWarnings("unchecked")
+        List<YNetRunner> runners = (List<YNetRunner>) _pmgr.getObjectsForClassWhere(
             "YNetRunner", "_caseID.idString='" + _caseID.toString() + "'");
         _pmgr.commit();
 
@@ -217,21 +220,22 @@ public class TestYPersistenceManager extends TestCase {
                                               task, workItemID, true, false);
 
             try {
-                _pmgr.storeObject(testItem);
+                _pmgr.storeObjectFromExternal(testItem);
 
-                // Force rollback before commit
-                _pmgr.rollbackTransaction();
+                // Force rollback before commit by closing the session without committing
+                _pmgr.closeSession();
 
                 // Verify object NOT persisted after rollback
                 _pmgr.startTransaction();
-                List<YWorkItem> items = _pmgr.getObjectsForClassWhere(
+                @SuppressWarnings("unchecked")
+                List<YWorkItem> items = (List<YWorkItem>) _pmgr.getObjectsForClassWhere(
                     "YWorkItem", "_taskID='test-task-rollback'");
                 _pmgr.commit();
 
                 assertTrue("No data should be persisted after rollback",
                          items == null || items.isEmpty());
             } catch (YPersistenceException e) {
-                _pmgr.rollbackTransaction();
+                _pmgr.closeSession();
             }
         }
     }
@@ -310,7 +314,8 @@ public class TestYPersistenceManager extends TestCase {
         _pmgr.startTransaction();
 
         // Execute valid query for YSpecification objects
-        List<YSpecification> specs = _pmgr.getObjectsForClass(
+        @SuppressWarnings("unchecked")
+        List<YSpecification> specs = (List<YSpecification>) _pmgr.getObjectsForClass(
             "org.yawlfoundation.yawl.elements.YSpecification");
 
         _pmgr.commit();
@@ -334,7 +339,8 @@ public class TestYPersistenceManager extends TestCase {
         // Query with WHERE clause
         _pmgr.startTransaction();
         String caseIDStr = _caseID.toString().replace("'", "''"); // Escape quotes
-        List<YNetRunner> runners = _pmgr.getObjectsForClassWhere(
+        @SuppressWarnings("unchecked")
+        List<YNetRunner> runners = (List<YNetRunner>) _pmgr.getObjectsForClassWhere(
             "YNetRunner", "_caseID.idString='" + caseIDStr + "'");
         _pmgr.commit();
 
@@ -405,12 +411,13 @@ public class TestYPersistenceManager extends TestCase {
 
         // Retrieve and update
         _pmgr.startTransaction();
-        List<YNetRunner> runners = _pmgr.getObjectsForClassWhere(
+        @SuppressWarnings("unchecked")
+        List<YNetRunner> runners = (List<YNetRunner>) _pmgr.getObjectsForClassWhere(
             "YNetRunner", "_caseID.idString='" + _caseID.toString() + "'");
 
         if (runners != null && runners.size() > 0) {
             YNetRunner runner = runners.get(0);
-            _pmgr.updateObject(runner);
+            _pmgr.updateObjectExternal(runner);
             _pmgr.commit();
         } else {
             _pmgr.commit();

@@ -238,14 +238,11 @@ public class PatternMatchingRegressionTest extends TestCase {
 
     // Test that all enum values are accounted for
     public void testEnumValues_NoChanges() {
-        // Completion enum
-        assertEquals(3, org.yawlfoundation.yawl.engine.YWorkItem.Completion.values().length);
+        // WorkItemCompletion enum (standalone class, 4 values: Normal, Force, Fail, Invalid)
+        assertEquals(4, org.yawlfoundation.yawl.engine.WorkItemCompletion.values().length);
 
-        // Timer type enum
-        assertEquals(3, org.yawlfoundation.yawl.elements.YTimerParameters.TimerType.values().length);
-
-        // Trigger type enum
-        assertEquals(2, org.yawlfoundation.yawl.elements.YTimerParameters.TriggerType.values().length);
+        // Timer type enum (5 values: Duration, Expiry, Interval, LateBound, Nil)
+        assertEquals(5, org.yawlfoundation.yawl.elements.YTimerParameters.TimerType.values().length);
 
         // Schema version enum
         assertEquals(10, YSchemaVersion.values().length);

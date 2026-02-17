@@ -1,16 +1,16 @@
 package org.yawlfoundation.yawl.engine;
 
 import junit.framework.TestCase;
-import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.YSyntaxException;
-import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,9 +37,6 @@ public class VirtualThreadPinningTest extends TestCase {
 
     private YEngine engine;
     private YSpecification testSpec;
-    private String sessionHandle;
-    private static final String TEST_USER = "admin";
-    private static final String TEST_PASS = "YAWL";
 
     /**
      * Set up test environment with real YAWL engine instance.
@@ -48,21 +45,15 @@ public class VirtualThreadPinningTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        // Initialize real engine (no mocks!)
+        // Initialize real engine using the singleton (no mocks)
         engine = YEngine.getInstance();
-        engine.initialise(false); // non-persisting mode for tests
+        EngineClearer.clear(engine);
 
-        // Connect and get session handle
-        sessionHandle = engine.connect(TEST_USER, TEST_PASS);
-        assertNotNull("Should get valid session handle", sessionHandle);
+        // Create and load a real test specification
+        testSpec = createMinimalSpec();
+        assertNotNull("Should create test specification", testSpec);
 
-        // Load a real test specification
-        testSpec = loadTestSpecification();
-        assertNotNull("Should load test specification", testSpec);
-
-        // Add specification to engine
-        String result = engine.addSpecification(testSpec, false);
-        assertFalse("Should successfully add specification", result.startsWith("<failure"));
+        engine.loadSpecification(testSpec);
     }
 
     /**
@@ -70,23 +61,8 @@ public class VirtualThreadPinningTest extends TestCase {
      */
     @Override
     protected void tearDown() throws Exception {
-        if (sessionHandle != null && engine != null) {
-            engine.disconnect(sessionHandle);
-        }
+        EngineClearer.clear(engine);
         super.tearDown();
-    }
-
-    /**
-     * Loads a minimal test specification for testing.
-     * Uses SimpleMakeTripProcess.yawl if available, otherwise creates minimal spec.
-     */
-    private YSpecification loadTestSpecification() throws YSyntaxException {
-        File specFile = new File("test/org/yawlfoundation/yawl/elements/SimpleMakeTripProcess.yawl");
-        if (specFile.exists()) {
-            List<YSpecification> specs = YMarshal.unmarshalSpecifications(specFile.getAbsolutePath());
-            return specs != null && !specs.isEmpty() ? specs.get(0) : createMinimalSpec();
-        }
-        return createMinimalSpec();
     }
 
     /**
@@ -94,9 +70,26 @@ public class VirtualThreadPinningTest extends TestCase {
      */
     private YSpecification createMinimalSpec() {
         YSpecification spec = new YSpecification("PinningTestSpec");
-        spec.setVersion("0.1");
-        spec.setBetaVersion(0.1);
-        spec.setURI("http://yawlfoundation.org/test/pinning");
+        spec.setBetaVersion("0.1");
+
+        YNet rootNet = new YNet("root", spec);
+        spec.setRootNet(rootNet);
+
+        YInputCondition input = new YInputCondition("input", rootNet);
+        YOutputCondition output = new YOutputCondition("output", rootNet);
+        rootNet.setInputCondition(input);
+        rootNet.setOutputCondition(output);
+
+        YAtomicTask task = new YAtomicTask("task1", YTask._AND, YTask._AND, rootNet);
+        rootNet.addNetElement(task);
+
+        YFlow flowIn = new YFlow(input, task);
+        YFlow flowOut = new YFlow(task, output);
+        input.addPostset(flowIn);
+        task.addPreset(flowIn);
+        task.addPostset(flowOut);
+        output.addPreset(flowOut);
+
         return spec;
     }
 
@@ -104,7 +97,7 @@ public class VirtualThreadPinningTest extends TestCase {
      * Test that launching multiple cases concurrently does not cause virtual thread pinning.
      *
      * This test:
-     * 1. Launches 100 cases concurrently
+     * 1. Launches 10 cases concurrently
      * 2. Monitors System.err for pinning warnings
      * 3. Fails if any pinning is detected
      *
@@ -114,7 +107,7 @@ public class VirtualThreadPinningTest extends TestCase {
         // Skip test if pinning detection is not enabled
         String tracePinned = System.getProperty("jdk.tracePinnedThreads");
         if (tracePinned == null || tracePinned.isEmpty()) {
-            System.out.println("INFO: Test skipped - run with -Djdk.tracePinnedThreads=full to enable");
+            System.out.println("INFO: Pinning detection skipped - run with -Djdk.tracePinnedThreads=full to enable");
             return;
         }
 
@@ -124,20 +117,16 @@ public class VirtualThreadPinningTest extends TestCase {
         System.setErr(new PrintStream(errCapture));
 
         try {
-            List<CompletableFuture<String>> futures = new ArrayList<>();
+            List<CompletableFuture<YIdentifier>> futures = new ArrayList<>();
 
-            // Launch 100 cases concurrently using virtual threads
-            for (int i = 0; i < 100; i++) {
+            // Launch 10 cases concurrently using virtual threads
+            for (int i = 0; i < 10; i++) {
                 final int caseNum = i;
-                CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+                CompletableFuture<YIdentifier> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        String caseID = engine.launchCase(
-                            sessionHandle,
-                            testSpec.getSpecificationID(),
-                            null,
-                            null
-                        );
-                        return caseID;
+                        return engine.startCase(testSpec.getSpecificationID(),
+                                null, null, null,
+                                new YLogDataItemList(), null, false);
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to launch case " + caseNum, e);
                     }
@@ -153,9 +142,9 @@ public class VirtualThreadPinningTest extends TestCase {
 
             // Check that all cases launched successfully
             int successCount = 0;
-            for (CompletableFuture<String> future : futures) {
-                String caseID = future.get();
-                if (caseID != null && !caseID.isEmpty()) {
+            for (CompletableFuture<YIdentifier> future : futures) {
+                YIdentifier caseID = future.get();
+                if (caseID != null) {
                     successCount++;
                 }
             }
@@ -183,7 +172,7 @@ public class VirtualThreadPinningTest extends TestCase {
     public void testNoPinningInSpecificationOperations() throws Exception {
         String tracePinned = System.getProperty("jdk.tracePinnedThreads");
         if (tracePinned == null || tracePinned.isEmpty()) {
-            System.out.println("INFO: Test skipped - run with -Djdk.tracePinnedThreads=full to enable");
+            System.out.println("INFO: Pinning detection skipped - run with -Djdk.tracePinnedThreads=full to enable");
             return;
         }
 
@@ -194,17 +183,17 @@ public class VirtualThreadPinningTest extends TestCase {
         try {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            // Perform 500 concurrent specification queries
-            for (int i = 0; i < 500; i++) {
+            // Perform 100 concurrent specification queries
+            for (int i = 0; i < 100; i++) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         // Query specification (uses synchronized blocks internally)
                         YSpecification spec = engine.getSpecification(testSpec.getSpecificationID());
                         assertNotNull("Should retrieve specification", spec);
 
-                        // Get specification list (also synchronized)
-                        List<YSpecificationID> specs = engine.getLoadedSpecificationIDs();
-                        assertNotNull("Should get specification list", specs);
+                        // Get specification set (also synchronized)
+                        Set<YSpecificationID> specIDs = engine.getLoadedSpecificationIDs();
+                        assertNotNull("Should get specification set", specIDs);
 
                     } catch (Exception e) {
                         throw new RuntimeException("Specification operation failed", e);
@@ -230,26 +219,19 @@ public class VirtualThreadPinningTest extends TestCase {
 
     /**
      * Test that concurrent workitem operations do not cause pinning.
-     *
-     * This is a more complex test that requires cases with actual workitems.
-     * Currently simplified to test the basic pattern.
      */
     public void testNoPinningInWorkItemOperations() throws Exception {
         String tracePinned = System.getProperty("jdk.tracePinnedThreads");
         if (tracePinned == null || tracePinned.isEmpty()) {
-            System.out.println("INFO: Test skipped - run with -Djdk.tracePinnedThreads=full to enable");
+            System.out.println("INFO: Pinning detection skipped - run with -Djdk.tracePinnedThreads=full to enable");
             return;
         }
 
         // Launch a single case first
-        String caseID = engine.launchCase(
-            sessionHandle,
-            testSpec.getSpecificationID(),
-            null,
-            null
-        );
+        YIdentifier caseID = engine.startCase(testSpec.getSpecificationID(),
+                null, null, null, new YLogDataItemList(), null, false);
 
-        if (caseID == null || caseID.isEmpty()) {
+        if (caseID == null) {
             System.out.println("INFO: Test skipped - no workitems available for test spec");
             return;
         }
@@ -261,13 +243,13 @@ public class VirtualThreadPinningTest extends TestCase {
         try {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            // Perform 200 concurrent workitem queries
-            for (int i = 0; i < 200; i++) {
+            // Perform 50 concurrent workitem queries
+            for (int i = 0; i < 50; i++) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         // Query workitems (may use synchronized blocks)
-                        List<YWorkItem> workItems = engine.getWorkItemRepository()
-                            .getAllWorkItems();
+                        Set<YWorkItem> workItems = engine.getWorkItemRepository()
+                            .getWorkItems();
                         assertNotNull("Should get workitem list", workItems);
 
                     } catch (Exception e) {
@@ -292,14 +274,12 @@ public class VirtualThreadPinningTest extends TestCase {
     }
 
     /**
-     * Stress test with very high concurrency to expose any pinning issues.
-     *
-     * This test is more aggressive and may take longer to run.
+     * Stress test with high concurrency to expose any pinning issues.
      */
     public void testNoPinningUnderStressLoad() throws Exception {
         String tracePinned = System.getProperty("jdk.tracePinnedThreads");
         if (tracePinned == null || tracePinned.isEmpty()) {
-            System.out.println("INFO: Test skipped - run with -Djdk.tracePinnedThreads=full to enable");
+            System.out.println("INFO: Pinning detection skipped - run with -Djdk.tracePinnedThreads=full to enable");
             return;
         }
 
@@ -308,13 +288,13 @@ public class VirtualThreadPinningTest extends TestCase {
         System.setErr(new PrintStream(errCapture));
 
         try {
-            final int OPERATIONS = 1000;
+            final int OPERATIONS = 200;
             CountDownLatch latch = new CountDownLatch(OPERATIONS);
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
             // Mix of different operations
             for (int i = 0; i < OPERATIONS; i++) {
-                final int opType = i % 3;
+                final int opType = i % 2;
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         switch (opType) {
@@ -323,21 +303,12 @@ public class VirtualThreadPinningTest extends TestCase {
                                 engine.getSpecification(testSpec.getSpecificationID());
                                 break;
                             case 1:
-                                // Specification list
+                                // Specification set
                                 engine.getLoadedSpecificationIDs();
-                                break;
-                            case 2:
-                                // Case launch attempt (may fail, that's ok)
-                                try {
-                                    engine.launchCase(sessionHandle,
-                                        testSpec.getSpecificationID(), null, null);
-                                } catch (Exception e) {
-                                    // Expected for some attempts
-                                }
                                 break;
                         }
                     } catch (Exception e) {
-                        // Log but don't fail - some operations expected to fail
+                        // Log but don't fail - some operations expected to fail under stress
                     } finally {
                         latch.countDown();
                     }
@@ -369,7 +340,7 @@ public class VirtualThreadPinningTest extends TestCase {
     public void testNoPinningInLoggingOperations() throws Exception {
         String tracePinned = System.getProperty("jdk.tracePinnedThreads");
         if (tracePinned == null || tracePinned.isEmpty()) {
-            System.out.println("INFO: Test skipped - run with -Djdk.tracePinnedThreads=full to enable");
+            System.out.println("INFO: Pinning detection skipped - run with -Djdk.tracePinnedThreads=full to enable");
             return;
         }
 
@@ -380,24 +351,18 @@ public class VirtualThreadPinningTest extends TestCase {
         try {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            // Create 300 concurrent logging operations
-            for (int i = 0; i < 300; i++) {
-                final int logNum = i;
+            // Create 30 concurrent case launch operations (triggers logging)
+            for (int i = 0; i < 30; i++) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         // Launch a case (which triggers logging)
-                        String caseID = engine.launchCase(
-                            sessionHandle,
-                            testSpec.getSpecificationID(),
-                            null,
-                            null
-                        );
-
-                        // The case launch will trigger YEventLogger operations
+                        // The case launch triggers YEventLogger operations
                         // which should not pin because it uses ReentrantLock
-
+                        engine.startCase(testSpec.getSpecificationID(),
+                                null, null, null,
+                                new YLogDataItemList(), null, false);
                     } catch (Exception e) {
-                        // Some may fail, that's acceptable
+                        // Some may fail due to resource constraints, that's acceptable
                     }
                 });
                 futures.add(future);

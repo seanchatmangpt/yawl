@@ -64,7 +64,7 @@ class TestImproperCompletion{
                 new YLogDataItemList(), null, false);
            int numIter = 0;
         Set s = _engine.getCasesForSpecification(_specification.getSpecificationID());
-        assertTrue("s = " + s, s.contains(_id));
+        assertTrue(s.contains(_id), "s = " + s);
         while (numIter < 10 && (_workItemRepository.getEnabledWorkItems().size() > 0 ||
                 _workItemRepository.getFiredWorkItems().size() > 0 ||
                 _workItemRepository.getExecutingWorkItems().size() > 0)) {
@@ -92,6 +92,6 @@ class TestImproperCompletion{
         _engine.cancelCase(_id, null);
         s = _engine.getCasesForSpecification(_specification.getSpecificationID());
 //        System.out.println("3: " + _id);
-        assertFalse("s = " + s, s.contains(_id));
+        assertFalse(s.contains(_id), "s = " + s);
     }
 }

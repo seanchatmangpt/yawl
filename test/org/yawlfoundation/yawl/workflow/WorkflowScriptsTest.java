@@ -228,7 +228,7 @@ public class WorkflowScriptsTest {
      * Test README exists for workflow scripts
      */
     @Test
-    public void testWorkflowScriptsReadmeExists() {
+    public void testWorkflowScriptsReadmeExists() throws java.io.IOException {
         Path readme = Paths.get(PROJECT_ROOT, ".claude", "WORKFLOW_SCRIPTS_README.md");
         assertTrue(Files.exists(readme),
             "WORKFLOW_SCRIPTS_README.md should exist in .claude/");

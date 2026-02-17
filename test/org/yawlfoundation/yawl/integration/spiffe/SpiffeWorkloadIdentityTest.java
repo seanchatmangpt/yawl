@@ -4,12 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
@@ -544,7 +539,7 @@ class SpiffeWorkloadIdentityTest {
     void testNotEqualsDifferentType() {
         SpiffeWorkloadIdentity identity = new SpiffeWorkloadIdentity(VALID_SPIFFE_ID, validCertChain);
 
-        assertNotEquals("string", identity, "Identity should not equal different type");
+        assertNotEquals(identity, "Identity should not equal different type", "string");
         assertNotEquals(42, identity, "Identity should not equal number");
     }
 
@@ -567,47 +562,27 @@ class SpiffeWorkloadIdentityTest {
      * Creates a self-signed certificate with the specified expiration.
      */
     private X509Certificate[] generateTestCertificateChain(Instant expiration) throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(2048);
-        KeyPair keyPair = keyGen.generateKeyPair();
-
-        X509Certificate cert = createSelfSignedCertificate(keyPair, expiration);
+        X509Certificate cert = createSelfSignedCertificate(expiration);
         return new X509Certificate[] { cert };
     }
 
     /**
-     * Create a self-signed X.509 certificate using sun.security classes.
+     * Create a self-signed X.509 certificate using JDK internal CertAndKeyGen.
      * This is a test-only method that creates minimal valid certificates.
+     * Uses sun.security.tools.keytool.CertAndKeyGen which is available in all standard JDK distributions.
      */
-    private X509Certificate createSelfSignedCertificate(KeyPair keyPair, Instant expiration) throws Exception {
-        // Use sun.security.x509 classes for certificate generation
-        // These are JDK internal classes but available in standard JDK
-        sun.security.x509.X500Name owner = new sun.security.x509.X500Name("CN=Test,O=YAWL,C=US");
-        sun.security.x509.X500Name issuer = owner;
+    private X509Certificate createSelfSignedCertificate(Instant expiration) throws Exception {
+        sun.security.tools.keytool.CertAndKeyGen certGen =
+            new sun.security.tools.keytool.CertAndKeyGen("RSA", "SHA256withRSA");
+        certGen.generate(2048);
 
-        java.math.BigInteger serialNumber = java.math.BigInteger.valueOf(System.currentTimeMillis());
+        sun.security.x509.X500Name subjectName = new sun.security.x509.X500Name("CN=Test,O=YAWL,C=US");
 
-        sun.security.x509.X509CertInfo info = new sun.security.x509.X509CertInfo();
-        info.set("version", new sun.security.x509.CertificateVersion(sun.security.x509.CertificateVersion.V3));
-        info.set("serialNumber", new sun.security.x509.CertificateSerialNumber(serialNumber));
-        info.set("issuer", new sun.security.x509.CertificateIssuerName(issuer));
-        info.set("subject", new sun.security.x509.CertificateSubjectName(owner));
-        info.set("validity", new sun.security.x509.CertificateValidity(
-            new java.util.Date(),
-            java.util.Date.from(expiration)));
+        // Calculate validity: from 2 hours before expiration, with validity in seconds
+        Instant notBefore = expiration.minusSeconds(7200);
+        long validitySeconds = 7200; // 2 hours validity
+        Date startDate = Date.from(notBefore);
 
-        // Convert public key to X509Key format
-        byte[] encoded = keyPair.getPublic().getEncoded();
-        sun.security.x509.X509Key x509Key = sun.security.x509.X509Key.parse(
-            new sun.security.util.DerValue(encoded));
-
-        info.set("key", new sun.security.x509.CertificateX509Key(x509Key));
-        info.set("algorithmID", new sun.security.x509.CertificateAlgorithmId(
-            sun.security.x509.AlgorithmId.get("SHA256withRSA")));
-
-        sun.security.x509.X509CertImpl cert = new sun.security.x509.X509CertImpl(info);
-        cert.sign(keyPair.getPrivate(), "SHA256withRSA");
-
-        return cert;
+        return certGen.getSelfCertificate(subjectName, startDate, validitySeconds);
     }
 }

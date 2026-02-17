@@ -6,9 +6,11 @@ import org.yawlfoundation.yawl.elements.YTimerParameters;
 /**
  * Tests for YTimerParameters switch expressions
  *
- * Tests switch expressions in YTimerParameters:
- * - Trigger type switches (OnEnabled/OnExecuting)
- * - Timer type switches in toString()
+ * Tests switch expressions over YTimerParameters.TimerType:
+ * - Duration type handling
+ * - Expiry type handling
+ * - Interval type handling
+ * - LateBound and Nil types
  *
  * Branch Coverage Target: 100%
  *
@@ -16,36 +18,6 @@ import org.yawlfoundation.yawl.elements.YTimerParameters;
  * Date: 2026-02-16
  */
 public class YTimerParametersSwitchTest extends TestCase {
-
-    // Test trigger type switches
-    public void testTriggerTypeSwitch_OnEnabled() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled,
-                                         "Enabled");
-        assertTrue("OnEnabled should match Enabled status", matches);
-
-        matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled,
-                                "Executing");
-        assertFalse("OnEnabled should not match Executing status", matches);
-    }
-
-    public void testTriggerTypeSwitch_OnExecuting() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnExecuting,
-                                         "Executing");
-        assertTrue("OnExecuting should match Executing status", matches);
-
-        matches = matchesTrigger(YTimerParameters.TriggerType.OnExecuting,
-                                "Enabled");
-        assertFalse("OnExecuting should not match Enabled status", matches);
-    }
-
-    // Test all trigger types
-    public void testTriggerTypeSwitch_Exhaustive() {
-        for (YTimerParameters.TriggerType trigger : YTimerParameters.TriggerType.values()) {
-            // Should not throw exception
-            String description = getTriggerDescription(trigger);
-            assertNotNull("Description should not be null for " + trigger, description);
-        }
-    }
 
     // Test timer type in toString() switch
     public void testTimerTypeToString_Duration() {
@@ -67,56 +39,45 @@ public class YTimerParametersSwitchTest extends TestCase {
         assertTrue("Interval should include ticks and unit", result.contains("HOURS"));
     }
 
-    // Test trigger type enum values
-    public void testTriggerTypeEnum_AllValues() {
-        YTimerParameters.TriggerType[] triggers = YTimerParameters.TriggerType.values();
-        assertEquals("Should have 2 trigger types", 2, triggers.length);
+    public void testTimerTypeToString_LateBound() {
+        String result = formatTimerType(YTimerParameters.TimerType.LateBound,
+                                       null, 0, null);
+        assertNotNull("LateBound should return a non-null result", result);
+        assertFalse("LateBound should return a non-empty result", result.isEmpty());
+    }
 
-        boolean hasOnEnabled = false;
-        boolean hasOnExecuting = false;
+    public void testTimerTypeToString_Nil() {
+        String result = formatTimerType(YTimerParameters.TimerType.Nil,
+                                       null, 0, null);
+        assertNotNull("Nil should return a non-null result", result);
+        assertFalse("Nil should return a non-empty result", result.isEmpty());
+    }
 
-        for (YTimerParameters.TriggerType t : triggers) {
-            if (t == YTimerParameters.TriggerType.OnEnabled) hasOnEnabled = true;
-            if (t == YTimerParameters.TriggerType.OnExecuting) hasOnExecuting = true;
+    // Test timer type enum values
+    public void testTimerTypeEnum_AllValues() {
+        // TimerType has Duration, Expiry, Interval, LateBound, Nil
+        YTimerParameters.TimerType[] timerTypes = YTimerParameters.TimerType.values();
+        assertEquals("Should have 5 timer types", 5, timerTypes.length);
+
+        boolean hasDuration = false;
+        boolean hasExpiry = false;
+        boolean hasInterval = false;
+        boolean hasLateBound = false;
+        boolean hasNil = false;
+
+        for (YTimerParameters.TimerType t : timerTypes) {
+            if (t == YTimerParameters.TimerType.Duration) hasDuration = true;
+            if (t == YTimerParameters.TimerType.Expiry) hasExpiry = true;
+            if (t == YTimerParameters.TimerType.Interval) hasInterval = true;
+            if (t == YTimerParameters.TimerType.LateBound) hasLateBound = true;
+            if (t == YTimerParameters.TimerType.Nil) hasNil = true;
         }
 
-        assertTrue("Should have OnEnabled trigger type", hasOnEnabled);
-        assertTrue("Should have OnExecuting trigger type", hasOnExecuting);
-    }
-
-    // Test trigger type ordinals
-    public void testTriggerTypeEnum_Ordinals() {
-        assertEquals("OnEnabled should be ordinal 0",
-                    0, YTimerParameters.TriggerType.OnEnabled.ordinal());
-        assertEquals("OnExecuting should be ordinal 1",
-                    1, YTimerParameters.TriggerType.OnExecuting.ordinal());
-    }
-
-    // Test trigger type valueOf
-    public void testTriggerTypeEnum_ValueOf() {
-        assertEquals(YTimerParameters.TriggerType.OnEnabled,
-                    YTimerParameters.TriggerType.valueOf("OnEnabled"));
-        assertEquals(YTimerParameters.TriggerType.OnExecuting,
-                    YTimerParameters.TriggerType.valueOf("OnExecuting"));
-    }
-
-    public void testTriggerTypeEnum_InvalidValueOf() {
-        try {
-            YTimerParameters.TriggerType.valueOf("Invalid");
-            fail("Should throw IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // Expected
-        }
-    }
-
-    // Test null handling
-    public void testTriggerTypeSwitch_NullEnum() {
-        try {
-            matchesTrigger(null, "Enabled");
-            fail("Should throw NullPointerException");
-        } catch (NullPointerException e) {
-            // Expected
-        }
+        assertTrue("Should have Duration timer type", hasDuration);
+        assertTrue("Should have Expiry timer type", hasExpiry);
+        assertTrue("Should have Interval timer type", hasInterval);
+        assertTrue("Should have LateBound timer type", hasLateBound);
+        assertTrue("Should have Nil timer type", hasNil);
     }
 
     public void testTimerTypeSwitch_NullEnum() {
@@ -124,59 +85,7 @@ public class YTimerParametersSwitchTest extends TestCase {
             formatTimerType(null, "PT2H", 0, null);
             fail("Should throw NullPointerException");
         } catch (NullPointerException e) {
-            // Expected
-        }
-    }
-
-    // Test edge cases for status matching
-    public void testTriggerTypeSwitch_NullStatus() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled, null);
-        assertFalse("Should not match null status", matches);
-    }
-
-    public void testTriggerTypeSwitch_EmptyStatus() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled, "");
-        assertFalse("Should not match empty status", matches);
-    }
-
-    public void testTriggerTypeSwitch_InvalidStatus() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled,
-                                        "Invalid");
-        assertFalse("Should not match invalid status", matches);
-    }
-
-    // Test case sensitivity
-    public void testTriggerTypeSwitch_CaseSensitive() {
-        boolean matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled,
-                                        "enabled");
-        assertFalse("Status matching should be case sensitive", matches);
-
-        matches = matchesTrigger(YTimerParameters.TriggerType.OnEnabled,
-                                "ENABLED");
-        assertFalse("Status matching should be case sensitive", matches);
-    }
-
-    // Test all combinations
-    public void testTriggerTypeSwitch_AllCombinations() {
-        String[] statuses = {"Enabled", "Executing", "Complete", "Invalid", null};
-
-        for (YTimerParameters.TriggerType trigger : YTimerParameters.TriggerType.values()) {
-            for (String status : statuses) {
-                if (status == null && trigger != null) {
-                    // Skip null status for non-null trigger (causes NPE in real code)
-                    continue;
-                }
-                // Should not throw exception
-                try {
-                    matchesTrigger(trigger, status);
-                } catch (NullPointerException e) {
-                    // Expected for null status
-                    if (status != null) {
-                        fail("Should not throw NPE for trigger=" + trigger +
-                             " status=" + status);
-                    }
-                }
-            }
+            // Expected - switch on null enum throws NPE
         }
     }
 
@@ -198,21 +107,16 @@ public class YTimerParametersSwitchTest extends TestCase {
         assertNotNull("Should handle null time unit", result);
     }
 
+    // Test all timer types produce non-null results
+    public void testTimerTypeSwitch_Exhaustive() {
+        for (YTimerParameters.TimerType type : YTimerParameters.TimerType.values()) {
+            String result = formatTimerType(type, null, 0, null);
+            assertNotNull("Result should not be null for " + type, result);
+            assertFalse("Result should not be empty for " + type, result.isEmpty());
+        }
+    }
+
     // Helper methods simulating actual switch expressions
-    private boolean matchesTrigger(YTimerParameters.TriggerType trigger, String status) {
-        return switch (trigger) {
-            case OnEnabled -> "Enabled".equals(status);
-            case OnExecuting -> "Executing".equals(status);
-        };
-    }
-
-    private String getTriggerDescription(YTimerParameters.TriggerType trigger) {
-        return switch (trigger) {
-            case OnEnabled -> "Triggers when work item is enabled";
-            case OnExecuting -> "Triggers when work item is executing";
-        };
-    }
-
     private String formatTimerType(YTimerParameters.TimerType type,
                                    String duration, long expiryTime, String timeUnit) {
         return switch (type) {
@@ -234,17 +138,8 @@ public class YTimerParametersSwitchTest extends TestCase {
                 }
                 yield "Interval: (not set)";
             }
+            case LateBound -> "LateBound: (runtime)";
+            case Nil -> "Nil: (no timer)";
         };
-    }
-
-    // Test description consistency
-    public void testTriggerDescriptions_Consistent() {
-        String enabledDesc = getTriggerDescription(YTimerParameters.TriggerType.OnEnabled);
-        assertTrue("OnEnabled description should mention 'enabled'",
-                  enabledDesc.toLowerCase().contains("enabled"));
-
-        String executingDesc = getTriggerDescription(YTimerParameters.TriggerType.OnExecuting);
-        assertTrue("OnExecuting description should mention 'executing'",
-                  executingDesc.toLowerCase().contains("executing"));
     }
 }

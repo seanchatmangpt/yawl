@@ -98,7 +98,7 @@ class TestYSpecification {
         Warning:The net (Net:f) may complete without any generated work.  Check the empty tasks linking from i to o.
         Warning:The net (Net:e) may complete without any generated work.  Check the empty tasks linking from i to o.
         */
-        assertTrue(handler.getMessages().get(0).getMessage(), handler.getMessageCount() == 4);
+        assertTrue(handler.getMessageCount() == 4, handler.getMessages().get(0).getMessage());
     }
 
     @Test

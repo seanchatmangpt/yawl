@@ -63,9 +63,9 @@ public class ResourceLogicUnitTest {
         WorkItemRecord workItem = new WorkItemRecord("123.456", "Approve_Order",
                 "http://localhost/spec.yawl", WorkItemRecord.statusEnabled);
 
-        assertEquals("123.456", workItem.getCaseID(), "Case ID should match");
-        assertEquals("Approve_Order", workItem.getTaskID(), "Task ID should match");
-        assertEquals("http://localhost/spec.yawl", workItem.getSpecURI(), "Spec URI should match");
+        assertEquals(workItem.getCaseID(), "Case ID should match", "123.456");
+        assertEquals(workItem.getTaskID(), "Task ID should match", "Approve_Order");
+        assertEquals(workItem.getSpecURI(), "Spec URI should match", "http://localhost/spec.yawl");
         assertEquals(WorkItemRecord.statusEnabled, workItem.getStatus(), "Status should match");
     }
 
@@ -202,7 +202,7 @@ public class ResourceLogicUnitTest {
 
         Resource leastLoaded = findLeastLoadedResource(resources);
 
-        assertEquals("user3", leastLoaded.getId(), "Should select least loaded resource");
+        assertEquals(leastLoaded.getId(), "Should select least loaded resource", "user3");
         assertEquals(1, leastLoaded.getAllocatedCount(), "Least loaded should have 1 allocation");
     }
 
@@ -212,10 +212,10 @@ public class ResourceLogicUnitTest {
         workItem.setCaseID("123.456.789");
 
         String caseId = workItem.getCaseID();
-        assertEquals("123.456.789", caseId, "Should extract full case ID");
+        assertEquals(caseId, "Should extract full case ID", "123.456.789");
 
         String rootCaseId = extractRootCaseId(caseId);
-        assertEquals("123", rootCaseId, "Should extract root case ID");
+        assertEquals(rootCaseId, "Should extract root case ID", "123");
     }
 
     private WorkItemRecord createTestWorkItem(String caseId, String taskId) {

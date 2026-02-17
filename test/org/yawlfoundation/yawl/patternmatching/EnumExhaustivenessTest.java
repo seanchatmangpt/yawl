@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
 import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.engine.WorkItemCompletion;
 import org.yawlfoundation.yawl.elements.YTimerParameters;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 
@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class EnumExhaustivenessTest {
 
-    // Test YWorkItem.Completion enum exhaustiveness
+    // Test WorkItemCompletion enum exhaustiveness
     @Test
     void testCompletionEnum_AllValuesHandled() {
-        for (YWorkItem.Completion completion : YWorkItem.Completion.values()) {
+        for (WorkItemCompletion completion : WorkItemCompletion.values()) {
             // Each value should produce a valid status
             String status = getCompletionStatusName(completion);
             assertNotNull(status, "Status should not be null for " + completion);
@@ -36,14 +36,15 @@ class EnumExhaustivenessTest {
 
     @Test
     void testCompletionEnum_NoMissingCases() {
-        // Verify count matches expected
-        assertEquals(3, YWorkItem.Completion.values().length,
-                    "Should have exactly 3 completion types");
+        // Verify count matches expected - WorkItemCompletion has Normal, Force, Fail, Invalid
+        assertEquals(4, WorkItemCompletion.values().length,
+                    "Should have exactly 4 completion types");
 
         // Verify all expected values exist
-        assertNotNull(YWorkItem.Completion.Normal);
-        assertNotNull(YWorkItem.Completion.Force);
-        assertNotNull(YWorkItem.Completion.Fail);
+        assertNotNull(WorkItemCompletion.Normal);
+        assertNotNull(WorkItemCompletion.Force);
+        assertNotNull(WorkItemCompletion.Fail);
+        assertNotNull(WorkItemCompletion.Invalid);
     }
 
     // Test YTimerParameters.TimerType enum exhaustiveness
@@ -60,37 +61,16 @@ class EnumExhaustivenessTest {
 
     @Test
     void testTimerTypeEnum_NoMissingCases() {
-        // Verify count matches expected
-        assertEquals(3, YTimerParameters.TimerType.values().length,
-                    "Should have exactly 3 timer types");
+        // Verify count matches expected - TimerType has Duration, Expiry, Interval, LateBound, Nil
+        assertEquals(5, YTimerParameters.TimerType.values().length,
+                    "Should have exactly 5 timer types");
 
         // Verify all expected values exist
         assertNotNull(YTimerParameters.TimerType.Expiry);
         assertNotNull(YTimerParameters.TimerType.Duration);
         assertNotNull(YTimerParameters.TimerType.Interval);
-    }
-
-    // Test YTimerParameters.TriggerType enum exhaustiveness
-    @Test
-    void testTriggerTypeEnum_AllValuesHandled() {
-        for (YTimerParameters.TriggerType trigger : YTimerParameters.TriggerType.values()) {
-            // Each value should produce a valid status
-            String status = getTriggerStatusName(trigger);
-            assertNotNull(status, "Status should not be null for " + trigger);
-            assertFalse(status.isEmpty(),
-                       "Status should not be empty for " + trigger);
-        }
-    }
-
-    @Test
-    void testTriggerTypeEnum_NoMissingCases() {
-        // Verify count matches expected
-        assertEquals(2, YTimerParameters.TriggerType.values().length,
-                    "Should have exactly 2 trigger types");
-
-        // Verify all expected values exist
-        assertNotNull(YTimerParameters.TriggerType.OnEnabled);
-        assertNotNull(YTimerParameters.TriggerType.OnExecuting);
+        assertNotNull(YTimerParameters.TimerType.LateBound);
+        assertNotNull(YTimerParameters.TimerType.Nil);
     }
 
     // Test YSchemaVersion enum exhaustiveness
@@ -130,50 +110,38 @@ class EnumExhaustivenessTest {
         // If someone adds a new enum value, these tests should catch it
         int completionCount = 0;
         int timerTypeCount = 0;
-        int triggerTypeCount = 0;
         int schemaVersionCount = 0;
 
-        for (YWorkItem.Completion c : YWorkItem.Completion.values()) {
+        for (WorkItemCompletion c : WorkItemCompletion.values()) {
             completionCount++;
         }
         for (YTimerParameters.TimerType t : YTimerParameters.TimerType.values()) {
             timerTypeCount++;
         }
-        for (YTimerParameters.TriggerType t : YTimerParameters.TriggerType.values()) {
-            triggerTypeCount++;
-        }
         for (YSchemaVersion v : YSchemaVersion.values()) {
             schemaVersionCount++;
         }
 
-        assertEquals(3, completionCount, "Completion enum count mismatch");
-        assertEquals(3, timerTypeCount, "Timer type enum count mismatch");
-        assertEquals(2, triggerTypeCount, "Trigger type enum count mismatch");
+        assertEquals(4, completionCount, "Completion enum count mismatch");
+        assertEquals(5, timerTypeCount, "Timer type enum count mismatch");
         assertEquals(10, schemaVersionCount, "Schema version enum count mismatch");
     }
 
     // Test enum ordinal consistency
     @Test
     void testEnumOrdinals_Sequential() {
-        // Completion ordinals should be 0, 1, 2
-        YWorkItem.Completion[] completions = YWorkItem.Completion.values();
+        // Completion ordinals should be 0, 1, 2, 3
+        WorkItemCompletion[] completions = WorkItemCompletion.values();
         for (int i = 0; i < completions.length; i++) {
             assertEquals(i, completions[i].ordinal(),
                         "Completion ordinal should match index");
         }
 
-        // Timer type ordinals should be 0, 1, 2
+        // Timer type ordinals should be sequential
         YTimerParameters.TimerType[] timerTypes = YTimerParameters.TimerType.values();
         for (int i = 0; i < timerTypes.length; i++) {
             assertEquals(i, timerTypes[i].ordinal(),
                         "Timer type ordinal should match index");
-        }
-
-        // Trigger type ordinals should be 0, 1
-        YTimerParameters.TriggerType[] triggers = YTimerParameters.TriggerType.values();
-        for (int i = 0; i < triggers.length; i++) {
-            assertEquals(i, triggers[i].ordinal(),
-                        "Trigger type ordinal should match index");
         }
 
         // Schema version ordinals should be 0-9
@@ -188,7 +156,7 @@ class EnumExhaustivenessTest {
     @Test
     void testEnumValues_AllDistinct() {
         // Test completion enum
-        YWorkItem.Completion[] completions = YWorkItem.Completion.values();
+        WorkItemCompletion[] completions = WorkItemCompletion.values();
         for (int i = 0; i < completions.length; i++) {
             for (int j = i + 1; j < completions.length; j++) {
                 assertFalse(completions[i].equals(completions[j]),
@@ -205,15 +173,6 @@ class EnumExhaustivenessTest {
             }
         }
 
-        // Test trigger type enum
-        YTimerParameters.TriggerType[] triggers = YTimerParameters.TriggerType.values();
-        for (int i = 0; i < triggers.length; i++) {
-            for (int j = i + 1; j < triggers.length; j++) {
-                assertFalse(triggers[i].equals(triggers[j]),
-                           "Trigger type values should be distinct");
-            }
-        }
-
         // Test schema version enum
         YSchemaVersion[] versions = YSchemaVersion.values();
         for (int i = 0; i < versions.length; i++) {
@@ -225,11 +184,12 @@ class EnumExhaustivenessTest {
     }
 
     // Helper methods
-    private String getCompletionStatusName(YWorkItem.Completion completion) {
+    private String getCompletionStatusName(WorkItemCompletion completion) {
         return switch (completion) {
             case Normal -> "Complete";
             case Force -> "ForcedComplete";
             case Fail -> "Failed";
+            case Invalid -> "Invalid";
         };
     }
 
@@ -238,13 +198,8 @@ class EnumExhaustivenessTest {
             case Expiry -> "Expires at specific time";
             case Duration -> "Runs for duration";
             case Interval -> "Repeats at intervals";
-        };
-    }
-
-    private String getTriggerStatusName(YTimerParameters.TriggerType trigger) {
-        return switch (trigger) {
-            case OnEnabled -> "Enabled";
-            case OnExecuting -> "Executing";
+            case LateBound -> "Late bound timer";
+            case Nil -> "No timer";
         };
     }
 }

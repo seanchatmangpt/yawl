@@ -609,9 +609,10 @@ public final class YSessionCache implements ISessionCache {
     // PRIVATE - Initialization
     // ========================================================================
 
+    @SuppressWarnings("unchecked")
     private void initializeDatabase() {
         try {
-            var classSet = new HashSet<Class<?>>();
+            Set<Class> classSet = new HashSet<>();
             classSet.add(YAuditEvent.class);
             database = new HibernateEngine(true, classSet);
         } catch (Exception e) {

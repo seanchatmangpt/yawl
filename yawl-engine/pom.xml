@@ -145,6 +145,29 @@
                         <exclude>**/*.png</exclude>
                         <exclude>**/*.gif</exclude>
                     </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/swingWorklist/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/wsif/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/patternmatching/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/miscellaneousPrograms/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/workflow/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/worklist/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.ywl</testExclude>
+                        <testExclude>**/*.yawl</testExclude>
+                        <testExclude>**/*.jpg</testExclude>
+                        <testExclude>**/*.png</testExclude>
+                        <testExclude>**/*.gif</testExclude>
+                        <testExclude>**/*.txt</testExclude>
+                        <testExclude>**/*.sql</testExclude>
+                        <!-- wsif source classes are not compiled; exclude test that depends on them -->
+                        <testExclude>**/org/yawlfoundation/yawl/wsif/TestWSIFInvoker.java</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>

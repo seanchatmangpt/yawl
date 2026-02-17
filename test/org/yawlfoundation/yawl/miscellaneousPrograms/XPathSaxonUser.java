@@ -1,42 +1,42 @@
 package org.yawlfoundation.yawl.miscellaneousPrograms;
 
-import net.sf.saxon.Configuration;
-import net.sf.saxon.om.DocumentInfo;
-import net.sf.saxon.query.DynamicQueryContext;
-import net.sf.saxon.query.XQueryExpression;
-import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.s9api.DocumentBuilder;
+import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XQueryCompiler;
+import net.sf.saxon.s9api.XQueryEvaluator;
+import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmValue;
 
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 
 /**
- * 
+ * Example of using Saxon S9API for XQuery evaluation.
+ * Updated to use the modern Saxon S9API (replaces deprecated Saxon 9.0 API).
+ *
  * @author Lachlan Aldred
  * Date: 11/02/2004
  * Time: 15:34:41
- * 
+ *
  */
 public class XPathSaxonUser {
     public static void main(String[] args) {
+        Processor processor = new Processor(false);
+        DocumentBuilder builder = processor.newDocumentBuilder();
+        XQueryCompiler compiler = processor.newXQueryCompiler();
 
-        net.sf.saxon.Configuration config = new Configuration();
-        net.sf.saxon.query.StaticQueryContext context = new net.sf.saxon.query.StaticQueryContext(config);
-    //    QueryProcessor qp = new QueryProcessor(config, context);
         try {
-            XQueryExpression exp = context.compileQuery("generate-id(/bye_mum/hi_there)");
-
-            DocumentInfo doc = context.buildDocument(new StreamSource(new StringReader(
+            XQueryExecutable exp = compiler.compile("generate-id(/bye_mum/hi_there)");
+            XdmNode doc = builder.build(new StreamSource(new StringReader(
                     "<bye_mum inf='h'><hi_there/></bye_mum>")));
-            DynamicQueryContext dynamicQueryContext = new DynamicQueryContext(config);
-            dynamicQueryContext.setContextNode(doc);
-            Object o = exp.evaluateSingle(dynamicQueryContext);
-System.out.println("o = " + o);
-        } catch (XPathException e) {
-            e.printStackTrace();
-        } catch (TransformerException e) {
+            XQueryEvaluator evaluator = exp.load();
+            evaluator.setContextItem(doc);
+            XdmValue result = evaluator.evaluate();
+            System.out.println("result = " + result);
+        } catch (SaxonApiException e) {
             e.printStackTrace();
         }
-
     }
 }
