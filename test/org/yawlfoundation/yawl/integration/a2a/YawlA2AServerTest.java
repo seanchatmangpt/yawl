@@ -14,6 +14,7 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
 import junit.framework.TestCase;
+import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -53,6 +54,15 @@ public class YawlA2AServerTest extends TestCase {
         server = null;
     }
 
+    /**
+     * Creates a YawlA2AServer with the required V6 authentication provider.
+     * Uses CompositeAuthenticationProvider.production() which is the recommended stack.
+     */
+    private static YawlA2AServer newServer(String url, String user, String pass, int port) {
+        return new YawlA2AServer(url, user, pass, port,
+                CompositeAuthenticationProvider.production());
+    }
+
     @Override
     protected void tearDown() {
         if (server != null && server.isRunning()) {
@@ -69,14 +79,14 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testConstructorWithValidParameters() {
-        YawlA2AServer s = new YawlA2AServer(
+        YawlA2AServer s = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
         assertNotNull("Server should be constructed successfully", s);
     }
 
     public void testConstructorWithNullEngineUrlThrows() {
         try {
-            new YawlA2AServer(null, "admin", "YAWL", TEST_PORT);
+            newServer(null, "admin", "YAWL", TEST_PORT);
             fail("Expected IllegalArgumentException for null engineUrl");
         } catch (IllegalArgumentException e) {
             assertTrue("Error should mention engine URL",
@@ -87,7 +97,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithEmptyEngineUrlThrows() {
         try {
-            new YawlA2AServer("", "admin", "YAWL", TEST_PORT);
+            newServer("", "admin", "YAWL", TEST_PORT);
             fail("Expected IllegalArgumentException for empty engineUrl");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -96,7 +106,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithNullUsernameThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", null, "YAWL", TEST_PORT);
+            newServer("http://localhost:8080/yawl", null, "YAWL", TEST_PORT);
             fail("Expected IllegalArgumentException for null username");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -105,7 +115,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithEmptyUsernameThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "", "YAWL", TEST_PORT);
+            newServer("http://localhost:8080/yawl", "", "YAWL", TEST_PORT);
             fail("Expected IllegalArgumentException for empty username");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -114,7 +124,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithNullPasswordThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "admin", null, TEST_PORT);
+            newServer("http://localhost:8080/yawl", "admin", null, TEST_PORT);
             fail("Expected IllegalArgumentException for null password");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -123,7 +133,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithEmptyPasswordThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "admin", "", TEST_PORT);
+            newServer("http://localhost:8080/yawl", "admin", "", TEST_PORT);
             fail("Expected IllegalArgumentException for empty password");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -132,7 +142,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithZeroPortThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "admin", "YAWL", 0);
+            newServer("http://localhost:8080/yawl", "admin", "YAWL", 0);
             fail("Expected IllegalArgumentException for port 0");
         } catch (IllegalArgumentException e) {
             assertTrue("Error should mention port",
@@ -142,7 +152,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithNegativePortThrows() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "admin", "YAWL", -1);
+            newServer("http://localhost:8080/yawl", "admin", "YAWL", -1);
             fail("Expected IllegalArgumentException for negative port");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -151,7 +161,7 @@ public class YawlA2AServerTest extends TestCase {
 
     public void testConstructorWithPortAbove65535Throws() {
         try {
-            new YawlA2AServer("http://localhost:8080/yawl", "admin", "YAWL", 65536);
+            newServer("http://localhost:8080/yawl", "admin", "YAWL", 65536);
             fail("Expected IllegalArgumentException for port 65536");
         } catch (IllegalArgumentException e) {
             assertNotNull(e.getMessage());
@@ -159,14 +169,14 @@ public class YawlA2AServerTest extends TestCase {
     }
 
     public void testConstructorWithMaxValidPort() {
-        YawlA2AServer s = new YawlA2AServer(
+        YawlA2AServer s = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", 65535);
         assertNotNull(s);
     }
 
     public void testConstructorWithPort1() {
         // Port 1 is technically valid per the guard (>= 1)
-        YawlA2AServer s = new YawlA2AServer(
+        YawlA2AServer s = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", 1);
         assertNotNull(s);
     }
@@ -176,7 +186,7 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testIsNotRunningBeforeStart() {
-        YawlA2AServer s = new YawlA2AServer(
+        YawlA2AServer s = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
         assertFalse("Server should not be running before start()", s.isRunning());
     }
@@ -186,7 +196,7 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testStartBindsHttpServer() throws Exception {
-        server = new YawlA2AServer(
+        server = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         server.start();
@@ -194,7 +204,7 @@ public class YawlA2AServerTest extends TestCase {
     }
 
     public void testStopTerminatesHttpServer() throws Exception {
-        server = new YawlA2AServer(
+        server = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         server.start();
@@ -210,7 +220,7 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testAgentCardEndpointResponds() throws Exception {
-        server = new YawlA2AServer(
+        server = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         server.start();
@@ -237,7 +247,7 @@ public class YawlA2AServerTest extends TestCase {
     }
 
     public void testHealthEndpointAfterStartIsBound() throws Exception {
-        server = new YawlA2AServer(
+        server = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         server.start();
@@ -266,7 +276,7 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testStopBeforeStartIsNoOp() {
-        YawlA2AServer s = new YawlA2AServer(
+        YawlA2AServer s = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         try {
@@ -283,7 +293,7 @@ public class YawlA2AServerTest extends TestCase {
     // =========================================================================
 
     public void testNotFoundEndpointReturns404() throws Exception {
-        server = new YawlA2AServer(
+        server = newServer(
             "http://localhost:8080/yawl", "admin", "YAWL", TEST_PORT);
 
         server.start();

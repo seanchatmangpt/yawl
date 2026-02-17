@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.integration.autonomous.CircuitBreakerTest;
 import org.yawlfoundation.yawl.integration.autonomous.RetryPolicyTest;
 import org.yawlfoundation.yawl.integration.autonomous.StaticMappingReasonerTest;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpServerTest;
+import org.yawlfoundation.yawl.integration.V6EndToEndIntegrationTest;
 
 /**
  * Master Integration Test Suite for YAWL V6.
@@ -68,7 +69,10 @@ import org.yawlfoundation.yawl.integration.mcp.YawlMcpServerTest;
     YawlMcpServerTest.class,
 
     // A2A server tests
-    YawlA2AServerTest.class
+    YawlA2AServerTest.class,
+
+    // V6 end-to-end integration tests
+    V6EndToEndIntegrationTest.class
     // Note: SpiffeExceptionTest and SpiffeWorkloadIdentityTest are package-private
     // JUnit 5 classes and are picked up automatically by JUnit platform scanning
 })
