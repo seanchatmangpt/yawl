@@ -52,7 +52,7 @@
  * <pre>
  * // Connect to engine
  * POST /api/ib/connect
- * Body: {"userid": "admin", "password": "YAWL"}
+ * Body: {"userid": "admin", "password": "<your-password>"}
  * Response: {"sessionHandle": "abc123..."}
  *
  * // Get work items

@@ -78,7 +78,18 @@ public class MainScreen {
   private static String YAWLlocation = "http://localhost:8080/yawl/ib";
   private static String ProcletServiceLocation = "http://localhost:8080/procletService/ib";
   private static String sUserId = "admin";
-  private static String sPwd = "YAWL";
+  // Password must be supplied via editor.properties (servicepassword key) or YAWL_SERVICE_PASSWORD
+  // environment variable. No default value - absent credential fails fast at authentication time.
+  private static String sPwd = loadServicePassword();
+
+  private static String loadServicePassword() {
+      String password = System.getenv("YAWL_SERVICE_PASSWORD");
+      if (password != null && !password.isEmpty()) {
+          return password;
+      }
+      // Return null here; setYawlProperties() will load from properties file or throw.
+      return null;
+  }
 
 
   /**
@@ -184,10 +195,17 @@ public class MainScreen {
             YAWLlocation = editorProps.getProperty("yawluri", YAWLlocation);
             ProcletServiceLocation = editorProps.getProperty("serviceuri", ProcletServiceLocation);
             sUserId = editorProps.getProperty("serviceusername", sUserId);
-            sPwd = editorProps.getProperty("servicepassword", sPwd);
+            String propPwd = editorProps.getProperty("servicepassword");
+            if (propPwd != null && !propPwd.isEmpty()) {
+                sPwd = propPwd;
+            }
         }
-        else {
-            System.err.println("   ... could not load YAWL connection properties, using defaults");
+        if (sPwd == null || sPwd.isEmpty()) {
+            throw new UnsupportedOperationException(
+                "YAWL service password not configured. " +
+                "Set 'servicepassword' in editor.properties or set the " +
+                "YAWL_SERVICE_PASSWORD environment variable. " +
+                "See SECURITY.md for credential configuration procedures.");
         }
     }
 

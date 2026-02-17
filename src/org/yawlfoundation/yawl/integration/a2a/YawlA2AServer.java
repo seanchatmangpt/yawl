@@ -622,7 +622,7 @@ public class YawlA2AServer {
      * Environment variables:
      *   YAWL_ENGINE_URL - YAWL engine base URL (default: http://localhost:8080/yawl)
      *   YAWL_USERNAME   - YAWL admin username (default: admin)
-     *   YAWL_PASSWORD   - YAWL admin password (default: YAWL)
+     *   YAWL_PASSWORD   - YAWL admin password (required - no default; see SECURITY.md)
      *   A2A_PORT        - Port to run on (default: 8081)
      */
     public static void main(String[] args) {
@@ -643,8 +643,8 @@ public class YawlA2AServer {
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable is required.\n" +
-                "Set it with: export YAWL_PASSWORD=YAWL");
+                "YAWL_PASSWORD environment variable is required. " +
+                "See SECURITY.md for credential configuration procedures.");
         }
 
         int port = 8081;
