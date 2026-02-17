@@ -93,6 +93,7 @@
                 <configuration>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
