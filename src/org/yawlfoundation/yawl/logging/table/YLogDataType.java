@@ -74,11 +74,9 @@ public class YLogDataType {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(150);
-        xml.append(String.format("<datatype key=\"%d\">", dataTypeID));
-        xml.append(StringUtil.wrap(name, "name"));
-        xml.append(StringUtil.wrap(definition, "definition"));
-        xml.append("</datatype>");
-        return xml.toString();
+        return "<datatype key=\"%d\">%s%s</datatype>".formatted(
+                dataTypeID,
+                StringUtil.wrap(name, "name"),
+                StringUtil.wrap(definition, "definition"));
     }
 }

@@ -44,7 +44,7 @@ import java.util.*;
 public class YEnabledTransitionSet {
 
     // a table of [place id, set of enabled transitions]
-    private Map<String, TaskGroup> transitions = new HashMap<String, TaskGroup>();
+    private Map<String, TaskGroup> transitions = new HashMap<>();
 
     // the only constructor
     public YEnabledTransitionSet() { }
@@ -64,7 +64,7 @@ public class YEnabledTransitionSet {
      * @return the set of groups
      */
     public Set<TaskGroup> getAllTaskGroups() {
-        return new HashSet<TaskGroup>(transitions.values());
+        return new HashSet<>(transitions.values());
     }
 
 
@@ -94,7 +94,7 @@ public class YEnabledTransitionSet {
      * @return a set of condition ids
      */
     private Set<String> getFlowsFromIDs(YTask task) {
-        Set<String> priorSet = new HashSet<String>();
+        Set<String> priorSet = new HashSet<>();
         for (YFlow flow : task.getPresetFlows()) {
             YNetElement prior = flow.getPriorElement();
             if (isEnablingCondition(prior)) priorSet.add(prior.getID()) ;
@@ -143,11 +143,11 @@ public class YEnabledTransitionSet {
          * @return true if the added task was not already in the group
          */
         public boolean add(YTask task) {
-            if (task instanceof YCompositeTask) {
-                return addCompositeTask((YCompositeTask) task);
+            if (task instanceof YCompositeTask compositeTask) {
+                return addCompositeTask(compositeTask);
             }
-            else if (task instanceof YAtomicTask) {
-                return addAtomicTask((YAtomicTask) task);
+            else if (task instanceof YAtomicTask atomicTask) {
+                return addAtomicTask(atomicTask);
             }
             return false;
         }

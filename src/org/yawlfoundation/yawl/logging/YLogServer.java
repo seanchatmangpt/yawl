@@ -598,8 +598,8 @@ public class YLogServer {
         if (isEnabled()) {
             YLogSpecification spec = getSpecification(specKey);
             if (spec != null) {
-                List instances = getNetInstanceObjects(spec.getRootNetID());
-                StringBuilder xml = new StringBuilder();
+                var instances = getNetInstanceObjects(spec.getRootNetID());
+                var xml = new StringBuilder();
                 xml.append("<cases specKey=\"%d\">".formatted(specKey));
                 for (Object o : instances) {
                     YLogNetInstance instance = (YLogNetInstance) o;
@@ -775,10 +775,9 @@ public class YLogServer {
 
 
     private String getEventListAsXML(long instanceID) {
-        StringBuilder xml = new StringBuilder();
+        var xml = new StringBuilder();
         for (Object o : getInstanceEventObjects(instanceID)) {
-            YLogEvent event = (YLogEvent) o;
-            xml.append(event.toXML());
+            xml.append(((YLogEvent) o).toXML());
         }
         return xml.toString();
     }

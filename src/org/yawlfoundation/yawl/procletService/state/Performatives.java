@@ -152,7 +152,7 @@ public class Performatives {
 			dataList = dataList.clone();
 			myLog.debug("dataList:" + JDOMUtil.elementToString(dataList));
 			Element eidData = dataList.getChild("entities");
-			List<Element> eltsRemove = new ArrayList<Element>();
+			List<Element> eltsRemove = new ArrayList<>();
 			if (eidData != null) {
 				myLog.debug("have entities");
 				List<Element> children = eidData.getChildren("entity");
@@ -196,7 +196,7 @@ public class Performatives {
 		}
 		else {
 			// get from the graphs which entities it concerns
-			List<EntityMID> emids = new ArrayList<EntityMID> ();
+			List<EntityMID> emids = new ArrayList<>();
 			myLog.debug("wir:" + wir);
 			List<InteractionGraph> graphs = InteractionGraphs.getInstance().getGraphs();
 			for (InteractionGraph graph : graphs) {
@@ -275,18 +275,18 @@ public class Performatives {
 	
 	public static void main(String [] args) {
 		Performatives perfs = Performatives.getInstance();
-		List<EntityID> eids1 = new ArrayList<EntityID> ();
+		List<EntityID> eids1 = new ArrayList<>();
 		eids1.add(new EntityID("1","1"));
 		eids1.add(new EntityID("1","2"));
-		List<String> receivers = new ArrayList<String>();
+		List<String> receivers = new ArrayList<>();
 		receivers.add("first");
 		receivers.add("second");
 		Performative perf1 = new Performative(
 				"ch1","s1",receivers,"a1","c1","sc1",ProcletPort.Direction.IN,eids1);
-		List<EntityID> eids = new ArrayList<EntityID> ();
+		List<EntityID> eids = new ArrayList<>();
 		eids.add(new EntityID("1","1"));
 		eids.add(new EntityID("1","2"));
-		List<String> receivers2 = new ArrayList<String>();
+		List<String> receivers2 = new ArrayList<>();
 		receivers2.add("third");
 		receivers2.add("fourth");
 		Performative perf2 = new Performative(

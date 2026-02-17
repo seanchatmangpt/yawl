@@ -45,12 +45,12 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     // These maps store references to all preceding and succeeding elements of this
     // element, and the flows that join them.
     // key = id of prior/next task or condition, value = flow between that and this
-    private Map<String, YFlow> _presetFlows = new HashMap<String, YFlow>();
-    private Map<String, YFlow> _postsetFlows = new HashMap<String, YFlow>();
+    private Map<String, YFlow> _presetFlows = new HashMap<>();
+    private Map<String, YFlow> _postsetFlows = new HashMap<>();
 
     // added for reduction rules code & mapping
-    private final Set<YExternalNetElement> _cancelledBySet = new HashSet<YExternalNetElement>();
-    private final Set<YExternalNetElement> _yawlMappingSet = new HashSet<YExternalNetElement>();
+    private final Set<YExternalNetElement> _cancelledBySet = new HashSet<>();
+    private final Set<YExternalNetElement> _yawlMappingSet = new HashSet<>();
 
 
     public YExternalNetElement(String id, YNet container) {
@@ -155,7 +155,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of succeeding elements
      */
     public Set<YExternalNetElement> getPostsetElements() {
-        Set<YExternalNetElement> postsetElements = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> postsetElements = new HashSet<>();
         for (YFlow flow : _postsetFlows.values()) {
             postsetElements.add(flow.getNextElement());
         }
@@ -168,7 +168,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of preceding elements
      */
     public Set<YExternalNetElement> getPresetElements() {
-        Set<YExternalNetElement> presetElements = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> presetElements = new HashSet<>();
         for (YFlow flow : _presetFlows.values()) {
             presetElements.add(flow.getPriorElement());
         }
@@ -201,7 +201,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of outgoing flows
      */
     public Set<YFlow> getPostsetFlows() {
-        return new HashSet<YFlow>(_postsetFlows.values());
+        return new HashSet<>(_postsetFlows.values());
     }
 
 
@@ -210,7 +210,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of incoming flows
      */
     public Set<YFlow> getPresetFlows() {
-        return new HashSet<YFlow>(_presetFlows.values());
+        return new HashSet<>(_presetFlows.values());
     }
 
 
@@ -238,7 +238,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     //added for reduction rules
     public Set<YExternalNetElement> getCancelledBySet() {
   	    return (_cancelledBySet != null) ?
-                new HashSet<YExternalNetElement>(_cancelledBySet) : null;
+                new HashSet<>(_cancelledBySet) : null;
     }
    
     public void addToCancelledBySet(YTask t){
@@ -253,7 +253,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     //added for reduction rules mappings
     public Set<YExternalNetElement> getYawlMappings() {
         return (_yawlMappingSet != null) ?
-                new HashSet<YExternalNetElement>(_yawlMappingSet) : null;
+                new HashSet<>(_yawlMappingSet) : null;
     }
    
     public void addToYawlMappings(YExternalNetElement e){
@@ -293,7 +293,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
 
     private void updateImplicitConditionID(YExternalNetElement element,
                                            String newID, boolean prior) {
-        if (element instanceof YCondition && ((YCondition) element).isImplicit()) {
+        if (element instanceof YCondition condition && condition.isImplicit()) {
             String oldID = element.getID();
 
             // an implicit condition will always have exactly 1 preset and 1 postset

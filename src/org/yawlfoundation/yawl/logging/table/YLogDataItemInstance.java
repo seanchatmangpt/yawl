@@ -120,13 +120,11 @@ public class YLogDataItemInstance {
 
 
     public String toXML() {
-        StringBuilder xml = new StringBuilder(330);
-        xml.append(String.format("<dataitem key=\"%d\">", dataItemID));
-        xml.append(dataItem.toXMLShort());
-        xml.append(StringUtil.wrap(String.valueOf(eventID), "eventKey"));
-        xml.append(StringUtil.wrap(String.valueOf(dataTypeID), "datatypeKey"));
-        xml.append("</dataitem>");
-        return xml.toString();
+        return "<dataitem key=\"%d\">%s%s%s</dataitem>".formatted(
+                dataItemID,
+                dataItem.toXMLShort(),
+                StringUtil.wrap(String.valueOf(eventID), "eventKey"),
+                StringUtil.wrap(String.valueOf(dataTypeID), "datatypeKey"));
     }
 
 }
