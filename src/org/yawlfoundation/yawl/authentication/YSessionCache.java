@@ -23,6 +23,8 @@ import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.logging.table.YAuditEvent;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -402,14 +404,58 @@ public final class YSessionCache implements ISessionCache {
         return storeSession(session);
     }
 
+    /**
+     * Validates client credentials using constant-time comparison to prevent timing attacks.
+     * <p>
+     * SECURITY NOTE: Passwords are currently stored in plaintext. This is a known security
+     * limitation that will be addressed in v6.1 with bcrypt migration. The constant-time
+     * comparison at least prevents timing-based password disclosure attacks.
+     * </p>
+     *
+     * @param client the client to validate
+     * @param password the password to verify
+     * @return true if credentials are valid, false otherwise
+     */
     private boolean validateClientCredentials(YExternalClient client, String password) {
         String storedPassword = client.getPassword();
-        return storedPassword != null && storedPassword.equals(password);
+        return constantTimeEquals(storedPassword, password);
     }
 
+    /**
+     * Validates service credentials using constant-time comparison to prevent timing attacks.
+     * <p>
+     * SECURITY NOTE: Passwords are currently stored in plaintext. This is a known security
+     * limitation that will be addressed in v6.1 with bcrypt migration. The constant-time
+     * comparison at least prevents timing-based password disclosure attacks.
+     * </p>
+     *
+     * @param service the service to validate
+     * @param password the password to verify
+     * @return true if credentials are valid, false otherwise
+     */
     private boolean validateServiceCredentials(YAWLServiceReference service, String password) {
         String storedPassword = service.getServicePassword();
-        return storedPassword != null && storedPassword.equals(password);
+        return constantTimeEquals(storedPassword, password);
+    }
+
+    /**
+     * Compares two strings in constant time to prevent timing attacks.
+     * <p>
+     * Uses {@link MessageDigest#isEqual(byte[], byte[])} which is designed for
+     * constant-time comparison of sensitive data like passwords and cryptographic tokens.
+     * </p>
+     *
+     * @param expected the expected value (stored password)
+     * @param provided the provided value (user input)
+     * @return true if strings match, false otherwise (including null cases)
+     */
+    private boolean constantTimeEquals(String expected, String provided) {
+        if (expected == null || provided == null) {
+            return false;
+        }
+        byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+        byte[] providedBytes = provided.getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expectedBytes, providedBytes);
     }
 
     private YAWLServiceReference findService(String name) {

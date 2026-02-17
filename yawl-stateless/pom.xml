@@ -115,11 +115,24 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/stateless/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/stateless/**</include>
+                    </includes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

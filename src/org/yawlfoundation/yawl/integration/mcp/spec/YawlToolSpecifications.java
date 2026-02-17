@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.spec;
 
-import io.modelcontextprotocol.server.McpServerFeatures;
-import io.modelcontextprotocol.server.McpSyncServerExchange;
-import io.modelcontextprotocol.spec.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.stub.McpServerFeatures;
+import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServerExchange;
+import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;

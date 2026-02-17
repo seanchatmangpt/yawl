@@ -27,9 +27,11 @@ import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.engine.YEngine;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -42,6 +44,9 @@ import java.util.concurrent.*;
  * - Failed services count
  * - Overall external connectivity status
  *
+ * Migrated to java.net.http.HttpClient (2026-02-16) for modern HTTP/2 support
+ * and virtual thread compatibility.
+ *
  * @author YAWL Foundation
  * @version 5.2
  */
@@ -52,9 +57,19 @@ public class YExternalServicesHealthIndicator implements HealthIndicator {
     private static final Logger logger = LogManager.getLogger(YExternalServicesHealthIndicator.class);
     private static final Logger _logger = LogManager.getLogger(YExternalServicesHealthIndicator.class);
 
-    private static final int CONNECT_TIMEOUT_MS = 3000;
-    private static final int READ_TIMEOUT_MS = 5000;
+    private static final Duration CONNECT_TIMEOUT = Duration.ofMillis(3000);
+    private static final Duration READ_TIMEOUT = Duration.ofMillis(5000);
     private static final long HEALTH_CHECK_TIMEOUT_MS = 10000;
+
+    /**
+     * Shared HTTP client using virtual threads for network I/O.
+     * Virtual threads provide efficient handling of concurrent health checks
+     * for potentially hundreds of external services.
+     */
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(CONNECT_TIMEOUT)
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
+            .build();
 
     private final YEngine engine;
 
@@ -70,7 +85,7 @@ public class YExternalServicesHealthIndicator implements HealthIndicator {
      * Performance Impact:
      * - Before: Max 10 concurrent health checks, rest queued
      * - After: All services checked concurrently (tested with 1,000+ services)
-     * - Memory: 10MB platform threads → 200KB virtual threads for 1,000 checks
+     * - Memory: 10MB platform threads -> 200KB virtual threads for 1,000 checks
      */
     private final ExecutorService executorService;
 
@@ -188,17 +203,16 @@ public class YExternalServicesHealthIndicator implements HealthIndicator {
             }
             URI serviceURI = URI.create(uriString);
 
-            URL url = serviceURI.toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
-            connection.setReadTimeout(READ_TIMEOUT_MS);
-            connection.setInstanceFollowRedirects(true);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(serviceURI)
+                    .timeout(READ_TIMEOUT)
+                    .GET()
+                    .build();
 
-            int responseCode = connection.getResponseCode();
+            HttpResponse<Void> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+            int responseCode = response.statusCode();
             long responseTime = System.currentTimeMillis() - startTime;
-
-            connection.disconnect();
 
             if (responseCode >= 200 && responseCode < 400) {
                 return new ServiceHealthStatus(true, responseTime, null);
@@ -207,6 +221,16 @@ public class YExternalServicesHealthIndicator implements HealthIndicator {
                     "HTTP " + responseCode);
             }
 
+        } catch (java.net.http.HttpConnectTimeoutException e) {
+            long responseTime = System.currentTimeMillis() - startTime;
+            return new ServiceHealthStatus(false, responseTime, "Connect timeout: " + e.getMessage());
+        } catch (java.net.http.HttpTimeoutException e) {
+            long responseTime = System.currentTimeMillis() - startTime;
+            return new ServiceHealthStatus(false, responseTime, "Read timeout: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            long responseTime = System.currentTimeMillis() - startTime;
+            return new ServiceHealthStatus(false, responseTime, "Interrupted");
         } catch (IOException e) {
             long responseTime = System.currentTimeMillis() - startTime;
             return new ServiceHealthStatus(false, responseTime, e.getMessage());

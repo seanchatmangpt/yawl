@@ -332,11 +332,7 @@ public final class AgentRegistry {
     }
 
     private String urlDecode(String value) {
-        try {
-            return java.net.URLDecoder.decode(value, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException("UTF-8 encoding not supported", e);
-        }
+        return java.net.URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     /**

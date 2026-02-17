@@ -71,7 +71,7 @@ public class ResourceResolver implements LSResourceResolver {
 
 
     private String streamToString(InputStream is) {
-        Scanner s = new Scanner(is, "UTF-8").useDelimiter("\\A");
+        Scanner s = new Scanner(is, StandardCharsets.UTF_8.name()).useDelimiter("\\A");
         return s.hasNext() ? s.next() : null;
     }
 

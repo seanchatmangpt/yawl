@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
-import io.modelcontextprotocol.server.McpServer;
-import io.modelcontextprotocol.server.McpSyncServer;
-import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
+import org.yawlfoundation.yawl.integration.mcp.stub.JacksonMcpJsonMapper;
+import org.yawlfoundation.yawl.integration.mcp.stub.McpServer;
+import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServer;
+import org.yawlfoundation.yawl.integration.mcp.stub.StdioServerTransportProvider;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;

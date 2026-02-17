@@ -32,6 +32,7 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Properties;
@@ -173,7 +174,7 @@ public class DocumentStore extends YHttpServlet {
             throws IOException {
         if (msg != null) {
             res.setContentType("text/xml; charset=UTF-8");
-            OutputStreamWriter out = new OutputStreamWriter(res.getOutputStream(), "UTF-8");
+            OutputStreamWriter out = new OutputStreamWriter(res.getOutputStream(), StandardCharsets.UTF_8);
             out.write(StringUtil.wrap(msg, tag));
             out.flush();
             out.close();

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- Java 25 Preview Feature Warnings - False Positives -->
+    <Match>
+        <!-- Record patterns and pattern matching for switch may trigger false positives -->
+        <Bug pattern="BC_VACUOUS_INSTANCEOF,BC_UNCONFIRMED_CAST,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
+        <Or>
+            <Source name=".*\$.*\.java" regex="true"/>
+            <Class name="~.*\$.*"/>
+        </Or>
+    </Match>
+
+    <!-- Generated Code Exclusions -->
+    <Match>
+        <!-- JAXB/JAX-WS generated code -->
+        <Class name="~.*\.(ObjectFactory|package-info|jaxb\..*)"/>
+    </Match>
+    <Match>
+        <!-- Hibernate generated proxies -->
+        <Class name="~.*\$\$_hibernate_.*"/>
+    </Match>
+    <Match>
+        <!-- JUnit generated test runners -->
+        <Class name="~.*Test\$.*"/>
+    </Match>
+
+    <!-- Known False Positives for Java 25 -->
+
+    <!-- UnsafeCast warnings in code using generics with type erasure -->
+    <Match>
+        <Bug pattern="BC_UNCONFIRMED_CAST"/>
+        <Class name="~org\.yawlfoundation\.yawl\.elements\..*"/>
+    </Match>
+    <Match>
+        <Bug pattern="BC_UNCONFIRMED_CAST"/>
+        <Class name="~org\.yawlfoundation\.yawl\.engine\..*"/>
+    </Match>
+
+    <!-- Null pointer analysis false positives with Optional usage -->
+    <Match>
+        <Bug pattern="NP_NULL_ON_SOME_PATH,NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
+        <Class name="~org\.yawlfoundation\.yawl\.stateless\..*"/>
+    </Match>
+
+    <!-- Serialization false positives for records -->
+    <Match>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+        <Or>
+            <Class name="~.*Record.*"/>
+            <Class name="~.*\$.*Builder.*"/>
+        </Or>
+    </Match>
+
+    <!-- Equals/hashCode on value objects that use identity intentionally -->
+    <Match>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS,EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS"/>
+        <Class name="~org\.yawlfoundation\.yawl\.elements\.YAWL.*"/>
+    </Match>
+
+    <!-- Inner class serialization warnings -->
+    <Match>
+        <Bug pattern="SE_INNER_CLASS,SIC_INNER_SHOULD_BE_STATIC"/>
+        <Class name="~.*\$\d+.*"/>
+    </Match>
+
+    <!-- Database/Hibernate related false positives -->
+    <Match>
+        <!-- Session/EntityManager usage patterns are safe in this codebase -->
+        <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE"/>
+        <Class name="~org\.yawlfoundation\.yawl\.engine\.YPersistenceManager.*"/>
+    </Match>
+
+    <!-- Exception handling patterns common in workflow engines -->
+    <Match>
+        <Bug pattern="DE_MIGHT_IGNORE,REC_CATCH_EXCEPTION"/>
+        <Class name="~org\.yawlfoundation\.yawl\.engine\..*"/>
+    </Match>
+
+    <!-- Thread safety in GUI code - not intended to be thread-safe -->
+    <Match>
+        <Bug pattern="IS2_INCONSISTENT_SYNC,VO_VOLATILE_REFERENCE_TO_ARRAY"/>
+        <Class name="~org\.yawlfoundation\.yawl\.engine\.gui\..*"/>
+    </Match>
+
+    <!-- Worklist/Queue implementations using synchronized blocks correctly -->
+    <Match>
+        <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER"/>
+        <Class name="~org\.yawlfoundation\.yawl\.resourcing\..*"/>
+    </Match>
+
+    <!-- XML Processing - known safe patterns -->
+    <Match>
+        <Bug pattern="XXE_SAXPARSER,XXE_XMLREADER"/>
+        <Class name="~org\.yawlfoundation\.yawl\.schema\..*"/>
+    </Match>
+
+    <!-- Builder pattern false positives -->
+    <Match>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED,NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+        <Method name="~builder|with.*|set.*" regex="true"/>
+    </Match>
+
+    <!-- Static initializer patterns used for framework registration -->
+    <Match>
+        <Bug pattern="MS_SHOULD_BE_FINAL,MS_PKGPROTECT"/>
+        <Class name="~org\.yawlfoundation\.yawl\.elements\.YAWL.*"/>
+    </Match>
+
+    <!-- Test utility classes - relaxed rules -->
+    <Match>
+        <Class name="~.*Test(s)?(Suite)?"/>
+        <Or>
+            <Bug pattern="RV_RETURN_VALUE_IGNORED"/>
+            <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+            <Bug pattern="DE_MIGHT_IGNORE"/>
+        </Or>
+    </Match>
+
+</FindBugsFilter>

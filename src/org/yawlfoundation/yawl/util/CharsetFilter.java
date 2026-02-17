@@ -22,6 +22,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Enforces UTF-8 encoding for all servlet requests and responses.
@@ -36,7 +37,7 @@ public class CharsetFilter implements Filter {
 
     public void init(FilterConfig config) throws ServletException {
         encoding = config.getInitParameter("requestEncoding");
-        if (encoding == null) encoding="UTF-8";
+        if (encoding == null) encoding = StandardCharsets.UTF_8.name();
     }
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain next)
@@ -57,7 +58,7 @@ public class CharsetFilter implements Filter {
             request.setCharacterEncoding(encoding);
         }
 
-        response.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         next.doFilter(request, response);
     }

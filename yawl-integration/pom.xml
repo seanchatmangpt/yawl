@@ -146,11 +146,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <!-- Exclude MCP-dependent sources (SDK not on Maven Central) -->
-                        <exclude>**/mcp/**</exclude>
-                        <!-- Exclude A2A-dependent sources (SDK not on Maven Central) -->
+                        <!-- A2A SDK not on Maven Central - excluded until available -->
                         <exclude>**/a2a/**</exclude>
-                        <!-- Exclude sources that depend on MCP/A2A -->
+                        <!-- Exclude sources that depend on A2A -->
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
                         <!-- Exclude sources with inter-dependencies on excluded packages -->
@@ -159,6 +157,8 @@
                         <!-- Exclude spiffe files that depend on zai -->
                         <exclude>**/spiffe/SpiffeEnabledZaiService.java</exclude>
                         <exclude>**/test/SelfPlayTest.java</exclude>
+                        <!-- Exclude MCP client (uses client-side SDK not in stubs) -->
+                        <exclude>**/mcp/YawlMcpClient.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -167,7 +167,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>**/mcp/**</exclude>
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>

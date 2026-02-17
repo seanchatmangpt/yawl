@@ -48,7 +48,7 @@ public class ServletUtils {
 
     public static OutputStreamWriter prepareResponse(HttpServletResponse response) throws IOException {
         response.setContentType("text/xml; charset=UTF-8");
-        return new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+        return new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8);
     }
 
     

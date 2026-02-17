@@ -23,13 +23,15 @@ import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 /**
+ * Email sender using HTTP POST.
+ * Uses Interface_Client's HttpClient (migrated 2026-02-16) for transport.
+ *
  * @author Michael Adams
  * @date 1/10/15
  */

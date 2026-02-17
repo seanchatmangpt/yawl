@@ -8,16 +8,19 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 /**
  * Health check system for YAWL autonomous integration.
@@ -29,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * - Custom registered health checks
  *
  * Thread-safe for concurrent health check execution.
+ * Migrated to java.net.http.HttpClient (2026-02-16) for modern HTTP/2 support
+ * and virtual thread compatibility.
  *
  * @author YAWL Production Validator
  * @version 5.2
@@ -37,9 +42,18 @@ public class HealthCheck {
 
     private static final Logger logger = LoggerFactory.getLogger(HealthCheck.class);
 
+    /**
+     * Shared HTTP client using virtual threads for network I/O.
+     * Virtual threads provide efficient handling of concurrent health checks.
+     */
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
+            .build();
+
     private final String yawlEngineUrl;
     private final String zaiApiUrl;
-    private final int timeoutMs;
+    private final Duration timeout;
     private final HttpServer server;
     private final ConcurrentHashMap<String, Check> customChecks;
 
@@ -71,7 +85,7 @@ public class HealthCheck {
 
         this.yawlEngineUrl = yawlEngineUrl;
         this.zaiApiUrl = zaiApiUrl;
-        this.timeoutMs = timeoutMs;
+        this.timeout = Duration.ofMillis(timeoutMs);
         this.customChecks = new ConcurrentHashMap<>();
 
         if (port > 0) {
@@ -79,7 +93,7 @@ public class HealthCheck {
             server.createContext("/health", new HealthHandler());
             server.createContext("/health/ready", new ReadinessHandler());
             server.createContext("/health/live", new LivenessHandler());
-            server.setExecutor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor());
+            server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
             server.start();
 
             logger.info("Health check HTTP server started on port {}", port);
@@ -150,21 +164,22 @@ public class HealthCheck {
     }
 
     /**
-     * Check YAWL engine connectivity.
+     * Check YAWL engine connectivity using modern HttpClient.
      * Sends HEAD request to YAWL engine base URL.
      *
      * @return Check result
      */
     private CheckResult checkYawlEngine() {
         try {
-            URL url = URI.create(yawlEngineUrl).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("HEAD");
-            conn.setConnectTimeout(timeoutMs);
-            conn.setReadTimeout(timeoutMs);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(yawlEngineUrl))
+                    .timeout(timeout)
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .build();
 
-            int responseCode = conn.getResponseCode();
-            conn.disconnect();
+            HttpResponse<Void> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+            int responseCode = response.statusCode();
 
             if (responseCode >= 200 && responseCode < 500) {
                 return CheckResult.healthy("YAWL engine responding (HTTP " + responseCode + ")");
@@ -172,6 +187,16 @@ public class HealthCheck {
                 return CheckResult.unhealthy("YAWL engine returned HTTP " + responseCode);
             }
 
+        } catch (java.net.http.HttpConnectTimeoutException e) {
+            logger.warn("YAWL engine health check connect timeout: {}", e.getMessage());
+            return CheckResult.unhealthy("Connection timeout: " + e.getMessage());
+        } catch (java.net.http.HttpTimeoutException e) {
+            logger.warn("YAWL engine health check timeout: {}", e.getMessage());
+            return CheckResult.unhealthy("Request timeout: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("YAWL engine health check interrupted");
+            return CheckResult.unhealthy("Interrupted");
         } catch (IOException e) {
             logger.warn("YAWL engine health check failed: {}", e.getMessage());
             return CheckResult.unhealthy("Connection failed: " + e.getMessage());
@@ -179,7 +204,7 @@ public class HealthCheck {
     }
 
     /**
-     * Check ZAI API connectivity.
+     * Check ZAI API connectivity using modern HttpClient.
      * Sends HEAD request to ZAI API base URL.
      *
      * @return Check result
@@ -190,14 +215,15 @@ public class HealthCheck {
         }
 
         try {
-            URL url = URI.create(zaiApiUrl).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("HEAD");
-            conn.setConnectTimeout(timeoutMs);
-            conn.setReadTimeout(timeoutMs);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(zaiApiUrl))
+                    .timeout(timeout)
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .build();
 
-            int responseCode = conn.getResponseCode();
-            conn.disconnect();
+            HttpResponse<Void> response = HTTP_CLIENT.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+            int responseCode = response.statusCode();
 
             if (responseCode >= 200 && responseCode < 500) {
                 return CheckResult.healthy("ZAI API responding (HTTP " + responseCode + ")");
@@ -205,6 +231,16 @@ public class HealthCheck {
                 return CheckResult.unhealthy("ZAI API returned HTTP " + responseCode);
             }
 
+        } catch (java.net.http.HttpConnectTimeoutException e) {
+            logger.warn("ZAI API health check connect timeout: {}", e.getMessage());
+            return CheckResult.unhealthy("Connection timeout: " + e.getMessage());
+        } catch (java.net.http.HttpTimeoutException e) {
+            logger.warn("ZAI API health check timeout: {}", e.getMessage());
+            return CheckResult.unhealthy("Request timeout: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("ZAI API health check interrupted");
+            return CheckResult.unhealthy("Interrupted");
         } catch (IOException e) {
             logger.warn("ZAI API health check failed: {}", e.getMessage());
             return CheckResult.unhealthy("Connection failed: " + e.getMessage());

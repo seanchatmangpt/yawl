@@ -66,8 +66,10 @@ COPY yawl-monitoring ./yawl-monitoring
 COPY yawl-webapps ./yawl-webapps
 COPY yawl-control-panel ./yawl-control-panel
 
-# Build with Maven (skip tests in Docker build, run in CI)
-RUN mvn clean package -DskipTests -B --no-transfer-progress
+# Build with Maven (skip test compilation and execution in Docker build, run in CI)
+# Use -Dmaven.test.skip=true to skip both compilation and execution
+# This is necessary because test sources reference classes across modules
+RUN mvn clean package -Dmaven.test.skip=true -B --no-transfer-progress
 
 # ============================================================================
 # Runtime Stage - Minimal JRE with Health Checks
@@ -116,7 +118,8 @@ RUN mkdir -p \
     && chown -R yawl:yawl /app
 
 # Copy built artifacts from builder stage
-COPY --from=builder --chown=yawl:yawl /build/target/*.jar /app/yawl.jar
+# The shaded JAR is in yawl-control-panel module with all dependencies
+COPY --from=builder --chown=yawl:yawl /build/yawl-control-panel/target/yawl-control-panel-*.jar /app/yawl.jar
 
 # Create health check script with fallback logic
 RUN echo '#!/bin/sh' > /app/healthcheck.sh && \
