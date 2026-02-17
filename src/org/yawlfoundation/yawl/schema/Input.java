@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.ls.LSInput;
 
 import java.io.BufferedInputStream;
@@ -31,6 +33,7 @@ import java.io.Reader;
  */
 public class Input implements LSInput {
 
+    private static final Logger _log = LogManager.getLogger(Input.class);
     private String publicId;
     private String systemId;
     private BufferedInputStream inputStream;
@@ -82,12 +85,12 @@ public class Input implements LSInput {
             try {
                 byte[] input = new byte[inputStream.available()];
                 inputStream.read(input);
-                String contents = new String(input);
-                return contents;
+                return new String(input);
             } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Exception " + e);
-                return null;
+                _log.error("Failed to read string data from LSInput stream (systemId='{}'): {}",
+                        systemId, e.getMessage(), e);
+                throw new IllegalStateException(
+                        "Failed to read schema input stream for systemId '" + systemId + "'", e);
             }
         }
     }

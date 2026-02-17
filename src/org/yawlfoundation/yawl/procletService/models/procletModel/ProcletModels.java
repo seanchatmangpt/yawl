@@ -41,7 +41,12 @@ public class ProcletModels {
 		}
 	}
 	
-	public ProcletModel getProcletClass(String classID) {
+	/**
+     * Get a Proclet model by class ID.
+     * @param classID the class identifier
+     * @return the ProcletModel if found, or null if not found
+     */
+    public ProcletModel getProcletClass(String classID) {
 		for (ProcletModel pmodel : this.pModelsList) {
 			if (pmodel.getClassID().equals(classID)) {
 				return pmodel;
@@ -72,7 +77,12 @@ public class ProcletModels {
 		return portsTot;
 	}
 	
-	public ProcletBlock getBlockForInteractionNode (InteractionNode node) {
+	/**
+     * Get a Proclet block for an interaction node.
+     * @param node the interaction node
+     * @return the ProcletBlock if found, or null if not found
+     */
+    public ProcletBlock getBlockForInteractionNode (InteractionNode node) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(node.getClassID())) {
 				for (ProcletBlock block : pmodel.getBlocks()) {
@@ -85,7 +95,13 @@ public class ProcletModels {
 		return null;
 	}
 	
-	public ProcletBlock getProcletBlock(String classID, String blockID) {
+	/**
+     * Get a Proclet block by class and block ID.
+     * @param classID the class identifier
+     * @param blockID the block identifier
+     * @return the ProcletBlock if found, or null if not found
+     */
+    public ProcletBlock getProcletBlock(String classID, String blockID) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(classID)) {
 				for (ProcletBlock block : pmodel.getBlocks()) {
@@ -98,7 +114,12 @@ public class ProcletModels {
 		return null;
 	}
 	
-	public List<ProcletPort> getPortsBlock (InteractionNode node) {
+	/**
+     * Get ports for a Proclet block in an interaction node.
+     * @param node the interaction node
+     * @return the list of ProcletPorts if found, or null if not found
+     */
+    public List<ProcletPort> getPortsBlock (InteractionNode node) {
 		for (ProcletModel pmodel : this.getProcletClasses()) {
 			if (pmodel.getClassID().equals(node.getClassID())) {
 				for (ProcletBlock block : pmodel.getBlocks()) {

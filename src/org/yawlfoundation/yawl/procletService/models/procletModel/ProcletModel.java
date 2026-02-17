@@ -194,6 +194,11 @@ public class ProcletModel extends DirectedSparseGraph {
 		return blocks;
 	}
 	
+	/**
+	 * Get a block by its block ID.
+	 * @param blockID the block identifier
+	 * @return the ProcletBlock if found, or null if not found
+	 */
 	public ProcletBlock getBlock(String blockID) {
 		List<ProcletBlock> blocks = this.getBlocks();
 		for (ProcletBlock block : blocks) {
@@ -315,7 +320,7 @@ public class ProcletModel extends DirectedSparseGraph {
         }
 	}
 	
-	
+
 	public void deleteProcletModelFromDB () {
         String template = "delete from %s as s where s.classID='" + classID + "'";
         DBConnection.execUpdate(String.format(template, "StoredProcletBlock"));

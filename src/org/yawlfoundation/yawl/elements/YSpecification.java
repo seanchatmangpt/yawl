@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YDataValidator;
@@ -38,6 +40,7 @@ import java.util.*;
  * 
  */
 public final class YSpecification implements Cloneable, YVerifiable {
+    private static final Logger _log = LogManager.getLogger(YSpecification.class);
     private String _specURI;
     private YNet _rootNet;
     private Map<String, YDecomposition> _decompositions =
@@ -282,6 +285,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
             return persistedXML;
         }
         catch (Exception e) {
+            _log.error("Failed to marshal YSpecification '{}' for persistence", _specURI, e);
             return null;
         }
     }

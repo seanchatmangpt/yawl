@@ -341,7 +341,6 @@ public final class YNet extends YDecomposition {
             _log.error("Unexpected CloneNotSupportedException cloning YNet - YCloneable contract violated", e);
             throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
         }
-        return null;
     }
 
 

@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.engine.time.workdays.WorkDayAdjuster;
@@ -42,6 +44,8 @@ import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
  * @date 30/07/12
  */
 public class YTimerParameters {
+
+    private static final Logger _log = LogManager.getLogger(YTimerParameters.class);
 
     // the ways in which timer parameters may be expressed
     public enum TimerType { Duration, Expiry, Interval, LateBound, Nil }
@@ -202,7 +206,8 @@ public class YTimerParameters {
             return true;
         }
         catch (IllegalArgumentException pe) {
-            // do nothing here - trickle down
+            _log.debug("Expiry '{}' is not an xsd:dateTime, trying epoch millis: {}",
+                    expiry, pe.getMessage());
         }
 
         long time = StringUtil.strToLong(expiry, -1);           // test for long

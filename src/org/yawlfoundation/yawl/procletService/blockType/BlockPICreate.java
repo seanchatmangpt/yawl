@@ -246,7 +246,7 @@ public class BlockPICreate {
 		   	//eids.add(new EntityID("ronny","1"));
 		   	String data = bpic.removeUnneededData(s, eids);
 		   	bpic.checkForCreationProclets();
-	    	System.out.println();
+	    	myLog.debug("BlockPICreate main completed");
 	    }
 	
 }

@@ -60,7 +60,8 @@ public class CompleteCaseDeleteCase {
 				}
 			}
 		}
-		return "";
+		myLog.warn("No class ID found in interaction graphs for proclet '{}'", this.procletID);
+		return null;
 	}
 	
 	public void removeFromGraphs (String procletID) {
@@ -146,8 +147,9 @@ public class CompleteCaseDeleteCase {
 			try {
 				Thread.sleep(500);
 			}
-			catch (Exception e) {
-				e.printStackTrace();
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				myLog.error("Thread interrupted while waiting for case block in CompleteCaseDeleteCase", e);
 			}
 		}
 		SingleInstanceClass.getInstance().blockCase(procletID);
@@ -207,7 +209,7 @@ public class CompleteCaseDeleteCase {
 				}
 			}
 			catch (Exception e) {
-				e.printStackTrace();
+				myLog.error("Exception in CompleteCaseDeleteCase processing", e);
 			}
 		}
 		boolean firstPass = false;
@@ -360,7 +362,7 @@ public class CompleteCaseDeleteCase {
 								trigger.send("something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in CompleteCaseDeleteCase graph extension", e);
 							}
 							// and continue building
 						}
@@ -524,7 +526,7 @@ public class CompleteCaseDeleteCase {
 	}
 
 	
-	public static void main(String [] args) { 
+	public static void main(String [] args) {
 //		String test = "1";
 //		String[] split = test.split(",");
 //		for (int i=0; i<split.length; i++) {
@@ -532,7 +534,7 @@ public class CompleteCaseDeleteCase {
 //		}
 		CompleteCaseDeleteCase.deleteException("visit","p2","exception");
 		List exc = CompleteCaseDeleteCase.getExceptions();
-		System.out.println();
+		LogManager.getLogger(CompleteCaseDeleteCase.class).info("Exceptions: {}", exc);
 	}
 	
 }

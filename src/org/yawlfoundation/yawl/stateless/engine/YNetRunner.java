@@ -684,7 +684,8 @@ public class YNetRunner {
             }
         }
         catch (YStateException yse) {
-            // ignore - task already removed due to alternate path or case completion
+            _logger.debug("Task already removed during net execution (expected for alternate " +
+                    "path or case completion): {}", yse.getMessage());
         }
     }
 
