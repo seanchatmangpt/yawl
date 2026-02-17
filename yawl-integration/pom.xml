@@ -154,7 +154,7 @@
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
                         <!-- Exclude sources with inter-dependencies on excluded packages -->
-                        <exclude>**/zai/**</exclude>
+                        <exclude>zai/**</exclude>
                         <exclude>**/processmining/**</exclude>
                         <!-- Exclude spiffe files that depend on zai -->
                         <exclude>**/spiffe/SpiffeEnabledZaiService.java</exclude>
@@ -172,7 +172,7 @@
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
-                        <exclude>**/zai/**</exclude>
+                        <exclude>zai/**</exclude>
                         <exclude>**/processmining/**</exclude>
                         <exclude>**/SpiffeEnabledZaiService.java</exclude>
                         <exclude>**/SelfPlayTest.java</exclude>
