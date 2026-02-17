@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.schema.YDataValidator;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.NullCheckModernizer;
+import org.yawlfoundation.yawl.engine.core.marking.IMarkingTask;
 import org.yawlfoundation.yawl.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
@@ -53,7 +54,7 @@ import java.util.*;
  * @author Lachlan Aldred
  * @author Michael Adams (v2.0 and later)
  */
-public abstract class YTask extends YExternalNetElement {
+public abstract class YTask extends YExternalNetElement implements IMarkingTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());

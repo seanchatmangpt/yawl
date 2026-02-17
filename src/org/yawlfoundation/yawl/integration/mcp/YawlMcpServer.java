@@ -246,8 +246,8 @@ public class YawlMcpServer {
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable is required.\n" +
-                "Set it with: export YAWL_PASSWORD=YAWL");
+                "YAWL_PASSWORD environment variable is required. " +
+                "See SECURITY.md for credential configuration procedures.");
         }
 
         System.err.println("Starting YAWL MCP Server v" + SERVER_VERSION);

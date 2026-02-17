@@ -44,10 +44,10 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 
+ *
  * The implementation of a net in the YAWL semantics - A container for tasks and conditions.
  * @author Lachlan Aldred
- * 
+ *
  */
 public final class YNet extends YDecomposition {
 
@@ -284,7 +284,7 @@ public final class YNet extends YDecomposition {
     public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
         Set<YExternalNetElement> postset = new HashSet<YExternalNetElement>();
         for (YExternalNetElement element : elements) {
-            if (! (element instanceof YOutputCondition)) {
+            if (!(element instanceof YOutputCondition)) {
                 postset.addAll(element.getPostsetElements());
             }
         }

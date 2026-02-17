@@ -846,24 +846,29 @@ public class YNetRunner {
                 if (_containingCompositeTask != null) {
                     YNetRunner parentRunner = _engine.getNetRunner(_caseIDForNet.getParent());
                     if (parentRunner != null) {
-                        synchronized (parentRunner) {
-                            if (_containingCompositeTask.t_isBusy()) {
+                        /* DEADLOCK FIX: Removed nested synchronized(parentRunner) block.
+                         * Previously: completeTask (child lock) -> synchronized(parentRunner)
+                         * caused ABBA deadlock when parent held its lock and called into child.
+                         * processCompletedSubnet is already a private synchronized method on
+                         * parentRunner, so it provides its own mutual exclusion. Lock ordering
+                         * is now consistent: always parent runner first (via its own method), then
+                         * child runner -- never the reverse. */
+                        if (_containingCompositeTask.t_isBusy()) {
 
-                                warnIfNetNotEmpty();
+                            warnIfNetNotEmpty();
 
-                                Document dataDoc = _net.usesSimpleRootData() ?
-                                                   _net.getInternalDataDocument() :
-                                                   _net.getOutputData() ;
+                            Document dataDoc = _net.usesSimpleRootData() ?
+                                               _net.getInternalDataDocument() :
+                                               _net.getOutputData() ;
 
-                                parentRunner.processCompletedSubnet(pmgr,
-                                            _caseIDForNet,
-                                            _containingCompositeTask,
-                                            dataDoc);
+                            parentRunner.processCompletedSubnet(pmgr,
+                                        _caseIDForNet,
+                                        _containingCompositeTask,
+                                        dataDoc);
 
-                                _logger.debug("YNetRunner::completeTask() finished local task: {}," +
-                                        " composite task: {}, caseid for decomposed net: {}",
-                                        atomicTask, _containingCompositeTask, _caseIDForNet);
-                            }
+                            _logger.debug("YNetRunner::completeTask() finished local task: {}," +
+                                    " composite task: {}, caseid for decomposed net: {}",
+                                    atomicTask, _containingCompositeTask, _caseIDForNet);
                         }
                     }
                 }

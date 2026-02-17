@@ -66,10 +66,14 @@ public class YStatelessEngine {
      *              the case idle time monitoring and the announcement of timeout events.
      */
     public void setIdleCaseTimer(long msecs) {
-        if (_caseMonitor != null) {
+        if (msecs <= 0) {
+            // A non-positive value disables case idle time monitoring entirely.
+            setCaseMonitoringEnabled(false);
+        }
+        else if (_caseMonitor != null) {
             _caseMonitor.setIdleTimeout(msecs);
         }
-        else if (msecs > 0) {
+        else {
             setCaseMonitoringEnabled(true, msecs);
         }
     }
