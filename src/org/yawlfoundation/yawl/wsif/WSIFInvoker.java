@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.wsif;
 
 import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.apache.wsif.*;
 import org.apache.wsif.providers.ProviderUtils;
 import org.apache.wsif.providers.soap.apachesoap.WSIFDynamicProvider_ApacheSOAP;
@@ -227,11 +228,11 @@ public class WSIFInvoker {
                     if (c.equals(String.class)) {
                         value = arg;
                     } else if (c.equals(Double.TYPE)) {
-                        value = Double.valueOf(arg);
+                        value = SafeNumberParser.parseDoubleOrThrow(arg, "WSIF double parameter "" + inNames[pos] + """);
                     } else if (c.equals(Float.TYPE)) {
                         value = Float.valueOf(arg);
                     } else if (c.equals(Integer.TYPE)) {
-                        value = Integer.valueOf(arg);
+                        value = SafeNumberParser.parseIntOrThrow(arg, "WSIF integer parameter "" + inNames[pos] + """);
                     } else if (c.equals(Boolean.TYPE)) {
                         value = Boolean.valueOf(arg);
                     } else {

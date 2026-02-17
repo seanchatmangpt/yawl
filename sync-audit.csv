@@ -1,0 +1,134 @@
+file,line,lock_object,method_or_block,nested_depth,scope,lock_duration_estimate,risk_level,notes
+src/org/yawlfoundation/yawl/engine/YEngine.java,871,_pmgr (static shared),cancelCase,1,instance block,LONG (DB tx + announce),HIGH,Holds _pmgr across full DB transaction + announcements
+src/org/yawlfoundation/yawl/engine/YEngine.java,929,_pmgr (static shared),launchCase,1,instance block,LONG (DB tx + startCase),HIGH,Holds _pmgr across case start + commit
+src/org/yawlfoundation/yawl/engine/YEngine.java,1098,_pmgr (static shared),suspendCase,1,instance block,LONG (DB tx),MEDIUM,Long tx but no nested locks
+src/org/yawlfoundation/yawl/engine/YEngine.java,1158,_pmgr (static shared),resumeCase,1,instance block,LONG (DB tx + announce),MEDIUM,Long tx + announce inside lock
+src/org/yawlfoundation/yawl/engine/YEngine.java,1283,_pmgr (static shared),updateCaseData,1,instance block,MEDIUM (DB tx),MEDIUM,Short DB update tx
+src/org/yawlfoundation/yawl/engine/YEngine.java,1441,_pmgr (static shared),startWorkItem (checkOut),1,instance block,LONG (DB tx + netRunner calls),HIGH,Long critical-path lock; calls synchronized YNetRunner methods → nested depth 2
+src/org/yawlfoundation/yawl/engine/YEngine.java,1557,_pmgr (static shared),completeWorkItem (checkIn),1,instance block,LONG (DB tx + netRunner calls),HIGH,Long critical-path lock; calls synchronized YNetRunner methods → nested depth 2
+src/org/yawlfoundation/yawl/engine/YEngine.java,1791,_pmgr (static shared),createNewInstance,1,instance block,MEDIUM (DB tx),MEDIUM,DB tx + netRunner call inside lock
+src/org/yawlfoundation/yawl/engine/YEngine.java,1813,_pmgr (static shared),suspendWorkItem,1,instance block,SHORT (DB tx),LOW,Short DB update only
+src/org/yawlfoundation/yawl/engine/YEngine.java,1828,_pmgr (static shared),unsuspendWorkItem,1,instance block,SHORT (DB tx),LOW,Short DB update only
+src/org/yawlfoundation/yawl/engine/YEngine.java,1843,_pmgr (static shared),rollbackWorkItem,1,instance block,MEDIUM (DB tx + runner),MEDIUM,Calls runner.rollbackWorkItem inside _pmgr lock
+src/org/yawlfoundation/yawl/engine/YEngine.java,1870,_pmgr (static shared),updateWorkItemData,1,instance block,SHORT (DB tx),LOW,Short data update
+src/org/yawlfoundation/yawl/engine/YEngine.java,1892,_pmgr (static shared),cancelWorkItem,1,instance block,MEDIUM (DB tx + task),MEDIUM,Calls synchronized YTask.cancel inside _pmgr lock → depth 2
+src/org/yawlfoundation/yawl/engine/YEngine.java,2174,this + _pmgr,doPersistAction,2,NESTED (this → _pmgr),SHORT (DB op),HIGH,DOUBLE-LOCK: method is synchronized(this) AND internally locks _pmgr; classic nested ordering risk
+src/org/yawlfoundation/yawl/engine/YEngine.java,2176,_pmgr (inner),doPersistAction inner,2,NESTED,SHORT (DB op),HIGH,Inner lock; combined with outer synchronized(this) creates 2-level nesting
+src/org/yawlfoundation/yawl/engine/YEngine.java,2224,_pmgr (static shared),clearCaseFromPersistence,1,instance block,SHORT (session.get + delete),MEDIUM,Called inside existing _pmgr lock from cancelCase — potential re-entrant lock
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,310,this (YNetRunner),kick,1,method,LONG (may fire tasks),HIGH,Holds runner lock across full task-firing cycle; called from completeTask under same lock → re-entrant required
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,425,this (YNetRunner),processCompletedSubnet,1,method,MEDIUM,MEDIUM,Internal runner operation
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,483,this (YNetRunner),addNewInstance,1,method,MEDIUM,MEDIUM,Called inside YEngine._pmgr lock → depth 2
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,504,this (YNetRunner),startWorkItemInTask,1,method,MEDIUM,MEDIUM,Called inside YEngine._pmgr lock → depth 2
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,522,this (YNetRunner),completeWorkItemInTask,1,method,MEDIUM,MEDIUM,Called inside YEngine._pmgr lock → depth 2
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,543,this (YNetRunner),continueIfPossible,1,method,LONG (may fire tasks),HIGH,Called inside YEngine._pmgr lock → depth 2; may fire multiple tasks
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,798,this (YNetRunner),completeTask,1,method,LONG (task + subnet),HIGH,Acquires parentRunner lock inside → NESTED LOCK: this-runner → parentRunner
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,826,parentRunner (different YNetRunner),completeTask inner,2,NESTED (childRunner → parentRunner),MEDIUM,DEADLOCK RISK: child acquires parent's lock; concurrent parent operation acquiring child's lock would deadlock
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,871,this (YNetRunner),cancel,1,method,LONG (all tasks),MEDIUM,Iterates all tasks under lock
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,906,this (YNetRunner),rollbackWorkItem,1,method,SHORT,LOW,Short state change
+src/org/yawlfoundation/yawl/engine/YNetRunner.java,1076,this (YNetRunner),cancelTask,1,method,SHORT,LOW,Simple removal
+src/org/yawlfoundation/yawl/engine/YWorkItem.java,182,_parent (YWorkItem),completeParentPersistence,1,block on parent object,MEDIUM (sibling iteration),MEDIUM,Locks parent item; called inside YEngine._pmgr lock → depth 2
+src/org/yawlfoundation/yawl/engine/YPersistenceManager.java,311,this (YPersistenceManager),doPersistAction,1,method,SHORT (DB op),MEDIUM,Redundant given callers also lock _pmgr; double-locking same object (re-entrant in Java but wasteful)
+src/org/yawlfoundation/yawl/engine/YAnnouncer.java,87,this (YAnnouncer),registerInterfaceBObserverGateway,1,method,SHORT,LOW,One-time registration
+src/org/yawlfoundation/yawl/engine/time/YTimer.java,154,this (TimeKeeper),run,1,method,MEDIUM (handleTimerExpiry),MEDIUM,Timer thread holds lock while calling handleTimerExpiry which may reenter other locks
+src/org/yawlfoundation/yawl/engine/interfce/interfaceE/YLogGateway.java,92,persistenceManager,query execution,1,block,MEDIUM (DB query),MEDIUM,Locks persistence manager for query
+src/org/yawlfoundation/yawl/elements/YTask.java,302,this (YTask),t_fire,1,method,LONG (token mgmt + conditions),HIGH,Holds task lock across multi-step Petri net firing; called inside runner lock → depth 2
+src/org/yawlfoundation/yawl/elements/YTask.java,382,this (YTask),t_add,1,method,MEDIUM,MEDIUM,MI token management
+src/org/yawlfoundation/yawl/elements/YTask.java,498,this (YTask),t_isExitEnabled,1,method,SHORT,LOW,Read-only check
+src/org/yawlfoundation/yawl/elements/YTask.java,509,this (YTask),t_complete,1,method,LONG (token + conditions),HIGH,Complex Petri net completion; called inside runner lock → depth 2
+src/org/yawlfoundation/yawl/elements/YTask.java,723,this (YTask),t_start,1,method,MEDIUM,MEDIUM,State change + token mgmt
+src/org/yawlfoundation/yawl/elements/YTask.java,743,this (YTask),t_exit,1,method,LONG (condition removal),HIGH,Removes tokens from all output conditions; inside runner lock → depth 2
+src/org/yawlfoundation/yawl/elements/YTask.java,1000,this (YTask),t_enabled,1,method,MEDIUM (condition checks),MEDIUM,Iterates conditions; called inside runner lock → depth 2
+src/org/yawlfoundation/yawl/elements/YTask.java,1265,this (YTask),t_isBusy,1,method,SHORT,LOW,Simple boolean check
+src/org/yawlfoundation/yawl/elements/YTask.java,1270,this (YTask),cancel,1,method,MEDIUM,MEDIUM,Called inside YEngine._pmgr lock → depth 2
+src/org/yawlfoundation/yawl/elements/YTask.java,1279,this (YTask),rollbackFired,1,method,SHORT,LOW,Token removal
+src/org/yawlfoundation/yawl/elements/YAtomicTask.java,94,this (YAtomicTask),cancel(pmgr),1,method,MEDIUM (DB ops),MEDIUM,DB-aware cancellation; called inside YEngine lock → depth 2
+src/org/yawlfoundation/yawl/elements/YAtomicTask.java,107,this (YAtomicTask),cancel(pmgr+caseID),1,method,MEDIUM (DB ops),MEDIUM,Overload; called inside YEngine lock → depth 2
+src/org/yawlfoundation/yawl/elements/YCompositeTask.java,70,this (YCompositeTask),startOne,1,method,LONG (spawns subnet),HIGH,Spawns subnet runner under lock; called inside parent runner lock → depth 2
+src/org/yawlfoundation/yawl/elements/YCompositeTask.java,87,this (YCompositeTask),cancel,1,method,MEDIUM,MEDIUM,Cancels subnet runner
+src/org/yawlfoundation/yawl/elements/YCondition.java,111,this (YCondition),removeAll,1,method,SHORT,LOW,Simple list clear
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,192,this (YIdentifier),addLocation,1,method,SHORT (list add + persist),LOW,Fine-grained; but called inside task lock → depth 2
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,210,this (YIdentifier),clearLocations,1,method,SHORT,LOW,Simple list clear
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,218,this (YIdentifier),clearLocation,1,method,SHORT,LOW,Simple list removal
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,224,this (YIdentifier),removeLocation,1,method,SHORT,LOW,Simple removal
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,243,this (YIdentifier),addLocation(task),1,method,SHORT,LOW,Simple list add
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,254,this (YIdentifier),removeLocation(task),1,method,SHORT,LOW,Simple list removal
+src/org/yawlfoundation/yawl/elements/state/YIdentifier.java,264,this (YIdentifier),getLocations,1,method,SHORT (list return),LOW,Read-only accessor
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,351,this (YNetRunner),kick,1,method,LONG (task firing),HIGH,Same pattern as stateful; re-entrant + calls t_fire
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,444,this (YNetRunner),processCompletedSubnet,1,method,MEDIUM,MEDIUM,Internal subnet completion
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,491,this (YNetRunner),addNewInstance,1,method,MEDIUM,MEDIUM,MI token addition
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,509,this (YNetRunner),startWorkItemInTask,1,method,MEDIUM,MEDIUM,Task start
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,525,this (YNetRunner),completeWorkItemInTask,1,method,MEDIUM,MEDIUM,Task completion
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,543,this (YNetRunner),continueIfPossible,1,method,LONG,HIGH,Fires multiple tasks under lock
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,772,this (YNetRunner),completeTask,1,method,LONG,HIGH,Acquires parentRunner inside → nested child-parent lock
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,800,parentRunner (different YNetRunner),completeTask inner,2,NESTED (childRunner → parentRunner),MEDIUM,DEADLOCK RISK: same pattern as stateful engine
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,837,this (YNetRunner),cancel,1,method,LONG (all tasks),MEDIUM,Iterates and cancels all tasks
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,862,this (YNetRunner),rollbackWorkItem,1,method,SHORT,LOW,Simple state revert
+src/org/yawlfoundation/yawl/stateless/engine/YNetRunner.java,1012,this (YNetRunner),cancelTask,1,method,SHORT,LOW,Set removal
+src/org/yawlfoundation/yawl/stateless/engine/YWorkItem.java,202,_parent (YWorkItem),completeParentPersistence,1,block on parent,MEDIUM (sibling iteration),MEDIUM,Sibling iteration under parent lock
+src/org/yawlfoundation/yawl/stateless/engine/time/YWorkItemTimer.java,125,engine.UNLOAD_MUTEX (shared),handleTimerExpiry,1,instance block,MEDIUM (timer expiry),MEDIUM,Contends with YStatelessEngine.unloadCase on same object
+src/org/yawlfoundation/yawl/stateless/YStatelessEngine.java,529,engine.UNLOAD_MUTEX (shared),unloadCase,1,instance block,MEDIUM (unmarshal),MEDIUM,Intentional mutex with timer; correct pattern
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,285,this (YTask),t_fire,1,method,LONG,HIGH,Same deep Petri net firing pattern as stateful
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,361,this (YTask),t_add,1,method,MEDIUM,MEDIUM,MI token addition
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,435,this (YTask),t_isExitEnabled,1,method,SHORT,LOW,Read check
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,446,this (YTask),t_complete,1,method,LONG,HIGH,Complex completion; nested in runner
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,658,this (YTask),t_start,1,method,MEDIUM,MEDIUM,Task start
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,677,this (YTask),t_exit,1,method,LONG,HIGH,Token removal from all output conditions
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,911,this (YTask),t_enabled,1,method,MEDIUM,MEDIUM,Condition iteration
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,1168,this (YTask),t_isBusy,1,method,SHORT,LOW,Boolean read
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,1173,this (YTask),cancel,1,method,MEDIUM,MEDIUM,State cancellation
+src/org/yawlfoundation/yawl/stateless/elements/YTask.java,1182,this (YTask),rollbackFired,1,method,SHORT,LOW,Token removal
+src/org/yawlfoundation/yawl/stateless/elements/YAtomicTask.java,74,this (YAtomicTask),cancel,1,method,SHORT,LOW,Simple state cancel
+src/org/yawlfoundation/yawl/stateless/elements/YAtomicTask.java,85,this (YAtomicTask),cancel(caseID),1,method,SHORT,LOW,Overload with case filter
+src/org/yawlfoundation/yawl/stateless/elements/YCompositeTask.java,69,this (YCompositeTask),startOne,1,method,LONG (spawns runner),HIGH,Spawns subnet runner under lock
+src/org/yawlfoundation/yawl/stateless/elements/YCompositeTask.java,88,this (YCompositeTask),cancel,1,method,MEDIUM,MEDIUM,Cancels subnet runner
+src/org/yawlfoundation/yawl/stateless/elements/YCondition.java,111,this (YCondition),removeAll,1,method,SHORT,LOW,Simple clear
+src/org/yawlfoundation/yawl/stateless/elements/YNet.java,301,this (YNet),clone,1,method,LONG (deep clone),MEDIUM,Deep object clone under lock; can be slow for large nets
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,181,this (YIdentifier),addLocation,1,method,SHORT,LOW,List add
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,196,this (YIdentifier),clearLocations,1,method,SHORT,LOW,List clear
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,202,this (YIdentifier),clearLocation,1,method,SHORT,LOW,Specific removal
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,207,this (YIdentifier),removeLocation,1,method,SHORT,LOW,List removal
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,223,this (YIdentifier),addLocation(task),1,method,SHORT,LOW,List add
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,232,this (YIdentifier),removeLocation(task),1,method,SHORT,LOW,List removal
+src/org/yawlfoundation/yawl/stateless/elements/marking/YIdentifier.java,241,this (YIdentifier),getLocations,1,method,SHORT,LOW,Read-only
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,49,mutex3,blockCase,1,block,SHORT,MEDIUM,Multiple separate mutexes — ordering must be consistent
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,57,mutex3,isCaseBlocked,1,block,SHORT,MEDIUM,Read under lock (could be AtomicBoolean)
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,63,mutex3,unblockCase,1,block,SHORT,MEDIUM,Write under lock
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,70,mutex (mutex1),registerAndWait,1,block,LONG (starts thread + waits),HIGH,Starts InternalRunner thread inside lock; InternalRunner.run re-acquires mutex → RE-ENTRANT RISK / NESTED
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,83,mutex2,registerAndWaitDuringNotify,1,block,MEDIUM,MEDIUM,Separate mutex from registerAndWait — potential ordering issue
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,105,mutex (mutex1),notifyPerformativeListeners,1,block,VERY LONG (polling wait loop inside!),CRITICAL,Holds mutex1 while spinning on Thread.sleep(500) in a while(true) loop — this will block ALL threads needing mutex1 for the full poll duration
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,156,mutex2,unregister,1,block,SHORT,LOW,Simple removal
+src/org/yawlfoundation/yawl/procletService/SingleInstanceClass.java,188,mutex (mutex1) [inner],InternalRunner.run,2,NESTED (InternalRunner holds mutex1 → calls notification() which acquires ThreadNotify's lock),MEDIUM,DEADLOCK RISK: InternalRunner acquires mutex1 after sleeping; if main thread already holds mutex1 and waits for InternalRunner → circular wait
+src/org/yawlfoundation/yawl/procletService/blockType/BlockPICreate.java,54,this (BlockPICreate),block,1,block,SHORT,LOW,Short synchronization block
+src/org/yawlfoundation/yawl/procletService/connect/JavaCPN.java,145,this (JavaCPN),send,1,method,MEDIUM (socket I/O),HIGH,Synchronized method performs blocking socket I/O — can hold lock for arbitrary duration on network latency
+src/org/yawlfoundation/yawl/procletService/interactionGraph/InteractionGraphs.java,406,this (InteractionGraphs),persistGraphs,1,method,LONG (serialization),MEDIUM,Long serialization under lock
+src/org/yawlfoundation/yawl/procletService/util/ThreadNotify.java,25,this (ThreadNotify),press,1,method,SHORT,LOW,notifyAll wake
+src/org/yawlfoundation/yawl/procletService/util/ThreadNotify.java,33,this (ThreadNotify),notification,1,method,SHORT,LOW,notifyAll wake
+src/org/yawlfoundation/yawl/procletService/util/ThreadNotify.java,41,this (ThreadNotify),run (synchronized),1,method,VERY LONG (waits on wait()),CRITICAL,run() method is synchronized AND calls wait() — this is correct for the wait/notify pattern but prevents any other synchronized method on this object from executing while the thread is sleeping
+src/org/yawlfoundation/yawl/procletService/util/ThreadTest.java,29,this (ThreadTest),press,1,method,SHORT,LOW,notifyAll
+src/org/yawlfoundation/yawl/procletService/util/ThreadTest.java,37,this (ThreadTest),block,1,block,LONG (waits),MEDIUM,wait() inside synchronized block — correct pattern but long hold
+src/org/yawlfoundation/yawl/procletService/util/TimeService.java,126,this (TimeService),finish,1,method,LONG (engine call + interaction mgmt),HIGH,Synchronized method performs external engine HTTP call — network I/O under lock
+src/org/yawlfoundation/yawl/resilience/provider/YawlResilienceProvider.java,63,YawlResilienceProvider.class,getInstance,1,class-level (static),SHORT,LOW,Standard double-check singleton; should use volatile + DCL properly
+src/org/yawlfoundation/yawl/resilience/provider/YawlResilienceProvider.java,81,YawlResilienceProvider.class,initialize,1,class-level (static),SHORT,LOW,Static initialization guard
+src/org/yawlfoundation/yawl/engine/observability/YAWLTelemetry.java,220,_lock (Class object),getInstance,1,block,SHORT (DCL inner),LOW,Correct double-checked locking pattern with Class object as lock
+src/org/yawlfoundation/yawl/integration/a2a/YawlEngineAdapter.java,111,this (YawlEngineAdapter),connect,1,method,LONG (network retries with sleep),HIGH,Synchronized method with Thread.sleep inside retry loop — holds lock during network delay (RECONNECT_DELAY_MS per attempt x RECONNECT_ATTEMPTS)
+src/org/yawlfoundation/yawl/integration/a2a/YawlEngineAdapter.java,157,this (YawlEngineAdapter),disconnect,1,method,SHORT,LOW,Simple state change
+src/org/yawlfoundation/yawl/integration/a2a/YawlEngineAdapter.java,530,this (YawlEngineAdapter),ensureInterfaceA,1,method,MEDIUM (may connect),MEDIUM,May perform network connection
+src/org/yawlfoundation/yawl/schema/Input.java,75,inputStream,parse,1,block on stream,SHORT,LOW,Stream resource guard
+src/org/yawlfoundation/yawl/smsModule/SMSSender.java,191,this (SMSSender),handleCancelledWorkItemEvent,1,block,MEDIUM (list iteration),MEDIUM,List manipulation under lock
+src/org/yawlfoundation/yawl/smsModule/SMSSender.java,257,this (SMSSender),run,1,block,LONG (socket I/O),HIGH,Synchronized block performs network I/O (getReplies) inside — indefinite hold on network latency
+src/org/yawlfoundation/yawl/util/AbstractEngineClient.java,224,_mutex (Object),connected,1,block,LONG (HTTP + possible reconnect),HIGH,Holds lock while performing HTTP connection to engine — network I/O under lock
+src/org/yawlfoundation/yawl/util/JDOMUtil.java,97,JDOMUtil.class,stringToDocument,1,class-level (static),MEDIUM (XML parse),HIGH,Static synchronized serializes ALL XML parsing across entire JVM — global bottleneck for concurrent workflow execution
+src/org/yawlfoundation/yawl/util/JDOMUtil.java,114,JDOMUtil.class,stringToDocumentUncaught,1,class-level (static),MEDIUM (XML parse),HIGH,Same bottleneck as stringToDocument
+src/org/yawlfoundation/yawl/util/JDOMUtil.java,140,JDOMUtil.class,fileToDocument,1,class-level (static),LONG (file I/O + XML parse),HIGH,File I/O under global static lock — severe contention
+src/org/yawlfoundation/yawl/util/PasswordEncryptor.java,38,PasswordEncryptor.class,encrypt(text),1,class-level (static),SHORT (hash),MEDIUM,Static lock on MessageDigest — unnecessarily serializes encryption; MessageDigest is not thread-safe but instances are cheap to create
+src/org/yawlfoundation/yawl/util/PasswordEncryptor.java,47,PasswordEncryptor.class,encrypt(text+defText),1,class-level (static),SHORT,MEDIUM,Delegates to encrypt(text); same bottleneck
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,54,this (YWorklistTableModel),getRowCount,1,method,SHORT,LOW,Simple count read (UI thread only in practice)
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,67,this (YWorklistTableModel),getColumnCount,1,method,SHORT,LOW,Simple count read
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,83,this (YWorklistTableModel),getValueAt,1,method,SHORT,LOW,Table cell read
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,101,this (YWorklistTableModel),addRow,1,method,SHORT,LOW,Row add
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,112,this (YWorklistTableModel),getColumnName,1,method,SHORT,LOW,Column name read
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,120,this (YWorklistTableModel),removeRow,1,method,SHORT,LOW,Row removal
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,133,this (YWorklistTableModel),getColumnClass,1,method,SHORT,LOW,Type lookup
+src/org/yawlfoundation/yawl/swingWorklist/YWorklistTableModel.java,139,this (YWorklistTableModel),getRowIndex,1,method,SHORT,LOW,Index lookup
+src/org/yawlfoundation/yawl/swingWorklist/YWorkListPanel.java,53,_myTable,refreshTable,1,block,MEDIUM (table rebuild),LOW,UI component lock; Swing EDT should handle this
+src/org/yawlfoundation/yawl/swingWorklist/util/TableSorter.java,283,model,sort operation,1,block on model,MEDIUM (sort),LOW,Table model lock during sort

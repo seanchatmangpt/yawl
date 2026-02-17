@@ -39,6 +39,7 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.schema.YDataValidator;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.NullCheckModernizer;
 import org.yawlfoundation.yawl.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
@@ -172,7 +173,8 @@ public abstract class YTask extends YExternalNetElement {
 
 
     public boolean isMultiInstance() {
-        return _multiInstAttr != null && _multiInstAttr.isMultiInstance();
+        return NullCheckModernizer.mapOrElse(_multiInstAttr,
+                YMultiInstanceAttributes::isMultiInstance, false);
     }
 
 
@@ -275,10 +277,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     public Set<YExternalNetElement> getRemoveSet() {
-        if (_removeSet != null) {
-            return new HashSet<YExternalNetElement>(_removeSet);
-        }
-        return null;
+        return NullCheckModernizer.mapOrNull(_removeSet, HashSet::new);
     }
 
 
@@ -490,8 +489,8 @@ public abstract class YTask extends YExternalNetElement {
 
     public String getPreSplittingMIQuery() {
         String miVarNameInDecomposition = _multiInstAttr.getMIFormalInputParam();
-        return miVarNameInDecomposition != null ?
-                _dataMappingsForTaskStarting.get(miVarNameInDecomposition) : null;
+        return NullCheckModernizer.mapOrNull(miVarNameInDecomposition,
+                _dataMappingsForTaskStarting::get);
     }
 
 
@@ -716,7 +715,8 @@ public abstract class YTask extends YExternalNetElement {
 
 
     private String getPreJoiningMIQuery() {
-        return _multiInstAttr != null ? _multiInstAttr.getMIFormalOutputQuery() : null;
+        return NullCheckModernizer.mapOrNull(_multiInstAttr,
+                YMultiInstanceAttributes::getMIFormalOutputQuery);
     }
 
 
@@ -1585,9 +1585,10 @@ public abstract class YTask extends YExternalNetElement {
         result.append(getID());
         result.append("</taskID>");
 
-        String taskName = _name != null ? _name :
-                        _decompositionPrototype != null ?
-                                _decompositionPrototype.getID() : "null";
+        String taskName = NullCheckModernizer.firstNonNull(
+                _name,
+                NullCheckModernizer.mapOrNull(_decompositionPrototype, YDecomposition::getID),
+                "null");
         result.append(StringUtil.wrapEscaped(taskName, "taskName"));
 
         if (_documentation != null) {
