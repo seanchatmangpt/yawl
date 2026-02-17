@@ -49,7 +49,7 @@ class WindowMenu extends JMenu {
    */
   WindowMenu() {
     super("Window");
-    this.frames = new HashSet<WindowMenuItem>();
+    this.frames = new HashSet<>();
     this.group = new BlankButtonGroup();
     this.setVisibility();
   }
