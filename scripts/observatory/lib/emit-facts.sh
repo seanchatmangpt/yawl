@@ -189,31 +189,39 @@ emit_shared_src() {
                 fi
             done
 
-            # Check for overlapping include patterns across modules
+            # Check for overlapping include patterns across modules (deduplicated)
             local -a filtered_mods=()
             for m in "${mods[@]}"; do
                 [[ -n "${mod_to_includes[$m]:-}" ]] && filtered_mods+=("$m")
             done
+            declare -A _overlap_seen
             local i j
             for ((i=0; i<${#filtered_mods[@]}; i++)); do
                 for ((j=i+1; j<${#filtered_mods[@]}; j++)); do
                     local m1="${filtered_mods[$i]}" m2="${filtered_mods[$j]}"
                     local inc1="${mod_to_includes[$m1]}" inc2="${mod_to_includes[$m2]}"
-                    # Check for overlap: if any include pattern from m1 matches any from m2
+                    # Deduplicate patterns within each module before comparing
                     IFS='|' read -ra pats1 <<< "$inc1"
                     IFS='|' read -ra pats2 <<< "$inc2"
-                    for p1 in "${pats1[@]}"; do
-                        for p2 in "${pats2[@]}"; do
-                            if [[ "$p1" == "$p2" ]]; then
+                    declare -A _uniq1 _uniq2
+                    for p in "${pats1[@]}"; do _uniq1["$p"]=1; done
+                    for p in "${pats2[@]}"; do _uniq2["$p"]=1; done
+                    for p1 in "${!_uniq1[@]}"; do
+                        if [[ -v _uniq2["$p1"] ]]; then
+                            local overlap_key="${m1}|${m2}|${p1}"
+                            if [[ ! -v _overlap_seen["$overlap_key"] ]]; then
+                                _overlap_seen["$overlap_key"]=1
                                 $first_amb || printf ',\n'
                                 first_amb=false
                                 printf '    {"path": "%s", "claimed_by": ["%s", "%s"], "severity": "MEDIUM", "reason": "Overlapping include: %s"}' \
                                     "$root" "$m1" "$m2" "$(json_escape "$p1")"
                             fi
-                        done
+                        fi
                     done
+                    unset _uniq1 _uniq2
                 done
             done
+            unset _overlap_seen
         done
         printf '\n  ]\n}\n'
     } > "$out"
@@ -421,7 +429,7 @@ emit_tests() {
         [[ -n "$parent_surefire_exc" ]] && surefire_excludes="$parent_surefire_exc"
     fi
 
-    # Count test files per module
+    # Count test files per module, scoped by compiler include patterns
     local -a module_test_data=()
     while IFS= read -r mod; do
         [[ -z "$mod" ]] && continue
@@ -435,16 +443,47 @@ emit_tests() {
             resolved_test="${REPO_ROOT}/${mod}/${test_dir}"
         fi
 
-        local unit_count=0 it_count=0
+        local unit_count=0 it_count=0 visible_count=0
         if [[ -d "$resolved_test" ]]; then
-            unit_count=$(find "$resolved_test" -name "*Test.java" -type f 2>/dev/null | wc -l)
+            # Raw visible count (everything the test source directory exposes)
+            visible_count=$(find "$resolved_test" -name "*Test.java" -o -name "*Tests.java" 2>/dev/null | wc -l)
+
+            # For full-shared modules (../test), scope to owned packages using
+            # source compiler include patterns from the POM
+            if [[ "$test_dir" == "../test" ]]; then
+                local src_includes
+                src_includes=$(grep -oP '(?<=<include>)[^<]+' "$pom" 2>/dev/null | head -20)
+                if [[ -n "$src_includes" ]]; then
+                    # Convert source include patterns to test directory paths
+                    # e.g. **/org/yawlfoundation/yawl/engine/** -> test/org/.../engine/
+                    unit_count=0
+                    while IFS= read -r inc_pattern; do
+                        # Strip ** prefix/suffix, convert to directory path
+                        local dir_fragment
+                        dir_fragment=$(echo "$inc_pattern" | sed 's|^\*\*/||; s|/\*\*$||; s|\*\*||g')
+                        [[ -z "$dir_fragment" ]] && continue
+                        local test_subdir="$resolved_test/$dir_fragment"
+                        if [[ -d "$test_subdir" ]]; then
+                            local sub_count
+                            sub_count=$(find "$test_subdir" -name "*Test.java" -o -name "*Tests.java" 2>/dev/null | wc -l)
+                            unit_count=$((unit_count + sub_count))
+                        fi
+                    done <<< "$src_includes"
+                else
+                    # No include filters = full access (report visible count)
+                    unit_count=$visible_count
+                fi
+            else
+                # Package-scoped module: test dir is already narrow
+                unit_count=$(find "$resolved_test" -name "*Test.java" -o -name "*Tests.java" 2>/dev/null | wc -l)
+            fi
             it_count=$(find "$resolved_test" -name "*IT.java" -type f 2>/dev/null | wc -l)
         fi
 
         if [[ $unit_count -gt 0 ]]; then surefire_modules+=("$mod"); fi
         if [[ $it_count -gt 0 ]]; then failsafe_modules+=("$mod"); fi
 
-        module_test_data+=("{\"module\":\"$mod\",\"unit_tests\":$unit_count,\"integration_tests\":$it_count,\"test_source\":\"$(json_escape "${test_dir:-none}")\"}")
+        module_test_data+=("{\"module\":\"$mod\",\"scoped_tests\":$unit_count,\"visible_tests\":$visible_count,\"integration_tests\":$it_count,\"test_source\":\"$(json_escape "${test_dir:-none}")\"}")
     done <<< "$modules"
 
     {
@@ -471,6 +510,63 @@ emit_tests() {
 }
 
 # ── 8. gates.json ────────────────────────────────────────────────────────
+# Utility: check if a plugin has <executions> with <goal> in default build
+_plugin_active_in_default() {
+    local pom="$1" plugin_id="$2"
+    # Extract content before <profiles> to get default build section
+    local default_section
+    default_section=$(python3 -c "
+import re, sys
+with open('$pom') as f:
+    content = f.read()
+idx = content.find('<profiles>')
+default = content[:idx] if idx != -1 else content
+# Find the plugin block
+pattern = re.compile(r'<plugin>\s*(?:(?!</plugin>).)*?<artifactId>$plugin_id</artifactId>(?:(?!</plugin>).)*?</plugin>', re.DOTALL)
+match = pattern.search(default)
+if match:
+    block = match.group(0)
+    has_exec = '<execution>' in block or '<executions>' in block
+    has_goals = bool(re.search(r'<goal>', block))
+    has_skip_true = bool(re.search(r'<skip>true</skip>', block))
+    if has_exec and has_goals and not has_skip_true:
+        print('ACTIVE')
+    elif has_skip_true:
+        print('SKIP_DEFAULT')
+    elif has_exec and not has_goals:
+        print('INERT')
+    else:
+        print('CONFIG_ONLY')
+else:
+    print('NOT_FOUND')
+" 2>/dev/null)
+    echo "$default_section"
+}
+
+# Utility: find which profiles activate a given plugin
+_plugin_profiles() {
+    local pom="$1" plugin_id="$2"
+    python3 -c "
+import re
+with open('$pom') as f:
+    content = f.read()
+idx = content.find('<profiles>')
+if idx == -1:
+    exit(0)
+profiles_section = content[idx:]
+profile_blocks = re.split(r'<profile>', profiles_section)
+result = []
+for block in profile_blocks[1:]:
+    pid = re.search(r'<id>([^<]+)</id>', block)
+    if pid and '$plugin_id' in block:
+        # Check if this profile has executions for the plugin
+        if re.search(r'<goal>', block):
+            result.append(pid.group(1))
+if result:
+    print(','.join(result))
+" 2>/dev/null
+}
+
 emit_gates() {
     local out="$FACTS_DIR/gates.json"
     log_info "Emitting facts/gates.json ..."
@@ -479,41 +575,46 @@ emit_gates() {
     local -a gates=()
     local -a skip_flags=()
 
-    # Check for SpotBugs
-    if grep -q 'spotbugs-maven-plugin' "$root_pom" 2>/dev/null; then
-        local sb_phase
-        sb_phase=$(grep -A10 'spotbugs-maven-plugin' "$root_pom" | grep -oP '(?<=<phase>)[^<]+' | head -1)
-        gates+=("{\"name\":\"spotbugs\",\"phase\":\"${sb_phase:-verify}\",\"enabled\":true,\"plugin\":\"spotbugs-maven-plugin\"}")
-    fi
+    # Gate detection: check each quality plugin for activation status
+    local -a gate_plugins=(
+        "spotbugs-maven-plugin:spotbugs:verify"
+        "maven-pmd-plugin:pmd:verify"
+        "maven-checkstyle-plugin:checkstyle:verify"
+        "jacoco-maven-plugin:jacoco:verify"
+        "dependency-check-maven:owasp-dependency-check:verify"
+        "maven-enforcer-plugin:enforcer:validate"
+    )
 
-    # Check for PMD
-    if grep -q 'maven-pmd-plugin' "$root_pom" 2>/dev/null; then
-        local pmd_phase
-        pmd_phase=$(grep -A10 'maven-pmd-plugin' "$root_pom" | grep -oP '(?<=<phase>)[^<]+' | head -1)
-        gates+=("{\"name\":\"pmd\",\"phase\":\"${pmd_phase:-verify}\",\"enabled\":true,\"plugin\":\"maven-pmd-plugin\"}")
-    fi
+    for gate_spec in "${gate_plugins[@]}"; do
+        IFS=':' read -r plugin_artifact gate_name gate_phase <<< "$gate_spec"
+        if grep -q "$plugin_artifact" "$root_pom" 2>/dev/null; then
+            local activation
+            activation=$(_plugin_active_in_default "$root_pom" "$plugin_artifact")
+            local profiles
+            profiles=$(_plugin_profiles "$root_pom" "$plugin_artifact")
 
-    # Check for Checkstyle
-    if grep -q 'maven-checkstyle-plugin' "$root_pom" 2>/dev/null; then
-        local cs_phase
-        cs_phase=$(grep -A10 'maven-checkstyle-plugin' "$root_pom" | grep -oP '(?<=<phase>)[^<]+' | head -1)
-        gates+=("{\"name\":\"checkstyle\",\"phase\":\"${cs_phase:-verify}\",\"enabled\":true,\"plugin\":\"maven-checkstyle-plugin\"}")
-    fi
+            local enabled="false"
+            local default_active="false"
+            [[ "$activation" == "ACTIVE" ]] && enabled="true" && default_active="true"
+            [[ "$activation" == "SKIP_DEFAULT" ]] && default_active="false"
 
-    # Check for JaCoCo
-    if grep -q 'jacoco-maven-plugin' "$root_pom" 2>/dev/null; then
-        gates+=("{\"name\":\"jacoco\",\"phase\":\"verify\",\"enabled\":true,\"plugin\":\"jacoco-maven-plugin\"}")
-    fi
+            # If profiles activate it, it's available but not by default
+            local profiles_json="[]"
+            if [[ -n "$profiles" ]]; then
+                profiles_json="["
+                local first_p=true
+                IFS=',' read -ra prof_arr <<< "$profiles"
+                for p in "${prof_arr[@]}"; do
+                    $first_p || profiles_json+=","
+                    first_p=false
+                    profiles_json+="\"$p\""
+                done
+                profiles_json+="]"
+            fi
 
-    # Check for OWASP Dependency Check
-    if grep -q 'dependency-check-maven' "$root_pom" 2>/dev/null; then
-        gates+=("{\"name\":\"owasp-dependency-check\",\"phase\":\"verify\",\"enabled\":true,\"plugin\":\"dependency-check-maven\"}")
-    fi
-
-    # Check for Enforcer
-    if grep -q 'maven-enforcer-plugin' "$root_pom" 2>/dev/null; then
-        gates+=("{\"name\":\"enforcer\",\"phase\":\"validate\",\"enabled\":true,\"plugin\":\"maven-enforcer-plugin\"}")
-    fi
+            gates+=("{\"name\":\"$gate_name\",\"phase\":\"$gate_phase\",\"default_active\":$default_active,\"activation\":\"$activation\",\"profiles\":$profiles_json,\"plugin\":\"$plugin_artifact\"}")
+        fi
+    done
 
     # Known skip flags that disable gates
     skip_flags+=("{\"flag\":\"-DskipTests=true\",\"risk\":\"RED\",\"disables\":\"surefire+failsafe\"}")
@@ -523,7 +624,7 @@ emit_gates() {
     skip_flags+=("{\"flag\":\"-DskipITs=true\",\"risk\":\"RED\",\"disables\":\"failsafe\"}")
     skip_flags+=("{\"flag\":\"-Denforcer.skip=true\",\"risk\":\"RED\",\"disables\":\"enforcer\"}")
 
-    # Check if any gates are configured but not working (profile-gated)
+    # Discover available profiles
     local -a profiles=()
     while IFS= read -r prof; do
         [[ -z "$prof" ]] && continue

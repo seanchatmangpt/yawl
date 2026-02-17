@@ -10,14 +10,12 @@
     {"root": "../src/org/yawlfoundation/yawl/integration", "modules": [{"name": "yawl-integration", "includes": "**/observability/**|**/mcp/**|**/spiffe/**|**/dedup/**|**/observability/**|**/mcp/**|**/spiffe/**|**/dedup/**", "excludes": "**/a2a/**|**/orderfulfillment/**|**/autonomous/**|zai/**|**/processmining/**|**/spiffe/SpiffeEnabledZaiService.java|**/test/SelfPlayTest.java|**/mcp/YawlMcpClient.java|**/mcp/sdk/McpServer.java|**/mcp/sdk/McpServerFeatures.java|**/mcp/sdk/McpSyncServer.java|**/mcp/sdk/McpSyncServerExchange.java|**/mcp/sdk/StdioServerTransportProvider.java|**/mcp/sdk/ZaiFunctionService.java|**/a2a/**|**/orderfulfillment/**|**/autonomous/**|zai/**|**/processmining/**|**/SpiffeEnabledZaiService.java|**/SelfPlayTest.java|**/observability/OpenTelemetryConfigTest.java"}]}
   ],
   "ownership_ambiguities": [
-    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/schema/**"},
-    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/schema/**"},
-    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/schema/**"},
     {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/unmarshal/**"},
-    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/util/**"},
+    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/schema/**"},
     {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/exceptions/**"},
-    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-engine"], "severity": "MEDIUM", "reason": "Overlapping include: **/*.xml"},
+    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-elements"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/util/**"},
     {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-engine"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/unmarshal/**/*.xml"},
+    {"path": "../src", "claimed_by": ["yawl-utilities", "yawl-engine"], "severity": "MEDIUM", "reason": "Overlapping include: **/*.xml"},
     {"path": "../src", "claimed_by": ["yawl-elements", "yawl-engine"], "severity": "MEDIUM", "reason": "Overlapping include: **/org/yawlfoundation/yawl/elements/**/*.xml"}
   ]
 }

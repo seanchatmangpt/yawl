@@ -1,11 +1,11 @@
 {
   "gates": [
-    {"name":"spotbugs","phase":"verify","enabled":true,"plugin":"spotbugs-maven-plugin"},
-    {"name":"pmd","phase":"verify","enabled":true,"plugin":"maven-pmd-plugin"},
-    {"name":"checkstyle","phase":"verify","enabled":true,"plugin":"maven-checkstyle-plugin"},
-    {"name":"jacoco","phase":"verify","enabled":true,"plugin":"jacoco-maven-plugin"},
-    {"name":"owasp-dependency-check","phase":"verify","enabled":true,"plugin":"dependency-check-maven"},
-    {"name":"enforcer","phase":"validate","enabled":true,"plugin":"maven-enforcer-plugin"}
+    {"name":"spotbugs","phase":"verify","default_active":false,"activation":"CONFIG_ONLY","profiles":["ci","prod","analysis"],"plugin":"spotbugs-maven-plugin"},
+    {"name":"pmd","phase":"verify","default_active":false,"activation":"CONFIG_ONLY","profiles":["analysis"],"plugin":"maven-pmd-plugin"},
+    {"name":"checkstyle","phase":"verify","default_active":false,"activation":"CONFIG_ONLY","profiles":["analysis"],"plugin":"maven-checkstyle-plugin"},
+    {"name":"jacoco","phase":"verify","default_active":true,"activation":"ACTIVE","profiles":["ci","prod","analysis","sonar"],"plugin":"jacoco-maven-plugin"},
+    {"name":"owasp-dependency-check","phase":"verify","default_active":false,"activation":"CONFIG_ONLY","profiles":["prod","security-audit"],"plugin":"dependency-check-maven"},
+    {"name":"enforcer","phase":"validate","default_active":true,"activation":"ACTIVE","profiles":[],"plugin":"maven-enforcer-plugin"}
   ],
   "skip_flags": [
     {"flag":"-DskipTests=true","risk":"RED","disables":"surefire+failsafe"},

@@ -93,6 +93,7 @@ emit_receipt() {
   "warnings": [${warnings_json}
   ],
   "outputs": {
+    "index_sha256": "$(sha256_of_file "$OUT_DIR/INDEX.md")",
     "facts_sha256": {${facts_sha_entries}
     },
     "diagrams_sha256": {${diagrams_sha_entries}
