@@ -1,9 +1,9 @@
 package org.yawlfoundation.yawl.integration.mcp.spec;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpServerFeatures;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServerExchange;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
-import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpServerFeatures;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSyncServerExchange;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;

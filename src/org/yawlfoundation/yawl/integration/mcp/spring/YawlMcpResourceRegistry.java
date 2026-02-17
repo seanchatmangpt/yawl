@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpServerFeatures;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpServerFeatures;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 

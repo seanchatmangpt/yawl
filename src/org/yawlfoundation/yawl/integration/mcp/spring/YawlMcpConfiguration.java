@@ -1,15 +1,15 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.yawlfoundation.yawl.integration.mcp.stub.JacksonMcpJsonMapper;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpServer;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServer;
-import org.yawlfoundation.yawl.integration.mcp.stub.StdioServerTransportProvider;
+import org.yawlfoundation.yawl.integration.mcp.sdk.JacksonMcpJsonMapper;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpServer;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSyncServer;
+import org.yawlfoundation.yawl.integration.mcp.sdk.StdioServerTransportProvider;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
-import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
 
 import java.io.IOException;
 import java.util.logging.Logger;

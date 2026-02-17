@@ -4,7 +4,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_Environment
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.tools.LaunchCaseTool;
 import org.yawlfoundation.yawl.integration.mcp.spring.resources.SpecificationsResource;
-import org.yawlfoundation.yawl.integration.mcp.stub.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
 
 import java.util.logging.Logger;
 

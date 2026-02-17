@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.resource;
 
-import org.yawlfoundation.yawl.integration.mcp.stub.McpServerFeatures;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSyncServerExchange;
-import org.yawlfoundation.yawl.integration.mcp.stub.McpSchema;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpServerFeatures;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSyncServerExchange;
+import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
