@@ -22,7 +22,7 @@ fi
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "" >&2
   echo -e "${YELLOW}⚠️  There are uncommitted changes in the repository.${NC}" >&2
-  echo -e "${YELLOW}Please commit and push these changes to the remote branch.${NC}" >&2
+  echo -e "${YELLOW}Please commit and push these changes to your feature branch.${NC}" >&2
   echo "" >&2
 
   # Show what's changed
