@@ -168,7 +168,7 @@ public final class GenericWorkflowLauncher {
      * @return XML string in YAWL format or null if input is null/empty
      */
     private static String convertJsonToYawlXml(String jsonData) {
-        if (jsonData == null || jsonData.trim().isEmpty()) {
+        if (jsonData == null || jsonData.isBlank()) {
             return null;
         }
 
@@ -214,12 +214,12 @@ public final class GenericWorkflowLauncher {
         if (s == null) {
             throw new IllegalArgumentException("Cannot strip XML tags from null string");
         }
-        String t = s.trim();
+        String t = s.strip();
         if (t.isEmpty()) {
             throw new IllegalArgumentException("Cannot strip XML tags from empty string");
         }
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
-        return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();
+        return m.find() ? m.group(1).strip() : t.replaceAll("<[^>]+>", "").strip();
     }
 
     private static boolean isCaseRunning(String runningXml, String caseId) {

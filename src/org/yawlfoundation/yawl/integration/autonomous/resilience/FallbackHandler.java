@@ -38,7 +38,7 @@ public class FallbackHandler {
             throw new IllegalArgumentException("primary operation cannot be null");
         }
 
-        String opName = (operationName != null && !operationName.trim().isEmpty())
+        String opName = (operationName != null && !operationName.isBlank())
                         ? operationName
                         : "unnamed operation";
 
@@ -111,7 +111,7 @@ public class FallbackHandler {
             T fallbackValue,
             String operationName) {
 
-        String opName = (operationName != null && !operationName.trim().isEmpty())
+        String opName = (operationName != null && !operationName.isBlank())
                         ? operationName
                         : "unnamed operation";
 
@@ -145,7 +145,7 @@ public class FallbackHandler {
             throw new IllegalArgumentException("primary operation cannot be null");
         }
 
-        String opName = (operationName != null && !operationName.trim().isEmpty())
+        String opName = (operationName != null && !operationName.isBlank())
                         ? operationName
                         : "unnamed operation";
 
@@ -199,7 +199,7 @@ public class FallbackHandler {
             throw new IllegalArgumentException("At least one operation is required");
         }
 
-        String opName = (operationName != null && !operationName.trim().isEmpty())
+        String opName = (operationName != null && !operationName.isBlank())
                         ? operationName
                         : "unnamed operation";
 

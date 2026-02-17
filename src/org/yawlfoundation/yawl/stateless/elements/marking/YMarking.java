@@ -42,7 +42,7 @@ public class YMarking {
     }
 
     public YMarking(List<YNetElement> locations) {
-        _locations = new Vector<YNetElement>(locations);
+        _locations = new Vector<>(locations);
     }
 
 
@@ -319,7 +319,7 @@ public class YMarking {
     
     
     private Set<YExternalNetElement> getLocationsAsSet() {
-        Set<YExternalNetElement> set = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> set = new HashSet<>();
         for (YNetElement element : _locations) {
             set.add((YExternalNetElement) element);
         }

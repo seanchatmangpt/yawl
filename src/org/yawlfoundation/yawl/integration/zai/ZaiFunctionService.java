@@ -264,13 +264,13 @@ public class ZaiFunctionService {
         int funcEnd = content.indexOf("\n", funcStart);
         if (funcEnd == -1) funcEnd = content.length();
 
-        String funcName = content.substring(funcStart, funcEnd).trim();
+        String funcName = content.substring(funcStart, funcEnd).strip();
 
         int argsIdx = upperContent.indexOf("ARGUMENTS:");
         String argsJson = "{}";
         if (argsIdx != -1) {
             int argsStart = argsIdx + "ARGUMENTS:".length();
-            String argsPart = content.substring(argsStart).trim();
+            String argsPart = content.substring(argsStart).strip();
             int braceStart = argsPart.indexOf("{");
             int braceEnd = argsPart.lastIndexOf("}");
             if (braceStart != -1 && braceEnd != -1 && braceEnd > braceStart) {
@@ -287,7 +287,7 @@ public class ZaiFunctionService {
             return result;
         }
 
-        json = json.substring(1, json.length() - 1).trim();
+        json = json.substring(1, json.length() - 1).strip();
         if (json.isEmpty()) {
             return result;
         }
@@ -296,8 +296,8 @@ public class ZaiFunctionService {
         for (String pair : pairs) {
             String[] kv = pair.split(":", 2);
             if (kv.length == 2) {
-                String key = kv[0].trim().replace("\"", "");
-                String value = kv[1].trim().replace("\"", "");
+                String key = kv[0].strip().replace("\"", "");
+                String value = kv[1].strip().replace("\"", "");
                 result.put(key, value);
             }
         }
@@ -439,7 +439,7 @@ public class ZaiFunctionService {
     }
 
     private String wrapDataInXML(String data) {
-        if (data.trim().startsWith("<")) {
+        if (data.strip().startsWith("<")) {
             return data;
         }
         return "<data>%s</data>".formatted(data);

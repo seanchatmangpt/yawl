@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Agent-to-Agent (A2A) Registry for YAWL autonomous workflow coordination.
@@ -43,10 +42,10 @@ public class AgentRegistry {
         private volatile AgentStatus status;
 
         public AgentEntry(String agentId, String endpoint, List<String> capabilities, Map<String, Object> metadata) {
-            if (agentId == null || agentId.trim().isEmpty()) {
+            if (agentId == null || agentId.isBlank()) {
                 throw new IllegalArgumentException("Agent ID cannot be null or empty");
             }
-            if (endpoint == null || endpoint.trim().isEmpty()) {
+            if (endpoint == null || endpoint.isBlank()) {
                 throw new IllegalArgumentException("Agent endpoint cannot be null or empty");
             }
 
@@ -185,14 +184,14 @@ public class AgentRegistry {
      * @return List of agents with the capability
      */
     public List<AgentEntry> findAgentsByCapability(String capability) {
-        if (capability == null || capability.trim().isEmpty()) {
+        if (capability == null || capability.isBlank()) {
             throw new IllegalArgumentException("Capability cannot be null or empty");
         }
 
         return agents.values().stream()
                 .filter(agent -> agent.getStatus() == AgentStatus.ACTIVE)
                 .filter(agent -> agent.hasCapability(capability))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -203,7 +202,7 @@ public class AgentRegistry {
     public List<AgentEntry> getActiveAgents() {
         return agents.values().stream()
                 .filter(agent -> agent.getStatus() == AgentStatus.ACTIVE)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

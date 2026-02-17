@@ -29,7 +29,7 @@ import java.util.Set;
  *
  */
 public class YSetOfMarkings {
-    private final Set<YMarking> _markings = new HashSet<YMarking>();
+    private final Set<YMarking> _markings = new HashSet<>();
 
 
 

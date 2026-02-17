@@ -1186,7 +1186,7 @@ public class YNetRunner {
     }
 
     public boolean evaluateTimerPredicate(String predicate) throws YQueryException {
-        predicate = predicate.trim();
+        predicate = predicate.strip();
         int pos = predicate.indexOf(')');
         if (pos > -1) {
             String taskName = predicate.substring(6, pos);     // 6 = 'timer('

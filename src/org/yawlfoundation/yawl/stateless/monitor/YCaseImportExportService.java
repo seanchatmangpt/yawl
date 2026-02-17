@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -127,7 +126,7 @@ public class YCaseImportExportService {
 
         List<YCase> filteredCases = allCases.stream()
             .filter(c -> matchesFilter(c, specID, minStartTime, maxStartTime))
-            .collect(Collectors.toList());
+            .toList();
 
         logger.info("Exporting {} filtered cases (out of {} total) to {}",
                    filteredCases.size(), allCases.size(), filename);

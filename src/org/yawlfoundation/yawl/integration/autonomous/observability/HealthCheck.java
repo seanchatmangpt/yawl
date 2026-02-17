@@ -76,7 +76,7 @@ public class HealthCheck {
      * @throws IOException If HTTP server cannot be started
      */
     public HealthCheck(String yawlEngineUrl, String zaiApiUrl, int timeoutMs, int port) throws IOException {
-        if (yawlEngineUrl == null || yawlEngineUrl.trim().isEmpty()) {
+        if (yawlEngineUrl == null || yawlEngineUrl.isBlank()) {
             throw new IllegalArgumentException("yawlEngineUrl cannot be null or empty");
         }
         if (timeoutMs <= 0) {
@@ -109,7 +109,7 @@ public class HealthCheck {
      * @param check Check implementation
      */
     public void registerCheck(String name, Check check) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
         if (check == null) {

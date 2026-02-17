@@ -247,7 +247,7 @@ public class YawlCompletionSpecifications {
             if (tagEnd == -1) {
                 break;
             }
-            String caseId = xml.substring(valueStart, tagEnd).trim();
+            String caseId = xml.substring(valueStart, tagEnd).strip();
             if (!caseId.isEmpty()) {
                 caseIds.add(caseId);
             }
@@ -269,7 +269,7 @@ public class YawlCompletionSpecifications {
                 if (tagEnd == -1) {
                     break;
                 }
-                String caseId = xml.substring(valueStart, tagEnd).trim();
+                String caseId = xml.substring(valueStart, tagEnd).strip();
                 if (!caseId.isEmpty()) {
                     caseIds.add(caseId);
                 }

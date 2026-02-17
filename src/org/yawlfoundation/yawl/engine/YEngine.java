@@ -68,7 +68,6 @@ public class YEngine implements InterfaceADesign,
                                 InterfaceBInterop {
 
 
-    private static final Logger logger = LogManager.getLogger(YEngine.class);
     // STATIC MEMBERS //
 
     // Engine statuses

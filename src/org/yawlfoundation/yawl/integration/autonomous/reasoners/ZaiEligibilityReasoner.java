@@ -67,10 +67,10 @@ public final class ZaiEligibilityReasoner implements EligibilityReasoner {
         if (zaiService == null) {
             throw new IllegalArgumentException("zaiService is required");
         }
-        if (systemPromptTemplate == null || systemPromptTemplate.trim().isEmpty()) {
+        if (systemPromptTemplate == null || systemPromptTemplate.isBlank()) {
             throw new IllegalArgumentException("systemPromptTemplate is required");
         }
-        if (userPromptTemplate == null || userPromptTemplate.trim().isEmpty()) {
+        if (userPromptTemplate == null || userPromptTemplate.isBlank()) {
             throw new IllegalArgumentException("userPromptTemplate is required");
         }
         this.capability = capability;
@@ -98,7 +98,7 @@ public final class ZaiEligibilityReasoner implements EligibilityReasoner {
 
         try {
             String response = zaiService.chat(userPrompt);
-            return response != null && response.trim().toUpperCase().startsWith("YES");
+            return response != null && response.strip().toUpperCase().startsWith("YES");
         } catch (Exception e) {
             throw new RuntimeException(
                 "Eligibility reasoning failed for work item " + workItem.getID(), e);
@@ -110,7 +110,7 @@ public final class ZaiEligibilityReasoner implements EligibilityReasoner {
      * Variables: {capability}, {taskName}, {caseId}, {inputSummary}
      */
     public void setSystemPromptTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("systemPromptTemplate cannot be empty");
         }
         this.systemPromptTemplate = template;
@@ -121,7 +121,7 @@ public final class ZaiEligibilityReasoner implements EligibilityReasoner {
      * Variables: {capability}, {taskName}, {caseId}, {inputSummary}
      */
     public void setUserPromptTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("userPromptTemplate cannot be empty");
         }
         this.userPromptTemplate = template;

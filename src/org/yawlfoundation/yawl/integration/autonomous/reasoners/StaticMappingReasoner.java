@@ -81,7 +81,7 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
      * @throws IOException if file cannot be read
      */
     public void loadFromFile(String filePath) throws IOException {
-        if (filePath == null || filePath.trim().isEmpty()) {
+        if (filePath == null || filePath.isBlank()) {
             throw new IllegalArgumentException("filePath is required");
         }
 
@@ -169,7 +169,7 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
         if (taskName == null) {
             return Collections.emptySet();
         }
-        Set<String> capabilities = taskToCapabilities.get(taskName.trim());
+        Set<String> capabilities = taskToCapabilities.get(taskName.strip());
         return capabilities != null ? new HashSet<>(capabilities) : Collections.emptySet();
     }
 

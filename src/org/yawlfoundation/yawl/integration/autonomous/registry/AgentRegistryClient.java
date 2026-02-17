@@ -68,7 +68,7 @@ public final class AgentRegistryClient {
      */
     public AgentRegistryClient(String registryHost, int registryPort,
                                int connectTimeoutMs, int readTimeoutMs) {
-        if (registryHost == null || registryHost.trim().isEmpty()) {
+        if (registryHost == null || registryHost.isBlank()) {
             throw new IllegalArgumentException("registryHost is required");
         }
         if (registryPort < 1 || registryPort > 65535) {
@@ -81,7 +81,7 @@ public final class AgentRegistryClient {
             throw new IllegalArgumentException("readTimeoutMs must be non-negative");
         }
 
-        this.registryHost = registryHost.trim();
+        this.registryHost = registryHost.strip();
         this.registryPort = registryPort;
         this.connectTimeout = Duration.ofMillis(connectTimeoutMs);
         this.readTimeout = Duration.ofMillis(readTimeoutMs);
@@ -103,7 +103,7 @@ public final class AgentRegistryClient {
             throw new IllegalArgumentException("agentInfo is required");
         }
 
-        String url = String.format("http://%s:%d/agents/register", registryHost, registryPort);
+        String url = "http://%s:%d/agents/register".formatted(registryHost, registryPort);
         String response = sendPost(url, agentInfo.toJson());
 
         logger.info("Registered agent {} with registry at {}:{}",
@@ -119,12 +119,12 @@ public final class AgentRegistryClient {
      * @throws IOException if network error occurs
      */
     public boolean sendHeartbeat(String agentId) throws IOException {
-        if (agentId == null || agentId.trim().isEmpty()) {
+        if (agentId == null || agentId.isBlank()) {
             throw new IllegalArgumentException("agentId is required");
         }
 
-        String url = String.format("http://%s:%d/agents/%s/heartbeat",
-                                  registryHost, registryPort, agentId.trim());
+        String url = "http://%s:%d/agents/%s/heartbeat".formatted(
+                                  registryHost, registryPort, agentId.strip());
         String response = sendPost(url, "{}");
 
         logger.debug("Sent heartbeat for agent {}", agentId);
@@ -139,12 +139,12 @@ public final class AgentRegistryClient {
      * @throws IOException if network error occurs
      */
     public boolean unregister(String agentId) throws IOException {
-        if (agentId == null || agentId.trim().isEmpty()) {
+        if (agentId == null || agentId.isBlank()) {
             throw new IllegalArgumentException("agentId is required");
         }
 
-        String url = String.format("http://%s:%d/agents/%s",
-                                  registryHost, registryPort, agentId.trim());
+        String url = "http://%s:%d/agents/%s".formatted(
+                                  registryHost, registryPort, agentId.strip());
         String response = sendDelete(url);
 
         logger.info("Unregistered agent {} from registry", agentId);
@@ -159,12 +159,12 @@ public final class AgentRegistryClient {
      * @throws IOException if network error occurs
      */
     public List<AgentInfo> queryByCapability(String domain) throws IOException {
-        if (domain == null || domain.trim().isEmpty()) {
+        if (domain == null || domain.isBlank()) {
             throw new IllegalArgumentException("domain is required");
         }
 
-        String url = String.format("http://%s:%d/agents/by-capability?domain=%s",
-                                  registryHost, registryPort, urlEncode(domain.trim()));
+        String url = "http://%s:%d/agents/by-capability?domain=%s".formatted(
+                                  registryHost, registryPort, urlEncode(domain.strip()));
         String response = sendGet(url);
 
         return parseAgentList(response);
@@ -177,7 +177,7 @@ public final class AgentRegistryClient {
      * @throws IOException if network error occurs
      */
     public List<AgentInfo> listAll() throws IOException {
-        String url = String.format("http://%s:%d/agents", registryHost, registryPort);
+        String url = "http://%s:%d/agents".formatted(registryHost, registryPort);
         String response = sendGet(url);
         return parseAgentList(response);
     }
@@ -240,16 +240,16 @@ public final class AgentRegistryClient {
     private List<AgentInfo> parseAgentList(String json) {
         var agents = new ArrayList<AgentInfo>();
 
-        if (json == null || json.trim().isEmpty()) {
+        if (json == null || json.isBlank()) {
             return agents;
         }
 
-        String trimmed = json.trim();
+        String trimmed = json.strip();
         if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) {
             throw new IllegalArgumentException("Expected JSON array but got: " + json);
         }
 
-        String content = trimmed.substring(1, trimmed.length() - 1).trim();
+        String content = trimmed.substring(1, trimmed.length() - 1).strip();
         if (content.isEmpty()) {
             return agents;
         }
@@ -263,7 +263,7 @@ public final class AgentRegistryClient {
             } else if (c == '}') {
                 depth--;
                 if (depth == 0) {
-                    String agentJson = content.substring(start, i + 1).trim();
+                    String agentJson = content.substring(start, i + 1).strip();
                     agents.add(AgentInfo.fromJson(agentJson));
                     start = i + 1;
                     while (start < content.length() &&

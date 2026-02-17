@@ -100,17 +100,17 @@ public class YDefClientsLoader {
         if (headerEnd > -1) {
             var parts = rawLine.substring(headerEnd + 1).split(",");
             if (rawLine.startsWith("extClient:") && (parts.length == 3)) {
-                _clients.add(new YExternalClient(parts[0].trim(),
-                        PasswordEncryptor.encrypt(parts[1].trim(), null),
-                        parts[2].trim()));
+                _clients.add(new YExternalClient(parts[0].strip(),
+                        PasswordEncryptor.encrypt(parts[1].strip(), null),
+                        parts[2].strip()));
                 return;
             }
             else if (rawLine.startsWith("service:") && (parts.length == 5)) {
                 YAWLServiceReference service = new YAWLServiceReference(
-                        parts[3].trim(), null, parts[0].trim(),
-                        PasswordEncryptor.encrypt(parts[1].trim(), null),
-                        parts[2].trim());
-                service.setAssignable(parts[4].trim().equalsIgnoreCase("true"));
+                        parts[3].strip(), null, parts[0].strip(),
+                        PasswordEncryptor.encrypt(parts[1].strip(), null),
+                        parts[2].strip());
+                service.setAssignable(parts[4].strip().equalsIgnoreCase("true"));
                 _services.add(service);
                 return;
             }

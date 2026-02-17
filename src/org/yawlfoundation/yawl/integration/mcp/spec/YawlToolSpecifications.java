@@ -346,7 +346,7 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(sb.toString().strip(), false);
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error listing specifications: " + e.getMessage(), true);
@@ -507,7 +507,7 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(sb.toString().strip(), false);
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error getting work items: " + e.getMessage(), true);
@@ -564,7 +564,7 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(sb.toString().strip(), false);
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error getting work items for case: " + e.getMessage(), true);

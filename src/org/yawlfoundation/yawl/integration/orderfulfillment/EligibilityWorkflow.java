@@ -78,7 +78,7 @@ public final class EligibilityWorkflow {
 
         try {
             String response = zaiService.chat(prompt);
-            return response != null && response.trim().toUpperCase().startsWith("YES");
+            return response != null && response.strip().toUpperCase().startsWith("YES");
         } catch (Exception e) {
             return false;
         }

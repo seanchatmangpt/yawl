@@ -62,7 +62,7 @@ public final class XmlOutputGenerator {
      * @return well-formed XML string
      */
     public String generateOutput(String rootName, Map<String, String> elements) {
-        if (rootName == null || rootName.trim().isEmpty()) {
+        if (rootName == null || rootName.isBlank()) {
             throw new IllegalArgumentException("rootName is required");
         }
         if (elements == null) {
@@ -73,7 +73,7 @@ public final class XmlOutputGenerator {
         for (Map.Entry<String, String> entry : elements.entrySet()) {
             String name = entry.getKey();
             String value = entry.getValue();
-            if (name != null && !name.trim().isEmpty()) {
+            if (name != null && !name.isBlank()) {
                 Element child = new Element(name);
                 if (value != null) {
                     child.setText(value);
@@ -94,7 +94,7 @@ public final class XmlOutputGenerator {
      * @return XML string
      */
     public String generateApprovalOutput(String rootName, boolean approved) {
-        if (rootName == null || rootName.trim().isEmpty()) {
+        if (rootName == null || rootName.isBlank()) {
             throw new IllegalArgumentException("rootName is required");
         }
 
@@ -117,10 +117,10 @@ public final class XmlOutputGenerator {
     public String generateNestedOutput(String rootName,
                                        String parentName,
                                        Map<String, String> childElements) {
-        if (rootName == null || rootName.trim().isEmpty()) {
+        if (rootName == null || rootName.isBlank()) {
             throw new IllegalArgumentException("rootName is required");
         }
-        if (parentName == null || parentName.trim().isEmpty()) {
+        if (parentName == null || parentName.isBlank()) {
             throw new IllegalArgumentException("parentName is required");
         }
         if (childElements == null) {
@@ -133,7 +133,7 @@ public final class XmlOutputGenerator {
         for (Map.Entry<String, String> entry : childElements.entrySet()) {
             String name = entry.getKey();
             String value = entry.getValue();
-            if (name != null && !name.trim().isEmpty()) {
+            if (name != null && !name.isBlank()) {
                 Element child = new Element(name);
                 if (value != null) {
                     child.setText(value);
@@ -156,10 +156,10 @@ public final class XmlOutputGenerator {
      * @throws IllegalArgumentException if no valid XML found
      */
     public String extractAndValidateXml(String text, String expectedRoot) {
-        if (text == null || text.trim().isEmpty()) {
+        if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("text is required");
         }
-        if (expectedRoot == null || expectedRoot.trim().isEmpty()) {
+        if (expectedRoot == null || expectedRoot.isBlank()) {
             throw new IllegalArgumentException("expectedRoot is required");
         }
 
@@ -176,11 +176,11 @@ public final class XmlOutputGenerator {
      * @throws IllegalArgumentException if no XML found
      */
     public String extractXml(String text) {
-        if (text == null || text.trim().isEmpty()) {
+        if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("text cannot be empty");
         }
 
-        String trimmed = text.trim();
+        String trimmed = text.strip();
         int start = trimmed.indexOf("<");
         int end = trimmed.lastIndexOf(">");
 
@@ -199,7 +199,7 @@ public final class XmlOutputGenerator {
      * @throws IllegalArgumentException if XML is invalid
      */
     public void validateXml(String xml, String expectedRoot) {
-        if (xml == null || xml.trim().isEmpty()) {
+        if (xml == null || xml.isBlank()) {
             throw new IllegalArgumentException("xml cannot be empty");
         }
 
@@ -207,7 +207,7 @@ public final class XmlOutputGenerator {
             Document doc = saxBuilder.build(new StringReader(xml));
             Element root = doc.getRootElement();
 
-            if (expectedRoot != null && !expectedRoot.trim().isEmpty()) {
+            if (expectedRoot != null && !expectedRoot.isBlank()) {
                 String actualRoot = root.getName();
                 if (!actualRoot.equals(expectedRoot)) {
                     throw new IllegalArgumentException(
@@ -228,7 +228,7 @@ public final class XmlOutputGenerator {
      * @throws IllegalArgumentException if XML is invalid
      */
     public String formatXml(String xml) {
-        if (xml == null || xml.trim().isEmpty()) {
+        if (xml == null || xml.isBlank()) {
             throw new IllegalArgumentException("xml cannot be empty");
         }
 

@@ -58,10 +58,10 @@ public final class ZaiDecisionReasoner implements DecisionReasoner {
         if (zaiService == null) {
             throw new IllegalArgumentException("zaiService is required");
         }
-        if (systemPromptTemplate == null || systemPromptTemplate.trim().isEmpty()) {
+        if (systemPromptTemplate == null || systemPromptTemplate.isBlank()) {
             throw new IllegalArgumentException("systemPromptTemplate is required");
         }
-        if (userPromptTemplate == null || userPromptTemplate.trim().isEmpty()) {
+        if (userPromptTemplate == null || userPromptTemplate.isBlank()) {
             throw new IllegalArgumentException("userPromptTemplate is required");
         }
         this.zaiService = zaiService;
@@ -113,7 +113,7 @@ public final class ZaiDecisionReasoner implements DecisionReasoner {
      * Variables: {workItemId}, {taskName}, {decompositionRoot}, {inputXml}, {mcpGuide}
      */
     public void setSystemPromptTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("systemPromptTemplate cannot be empty");
         }
         this.systemPromptTemplate = template;
@@ -124,7 +124,7 @@ public final class ZaiDecisionReasoner implements DecisionReasoner {
      * Variables: {workItemId}, {taskName}, {decompositionRoot}, {inputXml}, {mcpGuide}
      */
     public void setUserPromptTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("userPromptTemplate cannot be empty");
         }
         this.userPromptTemplate = template;
@@ -152,10 +152,10 @@ public final class ZaiDecisionReasoner implements DecisionReasoner {
     }
 
     private static String extractXml(String response, String expectedRoot) {
-        if (response == null || response.trim().isEmpty()) {
+        if (response == null || response.isBlank()) {
             throw new IllegalArgumentException("Empty response from ZAI");
         }
-        String s = response.trim();
+        String s = response.strip();
         int start = s.indexOf("<");
         int end = s.lastIndexOf(">");
         if (start >= 0 && end > start) {

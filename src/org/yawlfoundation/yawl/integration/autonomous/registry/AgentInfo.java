@@ -44,26 +44,26 @@ public final class AgentInfo {
      */
     public AgentInfo(String id, String name, AgentCapability capability,
                      String host, int port) {
-        if (id == null || id.trim().isEmpty()) {
+        if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("id is required");
         }
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name is required");
         }
         if (capability == null) {
             throw new IllegalArgumentException("capability is required");
         }
-        if (host == null || host.trim().isEmpty()) {
+        if (host == null || host.isBlank()) {
             throw new IllegalArgumentException("host is required");
         }
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be between 1 and 65535");
         }
 
-        this.id = id.trim();
-        this.name = name.trim();
+        this.id = id.strip();
+        this.name = name.strip();
         this.capability = capability;
-        this.host = host.trim();
+        this.host = host.strip();
         this.port = port;
         this.lastHeartbeat = System.currentTimeMillis();
     }
@@ -184,7 +184,7 @@ public final class AgentInfo {
                    json.charAt(end) != ']') {
                 end++;
             }
-            return json.substring(start, end).trim();
+            return json.substring(start, end).strip();
         }
     }
 

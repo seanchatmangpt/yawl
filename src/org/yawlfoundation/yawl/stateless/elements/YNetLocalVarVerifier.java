@@ -137,8 +137,7 @@ public class YNetLocalVarVerifier {
                     addMessage(map, subjectTask, visited);
                     visited = resetVisited(baseElement);
                 }
-                else if (preElement instanceof YTask) {
-                    YTask preTask = (YTask) preElement;
+                else if (preElement instanceof YTask preTask) {
 
                     // if it is mandatory for the task to output a value for this
                     // local var, then this path is ok - otherwise call recursive
@@ -345,8 +344,8 @@ public class YNetLocalVarVerifier {
      * @return true if the element is an XOR-join task with multiple inflows
      */
     private boolean isMultiPathXORJoin(YExternalNetElement element) {
-        return (element instanceof YTask) &&
-                ((YTask) element).getJoinType() == YTask._XOR &&
+        return (element instanceof YTask t) &&
+                t.getJoinType() == YTask._XOR &&
                 element.getPresetElements().size() > 1;
     }
 
@@ -379,8 +378,7 @@ public class YNetLocalVarVerifier {
      * @param stack the stack of paths
      */
     private void updateAndStack(YExternalNetElement element, Stack<Integer> stack) {
-        if (element instanceof YTask) {
-            YTask task = (YTask) element;
+        if (element instanceof YTask task) {
             if (task.getSplitType() == YTask._AND) {
                 int outFlowCount = task.getPostsetElements().size();
 

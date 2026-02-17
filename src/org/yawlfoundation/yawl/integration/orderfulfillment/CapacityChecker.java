@@ -42,7 +42,7 @@ public final class CapacityChecker {
      * @return true if all peers report available, or if no peers configured
      */
     public static boolean checkPeersAvailable(String peersCommaSeparated) {
-        if (peersCommaSeparated == null || peersCommaSeparated.trim().isEmpty()) {
+        if (peersCommaSeparated == null || peersCommaSeparated.isBlank()) {
             return true;
         }
         String[] urls = peersCommaSeparated.split(",");
@@ -50,7 +50,7 @@ public final class CapacityChecker {
             .connectTimeout(Duration.ofMillis(TIMEOUT_MS))
             .build();
         for (String url : urls) {
-            String base = url.trim();
+            String base = url.strip();
             if (base.isEmpty()) continue;
             String capacityUrl = base.endsWith("/") ? base + "capacity" : base + "/capacity";
             try {

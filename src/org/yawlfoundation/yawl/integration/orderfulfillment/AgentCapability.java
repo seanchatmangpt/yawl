@@ -36,14 +36,14 @@ public final class AgentCapability {
      *        purchase orders, approvals, order lifecycle")
      */
     public AgentCapability(String domainName, String description) {
-        if (domainName == null || domainName.trim().isEmpty()) {
+        if (domainName == null || domainName.isBlank()) {
             throw new IllegalArgumentException("domainName is required");
         }
-        if (description == null || description.trim().isEmpty()) {
+        if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("description is required");
         }
-        this.domainName = domainName.trim();
-        this.description = description.trim();
+        this.domainName = domainName.strip();
+        this.description = description.strip();
     }
 
     /**
@@ -52,17 +52,17 @@ public final class AgentCapability {
      */
     public static AgentCapability fromEnvironment() {
         String raw = System.getenv("AGENT_CAPABILITY");
-        if (raw == null || raw.trim().isEmpty()) {
+        if (raw == null || raw.isBlank()) {
             throw new IllegalStateException(
                 "AGENT_CAPABILITY environment variable is required.\n" +
                 "Example: AGENT_CAPABILITY=\"Ordering: procurement, purchase orders, approvals\"");
         }
-        String s = raw.trim();
+        String s = raw.strip();
         int colon = s.indexOf(':');
         if (colon > 0) {
             return new AgentCapability(
-                s.substring(0, colon).trim(),
-                s.substring(colon + 1).trim());
+                s.substring(0, colon).strip(),
+                s.substring(colon + 1).strip());
         }
         String domain = s.split("\\s+")[0];
         return new AgentCapability(domain, s);

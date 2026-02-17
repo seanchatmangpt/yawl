@@ -59,7 +59,7 @@ public final class TemplateDecisionReasoner implements DecisionReasoner {
      * @param defaultTemplate template to use when no task-specific template exists
      */
     public TemplateDecisionReasoner(String defaultTemplate) {
-        if (defaultTemplate == null || defaultTemplate.trim().isEmpty()) {
+        if (defaultTemplate == null || defaultTemplate.isBlank()) {
             throw new IllegalArgumentException("defaultTemplate is required");
         }
         this.taskTemplates = new HashMap<>();
@@ -72,20 +72,20 @@ public final class TemplateDecisionReasoner implements DecisionReasoner {
      * @param template XML template with ${variable} placeholders
      */
     public void addTaskTemplate(String taskName, String template) {
-        if (taskName == null || taskName.trim().isEmpty()) {
+        if (taskName == null || taskName.isBlank()) {
             throw new IllegalArgumentException("taskName is required");
         }
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
-        taskTemplates.put(taskName.trim(), template);
+        taskTemplates.put(taskName.strip(), template);
     }
 
     /**
      * Set default template for tasks without specific templates.
      */
     public void setDefaultTemplate(String template) {
-        if (template == null || template.trim().isEmpty()) {
+        if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
         this.defaultTemplate = template;

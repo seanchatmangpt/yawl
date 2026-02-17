@@ -61,7 +61,7 @@ public class CircuitBreaker {
      * @param openDurationMs Duration to stay open in milliseconds (must be > 0)
      */
     public CircuitBreaker(String name, int failureThreshold, long openDurationMs) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
         if (failureThreshold <= 0) {
@@ -97,7 +97,7 @@ public class CircuitBreaker {
         State currentState = getStateAndUpdate();
 
         if (currentState == State.OPEN) {
-            String msg = String.format("Circuit breaker [%s] is OPEN, failing fast", name);
+            var msg = "Circuit breaker [%s] is OPEN, failing fast".formatted(name);
             logger.warn(msg);
             throw new CircuitBreakerOpenException(msg);
         }

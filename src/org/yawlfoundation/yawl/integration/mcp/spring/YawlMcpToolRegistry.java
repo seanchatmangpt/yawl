@@ -158,7 +158,7 @@ public class YawlMcpToolRegistry {
         List<YawlMcpTool> sortedTools = customTools.values().stream()
             .filter(YawlMcpTool::isEnabled)
             .sorted(Comparator.comparingInt(YawlMcpTool::getPriority))
-            .collect(Collectors.toList());
+            .toList();
 
         for (YawlMcpTool tool : sortedTools) {
             specs.add(createToolSpecification(tool));

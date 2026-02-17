@@ -46,7 +46,7 @@ public class StructuredLogger {
      * @param name Logger name
      */
     public StructuredLogger(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
         this.logger = LoggerFactory.getLogger(name);
@@ -60,7 +60,7 @@ public class StructuredLogger {
      * @return Correlation ID that was set
      */
     public String setCorrelationId(String correlationId) {
-        String id = (correlationId != null && !correlationId.trim().isEmpty())
+        String id = (correlationId != null && !correlationId.isBlank())
                     ? correlationId
                     : UUID.randomUUID().toString();
 
@@ -91,7 +91,7 @@ public class StructuredLogger {
      * @param value Context value
      */
     public void setContext(String key, String value) {
-        if (key == null || key.trim().isEmpty()) {
+        if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("key cannot be null or empty");
         }
         if (value != null) {
@@ -136,7 +136,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logTaskStarted(String taskId, Map<String, String> context) {
-        if (taskId != null && !taskId.trim().isEmpty()) {
+        if (taskId != null && !taskId.isBlank()) {
             MDC.put(TASK_ID_KEY, taskId);
         }
 
@@ -154,7 +154,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logTaskCompleted(String taskId, long durationMs, Map<String, String> context) {
-        if (taskId != null && !taskId.trim().isEmpty()) {
+        if (taskId != null && !taskId.isBlank()) {
             MDC.put(TASK_ID_KEY, taskId);
         }
 
@@ -172,7 +172,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logTaskFailed(String taskId, Throwable error, Map<String, String> context) {
-        if (taskId != null && !taskId.trim().isEmpty()) {
+        if (taskId != null && !taskId.isBlank()) {
             MDC.put(TASK_ID_KEY, taskId);
         }
 
@@ -190,7 +190,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logCaseStarted(String caseId, String specId, Map<String, String> context) {
-        if (caseId != null && !caseId.trim().isEmpty()) {
+        if (caseId != null && !caseId.isBlank()) {
             MDC.put(CASE_ID_KEY, caseId);
         }
 
@@ -207,7 +207,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logCaseCompleted(String caseId, Map<String, String> context) {
-        if (caseId != null && !caseId.trim().isEmpty()) {
+        if (caseId != null && !caseId.isBlank()) {
             MDC.put(CASE_ID_KEY, caseId);
         }
 
@@ -225,7 +225,7 @@ public class StructuredLogger {
      * @param context Additional context
      */
     public void logAgentAction(String agent, String action, Map<String, String> context) {
-        if (agent != null && !agent.trim().isEmpty()) {
+        if (agent != null && !agent.isBlank()) {
             MDC.put(AGENT_KEY, agent);
         }
 

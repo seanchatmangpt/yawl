@@ -30,7 +30,7 @@ import java.util.*;
  */
 public class YIdentifierBag {
 
-    private final Map<YIdentifier, Integer> _idToQtyMap = new HashMap<YIdentifier, Integer>();
+    private final Map<YIdentifier, Integer> _idToQtyMap = new HashMap<>();
     public YNetElement _condition;
 
 
@@ -61,7 +61,7 @@ public class YIdentifierBag {
 
 
     public List<YIdentifier> getIdentifiers() {
-        List<YIdentifier> idList = new Vector<YIdentifier>();
+        List<YIdentifier> idList = new Vector<>();
         for (YIdentifier identifier : _idToQtyMap.keySet()) {
             int amount = _idToQtyMap.get(identifier);
             for (int i = 0; i < amount; i++) {
@@ -109,7 +109,7 @@ public class YIdentifierBag {
 
 
     public void removeAll() {
-        Set<YIdentifier> identifiers = new HashSet<YIdentifier>(_idToQtyMap.keySet());
+        Set<YIdentifier> identifiers = new HashSet<>(_idToQtyMap.keySet());
         for (YIdentifier identifier : identifiers) {
             while (identifier.getLocations().contains(_condition)) {
                 identifier.clearLocation(_condition);

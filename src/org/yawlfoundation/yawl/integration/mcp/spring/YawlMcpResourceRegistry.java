@@ -156,7 +156,7 @@ public class YawlMcpResourceRegistry {
         List<YawlMcpResource> sortedResources = customStaticResources.values().stream()
             .filter(YawlMcpResource::isEnabled)
             .sorted(Comparator.comparingInt(YawlMcpResource::getPriority))
-            .collect(Collectors.toList());
+            .toList();
 
         for (YawlMcpResource resource : sortedResources) {
             specs.add(createResourceSpecification(resource));
@@ -192,7 +192,7 @@ public class YawlMcpResourceRegistry {
         List<YawlMcpResource> sortedTemplates = customTemplateResources.values().stream()
             .filter(YawlMcpResource::isEnabled)
             .sorted(Comparator.comparingInt(YawlMcpResource::getPriority))
-            .collect(Collectors.toList());
+            .toList();
 
         for (YawlMcpResource template : sortedTemplates) {
             specs.add(createResourceTemplateSpecification(template));

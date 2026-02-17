@@ -116,10 +116,10 @@ public final class DecisionWorkflow {
     }
 
     private static String extractXml(String response, String expectedRoot) {
-        if (response == null || response.trim().isEmpty()) {
+        if (response == null || response.isBlank()) {
             throw new IllegalArgumentException("Empty response from ZAI");
         }
-        String s = response.trim();
+        String s = response.strip();
         int start = s.indexOf("<");
         int end = s.lastIndexOf(">");
         if (start >= 0 && end > start) {

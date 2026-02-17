@@ -345,7 +345,7 @@ public class YawlA2AServer {
                 }
             }
             ensureEngineConnection();
-            String lower = userText.toLowerCase().trim();
+            String lower = userText.toLowerCase().strip();
 
             if (lower.contains("list") && (lower.contains("spec")
                     || lower.contains("workflow"))) {

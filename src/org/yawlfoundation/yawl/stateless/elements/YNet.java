@@ -539,7 +539,7 @@ public final class YNet extends YDecomposition {
             try {
                 gateway.updateFromCaseData(getSpecification().getSpecificationID(),
                         caseID,
-                        new ArrayList<YParameter>(getOutputParameters().values()),
+                        new ArrayList<>(getOutputParameters().values()),
                         _data.getRootElement());
             }
             catch (Throwable t) {

@@ -64,7 +64,7 @@ public class OpenTelemetryConfig {
      * @param samplingRatio Trace sampling ratio (0.0 to 1.0)
      */
     public OpenTelemetryConfig(String otlpEndpoint, double samplingRatio) {
-        if (otlpEndpoint == null || otlpEndpoint.trim().isEmpty()) {
+        if (otlpEndpoint == null || otlpEndpoint.isBlank()) {
             throw new IllegalArgumentException("OTLP endpoint cannot be null or empty");
         }
         if (samplingRatio < 0.0 || samplingRatio > 1.0) {

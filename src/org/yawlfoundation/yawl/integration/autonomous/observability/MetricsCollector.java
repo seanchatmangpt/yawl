@@ -72,7 +72,7 @@ public class MetricsCollector {
      * @param labels Label map (e.g., {"agent": "ordering", "domain": "Ordering"})
      */
     public void incrementCounter(String name, Map<String, String> labels) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Metric name cannot be null or empty");
         }
 
@@ -97,7 +97,7 @@ public class MetricsCollector {
      * @param labels Label map (optional)
      */
     public void recordDuration(String name, long durationMs, Map<String, String> labels) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Metric name cannot be null or empty");
         }
 

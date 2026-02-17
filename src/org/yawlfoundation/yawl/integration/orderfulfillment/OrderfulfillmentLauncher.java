@@ -141,9 +141,9 @@ public final class OrderfulfillmentLauncher {
 
     private static String stripXmlTags(String s) {
         if (s == null) return "";
-        String t = s.trim();
+        String t = s.strip();
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
-        return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();
+        return m.find() ? m.group(1).strip() : t.replaceAll("<[^>]+>", "").strip();
     }
 
     private static boolean isCaseRunning(String runningXml, String caseId) {

@@ -75,10 +75,10 @@ public final class PermutationRunner {
     public int runAll() throws IOException {
         List<Permutation> perms = loadPermutations();
         String filterIds = System.getenv("PERMUTATION_IDS");
-        if (filterIds != null && !filterIds.trim().isEmpty()) {
+        if (filterIds != null && !filterIds.isBlank()) {
             java.util.Set<String> ids = new java.util.HashSet<>();
             for (String id : filterIds.split(",")) {
-                ids.add(id.trim());
+                ids.add(id.strip());
             }
             perms.removeIf(p -> !ids.contains(p.id));
         }
@@ -239,9 +239,9 @@ public final class PermutationRunner {
 
     private static String stripXmlTags(String s) {
         if (s == null) return "";
-        String t = s.trim();
+        String t = s.strip();
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
-        return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();
+        return m.find() ? m.group(1).strip() : t.replaceAll("<[^>]+>", "").strip();
     }
 
     private static boolean isCaseRunning(String runningXml, String caseId) {

@@ -55,7 +55,7 @@ public class ZaiService {
      * @throws IllegalArgumentException if apiKey is null or empty
      */
     public ZaiService(String apiKey) {
-        if (apiKey == null || apiKey.trim().isEmpty()) {
+        if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException(
                 "Z.AI API key is required. Set ZHIPU_API_KEY environment variable or provide explicit key."
             );
@@ -113,11 +113,11 @@ public class ZaiService {
      * @throws A2AException if API call fails
      */
     public String reason(String prompt, String model) throws A2AException {
-        if (prompt == null || prompt.trim().isEmpty()) {
+        if (prompt == null || prompt.isBlank()) {
             throw new IllegalArgumentException("Prompt cannot be null or empty");
         }
 
-        String modelToUse = (model != null && !model.trim().isEmpty()) ? model : "glm-4";
+        String modelToUse = (model != null && !model.isBlank()) ? model : "glm-4";
 
         try {
             return Retry.decorateSupplier(retry, () ->
@@ -232,7 +232,7 @@ public class ZaiService {
      * @return Circuit breaker state information
      */
     public String getCircuitBreakerState() {
-        return String.format("State: %s, Failure Rate: %.2f%%, Buffered Calls: %d",
+        return "State: %s, Failure Rate: %.2f%%, Buffered Calls: %d".formatted(
                 circuitBreaker.getState(),
                 circuitBreaker.getMetrics().getFailureRate(),
                 circuitBreaker.getMetrics().getNumberOfBufferedCalls());

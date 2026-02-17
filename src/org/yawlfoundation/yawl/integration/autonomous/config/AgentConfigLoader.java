@@ -89,7 +89,7 @@ public final class AgentConfigLoader {
      * @throws IOException if file cannot be read
      */
     public static AgentConfigLoader fromFile(String filePath) throws IOException {
-        if (filePath == null || filePath.trim().isEmpty()) {
+        if (filePath == null || filePath.isBlank()) {
             throw new IllegalArgumentException("filePath is required");
         }
 
@@ -290,10 +290,10 @@ public final class AgentConfigLoader {
 
     private String getRequired(String key) {
         String value = get(key);
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             throw new IllegalStateException("Required property missing: " + key);
         }
-        return value.trim();
+        return value.strip();
     }
 
     private int getInt(String key, int defaultValue) {
@@ -302,7 +302,7 @@ public final class AgentConfigLoader {
             return defaultValue;
         }
         try {
-            return Integer.parseInt(value.trim());
+            return Integer.parseInt(value.strip());
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                 "Invalid integer value for " + key + ": " + value, e);
@@ -315,7 +315,7 @@ public final class AgentConfigLoader {
             return defaultValue;
         }
         try {
-            return Long.parseLong(value.trim());
+            return Long.parseLong(value.strip());
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                 "Invalid long value for " + key + ": " + value, e);

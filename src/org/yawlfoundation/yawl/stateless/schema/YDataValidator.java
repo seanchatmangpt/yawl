@@ -91,7 +91,7 @@ public class YDataValidator {
      */
     public void validate(YVariable variable, Element data, String source)
             throws YDataValidationException {
-        List<YVariable> vars = new ArrayList<YVariable>(1);
+        List<YVariable> vars = new ArrayList<>(1);
         vars.add(variable);
         validate(vars, data, source);
     }

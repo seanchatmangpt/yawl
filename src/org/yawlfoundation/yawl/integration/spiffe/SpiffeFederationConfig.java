@@ -230,7 +230,7 @@ public class SpiffeFederationConfig {
         Map<String, String> currentMetadata = new HashMap<>();
 
         for (String line : lines) {
-            line = line.trim();
+            line = line.strip();
             if (line.isEmpty() || line.startsWith("#")) {
                 continue;
             }
@@ -285,7 +285,7 @@ public class SpiffeFederationConfig {
         if (colonIndex == -1) {
             throw new IllegalArgumentException("Invalid YAML line, missing colon: " + line);
         }
-        String value = line.substring(colonIndex + 1).trim();
+        String value = line.substring(colonIndex + 1).strip();
         if (value.isEmpty()) {
             throw new IllegalArgumentException("YAML value is empty for line: " + line);
         }

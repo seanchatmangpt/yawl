@@ -73,7 +73,7 @@ public final class McpTaskContextSupplierImpl implements McpTaskContextSupplier 
                     sb.append(((McpSchema.TextContent) content).text()).append("\n");
                 }
             }
-            return sb.length() > 0 ? sb.toString().trim() : null;
+            return sb.length() > 0 ? sb.toString().strip() : null;
         } catch (Exception e) {
             return null;
         }

@@ -27,7 +27,6 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Provides real-time case monitoring data for dashboards and analytics.
@@ -188,7 +187,7 @@ public class YCaseMonitoringService {
         return caseDurations.entrySet().stream()
             .sorted(Map.Entry.<YIdentifier, Long>comparingByValue().reversed())
             .limit(limit)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**

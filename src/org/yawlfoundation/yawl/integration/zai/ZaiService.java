@@ -99,14 +99,15 @@ public class ZaiService {
      * Analyze workflow context and suggest next action
      */
     public String analyzeWorkflowContext(String workflowId, String currentTask, String workflowData) {
-        String prompt = String.format(
-                "Analyze the following YAWL workflow context and suggest the best action:\n\n" +
-                        "Workflow ID: %s\n" +
-                        "Current Task: %s\n" +
-                        "Workflow Data: %s\n\n" +
-                        "Provide a concise recommendation for the next action.",
-                workflowId, currentTask, workflowData
-        );
+        var prompt = """
+                Analyze the following YAWL workflow context and suggest the best action:
+
+                Workflow ID: %s
+                Current Task: %s
+                Workflow Data: %s
+
+                Provide a concise recommendation for the next action."""
+                .formatted(workflowId, currentTask, workflowData);
         return chat(prompt);
     }
 
@@ -246,7 +247,7 @@ public class ZaiService {
         String decision = service.makeWorkflowDecision(
                 "Approval Level",
                 "{\"amount\": 5000, \"department\": \"IT\", \"urgency\": \"high\"}",
-                Arrays.asList("Manager Approval", "Director Approval", "Auto-Approve", "Reject")
+                List.of("Manager Approval", "Director Approval", "Auto-Approve", "Reject")
         );
         System.out.println("Decision: " + decision);
 

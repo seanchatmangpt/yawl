@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * YAWL Engine Adapter
@@ -499,7 +498,7 @@ public class YawlEngineAdapter {
             return specs.stream()
                 .filter(s -> s.getID() != null)
                 .map(s -> s.getID().getIdentifier())
-                .collect(Collectors.toList());
+                .toList();
 
         } catch (IOException e) {
             throw new A2AException(
@@ -560,7 +559,7 @@ public class YawlEngineAdapter {
         if (data == null) {
             return null;
         }
-        String trimmed = data.trim();
+        String trimmed = data.strip();
         if (trimmed.startsWith("<")) {
             return trimmed;
         }
