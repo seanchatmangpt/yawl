@@ -175,7 +175,7 @@ public enum YSchemaVersion {
 
     private String getSchemaFileName() {
         return isBeta2() ? "YAWL_Schema.xsd"
-                    : String.format("YAWL_Schema%s.xsd", toCompactString());
+                    : "YAWL_Schema%s.xsd".formatted(toCompactString());
     }
 
     private String toCompactString() {

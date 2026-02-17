@@ -632,8 +632,8 @@ public class YStatelessEngine {
                return _caseMonitor.isIdleCase(caseID);
            }
            else {
-               throw new YStateException(String.format("Case '%s' is unknown" +
-                       " to this engine - perhaps it has been unloaded?", caseID));
+               throw new YStateException("Case '%s' is unknown" .formatted(caseID) +
+                       " to this engine - perhaps it has been unloaded?");
            }
         }
         else throw new YStateException("Case monitoring is disabled for this engine");
@@ -648,8 +648,8 @@ public class YStatelessEngine {
      */
     private boolean isLoadedCase(YIdentifier caseID, String errMsg) throws YStateException {
         if (isCaseMonitoringEnabled() && ! _caseMonitor.hasCase(caseID)) {
-            throw new YStateException(String.format("Unable to %s; case '%s' is unknown" +
-                            " to this engine - perhaps it has been unloaded?", errMsg, caseID));
+            throw new YStateException("Unable to %s; case '%s' is unknown".formatted(errMsg, caseID) +
+                            " to this engine - perhaps it has been unloaded?");
         }
         return true;
     }

@@ -45,6 +45,7 @@ org/yawlfoundation/yawl/elements/e2wfoj/RPlace.class
 org/yawlfoundation/yawl/elements/predicate/PredicateEvaluatorCache.class
 org/yawlfoundation/yawl/schema/YDataValidator.class
 org/yawlfoundation/yawl/elements/YDecomposition.class
+org/yawlfoundation/yawl/authentication/YSessionCache.class
 org/yawlfoundation/yawl/schema/internal/YGeoLatLongListType.class
 org/yawlfoundation/yawl/elements/YConditionInterface.class
 org/yawlfoundation/yawl/elements/YAWLServiceGateway.class

@@ -368,8 +368,8 @@ public class YEngine {
                     startedItem = startFiredWorkItem(netRunner, workItem);
                 }
                 case statusDeadlocked -> startedItem = workItem;
-                default -> throw new YStateException(String.format(
-                        "Item [%s]: status [%s] does not permit starting.",
+                default -> throw new YStateException(
+                        "Item [%s]: status [%s] does not permit starting.".formatted(
                         workItem.getIDString(), workItem.getStatus()));
             }
             announceItemStarted(startedItem);
@@ -582,9 +582,9 @@ public class YEngine {
             if (defaultValue == null) {
                 String typeName = outParam.getDataTypeName();
                 if (!XSDType.isBuiltInType(typeName)) {
-                    throw new YStateException(String.format(
-                            "Could not skip work item [%s]: Output-Only parameter [%s]" +
-                                    " requires a default value.", workItem.getIDString(), name));
+                    throw new YStateException(
+                            ("Could not skip work item [%s]: Output-Only parameter [%s]" +
+                                    " requires a default value.").formatted(workItem.getIDString(), name));
                 }
                 defaultValue = JDOMUtil.getDefaultValueForType(typeName);
             }

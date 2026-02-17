@@ -26,7 +26,6 @@ import org.yawlfoundation.yawl.util.HibernateEngine;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,11 +130,12 @@ public final class YSessionCache implements ISessionCache {
      * @param timeOutSeconds the maximum idle time for this session (in seconds).
      *                       A value of 0 defaults to 60 minutes; negative means no timeout.
      * @return a valid session handle, or an error message wrapped in XML
-     * @throws NullPointerException if name is null
      */
     @Override
     public String connect(String name, String password, long timeOutSeconds) {
-        Objects.requireNonNull(name, "Username cannot be null");
+        if (name == null || name.isEmpty()) {
+            return failureMessage("Username cannot be null or empty");
+        }
 
         if (shutdownRequested.get()) {
             return failureMessage("Cache is shutting down");

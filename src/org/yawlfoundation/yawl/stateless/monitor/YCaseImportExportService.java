@@ -230,7 +230,7 @@ public class YCaseImportExportService {
      * @return formatted header string
      */
     private String createExportHeader() {
-        return String.format("<!-- YAWL Case Export | Version: %s | Date: %s -->",
+        return "<!-- YAWL Case Export | Version: %s | Date: %s -->".formatted(
                            EXPORT_VERSION, new Date());
     }
 
@@ -318,7 +318,7 @@ public class YCaseImportExportService {
 
         @Override
         public String toString() {
-            return String.format("ValidationResult[file=%s, valid=%s, cases=%d, errors=%d]",
+            return "ValidationResult[file=%s, valid=%s, cases=%d, errors=%d]".formatted(
                                filename, isValid, validCaseCount, errors.size());
         }
     }
