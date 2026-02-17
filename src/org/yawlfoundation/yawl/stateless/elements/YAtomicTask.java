@@ -19,9 +19,9 @@
 package org.yawlfoundation.yawl.stateless.elements;
 
 
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
-import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 /**

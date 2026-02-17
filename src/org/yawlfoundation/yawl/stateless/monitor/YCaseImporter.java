@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
+import java.util.*;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -20,8 +22,6 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
-
-import java.util.*;
 
 /**
  * @author Michael Adams

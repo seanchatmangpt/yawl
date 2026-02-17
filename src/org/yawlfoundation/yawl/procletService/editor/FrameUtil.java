@@ -18,12 +18,13 @@
 
 package org.yawlfoundation.yawl.procletService.editor;
 
-import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.swing.*;
+import javax.swing.text.JTextComponent;
 
 public class FrameUtil {
 
@@ -282,4 +283,3 @@ public class FrameUtil {
   }
 
 }
-

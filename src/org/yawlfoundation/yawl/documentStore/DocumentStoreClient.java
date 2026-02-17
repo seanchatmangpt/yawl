@@ -18,9 +18,6 @@
 
 package org.yawlfoundation.yawl.documentStore;
 
-import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
-import org.yawlfoundation.yawl.util.PasswordEncryptor;
-
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,6 +26,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.Executors;
+
+import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
+import org.yawlfoundation.yawl.util.PasswordEncryptor;
 
 /**
  * An client-side interface to communicate with the YAWL Document Store

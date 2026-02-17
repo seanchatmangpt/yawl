@@ -18,13 +18,17 @@
 
 package org.yawlfoundation.yawl.elements.state;
 
+import java.util.List;
+import java.util.Set;
+
 import org.yawlfoundation.yawl.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.elements.YNet;
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.engine.core.marking.YCoreMarking;
+import org.yawlfoundation.yawl.engine.core.marking.YCoreSetOfMarkings;
+import org.yawlfoundation.yawl.engine.core.marking.IMarkingTask;
 
-import java.util.List;
-import java.util.Set;
+import org.yawlfoundation.yawl.elements.*;
 
 /**
  * Stateful-engine thin wrapper around {@link YCoreMarking}.
@@ -95,6 +99,36 @@ public class YMarking extends YCoreMarking {
     @Override
     protected YMarking newInstance(List<YNetElement> locations) {
         return new YMarking(locations);
+    }
+
+
+    // =========================================================================
+    // Covariant return type overrides
+    // =========================================================================
+
+    /**
+     * Computes all markings reachable from this marking in a single task firing.
+     *
+     * <p>This override provides a covariant return type of {@link YSetOfMarkings}
+     * for backward compatibility with existing stateful-engine callers that expect
+     * the stateful wrapper type.</p>
+     *
+     * @param task   the task to fire
+     * @param orJoin the OR-join being evaluated (used to guard OR-join firing)
+     * @return the set of markings reachable in one step, or {@code null} if not enabled
+     */
+    @Override
+    public YSetOfMarkings reachableInOneStep(IMarkingTask task, IMarkingTask orJoin) {
+        YCoreSetOfMarkings coreResult = super.reachableInOneStep(task, orJoin);
+        if (coreResult == null) {
+            return null;
+        }
+        // Wrap in YSetOfMarkings for backward compatibility
+        YSetOfMarkings result = new YSetOfMarkings();
+        for (YCoreMarking marking : coreResult.getMarkings()) {
+            result.addMarking(marking);
+        }
+        return result;
     }
 
 }

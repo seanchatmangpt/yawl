@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
+import java.util.List;
+import java.util.Set;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.engine.core.marking.YCoreMarking;
 import org.yawlfoundation.yawl.stateless.elements.YExternalNetElement;
 import org.yawlfoundation.yawl.stateless.elements.YNet;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Stateless-engine thin wrapper around {@link YCoreMarking}.

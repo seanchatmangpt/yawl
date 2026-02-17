@@ -36,20 +36,22 @@ package org.yawlfoundation.yawl.swingWorklist.util;
  * @author Philip Milne
  */
 
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.Date;
-import java.util.Vector;
 
 public class TableSorter extends TableMap {
     int indexes[];
-    Vector sortingColumns = new Vector();
+    List<Integer> sortingColumns = new ArrayList<Integer>();
     boolean ascending = true;
     int compares;
 
@@ -164,7 +166,7 @@ public class TableSorter extends TableMap {
     public int compare(int row1, int row2) {
         compares++;
         for (int level = 0; level < sortingColumns.size(); level++) {
-            Integer column = (Integer) sortingColumns.elementAt(level);
+            Integer column = sortingColumns.get(level);
             int result = compareRowsByColumn(row1, row2, column.intValue());
             if (result != 0) {
                 return ascending ? result : -result;
@@ -296,8 +298,8 @@ public class TableSorter extends TableMap {
 
     public void sortByColumn(int column, boolean ascending) {
         this.ascending = ascending;
-        sortingColumns.removeAllElements();
-        sortingColumns.addElement(Integer.valueOf(column));
+        sortingColumns.clear();
+        sortingColumns.add(Integer.valueOf(column));
         sort(this);
         super.tableChanged(new TableModelEvent(this));
     }

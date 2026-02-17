@@ -1,9 +1,10 @@
 package org.yawlfoundation.yawl.logging;
 
+import org.yawlfoundation.yawl.engine.YEngine;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.yawlfoundation.yawl.engine.YEngine;
 
 public class YawlServletTestNextIdNew extends TestCase {
 

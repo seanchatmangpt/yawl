@@ -18,18 +18,19 @@
 
 package org.yawlfoundation.yawl.mailService;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.List;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.engine.interfce.ServletUtils;
 import org.yawlfoundation.yawl.engine.interfce.YHttpServlet;
 import org.yawlfoundation.yawl.util.Sessions;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.List;
 
 
 /**

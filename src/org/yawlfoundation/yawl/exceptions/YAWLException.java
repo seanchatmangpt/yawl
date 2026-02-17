@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-import org.jdom2.Document;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-
 import java.io.IOException;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 /**
  * Enhanced YAWL exception with detailed context and troubleshooting guidance.

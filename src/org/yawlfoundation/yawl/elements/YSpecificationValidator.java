@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
  * Validates YAWL specifications and provides detailed error reports.

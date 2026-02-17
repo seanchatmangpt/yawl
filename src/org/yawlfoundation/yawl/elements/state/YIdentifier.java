@@ -18,15 +18,15 @@
 
 package org.yawlfoundation.yawl.elements.state;
 
-import org.yawlfoundation.yawl.elements.*;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.engine.YPersistenceManager;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.yawlfoundation.yawl.elements.*;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.engine.YPersistenceManager;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  * This class has control over data structures that allow for

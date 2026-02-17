@@ -18,15 +18,15 @@
 
 package org.yawlfoundation.yawl.procletService.persistence;
 
-import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
-import org.yawlfoundation.yawl.procletService.state.Performative;
-import org.yawlfoundation.yawl.procletService.state.Performatives;
-import org.yawlfoundation.yawl.procletService.util.EntityID;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
+import org.yawlfoundation.yawl.procletService.state.Performative;
+import org.yawlfoundation.yawl.procletService.state.Performatives;
+import org.yawlfoundation.yawl.procletService.util.EntityID;
 
 /**
  * @author Michael Adams
@@ -152,4 +152,3 @@ public class StoredPerformative {
         this.entityIDs = entityIDs;
     }
 }
-

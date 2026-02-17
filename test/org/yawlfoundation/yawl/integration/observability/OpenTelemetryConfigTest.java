@@ -1,15 +1,14 @@
 package org.yawlfoundation.yawl.integration.observability;
 
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 
 /**
  * Integration tests for OpenTelemetryConfig.

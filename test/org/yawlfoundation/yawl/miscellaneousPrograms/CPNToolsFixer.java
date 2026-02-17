@@ -1,12 +1,13 @@
 package org.yawlfoundation.yawl.miscellaneousPrograms;
 
-import org.apache.logging.log4j.LogManager;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+
+import org.apache.logging.log4j.LogManager;
 
 /**
  /**

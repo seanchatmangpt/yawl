@@ -48,6 +48,7 @@ public final class YInputCondition extends YCondition {
      * parent class on one of the supertype members (preset).  ie. an InputCondition must always
      * have an empty preset.
      */
+    @Override
     public void verify(YVerificationHandler handler) {
         if (getPresetElements().size() != 0) {
             handler.error(this, this + " preset must be empty: " + getPresetElements());
@@ -55,6 +56,7 @@ public final class YInputCondition extends YCondition {
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YNet copyContainer = _net.getCloneContainer();
         if (copyContainer.getNetElements().containsKey(this.getID())) {

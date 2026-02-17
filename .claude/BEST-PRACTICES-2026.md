@@ -1017,9 +1017,9 @@ Our 67-package documentation session demonstrated that **AI-assisted development
 
 The YAWL project now serves as a **reference implementation** for Claude Code best practices in 2026:
 - Mathematical notation for compressed specifications
-- Guards enforced by hooks (H → ⊥)
-- Agent roles defined (μ(O))
-- Build sequence automated (Δ)
+- Guards enforced by hooks (H -> bottom)
+- Agent roles defined (mu(O))
+- Build sequence automated (Delta)
 - Invariants explicit (Q)
 - **V6 upgrade patterns** for managing breaking changes
 
@@ -1054,5 +1054,5 @@ For teams upgrading to v6.0.0-Alpha:
 
 **Session**: https://claude.ai/code/session_012G4ZichzPon9aCvwkWB9Dc + V6 Migration (2026-02-17)
 **Date**: 2026-02-15 (initial) + 2026-02-17 (V6 update)
-**Claude Model**: Haiku 4.5 (V6 documentation)
+**Claude Model**: Sonnet 4.5 (initial), Haiku 4.5 (V6 documentation)
 **Total Impact**: 67 files, 1,608 lines + 2 comprehensive V6 guides, 100% build success, 0 errors

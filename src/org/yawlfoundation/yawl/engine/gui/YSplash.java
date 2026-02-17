@@ -18,14 +18,6 @@
 
 package org.yawlfoundation.yawl.engine.gui;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JProgressBar;
-import javax.swing.JWindow;
-import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
@@ -33,6 +25,15 @@ import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.JWindow;
+import javax.swing.SwingUtilities;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Splash screen window for YAWL engine startup.

@@ -1,15 +1,15 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.yawlfoundation.yawl.integration.autonomous.observability.HealthCheck;
 import org.yawlfoundation.yawl.integration.autonomous.observability.MetricsCollector;
 import org.yawlfoundation.yawl.integration.autonomous.observability.StructuredLogger;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.FallbackHandler;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.RetryPolicy;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Example demonstrating production hardening components.

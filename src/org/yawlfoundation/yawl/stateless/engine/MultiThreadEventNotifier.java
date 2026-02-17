@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
-import org.yawlfoundation.yawl.stateless.listener.*;
-import org.yawlfoundation.yawl.stateless.listener.event.*;
-
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.yawlfoundation.yawl.stateless.listener.*;
+import org.yawlfoundation.yawl.stateless.listener.event.*;
 
 /**
  * Multi-threaded event notifier using Java virtual threads for unbounded concurrency.

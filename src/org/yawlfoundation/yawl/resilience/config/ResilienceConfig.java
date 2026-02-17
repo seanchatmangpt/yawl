@@ -1,5 +1,11 @@
 package org.yawlfoundation.yawl.resilience.config;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadConfig;
 import io.github.resilience4j.bulkhead.BulkheadRegistry;
@@ -16,11 +22,6 @@ import io.github.resilience4j.timelimiter.TimeLimiter;
 import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Platform-level Resilience4j configuration for YAWL.

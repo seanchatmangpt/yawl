@@ -18,16 +18,18 @@
 
 package org.yawlfoundation.yawl.engine.actuator.metrics;
 
-import io.micrometer.core.instrument.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import jakarta.annotation.PostConstruct;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import io.micrometer.core.instrument.*;
 
 /**
  * Micrometer metrics for A2A and MCP agent performance.

@@ -1,9 +1,10 @@
 package org.yawlfoundation.yawl.authentication;
 
-import org.yawlfoundation.yawl.engine.YEngine;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.exceptions.YAuthenticationException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 

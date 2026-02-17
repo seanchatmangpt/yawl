@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.procletService.state;
 
-import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
-import org.yawlfoundation.yawl.procletService.util.EntityID;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
+import org.yawlfoundation.yawl.procletService.util.EntityID;
 
 
 // colset Performative = record time_:INT * channel:STRING * sender:ProcletID * 
@@ -180,4 +180,3 @@ public class Performative {
 		this.getDirection() + "," + this.getEntityIDs() + "," + this.getContent();
 	}
 }
-

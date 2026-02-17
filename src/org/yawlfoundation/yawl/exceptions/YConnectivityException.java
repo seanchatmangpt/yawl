@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-import org.yawlfoundation.yawl.elements.YExternalNetElement;
-
 import java.io.Serial;
+
+import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
 /**
  * Exception thrown when an invalid connection is attempted between YAWL net elements.
@@ -30,6 +30,13 @@ import java.io.Serial;
 public class YConnectivityException extends YSyntaxException {
     @Serial
     private static final long serialVersionUID = 2L;
+
+    /**
+     * Constructs a new connectivity exception with no detail message.
+     */
+    public YConnectivityException() {
+        super();
+    }
 
     /**
      * Constructs a new connectivity exception for an invalid connection between two elements.
@@ -48,6 +55,15 @@ public class YConnectivityException extends YSyntaxException {
      */
     public YConnectivityException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs a new connectivity exception with the specified cause.
+     *
+     * @param cause the cause of this exception
+     */
+    public YConnectivityException(Throwable cause) {
+        super(cause);
     }
 
     /**

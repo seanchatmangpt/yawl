@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.swingWorklist;
 
+import java.awt.*;
+import java.awt.event.*;
+import java.io.IOException;
+
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.input.JDOMParseException;
@@ -27,13 +35,6 @@ import org.yawlfoundation.yawl.engine.interfce.Marshaller;
 import org.yawlfoundation.yawl.exceptions.YLogException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
-
-import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
 
 /**
  * 
@@ -429,5 +430,3 @@ public class YWorklistGUI extends JPanel implements ActionListener, ListSelectio
 
 
 }
-
-

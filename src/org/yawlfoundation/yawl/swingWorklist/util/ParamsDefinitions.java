@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.swingWorklist.util;
 
-import org.yawlfoundation.yawl.engine.interfce.YParametersSchema;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.yawlfoundation.yawl.engine.interfce.YParametersSchema;
 
 /**
  * 

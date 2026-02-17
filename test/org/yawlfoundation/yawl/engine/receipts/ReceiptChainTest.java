@@ -101,7 +101,8 @@ public class ReceiptChainTest extends TestCase {
         Receipt r2 = b2.build();
 
         // Different delta → different hash
-        assertNotEquals(r1.getHash(), r2.getHash());
+        assertFalse("Hashes should differ for different deltas",
+                    r1.getHash().equals(r2.getHash()));
     }
 
     /**

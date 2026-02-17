@@ -1,9 +1,8 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.engine.YEngine;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Smoke test for YEngine initialization with H2 config.

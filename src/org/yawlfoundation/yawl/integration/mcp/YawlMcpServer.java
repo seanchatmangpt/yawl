@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
@@ -15,8 +17,6 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-
-import java.io.IOException;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK 0.17.2.

@@ -1,7 +1,13 @@
 package org.yawlfoundation.yawl.performance;
 
-import junit.framework.TestCase;
-import org.jdom2.JDOMException;
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.*;
+
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.EngineClearer;
@@ -13,14 +19,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.*;
+import junit.framework.TestCase;
 
 /**
  * Performance baseline measurements for YAWL Engine.

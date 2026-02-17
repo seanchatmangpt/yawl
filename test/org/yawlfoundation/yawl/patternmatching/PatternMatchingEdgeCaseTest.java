@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+
+import junit.framework.TestCase;
 
 /**
  * Edge case tests for pattern matching conversions

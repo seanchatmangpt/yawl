@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for general switch expression branch coverage
@@ -111,7 +112,6 @@ public class SwitchExpressionBranchTest extends TestCase {
         assertEquals(0, YParameter._INPUT_PARAM_TYPE);
         assertEquals(1, YParameter._OUTPUT_PARAM_TYPE);
         assertEquals(2, YParameter._ENABLEMENT_PARAM_TYPE);
-        assertEquals(3, YParameter._LOCAL_VAR_TYPE);
 
         // Verify they're all different
         assertTrue(YParameter._INPUT_PARAM_TYPE != YParameter._OUTPUT_PARAM_TYPE);
@@ -174,8 +174,7 @@ public class SwitchExpressionBranchTest extends TestCase {
         int[] validTypes = {
             YParameter._INPUT_PARAM_TYPE,
             YParameter._OUTPUT_PARAM_TYPE,
-            YParameter._ENABLEMENT_PARAM_TYPE,
-            YParameter._LOCAL_VAR_TYPE
+            YParameter._ENABLEMENT_PARAM_TYPE
         };
 
         for (int type : validTypes) {

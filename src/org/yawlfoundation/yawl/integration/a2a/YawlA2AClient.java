@@ -1,18 +1,17 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.a2a.A2A;
 import io.a2a.client.Client;
-import io.a2a.client.ClientEvent;
 import io.a2a.client.MessageEvent;
 import io.a2a.client.TaskEvent;
 import io.a2a.client.transport.rest.RestTransport;
 import io.a2a.client.transport.rest.RestTransportConfig;
 import io.a2a.spec.*;
-
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Agent-to-Agent (A2A) Client for YAWL using the official A2A Java SDK.

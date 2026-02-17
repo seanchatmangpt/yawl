@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceE;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.locks.ReentrantLock;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.apache.logging.log4j.LogManager;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.EngineGatewayImpl;
@@ -26,12 +34,6 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.logging.YLogServer;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 
 /**
@@ -44,6 +46,9 @@ import java.io.PrintWriter;
  */
 
 public class YLogGateway extends YHttpServlet {
+
+    /** Lock for virtual thread safe log persistence operations */
+    private final ReentrantLock _logPersistLock = new ReentrantLock();
 
     private YLogServer _logSvr = YLogServer.getInstance() ;
     private EngineGatewayImpl _engine ;
@@ -90,7 +95,8 @@ public class YLogGateway extends YHttpServlet {
             else result = _noEngine ;
         }
         else if (validConnection(handle)) {
-            synchronized(_logSvr.getPersistenceManager()) {
+            _logPersistLock.lock();
+            try {
                 boolean isLocalTransaction = _logSvr.startTransaction();
                 if (action.equals("getAllSpecifications")) {
                     result = _logSvr.getAllSpecifications();
@@ -196,6 +202,8 @@ public class YLogGateway extends YHttpServlet {
                     result = _logSvr.getSpecificationXESLog(specID, withData, ignoreUnknowns);
                 }
                 if (isLocalTransaction) _logSvr.commitTransaction();
+            } finally {
+                _logPersistLock.unlock();
             }
         }
         else throw new IOException("Invalid or disconnected session handle.");

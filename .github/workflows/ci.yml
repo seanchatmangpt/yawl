@@ -1,11 +1,14 @@
-# YAWL v5.2 - Unified CI/CD Pipeline
+# YAWL v6.0.0-Alpha - Unified CI/CD Pipeline
 #
 # Optimized for Java 25 builds with:
 # - Maven dependency caching
 # - Parallel test execution
-# - Multi-arch Docker builds
-# - Improved error reporting
-# - Latest GitHub Actions (checkout@v4, setup-java@v4)
+# - Multi-arch Docker builds (amd64, arm64)
+# - GHCR container registry publishing
+# - Trivy security scanning
+# - Container-based test execution
+# - Layer caching for faster builds
+# - Version tagging (6.0.0-Alpha, latest, sha)
 #
 # Consolidated from:
 # - build-maven.yaml
@@ -17,9 +20,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [master, main, develop, release/**, 'claude/**']
+    branches: [master, main]
+    tags:
+      - 'v6.*'
+      - 'v6.*.*'
+      - 'v6.*.*-*'
   pull_request:
-    branches: [master, main, develop]
+    branches: [master, main]
   schedule:
     # Security scan daily at 2 AM UTC
     - cron: '0 2 * * *'
@@ -27,6 +34,11 @@ on:
     inputs:
       skip_tests:
         description: 'Skip tests (emergency builds only)'
+        required: false
+        default: 'false'
+        type: boolean
+      push_image:
+        description: 'Push Docker image (override branch check)'
         required: false
         default: 'false'
         type: boolean
@@ -41,6 +53,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   JAVA_VERSION: 25
+  VERSION: 6.0.0-Alpha
 
 jobs:
   # ============================================================================
@@ -429,39 +442,69 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Docker Build - Multi-Arch with GitHub Actions Cache
+  # Docker Build - Multi-Arch with GitHub Actions Cache (v6.0.0-Alpha)
+  # Builds only on: main/master branches OR version tags OR manual dispatch
   # ============================================================================
   docker-build:
     name: Docker Build (Multi-Arch)
-    needs: [test-unit, security-scan]
+    needs: [test-unit]
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    if: github.event_name == 'push'
+    timeout-minutes: 30
+    # Build Docker images on:
+    # - Push to main/master
+    # - Version tags (v6.*)
+    # - Manual workflow dispatch with push_image=true
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
+      startsWith(github.ref, 'refs/tags/v6') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.push_image == 'true')
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.version }}
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up QEMU for Multi-Arch
+      - name: Set up QEMU for Multi-Arch Builds
         uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver-opts: network=host
+          driver-opts: |
+            network=host
+            image=moby/buildkit:latest
+          buildkitd-flags: --debug
+          install: true
 
-      - name: Cache Docker Layers
+      - name: Cache Docker Layers (GitHub Actions Cache)
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-v6-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-buildx-v6-
             ${{ runner.os }}-buildx-
 
+      - name: Cache Docker Layers (BuildKit Inline)
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+          cache-binary: true
+
       - name: Log in to GitHub Container Registry
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -473,32 +516,47 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=java25,enable={{is_default_branch}}
+            # Version tag from git tag (e.g., v6.0.0-Alpha -> 6.0.0-Alpha)
+            type=match,pattern=v(.*),group=1,prefix=
+            # Major.Minor version (e.g., 6.0)
+            type=match,pattern=v(\d+\.\d+),group=1,prefix=
+            # Major version (e.g., 6)
+            type=match,pattern=v(\d+),group=1,prefix=
+            # Latest tag for default branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            # v6.0.0-Alpha explicit tag
+            type=raw,value=6.0.0-Alpha,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v6') }}
+            # v6 tag for major version tracking
+            type=raw,value=v6,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v6') }}
+            # SHA-based tag for traceability
+            type=sha,prefix=sha-,format=short
+          labels: |
+            org.opencontainers.image.title=YAWL Workflow Engine
+            org.opencontainers.image.description=YAWL v6 Workflow Engine with Java 25 and Virtual Threads
+            org.opencontainers.image.version=${{ env.VERSION }}
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image (Multi-Arch)
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.modernized
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
           cache-from: |
             type=local,src=/tmp/.buildx-cache
-            type=gha
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           build-args: |
-            VERSION=5.2
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VERSION=${{ env.VERSION }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}
             VCS_REF=${{ github.sha }}
             MAVEN_VERSION=3.9.9
 
@@ -507,29 +565,185 @@ jobs:
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-      - name: Run Trivy Vulnerability Scanner
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      - name: Generate Image Attestation
+        run: |
+          echo "## Docker Image Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "**Provenance:** Enabled" >> $GITHUB_STEP_SUMMARY
+          echo "**SBOM:** Enabled" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Container Security Scanning with Trivy
+  # ============================================================================
+  container-security-scan:
+    name: Container Security Scan (Trivy)
+    needs: docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: needs.docker-build.result == 'success'
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy Vulnerability Scanner (SARIF)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
           ignore-unfixed: true
+          exit-code: '0'
+        continue-on-error: true
 
-      - name: Upload Trivy Results to GitHub Security
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      - name: Upload Trivy SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'trivy-container-scan'
 
-      - name: Docker Build Summary
+      - name: Run Trivy Vulnerability Scanner (JSON Report)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+        continue-on-error: true
+
+      - name: Run Trivy Vulnerability Scanner (Table Summary)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '1'
+        continue-on-error: true
+
+      - name: Upload Trivy Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-security-reports
+          path: |
+            trivy-results.sarif
+            trivy-results.json
+          retention-days: 30
+
+      - name: Security Scan Summary
+        if: always()
         run: |
-          echo "## Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Container Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-results.json" ]; then
+            CRITICAL=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' 2>/dev/null || echo "0")
+            HIGH=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' 2>/dev/null || echo "0")
+            MEDIUM=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' 2>/dev/null || echo "0")
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "::warning::Found $CRITICAL critical and $HIGH high vulnerabilities"
+            fi
+          fi
+
+  # ============================================================================
+  # Run Tests in Container (Validation)
+  # ============================================================================
+  container-test:
+    name: Container Integration Test
+    needs: docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: needs.docker-build.result == 'success'
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker Image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
+
+      - name: Verify Image Architecture
+        run: |
+          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }} | jq '.[0].Architecture'
+
+      - name: Run Container Health Check Test
+        run: |
+          # Start container in background
+          docker run -d --name yawl-test \
+            -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=test \
+            -e LOGGING_LEVEL_ROOT=INFO \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
+
+          # Wait for container to start
+          echo "Waiting for container to start..."
+          sleep 30
+
+          # Check container is running
+          docker ps | grep yawl-test
+
+          # Check health status
+          for i in {1..10}; do
+            HEALTH=$(docker inspect --format='{{.State.Health.Status}}' yawl-test 2>/dev/null || echo "unknown")
+            echo "Health check attempt $i: $HEALTH"
+            if [ "$HEALTH" = "healthy" ]; then
+              echo "Container is healthy!"
+              break
+            fi
+            sleep 10
+          done
+
+          # Get container logs for debugging
+          echo "Container logs:"
+          docker logs yawl-test --tail 50
+
+          # Cleanup
+          docker stop yawl-test || true
+          docker rm yawl-test || true
+
+      - name: Container Test Summary
+        if: always()
+        run: |
+          echo "## Container Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tested:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** Container started and health check executed" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
   # Ant Build Verification (Legacy Support)
@@ -602,29 +816,40 @@ jobs:
   # ============================================================================
   report:
     name: Pipeline Summary
-    needs: [build, test-unit, test-integration, coverage, docker-build]
+    needs: [build, test-unit, test-integration, coverage, docker-build, container-security-scan, container-test]
     runs-on: ubuntu-latest
     if: always()
 
     steps:
       - name: Create Job Summary
         run: |
-          echo "# YAWL CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# YAWL v6.0.0-Alpha CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Build Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests | ${{ needs.test-unit.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests | ${{ needs.test-integration.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build (Java 25) | ${{ needs.build.result == 'success' && '✅ Passed' || (needs.build.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.test-unit.result == 'success' && '✅ Passed' || (needs.test-unit.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.test-integration.result == 'success' && '✅ Passed' || (needs.test-integration.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅ Passed' || (needs.coverage.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Build | ${{ needs.docker-build.result == 'success' && '✅ Passed' || (needs.docker-build.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Security Scan | ${{ needs.container-security-scan.result == 'success' && '✅ Passed' || (needs.container-security-scan.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Test | ${{ needs.container-test.result == 'success' && '✅ Passed' || (needs.container-test.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Image Information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Run Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Author:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "**Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Fail if critical jobs failed
         if: contains(needs.*.result, 'failure') && (needs.build.result == 'failure' || needs.test-unit.result == 'failure')

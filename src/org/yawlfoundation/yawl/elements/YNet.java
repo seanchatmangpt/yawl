@@ -18,6 +18,10 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
@@ -38,16 +42,44 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
-import java.util.*;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
+ * Represents a YAWL workflow net - the core container for process control elements.
  *
- * The implementation of a net in the YAWL semantics - A container for tasks and conditions.
+ * <p>A YNet contains the complete control flow definition of a workflow process including
+ * input/output conditions, tasks, and intermediate conditions. It implements Petri net
+ * semantics with YAWL-specific extensions for cancellation, OR-joins, and multi-instance
+ * tasks.</p>
+ *
+ * <h2>Structure</h2>
+ * <ul>
+ *   <li><b>Input Condition</b> - Single entry point (must have exactly one)</li>
+ *   <li><b>Output Condition</b> - Single exit point (must have exactly one)</li>
+ *   <li><b>Tasks</b> - YAtomicTask or YCompositeTask elements</li>
+ *   <li><b>Conditions</b> - Places that hold tokens between tasks</li>
+ *   <li><b>Local Variables</b> - Net-scoped data variables</li>
+ * </ul>
+ *
+ * <h2>OR-Join Semantics</h2>
+ * <p>YNet implements the E2WFOJ (Extended Workflow Net with OR-Joins) algorithm for
+ * determining OR-join enablement. The algorithm considers the possibility of future
+ * token arrivals to ensure soundness without requiring safe nets.</p>
+ *
+ * <h2>External Data Gateway</h2>
+ * <p>Nets can be configured with an external data gateway that provides initial case
+ * data and receives final case data upon completion. This enables integration with
+ * external data sources.</p>
+ *
+ * <h2>Cloning</h2>
+ * <p>Nets are cloned when creating case instances to ensure each case has its own
+ * independent copy of the net definition. The clone operation creates deep copies
+ * of all net elements and local variables.</p>
+ *
  * @author Lachlan Aldred
- *
+ * @see YInputCondition
+ * @see YOutputCondition
+ * @see YTask
+ * @see YCondition
+ * @see YDecomposition
  */
 public final class YNet extends YDecomposition {
 
@@ -186,6 +218,7 @@ public final class YNet extends YDecomposition {
     /**
      * Used to verify that the net conforms to syntax of YAWL.
      */
+    @Override
     public void verify(YVerificationHandler handler) {
         super.verify(handler);
 
@@ -304,6 +337,7 @@ public final class YNet extends YDecomposition {
     }
 
 
+    @Override
     public Object clone() {
         try {
             _clone = (YNet) super.clone();
@@ -338,7 +372,7 @@ public final class YNet extends YDecomposition {
             return temp;
         }
         catch (CloneNotSupportedException e) {
-            _log.error("Unexpected CloneNotSupportedException cloning YNet - YCloneable contract violated", e);
+            _log.error("Unexpected CloneNotSupportedException cloning YNet: {} - YCloneable contract violated", getID(), e);
             throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
         }
     }
@@ -361,7 +395,7 @@ public final class YNet extends YDecomposition {
         }
 
         YMarking actualMarking = new YMarking(caseID);
-        List<YNetElement> locations = new Vector<YNetElement>(actualMarking.getLocations());
+        List<YNetElement> locations = new ArrayList<YNetElement>(actualMarking.getLocations());
         Set preSet = orJoinTask.getPresetElements();
         if (locations.containsAll(preSet)) {
             return true;
@@ -409,6 +443,7 @@ public final class YNet extends YDecomposition {
     }
 
 
+    @Override
     public String toXML() {
         StringBuilder xml = new StringBuilder();
         xml.append(super.toXML());
@@ -480,6 +515,7 @@ public final class YNet extends YDecomposition {
     /**
      * Initialises the variable/parameter declarations so that the net may execute.
      */
+    @Override
     public void initialise(YPersistenceManager pmgr) throws YPersistenceException {
         super.initialise(pmgr);
         for (YVariable variable : _localVariables.values()) {

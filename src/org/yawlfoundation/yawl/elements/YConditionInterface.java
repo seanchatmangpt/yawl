@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.List;
+
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
-
-import java.util.List;
 
 /**
  * This interface expresses the ability to hold tokens (Identifiers), nothing more.

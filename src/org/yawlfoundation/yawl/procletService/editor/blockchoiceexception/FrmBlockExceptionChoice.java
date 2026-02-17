@@ -19,12 +19,12 @@
 package org.yawlfoundation.yawl.procletService.editor.blockchoiceexception;
 
 
+import java.awt.event.ActionEvent;
+import java.util.List;
+
 import org.yawlfoundation.yawl.procletService.blockType.BlockPI;
 import org.yawlfoundation.yawl.procletService.editor.DesignInternalFrame;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import java.awt.event.ActionEvent;
-import java.util.List;
 
 public class FrmBlockExceptionChoice extends DesignInternalFrame {
 	
@@ -241,11 +241,14 @@ public class FrmBlockExceptionChoice extends DesignInternalFrame {
 		    		String classIDl = (String) l.get(1);
 		    		String procletIDl = (String) l.get(2);
 		    		if (classID.equals(classIDl) && procletID.equals(procletIDl)) {
-		    			String emidsStr = "";
+		    			StringBuilder emidsBuilder = new StringBuilder();
 		    			for (EntityMID emid : emids) {
-		    				emidsStr = emidsStr + emid + ";";
+		    				if (emidsBuilder.length() > 0) {
+		    					emidsBuilder.append(";");
+		    				}
+		    				emidsBuilder.append(emid);
 		    			}
-		    			emidsStr = emidsStr.substring(0,emidsStr.length()-1);
+		    			String emidsStr = emidsBuilder.toString();
 		    			emidsTextField.setText(emidsStr);
 		    			break;
 		    		}

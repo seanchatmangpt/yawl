@@ -19,14 +19,14 @@
 package org.yawlfoundation.yawl.procletService.editor.block;
 
 
-import edu.uci.ics.jung.algorithms.layout.*;
-import edu.uci.ics.jung.algorithms.layout.SpringLayout;
-import edu.uci.ics.jung.graph.Graph;
-import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
-import edu.uci.ics.jung.visualization.VisualizationViewer;
-import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
-import edu.uci.ics.jung.visualization.decorators.EdgeShape;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
+import java.util.List;
+
+import javax.swing.*;
+
 import org.apache.commons.collections15.Transformer;
 import org.yawlfoundation.yawl.procletService.blockType.BlockCP;
 import org.yawlfoundation.yawl.procletService.blockType.BlockPI;
@@ -39,12 +39,14 @@ import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionNode;
 import org.yawlfoundation.yawl.procletService.selectionProcess.ProcessEntityMID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
+import edu.uci.ics.jung.algorithms.layout.*;
+import edu.uci.ics.jung.algorithms.layout.SpringLayout;
+import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 
 public class FrmBlock extends DesignInternalFrame {
   static final String TITLE = "Configuration Interaction Point";
@@ -1430,6 +1432,3 @@ private void initPanel() {
   }
 
 }
-
-
-

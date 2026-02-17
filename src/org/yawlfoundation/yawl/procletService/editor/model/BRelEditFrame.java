@@ -19,13 +19,14 @@
 package org.yawlfoundation.yawl.procletService.editor.model;
 
 
+import java.awt.*;
+
+import javax.swing.*;
+
 import org.yawlfoundation.yawl.procletService.models.procletModel.BlockRel;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletBlock;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModel;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModels;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class BRelEditFrame extends JDialog {
 	

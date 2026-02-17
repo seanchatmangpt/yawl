@@ -1,18 +1,19 @@
 package org.yawlfoundation.yawl.authentication;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import io.jsonwebtoken.*;
 
 /**
  * JWT manager with persistent signing key and proper error handling.

@@ -1,0 +1,360 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - YAWL-Specific Alert Rules
+# =============================================================================
+# YAWL workflow engine specific alert rules for:
+# - Workflow execution health
+# - Case management
+# - Work item processing
+# - Specification management
+# - Engine performance
+# =============================================================================
+
+groups:
+  # ==========================================================================
+  # YAWL Engine Health Alerts
+  # ==========================================================================
+  - name: yawl_engine_health
+    rules:
+      # YAWL engine unreachable
+      - alert: YAWLEngineDown
+        expr: up{job="yawl-engine"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "YAWL Engine is down"
+          description: "YAWL workflow engine at {{ $labels.instance }} is unreachable. Workflow processing has stopped."
+          runbook_url: "https://yawlfoundation.github.io/yawl/runbooks/engine-down"
+
+      # Health check failing
+      - alert: YAWLHealthCheckFailing
+        expr: |
+          probe_success{job="blackbox-http"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "YAWL health check failing"
+          description: "Health check for {{ $labels.instance }} is failing. Endpoint may be unresponsive."
+
+      # Liveness probe failing
+      - alert: YAWLLivenessProbeFailing
+        expr: |
+          probe_success{job="blackbox-http", __param_target=~".*liveness.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "YAWL liveness probe failing"
+          description: "Liveness probe for YAWL engine is failing. Container may need restart."
+
+      # Readiness probe failing
+      - alert: YAWLReadinessProbeFailing
+        expr: |
+          probe_success{job="blackbox-http", __param_target=~".*readiness.*"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "YAWL readiness probe failing"
+          description: "YAWL engine is not ready to accept traffic. May indicate dependency issues."
+
+  # ==========================================================================
+  # YAWL Case Management Alerts
+  # ==========================================================================
+  - name: yawl_case_management
+    rules:
+      # High number of active cases
+      - alert: YAWLHighActiveCases
+        expr: |
+          yawl_cases_active_total > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "High number of active cases"
+          description: "YAWL has {{ $value | printf \"%.0f\" }} active cases. Consider scaling or archiving."
+          runbook_url: "https://yawlfoundation.github.io/yawl/runbooks/high-cases"
+
+      # Cases stuck in running state
+      - alert: YAWLStuckCases
+        expr: |
+          yawl_cases_running_duration_seconds_bucket{le="3600"} - yawl_cases_running_duration_seconds_bucket{le="1800"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Cases running for extended duration"
+          description: "{{ $value }} cases have been running between 30-60 minutes. Investigate for stuck workflows."
+          runbook_url: "https://yawlfoundation.github.io/yawl/runbooks/stuck-cases"
+
+      # High case creation rate
+      - alert: YAWLHighCaseCreationRate
+        expr: |
+          rate(yawl_cases_created_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "High case creation rate"
+          description: "Case creation rate is {{ $value | printf \"%.1f\" }} cases/second. Ensure capacity is adequate."
+
+      # Case completion rate low
+      - alert: YAWLLowCaseCompletionRate
+        expr: |
+          (rate(yawl_cases_completed_total[1h]) / rate(yawl_cases_created_total[1h])) < 0.5
+        for: 30m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Low case completion rate"
+          description: "Case completion rate is {{ $value | printf \"%.2f\" }} relative to creation rate. Workflows may be blocked."
+
+      # Cases with errors
+      - alert: YAWLCasesWithError
+        expr: |
+          increase(yawl_cases_errors_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Cases experiencing errors"
+          description: "{{ $value }} cases have encountered errors in the last 5 minutes."
+          runbook_url: "https://yawlfoundation.github.io/yawl/runbooks/case-errors"
+
+  # ==========================================================================
+  # YAWL Work Item Alerts
+  # ==========================================================================
+  - name: yawl_workitems
+    rules:
+      # High work item queue length
+      - alert: YAWLHighWorkItemQueue
+        expr: |
+          yawl_workitems_queued_total > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "High work item queue length"
+          description: "{{ $value | printf \"%.0f\" }} work items are queued. Processing may be delayed."
+
+      # Work item processing latency high
+      - alert: YAWLWorkItemLatencyHigh
+        expr: |
+          histogram_quantile(0.95, rate(yawl_workitem_processing_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "High work item processing latency"
+          description: "95th percentile work item processing latency is {{ $value | printf \"%.1f\" }} seconds."
+
+      # Work items timing out
+      - alert: YAWLWorkItemTimeouts
+        expr: |
+          rate(yawl_workitem_timeouts_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Work items timing out"
+          description: "Work items are timing out at {{ $value | printf \"%.1f\" }}/second. Review timeout configuration."
+
+      # Enabled work items not being picked up
+      - alert: YAWLWorkItemsNotPickedUp
+        expr: |
+          yawl_workitems_enabled_duration_seconds_count - yawl_workitems_started_total > 100
+        for: 15m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Enabled work items not being picked up"
+          description: "{{ $value }} enabled work items have not been started. Check resource allocation."
+
+  # ==========================================================================
+  # YAWL Specification Alerts
+  # ==========================================================================
+  - name: yawl_specifications
+    rules:
+      # Specification load failures
+      - alert: YAWLSpecLoadFailure
+        expr: |
+          increase(yawl_specifications_load_errors_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "Specification load failure"
+          description: "{{ $value }} specification(s) failed to load. Check specification validity."
+          runbook_url: "https://yawlfoundation.github.io/yawl/runbooks/spec-load-error"
+
+      # Specification validation errors
+      - alert: YAWLSpecValidationErrors
+        expr: |
+          increase(yawl_specifications_validation_errors_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Specification validation errors"
+          description: "{{ $value }} specification(s) have validation errors."
+
+      # High number of loaded specifications
+      - alert: YAWLHighSpecificationCount
+        expr: |
+          yawl_specifications_loaded_total > 1000
+        for: 10m
+        labels:
+          severity: info
+          service: yawl-engine
+        annotations:
+          summary: "High number of loaded specifications"
+          description: "{{ $value | printf \"%.0f\" }} specifications are loaded. Consider unloading unused specs."
+
+  # ==========================================================================
+  # YAWL Resource Service Alerts
+  # ==========================================================================
+  - name: yawl_resources
+    rules:
+      # Resource service unreachable
+      - alert: YAWLResourceServiceDown
+        expr: up{job="yawl-resource-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: yawl-resource
+        annotations:
+          summary: "YAWL Resource Service is down"
+          description: "Resource service at {{ $labels.instance }} is unreachable."
+
+      # Participant allocation failures
+      - alert: YAWLAllocationFailures
+        expr: |
+          rate(yawl_resource_allocation_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-resource
+        annotations:
+          summary: "Resource allocation failures"
+          description: "Resource allocation is failing at {{ $value | printf \"%.2f\" }}/second. Check participant availability."
+
+      # Queue congestion
+      - alert: YAWLQueueCongestion
+        expr: |
+          yawl_resource_queue_size > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: yawl-resource
+        annotations:
+          summary: "Resource queue congestion"
+          description: "Resource queue has {{ $value | printf \"%.0f\" }} items. Processing is backlogged."
+
+  # ==========================================================================
+  # YAWL Worklet Service Alerts
+  # ==========================================================================
+  - name: yawl_worklet
+    rules:
+      # Worklet service unreachable
+      - alert: YAWLWorkletServiceDown
+        expr: up{job="yawl-worklet"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: yawl-worklet
+        annotations:
+          summary: "YAWL Worklet Service is down"
+          description: "Worklet service at {{ $labels.instance }} is unreachable. Exception handling may be affected."
+
+      # Exception handling failures
+      - alert: YAWLExceptionHandlingFailures
+        expr: |
+          rate(yawl_worklet_exception_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-worklet
+        annotations:
+          summary: "Exception handling failures"
+          description: "Worklet exception handling is failing at {{ $value | printf \"%.2f\" }}/second."
+
+      # High exception rate
+      - alert: YAWLHighExceptionRate
+        expr: |
+          rate(yawl_worklet_exceptions_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-worklet
+        annotations:
+          summary: "High exception rate"
+          description: "Worklet exception rate is {{ $value | printf \"%.1f\" }}/second. Review workflow design."
+
+  # ==========================================================================
+  # YAWL Performance Alerts
+  # ==========================================================================
+  - name: yawl_performance
+    rules:
+      # API response time high
+      - alert: YAWLAPIResponseTimeHigh
+        expr: |
+          histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~"/yawl/.*"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile API response time is {{ $value | printf \"%.2f\" }} seconds."
+
+      # Database query time high
+      - alert: YAWLDatabaseSlow
+        expr: |
+          histogram_quantile(0.95, rate(yawl_database_query_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: yawl-engine
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile database query time is {{ $value | printf \"%.2f\" }} seconds. Check indexes."
+
+      # Session creation failures
+      - alert: YAWLSessionFailures
+        expr: |
+          rate(yawl_sessions_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "Session creation failures"
+          description: "Session creation is failing at {{ $value | printf \"%.2f\" }}/second. Check authentication."
+
+      # Connection pool exhaustion
+      - alert: YAWLConnectionPoolExhausted
+        expr: |
+          (hikaricp_connections_active / hikaricp_connections_max) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          service: yawl-engine
+        annotations:
+          summary: "Connection pool nearly exhausted"
+          description: "Connection pool usage is {{ $value | printf \"%.1f\" }}%. Increase pool size or investigate leaks."

@@ -1,6 +1,5 @@
 package org.yawlfoundation.yawl.integration.spiffe;
 
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
 
 /**

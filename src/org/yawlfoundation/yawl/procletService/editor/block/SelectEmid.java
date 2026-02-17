@@ -18,14 +18,15 @@
 
 package org.yawlfoundation.yawl.procletService.editor.block;
 
-import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.*;
+
+import org.yawlfoundation.yawl.procletService.util.EntityMID;
 
 public class SelectEmid extends JPanel implements ActionListener {
 
@@ -70,4 +71,3 @@ public class SelectEmid extends JPanel implements ActionListener {
 		frame.setVisible(true);
 	}
 }
-

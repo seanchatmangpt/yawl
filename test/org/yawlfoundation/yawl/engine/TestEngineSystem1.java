@@ -1,16 +1,6 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.jdom2.JDOMException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.YAtomicTask;
-import org.yawlfoundation.yawl.elements.YMultiInstanceAttributes;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.*;
-import org.yawlfoundation.yawl.unmarshal.YMarshal;
-import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +9,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
+
+import org.jdom2.JDOMException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.yawlfoundation.yawl.elements.YMultiInstanceAttributes;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  *

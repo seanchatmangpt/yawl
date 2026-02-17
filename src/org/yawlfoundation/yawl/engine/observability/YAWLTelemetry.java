@@ -18,17 +18,19 @@
 
 package org.yawlfoundation.yawl.engine.observability;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.*;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Central telemetry provider for YAWL Engine observability.
@@ -50,7 +52,7 @@ public class YAWLTelemetry {
     private static final String INSTRUMENTATION_VERSION = "5.2";
 
     private static volatile YAWLTelemetry _instance;
-    private static final Object _lock = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     private final OpenTelemetry openTelemetry;
     private final Tracer tracer;
@@ -217,10 +219,13 @@ public class YAWLTelemetry {
      */
     public static YAWLTelemetry getInstance() {
         if (_instance == null) {
-            synchronized (_lock) {
+            _lock.lock();
+            try {
                 if (_instance == null) {
                     _instance = new YAWLTelemetry();
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return _instance;

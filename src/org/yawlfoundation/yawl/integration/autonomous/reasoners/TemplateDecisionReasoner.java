@@ -13,12 +13,12 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.reasoners;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Template-based decision reasoner for autonomous agents.

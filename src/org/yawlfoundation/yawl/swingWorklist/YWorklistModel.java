@@ -18,6 +18,19 @@
 
 package org.yawlfoundation.yawl.swingWorklist;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.List;
+
+import javax.swing.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.output.Format;
@@ -35,18 +48,6 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.swingWorklist.util.ParamsDefinitions;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.List;
-
 /**
  *
  * @author Lachlan Aldred
@@ -59,7 +60,7 @@ public class YWorklistModel {
     private static final Logger logger = LogManager.getLogger(YWorklistModel.class);
     private YWorklistTableModel _availableWork;
     private YWorklistTableModel _myActiveTasks;
-    private Vector<String> inSequenceWorkitemIDs = new Vector<>();
+    private List<String> inSequenceWorkitemIDs = Collections.synchronizedList(new ArrayList<>());
     private DateFormat _formatter;
     private static ParamsDefinitions _paramsDefinitions = new ParamsDefinitions();
 
@@ -431,7 +432,7 @@ public class YWorklistModel {
     }
 
     public List validateData() {
-        List validationMessages = new Vector();
+        List validationMessages = new ArrayList();
 
         return validationMessages;
     }

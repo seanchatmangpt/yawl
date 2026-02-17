@@ -1,13 +1,13 @@
 package org.yawlfoundation.yawl.stateless.listener.event;
 
+import java.util.Set;
+
 import org.jdom2.Document;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
-
-import java.util.Set;
 
 /**
  * @author Michael Adams

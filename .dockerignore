@@ -1,6 +1,167 @@
-classes
-temp
-output
-*.log
+# YAWL v5.2 Docker Ignore File
+# Minimizes build context for faster Docker builds
+
+# ============================================================================
+# Version Control
+# ============================================================================
 .git
 .gitignore
+.gitattributes
+.github
+
+# ============================================================================
+# Build Artifacts (Maven)
+# ============================================================================
+# Exclude all target directories - artifacts are built fresh in container
+**/target/
+
+# Maven wrapper (not needed - using apk maven or curl install)
+.mvn/
+
+# Maven build cache
+.m2/
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.code-workspace
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============================================================================
+# Documentation (not needed in container build)
+# ============================================================================
+docs/
+*.md
+!README.md
+LICENSE
+CHANGELOG*
+CONTRIBUTING*
+CODE_OF_CONDUCT*
+
+# ============================================================================
+# Test Artifacts (tests run in CI, not Docker build)
+# ============================================================================
+# Test output directories (keep test sources for reference)
+test-output/
+test-results/
+coverage/
+.nyc_output/
+
+# Test logs and reports
+*.test.log
+test-*.log
+jacoco.exec
+*.exec
+
+# ============================================================================
+# Logs and Temporary Files
+# ============================================================================
+*.log
+logs/
+temp/
+tmp/
+output/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ============================================================================
+# Database Files
+# ============================================================================
+*.db
+*.h2.db
+*.mv.db
+*.trace.db
+yawl.h2.db
+
+# ============================================================================
+# CI/CD Configuration
+# ============================================================================
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+azure-pipelines.yml
+cloudbuild.yaml
+
+# ============================================================================
+# Docker Files (prevent recursive context)
+# ============================================================================
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+.docker/
+.dockerignore
+
+# ============================================================================
+# Infrastructure and Deployment
+# ============================================================================
+k8s/
+kubernetes/
+helm/
+charts/
+terraform/
+ansible/
+*.tf
+*.tfstate
+*.tfvars
+
+# ============================================================================
+# Build Scripts and Config (host-only)
+# ============================================================================
+scripts/
+Makefile
+*.sh
+!entrypoint.sh
+
+# ============================================================================
+# Miscellaneous
+# ============================================================================
+# Dependency reduction files (not needed at runtime)
+dependency-reduced-pom.xml
+
+# Site generation
+site/
+
+# Backup and generated files
+*.generated
+*.orig
+*.diff
+*.patch
+
+# Environment files (should be passed as env vars or secrets)
+.env
+.env.*
+*.env
+
+# Specification examples (if any exist outside schema/)
+# Keep schema/ for validation but exclude example specs
+examples/
+samples/
+
+# Claude/AI configuration
+.claude/
+.specify/
+ggen.toml
+
+# Build logs
+build-log.txt
+
+# Templates (development only)
+templates/
+
+# 3rd party sources (downloaded in build)
+build/3rdParty/

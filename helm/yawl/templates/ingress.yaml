@@ -1,6 +1,5 @@
 {{- if .Values.ingress.enabled }}
 {{- $fullName := include "yawl.fullname" . -}}
-{{- $svcPort := 8080 -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -32,95 +31,14 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-          {{- if .paths }}
           {{- range .paths }}
           - path: {{ .path }}
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ printf "%s-%s" (include "yawl.name" $) .service }}
+                name: {{ $fullName }}
                 port:
-                  number: {{ $svcPort }}
-          {{- end }}
-          {{- else }}
-          # Default paths for all YAWL services
-          - path: /engine
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-engine" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /resourceService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-resource-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /workletService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-worklet-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /monitorService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-monitor-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /costService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-cost-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /schedulingService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-scheduling-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /mailService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-mail-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /digitalSignature
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-digital-signature" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /documentStore
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-document-store" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /procletService
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-proclet-service" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
-          - path: /balancer
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ printf "%s-balancer" (include "yawl.name" $) }}
-                port:
-                  number: {{ $svcPort }}
+                  number: {{ .port }}
           {{- end }}
     {{- end }}
 {{- end }}

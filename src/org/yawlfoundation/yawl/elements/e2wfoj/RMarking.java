@@ -57,7 +57,7 @@ public class RMarking {
     }
 
     public List getLocations() {
-        return new Vector(_markedPlaces.keySet());
+        return new ArrayList(_markedPlaces.keySet());
     }
 
     public boolean equals(Object omarking) {

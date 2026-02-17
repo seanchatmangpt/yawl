@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-
 import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
 /**
  * Spring-managed YAWL session lifecycle manager.

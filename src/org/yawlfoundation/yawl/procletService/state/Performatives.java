@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.procletService.state;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -33,9 +36,6 @@ import org.yawlfoundation.yawl.procletService.persistence.StoredPerformative;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 
@@ -252,14 +252,14 @@ public class Performatives {
 	}
 	
 	public static String parseEntityIDs (List<EntityID> eids) {
-		String returnString = "";
+		StringBuilder returnBuilder = new StringBuilder();
 		for (EntityID eid : eids) {
-			returnString = returnString + eid + ",";
+			if (returnBuilder.length() > 0) {
+				returnBuilder.append(",");
+			}
+			returnBuilder.append(eid);
 		}
-		if (returnString.length()>0) {
-			returnString = returnString.substring(0, returnString.length()-1);
-		}
-		return returnString;
+		return returnBuilder.toString();
 	}
 	
 	public boolean buildFromDB() {
@@ -278,12 +278,14 @@ public class Performatives {
 	public void persistPerformatives () {
 		this.deletePerfsFromDB();
 		for (Performative perf : perfs) {
-			String receiversStr = "";
+			StringBuilder receiversBuilder = new StringBuilder();
 			for (String receiverStr : perf.getReceivers()) {
-				receiversStr = receiversStr + receiverStr + ",";
+				if (receiversBuilder.length() > 0) {
+					receiversBuilder.append(",");
+				}
+				receiversBuilder.append(receiverStr);
 			}
-			// remove last comma
-			receiversStr = receiversStr.substring(0, receiversStr.length()-1);
+			String receiversStr = receiversBuilder.toString();
 
             DBConnection.insert(new StoredPerformative(perf.getTime(),
 				perf.getChannel(), perf.getSender(), receiversStr,

@@ -18,6 +18,16 @@
 
 package org.yawlfoundation.yawl.util;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
+import javax.xml.datatype.Duration;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -31,14 +41,6 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
-
-import javax.xml.datatype.Duration;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Base class that abstracts interface connections and calls between custom services
@@ -72,7 +74,8 @@ public abstract class AbstractEngineClient {
 
     protected Logger _log ;                                 // debug log4j file
 
-    private static final Object _mutex = new Object();
+    /** Lock for virtual thread safe connection operations */
+    private static final ReentrantLock _mutex = new ReentrantLock();
 
 
     /**
@@ -221,7 +224,8 @@ public abstract class AbstractEngineClient {
      *  @return true if connected to the engine
      */
     protected boolean connected() {
-        synchronized(_mutex) {
+        _mutex.lock();
+        try {
             try {
                 // if not connected
                 if ((_sessionHandle == null) ||
@@ -242,6 +246,8 @@ public abstract class AbstractEngineClient {
                 return false;
             }
             return (successful(_sessionHandle)) ;
+        } finally {
+            _mutex.unlock();
         }
     }
 

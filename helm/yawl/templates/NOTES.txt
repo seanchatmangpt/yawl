@@ -1,0 +1,206 @@
+================================================================================
+  YAWL v{{ .Chart.AppVersion }} - Yet Another Workflow Language
+  Cloud-Native BPM/Workflow Engine with Petri Net Semantics
+================================================================================
+
+Your YAWL workflow engine has been deployed successfully!
+
+--------------------------------------------------------------------------------
+INSTALLATION DETAILS
+--------------------------------------------------------------------------------
+
+Namespace:        {{ .Release.Namespace }}
+Release Name:     {{ .Release.Name }}
+Chart Version:    {{ .Chart.Version }}
+App Version:      {{ .Chart.AppVersion }}
+
+--------------------------------------------------------------------------------
+ACCESSING YAWL
+--------------------------------------------------------------------------------
+
+{{- if .Values.ingress.enabled }}
+
+1. Via Ingress (HTTP/HTTPS):
+
+{{- range $host := .Values.ingress.hosts }}
+   {{- range .paths }}
+   URL: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+   {{- end }}
+{{- end }}
+
+{{- if .Values.ingress.tls }}
+   TLS is enabled. Ensure your DNS records point to the ingress controller.
+{{- end }}
+
+{{- else }}
+
+1. Via Port-Forward (Development):
+
+   export POD_NAME=$(kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "yawl.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+   kubectl port-forward $POD_NAME {{ .Values.service.port }}:{{ .Values.service.targetPort }} -n {{ .Release.Namespace }}
+
+   Then access: http://localhost:{{ .Values.service.port }}
+
+{{- end }}
+
+2. Management/Actuator Endpoints:
+
+{{- if .Values.ingress.enabled }}
+   Health: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ (index .Values.ingress.hosts 0).host }}/actuator/health
+   Metrics: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ (index .Values.ingress.hosts 0).host }}/actuator/prometheus
+{{- else }}
+   Health: http://localhost:{{ .Values.service.managementPort }}/actuator/health
+   Metrics: http://localhost:{{ .Values.service.managementPort }}/actuator/prometheus
+{{- end }}
+
+--------------------------------------------------------------------------------
+SERVICE ENDPOINTS
+--------------------------------------------------------------------------------
+
+Main Service:          {{ include "yawl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+Management Service:    {{ include "yawl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.managementPort }}
+Resource Service:      {{ include "yawl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.resourcePort }}
+
+--------------------------------------------------------------------------------
+DATABASE CONNECTION
+--------------------------------------------------------------------------------
+
+{{- if .Values.postgresql.enabled }}
+Database Type:    PostgreSQL (Embedded via Bitnami Chart)
+Database Host:    {{ include "yawl.fullname" . }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local
+Database Port:    5432
+Database Name:    {{ .Values.postgresql.auth.database }}
+
+To connect to the database:
+   kubectl run -i --tty --rm psql --image=postgres:16-alpine --restart=Never -- \
+     psql -h {{ include "yawl.fullname" . }}-postgresql -U {{ .Values.postgresql.auth.password }} -d {{ .Values.postgresql.auth.database }}
+{{- else if .Values.externalDatabase.host }}
+Database Type:    PostgreSQL (External)
+Database Host:    {{ .Values.externalDatabase.host }}
+Database Port:    {{ .Values.externalDatabase.port }}
+Database Name:    {{ .Values.externalDatabase.database }}
+{{- else }}
+Database Type:    H2 (Embedded, Development only)
+{{- end }}
+
+--------------------------------------------------------------------------------
+REDIS CONNECTION
+--------------------------------------------------------------------------------
+
+{{- if .Values.redis.enabled }}
+Redis Host:    {{ include "yawl.fullname" . }}-redis-master.{{ .Release.Namespace }}.svc.cluster.local
+Redis Port:    6379
+{{- else if .Values.externalRedis.host }}
+Redis Host:    {{ .Values.externalRedis.host }}
+Redis Port:    {{ .Values.externalRedis.port }}
+{{- else }}
+Redis:         Not configured
+{{- end }}
+
+--------------------------------------------------------------------------------
+CHECKING DEPLOYMENT STATUS
+--------------------------------------------------------------------------------
+
+1. Check pod status:
+   kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "yawl.name" . }}
+
+2. Check service status:
+   kubectl get svc -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "yawl.name" . }}
+
+3. Check logs:
+   kubectl logs -f -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "yawl.name" . }}
+
+4. Check events:
+   kubectl get events -n {{ .Release.Namespace }} --sort-by='.lastTimestamp'
+
+5. Check health status:
+   kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "yawl.fullname" . }} -- \
+     curl -s http://localhost:{{ .Values.service.managementPort }}/actuator/health | jq .
+
+--------------------------------------------------------------------------------
+SCALING (HPA)
+--------------------------------------------------------------------------------
+
+{{- if .Values.autoscaling.enabled }}
+HPA is enabled with the following configuration:
+   Min Replicas:     {{ .Values.autoscaling.minReplicas }}
+   Max Replicas:     {{ .Values.autoscaling.maxReplicas }}
+   CPU Target:       {{ .Values.autoscaling.targetCPUUtilizationPercentage }}%
+   Memory Target:    {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}%
+
+To manually scale:
+   kubectl scale deployment {{ include "yawl.fullname" . }} --replicas=N -n {{ .Release.Namespace }}
+{{- else }}
+HPA is not enabled. To manually scale:
+   kubectl scale deployment {{ include "yawl.fullname" . }} --replicas=N -n {{ .Release.Namespace }}
+{{- end }}
+
+--------------------------------------------------------------------------------
+JAVA 25 FEATURES
+--------------------------------------------------------------------------------
+
+This deployment uses Java 25 with the following optimizations:
+   - Virtual Threads: Native support (no preview flags required)
+   - GC: ZGC Generational
+   - Memory: Container-aware ({{ .Values.resources.limits.memory }} limit)
+   - Virtual Thread Scheduler Parallelism: 200
+
+--------------------------------------------------------------------------------
+CONFIGURATION CUSTOMIZATION
+--------------------------------------------------------------------------------
+
+To customize the deployment, create a values file:
+
+   # Custom values file (custom-values.yaml)
+   replicaCount: 3
+
+   resources:
+     requests:
+       cpu: 1000m
+       memory: 2Gi
+     limits:
+       cpu: 8000m
+       memory: 8Gi
+
+   ingress:
+     hosts:
+       - host: yawl.yourdomain.com
+         paths:
+           - path: /
+             pathType: Prefix
+             port: 8080
+
+Then upgrade:
+   helm upgrade {{ .Release.Name }} . -f custom-values.yaml -n {{ .Release.Namespace }}
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+1. Pod not starting:
+   kubectl describe pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "yawl.name" . }}
+   kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "yawl.name" . }} --previous
+
+2. Database connection issues:
+   kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "yawl.fullname" . }} -- \
+     nc -zv {{ include "yawl.databaseHost" . }} {{ include "yawl.databasePort" . }}
+
+3. Redis connection issues:
+   kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "yawl.fullname" . }} -- \
+     nc -zv {{ include "yawl.redisHost" . }} {{ include "yawl.redisPort" . }}
+
+4. Check JVM memory:
+   kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "yawl.fullname" . }} -- \
+     jcmd 1 VM.flags
+
+--------------------------------------------------------------------------------
+DOCUMENTATION
+--------------------------------------------------------------------------------
+
+   Official Docs:    https://yawlfoundation.github.io/yawl/v6.0/
+   GitHub:           https://github.com/yawlfoundation/yawl
+   Issues:           https://github.com/yawlfoundation/yawl/issues
+
+================================================================================
+  Thank you for using YAWL v{{ .Chart.AppVersion }}!
+================================================================================

@@ -18,9 +18,10 @@
 
 package org.yawlfoundation.yawl.elements.predicate;
 
-import org.yawlfoundation.yawl.util.PluginLoaderUtil;
 import java.util.Map;
 import java.util.Set;
+
+import org.yawlfoundation.yawl.util.PluginLoaderUtil;
 
 /**
  * This factory class creates and instantiates instances of classes in this package that

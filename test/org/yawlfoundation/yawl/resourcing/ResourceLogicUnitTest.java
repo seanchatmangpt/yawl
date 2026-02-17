@@ -1,14 +1,14 @@
 package org.yawlfoundation.yawl.resourcing;
 
-import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
  * Unit tests for resource allocation and work item distribution logic.

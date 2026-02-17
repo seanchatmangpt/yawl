@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.*;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.*;
 
 /**
  * @author Michael Adams

@@ -20,11 +20,11 @@ package org.yawlfoundation.yawl.stateless.elements;
 
 
 
+import java.util.List;
+
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifierBag;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.List;
 
 /**
  * 

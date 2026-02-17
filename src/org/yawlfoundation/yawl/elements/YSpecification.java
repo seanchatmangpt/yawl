@@ -18,8 +18,11 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YDataValidator;
@@ -30,14 +33,42 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
-import java.util.*;
-
 
 /**
- * 
- * Objects of this type are a specification of a Workflow checkSchema model in YAWL.
+ * Represents a complete YAWL workflow specification.
+ *
+ * <p>A YSpecification is the top-level container for a YAWL process definition. It
+ * contains a root net (the main workflow), additional decompositions (sub-nets and
+ * service gateways), data type definitions, and metadata.</p>
+ *
+ * <h2>Structure</h2>
+ * <ul>
+ *   <li><b>Root Net</b> - The primary workflow net that defines the process flow</li>
+ *   <li><b>Decompositions</b> - Sub-nets and YAWL service gateways referenced by tasks</li>
+ *   <li><b>Data Schema</b> - XML Schema definitions for process data types</li>
+ *   <li><b>Metadata</b> - Version, author, and other specification information</li>
+ * </ul>
+ *
+ * <h2>Versioning</h2>
+ * <p>Specifications support versioning through YSpecificationID. Each specification
+ * has a unique identifier, version number, and URI. Pre-2.0 specifications use URI
+ * as the identifier; 2.0+ specifications use explicit identifiers.</p>
+ *
+ * <h2>Validation</h2>
+ * <p>Specifications implement verification to check:
+ * <ul>
+ *   <li>All decompositions are reachable from the root net</li>
+ *   <li>No infinite loops without work item creation</li>
+ *   <li>All elements are on a directed path from input to output condition</li>
+ *   <li>Data type schema validity</li>
+ * </ul>
+ * </p>
+ *
  * @author Lachlan Aldred
- * 
+ * @see YNet
+ * @see YDecomposition
+ * @see YSpecificationID
+ * @see YDataValidator
  */
 public final class YSpecification implements Cloneable, YVerifiable {
     private static final Logger _log = LogManager.getLogger(YSpecification.class);
@@ -261,12 +292,14 @@ public final class YSpecification implements Cloneable, YVerifiable {
     }
 
 
+    @Override
     public boolean equals(Object other) {
         return (other instanceof YSpecification spec) ?  // instanceof = false if other is null
                 getSpecificationID().equals(spec.getSpecificationID())
                 : super.equals(other);
     }
 
+    @Override
     public int hashCode() {
         return getSpecificationID().hashCode();
     }
@@ -307,6 +340,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
     //                              VERIFICATION TASKS                                //
     //##################################################################################
 
+    @Override
     public void verify(YVerificationHandler handler) {
         for (YDecomposition decomposition : _decompositions.values()) {
             decomposition.verify(handler);

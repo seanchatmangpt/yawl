@@ -1,11 +1,12 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
-
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.List;
 import java.util.Vector;
+
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  * @author aldredl

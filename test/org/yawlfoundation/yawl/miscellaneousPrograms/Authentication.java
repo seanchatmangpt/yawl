@@ -1,8 +1,9 @@
 package org.yawlfoundation.yawl.miscellaneousPrograms;
 
-import javax.swing.*;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+
+import javax.swing.*;
 
 /**
  /**

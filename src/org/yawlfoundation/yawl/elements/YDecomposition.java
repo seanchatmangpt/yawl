@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import java.util.*;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.data.YParameter;
@@ -30,18 +32,40 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
-import java.util.*;
-
 /**
- * 
- * @author Lachlan Aldred
- * Date: 25/09/2003
- * Time: 16:04:21
+ * Abstract base class for all decompositions in a YAWL specification.
  *
- * Refactored for 2.0 by Michael Adams 
- * 
+ * <p>A decomposition defines the internal behavior of a task when it executes.
+ * Decompositions can be nets (YNet) containing workflow elements, or service
+ * gateways (YAWLServiceGateway) that interface with external services.</p>
+ *
+ * <h2>Data Handling</h2>
+ * <p>Decompositions manage input and output parameters:
+ * <ul>
+ *   <li><b>Input Parameters</b> - Data passed into the decomposition at task start</li>
+ *   <li><b>Output Parameters</b> - Data returned from the decomposition at task completion</li>
+ *   <li><b>Enablement Parameters</b> - Data available when task becomes enabled</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>External Interaction</h2>
+ * <p>Decompositions can be configured for manual or automated interaction:
+ * <ul>
+ *   <li><b>Manual</b> - Requires resourcing decisions (user allocation)</li>
+ *   <li><b>Automated</b> - Executed by a codelet or service without user intervention</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Logging</h2>
+ * <p>Decompositions support log predicates for custom logging at task start
+ * and completion events.</p>
+ *
+ * @author Lachlan Aldred
+ * @author Michael Adams (v2.0 refactoring)
+ * @see YNet
+ * @see YAWLServiceGateway
+ * @see YParameter
  */
-
 public abstract class YDecomposition implements Cloneable, YVerifiable {
     protected String _id;
     protected YSpecification _specification;
@@ -252,6 +276,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
     }
 
 
+    @Override
     public void verify(YVerificationHandler handler) {
         if (_id == null)
             handler.error(this, this + " cannot have null id.");
@@ -295,6 +320,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
     }
 
 
+    @Override
     public String toString() {
         String fullClassName = getClass().getName();
         String shortClassName = fullClassName.substring(fullClassName.lastIndexOf('.') + 1);
@@ -302,6 +328,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
     }
 
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         YDecomposition copy = (YDecomposition) super.clone();
         copy._inputParameters = new HashMap<String, YParameter>();

@@ -18,9 +18,6 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.jdom2.Document;
-import org.jdom2.Element;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
@@ -30,6 +27,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.Executors;
+
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * A simple static checker that (1) checks that the url string passed in is a valid

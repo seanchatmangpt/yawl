@@ -18,19 +18,19 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
+import java.util.*;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YAttributeMap;
 import org.yawlfoundation.yawl.elements.YVerifiable;
-import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
 import org.yawlfoundation.yawl.engine.YNetData;
+import org.yawlfoundation.yawl.stateless.elements.data.YParameter;
 import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
 import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 /**
  * 

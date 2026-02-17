@@ -18,11 +18,13 @@
 
 package org.yawlfoundation.yawl.util;
 
-import net.sf.saxon.TransformerFactoryImpl;
-import org.apache.commons.beanutils.BeanComparator;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,14 +39,13 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Vector;
+
+import org.apache.commons.beanutils.BeanComparator;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import net.sf.saxon.TransformerFactoryImpl;
 
 /**
  *
@@ -195,7 +196,7 @@ public class DOMUtil
      */
     public static String getXMLStringFragmentFromNode(Node node, boolean omitDeclaration) throws TransformerException
     {
-        return getXMLStringFragmentFromNode(node, omitDeclaration, "UTF-8");
+        return getXMLStringFragmentFromNode(node, omitDeclaration, StandardCharsets.UTF_8.name());
     }
 
     /**
@@ -238,7 +239,7 @@ public class DOMUtil
      */
     public static String getXMLStringFragmentFromNode(Node node, boolean omitDeclaration, boolean collapseEmptyTags) throws TransformerException
     {
-        return getXMLStringFragmentFromNode(node, omitDeclaration, "UTF-8", collapseEmptyTags);
+        return getXMLStringFragmentFromNode(node, omitDeclaration, StandardCharsets.UTF_8.name(), collapseEmptyTags);
     }
 
     /**

@@ -1,0 +1,825 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Production Docker Compose Configuration
+# =============================================================================
+# Production-grade deployment with:
+# - PostgreSQL with connection pooling and replication readiness
+# - Secrets management via Docker secrets and environment files
+# - TLS/HTTPS termination via Traefik reverse proxy
+# - Centralized logging with Loki
+# - Metrics collection with Prometheus
+# - Resource limits and health checks
+# - Automatic restart policies
+# =============================================================================
+
+# =============================================================================
+# Secrets - Sensitive configuration (use `docker secret` or external sources)
+# =============================================================================
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  jwt_signing_key:
+    file: ./secrets/jwt_signing_key.txt
+  tls_cert:
+    file: ./secrets/tls.crt
+  tls_key:
+    file: ./secrets/tls.key
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password
+
+# =============================================================================
+# Networks - Isolated network segments for security
+# =============================================================================
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+  backend:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+  logging:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16
+
+# =============================================================================
+# Volumes - Persistent data storage
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/yawl/postgres
+  postgres_replica_data:
+    driver: local
+  yawl_specs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/yawl/specifications
+  yawl_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/log/yawl
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  promtail_positions:
+    driver: local
+  traefik_certs:
+    driver: local
+
+# =============================================================================
+# Common Configuration Anchors (YAML anchors for DRY)
+# =============================================================================
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 60s
+
+x-resource-limits-small: &resource-limits-small
+  limits:
+    cpus: '1'
+    memory: 512M
+  reservations:
+    cpus: '0.25'
+    memory: 128M
+
+x-resource-limits-medium: &resource-limits-medium
+  limits:
+    cpus: '2'
+    memory: 2G
+  reservations:
+    cpus: '0.5'
+    memory: 512M
+
+x-resource-limits-large: &resource-limits-large
+  limits:
+    cpus: '4'
+    memory: 8G
+  reservations:
+    cpus: '1'
+    memory: 2G
+
+x-logging-config: &logging-config
+  driver: loki
+  options:
+    loki-url: "http://loki:3100/loki/api/v1/push"
+    loki-batch-size: "100"
+    loki-retries: "2"
+    loki-max-backoff: "1s"
+    loki-timeout: "10s"
+    labels: "service,environment,level"
+    tag: "{{.Name}}"
+
+x-java-opts-base: &java-opts-base
+  -XX:+UseContainerSupport
+  -XX:MaxRAMPercentage=75.0
+  -XX:InitialRAMPercentage=50.0
+  -XX:+UseZGC
+  -XX:+ZGenerational
+  -XX:+UseStringDeduplication
+  -XX:+ExitOnOutOfMemoryError
+  -XX:+HeapDumpOnOutOfMemoryError
+  -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+  -Djava.security.egd=file:/dev/./urandom
+  -Dfile.encoding=UTF-8
+  -Djdk.virtualThreadScheduler.parallelism=200
+  -Djdk.virtualThreadScheduler.maxPoolSize=256
+  -Djdk.tracePinnedThreads=short
+
+# =============================================================================
+# Services
+# =============================================================================
+services:
+
+  # ===========================================================================
+  # Reverse Proxy - Traefik with TLS Termination
+  # ===========================================================================
+  traefik:
+    image: traefik:v3.2
+    container_name: yawl-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=frontend"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@yawl.local}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme.json"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entrypoint=metrics"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+      - "--accesslog.fields.defaultmode=keep"
+      - "--accesslog.fields.headers.defaultmode=keep"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/etc/traefik/acme
+    networks:
+      - frontend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "traefik", "healthcheck"]
+    deploy:
+      resources:
+        <<: *resource-limits-small
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=8080"
+    logging: *logging-config
+
+  # ===========================================================================
+  # PostgreSQL Primary - Production Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: yawl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yawl
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: yawl
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      backend:
+        aliases:
+          - postgres
+          - db
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "pg_isready -U yawl -d yawl -h localhost"]
+      interval: 10s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=6GB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=10MB"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "max_worker_processes=8"
+      - "-c"
+      - "max_parallel_workers_per_gather=4"
+      - "-c"
+      - "max_parallel_workers=8"
+      - "-c"
+      - "max_parallel_maintenance_workers=4"
+      - "-c"
+      - "ssl=on"
+      - "-c"
+      - "ssl_cert_file=/run/secrets/tls_cert"
+      - "-c"
+      - "ssl_key_file=/run/secrets/tls_key"
+    shm_size: 256mb
+    logging: *logging-config
+
+  # ===========================================================================
+  # PostgreSQL Replica - Read Replica for Scaling
+  # ===========================================================================
+  postgres-replica:
+    image: postgres:16-alpine
+    container_name: yawl-postgres-replica
+    restart: unless-stopped
+    profiles:
+      - replicated
+    environment:
+      PGUSER: replicator
+      PGPASSWORD_FILE: /run/secrets/db_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - db_password
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U replicator -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging: *logging-config
+
+  # ===========================================================================
+  # YAWL Engine - Core Workflow Engine
+  # ===========================================================================
+  engine:
+    image: yawl/engine:${YAWL_VERSION:-6.0.0-Alpha}
+    build:
+      context: .
+      dockerfile: Dockerfile.modernized
+    container_name: yawl-engine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - JAVA_OPTS=${JAVA_OPTS:--Xms1g -Xmx4g}
+      - MANAGEMENT_HEALTH_PROBES_ENABLED=true
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when-authorized
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+      - OTEL_SERVICE_NAME=yawl-engine
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=prometheus
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - LOGGING_LEVEL_ROOT=${LOG_LEVEL:-INFO}
+      - LOGGING_LEVEL_ORG_YAWLFOUNDATION=${YAWL_LOG_LEVEL:-INFO}
+      - JWT_SIGNING_KEY_FILE=/run/secrets/jwt_signing_key
+      - RESOURCE_SERVICE_URL=http://resource-service:8080/ib
+      - WORKLET_SERVICE_URL=http://worklet-service:8080/ib
+    secrets:
+      - db_password
+      - jwt_signing_key
+    volumes:
+      - yawl_specs:/app/specifications
+      - yawl_logs:/app/logs
+    networks:
+      frontend:
+        aliases:
+          - engine
+      backend:
+        aliases:
+          - engine
+      monitoring:
+        aliases:
+          - engine
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      start_period: 120s
+    deploy:
+      resources:
+        <<: *resource-limits-large
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 5
+        window: 300s
+      update_config:
+        parallelism: 1
+        delay: 60s
+        failure_action: rollback
+        order: start-first
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.engine.rule=Host(`engine.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.engine.entrypoints=websecure"
+      - "traefik.http.routers.engine.tls=true"
+      - "traefik.http.routers.engine.tls.certresolver=letsencrypt"
+      - "traefik.http.services.engine.loadbalancer.server.port=8080"
+      - "traefik.http.services.engine.loadbalancer.healthcheck.path=/actuator/health"
+      - "traefik.http.services.engine.loadbalancer.healthcheck.interval=30s"
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9090"
+      - "prometheus.io/path=/actuator/prometheus"
+    logging: *logging-config
+
+  # ===========================================================================
+  # YAWL Resource Service - Resource Allocation
+  # ===========================================================================
+  resource-service:
+    image: yawl/resource-service:${YAWL_VERSION:-6.0.0-Alpha}
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.resourceService
+    container_name: yawl-resource-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - JAVA_OPTS=-Xms512m -Xmx1g
+      - ENGINE_URL=http://engine:8080/ib
+      - OTEL_SERVICE_NAME=yawl-resource-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    secrets:
+      - db_password
+    networks:
+      - backend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      start_period: 90s
+    deploy:
+      resources:
+        <<: *resource-limits-medium
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.resource.rule=Host(`resource.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.resource.entrypoints=websecure"
+      - "traefik.http.routers.resource.tls=true"
+      - "traefik.http.services.resource.loadbalancer.server.port=8080"
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9090"
+    logging: *logging-config
+
+  # ===========================================================================
+  # YAWL Worklet Service - Dynamic Workflow Adaptation
+  # ===========================================================================
+  worklet-service:
+    image: yawl/worklet-service:${YAWL_VERSION:-6.0.0-Alpha}
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.workletService
+    container_name: yawl-worklet-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - JAVA_OPTS=-Xms512m -Xmx1g
+      - ENGINE_URL=http://engine:8080/ib
+      - OTEL_SERVICE_NAME=yawl-worklet-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    secrets:
+      - db_password
+    networks:
+      - backend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      start_period: 90s
+    deploy:
+      resources:
+        <<: *resource-limits-medium
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.worklet.rule=Host(`worklet.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.worklet.entrypoints=websecure"
+      - "traefik.http.routers.worklet.tls=true"
+      - "traefik.http.services.worklet.loadbalancer.server.port=8080"
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9090"
+    logging: *logging-config
+
+  # ===========================================================================
+  # YAWL Monitor Service - Process Monitoring
+  # ===========================================================================
+  monitor-service:
+    image: yawl/monitor-service:${YAWL_VERSION:-6.0.0-Alpha}
+    build:
+      context: .
+      dockerfile: containerization/Dockerfile.monitorService
+    container_name: yawl-monitor-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=yawl
+      - DB_USER=yawl
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - JAVA_OPTS=-Xms256m -Xmx512m
+      - ENGINE_URL=http://engine:8080/ib
+      - OTEL_SERVICE_NAME=yawl-monitor-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    secrets:
+      - db_password
+    networks:
+      - backend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      start_period: 60s
+    deploy:
+      resources:
+        <<: *resource-limits-small
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitor.rule=Host(`monitor.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.monitor.entrypoints=websecure"
+      - "traefik.http.routers.monitor.tls=true"
+      - "traefik.http.services.monitor.loadbalancer.server.port=8080"
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9090"
+    logging: *logging-config
+
+  # ===========================================================================
+  # OpenTelemetry Collector - Telemetry Aggregation
+  # ===========================================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.118.0
+    container_name: yawl-otel-collector
+    restart: unless-stopped
+    command:
+      - "--config=/etc/otelcol/config.yaml"
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    networks:
+      - monitoring
+      - logging
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "13133:13133" # Health check extension
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging: *logging-config
+
+  # ===========================================================================
+  # Prometheus - Metrics Collection and Alerting
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: yawl-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=10GB"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+      - "--web.external-url=https://prometheus.${DOMAIN:-yawl.local}"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/alerting/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.middlewares=auth"
+    logging: *logging-config
+
+  # ===========================================================================
+  # Grafana - Metrics Visualization and Dashboards
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: yawl-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://grafana.${DOMAIN:-yawl.local}
+      - GF_SERVER_ENFORCE_DOMAIN=true
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+      - GF_ALERTING_ENABLED=true
+      - GF_UNIFIED_ALERTING_ENABLED=true
+      - GF_FEATURE_TOGGLES_ENABLE=ngalert
+    secrets:
+      - grafana_admin_password
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - frontend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    logging: *logging-config
+
+  # ===========================================================================
+  # Loki - Log Aggregation
+  # ===========================================================================
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: yawl-loki
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/loki/config.yaml"
+      - "-target=all"
+    volumes:
+      - ./config/loki.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - logging
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loki.rule=Host(`loki.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.loki.entrypoints=websecure"
+      - "traefik.http.routers.loki.tls=true"
+      - "traefik.http.services.loki.loadbalancer.server.port=3100"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # Promtail - Log Collection Agent
+  # ===========================================================================
+  promtail:
+    image: grafana/promtail:3.3.2
+    container_name: yawl-promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yaml"
+    volumes:
+      - ./config/promtail.yaml:/etc/promtail/config.yaml:ro
+      - yawl_logs:/var/log/yawl:ro
+      - promtail_positions:/tmp/positions
+    networks:
+      - logging
+    deploy:
+      resources:
+        <<: *resource-limits-small
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # AlertManager - Alert Routing and Notification
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: yawl-alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=https://alertmanager.${DOMAIN:-yawl.local}"
+    volumes:
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+    deploy:
+      resources:
+        <<: *resource-limits-small
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${DOMAIN:-yawl.local}`)"
+      - "traefik.http.routers.alertmanager.entrypoints=websecure"
+      - "traefik.http.routers.alertmanager.tls=true"
+      - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
+    logging: *logging-config
+
+  # ===========================================================================
+  # Node Exporter - Host Metrics (Optional for Full Stack Monitoring)
+  # ===========================================================================
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: yawl-node-exporter
+    restart: unless-stopped
+    profiles:
+      - full-monitoring
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging: *logging-config
+
+  # ===========================================================================
+  # PostgreSQL Exporter - Database Metrics
+  # ===========================================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: yawl-postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://yawl:yawl@postgres:5432/yawl?sslmode=require"
+      PG_EXPORTER_EXTEND_QUERY_PATH: ""
+    secrets:
+      - db_password
+    networks:
+      - backend
+      - monitoring
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9187/health"]
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+    logging: *logging-config

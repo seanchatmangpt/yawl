@@ -1,15 +1,14 @@
 package org.yawlfoundation.yawl.resilience.decorator;
 
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.a2a.A2AException;
 import org.yawlfoundation.yawl.integration.a2a.YawlEngineAdapter;
 import org.yawlfoundation.yawl.resilience.provider.YawlResilienceProvider;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Resilient decorator for YawlEngineAdapter.

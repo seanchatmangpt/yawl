@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp.sdk;
 
+import io.modelcontextprotocol.spec.McpSchema;
+
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -135,11 +137,11 @@ public final class McpServerFeatures {
     }
 
     /**
-     * Pairs a Reference with its synchronous completion handler.
+     * Pairs a CompleteReference with its synchronous completion handler.
      * Register via {@link McpServer.SyncServerBuilder#completions(java.util.List)}.
      */
     public static final class SyncCompletionSpecification {
-        private final McpSchema.Reference reference;
+        private final McpSchema.CompleteReference reference;
         private final BiFunction<McpSyncServerExchange, CompleteRequest, McpSchema.CompleteResult> handler;
 
         /**
@@ -150,13 +152,13 @@ public final class McpServerFeatures {
          *        receives the exchange context and complete request, returns completion values
          */
         public SyncCompletionSpecification(
-                McpSchema.Reference reference,
+                McpSchema.CompleteReference reference,
                 BiFunction<McpSyncServerExchange, CompleteRequest, McpSchema.CompleteResult> handler) {
             this.reference = reference;
             this.handler = handler;
         }
 
-        public McpSchema.Reference getReference() { return reference; }
+        public McpSchema.CompleteReference getReference() { return reference; }
         public BiFunction<McpSyncServerExchange, CompleteRequest, McpSchema.CompleteResult> getHandler() {
             return handler;
         }
@@ -209,7 +211,7 @@ public final class McpServerFeatures {
      * Received by completion handlers.
      */
     public static final class CompleteRequest {
-        private final McpSchema.Reference reference;
+        private final McpSchema.CompleteReference reference;
         private final CompleteArgument argument;
 
         /**
@@ -218,12 +220,12 @@ public final class McpServerFeatures {
          * @param reference the reference (prompt or resource) the completion is for
          * @param argument the argument being completed
          */
-        public CompleteRequest(McpSchema.Reference reference, CompleteArgument argument) {
+        public CompleteRequest(McpSchema.CompleteReference reference, CompleteArgument argument) {
             this.reference = reference;
             this.argument = argument;
         }
 
-        public McpSchema.Reference getReference() { return reference; }
+        public McpSchema.CompleteReference getReference() { return reference; }
         public CompleteArgument argument() { return argument; }
         public CompleteArgument getArgument() { return argument; }
     }

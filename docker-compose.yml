@@ -1,39 +1,185 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Docker Compose Configuration
+# =============================================================================
+# Enterprise workflow engine with Petri net semantics and virtual threads support.
+#
+# Usage:
+#   Development (H2 database):
+#     docker compose up -d
+#     docker compose up -d yawl-engine
+#
+#   Production (PostgreSQL):
+#     docker compose --profile production up -d
+#
+#   Full stack with observability:
+#     docker compose --profile production --profile observability up -d
+#
+# Build first:
+#   docker build -f Dockerfile.modernized -t yawl-engine:6.0.0-alpha .
+#
+# Health checks:
+#   curl http://localhost:8080/actuator/health/liveness
+#   curl http://localhost:9090/actuator/health
+# =============================================================================
+
 services:
   # =============================================================================
-  # Development Environment
+  # YAWL Engine Service (Primary)
   # =============================================================================
-  yawl-dev:
+  yawl-engine:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    container_name: yawl-dev
-    working_dir: /workspace
-    volumes:
-      - .:/workspace
-    environment:
-      - JAVA_HOME=/opt/java/openjdk
-      - ANT_HOME=/usr/share/ant
-      - PATH=/usr/share/ant/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      - ZAI_API_KEY=${ZAI_API_KEY:-}
+      dockerfile: Dockerfile.modernized
+      args:
+        VERSION: 6.0.0-Alpha
+        BUILD_DATE: ${BUILD_DATE:-2026-02-16}
+        VCS_REF: ${VCS_REF:-}
+    image: yawl-engine:6.0.0-alpha
+    container_name: yawl-engine
+    hostname: yawl-engine
+    restart: unless-stopped
     ports:
-      - "9080:8080" # YAWL Engine (mapped to 9080 to avoid conflicts)
-      - "9081:8081" # Tomcat
-    stdin_open: true
-    tty: true
-    command: /bin/bash
+      - "8080:8080"   # Main application / Engine API
+      - "9090:9090"   # Management/Actuator / Prometheus metrics
+      - "8081:8081"   # Resource Service
+    environment:
+      # Spring configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-development}
+      SPRING_APPLICATION_NAME: yawl-engine
+
+      # Database configuration (defaults to H2 for development)
+      DB_TYPE: ${DB_TYPE:-h2}
+      DB_HOST: ${DB_HOST:-}
+      DB_PORT: ${DB_PORT:-}
+      DB_NAME: ${DB_NAME:-yawl}
+      DB_USER: ${DB_USER:-sa}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+
+      # H2 specific settings
+      H2_TCP_PORT: 9092
+      H2_WEB_PORT: 8082
+      H2_DATA_DIR: /app/data
+
+      # JVM options optimized for Java 25 and containers
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -XX:+UseZGC
+        -XX:+ZGenerational
+        -XX:+UseStringDeduplication
+        -XX:+ExitOnOutOfMemoryError
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+        -Djava.security.egd=file:/dev/./urandom
+        -Djava.io.tmpdir=/app/temp
+        -Dfile.encoding=UTF-8
+        -Djdk.virtualThreadScheduler.parallelism=200
+        -Djdk.virtualThreadScheduler.maxPoolSize=256
+        -Djdk.tracePinnedThreads=short
+
+      # Actuator configuration
+      MANAGEMENT_HEALTH_PROBES_ENABLED: "true"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+
+      # OpenTelemetry configuration
+      OTEL_SERVICE_NAME: yawl-engine
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-prometheus}
+      OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-otlp}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+
+      # Logging configuration
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+      LOGGING_LEVEL_ORG_YAWLFOUNDATION: ${LOGGING_LEVEL_ORG_YAWLFOUNDATION:-DEBUG}
+      TZ: UTC
+
+    volumes:
+      # Persistence volumes
+      - yawl_specifications:/app/specifications
+      - yawl_logs:/app/logs
+      - yawl_data:/app/data
+      - yawl_temp:/app/temp
+      - yawl_config:/app/config
+
+      # Optional: Mount specifications from host for development
+      - ${YAWL_SPECS_PATH:-./specifications}:/app/specifications/import:ro
+
     networks:
       - yawl-network
 
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+    labels:
+      app: yawl
+      component: engine
+      version: "6.0.0-alpha"
+      description: "YAWL Workflow Engine with Virtual Threads"
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+
   # =============================================================================
-  # Database - PostgreSQL
+  # H2 Database Console (Development Only)
+  # =============================================================================
+  h2-console:
+    image: eclipse-temurin:25-jre-alpine
+    container_name: yawl-h2-console
+    hostname: h2-console
+    profiles:
+      - development
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    environment:
+      JAVA_OPTS: "-Xmx256m"
+    volumes:
+      - yawl_data:/data
+    command: >
+      sh -c "
+        apk add --no-cache curl &&
+        java -cp /data/h2-*.jar org.h2.tools.Server
+        -web -webAllowOthers -webPort 8082
+        -tcp -tcpAllowOthers -tcpPort 9092
+        -baseDir /data
+      "
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      app: yawl
+      component: h2-console
+    depends_on:
+      yawl-engine:
+        condition: service_healthy
+
+  # =============================================================================
+  # PostgreSQL Database (Production)
   # =============================================================================
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: yawl-postgres
+    hostname: postgres
+    profiles:
+      - production
     environment:
-      POSTGRES_USER: yawl
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: yawl
+      POSTGRES_USER: ${POSTGRES_USER:-yawl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yawl_password}
+      POSTGRES_DB: ${POSTGRES_DB:-yawl}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
@@ -42,139 +188,296 @@ services:
     networks:
       - yawl-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yawl"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yawl} -d ${POSTGRES_DB:-yawl}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    labels:
+      app: yawl
+      component: database
+      db.type: postgresql
+    restart: unless-stopped
 
   # =============================================================================
-  # YAWL Engine - Core workflow engine (production)
+  # YAWL Engine with PostgreSQL (Production)
   # =============================================================================
-  engine:
-    platform: linux/amd64
+  yawl-engine-prod:
     build:
       context: .
-      dockerfile: containerization/Dockerfile.engine
-    container_name: yawl-engine
+      dockerfile: Dockerfile.modernized
+      args:
+        VERSION: 6.0.0-Alpha
+        BUILD_DATE: ${BUILD_DATE:-2026-02-16}
+        VCS_REF: ${VCS_REF:-}
+    image: yawl-engine:6.0.0-alpha
+    container_name: yawl-engine-prod
+    hostname: yawl-engine
+    profiles:
+      - production
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      - DB_TYPE=postgres
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=yawl
-      - DB_USER=yawl
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JAVA_OPTS=-Xms512m -Xmx1024m -Djava.awt.headless=true
-      - RESOURCE_SERVICE_URL=http://resource-service:8080/ib
-      - WORKLET_SERVICE_URL=http://worklet-service:8080/ib
     ports:
-      - "8888:8080"
+      - "8080:8080"
+      - "9090:9090"
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      SPRING_APPLICATION_NAME: yawl-engine
+
+      # PostgreSQL configuration
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-yawl}
+      DB_USER: ${POSTGRES_USER:-yawl}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-yawl_password}
+
+      # HikariCP connection pool settings
+      HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_MAXIMUM_POOL_SIZE:-20}
+      HIKARI_MINIMUM_IDLE: ${HIKARI_MINIMUM_IDLE:-5}
+      HIKARI_IDLE_TIMEOUT: ${HIKARI_IDLE_TIMEOUT:-300000}
+      HIKARI_CONNECTION_TIMEOUT: ${HIKARI_CONNECTION_TIMEOUT:-30000}
+
+      # JVM options for production
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -XX:+UseZGC
+        -XX:+ZGenerational
+        -XX:+UseStringDeduplication
+        -XX:+ExitOnOutOfMemoryError
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+        -Djava.security.egd=file:/dev/./urandom
+        -Djava.io.tmpdir=/app/temp
+        -Dfile.encoding=UTF-8
+        -Djdk.virtualThreadScheduler.parallelism=200
+        -Djdk.virtualThreadScheduler.maxPoolSize=256
+        -Djdk.tracePinnedThreads=short
+
+      # Actuator configuration
+      MANAGEMENT_HEALTH_PROBES_ENABLED: "true"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+
+      # OpenTelemetry configuration
+      OTEL_SERVICE_NAME: yawl-engine
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: prometheus
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+
+      # Logging configuration
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_ORG_YAWLFOUNDATION: INFO
+      TZ: UTC
+
+    volumes:
+      - yawl_specifications:/app/specifications
+      - yawl_logs:/app/logs
+      - yawl_data:/app/data
+      - yawl_temp:/app/temp
+      - yawl_config:/app/config
+
+    networks:
+      - yawl-network
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+
+    labels:
+      app: yawl
+      component: engine
+      version: "6.0.0-alpha"
+      environment: production
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # =============================================================================
+  # OpenTelemetry Collector (Observability)
+  # =============================================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: yawl-otel-collector
+    hostname: otel-collector
+    profiles:
+      - observability
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/opentelemetry/collector.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics (collector self-monitoring)
+      - "13133:13133" # Health check
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      app: yawl
+      component: otel-collector
+    restart: unless-stopped
+
+  # =============================================================================
+  # Prometheus (Observability)
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: yawl-prometheus
+    hostname: prometheus
+    profiles:
+      - observability
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 120s
-    networks:
-      - yawl-network
-    profiles:
-      - production
+    labels:
+      app: yawl
+      component: prometheus
+    restart: unless-stopped
 
   # =============================================================================
-  # YAWL Resource Service - Resource allocation (production)
+  # Grafana (Observability)
   # =============================================================================
-  resource-service:
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: containerization/Dockerfile.resourceService
-    container_name: yawl-resource-service
-    depends_on:
-      postgres:
-        condition: service_healthy
-      engine:
-        condition: service_started
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: yawl-grafana
+    hostname: grafana
+    profiles:
+      - observability
     environment:
-      - DB_TYPE=postgres
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=yawl
-      - DB_USER=yawl
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JAVA_OPTS=-Xms256m -Xmx512m
-      - ENGINE_URL=http://engine:8080/ib
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_FEATURE_TOGGLES_ENABLE: tempoSearch tempoBackendSearch traceqlEditor
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
     ports:
-      - "8081:8080"
+      - "3000:3000"
     networks:
       - yawl-network
-    profiles:
-      - production
-
-  # =============================================================================
-  # YAWL Worklet Service - Dynamic workflow adaptation (production)
-  # =============================================================================
-  worklet-service:
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: containerization/Dockerfile.workletService
-    container_name: yawl-worklet-service
     depends_on:
-      postgres:
-        condition: service_healthy
-      engine:
-        condition: service_started
-    environment:
-      - DB_TYPE=postgres
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=yawl
-      - DB_USER=yawl
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JAVA_OPTS=-Xms256m -Xmx512m
-      - ENGINE_URL=http://engine:8080/ib
-    ports:
-      - "8082:8080"
-    networks:
-      - yawl-network
-    profiles:
-      - production
+      - prometheus
+      - otel-collector
+    labels:
+      app: yawl
+      component: grafana
+    restart: unless-stopped
 
   # =============================================================================
-  # YAWL Monitor Service - Process monitoring (production)
+  # Jaeger Tracing (Observability)
   # =============================================================================
-  monitor-service:
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: containerization/Dockerfile.monitorService
-    container_name: yawl-monitor-service
-    depends_on:
-      postgres:
-        condition: service_healthy
-      engine:
-        condition: service_started
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: yawl-jaeger
+    hostname: jaeger
+    profiles:
+      - observability
     environment:
-      - DB_TYPE=postgres
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=yawl
-      - DB_USER=yawl
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JAVA_OPTS=-Xms128m -Xmx256m
-      - ENGINE_URL=http://engine:8080/ib
+      COLLECTOR_OTLP_ENABLED: "true"
+      METRICS_STORAGE_TYPE: prometheus
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
     ports:
-      - "8083:8080"
+      - "16686:16686" # UI
+      - "14250:14250" # gRPC for collector
     networks:
       - yawl-network
-    profiles:
-      - production
+    labels:
+      app: yawl
+      component: jaeger
+    restart: unless-stopped
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   yawl-network:
     driver: bridge
+    name: yawl-network
+    labels:
+      app: yawl
+      description: "YAWL internal network"
 
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
+  yawl_specifications:
+    name: yawl_specifications
+    labels:
+      app: yawl
+      description: "YAWL workflow specifications"
+
+  yawl_logs:
+    name: yawl_logs
+    labels:
+      app: yawl
+      description: "YAWL engine logs"
+
+  yawl_data:
+    name: yawl_data
+    labels:
+      app: yawl
+      description: "YAWL persistent data (H2 database)"
+
+  yawl_temp:
+    name: yawl_temp
+    labels:
+      app: yawl
+      description: "YAWL temporary files"
+
+  yawl_config:
+    name: yawl_config
+    labels:
+      app: yawl
+      description: "YAWL configuration files"
+
   postgres_data:
+    name: yawl_postgres_data
+    labels:
+      app: yawl
+      description: "PostgreSQL data directory"
+
+  prometheus_data:
+    name: yawl_prometheus_data
+    labels:
+      app: yawl
+      description: "Prometheus metrics storage"
+
+  grafana_data:
+    name: yawl_grafana_data
+    labels:
+      app: yawl
+      description: "Grafana dashboards and settings"

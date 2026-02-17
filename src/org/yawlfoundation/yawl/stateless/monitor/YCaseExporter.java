@@ -1,5 +1,9 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
@@ -13,10 +17,6 @@ import org.yawlfoundation.yawl.stateless.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Michael Adams
@@ -185,11 +185,12 @@ public class YCaseExporter {
             long startTime = System.nanoTime();
             String xml = exporter.marshal(runner);
             long endTime = System.nanoTime();
-            System.out.println("Duration (msecs): " + ((endTime - startTime) / 1000000));
-        //    System.out.println(xml);
+            org.apache.logging.log4j.LogManager.getLogger(YCaseExporter.class).info(
+                    "Case export duration (msecs): {}", ((endTime - startTime) / 1000000));
         }
         catch (Exception e) {
-            e.printStackTrace();
+            org.apache.logging.log4j.LogManager.getLogger(YCaseExporter.class).error(
+                    "Failed to export case", e);
         }
 
     }

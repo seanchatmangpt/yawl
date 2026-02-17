@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
-import org.yawlfoundation.yawl.elements.YNetElement;
-
 import java.util.*;
+
+import org.yawlfoundation.yawl.elements.YNetElement;
 
 /**
  * 
@@ -61,7 +61,7 @@ public class YIdentifierBag {
 
 
     public List<YIdentifier> getIdentifiers() {
-        List<YIdentifier> idList = new Vector<YIdentifier>();
+        List<YIdentifier> idList = new ArrayList<YIdentifier>();
         for (YIdentifier identifier : _idToQtyMap.keySet()) {
             int amount = _idToQtyMap.get(identifier);
             for (int i = 0; i < amount; i++) {

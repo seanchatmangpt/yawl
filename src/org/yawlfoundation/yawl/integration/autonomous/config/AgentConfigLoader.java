@@ -13,14 +13,14 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.config;
 
+import java.io.*;
+import java.util.*;
+
 import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
 import org.yawlfoundation.yawl.integration.autonomous.AgentConfiguration;
 import org.yawlfoundation.yawl.integration.autonomous.reasoners.*;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.*;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
-
-import java.io.*;
-import java.util.*;
 
 /**
  * Configuration loader for autonomous agents.

@@ -1,5 +1,13 @@
 package org.yawlfoundation.yawl.elements;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,14 +20,6 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -117,8 +117,3 @@ class TestYAtomicTask {
         assertFalse(_atomicTask1.t_isBusy());
     }
 }
-
-
-
-
-

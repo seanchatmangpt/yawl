@@ -18,7 +18,17 @@
 
 package org.yawlfoundation.yawl.engine;
 
-import net.sf.saxon.s9api.SaxonApiException;
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
+
+import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -35,29 +45,55 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 
-import java.net.URL;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
+import net.sf.saxon.s9api.SaxonApiException;
 
 /**
- * 
- * @author Lachlan Aldred
- * Date: 28/05/2003
- * Time: 15:29:33
+ * Represents a unit of work within a YAWL workflow process.
  *
- * Refactored for v2.0 by Michael Adams 10/2007 - 12/2009
- * 
+ * <p>A YWorkItem is created when a task becomes enabled in a workflow net. It progresses
+ * through various states (enabled, fired, executing, complete) as it is processed by
+ * external services or the default worklist. Work items can be parent items (for
+ * multi-instance tasks) or child items (individual instances within a multi-instance task).</p>
+ *
+ * <h2>Lifecycle States</h2>
+ * <ul>
+ *   <li><b>Enabled</b> - Task is ready to be started</li>
+ *   <li><b>Fired</b> - Task has been claimed but not yet started</li>
+ *   <li><b>Executing</b> - Task is currently being performed</li>
+ *   <li><b>Complete/Failed/ForcedComplete</b> - Task has finished</li>
+ *   <li><b>Suspended</b> - Task execution is paused</li>
+ *   <li><b>Deadlocked</b> - Task cannot proceed due to net state</li>
+ * </ul>
+ *
+ * <h2>Key Features</h2>
+ * <ul>
+ *   <li>Timer support for automatic expiry or escalation</li>
+ *   <li>Custom form URLs for user interface customization</li>
+ *   <li>Codelet support for automated task execution</li>
+ *   <li>Data binding for input/output parameters</li>
+ *   <li>Parent/child relationships for multi-instance tasks</li>
+ *   <li>Event logging with customizable predicates</li>
+ * </ul>
+ *
+ * <h2>Thread Safety</h2>
+ * <p>This class uses a ReentrantLock for virtual thread-safe parent/child operations.
+ * Multi-instance tasks that spawn child work items are protected against race conditions.</p>
+ *
+ * @author Lachlan Aldred
+ * @author Michael Adams (v2.0 refactoring 10/2007 - 12/2009)
+ * @see YWorkItemID
+ * @see YWorkItemStatus
+ * @see YNetRunner
+ * @see YTask
  */
 public class YWorkItem {
 
     private static final DateTimeFormatter _df =
             DateTimeFormatter.ofPattern("MMM:dd, yyyy H:mm:ss").withZone(ZoneId.systemDefault());
+
+    /** Lock for virtual thread safe parent/child operations */
+    private final ReentrantLock _parentLock = new ReentrantLock();
+
     private YEngine _engine;
     private YWorkItemID _workItemID;
     private String _thisID = null;
@@ -179,7 +215,8 @@ public class YWorkItem {
     private void completeParentPersistence(YPersistenceManager pmgr)
             throws YPersistenceException {
 
-        synchronized(_parent) {                      // sequentially handle children
+        _parent._parentLock.lock();                      // sequentially handle children
+        try {
 
             // if all siblings are completed, then the parent is completed too
             boolean parentComplete = true;
@@ -194,6 +231,8 @@ public class YWorkItem {
             }
 
             if (parentComplete) logAndUnpersist(pmgr, _parent);
+        } finally {
+            _parent._parentLock.unlock();
         }
     }
 

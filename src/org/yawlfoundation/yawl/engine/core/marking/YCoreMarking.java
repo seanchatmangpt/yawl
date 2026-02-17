@@ -163,7 +163,7 @@ public abstract class YCoreMarking {
      * @return the power set (all subsets including the set itself)
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    protected Set doPowerSetRecursion(Set aSet) {
+    public Set doPowerSetRecursion(Set aSet) {
         Set powerset = new HashSet();
         powerset.add(aSet);
         for (Iterator iterator = aSet.iterator(); iterator.hasNext(); ) {

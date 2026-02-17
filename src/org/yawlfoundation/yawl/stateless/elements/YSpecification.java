@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.stateless.elements;
 
 
+import java.util.*;
+
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.elements.YVerifiable;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -29,8 +31,6 @@ import org.yawlfoundation.yawl.unmarshal.YMetaData;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 
 /**

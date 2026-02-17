@@ -13,10 +13,10 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import junit.framework.TestCase;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for WorkItemMetadata record.

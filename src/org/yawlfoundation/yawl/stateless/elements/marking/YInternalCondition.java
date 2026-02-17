@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
+import java.util.List;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
-import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.stateless.elements.YConditionInterface;
+import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.util.List;
 
 /**
  * 
