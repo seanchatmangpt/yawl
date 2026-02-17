@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YDataValidator;
@@ -38,6 +40,7 @@ import java.util.*;
  * 
  */
 public final class YSpecification implements Cloneable, YVerifiable {
+    private static final Logger _log = LogManager.getLogger(YSpecification.class);
     private String _specURI;
     private YNet _rootNet;
     private Map<String, YDecomposition> _decompositions =
@@ -71,11 +74,12 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
 
     /**
-     * @deprecated since v2.0: use getSchemaVersion() instead
      * Gets the version number of this specification's schema (as opposed to the
      * version number of the specification itself).
      * @return the version of the engine that this specification was first designed for.
+     * @deprecated since v2.0: use {@link #getSchemaVersion()} instead.
      */
+    @Deprecated
     public String getBetaVersion() {
         return getSchemaVersion().toString();
     }
@@ -102,9 +106,10 @@ public final class YSpecification implements Cloneable, YVerifiable {
     
     /**
      * Sets the version number of the specification.
-     * @param version
-     * @deprecated since v2.0: use setVersion() instead.
+     * @param version the version string to set
+     * @deprecated since v2.0: use {@link #setVersion(String)} instead.
      */
+    @Deprecated
     public void setBetaVersion(String version) { setVersion(version) ; }
 
     public void setVersion(String version) {
@@ -280,6 +285,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
             return persistedXML;
         }
         catch (Exception e) {
+            _log.error("Failed to marshal YSpecification '{}' for persistence", _specURI, e);
             return null;
         }
     }

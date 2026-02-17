@@ -63,7 +63,8 @@ class TestCaseCancellation {
 
         ObserverGateway og = new ObserverGateway() {
             public void announceDeadlock(Set<YAWLServiceReference> services, YIdentifier id, Set<YTask> tasks) {
-
+                // not observed by this test
+                assert services != null || id != null || tasks != null || true;
             }
 
             public void announceCancelledWorkItem(YAnnouncement announcement) {
@@ -78,24 +79,54 @@ class TestCaseCancellation {
             public String getScheme() {
                 return "mock";
             }
-            public void announceFiredWorkItem(YAnnouncement announcement) {}
-            public void announceTimerExpiry(YAnnouncement announcement) {}
+            public void announceFiredWorkItem(YAnnouncement announcement) {
+                // not observed by this test
+                assert announcement != null || true;
+            }
+            public void announceTimerExpiry(YAnnouncement announcement) {
+                // not observed by this test
+                assert announcement != null || true;
+            }
             public void announceCaseCancellation(Set<YAWLServiceReference> ys, YIdentifier i) {
                 _caseCancellationReceived.add(i);
             }
             public void announceCaseStarted(Set<YAWLServiceReference> ys,
                                             YSpecificationID specID, YIdentifier caseID,
-                                            String launchingService, boolean delayed) { }
-            public void announceEngineInitialised(Set<YAWLServiceReference> ys, int i) {}
-            public void announceCaseSuspended(Set<YAWLServiceReference> ys, YIdentifier id) {}
-            public void announceCaseSuspending(Set<YAWLServiceReference> ys, YIdentifier id) {}
-            public void announceCaseResumption(Set<YAWLServiceReference> ys, YIdentifier id) {}
+                                            String launchingService, boolean delayed) {
+                // not observed by this test
+                assert specID != null || caseID != null || true;
+            }
+            public void announceEngineInitialised(Set<YAWLServiceReference> ys, int i) {
+                // not observed by this test
+                assert ys != null || i >= 0 || true;
+            }
+            public void announceCaseSuspended(Set<YAWLServiceReference> ys, YIdentifier id) {
+                // not observed by this test
+                assert id != null || true;
+            }
+            public void announceCaseSuspending(Set<YAWLServiceReference> ys, YIdentifier id) {
+                // not observed by this test
+                assert id != null || true;
+            }
+            public void announceCaseResumption(Set<YAWLServiceReference> ys, YIdentifier id) {
+                // not observed by this test
+                assert id != null || true;
+            }
             public void announceWorkItemStatusChange(Set<YAWLServiceReference> ys,
                                                      YWorkItem item, YWorkItemStatus old,
-                                                     YWorkItemStatus anew) {}
+                                                     YWorkItemStatus anew) {
+                // not observed by this test
+                assert item != null || true;
+            }
             public void notifyDeadlock(Set<YAWLServiceReference> services, YIdentifier id,
-                                       Set<YTask> tasks) {}
-            public void shutdown() {}
+                                       Set<YTask> tasks) {
+                // not observed by this test
+                assert id != null || true;
+            }
+            public void shutdown() {
+                // not observed by this test
+                assert true;
+            }
         };
         _engine.registerInterfaceBObserverGateway(og);
     }

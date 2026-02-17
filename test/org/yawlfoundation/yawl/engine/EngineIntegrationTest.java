@@ -1,16 +1,18 @@
 package org.yawlfoundation.yawl.engine;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
+import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Engine Core Integration Tests
@@ -19,95 +21,86 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Coverage:
  * - YEngine initialization
  * - YNetRunner workflow execution
- * - YWorkItem creation and completion
- * - Parallel execution (10+ concurrent cases)
+ * - YWorkItem creation and state transitions
+ * - Parallel execution (concurrent cases)
  * - Exception handling
  * - State transitions
- * - Performance (100 cases/second minimum)
+ * - Performance (identifier creation throughput)
  */
-public class EngineIntegrationTest extends TestCase {
+class EngineIntegrationTest {
 
     private YEngine engine;
     private YSpecification specification;
 
-    public EngineIntegrationTest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         engine = YEngine.getInstance();
-        assertNotNull("YEngine instance should be available", engine);
-
+        assertNotNull(engine, "YEngine instance should be available");
+        EngineClearer.clear(engine);
         specification = createMinimalSpecification();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (engine != null) {
-            // Clean up engine resources
-            try {
-                EngineClearer.clear(engine);
-            } catch (Exception e) {
-                // Ignore cleanup errors
-            }
+            EngineClearer.clear(engine);
+            engine.getWorkItemRepository().clear();
         }
-        super.tearDown();
     }
 
-    public void testEngineInitialization() {
-        assertNotNull("Engine should be initialized", engine);
+    @Test
+    void testEngineInitialization() {
+        assertNotNull(engine, "Engine should be initialized");
         YEngine instance1 = YEngine.getInstance();
         YEngine instance2 = YEngine.getInstance();
-        assertSame("Engine should be singleton", instance1, instance2);
+        assertSame(instance1, instance2, "Engine should be singleton");
     }
 
-    public void testSpecificationCreation() {
-        assertNotNull("Specification should be created", specification);
-        assertNotNull("Specification should have ID", specification.getSpecificationID());
+    @Test
+    void testSpecificationCreation() throws Exception {
+        assertNotNull(specification, "Specification should be created");
+        assertNotNull(specification.getSpecificationID(), "Specification should have ID");
 
         YNet rootNet = specification.getRootNet();
-        assertNotNull("Specification should have root net", rootNet);
+        assertNotNull(rootNet, "Specification should have root net");
     }
 
-    public void testBasicWorkflowExecution() throws Exception {
+    @Test
+    void testBasicWorkflowExecution() throws Exception {
         YSpecification spec = createMinimalSpecification();
-        assertNotNull("Specification created", spec);
+        assertNotNull(spec, "Specification created");
 
-        YIdentifier caseID = new YIdentifier();
-        assertNotNull("Case ID created", caseID);
+        YIdentifier caseID = new YIdentifier(null);
+        assertNotNull(caseID, "Case ID created");
 
         YNet rootNet = spec.getRootNet();
-        assertNotNull("Root net available", rootNet);
+        assertNotNull(rootNet, "Root net available");
 
-        // Basic workflow structure verification
-        assertTrue("Root net should have elements",
-            rootNet.getNetElements() != null);
+        assertNotNull(rootNet.getNetElements(), "Root net should have elements");
     }
 
-    public void testMultipleCaseExecution() throws Exception {
+    @Test
+    void testMultipleCaseExecution() {
         int caseCount = 10;
         List<YIdentifier> caseIds = new ArrayList<>();
 
         for (int i = 0; i < caseCount; i++) {
-            YIdentifier caseId = new YIdentifier();
+            YIdentifier caseId = new YIdentifier(null);
             caseIds.add(caseId);
-            assertNotNull("Case ID " + i + " should be created", caseId);
+            assertNotNull(caseId, "Case ID " + i + " should be created");
         }
 
-        assertEquals("Should have created 10 cases", caseCount, caseIds.size());
+        assertEquals(caseCount, caseIds.size(), "Should have created 10 cases");
 
-        // Verify all case IDs are unique
         for (int i = 0; i < caseIds.size(); i++) {
             for (int j = i + 1; j < caseIds.size(); j++) {
-                assertNotSame("Case IDs should be unique",
-                    caseIds.get(i), caseIds.get(j));
+                assertNotSame(caseIds.get(i), caseIds.get(j), "Case IDs should be unique");
             }
         }
     }
 
-    public void testConcurrentCaseExecution() throws Exception {
+    @Test
+    void testConcurrentCaseExecution() throws Exception {
         int concurrentCases = 20;
         ExecutorService executor = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(concurrentCases);
@@ -118,9 +111,8 @@ public class EngineIntegrationTest extends TestCase {
             final int caseNumber = i;
             executor.submit(() -> {
                 try {
-                    YSpecification spec = createMinimalSpecification();
-                    YIdentifier caseId = new YIdentifier();
-                    assertNotNull("Case " + caseNumber + " created", caseId);
+                    YIdentifier caseId = new YIdentifier(null);
+                    assertNotNull(caseId, "Case " + caseNumber + " created");
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     errorCount.incrementAndGet();
@@ -131,117 +123,115 @@ public class EngineIntegrationTest extends TestCase {
         }
 
         boolean completed = latch.await(30, TimeUnit.SECONDS);
-        assertTrue("All concurrent cases should complete", completed);
-        assertEquals("All cases should succeed", concurrentCases, successCount.get());
-        assertEquals("No cases should error", 0, errorCount.get());
+        assertTrue(completed, "All concurrent cases should complete");
+        assertEquals(concurrentCases, successCount.get(), "All cases should succeed");
+        assertEquals(0, errorCount.get(), "No cases should error");
 
         executor.shutdown();
         executor.awaitTermination(5, TimeUnit.SECONDS);
     }
 
-    public void testYWorkItemCreation() throws Exception {
+    @Test
+    void testYWorkItemCreation() throws Exception {
         YSpecification spec = createMinimalSpecification();
         YNet rootNet = spec.getRootNet();
 
         YTask task = createTask(rootNet, "task1");
-        assertNotNull("Task should be created", task);
+        assertNotNull(task, "Task should be created");
 
-        YIdentifier caseId = new YIdentifier();
-        YWorkItem workItem = new YWorkItem(spec.getSpecificationID(), task.getID(),
-            "task1", caseId.toString(), true, false);
+        YIdentifier caseId = new YIdentifier(null);
+        YWorkItemID workItemID = new YWorkItemID(caseId, "task1");
+        YWorkItem workItem = new YWorkItem(null, spec.getSpecificationID(), task, workItemID, true, false);
 
-        assertNotNull("Work item should be created", workItem);
-        assertEquals("Work item task ID should match", "task1", workItem.getTaskID());
-        assertTrue("Work item should be enabled", workItem.isEnabledWorkItem());
+        assertNotNull(workItem, "Work item should be created");
+        assertEquals("task1", workItem.getTaskID(), "Work item task ID should match");
+        assertEquals(YWorkItemStatus.statusEnabled, workItem.getStatus(), "Work item should be enabled");
     }
 
-    public void testYWorkItemStateTransitions() throws Exception {
+    @Test
+    void testYWorkItemStateTransitions() throws Exception {
         YSpecification spec = createMinimalSpecification();
         YNet rootNet = spec.getRootNet();
         YTask task = createTask(rootNet, "task_state");
 
-        YIdentifier caseId = new YIdentifier();
-        YWorkItem workItem = new YWorkItem(spec.getSpecificationID(), task.getID(),
-            "task_state", caseId.toString(), true, false);
+        YIdentifier caseId = new YIdentifier(null);
+        YWorkItemID workItemID = new YWorkItemID(caseId, "task_state");
+        YWorkItem workItem = new YWorkItem(null, spec.getSpecificationID(), task, workItemID, true, false);
 
-        assertTrue("Initial state should be enabled", workItem.isEnabledWorkItem());
-        assertFalse("Should not be executing initially", workItem.hasExecutionStarted());
+        assertEquals(YWorkItemStatus.statusEnabled, workItem.getStatus(),
+                "Initial state should be enabled");
+        assertNotEquals(YWorkItemStatus.statusExecuting, workItem.getStatus(),
+                "Should not be executing initially");
 
-        // Simulate state change
         workItem.setStatus(YWorkItemStatus.statusExecuting);
-        assertEquals("Status should be executing",
-            YWorkItemStatus.statusExecuting, workItem.getStatus());
+        assertEquals(YWorkItemStatus.statusExecuting, workItem.getStatus(),
+                "Status should be executing after transition");
     }
 
-    public void testExceptionHandling() {
-        try {
-            YSpecification spec = createMinimalSpecification();
-            assertNotNull("Specification creation should succeed", spec);
-        } catch (Exception e) {
-            fail("Specification creation should not throw exception: " + e.getMessage());
-        }
+    @Test
+    void testExceptionHandling() throws Exception {
+        YSpecification spec = createMinimalSpecification();
+        assertNotNull(spec, "Specification creation should succeed");
     }
 
-    public void testEnginePerformanceThroughput() throws Exception {
+    @Test
+    void testEnginePerformanceThroughput() throws Exception {
         int caseCount = 100;
         long startTime = System.currentTimeMillis();
 
         List<YIdentifier> caseIds = new ArrayList<>();
         for (int i = 0; i < caseCount; i++) {
-            YIdentifier caseId = new YIdentifier();
-            caseIds.add(caseId);
+            caseIds.add(new YIdentifier(null));
         }
 
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
 
-        assertEquals("Should create all cases", caseCount, caseIds.size());
+        assertEquals(caseCount, caseIds.size(), "Should create all cases");
 
         double casesPerSecond = (caseCount * 1000.0) / Math.max(duration, 1);
         System.out.println("Case creation throughput: " + String.format("%.1f", casesPerSecond) +
             " cases/second (" + caseCount + " cases in " + duration + "ms)");
 
-        assertTrue("Should achieve reasonable throughput (>10 cases/sec)",
-            casesPerSecond > 10);
+        assertTrue(casesPerSecond > 10, "Should achieve reasonable throughput (>10 cases/sec)");
     }
 
-    public void testHighVolumeCaseCreation() throws Exception {
+    @Test
+    void testHighVolumeCaseCreation() {
         int volumeCount = 1000;
         long startTime = System.currentTimeMillis();
 
         List<YIdentifier> caseIds = new ArrayList<>(volumeCount);
         for (int i = 0; i < volumeCount; i++) {
-            caseIds.add(new YIdentifier());
+            caseIds.add(new YIdentifier(null));
         }
 
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
 
-        assertEquals("Should create all high-volume cases", volumeCount, caseIds.size());
+        assertEquals(volumeCount, caseIds.size(), "Should create all high-volume cases");
 
         double casesPerSecond = (volumeCount * 1000.0) / Math.max(duration, 1);
         System.out.println("High-volume throughput: " + String.format("%.1f", casesPerSecond) +
             " cases/second (" + volumeCount + " cases in " + duration + "ms)");
     }
 
-    public void testNetRunnerVerification() throws Exception {
+    @Test
+    void testNetRunnerVerification() throws Exception {
         YSpecification spec = createMinimalSpecification();
         YNet rootNet = spec.getRootNet();
 
-        assertNotNull("Net should exist", rootNet);
-        assertNotNull("Net should have specification", rootNet.getSpecification());
-
-        // Verify net structure
-        assertTrue("Net should have net elements",
-            rootNet.getNetElements() != null);
+        assertNotNull(rootNet, "Net should exist");
+        assertNotNull(rootNet.getSpecification(), "Net should have specification");
+        assertNotNull(rootNet.getNetElements(), "Net should have net elements");
     }
 
     // Helper methods
 
     private YSpecification createMinimalSpecification() throws Exception {
         YSpecification spec = new YSpecification("MinimalSpec");
-        spec.setSpecificationID(new YSpecificationID("minimal", "1.0", "test"));
         spec.setName("Minimal Test Specification");
+        spec.setVersion(YSchemaVersion.Beta7);
 
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
@@ -270,15 +260,5 @@ public class EngineIntegrationTest extends TestCase {
         YAtomicTask task = new YAtomicTask(taskId, YAtomicTask._AND, YAtomicTask._AND, net);
         net.addNetElement(task);
         return task;
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Engine Core Integration Tests");
-        suite.addTestSuite(EngineIntegrationTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

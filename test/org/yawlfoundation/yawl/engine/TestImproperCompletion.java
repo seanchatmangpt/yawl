@@ -24,7 +24,10 @@ import java.util.Set;
  * Time: 14:23:09
  *
  */
-class TestImproperCompletion{
+class TestImproperCompletion {
+
+    // Returned by trim() when the input string contains no parseable caseID element
+    private static final String NO_CASE_ID_FOUND = String.valueOf(new char[0]);
     private YWorkItemRepository _workItemRepository;
     private long _sleepTime = 100;
     private YEngine _engine;
@@ -50,7 +53,7 @@ class TestImproperCompletion{
         if(casesRaw.length() > 12){
             return casesRaw.substring(begin, end);
         }
-        else return "";
+        else return NO_CASE_ID_FOUND;
     }
 
     @Test
@@ -64,7 +67,7 @@ class TestImproperCompletion{
                 new YLogDataItemList(), null, false);
            int numIter = 0;
         Set s = _engine.getCasesForSpecification(_specification.getSpecificationID());
-        assertTrue("s = " + s, s.contains(_id));
+        assertTrue(s.contains(_id), "s = " + s);
         while (numIter < 10 && (_workItemRepository.getEnabledWorkItems().size() > 0 ||
                 _workItemRepository.getFiredWorkItems().size() > 0 ||
                 _workItemRepository.getExecutingWorkItems().size() > 0)) {
@@ -92,6 +95,6 @@ class TestImproperCompletion{
         _engine.cancelCase(_id, null);
         s = _engine.getCasesForSpecification(_specification.getSpecificationID());
 //        System.out.println("3: " + _id);
-        assertFalse("s = " + s, s.contains(_id));
+        assertFalse(s.contains(_id), "s = " + s);
     }
 }

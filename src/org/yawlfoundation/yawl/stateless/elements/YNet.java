@@ -38,6 +38,9 @@ import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 import java.util.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -55,6 +58,8 @@ public final class YNet extends YDecomposition {
     private Map<String, YVariable> _localVariables = new HashMap<String, YVariable>();
     private String _externalDataGateway;
     private YNet _clone;
+
+    private static final Logger _log = LogManager.getLogger(YNet.class);
 
 
     public YNet(String id, YSpecification specification) {
@@ -332,9 +337,9 @@ public final class YNet extends YDecomposition {
             return temp;
         }
         catch (CloneNotSupportedException e) {
-            e.printStackTrace();
+            _log.error("Unexpected CloneNotSupportedException cloning YNet (stateless) - YCloneable contract violated", e);
+            throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
         }
-        return null;
     }
 
 

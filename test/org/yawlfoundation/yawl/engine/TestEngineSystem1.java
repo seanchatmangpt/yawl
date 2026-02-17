@@ -65,7 +65,7 @@ class TestEngineSystem1 {
             currWorkItems = _workItemRepository.getEnabledWorkItems();
             assertTrue(currWorkItems.isEmpty());
             currWorkItems = _workItemRepository.getExecutingWorkItems();
-            assertTrue("" + currWorkItems.size(), currWorkItems.size() == 1);
+            assertTrue(currWorkItems.size() == 1, "" + currWorkItems.size());
             anItem = (YWorkItem) currWorkItems.iterator().next();
             Thread.sleep(_sleepTime);
             //complete btop
@@ -100,8 +100,8 @@ class TestEngineSystem1 {
                 //fire e-leaf-c
 //                _localWorklist.startOneWorkItemAndSetOthersToFired(anItem.getCaseID().toString(), anItem.getTaskID());
                 _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
-                assertTrue("Item status ("+anItem.getStatus()+") should be is parent."
-                        , anItem.getStatus() == YWorkItemStatus.statusIsParent);
+                assertTrue(anItem.getStatus() == YWorkItemStatus.statusIsParent,
+                        "Item status ("+anItem.getStatus()+") should be is parent.");
                 Set executingChildren = _workItemRepository.getExecutingWorkItems();
                 assertTrue(executingChildren.containsAll(anItem.getChildren()));
                 Thread.sleep(_sleepTime);
@@ -201,12 +201,12 @@ class TestEngineSystem1 {
                 assertFalse(_workItemRepository.getWorkItems().contains(anItem));
                 Thread.sleep(_sleepTime);
             }
-            assertTrue("" + _workItemRepository.getWorkItems(),
-                    _workItemRepository.getWorkItems().size() == 0);
+            assertTrue(_workItemRepository.getWorkItems().size() == 0,
+                    "" + _workItemRepository.getWorkItems());
             Iterator iterator = leafNetRunners.iterator();
             while (iterator.hasNext()) {
                 YNetRunner leafCRunner = (YNetRunner) iterator.next();
-                assertFalse("" + leafCRunner.getCaseID(), leafCRunner.isAlive());
+                assertFalse(leafCRunner.isAlive(), "" + leafCRunner.getCaseID());
             }
             assertTrue(_workItemRepository.getWorkItems().size() == 0);
             assertFalse(topNetRunner.isAlive());

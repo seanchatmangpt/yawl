@@ -58,7 +58,9 @@ public class YAtomicTask extends YTask {
      * Sets the enablement data mappings for an atomic task to those specified.
      * @param map a map of [variable name, query] pairs.
      * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
      */
+    @Deprecated
     public void setDataMappingsForEnablement(Map<String, String> map) {
         _dataMappingsForTaskEnablement.putAll(map);
     }
@@ -177,7 +179,9 @@ public class YAtomicTask extends YTask {
      * Gets the map of enablement mappings for the task.
      * @return the map of enablement mappings.
      * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
      */
+    @Deprecated
     public Map getDataMappingsForEnablement() {
         return _dataMappingsForTaskEnablement;
     }
@@ -190,9 +194,10 @@ public class YAtomicTask extends YTask {
      * expressions.
      * @throws YQueryException if there's a problem with a query evaluation.
      * @throws YDataStateException if there's a problem with the evaluated data.
-     * @throws YStateException if there's a problem setting the task state.
      * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
      */
+    @Deprecated
     public Element prepareEnablementData() throws YQueryException, YDataStateException {
         if (null == getDecompositionPrototype()) {
             return null;

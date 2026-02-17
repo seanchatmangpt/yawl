@@ -873,11 +873,14 @@ public class YEngine implements InterfaceADesign,
     
 
     /**
-     * @deprecated use cancelCase(YIdentifier, String)
-     * @param id
-     * @throws YPersistenceException
-     * @throws YEngineStateException
+     * Cancels a running case by identifier.
+     *
+     * @param id the identifier of the case to cancel
+     * @throws YPersistenceException if persistence fails during cancellation
+     * @throws YEngineStateException if the engine is in an invalid state for cancellation
+     * @deprecated Use {@link #cancelCase(YIdentifier, String)} to supply a cancellation reason
      */
+    @Deprecated
     public void cancelCase(YIdentifier id) throws YPersistenceException, YEngineStateException {
         cancelCase(id, null);
     }
@@ -2187,26 +2190,36 @@ public class YEngine implements InterfaceADesign,
 
 
     /**
-     * Clears a case from persistence
-     * @param id the case id to clear
-     * @throws YPersistenceException if there's a problem clearing the case
+     * Clears a case from persistence, removing all associated MI output data,
+     * net runners, and identifiers.
+     *
+     * <p>V6 upgrade: the HQL DELETE for {@code GroupedMIOutputData} now uses a named
+     * parameter {@code :prefix} to bind the case ID prefix, preventing HQL injection
+     * from malformed case IDs. Previously the case ID was concatenated directly into
+     * the HQL string.</p>
+     *
+     * @param id the case identifier to clear
+     * @throws YPersistenceException if there is a problem clearing the case
      */
     protected void clearCaseFromPersistence(YIdentifier id) throws YPersistenceException {
-        _logger.debug("--> clearCaseFromPersistence: CaseID = ", id.get_idString());
+        _logger.debug("--> clearCaseFromPersistence: CaseID={}", id.get_idString());
         if (_persisting) {
             try {
-                if (! id.get_idString().contains(".")) {  // only if the root case id
-                    String query = "delete from GroupedMIOutputData as m where m.uniqueIdentifier like '" +
-                            id.get_idString() + ":%'";
-                    _pmgr.getSession().createQuery(query).executeUpdate();
+                if (!id.get_idString().contains(".")) {  // only root case ids have MI output data
+                    // V6: use named parameter to prevent HQL injection from case ID values
+                    String hql = "delete from GroupedMIOutputData as m " +
+                                 "where m.uniqueIdentifier like :prefix";
+                    _pmgr.getSession().createMutationQuery(hql)
+                            .setParameter("prefix", id.get_idString() + ":%")
+                            .executeUpdate();
                 }
-                
+
                 List<YIdentifier> list = id.get_children();
                 for (YIdentifier child : list) {
                     if (child != null) clearCaseFromPersistence(child);
                 }
 
-                synchronized(_pmgr) {
+                synchronized (_pmgr) {
                     Object obj = _pmgr.getSession().get(YNetRunner.class, id.toString());
                     if (obj == null) {
                         obj = _pmgr.getSession().get(YIdentifier.class, id.toString());

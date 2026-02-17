@@ -110,6 +110,7 @@ public final class PartyAgent {
 
     private static McpTaskContextSupplier createMcpSupplier() {
         if (!"true".equalsIgnoreCase(System.getenv("MCP_ENABLED"))) {
+            logger.info("MCP integration disabled (MCP_ENABLED not set to 'true'); proceeding without task context.");
             return null;
         }
         try {
@@ -117,7 +118,8 @@ public final class PartyAgent {
             impl.connect();
             return impl;
         } catch (Exception e) {
-            System.err.println("MCP task context unavailable: " + e.getMessage());
+            logger.error("MCP task context supplier initialization failed; order fulfillment agent will proceed without MCP context. Cause: {}",
+                    e.getMessage(), e);
             return null;
         }
     }
@@ -134,10 +136,9 @@ public final class PartyAgent {
         startHttpServer();
         startDiscoveryLoop();
 
-        System.out.println("Party Agent [" + capability.getDomainName() + "] v" + VERSION
-            + " started on port " + port);
-        System.out.println("  Capability: " + capability.getDescription());
-        System.out.println("  Agent card: http://localhost:" + port + "/.well-known/agent.json");
+        logger.info("Party Agent [{}] v{} started on port {}", capability.getDomainName(), VERSION, port);
+        logger.info("  Capability: {}", capability.getDescription());
+        logger.info("  Agent card: http://localhost:{}/.well-known/agent.json", port);
     }
 
     /**
@@ -162,7 +163,7 @@ public final class PartyAgent {
         } catch (IOException e) {
             logger.warn("Failed to disconnect: " + e.getMessage(), e);
         }
-        System.out.println("Party Agent [" + capability.getDomainName() + "] stopped");
+        logger.info("Party Agent [{}] stopped", capability.getDomainName());
     }
 
     private void startHttpServer() throws IOException {
@@ -241,7 +242,7 @@ public final class PartyAgent {
                 try {
                     runDiscoveryCycle();
                 } catch (Exception e) {
-                    System.err.println("Discovery cycle error: " + e.getMessage());
+                    logger.error("Discovery cycle error for agent [{}]: {}", capability.getDomainName(), e.getMessage(), e);
                 }
                 try {
                     TimeUnit.MILLISECONDS.sleep(POLL_INTERVAL_MS);
@@ -301,15 +302,14 @@ public final class PartyAgent {
 
                     if (checkinResult != null && checkinResult.contains("success")) {
                         ciSpan.setAttribute("success", 1);
-                        System.out.println("  [" + capability.getDomainName() + "] Completed "
-                            + workItemId + " (" + wir.getTaskName() + ")");
+                        logger.info("[{}] Completed work item {} ({})", capability.getDomainName(), workItemId, wir.getTaskName());
                     } else {
                         ciSpan.setAttribute("success", 0);
+                        logger.warn("[{}] Check-in did not return success for work item {}: {}", capability.getDomainName(), workItemId, checkinResult);
                     }
                 }
             } catch (Exception e) {
-                System.err.println("  [" + capability.getDomainName() + "] Failed " + workItemId
-                    + ": " + e.getMessage());
+                logger.error("[{}] Failed to process work item {}: {}", capability.getDomainName(), workItemId, e.getMessage(), e);
             }
         }
     }
@@ -349,8 +349,8 @@ public final class PartyAgent {
         try {
             capability = AgentCapability.fromEnvironment();
         } catch (IllegalStateException e) {
-            System.err.println(e.getMessage());
-            System.err.println("\nExample: AGENT_CAPABILITY=\"Ordering: procurement, purchase orders\"");
+            logger.fatal("Agent capability configuration error: {}", e.getMessage(), e);
+            logger.fatal("Example: AGENT_CAPABILITY=\"Ordering: procurement, purchase orders\"");
             System.exit(1);
             return;
         }
@@ -361,14 +361,14 @@ public final class PartyAgent {
                 capability, engineUrl, username, password, port);
             agent.start();
         } catch (IOException e) {
-            System.err.println("Failed to start agent: " + e.getMessage());
+            logger.fatal("Failed to start party agent: {}", e.getMessage(), e);
             System.exit(1);
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(
             Thread.ofVirtual().unstarted(() -> {
-                System.err.println("Shutting down...");
+                logger.info("Shutdown signal received, stopping party agent...");
                 agent.stop();
             })
         );

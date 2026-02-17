@@ -112,7 +112,7 @@ public class BlockFO {
 									Thread.sleep(1000);
 								}
 								catch (Exception e) {
-									e.printStackTrace();
+									myLog.error("Exception in BlockFO processing", e);
 								}
 							}
 						}
@@ -257,7 +257,7 @@ public class BlockFO {
 			//pemid.extendGraph(options);
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			myLog.error("Exception in BlockFO processing", e);
 		}
 //		List<List<List>> result = pemid.generateNextOptions();
 //		pemid.determineOptionsNonCrBlocks(result.get(1));
@@ -332,7 +332,7 @@ public class BlockFO {
 //		List<List> relations = bfo.calculateRelations();
 //		igraphs.updateGraphPerfOut(relations);
 //		bfo.calcPerformativesOut();
-		System.out.println("done");
+		myLog.debug("done");
 	}
 
 }

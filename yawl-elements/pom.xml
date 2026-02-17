@@ -86,7 +86,38 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
+        <resources>
+            <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->
+            <resource>
+                <directory>../schema</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>YAWL_Schema*.xsd</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.yawl</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xsd</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
+            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -108,11 +139,29 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <!-- Only compile tests that depend on elements + utilities module classes -->
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Exclude conflicting logging bridge to prevent ExceptionInInitializerError -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
