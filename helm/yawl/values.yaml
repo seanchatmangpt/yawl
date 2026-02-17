@@ -1,6 +1,13 @@
-# YAWL Helm Chart - Default Values
-# This file contains default configuration values for YAWL deployment
-# Override these values with environment-specific values files
+# =============================================================================
+# YAWL v6.0.0-Alpha Helm Chart - Default Values
+# =============================================================================
+# Cloud-native workflow engine with Petri Net semantics and virtual threads.
+# Override these values with environment-specific values files.
+#
+# Usage:
+#   helm install yawl ./helm/yawl -f values.yaml
+#   helm install yawl ./helm/yawl -f values.yaml -f values-production.yaml
+# =============================================================================
 
 # -----------------------------------------------------------------------------
 # Global Settings
@@ -14,10 +21,10 @@ global:
   annotations: {}
 
 # -----------------------------------------------------------------------------
-# YAWL Version
+# YAWL Version Information
 # -----------------------------------------------------------------------------
-yawlVersion: "5.2"
-buildNumber: "1724"
+yawlVersion: "6.0.0-Alpha"
+buildNumber: "6000"
 
 # -----------------------------------------------------------------------------
 # Cloud Provider Configuration
@@ -29,17 +36,23 @@ cloudProvider: ""  # gcp, aws, azure, oracle, ibm, or empty for generic
 # -----------------------------------------------------------------------------
 image:
   registry: docker.io
-  repository: yawl/yawl
-  tag: "5.2"
+  repository: yawl/yawl-engine
+  tag: "6.0.0-alpha"
   pullPolicy: IfNotPresent
+
+# -----------------------------------------------------------------------------
+# Replica Configuration
+# -----------------------------------------------------------------------------
+replicaCount: 2
 
 # -----------------------------------------------------------------------------
 # Database Configuration
 # -----------------------------------------------------------------------------
+# Embedded PostgreSQL (via Bitnami subchart)
 postgresql:
   enabled: true
   auth:
-    postgresPassword: "yawl"
+    postgresPassword: "yawl-admin"
     password: "yawl"
     database: "yawl"
   primary:
@@ -55,13 +68,13 @@ externalDatabase:
   host: ""
   port: 5432
   database: yawl
-  user: postgres
+  user: yawl
   password: ""
   existingSecret: ""
   existingSecretPasswordKey: password
 
 # -----------------------------------------------------------------------------
-# Redis Configuration
+# Redis Configuration (Session Management)
 # -----------------------------------------------------------------------------
 redis:
   enabled: true
@@ -84,390 +97,170 @@ externalRedis:
   existingSecretPasswordKey: password
 
 # -----------------------------------------------------------------------------
-# Service Configuration (7 Core Services)
+# Service Configuration
 # -----------------------------------------------------------------------------
-services:
-  engine:
-    name: engine
-    enabled: true
-    replicaCount: 2
-    image:
-      repository: yawl/engine
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 500m
-        memory: 1Gi
-      limits:
-        cpu: 2000m
-        memory: 2Gi
-    autoscaling:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 10
-      targetCPUUtilizationPercentage: 70
-      targetMemoryUtilizationPercentage: 80
-    livenessProbe:
-      httpGet:
-        path: /engine/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /engine/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  resourceService:
-    name: resource-service
-    enabled: true
-    replicaCount: 2
-    image:
-      repository: yawl/resource-service
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-    autoscaling:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 8
-      targetCPUUtilizationPercentage: 70
-      targetMemoryUtilizationPercentage: 80
-    livenessProbe:
-      httpGet:
-        path: /resourceService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /resourceService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  workletService:
-    name: worklet-service
-    enabled: true
-    replicaCount: 2
-    image:
-      repository: yawl/worklet-service
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-    autoscaling:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 6
-      targetCPUUtilizationPercentage: 70
-      targetMemoryUtilizationPercentage: 80
-    livenessProbe:
-      httpGet:
-        path: /workletService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /workletService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  monitorService:
-    name: monitor-service
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/monitor-service
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    autoscaling:
-      enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
-    livenessProbe:
-      httpGet:
-        path: /monitorService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /monitorService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  costService:
-    name: cost-service
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/cost-service
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    autoscaling:
-      enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
-    livenessProbe:
-      httpGet:
-        path: /costService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /costService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  schedulingService:
-    name: scheduling-service
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/scheduling-service
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    autoscaling:
-      enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
-    livenessProbe:
-      httpGet:
-        path: /schedulingService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /schedulingService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
-  balancer:
-    name: balancer
-    enabled: true
-    replicaCount: 2
-    image:
-      repository: yawl/balancer
-      tag: ""
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8080
-      targetPort: 8080
-      annotations: {}
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    autoscaling:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 5
-      targetCPUUtilizationPercentage: 70
-    livenessProbe:
-      httpGet:
-        path: /balancer/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /balancer/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-    env: []
-    extraVolumes: []
-    extraVolumeMounts: []
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  managementPort: 9090
+  managementTargetPort: 9090
+  resourcePort: 8081
+  resourceTargetPort: 8081
+  annotations: {}
+  labels: {}
 
 # -----------------------------------------------------------------------------
-# Additional Services
+# Health Check Configuration (Spring Boot Actuator)
 # -----------------------------------------------------------------------------
-additionalServices:
-  mailService:
-    name: mail-service
+healthcheck:
+  # Liveness probe - restarts container if failed
+  liveness:
     enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/mail-service
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
+    path: /actuator/health/liveness
+    port: 9090
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    timeoutSeconds: 15
+    failureThreshold: 3
+    successThreshold: 1
 
-  digitalSignature:
-    name: digital-signature
+  # Readiness probe - removes from service if failed
+  readiness:
     enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/digital-signature
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
+    path: /actuator/health/readiness
+    port: 9090
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
 
-  documentStore:
-    name: document-store
+  # Startup probe - for slow-starting containers
+  startup:
     enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/document-store
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
+    path: /actuator/health/liveness
+    port: 9090
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 18  # 3 minutes max startup time
 
-  procletService:
-    name: proclet-service
+# -----------------------------------------------------------------------------
+# Resource Management
+# -----------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 4000m
+    memory: 4Gi
+
+# -----------------------------------------------------------------------------
+# JVM Configuration (Java 25 + Virtual Threads)
+# -----------------------------------------------------------------------------
+jvm:
+  # Core JVM options optimized for Java 25 and containers
+  opts: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=50.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+UseStringDeduplication
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+    -Djava.security.egd=file:/dev/./urandom
+    -Djava.io.tmpdir=/app/temp
+    -Dfile.encoding=UTF-8
+    -Djdk.virtualThreadScheduler.parallelism=200
+    -Djdk.virtualThreadScheduler.maxPoolSize=256
+    -Djdk.tracePinnedThreads=short
+
+  # Additional JVM options (appended to opts)
+  extraOpts: ""
+
+# -----------------------------------------------------------------------------
+# Spring Boot Configuration
+# -----------------------------------------------------------------------------
+spring:
+  profilesActive: production
+  application:
+    name: yawl-engine
+
+# -----------------------------------------------------------------------------
+# Actuator Configuration
+# -----------------------------------------------------------------------------
+actuator:
+  enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,logfile,env,beans
+  health:
+    probes:
+      enabled: true
+    showDetails: when-authorized
+
+# -----------------------------------------------------------------------------
+# OpenTelemetry Configuration
+# -----------------------------------------------------------------------------
+opentelemetry:
+  enabled: true
+  serviceName: yawl-engine
+  tracesExporter: otlp
+  metricsExporter: prometheus
+  logsExporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://otel-collector:4318
+  resource:
+    attributes: "service.name=yawl-engine,service.version=6.0.0-alpha"
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  level:
+    root: INFO
+    yawlfoundation: DEBUG
+    hibernate: WARN
+    springframework: INFO
+  format: json
+  file:
+    path: /app/logs
+    name: yawl-engine.log
+    maxSize: 100MB
+    maxHistory: 10
+    totalSizeCap: 1GB
+
+# -----------------------------------------------------------------------------
+# Persistence Configuration
+# -----------------------------------------------------------------------------
+persistence:
+  enabled: true
+  specifications:
     enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/proclet-service
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+  logs:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+  data:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+  config:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
 
 # -----------------------------------------------------------------------------
 # Ingress Configuration
@@ -491,53 +284,29 @@ ingress:
   hosts:
     - host: yawl.example.com
       paths:
-        - path: /engine
+        - path: /
           pathType: Prefix
-          service: engine
-        - path: /resourceService
+          port: 8080
+        - path: /actuator
           pathType: Prefix
-          service: resource-service
-        - path: /workletService
-          pathType: Prefix
-          service: worklet-service
-        - path: /monitorService
-          pathType: Prefix
-          service: monitor-service
-        - path: /costService
-          pathType: Prefix
-          service: cost-service
-        - path: /schedulingService
-          pathType: Prefix
-          service: scheduling-service
-        - path: /mailService
-          pathType: Prefix
-          service: mail-service
-        - path: /digitalSignature
-          pathType: Prefix
-          service: digital-signature
-        - path: /documentStore
-          pathType: Prefix
-          service: document-store
-        - path: /procletService
-          pathType: Prefix
-          service: proclet-service
-        - path: /balancer
-          pathType: Prefix
-          service: balancer
+          port: 9090
   tls:
     - secretName: yawl-tls-secret
       hosts:
         - yawl.example.com
 
 # -----------------------------------------------------------------------------
-# Service Account
+# Horizontal Pod Autoscaler
 # -----------------------------------------------------------------------------
-serviceAccount:
-  create: true
-  name: ""
-  annotations: {}
-  labels: {}
-  automountServiceAccountToken: true
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  # Custom metrics (optional)
+  metrics: []
+  behavior: {}
 
 # -----------------------------------------------------------------------------
 # Pod Disruption Budget
@@ -560,6 +329,8 @@ networkPolicy:
       ports:
         - protocol: TCP
           port: 8080
+        - protocol: TCP
+          port: 9090
   egress:
     - to:
         - namespaceSelector: {}
@@ -568,6 +339,10 @@ networkPolicy:
           port: 5432  # PostgreSQL
         - protocol: TCP
           port: 6379  # Redis
+        - protocol: TCP
+          port: 4317  # OTLP gRPC
+        - protocol: TCP
+          port: 4318  # OTLP HTTP
     - to:
         - namespaceSelector: {}
       ports:
@@ -597,24 +372,14 @@ containerSecurityContext:
   runAsUser: 1000
 
 # -----------------------------------------------------------------------------
-# JVM Configuration
+# Service Account
 # -----------------------------------------------------------------------------
-jvm:
-  opts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-  catalinaOpts: "-Djava.security.egd=file:/dev/./urandom"
-
-# -----------------------------------------------------------------------------
-# Logging Configuration
-# -----------------------------------------------------------------------------
-logging:
-  yawl: WARN
-  worklet: INFO
-  resource: INFO
-  scheduling: DEBUG
-  proclet: INFO
-  hibernate: ERROR
-  root: ERROR
-  mail: INFO
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  labels: {}
+  automountServiceAccountToken: true
 
 # -----------------------------------------------------------------------------
 # Secrets Configuration
@@ -623,14 +388,16 @@ secrets:
   database:
     create: true
     name: ""
-    user: postgres
+    user: yawl
     password: yawl
   apiKeys:
     create: true
     name: ""
     engineApiKey: ""
-    resourceServiceKey: ""
-    workletServiceKey: ""
+  encryptionKey:
+    create: true
+    name: ""
+    key: ""
 
 # -----------------------------------------------------------------------------
 # Cloud-Specific Settings
@@ -665,29 +432,83 @@ ibmDatabase:
   instanceId: ""
 
 # -----------------------------------------------------------------------------
-# Node Selector, Tolerations, Affinity
+# Node Scheduling
 # -----------------------------------------------------------------------------
 nodeSelector: {}
 tolerations: []
 affinity: {}
 topologySpreadConstraints: []
-
-# -----------------------------------------------------------------------------
-# Priority Class
-# -----------------------------------------------------------------------------
 priorityClassName: ""
-
-# -----------------------------------------------------------------------------
-# Termination Grace Period
-# -----------------------------------------------------------------------------
-terminationGracePeriodSeconds: 30
+terminationGracePeriodSeconds: 60
 
 # -----------------------------------------------------------------------------
 # Init Containers
 # -----------------------------------------------------------------------------
 initContainers: []
+  # Example: Wait for database
+  # - name: wait-for-db
+  #   image: busybox:1.36
+  #   command: ['sh', '-c', 'until nc -z postgres 5432; do echo waiting for db; sleep 2; done']
 
 # -----------------------------------------------------------------------------
-# Extra Resources
+# Extra Configuration
 # -----------------------------------------------------------------------------
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []
 extraDeploy: []
+
+# -----------------------------------------------------------------------------
+# Pod Labels and Annotations
+# -----------------------------------------------------------------------------
+podLabels: {}
+podAnnotations: {}
+
+# -----------------------------------------------------------------------------
+# Metrics and Monitoring
+# -----------------------------------------------------------------------------
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+prometheus:
+  rules:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+
+# -----------------------------------------------------------------------------
+# Service Mesh (Istio)
+# -----------------------------------------------------------------------------
+istio:
+  enabled: false
+  gateway:
+    enabled: false
+    name: ""
+  virtualService:
+    enabled: false
+    hosts: []
+    gateways: []
+  destinationRule:
+    enabled: false
+    subsets: []
+
+# -----------------------------------------------------------------------------
+# H2 Database (Development Only)
+# -----------------------------------------------------------------------------
+h2:
+  enabled: false
+  console:
+    enabled: false
+    port: 8082
+  tcp:
+    enabled: false
+    port: 9092

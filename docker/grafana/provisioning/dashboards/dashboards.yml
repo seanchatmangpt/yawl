@@ -1,0 +1,51 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Grafana Dashboard Provisioning
+# =============================================================================
+# Dashboard provisioning configuration for YAWL monitoring.
+# Automatically loads dashboards from /etc/grafana/provisioning/dashboards/yawl/
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  # ==========================================================================
+  # YAWL Dashboards
+  # ==========================================================================
+  - name: 'YAWL Dashboards'
+    orgId: 1
+    folder: 'YAWL'
+    folderUid: 'yawl-folder'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/yawl
+
+  # ==========================================================================
+  # JVM Dashboards
+  # ==========================================================================
+  - name: 'JVM Dashboards'
+    orgId: 1
+    folder: 'JVM'
+    folderUid: 'jvm-folder'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/jvm
+
+  # ==========================================================================
+  # Infrastructure Dashboards
+  # ==========================================================================
+  - name: 'Infrastructure Dashboards'
+    orgId: 1
+    folder: 'Infrastructure'
+    folderUid: 'infra-folder'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/infrastructure

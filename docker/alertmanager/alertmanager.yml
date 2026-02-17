@@ -1,0 +1,244 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - AlertManager Configuration
+# =============================================================================
+# Alert routing, grouping, and notification configuration for YAWL.
+# Supports: Slack, Email, PagerDuty, OpsGenie, Webhooks
+# =============================================================================
+
+global:
+  # SMTP configuration for email alerts
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${SMTP_FROM}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # Slack configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # Default resolve timeout
+  resolve_timeout: 5m
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Inhibition rules - prevent lower severity alerts when higher severity fires
+inhibit_rules:
+  # If critical is firing, suppress warning
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname', 'instance']
+    labels:
+      - severity
+
+  # If engine is down, suppress all other engine alerts
+  - source_matchers:
+      - alertname="YAWLEngineDown"
+    target_matchers:
+      - service="yawl-engine"
+    equal: ['instance']
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'service', 'severity']
+
+  # Wait time before sending initial notification
+  group_wait: 30s
+
+  # Wait time before sending updated notification
+  group_interval: 5m
+
+  # Wait time before resending notification
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification
+    - matchers:
+        - severity="critical"
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+      continue: true
+
+    # YAWL Engine alerts
+    - matchers:
+        - service="yawl-engine"
+      receiver: 'yawl-engine-alerts'
+      group_by: ['alertname', 'instance']
+      routes:
+        - matchers:
+            - severity="critical"
+          receiver: 'critical-alerts'
+
+    # YAWL Resource Service alerts
+    - matchers:
+        - service="yawl-resource"
+      receiver: 'yawl-resource-alerts'
+
+    # YAWL Worklet alerts
+    - matchers:
+        - service="yawl-worklet"
+      receiver: 'yawl-worklet-alerts'
+
+    # Database alerts
+    - matchers:
+        - alertname=~"PostgreSQL.*|MySQL.*"
+      receiver: 'database-alerts'
+      group_by: ['alertname', 'database']
+
+    # Infrastructure alerts
+    - matchers:
+        - alertname=~"HighCPU.*|HighMemory.*|DiskSpace.*"
+      receiver: 'infrastructure-alerts'
+      group_by: ['alertname', 'instance']
+
+    # JVM alerts
+    - matchers:
+        - alertname=~"JVM.*"
+      receiver: 'jvm-alerts'
+      group_by: ['alertname', 'instance']
+
+# Receivers - notification destinations
+receivers:
+  # Default receiver
+  - name: 'default-receiver'
+    slack_configs:
+      - channel: '#yawl-alerts'
+        send_resolved: true
+        title: '{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Severity:* {{ .Labels.severity }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
+
+  # Critical alerts - multi-channel notification
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#yawl-critical'
+        send_resolved: true
+        title: 'CRITICAL: {{ .CommonLabels.alertname }}'
+        text: >-
+          :rotating_light: *CRITICAL ALERT* :rotating_light:
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Service:* {{ .Labels.service }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+        color: 'danger'
+    email_configs:
+      - to: '${ALERT_EMAIL_CRITICAL}'
+        send_resolved: true
+        html: |
+          <h2>Critical Alert: {{ .CommonLabels.alertname }}</h2>
+          {{ range .Alerts }}
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
+          <p><strong>Runbook:</strong> <a href="{{ .Annotations.runbook_url }}">{{ .Annotations.runbook_url }}</a></p>
+          {{ end }}
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ .CommonLabels.alertname }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+          resolved: '{{ template "pagerduty.default.instances" .Alerts.Resolved }}'
+          num_firing: '{{ .Alerts.Firing | len }}'
+          num_resolved: '{{ .Alerts.Resolved | len }}'
+
+  # YAWL Engine alerts
+  - name: 'yawl-engine-alerts'
+    slack_configs:
+      - channel: '#yawl-engine'
+        send_resolved: true
+        title: 'YAWL Engine: {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Severity:* {{ .Labels.severity }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
+    webhook_configs:
+      - url: '${WEBHOOK_URL}/alerts/yawl-engine'
+        send_resolved: true
+
+  # YAWL Resource Service alerts
+  - name: 'yawl-resource-alerts'
+    slack_configs:
+      - channel: '#yawl-resources'
+        send_resolved: true
+        title: 'YAWL Resources: {{ .CommonLabels.alertname }}'
+
+  # YAWL Worklet alerts
+  - name: 'yawl-worklet-alerts'
+    slack_configs:
+      - channel: '#yawl-worklet'
+        send_resolved: true
+        title: 'YAWL Worklet: {{ .CommonLabels.alertname }}'
+
+  # Database alerts
+  - name: 'database-alerts'
+    slack_configs:
+      - channel: '#yawl-database'
+        send_resolved: true
+        title: 'Database: {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Database:* {{ .Labels.database }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+    email_configs:
+      - to: '${ALERT_EMAIL_DATABASE}'
+        send_resolved: true
+
+  # Infrastructure alerts
+  - name: 'infrastructure-alerts'
+    slack_configs:
+      - channel: '#yawl-infrastructure'
+        send_resolved: true
+        title: 'Infrastructure: {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+
+  # JVM alerts
+  - name: 'jvm-alerts'
+    slack_configs:
+      - channel: '#yawl-jvm'
+        send_resolved: true
+        title: 'JVM: {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'

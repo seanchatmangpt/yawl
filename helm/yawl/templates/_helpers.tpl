@@ -40,6 +40,7 @@ helm.sh/chart: {{ include "yawl.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: engine
 {{- with .Values.global.labels }}
 {{ toYaml . }}
 {{- end }}
@@ -80,41 +81,17 @@ Return the proper image name
 {{- end }}
 
 {{/*
-Return the proper service image name
-*/}}
-{{- define "yawl.serviceImage" -}}
-{{- $registryName := .Values.image.registry -}}
-{{- $repositoryName := .service.image.repository -}}
-{{- $tag := .service.image.tag | default .Values.image.tag | default $.Chart.AppVersion | toString -}}
-{{- if $registryName }}
-{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-{{- else }}
-{{- printf "%s:%s" $repositoryName $tag -}}
-{{- end }}
-{{- end }}
-
-{{/*
 Return the appropriate apiVersion for ingress
 */}}
 {{- define "yawl.ingress.apiVersion" -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
 networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-networking.k8s.io/v1beta1
-{{- else -}}
-extensions/v1beta1
-{{- end }}
 {{- end }}
 
 {{/*
 Return the appropriate apiVersion for HPA
 */}}
 {{- define "yawl.hpa.apiVersion" -}}
-{{- if semverCompare ">=1.23-0" .Capabilities.KubeVersion.GitVersion -}}
 autoscaling/v2
-{{- else -}}
-autoscaling/v2beta2
-{{- end }}
 {{- end }}
 
 {{/*
@@ -122,13 +99,11 @@ Return the database host
 */}}
 {{- define "yawl.databaseHost" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- if eq .Values.postgresql.architecture "replication" -}}
-{{- printf "%s-primary" (include "yawl.fullname" .Subcharts.postgresql) -}}
-{{- else -}}
-{{- include "yawl.fullname" .Subcharts.postgresql -}}
-{{- end -}}
-{{- else if .Values.externalDatabase.existingSecret -}}
-{{- .Values.externalDatabase.host -}}
+{{- printf "%s-postgresql" (include "yawl.fullname" .) -}}
+{{- else if .Values.cloudsqlProxy.enabled -}}
+{{- printf "%s-cloudsql-proxy" (include "yawl.fullname" .) -}}
+{{- else if .Values.awsRdsProxy.enabled -}}
+{{- .Values.awsRdsProxy.endpoint -}}
 {{- else -}}
 {{- .Values.externalDatabase.host -}}
 {{- end -}}
@@ -140,6 +115,10 @@ Return the database port
 {{- define "yawl.databasePort" -}}
 {{- if .Values.postgresql.enabled -}}
 5432
+{{- else if .Values.cloudsqlProxy.enabled -}}
+{{- .Values.cloudsqlProxy.proxyPort -}}
+{{- else if .Values.awsRdsProxy.enabled -}}
+{{- .Values.awsRdsProxy.port -}}
 {{- else -}}
 {{- .Values.externalDatabase.port -}}
 {{- end -}}
@@ -171,7 +150,7 @@ Return the Redis host
 */}}
 {{- define "yawl.redisHost" -}}
 {{- if .Values.redis.enabled -}}
-{{- printf "%s-master" (include "yawl.fullname" .Subcharts.redis) -}}
+{{- printf "%s-redis-master" (include "yawl.fullname" .) -}}
 {{- else -}}
 {{- .Values.externalRedis.host -}}
 {{- end -}}
@@ -196,10 +175,10 @@ Create the namespace
 {{- end }}
 
 {{/*
-Return true if a secret object should be created
+Return true if a database secret should be created
 */}}
-{{- define "yawl.createSecret" -}}
-{{- if .Values.secrets.database.create -}}
+{{- define "yawl.createDatabaseSecret" -}}
+{{- if and .Values.secrets.database.create (not .Values.externalDatabase.existingSecret) -}}
 true
 {{- end }}
 {{- end }}
@@ -229,6 +208,17 @@ Return the secret name for API keys
 {{- end }}
 
 {{/*
+Return the secret name for encryption key
+*/}}
+{{- define "yawl.encryptionKeySecretName" -}}
+{{- if .Values.secrets.encryptionKey.name -}}
+{{- .Values.secrets.encryptionKey.name -}}
+{{- else -}}
+{{- printf "%s-encryption-key" (include "yawl.fullname" .) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Return the storage class
 */}}
 {{- define "yawl.storageClass" -}}
@@ -242,14 +232,33 @@ Return the storage class
 {{- end }}
 
 {{/*
-Labels for a service deployment
+Build JVM options string
 */}}
-{{- define "yawl.serviceLabels" -}}
-app.kubernetes.io/name: {{ include "yawl.name" . }}-{{ .serviceName }}
+{{- define "yawl.jvmOpts" -}}
+{{- $opts := .Values.jvm.opts -}}
+{{- if .Values.jvm.extraOpts -}}
+{{- printf "%s %s" $opts .Values.jvm.extraOpts -}}
+{{- else -}}
+{{- $opts -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Build OpenTelemetry resource attributes
+*/}}
+{{- define "yawl.otelResourceAttributes" -}}
+{{- printf "service.name=%s,service.version=%s" .Values.opentelemetry.serviceName .Values.yawlVersion -}}
+{{- end }}
+
+{{/*
+Pod labels
+*/}}
+{{- define "yawl.podLabels" -}}
+app.kubernetes.io/name: {{ include "yawl.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: {{ .serviceName }}
+app.kubernetes.io/component: engine
 app.kubernetes.io/part-of: yawl
-{{- with .context.Values.global.labels }}
+{{- with .Values.podLabels }}
 {{ toYaml . }}
 {{- end }}
 {{- end }}
@@ -261,48 +270,9 @@ Annotations for deployments
 {{- with .Values.global.annotations }}
 {{ toYaml . }}
 {{- end }}
+{{- with .Values.podAnnotations }}
+{{ toYaml . }}
 {{- end }}
-
-{{/*
-Pod labels for a service
-*/}}
-{{- define "yawl.podLabels" -}}
-app.kubernetes.io/name: {{ include "yawl.name" . }}-{{ .serviceName }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: {{ .serviceName }}
-app.kubernetes.io/part-of: yawl
-{{- end }}
-
-{{/*
-Probe configuration
-*/}}
-{{- define "yawl.probe" -}}
-httpGet:
-  path: {{ .path }}
-  port: {{ .port }}
-initialDelaySeconds: {{ .initialDelaySeconds | default 60 }}
-periodSeconds: {{ .periodSeconds | default 10 }}
-timeoutSeconds: {{ .timeoutSeconds | default 5 }}
-failureThreshold: {{ .failureThreshold | default 3 }}
-{{- end }}
-
-{{/*
-Resource configuration
-*/}}
-{{- define "yawl.resources" -}}
-requests:
-  cpu: {{ .requests.cpu }}
-  memory: {{ .requests.memory }}
-limits:
-  cpu: {{ .limits.cpu }}
-  memory: {{ .limits.memory }}
-{{- end }}
-
-{{/*
-Service URL helper
-*/}}
-{{- define "yawl.serviceUrl" -}}
-{{- printf "http://%s-%s:%d" (include "yawl.name" .context) .serviceName .port -}}
 {{- end }}
 
 {{/*

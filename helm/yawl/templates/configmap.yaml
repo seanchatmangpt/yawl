@@ -12,34 +12,38 @@ data:
   DATABASE_PATH: {{ include "yawl.databaseName" . | quote }}
   DATABASE_HOST: {{ include "yawl.databaseHost" . | quote }}
   DATABASE_PORT: {{ include "yawl.databasePort" . | quote }}
-
-  # Logging levels
-  YAWL_LOGGING_LEVEL: {{ .Values.logging.yawl | quote }}
-  WORKLET_LOGGING_LEVEL: {{ .Values.logging.worklet | quote }}
-  RESOURCE_LOGGING_LEVEL: {{ .Values.logging.resource | quote }}
-  SCHEDULING_LOGGING_LEVEL: {{ .Values.logging.scheduling | quote }}
-  PROCLET_LOGGING_LEVEL: {{ .Values.logging.proclet | quote }}
-  HIBERNATE_LOGGING_LEVEL: {{ .Values.logging.hibernate | quote }}
-  ROOT_LOGGING_LEVEL: {{ .Values.logging.root | quote }}
-  MAIL_LOGGING_LEVEL: {{ .Values.logging.mail | quote }}
-
-  # JVM options
-  JAVA_OPTS: {{ .Values.jvm.opts | quote }}
-
-  # Service URLs (internal cluster addresses)
-  ENGINE_URL: {{ printf "http://%s-engine:%d/engine" (include "yawl.name" .) (int .Values.services.engine.service.port) | quote }}
-  RESOURCE_SERVICE_URL: {{ printf "http://%s-resource-service:%d/resourceService" (include "yawl.name" .) (int .Values.services.resourceService.service.port) | quote }}
-  WORKLET_SERVICE_URL: {{ printf "http://%s-worklet-service:%d/workletService" (include "yawl.name" .) (int .Values.services.workletService.service.port) | quote }}
-  MONITOR_SERVICE_URL: {{ printf "http://%s-monitor-service:%d/monitorService" (include "yawl.name" .) (int .Values.services.monitorService.service.port) | quote }}
-  COST_SERVICE_URL: {{ printf "http://%s-cost-service:%d/costService" (include "yawl.name" .) (int .Values.services.costService.service.port) | quote }}
-  SCHEDULING_SERVICE_URL: {{ printf "http://%s-scheduling-service:%d/schedulingService" (include "yawl.name" .) (int .Values.services.schedulingService.service.port) | quote }}
-
-  # Tomcat settings
-  CATALINA_OPTS: {{ .Values.jvm.catalinaOpts | quote }}
+  DATABASE_URL: {{ include "yawl.databaseUrl" . | quote }}
 
   # Redis configuration
   REDIS_HOST: {{ include "yawl.redisHost" . | quote }}
   REDIS_PORT: {{ include "yawl.redisPort" . | quote }}
+
+  # Spring Boot configuration
+  SPRING_PROFILES_ACTIVE: {{ .Values.spring.profilesActive | quote }}
+  SPRING_APPLICATION_NAME: {{ .Values.spring.application.name | quote }}
+
+  # Actuator configuration
+  MANAGEMENT_HEALTH_PROBES_ENABLED: {{ .Values.actuator.health.probes.enabled | quote }}
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: {{ .Values.actuator.health.showDetails | quote }}
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: {{ .Values.actuator.endpoints.web.exposure.include | quote }}
+
+  # OpenTelemetry configuration
+  {{- if .Values.opentelemetry.enabled }}
+  OTEL_SERVICE_NAME: {{ .Values.opentelemetry.serviceName | quote }}
+  OTEL_TRACES_EXPORTER: {{ .Values.opentelemetry.tracesExporter | quote }}
+  OTEL_METRICS_EXPORTER: {{ .Values.opentelemetry.metricsExporter | quote }}
+  OTEL_LOGS_EXPORTER: {{ .Values.opentelemetry.logsExporter | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.opentelemetry.exporter.otlp.endpoint | quote }}
+  {{- end }}
+
+  # Logging configuration
+  LOGGING_LEVEL_ROOT: {{ .Values.logging.level.root | quote }}
+  LOGGING_LEVEL_ORG_YAWLFOUNDATION: {{ .Values.logging.level.yawlfoundation | quote }}
+  LOGGING_LEVEL_ORG_HIBERNATE: {{ .Values.logging.level.hibernate | quote }}
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: {{ .Values.logging.level.springframework | quote }}
+  LOGGING_FORMAT: {{ .Values.logging.format | quote }}
+  LOGGING_FILE_PATH: {{ .Values.logging.file.path | quote }}
+  LOGGING_FILE_NAME: {{ .Values.logging.file.name | quote }}
 
   # YAWL version
   YAWL_VERSION: {{ .Values.yawlVersion | quote }}
@@ -47,6 +51,9 @@ data:
 
   # Cloud provider
   CLOUD_PROVIDER: {{ .Values.cloudProvider | default "" | quote }}
+
+  # JVM options
+  JAVA_OPTS: {{ include "yawl.jvmOpts" . | quote }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -57,6 +64,7 @@ metadata:
     {{- include "yawl.labels" . | nindent 4 }}
     app.kubernetes.io/component: hibernate-config
 data:
+  # Hibernate configuration for PostgreSQL
   hibernate.dialect: "org.hibernate.dialect.PostgreSQLDialect"
   hibernate.show_sql: "false"
   hibernate.hbm2ddl.auto: "update"
@@ -65,11 +73,13 @@ data:
   hibernate.jdbc.batch_size: "20"
   hibernate.order_inserts: "true"
   hibernate.order_updates: "true"
-  hibernate.cache.region.factory_class: "org.hibernate.cache.ehcache.EhCacheRegionFactory"
   hibernate.generate_statistics: "false"
+
+  # HikariCP connection pool settings
   hibernate.connection.provider_class: "org.hibernate.hikaricp.internal.HikariCPConnectionProvider"
   hibernate.hikari.minimumIdle: "5"
   hibernate.hikari.maximumPoolSize: "20"
   hibernate.hikari.idleTimeout: "300000"
   hibernate.hikari.connectionTimeout: "30000"
   hibernate.hikari.maxLifetime: "1800000"
+  hibernate.hikari.leakDetectionThreshold: "60000"

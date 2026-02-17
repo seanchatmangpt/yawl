@@ -1,0 +1,224 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Prometheus Alert Rules
+# =============================================================================
+# Standard infrastructure and application alert rules for YAWL deployment.
+# Includes: container health, resource usage, service availability alerts.
+# =============================================================================
+
+groups:
+  # ==========================================================================
+  # General Infrastructure Alerts
+  # ==========================================================================
+  - name: infrastructure
+    rules:
+      # Instance down alert
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }}"
+
+      # Memory usage high
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }}"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }} filesystem {{ $labels.mountpoint }}"
+
+      # Disk space critical
+      - alert: DiskSpaceCritical
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }} filesystem {{ $labels.mountpoint }}"
+
+  # ==========================================================================
+  # Container Alerts
+  # ==========================================================================
+  - name: containers
+    rules:
+      # Container CPU throttling
+      - alert: ContainerCPUThrottling
+        expr: |
+          rate(container_cpu_cfs_throttled_seconds_total[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} CPU throttling"
+          description: "Container {{ $labels.name }} is experiencing CPU throttling at {{ $value | printf \"%.2f\" }} seconds/second"
+
+      # Container memory usage high
+      - alert: ContainerMemoryHigh
+        expr: |
+          (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} high memory usage"
+          description: "Container {{ $labels.name }} memory usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Container OOM risk
+      - alert: ContainerOOMRisk
+        expr: |
+          (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} at OOM risk"
+          description: "Container {{ $labels.name }} memory usage is {{ $value | printf \"%.1f\" }}% - OOM kill imminent"
+
+      # Container restart loop
+      - alert: ContainerRestartLoop
+        expr: |
+          increase(container_restart_count[1h]) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} in restart loop"
+          description: "Container {{ $labels.name }} has restarted {{ $value }} times in the last hour"
+
+  # ==========================================================================
+  # JVM Alerts (for Java applications)
+  # ==========================================================================
+  - name: jvm
+    rules:
+      # JVM heap usage high
+      - alert: JVMHeapUsageHigh
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage high for {{ $labels.instance }}"
+          description: "JVM heap usage is {{ $value | printf \"%.1f\" }}% for {{ $labels.instance }}"
+
+      # JVM heap usage critical
+      - alert: JVMHeapUsageCritical
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JVM heap usage critical for {{ $labels.instance }}"
+          description: "JVM heap usage is {{ $value | printf \"%.1f\" }}% for {{ $labels.instance }} - GC overhead likely"
+
+      # JVM GC pause time high
+      - alert: JVMGCPauseHigh
+        expr: |
+          rate(jvm_gc_pause_seconds_sum[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GC pause time for {{ $labels.instance }}"
+          description: "JVM GC pause time is {{ $value | printf \"%.2f\" }} seconds/second for {{ $labels.instance }}"
+
+      # JVM thread count high
+      - alert: JVMThreadCountHigh
+        expr: |
+          jvm_threads_current > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High thread count for {{ $labels.instance }}"
+          description: "JVM has {{ $value }} threads for {{ $labels.instance }}"
+
+      # JVM deadlocked threads
+      - alert: JVMDeadlockedThreads
+        expr: |
+          jvm_threads_deadlocked > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deadlocked threads detected in {{ $labels.instance }}"
+          description: "{{ $value }} deadlocked threads detected in {{ $labels.instance }}"
+
+  # ==========================================================================
+  # Database Alerts
+  # ==========================================================================
+  - name: database
+    rules:
+      # PostgreSQL connections high
+      - alert: PostgreSQLConnectionsHigh
+        expr: |
+          (pg_stat_activity_count / pg_settings_max_connections) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection usage high"
+          description: "PostgreSQL connection usage is {{ $value | printf \"%.1f\" }}%"
+
+      # PostgreSQL replication lag
+      - alert: PostgreSQLReplicationLag
+        expr: |
+          pg_replication_lag > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL replication lag detected"
+          description: "PostgreSQL replication lag is {{ $value }} seconds"
+
+      # MySQL connections high
+      - alert: MySQLConnectionsHigh
+        expr: |
+          (mysql_global_status_threads_connected / mysql_global_variables_max_connections) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL connection usage high"
+          description: "MySQL connection usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Database query time high
+      - alert: DatabaseSlowQueries
+        expr: |
+          rate(pg_stat_statements_total_time_seconds[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Database slow query rate is {{ $value | printf \"%.2f\" }} seconds/second"

@@ -1,4 +1,4 @@
-# YAWL v5.2 - Modernized Multi-Stage Docker Build (Java 25)
+# YAWL v6.0.0-Alpha - Modernized Multi-Stage Docker Build (Java 25)
 #
 # Features:
 # - Multi-stage build (build stage + runtime stage)
@@ -9,6 +9,7 @@
 # - Optimized layer caching for faster rebuilds
 # - Optimized JVM settings for containers (ZGC generational)
 # - Minimal attack surface with Alpine base
+# - OCI image labels for container metadata
 
 # ============================================================================
 # Build Stage - Optimized for Layer Caching
@@ -74,27 +75,35 @@ RUN mvn clean package -Dmaven.test.skip=true -B --no-transfer-progress
 # ============================================================================
 # Runtime Stage - Minimal JRE with Health Checks
 # ============================================================================
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 # Build arguments for labels
-ARG VERSION=5.2
+ARG VERSION=6.0.0-Alpha
 ARG BUILD_DATE
 ARG VCS_REF
+ARG MAINTAINER="YAWL Foundation <info@yawlfoundation.org>"
 
-LABEL maintainer="YAWL Foundation"
-LABEL version="${VERSION}"
-LABEL description="YAWL Workflow Engine - Cloud-Native with Virtual Threads Support"
-LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
-LABEL org.opencontainers.image.vendor="YAWL Foundation"
-LABEL org.opencontainers.image.licenses="LGPL-3.0"
+# OCI Image Labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
+LABEL maintainer="${MAINTAINER}"
+LABEL org.opencontainers.image.title="YAWL Workflow Engine"
+LABEL org.opencontainers.image.description="YAWL v6.0.0-Alpha - Yet Another Workflow Language with Petri Net semantics, Virtual Threads, and Cloud-Native support"
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
+LABEL org.opencontainers.image.url="https://yawlfoundation.org"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.licenses="LGPL-3.0-or-later"
+LABEL org.opencontainers.image.documentation="https://yawlfoundation.github.io/yawl/"
+LABEL org.yawlfoundation.yawl.java-version="25"
+LABEL org.yawlfoundation.yawl.features="virtual-threads,zgc,petri-net,mcp,a2a"
 
 # Install runtime dependencies in single layer
 RUN apk add --no-cache \
     bash \
     curl \
     netcat-openbsd \
+    procps-ng \
     postgresql-client \
     mysql-client \
     tzdata \
@@ -121,29 +130,10 @@ RUN mkdir -p \
 # The shaded JAR is in yawl-control-panel module with all dependencies
 COPY --from=builder --chown=yawl:yawl /build/yawl-control-panel/target/yawl-control-panel-*.jar /app/yawl.jar
 
-# Create health check script with fallback logic
-RUN echo '#!/bin/sh' > /app/healthcheck.sh && \
-    echo '# Health check with fallback: Actuator -> TCP port -> Process check' >> /app/healthcheck.sh && \
-    echo 'set -e' >> /app/healthcheck.sh && \
-    echo '' >> /app/healthcheck.sh && \
-    echo '# Try Spring Boot Actuator health endpoint first' >> /app/healthcheck.sh && \
-    echo 'if curl -sf http://localhost:8080/actuator/health/liveness >/dev/null 2>&1; then' >> /app/healthcheck.sh && \
-    echo '    exit 0' >> /app/healthcheck.sh && \
-    echo 'fi' >> /app/healthcheck.sh && \
-    echo '' >> /app/healthcheck.sh && \
-    echo '# Fallback: Check if port 8080 is listening' >> /app/healthcheck.sh && \
-    echo 'if nc -z localhost 8080 2>/dev/null; then' >> /app/healthcheck.sh && \
-    echo '    exit 0' >> /app/healthcheck.sh && \
-    echo 'fi' >> /app/healthcheck.sh && \
-    echo '' >> /app/healthcheck.sh && \
-    echo '# Fallback: Check if Java process is running' >> /app/healthcheck.sh && \
-    echo 'if pgrep -f "yaw[a-z]*\\.jar" >/dev/null 2>&1; then' >> /app/healthcheck.sh && \
-    echo '    exit 0' >> /app/healthcheck.sh && \
-    echo 'fi' >> /app/healthcheck.sh && \
-    echo '' >> /app/healthcheck.sh && \
-    echo 'exit 1' >> /app/healthcheck.sh && \
-    chmod +x /app/healthcheck.sh && \
-    chown yawl:yawl /app/healthcheck.sh
+# Copy health check script with production-ready fallback logic
+# Strategy: HTTP health endpoint -> TCP port check -> Process check
+# See docker/healthcheck.sh for full documentation and configuration options
+COPY --chown=yawl:yawl docker/healthcheck.sh /app/healthcheck.sh
 
 # Switch to non-root user
 USER yawl
@@ -155,9 +145,14 @@ USER yawl
 EXPOSE 8080 9090 8081
 
 # Health check with multiple fallback strategies
+# Production-ready settings:
+# - interval: 30s between checks
+# - timeout: 15s per check (increased for slow networks)
+# - start-period: 120s for JVM warmup (increased for container environments)
+# - retries: 3 before marking unhealthy
 HEALTHCHECK --interval=30s \
-            --timeout=10s \
-            --start-period=90s \
+            --timeout=15s \
+            --start-period=120s \
             --retries=3 \
     CMD /app/healthcheck.sh
 

@@ -1,10 +1,10 @@
 apiVersion: v2
 name: yawl
-description: YAWL (Yet Another Workflow Language) - Multi-cloud Helm Chart for BPM/Workflow Engine
+description: YAWL (Yet Another Workflow Language) - Cloud-Native BPM/Workflow Engine with Petri Net Semantics and Virtual Threads
 type: application
-version: 5.2.0
-appVersion: "5.2"
-kubeVersion: ">=1.25.0-0"
+version: 6.0.0
+appVersion: "6.0.0-Alpha"
+kubeVersion: ">=1.28.0-0"
 home: https://yawlfoundation.github.io/
 sources:
   - https://github.com/yawlfoundation/yawl
@@ -19,44 +19,56 @@ keywords:
   - petri-net
   - process-automation
   - workflow-engine
+  - java25
+  - virtual-threads
+  - cloud-native
+  - kubernetes
 annotations:
   artifacthub.io/category: integration-delivery
-  artifacthub.io/license: Apache-2.0
+  artifacthub.io/license: LGPL-3.0-or-later
   artifacthub.io/links: |
     - name: Documentation
-      url: https://yawlfoundation.github.io/yawl/v5.2/
+      url: https://yawlfoundation.github.io/yawl/v6.0/
     - name: GitHub
       url: https://github.com/yawlfoundation/yawl
   artifacthub.io/operator: "false"
-  artifacthub.io/prerelease: "false"
-  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/prerelease: "true"
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
+    - kind: changed
+      description: Upgraded to Java 25 with native virtual threads support
+    - kind: changed
+      description: Migrated from Tomcat to Spring Boot 3.4.x
+    - kind: changed
+      description: Replaced G1GC with ZGC Generational garbage collector
     - kind: added
-      description: Multi-cloud Helm chart support (GCP, AWS, Azure, Oracle, IBM)
+      description: OpenTelemetry integration for distributed tracing and metrics
     - kind: added
-      description: CloudSQL proxy integration for GCP
+      description: Spring Boot Actuator health probes for Kubernetes
     - kind: added
-      description: AWS RDS proxy integration
+      description: Multi-strategy health check with HTTP, TCP, and process checks
     - kind: added
-      description: Redis subchart for session management
+      description: Prometheus metrics endpoint via Actuator
     - kind: added
-      description: PostgreSQL subchart for database
+      description: Support for H2 and PostgreSQL databases
     - kind: added
-      description: Horizontal Pod Autoscaler support
+      description: OCI image labels for container metadata
     - kind: added
-      description: Pod Disruption Budget support
-    - kind: added
-      description: Network Policy support
+      description: Non-root container security by default
+    - kind: deprecated
+      description: Removed multi-service architecture in favor of unified engine
+    - kind: removed
+      description: Removed legacy Tomcat-based deployment
 
 dependencies:
   - name: postgresql
-    version: "15.x.x"
-    repository: "file://charts/postgresql"
+    version: "16.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
     condition: postgresql.enabled
     alias: postgresql
 
   - name: redis
-    version: "18.x.x"
-    repository: "file://charts/redis"
+    version: "19.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
     condition: redis.enabled
     alias: redis
