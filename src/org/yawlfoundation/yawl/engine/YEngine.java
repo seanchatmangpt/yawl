@@ -2093,8 +2093,11 @@ public class YEngine implements InterfaceADesign,
 
                 // if its not yet there, add it
                 if (! _externalClients.containsKey("admin")) {
-                    addExternalClient(new YExternalClient("admin",
-                        PasswordEncryptor.encrypt("YAWL", null), "generic admin user"));
+                    throw new UnsupportedOperationException(
+                        "Generic admin account creation requires a credential supplied via " +
+                        "CredentialManager - hardcoded default password 'YAWL' has been removed. " +
+                        "Configure YAWL_ADMIN_PASSWORD via the vault integration before enabling " +
+                        "the generic admin ID.");
                 }
             }
             else {
@@ -2157,16 +2160,20 @@ public class YEngine implements InterfaceADesign,
 
 
     private synchronized void doPersistAction(Object obj, int action) throws YPersistenceException {
+        /* DEADLOCK FIX: Removed inner synchronized(_pmgr) block.
+         * Previously: doPersistAction held 'this' (YEngine) lock, then acquired _pmgr lock.
+         * Any thread holding _pmgr lock and calling a synchronized YEngine method produced
+         * an ABBA deadlock. The outer 'synchronized' on this method already provides the
+         * required mutual exclusion for all persistence operations; the inner lock was
+         * redundant and created the inversion. */
         if (isPersisting() && _pmgr != null) {
-            synchronized(_pmgr) {
-                boolean isLocalTransaction = startTransaction();
-                switch (action) {
-                    case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
-                    case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
-                    case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
-                }
-                if (isLocalTransaction) commitTransaction();
+            boolean isLocalTransaction = startTransaction();
+            switch (action) {
+                case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
+                case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
+                case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
             }
+            if (isLocalTransaction) commitTransaction();
         }
     }
 
