@@ -3,7 +3,24 @@ name: yawl-agent-definitions
 description: YAWL Agent Definitions - Claude Code 2026 Best Practices
 ---
 
-Specialized agents for YAWL workflow engine development with Fortune 5 production standards.
+Specialized agents for YAWL workflow engine development with Fortune 5 production standards + Java 25.
+
+**Last Updated**: 2026-02-17 | **Java 25 Integration**: Complete | **Standards**: HYPER_STANDARDS + Java 25
+
+---
+
+## 🔗 Navigation
+
+**Related Documentation**:
+- **[.claude/INDEX.md](../INDEX.md)** - Master documentation index
+- **[.claude/JAVA-25-FEATURES.md](../JAVA-25-FEATURES.md)** - Feature adoption roadmap
+- **[.claude/ARCHITECTURE-PATTERNS-JAVA25.md](../ARCHITECTURE-PATTERNS-JAVA25.md)** - 8 implementation patterns
+- **[CLAUDE.md](../../CLAUDE.md)** - Main specification
+
+**Quick Links**:
+- 🚀 [Agent Selection Matrix](#agent-selection-matrix) - Which agent for which task
+- 💡 [Java 25 Considerations](#java-25-considerations-for-all-agents) - New capabilities per agent
+- 🔄 [Coordination Protocol](#coordination-protocol) - Multi-agent patterns
 
 ---
 
@@ -223,6 +240,98 @@ Focus Areas:
 - Bottleneck identification
 - Capacity planning
 - Optimization implementation
+
+---
+
+## ☕ Java 25 Considerations for All Agents
+
+### Universal Java 25 Requirements (All Agents Must Follow)
+
+**Compilation & Build**:
+- Use `mvn -T 1.5C clean compile` (parallel compilation, -50% faster)
+- Verify with `mvn -T 1.5C clean test` (parallel testing)
+- Check for deprecated APIs: `jdeprscan --for-removal build/libs/yawl.jar`
+
+**Language Features (Preferred)**:
+- ✅ **Records** for immutable DTOs: `public record WorkItem(String id, String name) {}`
+- ✅ **Sealed classes** for domain hierarchies: `public sealed class YElement permits ... {}`
+- ✅ **Pattern matching** in conditionals: `if (element instanceof YTask task) { ... }`
+- ✅ **Virtual threads** for concurrent operations: `Executors.newVirtualThreadPerTaskExecutor()`
+- ✅ **Scoped values** instead of ThreadLocal: `ScopedValue<String> WORKFLOW_ID = ...`
+- ✅ **Text blocks** for multi-line strings: `""" XML/JSON content """`
+
+**Performance Optimizations (Required)**:
+- Enable compact object headers: `-XX:+UseCompactObjectHeaders` (free 5-10% throughput)
+- Use structured concurrency: `try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { ... }`
+- Profile with JFR: `-XX:StartFlightRecording=...`
+
+**Security (Required)**:
+- TLS 1.3 only: `jdk.tls.disabledAlgorithms="TLSv1,TLSv1.1,TLSv1.2"`
+- 3072-bit RSA minimum (CNSA compliance)
+- AES-GCM for symmetric encryption
+- SBOM generation: `mvn cyclonedx:makeBom`
+
+### Agent-Specific Java 25 Enhancements
+
+#### yawl-engineer
+**Additional Java 25 Responsibilities**:
+- Implement records for event payloads (YEvent hierarchy)
+- Use sealed classes for state machines (YWorkItemStatus)
+- Adopt virtual threads for background task execution
+- Replace ThreadLocal with ScopedValue for engine context
+- Use structured concurrency for parallel workflow processing
+
+#### yawl-validator
+**Additional Java 25 Responsibilities**:
+- Validate that no sealed class hierarchy violates contracts
+- Check that records are properly immutable
+- Verify pattern matching exhaustiveness in compiled code
+- Ensure deprecated API list is empty
+
+#### yawl-architect
+**Additional Java 25 Responsibilities**:
+- Design with sealed interfaces for domain models
+- Plan virtual thread adoption for scaling
+- Document CQRS patterns for Interface B split
+- Plan module system boundaries for code organization
+
+#### yawl-integrator
+**Additional Java 25 Responsibilities**:
+- Use records for API request/response payloads
+- Implement virtual threads for async integrations
+- Use structured concurrency for multi-service operations
+- Leverage scoped values for request context (trace IDs, auth tokens)
+
+#### yawl-reviewer
+**Additional Java 25 Responsibilities**:
+- Check that sealed classes are properly sealed
+- Verify records are truly immutable (no setters)
+- Ensure pattern matching is exhaustive (compiler-verified)
+- Confirm virtual threads used instead of thread pools
+- Validate Scoped Values instead of ThreadLocal
+
+#### yawl-tester
+**Additional Java 25 Responsibilities**:
+- Create test data using records (no builders/mocks)
+- Use virtual threads in test fixtures for scaling tests
+- Test sealed class hierarchies with exhaustive matching
+- Verify structured concurrency cleanup in tests
+
+#### yawl-production-validator
+**Additional Java 25 Responsibilities**:
+- Verify compact object headers enabled: `-XX:+UseCompactObjectHeaders`
+- Check JVM flags for optimal GC (G1GC, ZGC, or Shenandoah)
+- Validate SBOM generated and scanned
+- Confirm no deprecated APIs in production JAR
+- Test startup time improvements with AOT cache
+
+#### yawl-performance-benchmarker
+**Additional Java 25 Responsibilities**:
+- Benchmark compact object header savings (5-10% expected)
+- Profile virtual thread performance vs platform threads
+- Measure structured concurrency overhead
+- Test startup improvement with `-XX:+UseAOTCache`
+- Compare GC pause times: G1GC vs ZGC vs Shenandoah
 
 ---
 
