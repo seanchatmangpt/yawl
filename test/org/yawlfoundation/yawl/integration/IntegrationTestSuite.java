@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  * Comprehensive Integration Test Suite for YAWL v5.2
@@ -11,11 +11,7 @@ import junit.textui.TestRunner;
  * - Engine lifecycle and case management
  * - Stateless engine operations
  * - Work item repository and data access
- * - Event processing and listeners
- * - Database and ORM integration
- * - Virtual threads and concurrency
- * - Security and observability
- * - Library compatibility
+ * - Jakarta EE migration
  *
  * Chicago TDD style - real integrations, minimal mocking.
  * Target: 70%+ test coverage across all modules.
@@ -23,29 +19,13 @@ import junit.textui.TestRunner;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Suite
+@SuiteDisplayName("YAWL Integration Tests")
+@SelectClasses({
+    StatelessEngineIntegrationTest.class,
+    WorkItemRepositoryIntegrationTest.class,
+    JakartaEEMigrationTest.class
+})
 public class IntegrationTestSuite {
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("YAWL Integration Tests");
-
-        // Core engine integration tests
-        suite.addTestSuite(EngineLifecycleIntegrationTest.class);
-        suite.addTestSuite(StatelessEngineIntegrationTest.class);
-        suite.addTestSuite(WorkItemRepositoryIntegrationTest.class);
-        suite.addTestSuite(EventProcessingIntegrationTest.class);
-
-        // Infrastructure integration tests
-        suite.addTestSuite(OrmIntegrationTest.class);
-        suite.addTestSuite(DatabaseIntegrationTest.class);
-        suite.addTestSuite(DatabaseTransactionTest.class);
-        suite.addTestSuite(VirtualThreadIntegrationTest.class);
-        suite.addTestSuite(CommonsLibraryCompatibilityTest.class);
-        suite.addTestSuite(SecurityIntegrationTest.class);
-
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
-    }
+    // JUnit 5 suite uses annotations - no main method needed
 }

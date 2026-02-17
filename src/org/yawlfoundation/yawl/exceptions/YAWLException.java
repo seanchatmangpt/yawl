@@ -84,7 +84,7 @@ public class YAWLException extends Exception {
      * @since 1.4
      */
     public YAWLException(String message, Throwable cause) {
-        super(cause);
+        super(message, cause);
         _message = message;
     }
 

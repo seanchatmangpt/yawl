@@ -35,10 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class YCaseNbrStore {
 
     private int pkey = 1001 ;                             // primary key for persistence
-    private AtomicInteger caseNbr;
+    private final AtomicInteger caseNbr;
     private boolean persisted = false ;                   // has this been persisted yet?
     private boolean persisting = false ;                  // is persistence on?
-    private static YCaseNbrStore _instance ;
+    private static final YCaseNbrStore _instance = new YCaseNbrStore();
     private static final Logger log = LogManager.getLogger(YCaseNbrStore.class) ;
 
     protected YCaseNbrStore() {
@@ -47,8 +47,6 @@ public class YCaseNbrStore {
 
     /** @return an instance of ths class */
     public static YCaseNbrStore getInstance() {
-        if (_instance == null)
-            _instance = new YCaseNbrStore();
         return _instance ;
     }
 

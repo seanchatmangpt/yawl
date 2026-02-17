@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Connection pooling
  * - Prepared statements (SQL injection prevention)
  */
-class DatabaseCompatibilityTest {
+public class DatabaseCompatibilityTest {
 
     private Connection connection;
 

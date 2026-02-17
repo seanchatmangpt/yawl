@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 5.2
  */
-class CloudConfigurationUnitTest {
+public class CloudConfigurationUnitTest {
 
     private MetricsCollector metricsCollector;
 

@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - No javax.* imports in codebase
  * - Tomcat 10+ compatibility
  */
-class JakartaEEMigrationTest {
+public class JakartaEEMigrationTest {
 
     private static final String PROJECT_ROOT = "/home/user/yawl";
     private static final String SRC_DIR = PROJECT_ROOT + "/src";

@@ -30,9 +30,9 @@ import java.util.List;
 
 
 public class SingleInstanceClass {
-	
-	private static SingleInstanceClass singleInstance = null;
-	
+
+	private static final SingleInstanceClass singleInstance = new SingleInstanceClass();
+
 	private List<ThreadNotify> registeredClasses = new ArrayList<ThreadNotify>();
 	private HashMap<ThreadNotify,InternalRunner> mapping = new HashMap<ThreadNotify,InternalRunner>();
 	private HashMap<ThreadNotify,Boolean> mappingDone = new HashMap<ThreadNotify,Boolean>();
@@ -40,7 +40,7 @@ public class SingleInstanceClass {
 	private Object mutex2 = new Object();
 	private Object mutex3 = new Object();
 	private List<String> blockedCases = new ArrayList<String>();
-	
+
 	private SingleInstanceClass() {
 		super();
 	}
@@ -160,10 +160,6 @@ public class SingleInstanceClass {
 	}
 	
 	public static SingleInstanceClass getInstance() {
-		if (singleInstance == null) {
-			singleInstance = new SingleInstanceClass();
-			
-		}
 		return singleInstance;
 	}
 	

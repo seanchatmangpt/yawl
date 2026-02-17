@@ -1,9 +1,7 @@
 package org.yawlfoundation.yawl.util;
 
-import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  *
@@ -11,15 +9,10 @@ import junit.framework.TestSuite;
  * Date: 9/05/2003
  * Time: 16:00:43
  *
- * JUnit 5 Test Suite (with JUnit 3 backward compatibility)
+ * JUnit 5 Test Suite (empty - no test classes in util package yet)
  */
 @Suite
+@SuiteDisplayName("Util Test Suite")
 public class UtilTestSuite {
-
-    /**
-     * JUnit 3 compatible suite() method for backward compatibility
-     */
-    public static Test suite() {
-        return new TestSuite("Util Test Suite");
-    }
+    // JUnit 5 suite uses annotations - no main method needed
 }

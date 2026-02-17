@@ -55,7 +55,7 @@ public class MailService extends InterfaceBWebsideController {
     // holds a session handle to the engine
     private String _handle = null;
 
-    private static MailService _instance;
+    private static final MailService _instance = new MailService();
     private final MailSettings _defaults = new MailSettings();
     private final Properties _extraProperties = new Properties();
 
@@ -63,7 +63,6 @@ public class MailService extends InterfaceBWebsideController {
     private MailService() { }
 
     public static MailService getInstance() {
-        if (_instance == null) _instance = new MailService();
         return _instance;
     }
 

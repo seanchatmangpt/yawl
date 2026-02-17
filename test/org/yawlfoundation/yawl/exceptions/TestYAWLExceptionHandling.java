@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Test Team
  * Date: 2026-02-16
  */
-class TestYAWLExceptionHandling {
+public class TestYAWLExceptionHandling {
 
     private YEngine _engine;
     private YPersistenceManager _pmgr;

@@ -47,7 +47,7 @@ import java.util.List;
 
 public class YLogServer {
 
-    private static YLogServer _instance;
+    private static final YLogServer _instance = new YLogServer();
     private HibernateEngine _logDb;
     private static final Logger _log = LogManager.getLogger(YLogServer.class);
 
@@ -67,7 +67,6 @@ public class YLogServer {
     }
 
     public static YLogServer getInstance() {
-        if (_instance == null) _instance = new YLogServer();
         return _instance;
     }
 

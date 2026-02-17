@@ -23,7 +23,7 @@ fi
 echo -e "${BLUE}[post-edit] Recording: ${FILE_PATH}${NC}"
 
 # Get relative path
-RELATIVE_PATH="${FILE_PATH#${PROJECT_ROOT}/"
+RELATIVE_PATH="${FILE_PATH#${PROJECT_ROOT}/}"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Log to session history

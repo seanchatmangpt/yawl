@@ -2,8 +2,7 @@ package org.yawlfoundation.yawl.unmarshal;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  *
@@ -20,24 +19,15 @@ import junit.framework.TestSuite;
  * The YAWL Project or it's members will not be held liable for any damage
  * occuring as a _errorsString of using this class.
  *
- * JUnit 5 Test Suite (with JUnit 3 backward compatibility)
+ * JUnit 5 Test Suite
  */
 @Suite
+@SuiteDisplayName("Unmarshaller Test Suite")
 @SelectClasses({
     TestMetaDataMarshal.class,
     TestYMarshal.class,
     TestYMarshalB4.class
 })
 public class UnmarshallerTestSuite {
-
-    /**
-     * JUnit 3 compatible suite() method for backward compatibility
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Unmarshaller Test Suite");
-        suite.addTestSuite(TestMetaDataMarshal.class);
-        suite.addTestSuite(TestYMarshal.class);
-        suite.addTestSuite(TestYMarshalB4.class);
-        return suite;
-    }
+    // JUnit 5 suite uses annotations - no main method needed
 }

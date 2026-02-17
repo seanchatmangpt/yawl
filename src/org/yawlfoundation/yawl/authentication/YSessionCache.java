@@ -353,6 +353,28 @@ public final class YSessionCache implements ISessionCache {
         }
     }
 
+    /**
+     * Clears all active sessions without shutting down the cache.
+     * Primarily intended for testing purposes to reset state between tests.
+     *
+     * <p>This method cancels all pending timeouts and removes all sessions,
+     * but keeps the scheduler and other infrastructure alive for reuse.</p>
+     */
+    public void clear() {
+        // Cancel all pending timeouts
+        timeoutTasks.values().forEach(task -> task.cancel(false));
+        timeoutTasks.clear();
+
+        // Clear all sessions
+        rwLock.writeLock().lock();
+        try {
+            sessions.clear();
+            activeSessionsCount.set(0);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
     // ========================================================================
     // PRIVATE - Authentication
     // ========================================================================

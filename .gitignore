@@ -33,3 +33,9 @@ dependency-reduced-pom.xml
 # Build logs and temp files
 build-log.txt
 build/3rdParty/
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+!.env.*.example

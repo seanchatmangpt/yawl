@@ -2,8 +2,7 @@ package org.yawlfoundation.yawl.authentication;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  * Test suite for authentication package.
@@ -12,22 +11,14 @@ import junit.framework.TestSuite;
  * Date: 28/04/2003
  * Time: 11:12:39
  *
- * JUnit 5 Test Suite (with JUnit 3 backward compatibility)
+ * JUnit 5 Test Suite
  */
 @Suite
+@SuiteDisplayName("Authentication Test Suite")
 @SelectClasses({
     TestConnections.class,
     TestJwtManager.class
 })
 public class AuthenticationTestSuite {
-
-    /**
-     * JUnit 3 compatible suite() method for backward compatibility
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Authentication Test Suite");
-        suite.addTestSuite(TestConnections.class);
-        suite.addTestSuite(TestJwtManager.class);
-        return suite;
-    }
+    // JUnit 5 suite uses annotations - no main method needed
 }

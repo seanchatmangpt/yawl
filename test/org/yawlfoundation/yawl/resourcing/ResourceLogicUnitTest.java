@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 5.2
  */
-class ResourceLogicUnitTest {
+public class ResourceLogicUnitTest {
 
     @Test
     void testWorkItemStatusTransitions() {

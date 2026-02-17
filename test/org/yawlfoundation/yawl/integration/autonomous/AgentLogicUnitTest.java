@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 5.2
  */
-class AgentLogicUnitTest {
+public class AgentLogicUnitTest {
 
     @Test
     void testAgentCapabilityCreation() {

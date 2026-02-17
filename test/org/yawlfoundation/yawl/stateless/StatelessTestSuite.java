@@ -2,26 +2,17 @@ package org.yawlfoundation.yawl.stateless;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
 /**
  * JUnit 5 test suite for the stateless YAWL engine (YStatelessEngine).
  * Run stateless mode tests before stateful engine tests (EngineTestSuite).
- * Includes JUnit 3 backward compatibility.
  */
 @Suite
+@SuiteDisplayName("Stateless Test Suite")
 @SelectClasses({
     TestStatelessEngine.class
 })
 public class StatelessTestSuite {
-
-    /**
-     * JUnit 3 compatible suite() method for backward compatibility
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Stateless Test Suite");
-        suite.addTestSuite(TestStatelessEngine.class);
-        return suite;
-    }
+    // JUnit 5 suite uses annotations - no main method needed
 }

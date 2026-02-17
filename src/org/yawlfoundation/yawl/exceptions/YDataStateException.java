@@ -20,10 +20,12 @@ package org.yawlfoundation.yawl.exceptions;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.jdom2.JDOMException;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.io.IOException;
 import java.io.Serial;
 import java.io.StringReader;
 
@@ -74,8 +76,8 @@ public class YDataStateException extends YAWLException {
         if (schema != null) {
             try {
                 _schema = _builder.build(new StringReader(schema)).getRootElement();
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (JDOMException | IOException e) {
+                throw new IllegalStateException("Failed to parse schema: " + e.getMessage(), e);
             }
         }
     }
