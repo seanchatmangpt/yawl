@@ -198,7 +198,7 @@ public final class AgentFactory {
 
                 Should this agent handle this work item? Answer with exactly YES or NO. \
                 If YES, add a brief reason in one sentence. If NO, add a brief reason."""
-                .formatted(capability.getDescription(), taskName,
+                .formatted(capability.description(), taskName,
                            workItem.getCaseID(), inputSummary);
 
             zaiService.setSystemPrompt(

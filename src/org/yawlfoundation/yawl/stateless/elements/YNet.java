@@ -444,12 +444,10 @@ public final class YNet extends YDecomposition {
             if (element instanceof YTask) {
                 xml.append(element.toXML());
             }
-            else {
-                YCondition condition = (YCondition) element;
-                if (! (condition instanceof YInputCondition ||
-                        condition instanceof YOutputCondition || condition.isImplicit())) {
-                    xml.append(condition.toXML());
-                }
+            else if (element instanceof YCondition condition &&
+                     !(condition instanceof YInputCondition ||
+                       condition instanceof YOutputCondition || condition.isImplicit())) {
+                xml.append(condition.toXML());
             }
         }
         return xml.toString();
