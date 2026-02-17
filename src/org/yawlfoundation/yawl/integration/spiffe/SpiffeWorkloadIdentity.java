@@ -321,7 +321,7 @@ public class SpiffeWorkloadIdentity implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("SpiffeWorkloadIdentity{id=%s, type=%s, trustDomain=%s, expires=%s}",
+        return "SpiffeWorkloadIdentity{id=%s, type=%s, trustDomain=%s, expires=%s}".formatted(
             spiffeId, type, trustDomain, expiresAt);
     }
 

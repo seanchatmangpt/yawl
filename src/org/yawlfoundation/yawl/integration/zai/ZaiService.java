@@ -131,11 +131,11 @@ public class ZaiService {
      * Transform data using AI
      */
     public String transformData(String inputData, String transformationRule) {
-        String prompt = String.format(
-                "Transform the following data according to the rule:\n\n" +
+        String prompt = ("Transform the following data according to the rule:\n\n" +
                         "Input Data: %s\n\n" +
                         "Transformation Rule: %s\n\n" +
-                        "Return only the transformed data, no explanation.",
+                        "Return only the transformed data, no explanation.").formatted(
+                
                 inputData, transformationRule
         );
         return chat(prompt, defaultModel());
@@ -145,11 +145,11 @@ public class ZaiService {
      * Extract structured information from unstructured text
      */
     public String extractInformation(String text, String fieldsToExtract) {
-        String prompt = String.format(
-                "Extract the following information from the text:\n\n" +
+        String prompt = ("Extract the following information from the text:\n\n" +
                         "Text: %s\n\n" +
                         "Fields to Extract: %s\n\n" +
-                        "Return the result as key-value pairs in JSON format.",
+                        "Return the result as key-value pairs in JSON format.").formatted(
+                
                 text, fieldsToExtract
         );
         return chat(prompt);
@@ -159,15 +159,15 @@ public class ZaiService {
      * Generate workflow documentation
      */
     public String generateDocumentation(String workflowSpec) {
-        String prompt = String.format(
-                "Generate comprehensive documentation for the following YAWL workflow:\n\n" +
+        String prompt = ("Generate comprehensive documentation for the following YAWL workflow:\n\n" +
                         "%s\n\n" +
                         "Include:\n" +
                         "1. Overview and purpose\n" +
                         "2. Input parameters\n" +
                         "3. Process steps\n" +
                         "4. Output parameters\n" +
-                        "5. Error handling",
+                        "5. Error handling").formatted(
+                
                 workflowSpec
         );
         return chat(prompt);
@@ -177,11 +177,11 @@ public class ZaiService {
      * Validate workflow data against rules
      */
     public String validateData(String data, String rules) {
-        String prompt = String.format(
-                "Validate the following data against these rules:\n\n" +
+        String prompt = ("Validate the following data against these rules:\n\n" +
                         "Data: %s\n\n" +
                         "Rules: %s\n\n" +
-                        "Return VALID if all rules pass, or list the validation issues found.",
+                        "Return VALID if all rules pass, or list the validation issues found.").formatted(
+                
                 data, rules
         );
         return chat(prompt, defaultModel());

@@ -203,8 +203,8 @@ public final class PartyAgent {
             if (agentsUrl != null && !agentsUrl.isEmpty()) {
                 available = CapacityChecker.checkPeersAvailable(agentsUrl);
             }
-            String json = String.format(
-                "{\"domain\":\"%s\",\"available\":%s,\"capacity\":\"normal\"}",
+            String json = ("{\"domain\":\"%s\",\"available\":%s,\"capacity\":\"normal\"}").formatted(
+                
                 capability.getDomainName(), available);
             byte[] body = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");

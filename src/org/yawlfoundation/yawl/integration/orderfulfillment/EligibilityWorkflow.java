@@ -58,14 +58,14 @@ public final class EligibilityWorkflow {
         }
         String inputSummary = summarizeInput(workItem);
 
-        String prompt = String.format(
-            "You are an autonomous agent with this domain capability: %s\n\n" +
+        String prompt = ("You are an autonomous agent with this domain capability: %s\n\n" +
             "Work item to evaluate:\n" +
             "- Task: %s\n" +
             "- Case: %s\n" +
             "- Input data summary: %s\n\n" +
             "Should this agent handle this work item? Answer with exactly YES or NO. " +
-            "If YES, add a brief reason in one sentence. If NO, add a brief reason.",
+            "If YES, add a brief reason in one sentence. If NO, add a brief reason.").formatted(
+            
             capability.getDescription(),
             taskName,
             workItem.getCaseID(),

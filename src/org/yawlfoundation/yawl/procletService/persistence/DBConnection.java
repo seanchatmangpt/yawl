@@ -159,8 +159,8 @@ public class DBConnection {
 
     public static List getStoredItems(String classID, String procletID,
                                            String blockID, Item itemType) {
-        String query = String.format("from StoredItem as s where s.classID='%s' and " +
-                           "s.procletID='%s' and s.blockID='%s' and s.itemType=%d",
+        String query = ("from StoredItem as s where s.classID='%s' and " +
+                           "s.procletID='%s' and s.blockID='%s' and s.itemType=%d").formatted(
                 classID, procletID, blockID, itemType.ordinal());
         return _db.execQuery(query);
     }
@@ -174,9 +174,9 @@ public class DBConnection {
 
     public static List getSelectedStoredItems(String classID, String procletID,
                                            String blockID, Item itemType) {
-        String query = String.format("from StoredItem as s where s.classID='%s' and " +
+        String query = ("from StoredItem as s where s.classID='%s' and " +
                            "s.procletID='%s' and s.blockID='%s' and s.itemType=%d and " +
-                           "s.selected=%b",
+                           "s.selected=%b").formatted(
                 classID, procletID, blockID, itemType.ordinal(), true);
         return _db.execQuery(query);
     }

@@ -284,9 +284,9 @@ public class ProcletModel extends DirectedSparseGraph {
 	
 	public void deleteProcletModelFromDB () {
         String template = "delete from %s as s where s.classID='" + classID + "'";
-        DBConnection.execUpdate(String.format(template, "StoredProcletBlock"));
-        DBConnection.execUpdate(String.format(template, "StoredProcletPort"));
-        DBConnection.execUpdate(String.format(template, "StoredBlockRel"));
+        DBConnection.execUpdate(template.formatted("StoredProcletBlock"));
+        DBConnection.execUpdate(template.formatted("StoredProcletPort"));
+        DBConnection.execUpdate(template.formatted("StoredBlockRel"));
 	}
 	
 	public String toString() {

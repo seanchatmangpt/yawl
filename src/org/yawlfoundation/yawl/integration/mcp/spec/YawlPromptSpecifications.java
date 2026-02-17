@@ -72,13 +72,13 @@ public final class YawlPromptSpecifications {
 
             String specInfo = fetchSpecInfo(client, sessionSupplier.get(), specId);
 
-            String text = String.format(
-                "Analyze the following YAWL workflow specification (focus: %s):\n\n%s\n\n" +
+            String text = ("Analyze the following YAWL workflow specification (focus: %s):\n\n%s\n\n" +
                 "Provide:\n1. Summary of the workflow's purpose and structure\n" +
                 "2. Key observations about task decomposition and flow\n" +
                 "3. Specific %s recommendations\n" +
                 "4. Potential issues, bottlenecks, or improvements\n" +
-                "5. Best practices alignment assessment",
+                "5. Best practices alignment assessment").formatted(
+                
                 analysisType, specInfo, analysisType);
 
             return new McpSchema.GetPromptResult(
@@ -119,13 +119,13 @@ public final class YawlPromptSpecifications {
                 throw new RuntimeException("Failed to fetch work item: " + e.getMessage(), e);
             }
 
-            String text = String.format(
-                "Provide step-by-step guidance for completing this YAWL work item:\n\n" +
+            String text = ("Provide step-by-step guidance for completing this YAWL work item:\n\n" +
                 "Work Item ID: %s\n%s\nWork Item Data:\n%s\n\n" +
                 "Include:\n1. What this task requires\n" +
                 "2. Expected input/output data format (XML)\n" +
                 "3. Steps using yawl_checkout_work_item and yawl_checkin_work_item tools\n" +
-                "4. Data validation requirements\n5. Common issues and resolutions",
+                "4. Data validation requirements\n5. Common issues and resolutions").formatted(
+                
                 workItemId,
                 context.isEmpty() ? "" : "Context: " + context + "\n",
                 taskInfo);
@@ -179,13 +179,13 @@ public final class YawlPromptSpecifications {
                 throw new RuntimeException("Failed to fetch case data: " + e.getMessage(), e);
             }
 
-            String text = String.format(
-                "Troubleshoot the following YAWL workflow case:\n\n" +
+            String text = ("Troubleshoot the following YAWL workflow case:\n\n" +
                 "Case ID: %s\nReported Symptom: %s\n\nCurrent State:\n%s\n\n" +
                 "Diagnostic steps:\n1. Analyze case state and work item statuses\n" +
                 "2. Identify blocked or stuck work items\n" +
                 "3. Check for missing resources or data\n" +
-                "4. Suggest specific resolution steps\n5. Recommend preventive measures",
+                "4. Suggest specific resolution steps\n5. Recommend preventive measures").formatted(
+                
                 caseId, symptom, caseInfo);
 
             return new McpSchema.GetPromptResult(
@@ -215,8 +215,7 @@ public final class YawlPromptSpecifications {
 
             String specInfo = fetchSpecInfo(client, sessionSupplier.get(), specId);
 
-            String text = String.format(
-                "Perform a design review of this YAWL workflow specification:\n\n%s\n\n" +
+            String text = ("Perform a design review of this YAWL workflow specification:\n\n%s\n\n" +
                 "Review criteria:\n" +
                 "1. YAWL pattern usage (choice, parallel split, synchronization)\n" +
                 "2. Resource allocation strategy (direct, role-based, deferred)\n" +
@@ -225,7 +224,8 @@ public final class YawlPromptSpecifications {
                 "5. Cancellation region design\n" +
                 "6. Timer and deadline configurations\n" +
                 "7. Documentation completeness\n" +
-                "8. Overall structure and maintainability",
+                "8. Overall structure and maintainability").formatted(
+                
                 specInfo);
 
             return new McpSchema.GetPromptResult(
@@ -244,9 +244,9 @@ public final class YawlPromptSpecifications {
                     YSpecificationID specId = spec.getID();
                     if (specIdentifier.equals(specId.getIdentifier())
                             || specIdentifier.equals(specId.getUri())) {
-                        return String.format(
-                            "Specification: %s\nVersion: %s\nURI: %s\nStatus: %s\n" +
-                            "Name: %s\nDocumentation: %s\nRoot Net: %s",
+                        return ("Specification: %s\nVersion: %s\nURI: %s\nStatus: %s\n" +
+                            "Name: %s\nDocumentation: %s\nRoot Net: %s").formatted(
+                            
                             specId.getIdentifier(), specId.getVersionAsString(),
                             specId.getUri(), spec.getStatus(), spec.getName(),
                             spec.getDocumentation(), spec.getRootNetID());
