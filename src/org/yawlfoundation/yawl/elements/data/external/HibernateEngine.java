@@ -25,7 +25,6 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.Configuration;
 import org.hibernate.exception.JDBCConnectionException;
 import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
@@ -86,7 +85,11 @@ public class HibernateEngine {
 
     /** initialises hibernate and the required tables */
     public void initialise() throws HibernateException {
-        _factory = new Configuration().buildSessionFactory();         // get a session context
+        // Hibernate 6.x bootstrap: replaces deprecated new Configuration().buildSessionFactory()
+        StandardServiceRegistry standardRegistry =
+                new StandardServiceRegistryBuilder().configure().build();
+        Metadata metadata = new MetadataSources(standardRegistry).buildMetadata();
+        _factory = metadata.buildSessionFactory();
     }
 
 
@@ -104,7 +107,7 @@ public class HibernateEngine {
         props.setProperty("hibernate.query.substitutions", "true 1, false 0, yes 'Y', no 'N'");
         props.setProperty("hibernate.show_sql", "false");
         props.setProperty("hibernate.current_session_context_class", "thread");
-        props.setProperty("hibernate.jdbc.batch_size", "0");
+        props.setProperty("hibernate.jdbc.batch_size", "20");
         props.setProperty("hibernate.jdbc.use_streams_for_binary", "true");
         props.setProperty("hibernate.max_fetch_depth", "1");
         props.setProperty("hibernate.cache.region_prefix", "hibernate.test");

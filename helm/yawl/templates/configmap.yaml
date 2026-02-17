@@ -65,7 +65,7 @@ data:
   hibernate.jdbc.batch_size: "20"
   hibernate.order_inserts: "true"
   hibernate.order_updates: "true"
-  hibernate.cache.region.factory_class: "org.hibernate.cache.ehcache.EhCacheRegionFactory"
+  hibernate.cache.region.factory_class: "org.hibernate.cache.jcache.JCacheRegionFactory"
   hibernate.generate_statistics: "false"
   hibernate.connection.provider_class: "org.hibernate.hikaricp.internal.HikariCPConnectionProvider"
   hibernate.hikari.minimumIdle: "5"
