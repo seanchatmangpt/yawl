@@ -626,8 +626,7 @@ public class YDecompositionParser {
     
 
     private void linkElements() {
-        if (_decomposition instanceof YNet) {
-            YNet decomposition = (YNet) _decomposition;
+        if (_decomposition instanceof YNet decomposition) {
             for (YExternalNetElement currentNetElement : decomposition.getNetElements().values()) {
                 List<FlowStruct> postsetIDs = _postsetIDs.getQPostset(currentNetElement.getID());
                 if (postsetIDs != null) {
@@ -714,19 +713,19 @@ public class YDecompositionParser {
             List<String> elementIDs = new Vector<>(_postsetMap.keySet());
             for (String currentElementID : elementIDs) {
                 YExternalNetElement currentNetElement = getNetElement(currentElementID);
-                if (currentNetElement instanceof YTask) {
+                if (currentNetElement instanceof YTask currentTask
+                        && _decomposition instanceof YNet yNet) {
                     for (FlowStruct flowStruct : _postsetMap.get(currentElementID)) {
                         YExternalNetElement netElement = getNetElement(flowStruct._flowInto);
 
                         // if one task flows directly to another task then we create an
                         // anonymous condition and insert it between the two tasks.
                         if (netElement instanceof YTask) {
-                            String anonID = makeAnonID(currentNetElement.getID(),
+                            String anonID = makeAnonID(currentTask.getID(),
                                                        netElement.getID());
-                            YCondition condition =
-                                    new YCondition(anonID, (YNet) _decomposition);
+                            YCondition condition = new YCondition(anonID, yNet);
                             condition.setImplicit(true);
-                            ((YNet) _decomposition).addNetElement(condition);
+                            yNet.addNetElement(condition);
                             String tempElemID = flowStruct._flowInto;
                             flowStruct._flowInto = condition.getID();
                             List<FlowStruct> dom = new Vector<>();
