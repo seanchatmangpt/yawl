@@ -227,29 +227,18 @@ class TestOrJoin {
             }
         }
         {
-            // After completing task 6, task 7 should be available from the XOR split at condition 4
-            // We need to explicitly find task 7 to avoid race conditions with iterator ordering
-            YWorkItem item7 = null;
-            Iterator it = _engine.getAvailableWorkItems().iterator();
-            while (it.hasNext()) {
-                YWorkItem item = (YWorkItem) it.next();
-                if (item.getTaskID().equals("7")) {
-                    item7 = item;
-                    break;
-                }
-            }
-            assertNotNull(item7, "item7 (task 7) should be available");
-            item7 = _engine.startWorkItem(item7, _engine.getExternalClient("admin"));
-            assertNotNull(item7, "item7 child is null");
+            // After completing tasks 5 and 6, task 9 (OR-join) is enabled from condition 2
+            // Task 7 is no longer enabled (XOR-join token in condition 4 was consumed by task 6)
+            YWorkItem itemA = _engine.getAvailableWorkItems().iterator().next();
+            assertNotNull(itemA, "itemA parent is null");
+            itemA = _engine.startWorkItem(itemA, _engine.getExternalClient("admin"));
+            assertNotNull(itemA, "itemA child is null");
             try {
                 Thread.sleep(_sleepTime);
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
-
-            // Task 9 should NOT be enabled yet - it has an OR join waiting for either
-            // condition 2 (from task 5) or condition 3 (from task 10)
-            it = _engine.getAvailableWorkItems().iterator();
+            Iterator it = _engine.getAvailableWorkItems().iterator();
             while (it.hasNext()) {
                 YWorkItem workItem = (YWorkItem) it.next();
                 if (workItem.getTaskID().equals("9")) {
@@ -257,15 +246,12 @@ class TestOrJoin {
                 }
             }
 
-            _engine.completeWorkItem(item7, "<data/>", null, WorkItemCompletion.Normal);
+            _engine.completeWorkItem(itemA, "<data/>", null, WorkItemCompletion.Normal);
             try {
                 Thread.sleep(_sleepTime);
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
-
-            // After completing task 7, task 10 (AND join) should fire and enable task 9
-            // But the OR join at task 9 needs to verify proper completion semantics
             it = _engine.getAvailableWorkItems().iterator();
             while (it.hasNext()) {
                 YWorkItem workItem = (YWorkItem) it.next();
