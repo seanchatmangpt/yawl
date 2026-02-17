@@ -70,13 +70,15 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
           cache: 'maven'
+          check-latest: true
 
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '**/pom-modernized.xml') }}
+          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java${{ matrix.java }}-
             ${{ runner.os }}-maven-
 
       - name: Display Tool Versions
@@ -128,13 +130,15 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
           cache: 'maven'
+          check-latest: true
 
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java${{ matrix.java }}-
             ${{ runner.os }}-maven-
 
       - name: Run Unit Tests (Parallel)
@@ -252,13 +256,15 @@ jobs:
           java-version: 25
           distribution: 'temurin'
           cache: 'maven'
+          check-latest: true
 
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java25-
             ${{ runner.os }}-maven-
 
       - name: Run Integration Tests
@@ -307,13 +313,15 @@ jobs:
           java-version: 25
           distribution: 'temurin'
           cache: 'maven'
+          check-latest: true
 
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java25-
             ${{ runner.os }}-maven-
 
       - name: Run OWASP Dependency Check

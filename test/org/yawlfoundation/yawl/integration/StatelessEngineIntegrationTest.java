@@ -1,6 +1,8 @@
 package org.yawlfoundation.yawl.integration;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Comprehensive integration test for YStatelessEngine.
  * Tests stateless engine operations including case export/import,
@@ -42,8 +46,7 @@ import java.util.concurrent.*;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class StatelessEngineIntegrationTest extends TestCase
-        implements YCaseEventListener, YWorkItemEventListener {
+class StatelessEngineIntegrationTest implements YCaseEventListener, YWorkItemEventListener {
 
     private YStatelessEngine _engine;
     private YSpecification _testSpec;
@@ -55,13 +58,8 @@ public class StatelessEngineIntegrationTest extends TestCase
     private final List<YEventType> _workItemEvents = new ArrayList<>();
     private final CountDownLatch _eventLatch = new CountDownLatch(1);
 
-    public StatelessEngineIntegrationTest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         _engine = new YStatelessEngine();
         _engine.addCaseEventListener(this);
         _engine.addWorkItemEventListener(this);
@@ -71,16 +69,15 @@ public class StatelessEngineIntegrationTest extends TestCase
         // Load test specification
         String specXml = loadMinimalSpecXml();
         _testSpec = _engine.unmarshalSpecification(specXml);
-        assertNotNull("Test specification should not be null", _testSpec);
+        assertNotNull(_testSpec, "Test specification should not be null");
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (_engine != null) {
             _engine.removeCaseEventListener(this);
             _engine.removeWorkItemEventListener(this);
         }
-        super.tearDown();
     }
 
     // Event listener implementations
@@ -104,55 +101,55 @@ public class StatelessEngineIntegrationTest extends TestCase
      */
     private String loadMinimalSpecXml() {
         InputStream is = getClass().getResourceAsStream(MINIMAL_SPEC_RESOURCE);
-        assertNotNull("Missing resource: " + MINIMAL_SPEC_RESOURCE, is);
+        assertNotNull(is, "Missing resource: " + MINIMAL_SPEC_RESOURCE);
         String xml = StringUtil.streamToString(is);
-        assertNotNull("Empty spec XML", xml);
+        assertNotNull(xml, "Empty spec XML");
         return xml;
     }
 
     /**
      * Test: Unmarshal specification and verify structure.
      */
-    public void testUnmarshalSpecification() throws YSyntaxException {
+    @Test
+    void testUnmarshalSpecification() throws YSyntaxException {
         String xml = loadMinimalSpecXml();
         YSpecification spec = _engine.unmarshalSpecification(xml);
 
-        assertNotNull("Specification should not be null", spec);
-        assertNotNull("Root net should not be null", spec.getRootNet());
-        assertEquals("Specification ID should match", "MinimalSpec", spec.getID());
-        assertTrue("Should have decompositions", spec.getDecompositions().size() > 0);
-        assertNotNull("Should have input condition",
-                spec.getRootNet().getInputCondition());
-        assertNotNull("Should have output condition",
-                spec.getRootNet().getOutputCondition());
+        assertNotNull(spec, "Specification should not be null");
+        assertNotNull(spec.getRootNet(), "Root net should not be null");
+        assertEquals("MinimalSpec", spec.getID(), "Specification ID should match");
+        assertTrue(spec.getDecompositions().size() > 0, "Should have decompositions");
+        assertNotNull(spec.getRootNet().getInputCondition(), "Should have input condition");
+        assertNotNull(spec.getRootNet().getOutputCondition(), "Should have output condition");
     }
 
     /**
      * Test: Launch case and verify it starts.
      */
-    public void testLaunchCase() throws YDataStateException, YStateException,
+    @Test
+    void testLaunchCase() throws YDataStateException, YStateException,
             YQueryException, YEngineStateException, YPersistenceException, YSchemaBuildingException {
 
         YIdentifier caseId = _engine.launchCase(
                 _testSpec.getSpecificationID(),
                 null, null, null, new YLogDataItemList(), null);
 
-        assertNotNull("Case ID should not be null", caseId);
-        assertNotNull("Case ID string should not be empty", caseId.toString());
+        assertNotNull(caseId, "Case ID should not be null");
+        assertNotNull(caseId.toString(), "Case ID string should not be empty");
 
         // Verify case started event was fired
         waitForEvents();
         synchronized (_caseEvents) {
-            assertTrue("Should have case events", _caseEvents.size() > 0);
-            assertTrue("Should have case started event",
-                    _caseEvents.contains(YEventType.CASE_STARTED));
+            assertTrue(_caseEvents.size() > 0, "Should have case events");
+            assertTrue(_caseEvents.contains(YEventType.CASE_STARTED), "Should have case started event");
         }
     }
 
     /**
      * Test: Start and complete work item lifecycle.
      */
-    public void testWorkItemLifecycle() throws YDataStateException, YStateException,
+    @Test
+    void testWorkItemLifecycle() throws YDataStateException, YStateException,
             YQueryException, YEngineStateException, YPersistenceException,
             YSchemaBuildingException, YAWLException {
 
@@ -165,11 +162,11 @@ public class StatelessEngineIntegrationTest extends TestCase
 
         // Get enabled work items
         YNetRunner runner = _engine.getNetRunner(caseId);
-        assertNotNull("Net runner should not be null", runner);
+        assertNotNull(runner, "Net runner should not be null");
 
         Set<YWorkItem> enabledItems = runner.getEnabledWorkItems();
-        assertNotNull("Enabled items should not be null", enabledItems);
-        assertFalse("Should have enabled work items", enabledItems.isEmpty());
+        assertNotNull(enabledItems, "Enabled items should not be null");
+        assertFalse(enabledItems.isEmpty(), "Should have enabled work items");
 
         // Start a work item
         YWorkItem item = enabledItems.iterator().next();
@@ -179,9 +176,8 @@ public class StatelessEngineIntegrationTest extends TestCase
 
         // Verify work item event
         synchronized (_workItemEvents) {
-            assertTrue("Should have work item events", _workItemEvents.size() > 0);
-            assertTrue("Should have work item fired event",
-                    _workItemEvents.contains(YEventType.ITEM_FIRED));
+            assertTrue(_workItemEvents.size() > 0, "Should have work item events");
+            assertTrue(_workItemEvents.contains(YEventType.ITEM_FIRED), "Should have work item fired event");
         }
     }
 
@@ -189,7 +185,8 @@ public class StatelessEngineIntegrationTest extends TestCase
      * Test: Case export and import (state serialization).
      * Verifies stateless engine can serialize and deserialize case state.
      */
-    public void testCaseExportImport() throws YDataStateException, YStateException,
+    @Test
+    void testCaseExportImport() throws YDataStateException, YStateException,
             YQueryException, YEngineStateException, YPersistenceException,
             YSchemaBuildingException, YAWLException {
 
@@ -204,9 +201,9 @@ public class StatelessEngineIntegrationTest extends TestCase
         YCaseExporter exporter = new YCaseExporter(_engine.getNetRunner(caseId));
         YCase exportedCase = exporter.exportCase();
 
-        assertNotNull("Exported case should not be null", exportedCase);
-        assertNotNull("Exported case ID should not be null", exportedCase.getCaseID());
-        assertEquals("Case IDs should match", caseId.toString(), exportedCase.getCaseID());
+        assertNotNull(exportedCase, "Exported case should not be null");
+        assertNotNull(exportedCase.getCaseID(), "Exported case ID should not be null");
+        assertEquals(caseId.toString(), exportedCase.getCaseID(), "Case IDs should match");
 
         // Import case state into new engine instance
         YStatelessEngine newEngine = new YStatelessEngine();
@@ -216,16 +213,16 @@ public class StatelessEngineIntegrationTest extends TestCase
         YCaseImporter importer = new YCaseImporter(spec);
         YNetRunner importedRunner = importer.importCase(exportedCase);
 
-        assertNotNull("Imported runner should not be null", importedRunner);
-        assertEquals("Imported case ID should match",
-                caseId.toString(), importedRunner.getCaseID().toString());
+        assertNotNull(importedRunner, "Imported runner should not be null");
+        assertEquals(caseId.toString(), importedRunner.getCaseID().toString(), "Imported case ID should match");
     }
 
     /**
      * Test: Multiple concurrent cases in stateless mode.
      * Verifies stateless engine handles concurrency correctly.
      */
-    public void testConcurrentCaseExecution() throws InterruptedException, ExecutionException {
+    @Test
+    void testConcurrentCaseExecution() throws InterruptedException, ExecutionException {
         final int NUM_CONCURRENT_CASES = 5;
         ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_CASES);
 
@@ -250,39 +247,40 @@ public class StatelessEngineIntegrationTest extends TestCase
         List<YIdentifier> caseIds = new ArrayList<>();
         for (Future<YIdentifier> future : futures) {
             YIdentifier caseId = future.get(5, TimeUnit.SECONDS);
-            assertNotNull("Case ID should not be null", caseId);
+            assertNotNull(caseId, "Case ID should not be null");
             caseIds.add(caseId);
         }
 
-        assertEquals("Should have launched " + NUM_CONCURRENT_CASES + " cases",
-                NUM_CONCURRENT_CASES, caseIds.size());
+        assertEquals(NUM_CONCURRENT_CASES, caseIds.size(),
+                "Should have launched " + NUM_CONCURRENT_CASES + " cases");
 
         // Verify all case IDs are unique
         long uniqueCount = caseIds.stream().map(YIdentifier::toString).distinct().count();
-        assertEquals("All case IDs should be unique", NUM_CONCURRENT_CASES, uniqueCount);
+        assertEquals(NUM_CONCURRENT_CASES, uniqueCount, "All case IDs should be unique");
 
         executor.shutdown();
-        assertTrue("Executor should terminate", executor.awaitTermination(10, TimeUnit.SECONDS));
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor should terminate");
     }
 
     /**
      * Test: Case monitoring with idle timeout.
      * Verifies case monitor correctly tracks and reports idle cases.
      */
-    public void testCaseMonitoring() throws YDataStateException, YStateException,
+    @Test
+    void testCaseMonitoring() throws YDataStateException, YStateException,
             YQueryException, YEngineStateException, YPersistenceException, YSchemaBuildingException {
 
         // Enable case monitoring with short timeout
         final long IDLE_TIMEOUT_MS = 1000;
         _engine.setCaseMonitoringEnabled(true, IDLE_TIMEOUT_MS);
-        assertTrue("Case monitoring should be enabled", _engine.isCaseMonitoringEnabled());
+        assertTrue(_engine.isCaseMonitoringEnabled(), "Case monitoring should be enabled");
 
         // Launch case
         YIdentifier caseId = _engine.launchCase(
                 _testSpec.getSpecificationID(),
                 null, null, null, new YLogDataItemList(), null);
 
-        assertNotNull("Case ID should not be null", caseId);
+        assertNotNull(caseId, "Case ID should not be null");
 
         // Wait for idle timeout
         waitForProcessing(IDLE_TIMEOUT_MS + 1000);
@@ -290,34 +288,36 @@ public class StatelessEngineIntegrationTest extends TestCase
         // Verify idle timeout event was fired
         synchronized (_caseEvents) {
             boolean hasIdleEvent = _caseEvents.contains(YEventType.CASE_IDLE_TIMEOUT);
-            assertTrue("Should have idle timeout event", hasIdleEvent);
+            assertTrue(hasIdleEvent, "Should have idle timeout event");
         }
 
         // Cleanup
         _engine.setCaseMonitoringEnabled(false);
-        assertFalse("Case monitoring should be disabled", _engine.isCaseMonitoringEnabled());
+        assertFalse(_engine.isCaseMonitoringEnabled(), "Case monitoring should be disabled");
     }
 
     /**
      * Test: Engine number assignment.
      * Verifies each engine instance has unique number.
      */
-    public void testEngineNumbering() {
+    @Test
+    void testEngineNumbering() {
         int engine1Number = _engine.getEngineNbr();
-        assertTrue("Engine number should be positive", engine1Number > 0);
+        assertTrue(engine1Number > 0, "Engine number should be positive");
 
         YStatelessEngine engine2 = new YStatelessEngine();
         int engine2Number = engine2.getEngineNbr();
-        assertTrue("Engine 2 number should be positive", engine2Number > 0);
+        assertTrue(engine2Number > 0, "Engine 2 number should be positive");
 
-        assertNotSame("Engine numbers should be unique", engine1Number, engine2Number);
+        assertNotEquals(engine1Number, engine2Number, "Engine numbers should be unique");
     }
 
     /**
      * Test: Event listener add/remove.
      * Verifies listener registration and deregistration.
      */
-    public void testEventListenerManagement() throws YDataStateException, YStateException,
+    @Test
+    void testEventListenerManagement() throws YDataStateException, YStateException,
             YQueryException, YEngineStateException, YPersistenceException, YSchemaBuildingException {
 
         // Create test listener
@@ -340,7 +340,7 @@ public class StatelessEngineIntegrationTest extends TestCase
 
         // Verify listener received events
         synchronized (externalCaseEvents) {
-            assertTrue("External listener should receive events", externalCaseEvents.size() > 0);
+            assertTrue(externalCaseEvents.size() > 0, "External listener should receive events");
         }
 
         // Remove listener
@@ -356,8 +356,8 @@ public class StatelessEngineIntegrationTest extends TestCase
 
         // Verify listener no longer receives events
         synchronized (externalCaseEvents) {
-            assertEquals("External listener should not receive events after removal",
-                    0, externalCaseEvents.size());
+            assertEquals(0, externalCaseEvents.size(),
+                    "External listener should not receive events after removal");
         }
     }
 
@@ -365,7 +365,8 @@ public class StatelessEngineIntegrationTest extends TestCase
      * Test: Invalid specification handling.
      * Verifies proper error handling for invalid specs.
      */
-    public void testInvalidSpecificationHandling() {
+    @Test
+    void testInvalidSpecificationHandling() {
         Exception exception = null;
         try {
             String invalidXml = "<?xml version=\"1.0\"?><invalid>not a valid spec</invalid>";
@@ -374,30 +375,31 @@ public class StatelessEngineIntegrationTest extends TestCase
             exception = e;
         }
 
-        assertNotNull("Should throw exception for invalid specification", exception);
-        assertTrue("Exception should be YSyntaxException or similar",
-                exception instanceof YSyntaxException || exception instanceof YSchemaBuildingException);
+        assertNotNull(exception, "Should throw exception for invalid specification");
+        assertTrue(exception instanceof YSyntaxException || exception instanceof YSchemaBuildingException,
+                "Exception should be YSyntaxException or similar");
     }
 
     /**
      * Test: Idle timer updates.
      * Verifies case monitor idle timer can be updated dynamically.
      */
-    public void testIdleTimerUpdates() {
+    @Test
+    void testIdleTimerUpdates() {
         // Enable monitoring with initial timeout
         final long INITIAL_TIMEOUT = 5000;
         _engine.setCaseMonitoringEnabled(true, INITIAL_TIMEOUT);
-        assertTrue("Case monitoring should be enabled", _engine.isCaseMonitoringEnabled());
+        assertTrue(_engine.isCaseMonitoringEnabled(), "Case monitoring should be enabled");
 
         // Update timeout
         final long UPDATED_TIMEOUT = 10000;
         _engine.setIdleCaseTimer(UPDATED_TIMEOUT);
-        assertTrue("Case monitoring should still be enabled", _engine.isCaseMonitoringEnabled());
+        assertTrue(_engine.isCaseMonitoringEnabled(), "Case monitoring should still be enabled");
 
         // Disable monitoring
         _engine.setIdleCaseTimer(-1);
-        assertFalse("Case monitoring should be disabled with negative timeout",
-                _engine.isCaseMonitoringEnabled());
+        assertFalse(_engine.isCaseMonitoringEnabled(),
+                "Case monitoring should be disabled with negative timeout");
     }
 
     // Helper methods

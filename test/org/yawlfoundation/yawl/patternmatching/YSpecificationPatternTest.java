@@ -1,9 +1,12 @@
 package org.yawlfoundation.yawl.patternmatching;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for YSpecification pattern matching in toXML()
@@ -18,19 +21,19 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
-public class YSpecificationPatternTest extends TestCase {
+class YSpecificationPatternTest {
 
     private YSpecification spec;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         spec = new YSpecification("test-spec");
         spec.setVersion(YSchemaVersion.FourPointZero);
     }
 
     // Test basic pattern matching: net vs non-net
-    public void testToXML_PatternMatching_NetVsGateway() throws YPersistenceException {
+    @Test
+    void testToXML_PatternMatching_NetVsGateway() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -44,15 +47,16 @@ public class YSpecificationPatternTest extends TestCase {
 
         // Count NetFactsType (should be 2: root + subnet)
         int netCount = countOccurrences(xml, "NetFactsType");
-        assertEquals("Should have 2 NetFactsType", 2, netCount);
+        assertEquals(2, netCount, "Should have 2 NetFactsType");
 
         // Count WebServiceGatewayFactsType (should be 1)
         int gatewayCount = countOccurrences(xml, "WebServiceGatewayFactsType");
-        assertEquals("Should have 1 WebServiceGatewayFactsType", 1, gatewayCount);
+        assertEquals(1, gatewayCount, "Should have 1 WebServiceGatewayFactsType");
     }
 
     // Test comparator pattern: both are nets
-    public void testToXML_Comparator_BothNets() throws YPersistenceException {
+    @Test
+    void testToXML_Comparator_BothNets() throws YPersistenceException {
         YNet rootNet = new YNet("z-root", spec);
         spec.setRootNet(rootNet);
 
@@ -71,12 +75,13 @@ public class YSpecificationPatternTest extends TestCase {
         int bPos = xml.indexOf("id=\"b-net\"");
         int cPos = xml.indexOf("id=\"c-net\"");
 
-        assertTrue("a-net should come before b-net", aPos < bPos);
-        assertTrue("b-net should come before c-net", bPos < cPos);
+        assertTrue(aPos < bPos, "a-net should come before b-net");
+        assertTrue(bPos < cPos, "b-net should come before c-net");
     }
 
     // Test comparator pattern: both are gateways
-    public void testToXML_Comparator_BothGateways() throws YPersistenceException {
+    @Test
+    void testToXML_Comparator_BothGateways() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -95,12 +100,13 @@ public class YSpecificationPatternTest extends TestCase {
         int mPos = xml.indexOf("id=\"m-gateway\"");
         int zPos = xml.indexOf("id=\"z-gateway\"");
 
-        assertTrue("a-gateway should come before m-gateway", aPos < mPos);
-        assertTrue("m-gateway should come before z-gateway", mPos < zPos);
+        assertTrue(aPos < mPos, "a-gateway should come before m-gateway");
+        assertTrue(mPos < zPos, "m-gateway should come before z-gateway");
     }
 
     // Test comparator pattern: net vs gateway (net comes first)
-    public void testToXML_Comparator_NetBeforeGateway() throws YPersistenceException {
+    @Test
+    void testToXML_Comparator_NetBeforeGateway() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -116,11 +122,12 @@ public class YSpecificationPatternTest extends TestCase {
         int netPos = xml.indexOf("id=\"z-net\"");
         int gatewayPos = xml.indexOf("id=\"a-gateway\"");
 
-        assertTrue("Net should come before gateway regardless of name", netPos < gatewayPos);
+        assertTrue(netPos < gatewayPos, "Net should come before gateway regardless of name");
     }
 
     // Test comparator pattern: gateway vs net (net comes first)
-    public void testToXML_Comparator_GatewayVsNet() throws YPersistenceException {
+    @Test
+    void testToXML_Comparator_GatewayVsNet() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -136,11 +143,12 @@ public class YSpecificationPatternTest extends TestCase {
         int netPos = xml.indexOf("id=\"z-net\"");
         int gatewayPos = xml.indexOf("id=\"a-gateway\"");
 
-        assertTrue("Net should come before gateway", netPos < gatewayPos);
+        assertTrue(netPos < gatewayPos, "Net should come before gateway");
     }
 
     // Test loop pattern: gateway with codelet
-    public void testToXML_LoopPattern_GatewayWithCodelet() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_GatewayWithCodelet() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -151,12 +159,13 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Gateway should have codelet element
-        assertTrue("Should contain codelet element",
-                  xml.contains("<codelet>org.example.TestCodelet</codelet>"));
+        assertTrue(xml.contains("<codelet>org.example.TestCodelet</codelet>"),
+                  "Should contain codelet element");
     }
 
     // Test loop pattern: gateway without codelet
-    public void testToXML_LoopPattern_GatewayWithoutCodelet() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_GatewayWithoutCodelet() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -167,12 +176,13 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Gateway should not have codelet element
-        assertFalse("Should not contain codelet element",
-                   xml.contains("<codelet>"));
+        assertFalse(xml.contains("<codelet>"),
+                   "Should not contain codelet element");
     }
 
     // Test loop pattern: net never has codelet
-    public void testToXML_LoopPattern_NetNoCodelet() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_NetNoCodelet() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -182,12 +192,13 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Nets should never have codelet element
-        assertFalse("Net should not have codelet element",
-                   xml.contains("<codelet>"));
+        assertFalse(xml.contains("<codelet>"),
+                   "Net should not have codelet element");
     }
 
     // Test loop pattern: gateway externalInteraction for release version
-    public void testToXML_LoopPattern_ReleaseVersionExternalInteraction() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_ReleaseVersionExternalInteraction() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -198,14 +209,15 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Release version should have externalInteraction
-        assertTrue("Should contain externalInteraction element",
-                  xml.contains("<externalInteraction>"));
-        assertTrue("Should be manual",
-                  xml.contains("<externalInteraction>manual</externalInteraction>"));
+        assertTrue(xml.contains("<externalInteraction>"),
+                  "Should contain externalInteraction element");
+        assertTrue(xml.contains("<externalInteraction>manual</externalInteraction>"),
+                  "Should be manual");
     }
 
     // Test loop pattern: gateway externalInteraction for beta version
-    public void testToXML_LoopPattern_BetaVersionNoExternalInteraction() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_BetaVersionNoExternalInteraction() throws YPersistenceException {
         YSpecification betaSpec = new YSpecification("beta-spec");
         betaSpec.setVersion(YSchemaVersion.Beta7);
 
@@ -219,12 +231,13 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = betaSpec.toXML();
 
         // Beta version should NOT have externalInteraction
-        assertFalse("Beta version should not have externalInteraction element",
-                   xml.contains("<externalInteraction>"));
+        assertFalse(xml.contains("<externalInteraction>"),
+                   "Beta version should not have externalInteraction element");
     }
 
     // Test loop pattern: net never has externalInteraction
-    public void testToXML_LoopPattern_NetNoExternalInteraction() throws YPersistenceException {
+    @Test
+    void testToXML_LoopPattern_NetNoExternalInteraction() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -238,11 +251,12 @@ public class YSpecificationPatternTest extends TestCase {
 
         // Count externalInteraction - should only be 1 (for gateway)
         int count = countOccurrences(xml, "<externalInteraction>");
-        assertEquals("Should have externalInteraction only for gateway", 1, count);
+        assertEquals(1, count, "Should have externalInteraction only for gateway");
     }
 
     // Test comparator pattern: null ID handling
-    public void testToXML_Comparator_NullID() throws YPersistenceException {
+    @Test
+    void testToXML_Comparator_NullID() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -256,11 +270,12 @@ public class YSpecificationPatternTest extends TestCase {
         String xml = spec.toXML();
 
         // Should not throw exception
-        assertNotNull("XML should be generated even with null ID", xml);
+        assertNotNull(xml, "XML should be generated even with null ID");
     }
 
     // Test multiple pattern matches in single method
-    public void testToXML_MultiplePatterns_Complex() throws YPersistenceException {
+    @Test
+    void testToXML_MultiplePatterns_Complex() throws YPersistenceException {
         YNet rootNet = new YNet("root", spec);
         spec.setRootNet(rootNet);
 
@@ -287,35 +302,35 @@ public class YSpecificationPatternTest extends TestCase {
         int g1Pos = xml.indexOf("id=\"gateway-1\"");
         int g2Pos = xml.indexOf("id=\"gateway-2\"");
 
-        assertTrue("net-1 before gateway-1", n1Pos < g1Pos);
-        assertTrue("net-1 before gateway-2", n1Pos < g2Pos);
-        assertTrue("net-2 before gateway-1", n2Pos < g1Pos);
-        assertTrue("net-2 before gateway-2", n2Pos < g2Pos);
+        assertTrue(n1Pos < g1Pos, "net-1 before gateway-1");
+        assertTrue(n1Pos < g2Pos, "net-1 before gateway-2");
+        assertTrue(n2Pos < g1Pos, "net-2 before gateway-1");
+        assertTrue(n2Pos < g2Pos, "net-2 before gateway-2");
 
         // Verify within-group sorting
-        assertTrue("net-1 before net-2", n1Pos < n2Pos);
-        assertTrue("gateway-1 before gateway-2", g1Pos < g2Pos);
+        assertTrue(n1Pos < n2Pos, "net-1 before net-2");
+        assertTrue(g1Pos < g2Pos, "gateway-1 before gateway-2");
 
         // Verify gateway-specific elements
-        assertTrue("Should have codelet", xml.contains("<codelet>Codelet1</codelet>"));
-        assertTrue("Should have manual interaction",
-                  xml.contains("<externalInteraction>manual</externalInteraction>"));
-        assertTrue("Should have automated interaction",
-                  xml.contains("<externalInteraction>automated</externalInteraction>"));
+        assertTrue(xml.contains("<codelet>Codelet1</codelet>"), "Should have codelet");
+        assertTrue(xml.contains("<externalInteraction>manual</externalInteraction>"),
+                  "Should have manual interaction");
+        assertTrue(xml.contains("<externalInteraction>automated</externalInteraction>"),
+                  "Should have automated interaction");
 
         // Verify correct counts
-        assertEquals("Should have 2 NetFactsType", 2,
-                    countOccurrences(xml, "NetFactsType"));
-        assertEquals("Should have 2 WebServiceGatewayFactsType", 2,
-                    countOccurrences(xml, "WebServiceGatewayFactsType"));
-        assertEquals("Should have 2 externalInteraction elements", 2,
-                    countOccurrences(xml, "<externalInteraction>"));
-        assertEquals("Should have 1 codelet element", 1,
-                    countOccurrences(xml, "<codelet>"));
+        assertEquals(2, countOccurrences(xml, "NetFactsType"), "Should have 2 NetFactsType");
+        assertEquals(2, countOccurrences(xml, "WebServiceGatewayFactsType"),
+                     "Should have 2 WebServiceGatewayFactsType");
+        assertEquals(2, countOccurrences(xml, "<externalInteraction>"),
+                     "Should have 2 externalInteraction elements");
+        assertEquals(1, countOccurrences(xml, "<codelet>"),
+                     "Should have 1 codelet element");
     }
 
     // Test root net is always first
-    public void testToXML_RootNetAlwaysFirst() throws YPersistenceException {
+    @Test
+    void testToXML_RootNetAlwaysFirst() throws YPersistenceException {
         YNet rootNet = new YNet("z-should-be-last", spec);
         spec.setRootNet(rootNet);
 
@@ -328,9 +343,9 @@ public class YSpecificationPatternTest extends TestCase {
         int rootPos = xml.indexOf("id=\"z-should-be-last\"");
         int net1Pos = xml.indexOf("id=\"a-first-alphabetically\"");
 
-        assertTrue("Root net should be first", rootPos < net1Pos);
-        assertTrue("Root net should have isRootNet",
-                  xml.substring(0, net1Pos).contains("isRootNet=\"true\""));
+        assertTrue(rootPos < net1Pos, "Root net should be first");
+        assertTrue(xml.substring(0, net1Pos).contains("isRootNet=\"true\""),
+                  "Root net should have isRootNet");
     }
 
     // Helper method

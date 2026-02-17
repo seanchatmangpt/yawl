@@ -1,8 +1,6 @@
 package org.yawlfoundation.yawl.integration;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,6 +11,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Jakarta EE Migration Tests
@@ -28,17 +28,14 @@ import java.util.stream.Stream;
  * - No javax.* imports in codebase
  * - Tomcat 10+ compatibility
  */
-public class JakartaEEMigrationTest extends TestCase {
+class JakartaEEMigrationTest {
 
     private static final String PROJECT_ROOT = "/home/user/yawl";
     private static final String SRC_DIR = PROJECT_ROOT + "/src";
     private static final String TEST_DIR = PROJECT_ROOT + "/test";
 
-    public JakartaEEMigrationTest(String name) {
-        super(name);
-    }
-
-    public void testNoJavaxServletImports() throws Exception {
+    @Test
+    void testNoJavaxServletImports() throws Exception {
         List<String> violations = findImportViolations("javax.servlet");
         if (!violations.isEmpty()) {
             System.out.println("Files with javax.servlet imports:");
@@ -46,11 +43,12 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax.servlet imports should be migrated to jakarta.servlet",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax.servlet imports should be migrated to jakarta.servlet");
     }
 
-    public void testNoJavaxPersistenceImports() throws Exception {
+    @Test
+    void testNoJavaxPersistenceImports() throws Exception {
         List<String> violations = findImportViolations("javax.persistence");
         if (!violations.isEmpty()) {
             System.out.println("Files with javax.persistence imports:");
@@ -58,11 +56,12 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax.persistence imports should be migrated to jakarta.persistence",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax.persistence imports should be migrated to jakarta.persistence");
     }
 
-    public void testNoJavaxXmlImports() throws Exception {
+    @Test
+    void testNoJavaxXmlImports() throws Exception {
         List<String> violations = findImportViolations("javax.xml.bind");
         if (!violations.isEmpty()) {
             System.out.println("Files with javax.xml.bind imports:");
@@ -70,11 +69,12 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax.xml.bind imports should be migrated to jakarta.xml.bind",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax.xml.bind imports should be migrated to jakarta.xml.bind");
     }
 
-    public void testNoJavaxCDIImports() throws Exception {
+    @Test
+    void testNoJavaxCDIImports() throws Exception {
         List<String> violations = findImportViolations("javax.inject");
         violations.addAll(findImportViolations("javax.enterprise"));
 
@@ -84,11 +84,12 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax CDI imports should be migrated to jakarta",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax CDI imports should be migrated to jakarta");
     }
 
-    public void testNoJavaxMailImports() throws Exception {
+    @Test
+    void testNoJavaxMailImports() throws Exception {
         List<String> violations = findImportViolations("javax.mail");
         if (!violations.isEmpty()) {
             System.out.println("Files with javax.mail imports:");
@@ -96,11 +97,12 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax.mail imports should be migrated to jakarta.mail",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax.mail imports should be migrated to jakarta.mail");
     }
 
-    public void testNoJavaxFacesImports() throws Exception {
+    @Test
+    void testNoJavaxFacesImports() throws Exception {
         List<String> violations = findImportViolations("javax.faces");
         if (!violations.isEmpty()) {
             System.out.println("Files with javax.faces imports:");
@@ -108,44 +110,48 @@ public class JakartaEEMigrationTest extends TestCase {
                 System.out.println("  - " + file);
             }
         }
-        assertTrue("All javax.faces imports should be migrated to jakarta.faces",
-            violations.isEmpty());
+        assertTrue(violations.isEmpty(),
+                "All javax.faces imports should be migrated to jakarta.faces");
     }
 
-    public void testJakartaServletImportsPresent() throws Exception {
+    @Test
+    void testJakartaServletImportsPresent() throws Exception {
         List<String> filesWithJakarta = findFiles("jakarta.servlet");
         // If we find jakarta.servlet imports, migration is in progress/complete
         System.out.println("Files using jakarta.servlet: " + filesWithJakarta.size());
     }
 
-    public void testJakartaPersistenceImportsPresent() throws Exception {
+    @Test
+    void testJakartaPersistenceImportsPresent() throws Exception {
         List<String> filesWithJakarta = findFiles("jakarta.persistence");
         System.out.println("Files using jakarta.persistence: " + filesWithJakarta.size());
     }
 
-    public void testWebXmlUsesJakartaNamespace() throws Exception {
+    @Test
+    void testWebXmlUsesJakartaNamespace() throws Exception {
         File webXml = findWebXml();
         if (webXml != null && webXml.exists()) {
             String content = readFile(webXml);
 
             // Check for old Java EE namespace
-            assertFalse("web.xml should not use old java.sun.com namespace",
-                content.contains("java.sun.com/xml/ns/javaee"));
+            assertFalse(content.contains("java.sun.com/xml/ns/javaee"),
+                    "web.xml should not use old java.sun.com namespace");
 
             // Check for Jakarta EE namespace
             if (content.contains("xmlns")) {
-                assertTrue("web.xml should use jakarta.ee namespace or be compatible",
-                    content.contains("jakarta.ee") ||
-                    !content.contains("java.sun.com"));
+                assertTrue(content.contains("jakarta.ee") ||
+                        !content.contains("java.sun.com"),
+                        "web.xml should use jakarta.ee namespace or be compatible");
             }
         } else {
             System.out.println("web.xml not found - may be using programmatic configuration");
         }
     }
 
-    public void testPomDependenciesUseJakarta() throws Exception {
+    @Test
+    void testPomDependenciesUseJakarta() throws Exception {
         File pomFile = new File(PROJECT_ROOT, "pom.xml");
-        assertTrue("pom.xml should exist", pomFile.exists());
+        assertTrue(pomFile.exists(), "pom.xml should exist");
 
         String content = readFile(pomFile);
 
@@ -170,7 +176,8 @@ public class JakartaEEMigrationTest extends TestCase {
         System.out.println("Jakarta persistence dependency: " + hasJakartaPersistence);
     }
 
-    public void testTomcat10Compatibility() throws Exception {
+    @Test
+    void testTomcat10Compatibility() throws Exception {
         File pomFile = new File(PROJECT_ROOT, "pom.xml");
         String content = readFile(pomFile);
 
@@ -180,8 +187,8 @@ public class JakartaEEMigrationTest extends TestCase {
 
             // Look for Tomcat 10+ version indicators
             boolean isTomcat10Plus = content.contains("tomcat.version>10") ||
-                                     content.contains("tomcat.version>11") ||
-                                     content.contains("jakarta");
+                    content.contains("tomcat.version>11") ||
+                    content.contains("jakarta");
 
             if (content.contains("tomcat.version")) {
                 System.out.println("Tomcat version configuration found");
@@ -189,7 +196,8 @@ public class JakartaEEMigrationTest extends TestCase {
         }
     }
 
-    public void testNoLegacyJavaEEReferences() throws Exception {
+    @Test
+    void testNoLegacyJavaEEReferences() throws Exception {
         List<String> javaFiles = getAllJavaFiles();
         List<String> violations = new ArrayList<>();
 
@@ -200,7 +208,7 @@ public class JakartaEEMigrationTest extends TestCase {
 
                 // Check for common legacy Java EE patterns
                 if (content.contains("javax.annotation.") &&
-                    !content.contains("javax.annotation.processing")) {
+                        !content.contains("javax.annotation.processing")) {
                     violations.add(file + " contains javax.annotation imports");
                 }
                 if (content.contains("javax.ejb.")) {
@@ -223,10 +231,11 @@ public class JakartaEEMigrationTest extends TestCase {
         }
     }
 
-    public void testMigrationCompleteness() throws Exception {
+    @Test
+    void testMigrationCompleteness() throws Exception {
         List<String> allJavaFiles = getAllJavaFiles();
         int totalFiles = allJavaFiles.size();
-        assertTrue("Should have Java files to test", totalFiles > 0);
+        assertTrue(totalFiles > 0, "Should have Java files to test");
 
         int filesWithJavax = 0;
         int filesWithJakarta = 0;
@@ -236,8 +245,8 @@ public class JakartaEEMigrationTest extends TestCase {
             if (f.exists()) {
                 String content = readFile(f);
                 if (content.contains("import javax.servlet") ||
-                    content.contains("import javax.persistence") ||
-                    content.contains("import javax.xml.bind")) {
+                        content.contains("import javax.persistence") ||
+                        content.contains("import javax.xml.bind")) {
                     filesWithJavax++;
                 }
                 if (content.contains("import jakarta.")) {
@@ -252,7 +261,7 @@ public class JakartaEEMigrationTest extends TestCase {
         System.out.println("  Files with jakarta imports: " + filesWithJakarta);
 
         double migrationPercentage = totalFiles > 0 ?
-            (double)(totalFiles - filesWithJavax) * 100 / totalFiles : 100.0;
+                (double) (totalFiles - filesWithJavax) * 100 / totalFiles : 100.0;
         System.out.println("  Migration progress: " + String.format("%.1f%%", migrationPercentage));
     }
 
@@ -346,15 +355,5 @@ public class JakartaEEMigrationTest extends TestCase {
             }
         }
         return content.toString();
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Jakarta EE Migration Tests");
-        suite.addTestSuite(JakartaEEMigrationTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

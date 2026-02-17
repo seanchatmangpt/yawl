@@ -1,9 +1,11 @@
 package org.yawlfoundation.yawl.elements;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecificationValidator.ValidationError;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test cases for YSpecificationValidator.
@@ -11,29 +13,21 @@ import java.util.List;
  * @author YAWL Development Team
  * @since 5.2
  */
-public class TestYSpecificationValidator extends TestCase {
+class TestYSpecificationValidator {
 
-    public TestYSpecificationValidator(String name) {
-        super(name);
-    }
-
-    /**
-     * Test that an empty specification fails validation.
-     */
-    public void testValidateEmptySpecificationFails() {
+    @Test
+    void testValidateEmptySpecificationFails() {
         YSpecification spec = new YSpecification();
         YSpecificationValidator validator = new YSpecificationValidator(spec);
 
         boolean isValid = validator.validate();
 
-        assertFalse("Empty specification should fail validation", isValid);
-        assertTrue("Should have validation errors", validator.getErrors().size() > 0);
+        assertFalse(isValid, "Empty specification should fail validation");
+        assertTrue(validator.getErrors().size() > 0, "Should have validation errors");
     }
 
-    /**
-     * Test that a specification with valid URI passes basic validation.
-     */
-    public void testValidateSpecificationWithURIPasses() {
+    @Test
+    void testValidateSpecificationWithURIPasses() {
         YSpecification spec = new YSpecification("test://spec/uri");
         YSpecificationValidator validator = new YSpecificationValidator(spec);
 
@@ -43,30 +37,26 @@ public class TestYSpecificationValidator extends TestCase {
         boolean hasURIError = errors.stream()
             .anyMatch(e -> e.getMessage().contains("URI"));
 
-        assertFalse("Specification with URI should not have URI error", hasURIError);
+        assertFalse(hasURIError, "Specification with URI should not have URI error");
     }
 
-    /**
-     * Test that a specification without a root net fails validation.
-     */
-    public void testValidateSpecificationWithoutRootNetFails() {
+    @Test
+    void testValidateSpecificationWithoutRootNetFails() {
         YSpecification spec = new YSpecification("test://spec/uri");
         YSpecificationValidator validator = new YSpecificationValidator(spec);
 
         boolean isValid = validator.validate();
 
-        assertFalse("Specification without root net should fail", isValid);
+        assertFalse(isValid, "Specification without root net should fail");
 
         boolean hasRootNetError = validator.getErrors().stream()
             .anyMatch(e -> e.getMessage().contains("root net"));
 
-        assertTrue("Should have root net error", hasRootNetError);
+        assertTrue(hasRootNetError, "Should have root net error");
     }
 
-    /**
-     * Test that a specification with a valid root net structure validates.
-     */
-    public void testValidateSpecificationWithRootNet() {
+    @Test
+    void testValidateSpecificationWithRootNet() {
         YSpecification spec = new YSpecification("test://spec/uri");
         YNet rootNet = new YNet("RootNet", spec);
 
@@ -88,52 +78,44 @@ public class TestYSpecificationValidator extends TestCase {
             }
         }
 
-        assertTrue("Specification with complete root net should validate", isValid);
+        assertTrue(isValid, "Specification with complete root net should validate");
     }
 
-    /**
-     * Test that null specification throws exception.
-     */
-    public void testNullSpecificationThrowsException() {
+    @Test
+    void testNullSpecificationThrowsException() {
         try {
             new YSpecificationValidator(null);
             fail("Should throw IllegalArgumentException for null specification");
         }
         catch (IllegalArgumentException e) {
-            assertTrue("Exception message should mention null",
-                      e.getMessage().contains("null"));
+            assertTrue(e.getMessage().contains("null"),
+                      "Exception message should mention null");
         }
     }
 
-    /**
-     * Test validation error properties.
-     */
-    public void testValidationErrorProperties() {
+    @Test
+    void testValidationErrorProperties() {
         ValidationError error = new ValidationError("Test message", "test-code", "element-123");
 
         assertEquals("Test message", error.getMessage());
         assertEquals("test-code", error.getErrorCode());
         assertEquals("element-123", error.getElementID());
-        assertTrue("Timestamp should be set", error.getTimestamp() > 0);
+        assertTrue(error.getTimestamp() > 0, "Timestamp should be set");
     }
 
-    /**
-     * Test validation error toString.
-     */
-    public void testValidationErrorToString() {
+    @Test
+    void testValidationErrorToString() {
         ValidationError error = new ValidationError("Test error", "ERR-001", "task-1");
 
         String errorString = error.toString();
 
-        assertTrue("String should contain message", errorString.contains("Test error"));
-        assertTrue("String should contain error code", errorString.contains("ERR-001"));
-        assertTrue("String should contain element ID", errorString.contains("task-1"));
+        assertTrue(errorString.contains("Test error"), "String should contain message");
+        assertTrue(errorString.contains("ERR-001"), "String should contain error code");
+        assertTrue(errorString.contains("task-1"), "String should contain element ID");
     }
 
-    /**
-     * Test error report generation.
-     */
-    public void testGetErrorReport() {
+    @Test
+    void testGetErrorReport() {
         YSpecification spec = new YSpecification();
         YSpecificationValidator validator = new YSpecificationValidator(spec);
 
@@ -141,14 +123,12 @@ public class TestYSpecificationValidator extends TestCase {
 
         String report = validator.getErrorReport();
 
-        assertNotNull("Error report should not be null", report);
-        assertTrue("Report should mention errors", report.contains("Error"));
+        assertNotNull(report, "Error report should not be null");
+        assertTrue(report.contains("Error"), "Report should mention errors");
     }
 
-    /**
-     * Test error report for valid specification.
-     */
-    public void testGetErrorReportForValidSpec() {
+    @Test
+    void testGetErrorReportForValidSpec() {
         YSpecification spec = new YSpecification("test://valid/spec");
         YNet rootNet = new YNet("RootNet", spec);
         YInputCondition input = new YInputCondition("Input", rootNet);
@@ -162,14 +142,12 @@ public class TestYSpecificationValidator extends TestCase {
 
         String report = validator.getErrorReport();
 
-        assertTrue("Report should indicate no errors",
-                  report.contains("No validation errors"));
+        assertTrue(report.contains("No validation errors"),
+                  "Report should indicate no errors");
     }
 
-    /**
-     * Test that multiple validation runs work correctly.
-     */
-    public void testMultipleValidationRuns() {
+    @Test
+    void testMultipleValidationRuns() {
         YSpecification spec = new YSpecification();
         YSpecificationValidator validator = new YSpecificationValidator(spec);
 
@@ -179,7 +157,7 @@ public class TestYSpecificationValidator extends TestCase {
         validator.validate();
         int secondErrorCount = validator.getErrors().size();
 
-        assertEquals("Error count should be consistent across runs",
-                    firstErrorCount, secondErrorCount);
+        assertEquals(firstErrorCount, secondErrorCount,
+                    "Error count should be consistent across runs");
     }
 }

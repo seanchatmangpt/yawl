@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration.cloud;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.integration.autonomous.observability.HealthCheck;
 import org.yawlfoundation.yawl.integration.autonomous.observability.HealthCheck.CheckResult;
 import org.yawlfoundation.yawl.integration.autonomous.observability.HealthCheck.HealthResult;
@@ -10,6 +10,8 @@ import org.yawlfoundation.yawl.integration.autonomous.observability.MetricsColle
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for cloud platform configuration and observability.
@@ -20,72 +22,71 @@ import java.util.Map;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class CloudConfigurationUnitTest extends TestCase {
+class CloudConfigurationUnitTest {
 
     private MetricsCollector metricsCollector;
 
-    public CloudConfigurationUnitTest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         metricsCollector = new MetricsCollector();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (metricsCollector != null) {
             metricsCollector.shutdown();
         }
         metricsCollector = null;
-        super.tearDown();
     }
 
-    public void testHealthCheckResultCreation() {
+    @Test
+    void testHealthCheckResultCreation() {
         CheckResult healthyResult = CheckResult.healthy("Service is responding");
         CheckResult unhealthyResult = CheckResult.unhealthy("Service is down");
 
-        assertTrue("Healthy result should report as healthy", healthyResult.isHealthy());
-        assertFalse("Unhealthy result should not report as healthy", unhealthyResult.isHealthy());
-        assertEquals("Healthy message should match", "Service is responding", healthyResult.getMessage());
-        assertEquals("Unhealthy message should match", "Service is down", unhealthyResult.getMessage());
+        assertTrue(healthyResult.isHealthy(), "Healthy result should report as healthy");
+        assertFalse(unhealthyResult.isHealthy(), "Unhealthy result should not report as healthy");
+        assertEquals("Service is responding", healthyResult.getMessage(), "Healthy message should match");
+        assertEquals("Service is down", unhealthyResult.getMessage(), "Unhealthy message should match");
     }
 
-    public void testHealthCheckAggregation() {
+    @Test
+    void testHealthCheckAggregation() {
         Map<String, CheckResult> checks = new HashMap<>();
         checks.put("database", CheckResult.healthy("Connected"));
         checks.put("engine", CheckResult.healthy("Running"));
 
         HealthResult result = new HealthResult("healthy", checks);
 
-        assertTrue("Overall result should be healthy", result.isHealthy());
-        assertEquals("Status should be healthy", "healthy", result.getStatus());
-        assertEquals("Should have 2 checks", 2, result.getChecks().size());
+        assertTrue(result.isHealthy(), "Overall result should be healthy");
+        assertEquals("healthy", result.getStatus(), "Status should be healthy");
+        assertEquals(2, result.getChecks().size(), "Should have 2 checks");
     }
 
-    public void testHealthCheckAggregationWithFailure() {
+    @Test
+    void testHealthCheckAggregationWithFailure() {
         Map<String, CheckResult> checks = new HashMap<>();
         checks.put("database", CheckResult.healthy("Connected"));
         checks.put("engine", CheckResult.unhealthy("Not responding"));
 
         HealthResult result = new HealthResult("unhealthy", checks);
 
-        assertFalse("Overall result should be unhealthy", result.isHealthy());
-        assertEquals("Status should be unhealthy", "unhealthy", result.getStatus());
+        assertFalse(result.isHealthy(), "Overall result should be unhealthy");
+        assertEquals("unhealthy", result.getStatus(), "Status should be unhealthy");
     }
 
-    public void testMetricsCollectorCounterIncrement() {
+    @Test
+    void testMetricsCollectorCounterIncrement() {
         metricsCollector.incrementCounter("tasks_completed");
         metricsCollector.incrementCounter("tasks_completed");
         metricsCollector.incrementCounter("tasks_completed");
 
         long count = metricsCollector.getCounterValue("tasks_completed", new HashMap<>());
-        assertEquals("Counter should be incremented 3 times", 3L, count);
+        assertEquals(3L, count, "Counter should be incremented 3 times");
     }
 
-    public void testMetricsCollectorCounterWithLabels() {
+    @Test
+    void testMetricsCollectorCounterWithLabels() {
         Map<String, String> labels1 = new HashMap<>();
         labels1.put("agent", "ordering");
         labels1.put("domain", "Ordering");
@@ -101,11 +102,12 @@ public class CloudConfigurationUnitTest extends TestCase {
         long count1 = metricsCollector.getCounterValue("tasks_completed", labels1);
         long count2 = metricsCollector.getCounterValue("tasks_completed", labels2);
 
-        assertEquals("Ordering counter should be 2", 2L, count1);
-        assertEquals("Carrier counter should be 1", 1L, count2);
+        assertEquals(2L, count1, "Ordering counter should be 2");
+        assertEquals(1L, count2, "Carrier counter should be 1");
     }
 
-    public void testMetricsCollectorDurationRecording() {
+    @Test
+    void testMetricsCollectorDurationRecording() {
         metricsCollector.recordDuration("task_execution_time", 1000);
         metricsCollector.recordDuration("task_execution_time", 2000);
         metricsCollector.recordDuration("task_execution_time", 3000);
@@ -113,11 +115,12 @@ public class CloudConfigurationUnitTest extends TestCase {
         long count = metricsCollector.getHistogramCount("task_execution_time", new HashMap<>());
         double sum = metricsCollector.getHistogramSum("task_execution_time", new HashMap<>());
 
-        assertEquals("Should have 3 observations", 3L, count);
-        assertEquals("Sum should be 6.0 seconds (6000ms)", 6.0, sum, 0.001);
+        assertEquals(3L, count, "Should have 3 observations");
+        assertEquals(6.0, sum, 0.001, "Sum should be 6.0 seconds (6000ms)");
     }
 
-    public void testMetricsCollectorDurationWithLabels() {
+    @Test
+    void testMetricsCollectorDurationWithLabels() {
         Map<String, String> labels = new HashMap<>();
         labels.put("task", "approval");
 
@@ -127,22 +130,24 @@ public class CloudConfigurationUnitTest extends TestCase {
         long count = metricsCollector.getHistogramCount("task_execution_time", labels);
         double sum = metricsCollector.getHistogramSum("task_execution_time", labels);
 
-        assertEquals("Should have 2 observations", 2L, count);
-        assertEquals("Sum should be 2.0 seconds (2000ms)", 2.0, sum, 0.001);
+        assertEquals(2L, count, "Should have 2 observations");
+        assertEquals(2.0, sum, 0.001, "Sum should be 2.0 seconds (2000ms)");
     }
 
-    public void testMetricsCollectorExport() {
+    @Test
+    void testMetricsCollectorExport() {
         metricsCollector.incrementCounter("requests_total");
         metricsCollector.incrementCounter("requests_total");
 
         String metrics = metricsCollector.exportMetrics();
 
-        assertNotNull("Exported metrics should not be null", metrics);
-        assertTrue("Should contain counter metric", metrics.contains("requests_total"));
-        assertTrue("Should contain value", metrics.contains("2"));
+        assertNotNull(metrics, "Exported metrics should not be null");
+        assertTrue(metrics.contains("requests_total"), "Should contain counter metric");
+        assertTrue(metrics.contains("2"), "Should contain value");
     }
 
-    public void testMetricsCollectorExportWithLabels() {
+    @Test
+    void testMetricsCollectorExportWithLabels() {
         Map<String, String> labels = new HashMap<>();
         labels.put("status", "success");
 
@@ -150,82 +155,103 @@ public class CloudConfigurationUnitTest extends TestCase {
 
         String metrics = metricsCollector.exportMetrics();
 
-        assertTrue("Should contain metric name", metrics.contains("requests_total"));
-        assertTrue("Should contain label", metrics.contains("status"));
-        assertTrue("Should contain label value", metrics.contains("success"));
+        assertTrue(metrics.contains("requests_total"), "Should contain metric name");
+        assertTrue(metrics.contains("status"), "Should contain label");
+        assertTrue(metrics.contains("success"), "Should contain label value");
     }
 
-    public void testMetricsCollectorValidation() {
+    @Test
+    void testMetricsCollectorValidation() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            metricsCollector.incrementCounter(null);
+        }, "Should reject null metric name");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            metricsCollector.incrementCounter("");
+        }, "Should reject empty metric name");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            metricsCollector.recordDuration(null, 1000);
+        }, "Should reject null metric name for duration");
+    }
+
+    @Test
+    void testMetricsCollectorValidationMessages() {
         try {
             metricsCollector.incrementCounter(null);
             fail("Should reject null metric name");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention metric name", e.getMessage().contains("name"));
+            assertTrue(e.getMessage().contains("name"), "Error should mention metric name");
         }
 
         try {
             metricsCollector.incrementCounter("");
             fail("Should reject empty metric name");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention metric name", e.getMessage().contains("name"));
+            assertTrue(e.getMessage().contains("name"), "Error should mention metric name");
         }
 
         try {
             metricsCollector.recordDuration(null, 1000);
             fail("Should reject null metric name for duration");
         } catch (IllegalArgumentException e) {
-            assertTrue("Error should mention metric name", e.getMessage().contains("name"));
+            assertTrue(e.getMessage().contains("name"), "Error should mention metric name");
         }
     }
 
-    public void testMetricsCollectorZeroValues() {
+    @Test
+    void testMetricsCollectorZeroValues() {
         long count = metricsCollector.getCounterValue("nonexistent", new HashMap<>());
-        assertEquals("Nonexistent counter should be 0", 0L, count);
+        assertEquals(0L, count, "Nonexistent counter should be 0");
 
         double sum = metricsCollector.getHistogramSum("nonexistent", new HashMap<>());
-        assertEquals("Nonexistent histogram sum should be 0.0", 0.0, sum, 0.001);
+        assertEquals(0.0, sum, 0.001, "Nonexistent histogram sum should be 0.0");
 
         long histogramCount = metricsCollector.getHistogramCount("nonexistent", new HashMap<>());
-        assertEquals("Nonexistent histogram count should be 0", 0L, histogramCount);
+        assertEquals(0L, histogramCount, "Nonexistent histogram count should be 0");
     }
 
-    public void testHealthStatusEvaluation() {
-        assertTrue("200 should be healthy", isHealthyStatus(200));
-        assertTrue("201 should be healthy", isHealthyStatus(201));
-        assertTrue("204 should be healthy", isHealthyStatus(204));
-        assertTrue("400 should be healthy (client error, service up)", isHealthyStatus(400));
-        assertTrue("404 should be healthy (client error, service up)", isHealthyStatus(404));
-        assertFalse("500 should be unhealthy", isHealthyStatus(500));
-        assertFalse("503 should be unhealthy", isHealthyStatus(503));
+    @Test
+    void testHealthStatusEvaluation() {
+        assertTrue(isHealthyStatus(200), "200 should be healthy");
+        assertTrue(isHealthyStatus(201), "201 should be healthy");
+        assertTrue(isHealthyStatus(204), "204 should be healthy");
+        assertTrue(isHealthyStatus(400), "400 should be healthy (client error, service up)");
+        assertTrue(isHealthyStatus(404), "404 should be healthy (client error, service up)");
+        assertFalse(isHealthyStatus(500), "500 should be unhealthy");
+        assertFalse(isHealthyStatus(503), "503 should be unhealthy");
     }
 
-    public void testConfigurationParsing() {
+    @Test
+    void testConfigurationParsing() {
         String engineUrl = parseEngineUrl("http://localhost:8080/yawl");
-        assertEquals("Should parse engine URL", "http://localhost:8080/yawl", engineUrl);
+        assertEquals("http://localhost:8080/yawl", engineUrl, "Should parse engine URL");
 
         int port = parsePort("8091");
-        assertEquals("Should parse port", 8091, port);
+        assertEquals(8091, port, "Should parse port");
 
         long timeout = parseTimeout("5000");
-        assertEquals("Should parse timeout", 5000L, timeout);
+        assertEquals(5000L, timeout, "Should parse timeout");
     }
 
-    public void testConfigurationValidation() {
-        assertTrue("Valid URL should pass", isValidUrl("http://localhost:8080"));
-        assertTrue("HTTPS URL should pass", isValidUrl("https://example.com"));
-        assertFalse("Empty URL should fail", isValidUrl(""));
-        assertFalse("Null URL should fail", isValidUrl(null));
-        assertFalse("Invalid URL should fail", isValidUrl("not-a-url"));
+    @Test
+    void testConfigurationValidation() {
+        assertTrue(isValidUrl("http://localhost:8080"), "Valid URL should pass");
+        assertTrue(isValidUrl("https://example.com"), "HTTPS URL should pass");
+        assertFalse(isValidUrl(""), "Empty URL should fail");
+        assertFalse(isValidUrl(null), "Null URL should fail");
+        assertFalse(isValidUrl("not-a-url"), "Invalid URL should fail");
 
-        assertTrue("Valid port should pass", isValidPort(8080));
-        assertTrue("Edge case port 1 should pass", isValidPort(1));
-        assertTrue("Edge case port 65535 should pass", isValidPort(65535));
-        assertFalse("Port 0 should fail", isValidPort(0));
-        assertFalse("Negative port should fail", isValidPort(-1));
-        assertFalse("Port > 65535 should fail", isValidPort(65536));
+        assertTrue(isValidPort(8080), "Valid port should pass");
+        assertTrue(isValidPort(1), "Edge case port 1 should pass");
+        assertTrue(isValidPort(65535), "Edge case port 65535 should pass");
+        assertFalse(isValidPort(0), "Port 0 should fail");
+        assertFalse(isValidPort(-1), "Negative port should fail");
+        assertFalse(isValidPort(65536), "Port > 65535 should fail");
     }
 
-    public void testMetricsPrometheusFormat() {
+    @Test
+    void testMetricsPrometheusFormat() {
         Map<String, String> labels = new HashMap<>();
         labels.put("instance", "yawl-1");
 
@@ -234,9 +260,9 @@ public class CloudConfigurationUnitTest extends TestCase {
 
         String metrics = metricsCollector.exportMetrics();
 
-        assertTrue("Should export counter", metrics.contains("yawl_cases_total"));
-        assertTrue("Should export histogram sum", metrics.contains("yawl_case_duration_seconds_sum"));
-        assertTrue("Should export histogram count", metrics.contains("yawl_case_duration_seconds_count"));
+        assertTrue(metrics.contains("yawl_cases_total"), "Should export counter");
+        assertTrue(metrics.contains("yawl_case_duration_seconds_sum"), "Should export histogram sum");
+        assertTrue(metrics.contains("yawl_case_duration_seconds_count"), "Should export histogram count");
     }
 
     private boolean isHealthyStatus(int httpStatus) {
@@ -283,15 +309,5 @@ public class CloudConfigurationUnitTest extends TestCase {
 
     private boolean isValidPort(int port) {
         return port > 0 && port <= 65535;
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Cloud Configuration Unit Tests");
-        suite.addTestSuite(CloudConfigurationUnitTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

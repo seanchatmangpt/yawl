@@ -1,13 +1,14 @@
-# YAWL v5.2 - Modernized Multi-Stage Docker Build
+# YAWL v5.2 - Modernized Multi-Stage Docker Build (Java 25)
 #
 # Features:
 # - Multi-stage build (build stage + runtime stage)
 # - JDK 25 for build, JRE 25 for runtime (smaller image)
-# - Virtual threads support (Java 25 native)
-# - Health checks for container orchestration
-# - Non-root user for security
+# - Virtual threads support (Java 25 native, no preview flags)
+# - Health checks for container orchestration (multi-strategy)
+# - Non-root user for security (UID/GID 1000)
 # - Optimized layer caching for faster rebuilds
-# - Optimized JVM settings for containers
+# - Optimized JVM settings for containers (ZGC generational)
+# - Minimal attack surface with Alpine base
 
 # ============================================================================
 # Build Stage - Optimized for Layer Caching
@@ -17,7 +18,7 @@ FROM eclipse-temurin:25-jdk-alpine AS builder
 LABEL stage=builder
 ARG MAVEN_VERSION=3.9.9
 
-# Install build dependencies in single layer
+# Install build dependencies in single layer (cached separately)
 RUN apk add --no-cache \
     curl \
     tar \
@@ -29,7 +30,7 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-# Layer 1: Copy pom files for dependency caching
+# Layer 1: Copy pom files for dependency caching (most stable layer)
 COPY pom.xml ./
 COPY yawl-utilities/pom.xml ./yawl-utilities/
 COPY yawl-elements/pom.xml ./yawl-elements/
@@ -47,7 +48,7 @@ COPY yawl-control-panel/pom.xml ./yawl-control-panel/
 # Layer 2: Download dependencies (cached if poms unchanged)
 RUN mvn dependency:go-offline -B --no-transfer-progress || true
 
-# Layer 3: Copy source code (changes frequently)
+# Layer 3: Copy source code (changes frequently - last layer)
 COPY src ./src
 COPY test ./test
 COPY build ./build

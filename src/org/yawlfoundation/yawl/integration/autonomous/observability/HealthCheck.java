@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -277,7 +278,7 @@ public class HealthCheck {
 
             HealthResult result = checkHealth();
             String response = formatJson(result);
-            byte[] bytes = response.getBytes("UTF-8");
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
 
             int statusCode = "healthy".equals(result.status) ? 200 : 503;
 
@@ -305,7 +306,7 @@ public class HealthCheck {
             int statusCode = "healthy".equals(result.status) ? 200 : 503;
 
             String response = "{\"ready\": " + ("healthy".equals(result.status)) + "}";
-            byte[] bytes = response.getBytes("UTF-8");
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
 
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
             exchange.sendResponseHeaders(statusCode, bytes.length);
@@ -328,7 +329,7 @@ public class HealthCheck {
             }
 
             String response = "{\"alive\": true}";
-            byte[] bytes = response.getBytes("UTF-8");
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
 
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
             exchange.sendResponseHeaders(200, bytes.length);

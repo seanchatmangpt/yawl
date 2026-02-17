@@ -1,6 +1,8 @@
 package org.yawlfoundation.yawl.integration;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -20,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Comprehensive integration test for YWorkItemRepository.
  * Tests real data access layer operations including work item storage,
@@ -38,20 +42,15 @@ import java.util.Set;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class WorkItemRepositoryIntegrationTest extends TestCase {
+class WorkItemRepositoryIntegrationTest {
 
     private YEngine _engine;
     private YWorkItemRepository _repository;
     private YSpecification _testSpecification;
     private static final String TEST_SPEC_FILE = "ImproperCompletion.xml";
 
-    public WorkItemRepositoryIntegrationTest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         _engine = YEngine.getInstance();
         _repository = _engine.getWorkItemRepository();
         EngineClearer.clear(_engine);
@@ -59,12 +58,11 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
         _engine.loadSpecification(_testSpecification);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (_engine != null) {
             EngineClearer.clear(_engine);
         }
-        super.tearDown();
     }
 
     /**
@@ -73,11 +71,11 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
     private YSpecification loadTestSpecification() throws YSchemaBuildingException,
             YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource(TEST_SPEC_FILE);
-        assertNotNull("Test specification file not found: " + TEST_SPEC_FILE, fileURL);
+        assertNotNull(fileURL, "Test specification file not found: " + TEST_SPEC_FILE);
         File yawlXMLFile = new File(fileURL.getFile());
         List<YSpecification> specs = YMarshal.unmarshalSpecifications(
                 StringUtil.fileToString(yawlXMLFile.getAbsolutePath()));
-        assertFalse("No specifications loaded from " + TEST_SPEC_FILE, specs.isEmpty());
+        assertFalse(specs.isEmpty(), "No specifications loaded from " + TEST_SPEC_FILE);
         return specs.get(0);
     }
 
@@ -85,19 +83,21 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
      * Test: Repository initialization.
      * Verifies repository is properly initialized.
      */
-    public void testRepositoryInitialization() {
-        assertNotNull("Repository should not be null", _repository);
-        assertNotNull("Repository should have reference to enabled items",
-                _repository.getEnabledWorkItems());
-        assertNotNull("Repository should have reference to fired items",
-                _repository.getFiredWorkItems());
+    @Test
+    void testRepositoryInitialization() {
+        assertNotNull(_repository, "Repository should not be null");
+        assertNotNull(_repository.getEnabledWorkItems(),
+                "Repository should have reference to enabled items");
+        assertNotNull(_repository.getFiredWorkItems(),
+                "Repository should have reference to fired items");
     }
 
     /**
      * Test: Work item storage and retrieval.
      * Verifies work items are correctly stored and can be retrieved.
      */
-    public void testWorkItemStorageAndRetrieval() throws YDataStateException,
+    @Test
+    void testWorkItemStorageAndRetrieval() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException {
 
         // Start case - this will create work items
@@ -109,28 +109,29 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
 
         // Retrieve enabled work items
         Set<YWorkItem> enabledItems = _repository.getEnabledWorkItems();
-        assertNotNull("Enabled items should not be null", enabledItems);
-        assertFalse("Should have enabled work items", enabledItems.isEmpty());
+        assertNotNull(enabledItems, "Enabled items should not be null");
+        assertFalse(enabledItems.isEmpty(), "Should have enabled work items");
 
         // Verify work items belong to the created case
         boolean foundItemForCase = false;
         for (YWorkItem item : enabledItems) {
             if (item.getCaseID().equals(caseId)) {
                 foundItemForCase = true;
-                assertNotNull("Work item ID should not be null", item.getIDString());
-                assertNotNull("Work item task ID should not be null", item.getTaskID());
+                assertNotNull(item.getIDString(), "Work item ID should not be null");
+                assertNotNull(item.getTaskID(), "Work item task ID should not be null");
                 break;
             }
         }
 
-        assertTrue("Should find work item for created case", foundItemForCase);
+        assertTrue(foundItemForCase, "Should find work item for created case");
     }
 
     /**
      * Test: Work item state transitions.
      * Verifies work items move between enabled and fired states correctly.
      */
-    public void testWorkItemStateTransitions() throws YDataStateException,
+    @Test
+    void testWorkItemStateTransitions() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException,
             YAWLException {
 
@@ -144,7 +145,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
         // Get initial enabled items count
         Set<YWorkItem> enabledItems = _repository.getEnabledWorkItems();
         int initialEnabledCount = enabledItems.size();
-        assertTrue("Should have enabled items initially", initialEnabledCount > 0);
+        assertTrue(initialEnabledCount > 0, "Should have enabled items initially");
 
         // Get initial fired items count
         Set<YWorkItem> firedItems = _repository.getFiredWorkItems();
@@ -159,7 +160,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
             }
         }
 
-        assertNotNull("Should find item to start", itemToStart);
+        assertNotNull(itemToStart, "Should find item to start");
 
         String itemIdBeforeStart = itemToStart.getIDString();
         _engine.startWorkItem(itemToStart, _engine.getExternalClient("admin"));
@@ -168,8 +169,8 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
 
         // Verify item moved from enabled to fired
         Set<YWorkItem> updatedFiredItems = _repository.getFiredWorkItems();
-        assertTrue("Fired items count should increase",
-                updatedFiredItems.size() > initialFiredCount);
+        assertTrue(updatedFiredItems.size() > initialFiredCount,
+                "Fired items count should increase");
 
         // Verify the specific item is now in fired state
         boolean foundInFired = false;
@@ -180,14 +181,15 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
             }
         }
 
-        assertTrue("Started item should be in fired state", foundInFired);
+        assertTrue(foundInFired, "Started item should be in fired state");
     }
 
     /**
      * Test: Multiple case work item isolation.
      * Verifies work items from different cases are properly isolated.
      */
-    public void testMultipleCaseWorkItemIsolation() throws YDataStateException,
+    @Test
+    void testMultipleCaseWorkItemIsolation() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException {
 
         final int NUM_CASES = 3;
@@ -205,9 +207,9 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
 
         // Get all enabled work items
         Set<YWorkItem> allEnabledItems = _repository.getEnabledWorkItems();
-        assertNotNull("Enabled items should not be null", allEnabledItems);
-        assertTrue("Should have work items from multiple cases",
-                allEnabledItems.size() >= NUM_CASES);
+        assertNotNull(allEnabledItems, "Enabled items should not be null");
+        assertTrue(allEnabledItems.size() >= NUM_CASES,
+                "Should have work items from multiple cases");
 
         // Verify each case has its own work items
         for (YIdentifier caseId : caseIds) {
@@ -218,7 +220,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
                     break;
                 }
             }
-            assertTrue("Should find work item for case: " + caseId, foundItemForCase);
+            assertTrue(foundItemForCase, "Should find work item for case: " + caseId);
         }
 
         // Verify work items are isolated (each has correct case ID)
@@ -235,7 +237,8 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
      * Test: Work item filtering by status.
      * Verifies repository correctly filters items by their status.
      */
-    public void testWorkItemFilteringByStatus() throws YDataStateException,
+    @Test
+    void testWorkItemFilteringByStatus() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException,
             YAWLException {
 
@@ -262,8 +265,8 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
 
         // Verify sets are disjoint (no item is both enabled and fired)
         for (String enabledId : enabledItemIds) {
-            assertFalse("Item should not be in both enabled and fired: " + enabledId,
-                    firedItemIds.contains(enabledId));
+            assertFalse(firedItemIds.contains(enabledId),
+                    "Item should not be in both enabled and fired: " + enabledId);
         }
 
         // Start a work item
@@ -301,7 +304,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
                 }
             }
 
-            assertTrue("Item should be in fired state", nowInFired);
+            assertTrue(nowInFired, "Item should be in fired state");
         }
     }
 
@@ -309,7 +312,8 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
      * Test: Repository consistency after case operations.
      * Verifies repository maintains consistency during case lifecycle.
      */
-    public void testRepositoryConsistency() throws YDataStateException,
+    @Test
+    void testRepositoryConsistency() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException,
             YAWLException {
 
@@ -343,15 +347,16 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
         int initialTotal = initialEnabledCount + initialFiredCount;
         int afterTotal = afterEnabledCount + afterFiredCount;
 
-        assertTrue("Repository should maintain consistency",
-                afterTotal >= initialTotal - 1); // Allow for state transitions
+        assertTrue(afterTotal >= initialTotal - 1,
+                "Repository should maintain consistency"); // Allow for state transitions
     }
 
     /**
      * Test: Work item retrieval by ID.
      * Verifies individual work items can be retrieved by their ID.
      */
-    public void testWorkItemRetrievalById() throws YDataStateException,
+    @Test
+    void testWorkItemRetrievalById() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException {
 
         // Start case
@@ -363,7 +368,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
 
         // Get enabled items
         Set<YWorkItem> enabledItems = _repository.getEnabledWorkItems();
-        assertFalse("Should have enabled items", enabledItems.isEmpty());
+        assertFalse(enabledItems.isEmpty(), "Should have enabled items");
 
         // Get a specific work item ID
         YWorkItem firstItem = null;
@@ -374,22 +379,23 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
             }
         }
 
-        assertNotNull("Should find work item for case", firstItem);
+        assertNotNull(firstItem, "Should find work item for case");
 
         String itemId = firstItem.getIDString();
-        assertNotNull("Work item ID should not be null", itemId);
+        assertNotNull(itemId, "Work item ID should not be null");
 
         // Retrieve by ID using engine
         YWorkItem retrievedItem = _engine.getWorkItem(itemId);
-        assertNotNull("Should retrieve work item by ID", retrievedItem);
-        assertEquals("Retrieved item ID should match", itemId, retrievedItem.getIDString());
+        assertNotNull(retrievedItem, "Should retrieve work item by ID");
+        assertEquals(itemId, retrievedItem.getIDString(), "Retrieved item ID should match");
     }
 
     /**
      * Test: Repository state after case cancellation.
      * Verifies work items are properly cleaned up when case is cancelled.
      */
-    public void testRepositoryStateAfterCaseCancellation() throws YDataStateException,
+    @Test
+    void testRepositoryStateAfterCaseCancellation() throws YDataStateException,
             YStateException, YQueryException, YEngineStateException, YPersistenceException,
             YAWLException {
 
@@ -409,7 +415,7 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
             }
         }
 
-        assertTrue("Should have work items before cancellation", itemsForCaseBefore > 0);
+        assertTrue(itemsForCaseBefore > 0, "Should have work items before cancellation");
 
         // Cancel case
         _engine.cancelCase(caseId);
@@ -425,14 +431,15 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
             }
         }
 
-        assertEquals("Should have no work items after cancellation", 0, itemsForCaseAfter);
+        assertEquals(0, itemsForCaseAfter, "Should have no work items after cancellation");
     }
 
     /**
      * Test: Repository handles empty state.
      * Verifies repository correctly handles scenarios with no work items.
      */
-    public void testRepositoryEmptyState() {
+    @Test
+    void testRepositoryEmptyState() {
         // Clear engine (should have no cases/work items)
         EngineClearer.clear(_engine);
 
@@ -440,12 +447,12 @@ public class WorkItemRepositoryIntegrationTest extends TestCase {
         Set<YWorkItem> enabledItems = _repository.getEnabledWorkItems();
         Set<YWorkItem> firedItems = _repository.getFiredWorkItems();
 
-        assertNotNull("Enabled items should not be null even when empty", enabledItems);
-        assertNotNull("Fired items should not be null even when empty", firedItems);
+        assertNotNull(enabledItems, "Enabled items should not be null even when empty");
+        assertNotNull(firedItems, "Fired items should not be null even when empty");
 
         // Empty sets are acceptable
-        assertTrue("Empty repository should have 0 or very few items",
-                enabledItems.size() < 5 && firedItems.size() < 5);
+        assertTrue(enabledItems.size() < 5 && firedItems.size() < 5,
+                "Empty repository should have 0 or very few items");
     }
 
     // Helper methods
