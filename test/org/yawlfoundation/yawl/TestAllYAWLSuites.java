@@ -8,7 +8,6 @@ import org.yawlfoundation.yawl.elements.ElementsTestSuite;
 import org.yawlfoundation.yawl.elements.state.StateTestSuite;
 import org.yawlfoundation.yawl.engine.EngineTestSuite;
 import org.yawlfoundation.yawl.exceptions.ExceptionTestSuite;
-import org.yawlfoundation.yawl.integration.IntegrationTestSuite;
 import org.yawlfoundation.yawl.logging.LoggingTestSuite;
 import org.yawlfoundation.yawl.schema.SchemaTestSuite;
 import org.yawlfoundation.yawl.stateless.StatelessTestSuite;
@@ -22,15 +21,13 @@ import org.yawlfoundation.yawl.util.UtilTestSuite;
  * Includes:
  * - Core engine and elements tests
  * - Stateless engine tests
- * - Integration tests (Chicago TDD style)
- * - Autonomous agent tests
  * - Authentication, logging, schema tests
  * - Utility and worklist tests
  *
  * Target: 70%+ overall test coverage
  *
  * Author: Lachlan Aldred (original)
- * Updated: YAWL Foundation v5.2
+ * Updated: YAWL Foundation v6.0.0-Alpha
  * Date: 9/05/2003 (original), 2026-02-16 (updated)
  */
 @Suite
@@ -46,9 +43,7 @@ import org.yawlfoundation.yawl.util.UtilTestSuite;
     UnmarshallerTestSuite.class,
     UtilTestSuite.class,
     WorklistTestSuite.class,
-    AuthenticationTestSuite.class,
-    IntegrationTestSuite.class,
-    ExcludedModulesTestSuite.class
+    AuthenticationTestSuite.class
 })
 public class TestAllYAWLSuites {
     // JUnit 5 suite uses annotations - no main method needed

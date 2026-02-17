@@ -116,7 +116,7 @@ class TestCaseCancellation {
         Thread.sleep(400);
         performTask("cancel");
         Set cases = _engine.getCasesForSpecification(_specification.getSpecificationID());
-        assertTrue(cases.toString(), cases.size() == 0);
+        assertTrue(cases.size() == 0, cases.toString());
     }
 
     @Test
