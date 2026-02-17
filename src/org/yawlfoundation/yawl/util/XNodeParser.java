@@ -63,8 +63,8 @@ public class XNodeParser {
         if (s.startsWith(UTF8_BOM)) s = s.substring(1);
 
         // remove any headers
-        if (s.startsWith("<?xml")) s = s.substring(s.indexOf("?>") + 2).trim();
-        if (s.startsWith("<!DOCTYPE")) s = s.substring(s.indexOf('>') + 2).trim();
+        if (s.startsWith("<?xml")) s = s.substring(s.indexOf("?>") + 2).strip();
+        if (s.startsWith("<!DOCTYPE")) s = s.substring(s.indexOf('>') + 2).strip();
 
         // if well-formedness check required use JDOM to check it
         if (_check && (JDOMUtil.stringToElement(s) == null)) return null;
@@ -92,15 +92,15 @@ public class XNodeParser {
         XNode node;
         init();
         try {
-            if ((s == null) || (! s.trim().startsWith("<"))) {
+            if ((s == null) || (! s.strip().startsWith("<"))) {
                 throw new IllegalArgumentException("bad input string");
             }
 
             // handle any comments before or after the root element
-            if (depth == 0) s = processOutlyingComments(s.trim());
+            if (depth == 0) s = processOutlyingComments(s.strip());
 
             // get the text inside the opening tag and use it to create a new XNode
-            String tagDef = s.trim().substring(1, s.indexOf('>'));
+            String tagDef = s.strip().substring(1, s.indexOf('>'));
             node = newNode(tagDef, depth);
 
             // if this element is not fully enclosed in a single tag
@@ -145,16 +145,16 @@ public class XNodeParser {
     private XNode newNode(String s, int depth) {
         if (s.endsWith("/")) s = s.substring(0, s.length() - 1);  // lop off '/', if any
 
-        String name = getFirstWord(s.trim());
+        String name = getFirstWord(s.strip());
         XNode node = new XNode(name);                 
         node.setDepth(depth);
 
         // if there are any attributes defined, add them to the node
-        String attributes = strSubtract(s, name).trim();
+        String attributes = strSubtract(s, name).strip();
         if (attributes.length() > 0) {
             String[] attributeParts = _attributeSplitter.split(attributes);
             for (int i=0; i < attributeParts.length - 1; i=i+2) {
-                node.addAttribute(attributeParts[i].trim(), attributeParts[i+1].trim());
+                node.addAttribute(attributeParts[i].strip(), attributeParts[i+1].strip());
             }    
         }
 
@@ -182,9 +182,9 @@ public class XNodeParser {
 
 
     private List<String> parseContent(String content) {
-        List<String> contentList = new ArrayList<String>();
+        List<String> contentList = new ArrayList<>();
         String subContent;
-        content = content.substring(content.indexOf('>') + 1, content.lastIndexOf('<')).trim();
+        content = content.substring(content.indexOf('>') + 1, content.lastIndexOf('<')).strip();
         while (content.length() > 0) {
             if (content.startsWith("<!--")) {   // comment
                 subContent = content.substring(0, content.indexOf("-->") + 3);
@@ -199,7 +199,7 @@ public class XNodeParser {
                 subContent = content;          // text
             }
             contentList.add(subContent);
-            content = content.substring(subContent.length()).trim();
+            content = content.substring(subContent.length()).strip();
         }
         return contentList;
     }
@@ -220,7 +220,7 @@ public class XNodeParser {
 
     private List<Integer> getIndexList(String s, String sub) {
         int offset = sub.length();
-        List<Integer> indexList = new ArrayList<Integer>();
+        List<Integer> indexList = new ArrayList<>();
         int pos = s.indexOf(sub);
         while (pos > -1) {
             if (isBookEndTag(s, pos + offset)) {
@@ -283,11 +283,11 @@ public class XNodeParser {
 
     private String processOpeningComments(String s) {
         if (! s.startsWith("<!--")) return s;
-        _openingComments = new ArrayList<String>();
+        _openingComments = new ArrayList<>();
         while (s.startsWith("<!--")) {
             String comment = extractComment(s);
             _openingComments.add(comment);
-            s = s.substring(s.indexOf("-->") + 3).trim();
+            s = s.substring(s.indexOf("-->") + 3).strip();
         }
         return s;
     }
@@ -295,11 +295,11 @@ public class XNodeParser {
 
     private String processClosingComments(String s) {
         if (! s.endsWith("-->")) return s;
-        _closingComments = new ArrayList<String>();
+        _closingComments = new ArrayList<>();
         while (s.endsWith("-->")) {
             String comment = extractTrailingComment(s);
             _closingComments.add(comment);
-            s = s.substring(0, s.lastIndexOf("<!--")).trim();
+            s = s.substring(0, s.lastIndexOf("<!--")).strip();
         }
         return s;
     }
@@ -321,12 +321,12 @@ public class XNodeParser {
 
 
     private String extractComment(String rawComment) {
-        return rawComment.substring(4, rawComment.indexOf("-->")).trim();
+        return rawComment.substring(4, rawComment.indexOf("-->")).strip();
     }
 
     private String extractTrailingComment(String rawComment) {
         return rawComment.substring(rawComment.lastIndexOf("<!--") + 4,
-                rawComment.length() - 3).trim();
+                rawComment.length() - 3).strip();
     }
 
     private String extractCDATA(String rawCDATA) {

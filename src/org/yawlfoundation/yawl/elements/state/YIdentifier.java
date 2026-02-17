@@ -115,7 +115,7 @@ public class YIdentifier {
 
 
     public YIdentifier createChild(YPersistenceManager pmgr) throws YPersistenceException {
-        String newID = String.format("%s.%d", this._idString, _children.size() + 1);
+        String newID = "%s.%d".formatted(this._idString, _children.size() + 1);
         return createChildWithID(pmgr, newID);
     }
 

@@ -175,7 +175,7 @@ public class YWorklistTableModel extends AbstractTableModel {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return new XMLOutputter().outputString(finalDoc.getRootElement()).trim();
+            return new XMLOutputter().outputString(finalDoc.getRootElement()).strip();
         }
         return null;
     }*/

@@ -112,7 +112,7 @@ public class YIdentifier {
 
 
     public YIdentifier createChild() {
-        String newID = String.format("%s.%d", this._idString, _children.size() + 1);
+        String newID = "%s.%d".formatted(this._idString, _children.size() + 1);
         return createChildWithID(newID);
     }
 

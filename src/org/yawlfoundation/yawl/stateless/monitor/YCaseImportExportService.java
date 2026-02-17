@@ -205,7 +205,7 @@ public class YCaseImportExportService {
             String line;
             int lineNumber = 2;
             while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) {
+                if (!line.strip().isEmpty()) {
                     if (!isValidXML(line)) {
                         result.isValid = false;
                         result.errors.add("Invalid XML at line " + lineNumber);

@@ -438,10 +438,10 @@ public class YNetLocalVarVerifier {
         }
         else {
             subMsg = "be uninitialised when the mapping is attempted";
-            postMsg = String.format(" Please assign an initial value to '%s' or ensure " +
+            postMsg = (" Please assign an initial value to '%s' or ensure " +
                     "that a task which precedes task '%s' has a mandatory output " +
-                    "mapping to '%s'.", localVar.getPreferredName(), task.getName(),
-                    localVar.getPreferredName() ) ;
+                    "mapping to '%s'.").formatted(localVar.getPreferredName(), task.getName(),
+                    localVar.getPreferredName()) ;
         }
 
         // construct the chain of visited elements
@@ -458,9 +458,9 @@ public class YNetLocalVarVerifier {
         visitedChain += "]";
 
         // put it all together
-        String msg = String.format("Task '%s' in Net '%s' references Local Variable " +
+        String msg = ("Task '%s' in Net '%s' references Local Variable " +
                 "'%s' via an input mapping, however it may be possible for '%s' to %s, via " +
-                "the path %s.%s",
+                "the path %s.%s").formatted(
                 task.getName(), _net.getID(), localVar.getPreferredName(),
                 localVar.getPreferredName(), subMsg, visitedChain, postMsg);
 

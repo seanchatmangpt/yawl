@@ -56,7 +56,7 @@ public class YNetData {
     }
 
     public String toString() {
-        return String.format("ID: %s; DATA: %s", _id, _data);
+        return "ID: %s; DATA: %s".formatted(_id, _data);
     }
 
 }

@@ -218,7 +218,7 @@ public class XNode implements Comparable<XNode> {
         if (content == null) {
             return;
         }
-        if (content.trim().startsWith(_header)) {
+        if (content.strip().startsWith(_header)) {
             content = content.substring(_header.length() + 1);
         }
         String wrappedContent = wrapContent(content, nsPrefix, nsURI);
@@ -276,7 +276,7 @@ public class XNode implements Comparable<XNode> {
 
 
     public void removeDuplicateChildren() {
-        Map<String, XNode> childMap = new HashMap<String, XNode>();
+        Map<String, XNode> childMap = new HashMap<>();
         for (XNode child : getChildren()) {
             childMap.put(child.toString(), child);
         }
@@ -305,12 +305,12 @@ public class XNode implements Comparable<XNode> {
     }
 
     public void addOpeningComment(String comment) {
-        if (_openingComments == null) _openingComments = new ArrayList<String>();
+        if (_openingComments == null) _openingComments = new ArrayList<>();
         _openingComments.add(comment);
     }
 
       public void addClosingComment(String comment) {
-        if (_closingComments == null) _closingComments = new ArrayList<String>();
+        if (_closingComments == null) _closingComments = new ArrayList<>();
         _closingComments.add(comment);
     }
 
@@ -416,7 +416,7 @@ public class XNode implements Comparable<XNode> {
 
 
     public List<XNode> getChildren(ContentType cType) {
-        List<XNode> matches = new ArrayList<XNode>();
+        List<XNode> matches = new ArrayList<>();
         for (XNode child : getChildren()) {
             if (child.getContentType() == cType) {
                 matches.add(child);
@@ -426,7 +426,7 @@ public class XNode implements Comparable<XNode> {
     }
 
     public List<XNode> getChildren(String name) {
-        List<XNode> namedChildren = new ArrayList<XNode>();
+        List<XNode> namedChildren = new ArrayList<>();
         if (_children != null) {
             for (XNode child : _children) {
                 if (child.getName().equals(name)) namedChildren.add(child);
@@ -668,7 +668,7 @@ public class XNode implements Comparable<XNode> {
 
     private String getIndent(int offset, int tabSize) {
         int tabCount = _depth - offset;
-        if (tabCount < 1) return "";
+        if (tabCount < 1) return String.valueOf(new char[0]);
         char[] tabs = new char[tabCount * tabSize];
         for (int i=0; i<(tabCount * tabSize); i++) {
             tabs[i] = ' ';
@@ -697,15 +697,13 @@ public class XNode implements Comparable<XNode> {
 
 
     private String printOutlyingComments(List<String> commentList, boolean pretty) {
-        if (commentList != null) {
-            StringBuilder s = new StringBuilder(commentList.size() * 100);
-            for (String comment : commentList) {
-                s.append("<!-- ").append(comment).append(" -->");
-                if (pretty) s.append(newline);
-            }
-            return s.toString();
+        if (commentList == null) return String.valueOf(new char[0]);
+        StringBuilder s = new StringBuilder(commentList.size() * 100);
+        for (String comment : commentList) {
+            s.append("<!-- ").append(comment).append(" -->");
+            if (pretty) s.append(newline);
         }
-        return "";
+        return s.toString();
     }
 
 
@@ -721,7 +719,7 @@ public class XNode implements Comparable<XNode> {
 
     private XNode acceptChild(XNode child) {
         if (child != null) {
-            if (_children == null) _children = new ArrayList<XNode>();
+            if (_children == null) _children = new ArrayList<>();
             child.setParent(this);
             child.setDepth(_depth + 1);
         }

@@ -71,17 +71,17 @@ public abstract class YTask extends YExternalNetElement {
     private int _splitType;
     private int _joinType;
     protected YMultiInstanceAttributes _multiInstAttr;
-    private Set<YExternalNetElement> _removeSet = new HashSet<YExternalNetElement>();
+    private Set<YExternalNetElement> _removeSet = new HashSet<>();
     protected final Map<String, String> _dataMappingsForTaskStarting =
-            new HashMap<String, String>();       //[key=ParamName, value=query]
+            new HashMap<>();       //[key=ParamName, value=query]
     private final Map<String, String> _dataMappingsForTaskCompletion =
-            new HashMap<String, String>();       //[key=query, value=NetVarName]
+            new HashMap<>();       //[key=query, value=NetVarName]
     protected final Map<String, String> _dataMappingsForTaskEnablement =
-            new HashMap<String, String>();       //[key=ParamName, value=query]
+            new HashMap<>();       //[key=ParamName, value=query]
     protected YDecomposition _decompositionPrototype;
 
     // input data storage
-    private final Map<YIdentifier, Element> _caseToDataMap = new HashMap<YIdentifier, Element>();
+    private final Map<YIdentifier, Element> _caseToDataMap = new HashMap<>();
     private Iterator<Content> _multiInstanceSpecificParamsIterator;
 
     // output data storage
@@ -252,12 +252,12 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     protected Set<String> getParamNamesForTaskEnablement() {
-        return new HashSet<String>(_dataMappingsForTaskEnablement.keySet());
+        return new HashSet<>(_dataMappingsForTaskEnablement.keySet());
     }
 
 
     protected Set<String> getParamNamesForTaskStarting() {
-        return new HashSet<String>(_dataMappingsForTaskStarting.keySet());
+        return new HashSet<>(_dataMappingsForTaskStarting.keySet());
     }
 
 
@@ -276,7 +276,7 @@ public abstract class YTask extends YExternalNetElement {
 
     public Set<YExternalNetElement> getRemoveSet() {
         if (_removeSet != null) {
-            return new HashSet<YExternalNetElement>(_removeSet);
+            return new HashSet<>(_removeSet);
         }
         return null;
     }
@@ -375,7 +375,7 @@ public abstract class YTask extends YExternalNetElement {
                 pmgr.storeObjectFromExternal(_groupedMultiInstanceOutputData);
             }
         }
-        _localVariableNameToReplaceableOutputData = new HashMap<String, Element>();
+        _localVariableNameToReplaceableOutputData = new HashMap<>();
     }
 
 
@@ -423,9 +423,8 @@ public abstract class YTask extends YExternalNetElement {
                     _net.getInternalDataDocument());
             throw new YDataQueryException(
                     _multiInstAttr.getMISplittingQuery(), dataToSplit, this.getID(),
-                    String.format(
-                            "The number of instances produced by MI split (%d) is %s than " +
-                                    "the %s instance bound specified (%d).", listSize,
+                    ("The number of instances produced by MI split (%d) is %s than " +
+                                    "the %s instance bound specified (%d).").formatted(listSize,
                             (listSize > max ? "more" : "less"),
                             (listSize > max ? "maximum" : "minimum"),
                             (listSize > max ? max : min))
@@ -966,7 +965,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private boolean isTimerPredicate(String predicate) {
-        return predicate.trim().startsWith("timer(");
+        return predicate.strip().startsWith("timer(");
     }
 
     private boolean evaluateTimerPredicate(String predicate, YIdentifier token) throws YQueryException {
@@ -1021,7 +1020,7 @@ public abstract class YTask extends YExternalNetElement {
         copy._mi_complete = new YInternalCondition(YInternalCondition._mi_complete, copy);
         copy._mi_entered = new YInternalCondition(YInternalCondition._mi_entered, copy);
         copy._mi_executing = new YInternalCondition(YInternalCondition._mi_executing, copy);
-        copy._removeSet = new HashSet<YExternalNetElement>();
+        copy._removeSet = new HashSet<>();
         for (YExternalNetElement elem : _removeSet) {
             YExternalNetElement elemsClone = copy._net.getNetElement(elem.getID());
             if (elemsClone == null) {
@@ -1069,7 +1068,7 @@ public abstract class YTask extends YExternalNetElement {
 
         var dataForChildCase = produceDataRootElement();
         var inputParams =
-                new ArrayList<YParameter>(_decompositionPrototype.getInputParameters().values());
+                new ArrayList<>(_decompositionPrototype.getInputParameters().values());
         Collections.sort(inputParams);
         for (YParameter parameter : inputParams) {
             String inputParamName = parameter.getPreferredName();
@@ -1347,7 +1346,7 @@ public abstract class YTask extends YExternalNetElement {
         }
 
         var removeTokensFromFlow = new StringBuilder();
-        var removeList = new ArrayList<YExternalNetElement>(_removeSet);
+        var removeList = new ArrayList<>(_removeSet);
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
@@ -1751,7 +1750,7 @@ public abstract class YTask extends YExternalNetElement {
         //catch the case where several expressions map to the same decomposition input param
         //The only case where the schema misses this is where the multi-instance input
         //is the same as one the regular variable mappings
-        int numOfUniqueParamsMappedTo = new HashSet<String>(
+        int numOfUniqueParamsMappedTo = new HashSet<>(
                 _dataMappingsForTaskStarting.values()).size();
         int numParams = _dataMappingsForTaskStarting.size();
         if (numOfUniqueParamsMappedTo != numParams) {
@@ -1765,7 +1764,7 @@ public abstract class YTask extends YExternalNetElement {
         //already mapped to by the said task.
         //The only case where the schema misses this is where the multi-instance output
         //is applied to the same net variable as one of regular outputs.
-        int numOfUniqueNetVarsMappedTo = new HashSet<String>(
+        int numOfUniqueNetVarsMappedTo = new HashSet<>(
                 _dataMappingsForTaskCompletion.values()).size();
         numParams = _dataMappingsForTaskCompletion.size();
         if (numOfUniqueNetVarsMappedTo != numParams) {

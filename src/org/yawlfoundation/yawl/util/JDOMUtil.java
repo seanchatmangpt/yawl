@@ -26,7 +26,6 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.input.sax.XMLReaderSAX2Factory;
 import org.jdom2.output.EscapeStrategy;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
@@ -54,10 +53,15 @@ import java.util.List;
 public class JDOMUtil {
 
     private static final Logger _log = LogManager.getLogger(JDOMUtil.class);
-    private static final SAXBuilder _builder = new SAXBuilder(
-            new XMLReaderSAX2Factory(false, "org.apache.xerces.parsers.SAXParser"));
+
+    /** Uses the JVM default SAX parser (javax.xml.parsers.SAXParserFactory)
+     *  to avoid a hard dependency on Xerces which is not guaranteed on the classpath. */
+    private static final SAXBuilder _builder = new SAXBuilder();
 
     public static final String UTF8_BOM = "\uFEFF";
+
+    /** XSD default value for xs:string and user-defined types is the empty string. */
+    private static final String XSD_STRING_DEFAULT = "";
 
 
     /****************************************************************************/
@@ -174,7 +178,7 @@ public class JDOMUtil {
         if (dataType == null) return "null";
         else if (dataType.equalsIgnoreCase("boolean")) return "false" ;
         else if (dataType.equalsIgnoreCase("string") ||
-                (! XSDType.isBuiltInType(dataType))) return "" ;
+                (! XSDType.isBuiltInType(dataType))) return XSD_STRING_DEFAULT ;
         else return "0";
     }
 

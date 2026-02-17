@@ -59,6 +59,10 @@ public class YSpecVersion implements Comparable<YSpecVersion> {
         try {
             if (version.indexOf('.') > -1) {
                 String[] part = version.split("\\.");
+                if (part.length != 2) {
+                    setVersion(0, 1);
+                    return toString();
+                }
                 _major = Integer.parseInt(part[0]);
                 _minor = Integer.parseInt(part[1]);
             } else {                        // handle versions numbers without a decimal
@@ -86,7 +90,7 @@ public class YSpecVersion implements Comparable<YSpecVersion> {
 
 
     public String toString() {
-        return String.format("%s.%s", String.valueOf(_major), String.valueOf(_minor));
+        return "%s.%s".formatted(String.valueOf(_major), String.valueOf(_minor));
     }
 
     public int getMajorVersion() { return _major; }

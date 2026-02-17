@@ -36,45 +36,58 @@ import java.util.Date;
  * @since 5.2
  */
 public class JwtManager {
-    
+
 
     private static final Logger _logger = LogManager.getLogger(JwtManager.class);
-    private static final SecretKey KEY = loadSigningKey();
     private static final long EXPIRATION_HOURS = 24;
-    
+
     /**
-     * FIX #2: Load JWT signing key from configuration (not ephemeral).
-     * 
+     * Initialization-on-demand holder for the JWT signing key.
+     *
+     * <p>This pattern defers key loading until the first JWT operation is invoked,
+     * which guarantees that any caller-configured system property
+     * ({@code yawl.jwt.secret}) or environment variable ({@code YAWL_JWT_SECRET})
+     * is already in place before the key is resolved. The JVM class-loader
+     * guarantees that {@code KeyHolder} is initialized exactly once and in a
+     * thread-safe manner without requiring explicit synchronization.
+     *
      * <p>The signing key MUST be persistent across server restarts, otherwise:
      * <ul>
      *   <li>Existing tokens become invalid on restart</li>
      *   <li>Users are forced to re-authenticate unnecessarily</li>
      *   <li>Session continuity is broken</li>
      * </ul>
-     * 
-     * @return the persistent signing key
-     * @throws IllegalStateException if no key is configured
      */
-    private static SecretKey loadSigningKey() {
-        String keySource = System.getProperty("yawl.jwt.secret");
-        if (keySource == null) {
-            keySource = System.getenv("YAWL_JWT_SECRET");
-        }
-        
-        if (keySource == null || keySource.isEmpty()) {
-            throw new IllegalStateException(
-                "JWT signing key not configured. Set system property 'yawl.jwt.secret' " +
-                "or environment variable 'YAWL_JWT_SECRET' to a secure random value " +
-                "(minimum 256 bits / 32 bytes)"
-            );
-        }
-        
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] keyBytes = digest.digest(keySource.getBytes(StandardCharsets.UTF_8));
-            return new SecretKeySpec(keyBytes, "HmacSHA256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
+    private static final class KeyHolder {
+        private static final SecretKey KEY = loadSigningKey();
+
+        /**
+         * FIX #2: Load JWT signing key from configuration (not ephemeral).
+         *
+         * @return the persistent signing key
+         * @throws IllegalStateException if no key is configured or SHA-256 is unavailable
+         */
+        private static SecretKey loadSigningKey() {
+            String keySource = System.getProperty("yawl.jwt.secret");
+            if (keySource == null) {
+                keySource = System.getenv("YAWL_JWT_SECRET");
+            }
+
+            if (keySource == null || keySource.isEmpty()) {
+                throw new IllegalStateException(
+                    "JWT signing key not configured. Set system property 'yawl.jwt.secret' " +
+                    "or environment variable 'YAWL_JWT_SECRET' to a secure random value " +
+                    "(minimum 256 bits / 32 bytes)"
+                );
+            }
+
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                byte[] keyBytes = digest.digest(keySource.getBytes(StandardCharsets.UTF_8));
+                return new SecretKeySpec(keyBytes, "HmacSHA256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("SHA-256 algorithm not available", e);
+            }
         }
     }
     
@@ -94,7 +107,7 @@ public class JwtManager {
             .claim("sessionHandle", sessionHandle)
             .issuedAt(Date.from(now))
             .expiration(Date.from(expiration))
-            .signWith(KEY)
+            .signWith(KeyHolder.KEY)
             .compact();
     }
     
@@ -119,7 +132,7 @@ public class JwtManager {
 
         try {
             return Jwts.parser()
-                .verifyWith(KEY)
+                .verifyWith(KeyHolder.KEY)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

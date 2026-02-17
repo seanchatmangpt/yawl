@@ -640,8 +640,8 @@ public class WorkItemRecord implements Cloneable {
         // split into key, value, key, value, ...
         String[] attributes = attrStr.split("\\s*=\\s*\"|\\s*\"\\s*");
         for (int i=0; i < attributes.length - 1; i=i+2) {
-            _attributeTable.put(attributes[i].trim(),
-                    JDOMUtil.decodeAttributeEscapes(attributes[i+1].trim()));
+            _attributeTable.put(attributes[i].strip(),
+                    JDOMUtil.decodeAttributeEscapes(attributes[i+1].strip()));
         }
     }
 

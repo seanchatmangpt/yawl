@@ -368,7 +368,7 @@ public class MailService extends InterfaceBWebsideController {
             RecipientType javaxRecipientType = convertRecipientType(jakartaRecipientType);
             return Arrays.stream(recipients.split(";")).map(s -> {
                 return new Recipient(null, s, javaxRecipientType);
-            }).collect(Collectors.toList());
+            }).toList();
         }
         return Collections.emptyList();
     }

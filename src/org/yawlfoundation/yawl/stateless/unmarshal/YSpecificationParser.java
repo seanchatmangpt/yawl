@@ -200,9 +200,9 @@ class YSpecificationParser {
         }
 
         String version = metaDataElem.getChildText("version", _yawlNS);
-        if(version != null && version.trim().length() > 0)
+        if(version != null && version.strip().length() > 0)
         {
-            metaData.setVersion(new YSpecVersion(version.trim()));
+            metaData.setVersion(new YSpecVersion(version.strip()));
         }
         else metaData.setVersion(new YSpecVersion(INITIAL_VERSION));
 
@@ -220,7 +220,7 @@ class YSpecificationParser {
             }
             else
             {
-                metaData.setPersistent(persistentText.trim().equalsIgnoreCase("TRUE"));
+                metaData.setPersistent(persistentText.strip().equalsIgnoreCase("TRUE"));
             }
         }
 

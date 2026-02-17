@@ -34,7 +34,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 /**
  * An API for custom services to call Engine functionalities regarding workitem
@@ -1248,13 +1247,13 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
                     throw new RuntimeException("Failed to checkout work item: " + itemID, e);
                 }
             }))
-            .collect(Collectors.toList());
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -1283,14 +1282,14 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
                     throw new RuntimeException("Failed to checkout work item: " + itemID, e);
                 }
             }))
-            .collect(Collectors.toList());
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
             .get(timeoutSeconds, TimeUnit.SECONDS);
 
         return futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -1315,13 +1314,13 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
                     throw new RuntimeException("Failed to checkin work item: " + item.workItemID, e);
                 }
             }))
-            .collect(Collectors.toList());
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -1345,13 +1344,13 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
                     throw new RuntimeException("Failed to cancel case: " + caseID, e);
                 }
             }))
-            .collect(Collectors.toList());
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -1376,13 +1375,13 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
                     throw new RuntimeException("Failed to get work items for case: " + caseID, e);
                 }
             }))
-            .collect(Collectors.toList());
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**

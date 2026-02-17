@@ -587,7 +587,7 @@ public final class YSessionCache implements ISessionCache {
     }
 
     private String failureMessage(String message) {
-        return String.format("<failure>%s</failure>", message);
+        return "<failure>%s</failure>".formatted(message);
     }
 
     private void writeAuditEvent(String username, YAuditEvent.Action action) {

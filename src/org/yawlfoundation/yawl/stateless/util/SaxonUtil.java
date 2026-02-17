@@ -159,7 +159,7 @@ public class SaxonUtil {
 
 
     private static String removeHeader(String xml) {
-        if ((xml != null) && xml.trim().startsWith("<?xml")) {
+        if ((xml != null) && xml.strip().startsWith("<?xml")) {
             int closingPos = xml.indexOf("?>");
             if (closingPos > -1) {
                 xml = xml.substring(closingPos + 2);

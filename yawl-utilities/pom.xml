@@ -83,6 +83,19 @@
             </resource>
         </resources>
 
+        <testResources>
+            <testResource>
+                <!-- Copy XML spec fixtures used by TestYMarshal so that
+                     YMarshal.class.getResource("MakeRecordings.xml") resolves
+                     at runtime from target/test-classes/org/yawlfoundation/yawl/unmarshal/ -->
+                <directory>../test/org/yawlfoundation/yawl/unmarshal</directory>
+                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
+                <includes>
+                    <include>*.xml</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -105,10 +118,12 @@
                         <testInclude>**/org/yawlfoundation/yawl/authentication/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/logging/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/schema/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/util/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/exceptions/**</testInclude>
                     </testIncludes>
+                    <!-- unmarshal tests excluded: TestYMarshal and TestYMarshalB4 both require
+                         YSpecification and YNet from yawl-elements which is NOT a compile
+                         dependency of yawl-utilities. Those tests belong in yawl-elements. -->
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
                         <testExclude>**/*.xml</testExclude>

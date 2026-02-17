@@ -1447,8 +1447,8 @@ public class YEngine implements InterfaceADesign,
                         case statusDeadlocked -> workItem;
                         default -> { // this work item is likely already executing.
                             rollbackTransaction();
-                            throw new YStateException(String.format(
-                                    "Item [%s]: status [%s] does not permit starting.",
+                            throw new YStateException(
+                                    "Item [%s]: status [%s] does not permit starting.".formatted(
                                      workItem.getIDString(), workItem.getStatus()));
                         }
                     };
@@ -1681,9 +1681,9 @@ public class YEngine implements InterfaceADesign,
             if (defaultValue == null) {
                 String typeName = outParam.getDataTypeName();
                 if (!XSDType.isBuiltInType(typeName)) {
-                    throw new YStateException(String.format(
-                            "Could not skip work item [%s]: Output-Only parameter [%s]" +
-                                    " requires a default value.", workItem.getIDString(), name));
+                    throw new YStateException(
+                            ("Could not skip work item [%s]: Output-Only parameter [%s]" +
+                                    " requires a default value.").formatted(workItem.getIDString(), name));
                 }
                 defaultValue = JDOMUtil.getDefaultValueForType(typeName);
             }

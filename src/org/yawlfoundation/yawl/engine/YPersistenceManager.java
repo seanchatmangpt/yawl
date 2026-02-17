@@ -432,8 +432,7 @@ public class YPersistenceManager {
     public List<?> getObjectsForClassWhere(String className, String whereClause)
             throws YPersistenceException {
         try {
-            String qry = String.format("from %s as tbl where tbl.%s",
-                    className, whereClause);
+            String qry = "from %s as tbl where tbl.%s".formatted(className, whereClause);
             Query query = createQuery(qry);
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
@@ -452,7 +451,7 @@ public class YPersistenceManager {
      */
     public Object selectScalar(String className, String field, String value)
             throws YPersistenceException {
-        String qryStr = String.format("select distinct t from %s as t where t.%s=%s",
+        String qryStr = "select distinct t from %s as t where t.%s=%s".formatted(
                 className, field, value);
         List<?> results = createQuery(qryStr).getResultList();
         Iterator<?> itr = results.iterator();

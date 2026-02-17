@@ -75,7 +75,7 @@ public class YSpecificationValidator {
      */
     private void validateSpecificationID() {
         String uri = _spec.getURI();
-        if (uri == null || uri.trim().isEmpty()) {
+        if (uri == null || uri.strip().isEmpty()) {
             addError("Specification URI is required", "spec-id", null);
         }
     }
@@ -90,7 +90,7 @@ public class YSpecificationValidator {
             return;
         }
 
-        if (rootNet.getID() == null || rootNet.getID().trim().isEmpty()) {
+        if (rootNet.getID() == null || rootNet.getID().strip().isEmpty()) {
             addError("Root net must have an ID", "root-net-id", rootNet.getID());
         }
     }
@@ -108,7 +108,7 @@ public class YSpecificationValidator {
         }
 
         for (YDecomposition decomp : decomps) {
-            if (decomp.getID() == null || decomp.getID().trim().isEmpty()) {
+            if (decomp.getID() == null || decomp.getID().strip().isEmpty()) {
                 addError("Decomposition must have an ID", "decomp-id", null);
             }
         }

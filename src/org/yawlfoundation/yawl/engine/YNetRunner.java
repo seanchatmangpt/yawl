@@ -1032,7 +1032,7 @@ public class YNetRunner {
 
 
     public String toString() {
-        return String.format("CaseID: %s; Enabled: %s; Busy: %s", _caseIDForNet.toString(),
+        return "CaseID: %s; Enabled: %s; Busy: %s".formatted(_caseIDForNet.toString(),
                 _enabledTaskNames.toString(), _busyTaskNames.toString());
     }
 

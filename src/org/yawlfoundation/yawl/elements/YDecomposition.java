@@ -67,10 +67,10 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
     public YDecomposition(String id, YSpecification specification) {
         _id = id;
         _specification = specification;
-        _inputParameters = new HashMap<String, YParameter>();
-        _outputParameters = new HashMap<String, YParameter>();
-        _enablementParameters = new HashMap<String, YParameter>();
-        _outputExpressions = new HashSet<String>();
+        _inputParameters = new HashMap<>();
+        _outputParameters = new HashMap<>();
+        _enablementParameters = new HashMap<>();
+        _outputExpressions = new HashSet<>();
         _data = new Document();
         _attributes = new YAttributeMap();
 
@@ -244,7 +244,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
 
     private String paramMapToXML(Map<String, YParameter> paramMap) {
-        List<YParameter> parameters = new ArrayList<YParameter>(paramMap.values());
+        List<YParameter> parameters = new ArrayList<>(paramMap.values());
         Collections.sort(parameters);
         return parameters.stream()
             .map(YParameter::toXML)
@@ -304,7 +304,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
     public Object clone() throws CloneNotSupportedException {
         YDecomposition copy = (YDecomposition) super.clone();
-        copy._inputParameters = new HashMap<String, YParameter>();
+        copy._inputParameters = new HashMap<>();
         for (YParameter parameter : _inputParameters.values()) {
             YParameter copyParam = (YParameter) parameter.clone();
             copy.addInputParameter(copyParam);

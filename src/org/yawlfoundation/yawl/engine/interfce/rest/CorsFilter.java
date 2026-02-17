@@ -59,23 +59,23 @@ public class CorsFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         // Allow configuration via context parameters
         String origins = filterConfig.getInitParameter("allowedOrigins");
-        if (origins != null && !origins.trim().isEmpty()) {
+        if (origins != null && !origins.strip().isEmpty()) {
             allowedOrigins = origins;
             _logger.info("CORS allowed origins: {}", allowedOrigins);
         }
 
         String methods = filterConfig.getInitParameter("allowedMethods");
-        if (methods != null && !methods.trim().isEmpty()) {
+        if (methods != null && !methods.strip().isEmpty()) {
             allowedMethods = methods;
         }
 
         String headers = filterConfig.getInitParameter("allowedHeaders");
-        if (headers != null && !headers.trim().isEmpty()) {
+        if (headers != null && !headers.strip().isEmpty()) {
             allowedHeaders = headers;
         }
 
         String credentials = filterConfig.getInitParameter("allowCredentials");
-        if (credentials != null && !credentials.trim().isEmpty()) {
+        if (credentials != null && !credentials.strip().isEmpty()) {
             allowCredentials = Boolean.parseBoolean(credentials);
         }
 

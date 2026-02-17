@@ -41,12 +41,12 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     // These maps store references to all preceding and succeeding elements of this
     // element, and the flows that join them.
     // key = id of prior/next task or condition, value = flow between that and this
-    private Map<String, YFlow> _presetFlows = new HashMap<String, YFlow>();
-    private Map<String, YFlow> _postsetFlows = new HashMap<String, YFlow>();
+    private Map<String, YFlow> _presetFlows = new HashMap<>();
+    private Map<String, YFlow> _postsetFlows = new HashMap<>();
 
     // added for reduction rules code & mapping
-    private Set<YExternalNetElement> _cancelledBySet = new HashSet<YExternalNetElement>();
-    private Set<YExternalNetElement> _yawlMappingSet = new HashSet<YExternalNetElement>();
+    private Set<YExternalNetElement> _cancelledBySet = new HashSet<>();
+    private Set<YExternalNetElement> _yawlMappingSet = new HashSet<>();
 
 
     public YExternalNetElement(String id, YNet container) {
@@ -197,7 +197,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of outgoing flows
      */
     public Set<YFlow> getPostsetFlows() {
-        return new HashSet<YFlow>(_postsetFlows.values());
+        return new HashSet<>(_postsetFlows.values());
     }
 
 
@@ -206,7 +206,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
      * @return the set of incoming flows
      */
     public Set<YFlow> getPresetFlows() {
-        return new HashSet<YFlow>(_presetFlows.values());
+        return new HashSet<>(_presetFlows.values());
     }
 
 
@@ -234,7 +234,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     //added for reduction rules
     public Set<YExternalNetElement> getCancelledBySet() {
   	    return (_cancelledBySet != null) ?
-                new HashSet<YExternalNetElement>(_cancelledBySet) : null;
+                new HashSet<>(_cancelledBySet) : null;
     }
    
     public void addToCancelledBySet(YTask t){
@@ -249,7 +249,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
     //added for reduction rules mappings
     public Set<YExternalNetElement> getYawlMappings() {
         return (_yawlMappingSet != null) ?
-                new HashSet<YExternalNetElement>(_yawlMappingSet) : null;
+                new HashSet<>(_yawlMappingSet) : null;
     }
    
     public void addToYawlMappings(YExternalNetElement e){

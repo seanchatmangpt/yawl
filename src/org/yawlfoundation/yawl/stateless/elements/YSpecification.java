@@ -142,7 +142,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
     public String toXML() {
         StringBuilder xml = new StringBuilder();
-        xml.append(String.format("<specification uri=\"%s\">", JDOMUtil.encodeEscapes(_specURI)));
+        xml.append("<specification uri=\"%s\">".formatted(JDOMUtil.encodeEscapes(_specURI)));
         if (_name != null) xml.append(StringUtil.wrapEscaped(_name, "name"));
         if (_documentation != null) xml.append(StringUtil.wrapEscaped(_documentation, "documentation"));
         xml.append(_metaData.toXML());
@@ -172,7 +172,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
             if (! decomposition.getID().equals(_rootNet.getID())) {
                 String factsType = (decomposition instanceof YNet net) ? "NetFactsType" :
                                                         "WebServiceGatewayFactsType";
-                xml.append(String.format("<decomposition id=\"%s\" xsi:type=\"%s\"%s>",
+                xml.append("<decomposition id=\"%s\" xsi:type=\"%s\"%s>".formatted(
                                decomposition.getID(), factsType,
                                decomposition.getAttributes().toXML()));
 

@@ -503,7 +503,7 @@ public class HibernateEngine {
      *         called 'field', an object with an key field value of 'value'
      */
     public List execJoinQuery(String table, String field, String value) {
-        String qry = String.format("from %s parent where '%s' in elements(parent.%s)",
+        String qry = "from %s parent where '%s' in elements(parent.%s)".formatted(
                                     table, value, field) ;
         return execQuery(qry) ;
     }
@@ -517,8 +517,7 @@ public class HibernateEngine {
      * @return the first (or only) object matching 'where [field] = [value]'
      */
     public Object selectScalar(String className, String field, String value) {
-        String qry = String.format("from %s as tbl where tbl.%s = '%s'",
-                                    className, field, value);
+        String qry = "from %s as tbl where tbl.%s = '%s'".formatted(className, field, value);
         List result = execQuery(qry) ;
         if (result != null) {
             if (! result.isEmpty()) return result.iterator().next();
@@ -547,8 +546,7 @@ public class HibernateEngine {
     public List getObjectsForClassWhere(String className, String whereClause) {
         List result = null;
         try {
-            String qry = String.format("from %s as tbl where tbl.%s",
-                                        className, whereClause) ;
+            String qry = "from %s as tbl where tbl.%s".formatted(className, whereClause) ;
             result = execQuery(qry);
         }
         catch (HibernateException he) {

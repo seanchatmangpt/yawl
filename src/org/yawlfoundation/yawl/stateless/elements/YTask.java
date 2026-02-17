@@ -407,9 +407,8 @@ public abstract class YTask extends YExternalNetElement {
         if (listSize > max || listSize < min) {
             throw new YDataQueryException(
                     _multiInstAttr.getMISplittingQuery(), dataToSplit, this.getID(),
-                    String.format(
-                            "The number of instances produced by MI split (%d) is %s than " +
-                                    "the %s instance bound specified (%d).", listSize,
+                    ("The number of instances produced by MI split (%d) is %s than " +
+                                    "the %s instance bound specified (%d).").formatted(listSize,
                             (listSize > max ? "more" : "less"),
                             (listSize > max ? "maximum" : "minimum"),
                             (listSize > max ? max : min))
@@ -896,7 +895,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private boolean isTimerPredicate(String predicate) {
-        return predicate.trim().startsWith("timer(");
+        return predicate.strip().startsWith("timer(");
     }
 
     private boolean evaluateTimerPredicate(String predicate, YIdentifier token) throws YQueryException {

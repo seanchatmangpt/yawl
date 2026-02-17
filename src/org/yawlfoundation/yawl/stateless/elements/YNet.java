@@ -487,7 +487,7 @@ public final class YNet extends YDecomposition {
                         " is missing mandatory input data for a parameter (" + parameter.getName() + ").  " +
                         " Alternatively the data is there but the query in the super net produced data with" +
                         " the wrong name (Check your specification). "
-                        + new XMLOutputter(Format.getPrettyFormat()).outputString(incomingData).trim());
+                        + new XMLOutputter(Format.getPrettyFormat()).outputString(incomingData).strip());
             }
 
             // remove any attributes - not required and cause validation errors if left

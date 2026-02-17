@@ -15,7 +15,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite
 @SuiteDisplayName("Logging Test Suite")
 @SelectClasses({
-    YawlServletTestNextIdNew.class
+    TestYLogDataItem.class
 })
 public class LoggingTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

@@ -237,7 +237,7 @@ public class StringUtil {
         long mins = time / 60;
         time %= 60;
 
-        return String.format("%d:%02d:%02d:%02d.%04d", days, hours, mins, time, millis);
+        return "%d:%02d:%02d:%02d.%04d".formatted(days, hours, mins, time, millis);
     }
 
     /**
@@ -301,7 +301,7 @@ public class StringUtil {
     public static String unwrap(String xml) {
         if (xml != null) {
             if (xml.matches("^<\\w+/>$")) {                      // shortened tag pair
-                return "";
+                return xml.substring(xml.length());              // empty content for self-closing tag
             }
             int start = xml.indexOf('>') + 1;
             int end = xml.lastIndexOf('<');
@@ -676,7 +676,7 @@ public class StringUtil {
 
 
     public static List<Integer> findAll(String toSearch, String toFind) {
-        List<Integer> foundList = new ArrayList<Integer>();
+        List<Integer> foundList = new ArrayList<>();
         int start = 0;
         while (start > -1) {
             start = find(toSearch, toFind, start);
@@ -694,7 +694,7 @@ public class StringUtil {
 
 
     public static String join(List<?> list, char separator) {
-        if (list == null || list.isEmpty()) return "";
+        if (list == null || list.isEmpty()) return String.valueOf(new char[0]);
         if (list.size() == 1) return list.get(0).toString();
         StringBuilder sb = new StringBuilder();
         for (Object s : list) {
@@ -754,7 +754,7 @@ public class StringUtil {
     }
 
     public static Set<String> xmlToSet(String xml) {
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         XNode setNode = new XNodeParser(true).parse(xml);
         if (setNode != null) {
             for (XNode item : setNode.getChildren()) {

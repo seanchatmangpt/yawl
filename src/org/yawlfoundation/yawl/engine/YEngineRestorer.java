@@ -403,9 +403,9 @@ public class YEngineRestorer {
                 /* This occurs when a specification has been unloaded, but the case is
                    still there. This case is removed, since we must have the
                    specification stored as well. */
-                String msg = String.format("YEngineRestorer: The specification '%s' for" +
+                String msg = ("YEngineRestorer: The specification '%s' for" +
                         " active case '%s' is not loaded; the active case cannot" +
-                        " continue and so has been removed.",
+                        " continue and so has been removed.").formatted(
                         runner.getSpecificationID().getUri(),
                         runner.getCaseID().toString());
                 _log.warn(msg);
@@ -450,8 +450,8 @@ public class YEngineRestorer {
                         YNet net = (YNet) task.getDecompositionPrototype().clone();
                         runner.setNet(net);
                     } catch (CloneNotSupportedException cnse) {
-                        String msg = String.format("YEngineRestorer: The decomposition" +
-                                "'%s' for  active case '%s' could not be set." +
+                        String msg = ("YEngineRestorer: The decomposition" +
+                                "'%s' for  active case '%s' could not be set.").formatted(
                                 task.getDecompositionPrototype().getID(),
                                 runner.getCaseID().toString());
                         throw new YPersistenceException(msg);
