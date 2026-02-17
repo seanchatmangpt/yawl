@@ -137,7 +137,7 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
         }
 
         var taskName = extractTaskName(workItem);
-        var normalizedCapability = capability.getDomainName().strip();
+        var normalizedCapability = capability.domainName().strip();
 
         var mappedCapabilities = taskToCapabilities.get(taskName);
         if (mappedCapabilities != null) {

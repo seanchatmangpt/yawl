@@ -49,6 +49,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -980,11 +981,7 @@ public class YNetRunner {
 
 
     private String setToCSV(Set<YTask> tasks) {
-        StringBuilder out = new StringBuilder();
-        for (YTask task : tasks) {
-            out.append(task.getID()).append(", ");
-        }
-        return out.toString();
+        return tasks.stream().map(YTask::getID).collect(Collectors.joining(", "));
     }
 
 
