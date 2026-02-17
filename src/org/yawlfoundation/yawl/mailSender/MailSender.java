@@ -48,11 +48,30 @@ public class MailSender extends InterfaceBWebsideController {
 
 
     //private static String _sessionHandle = null;
-    public void handleEnabledWorkItemEvent(WorkItemRecord enabledWorkItem){
-    	
+    /**
+     * MailSender is JSP-driven: work items are submitted via Send.jsp which
+     * invokes SendEmail() directly with form parameters. Engine-initiated work
+     * item events are not supported by this service.
+     *
+     * @param enabledWorkItem the enabled work item
+     * @throws UnsupportedOperationException always - use Send.jsp to trigger email sending
+     */
+    public void handleEnabledWorkItemEvent(WorkItemRecord enabledWorkItem) {
+        throw new UnsupportedOperationException(
+                "MailSender does not handle engine-enabled work item events. " +
+                "Email sending is triggered via Send.jsp with explicit form parameters.");
     }
 
-    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord){
+    /**
+     * MailSender does not track in-flight work items, so there is no
+     * cancellation cleanup to perform. This event is not supported.
+     *
+     * @param workItemRecord the cancelled work item
+     * @throws UnsupportedOperationException always
+     */
+    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        throw new UnsupportedOperationException(
+                "MailSender does not handle cancelled work item events.");
     }
     class MyAuthenticator extends Authenticator
     {  

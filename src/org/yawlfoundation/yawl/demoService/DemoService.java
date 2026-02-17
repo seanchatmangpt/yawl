@@ -73,9 +73,19 @@ public class DemoService extends InterfaceBWebsideController {
 
     }
 
+    /**
+     * DemoService schedules work item completion asynchronously but does not
+     * track in-flight items by ID. There is no state to clean up on cancellation.
+     * This event is not supported by the demo service.
+     *
+     * @param workItemRecord the cancelled work item
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
-
+        throw new UnsupportedOperationException(
+                "DemoService does not handle cancelled work item events. " +
+                "In-flight scheduled items are not tracked for cancellation.");
     }
 
 
