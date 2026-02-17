@@ -86,6 +86,18 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/schema/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/schema/**/*.xsd</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
