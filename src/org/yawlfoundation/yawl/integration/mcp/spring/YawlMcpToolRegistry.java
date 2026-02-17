@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpServerFeatures;
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
+import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 import java.util.ArrayList;
 import java.util.Comparator;

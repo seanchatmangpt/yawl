@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItem;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.NullCheckModernizer;
 
 import java.net.URL;
 import java.util.*;
@@ -437,7 +438,9 @@ public class YNetRunner {
 
         _logger.debug("--> processCompletedSubnet");
 
-        if (caseIDForSubnet == null) throw new RuntimeException();
+        NullCheckModernizer.requirePresent(caseIDForSubnet,
+                "caseIDForSubnet must not be null in processCompletedSubnet",
+                s -> new RuntimeException(s));
 
         if (busyCompositeTask.t_complete(pmgr, caseIDForSubnet, rawSubnetData)) {
             _busyTasks.remove(busyCompositeTask);
@@ -1087,11 +1090,9 @@ public class YNetRunner {
 
     /** restores the IB and IX observers on session startup (via persistence) */
     public void restoreObservers() {
-        if(_caseObserverStr != null) {
-            YAWLServiceReference caseObserver =
-                                    _engine.getRegisteredYawlService(_caseObserverStr);
-            if (caseObserver != null) setObserver(caseObserver);
-        }
+        NullCheckModernizer.ifPresent(_caseObserverStr, s ->
+                NullCheckModernizer.ifPresent(
+                        _engine.getRegisteredYawlService(s), this::setObserver));
     }
 
 
@@ -1120,16 +1121,13 @@ public class YNetRunner {
     /** returns true if the specified workitem is registered with the Time Service */
     public boolean isTimeServiceTask(YWorkItem item) {
         YTask task = (YTask) getNetElement(item.getTaskID());
-        if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
-            YAWLServiceGateway wsgw = (YAWLServiceGateway) atomicTask.getDecompositionPrototype();
-            if (wsgw != null) {
-                YAWLServiceReference ys = wsgw.getYawlService();
-                if (ys != null) {
-                    return ys.getServiceID().indexOf("timeService") > -1 ;
-                }
-            }
-        }
-        return false ;
+        if (!(task instanceof YAtomicTask atomicTask)) return false;
+        YAWLServiceGateway wsgw = NullCheckModernizer.mapOrNull(
+                atomicTask, t -> (YAWLServiceGateway) t.getDecompositionPrototype());
+        YAWLServiceReference ys = NullCheckModernizer.mapOrNull(wsgw,
+                YAWLServiceGateway::getYawlService);
+        return NullCheckModernizer.mapOrElse(ys,
+                ref -> ref.getServiceID().indexOf("timeService") > -1, false);
     }
 
 
@@ -1184,9 +1182,8 @@ public class YNetRunner {
         if (! _timerStates.isEmpty()) {
             for (String timerKey : _timerStates.keySet()) {
                 for (YTask task : _netTasks) {
-                    String taskName = task.getName();
-                    if (taskName == null) taskName = task.getID();
-                    if (taskName != null && taskName.equals(timerKey)) {
+                    String taskName = NullCheckModernizer.firstNonNull(task.getName(), task.getID());
+                    if (timerKey.equals(taskName)) {
                         String stateStr = _timerStates.get(timerKey);
                         YTimerVariable timerVar = task.getTimerVariable();
                         timerVar.setState(YWorkItemTimer.State.valueOf(stateStr), true);
@@ -1199,11 +1196,10 @@ public class YNetRunner {
 
 
     public void updateTimerState(YTask task, YWorkItemTimer.State state) {
-        YTimerVariable timerVar = task.getTimerVariable();
-        if (timerVar != null) {
+        NullCheckModernizer.ifPresent(task.getTimerVariable(), timerVar -> {
             timerVar.setState(state);
             _timerStates.put(task.getName(), timerVar.getStateString());
-        }
+        });
     }
 
 
@@ -1236,7 +1232,7 @@ public class YNetRunner {
         @return the timer variable, or null if no task with that name is found */
     private YTimerVariable getTimerVariable(String taskName) {
         for (YTask task : _netTasks) {
-            if (task.getName() != null && task.getName().equals(taskName)) {
+            if (Objects.equals(task.getName(), taskName)) {
                 return task.getTimerVariable();
             }
         }
@@ -1262,8 +1258,8 @@ public class YNetRunner {
     public void setStateNormal() { _executionStatus = ExecutionStatus.Normal; }
 
     public void setExecutionStatus(String status) {
-        _executionStatus = (status != null) ? ExecutionStatus.valueOf(status) :
-                ExecutionStatus.Normal;
+        _executionStatus = NullCheckModernizer.mapOrElse(
+                status, ExecutionStatus::valueOf, ExecutionStatus.Normal);
     }
 
     public String getExecutionStatus() {

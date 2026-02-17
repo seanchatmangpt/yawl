@@ -1,6 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema;
 
 import java.util.Map;
 

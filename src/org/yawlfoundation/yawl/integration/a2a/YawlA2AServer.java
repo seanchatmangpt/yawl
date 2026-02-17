@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
 import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -776,7 +777,7 @@ public class YawlA2AServer {
         int port = 8081;
         String portEnv = System.getenv("A2A_PORT");
         if (portEnv != null && !portEnv.isEmpty()) {
-            port = Integer.parseInt(portEnv);
+            port = SafeNumberParser.parseIntOrThrow(portEnv, "A2A_PORT environment variable");
         }
 
         // Build the production authentication provider stack.

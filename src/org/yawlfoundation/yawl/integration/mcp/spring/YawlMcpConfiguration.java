@@ -1,15 +1,15 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.yawlfoundation.yawl.integration.mcp.sdk.JacksonMcpJsonMapper;
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpServer;
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpSyncServer;
-import org.yawlfoundation.yawl.integration.mcp.sdk.StdioServerTransportProvider;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.server.McpServer;
+import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
-import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -156,12 +156,9 @@ public class YawlMcpConfiguration {
         }
 
         if (apiKey == null || apiKey.isEmpty()) {
-            LOGGER.severe("Z.AI integration is enabled but no API key was found. "
-                + "Set yawl.mcp.zai.api-key or the ZAI_API_KEY / ZHIPU_API_KEY environment variable.");
-            throw new IllegalStateException(
-                "Z.AI integration is enabled but no API key is configured. "
-                + "Set yawl.mcp.zai.api-key or ZAI_API_KEY environment variable. "
-                + "To disable Z.AI, set yawl.mcp.zai.enabled=false.");
+            LOGGER.warning("Z.AI integration enabled but no API key provided. " +
+                          "Set yawl.mcp.zai.api-key or ZAI_API_KEY environment variable.");
+            return null;
         }
 
         try {
@@ -173,13 +170,8 @@ public class YawlMcpConfiguration {
                 properties.getPassword()
             );
         } catch (Exception e) {
-            LOGGER.severe("Z.AI service initialization failed with API key configured. "
-                + "This is an unrecoverable error - the service cannot start in a degraded state. "
-                + "Cause: " + e.getMessage());
-            throw new IllegalStateException(
-                "Failed to initialize Z.AI function service. "
-                + "Verify ZAI_API_KEY is valid and the Z.AI endpoint is reachable. "
-                + "Cause: " + e.getMessage(), e);
+            LOGGER.warning("Failed to initialize Z.AI service: " + e.getMessage());
+            return null;
         }
     }
 
@@ -273,8 +265,8 @@ public class YawlMcpConfiguration {
 
         } else if (properties.getTransport() == YawlMcpProperties.Transport.HTTP) {
             throw new UnsupportedOperationException(
-                "HTTP transport is not supported in this version of YAWL MCP Spring integration. " +
-                "Configure transport: stdio in application.yml or implement HTTP transport with Spring WebMVC.");
+                "HTTP transport not yet implemented in Spring integration. " +
+                "Use transport: stdio or implement HTTP transport with Spring WebMVC.");
         } else {
             throw new IllegalStateException("Unknown transport type: " + properties.getTransport());
         }

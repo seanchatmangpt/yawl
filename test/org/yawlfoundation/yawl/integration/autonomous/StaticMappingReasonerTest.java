@@ -188,6 +188,19 @@ public class StaticMappingReasonerTest extends TestCase {
         assertTrue("Finance agent should also be eligible", financeReasoner.isEligible(wir));
     }
 
+    public void testBothAgentsEligibleForSharedTask() {
+        StaticMappingReasoner financeReasoner = new StaticMappingReasoner(financeCapability);
+        orderingReasoner.addMapping("Approve_Purchase_Order", "Ordering, Finance");
+        financeReasoner.addMapping("Approve_Purchase_Order", "Ordering, Finance");
+
+        WorkItemRecord workItem = createWorkItem("100.3", "Approve_Purchase_Order");
+
+        assertTrue("Ordering should be eligible for Approve_Purchase_Order",
+                orderingReasoner.isEligible(workItem));
+        assertTrue("Finance should be eligible for Approve_Purchase_Order",
+                financeReasoner.isEligible(workItem));
+    }
+
     // =========================================================================
     // isEligible() - wildcard matching
     // =========================================================================
@@ -253,6 +266,21 @@ public class StaticMappingReasonerTest extends TestCase {
         // taskName defaults to null, taskID is "task-id-001"
         assertTrue("Should use taskID as fallback when taskName is null",
                 orderingReasoner.isEligible(wir));
+    }
+
+    // =========================================================================
+    // Case sensitivity test
+    // =========================================================================
+
+    public void testEligibilityIsCaseSensitiveOnDomainName() {
+        AgentCapability lowerCaseCapability = new AgentCapability("ordering",
+                "lower case domain name test");
+        StaticMappingReasoner lowerReasoner = new StaticMappingReasoner(lowerCaseCapability);
+        lowerReasoner.addMapping("Create_Purchase_Order", "Ordering");
+
+        WorkItemRecord workItem = createWorkItem("700.1", "Create_Purchase_Order");
+        assertFalse("Case-sensitive: 'ordering' should not match 'Ordering' capability",
+                lowerReasoner.isEligible(workItem));
     }
 
     // =========================================================================

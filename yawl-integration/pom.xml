@@ -31,36 +31,27 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- MCP SDK Bridge API
-             The org.yawlfoundation.yawl.integration.mcp.sdk package provides a complete
-             implementation of the MCP type system (McpSchema, McpServer, McpSyncServer, etc.)
-             that mirrors the official io.modelcontextprotocol Java SDK API surface.
-             The SDK bridge enables full MCP protocol type-checking without a separate dependency.
-
-             When the official MCP Java SDK is published to Maven Central, migrate by:
-             1. Uncomment the dependencies below
-             2. Remove the mcp.sdk source package
-             3. Update imports from mcp.sdk.* to io.modelcontextprotocol.sdk.*
-             GitHub: https://github.com/modelcontextprotocol/java-sdk
-        -->
-        <!--
+        <!-- MCP SDK (io.modelcontextprotocol.sdk 0.17.2 - installed from legacy/ant-build/3rdParty/lib) -->
         <dependency>
-            <groupId>io.modelcontextprotocol</groupId>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp</artifactId>
+            <version>0.17.2</version>
         </dependency>
         <dependency>
-            <groupId>io.modelcontextprotocol</groupId>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-core</artifactId>
+            <version>0.17.2</version>
         </dependency>
         <dependency>
-            <groupId>io.modelcontextprotocol</groupId>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-json</artifactId>
+            <version>0.17.2</version>
         </dependency>
         <dependency>
-            <groupId>io.modelcontextprotocol</groupId>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-json-jackson2</artifactId>
+            <version>0.17.2</version>
         </dependency>
-        -->
 
         <!-- A2A SDK - requires local installation (not on Maven Central)
              Install from: https://github.com/anthropics/a2a-java-sdk
@@ -163,7 +154,7 @@
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
                         <!-- Exclude sources with inter-dependencies on excluded packages -->
-                        <exclude>**/zai/**</exclude>
+                        <exclude>zai/**</exclude>
                         <exclude>**/processmining/**</exclude>
                         <!-- Exclude spiffe files that depend on zai -->
                         <exclude>**/spiffe/SpiffeEnabledZaiService.java</exclude>
@@ -194,7 +185,7 @@
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
-                        <exclude>**/zai/**</exclude>
+                        <exclude>zai/**</exclude>
                         <exclude>**/processmining/**</exclude>
                         <exclude>**/SpiffeEnabledZaiService.java</exclude>
                         <exclude>**/SelfPlayTest.java</exclude>

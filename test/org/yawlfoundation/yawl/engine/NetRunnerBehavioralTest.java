@@ -60,7 +60,7 @@ class NetRunnerBehavioralTest {
     private YSpecification specification;
 
     @BeforeEach
-    void setUp() throws YEngineStateException, org.yawlfoundation.yawl.exceptions.YPersistenceException {
+    void setUp() throws YEngineStateException, YPersistenceException {
         engine = YEngine.getInstance();
         EngineClearer.clear(engine);
     }
@@ -611,7 +611,7 @@ class NetRunnerBehavioralTest {
          */
         @Test
         @DisplayName("Case ID hierarchy supports subnets")
-        void testCaseIDHierarchy() throws org.yawlfoundation.yawl.exceptions.YPersistenceException {
+        void testCaseIDHierarchy() throws YPersistenceException {
             YIdentifier rootID = new YIdentifier(null);
             assertNull(rootID.getParent(), "Root ID should have no parent");
 

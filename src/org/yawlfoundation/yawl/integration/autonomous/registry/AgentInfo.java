@@ -14,6 +14,7 @@
 package org.yawlfoundation.yawl.integration.autonomous.registry;
 
 import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 /**
  * Agent registration information for the agent registry.
@@ -140,14 +141,14 @@ public final class AgentInfo {
         String domainName = extractNestedJsonField(json, "capability", "domainName");
         String description = extractNestedJsonField(json, "capability", "description");
         String host = extractJsonField(json, "host");
-        int port = Integer.parseInt(extractJsonField(json, "port"));
+        int port = SafeNumberParser.parseIntOrThrow(extractJsonField(json, "port"), "agent port in registry JSON");
 
         AgentCapability capability = new AgentCapability(domainName, description);
         AgentInfo info = new AgentInfo(id, name, capability, host, port);
 
         String heartbeatStr = extractJsonField(json, "lastHeartbeat");
         if (heartbeatStr != null && !heartbeatStr.isEmpty()) {
-            info.lastHeartbeat = Long.parseLong(heartbeatStr);
+            info.lastHeartbeat = SafeNumberParser.parseLongOrThrow(heartbeatStr, "agent lastHeartbeat in registry JSON");
         }
 
         return info;

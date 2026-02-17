@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpSyncServer;
-import org.yawlfoundation.yawl.integration.mcp.sdk.McpSchema;
+import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.spec.McpSchema;
 
 import java.util.Map;
 import java.util.logging.Logger;

@@ -31,6 +31,7 @@ import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import javax.xml.datatype.Duration;
@@ -423,7 +424,7 @@ public class YDecompositionParser {
                 // expiry is a stringified long value representing a specific datetime
                 String expiry = timerElem.getChildText("expiry", _yawlNS) ;
                 if (expiry != null)
-                    timerParameters.set(trigger, Instant.ofEpochMilli(Long.valueOf(expiry)));
+                    timerParameters.set(trigger, Instant.ofEpochMilli(SafeNumberParser.parseLongOrThrow(expiry, "timer expiry (epoch ms) in YAWL spec XML")));
                 else {
                     // duration type - specified as a Duration?
                     String durationStr = timerElem.getChildText("duration", _yawlNS);
@@ -439,7 +440,7 @@ public class YDecompositionParser {
                         String tickStr = durationElem.getChildText("ticks", _yawlNS);
                         String intervalStr = durationElem.getChildText("interval", _yawlNS);
                         YTimer.TimeUnit interval = YTimer.TimeUnit.valueOf(intervalStr);
-                        timerParameters.set(trigger, Long.valueOf(tickStr), interval);
+                        timerParameters.set(trigger, SafeNumberParser.parseLongOrThrow(tickStr, "timer ticks value in YAWL spec XML"), interval);
                     }
                 }
             }
@@ -464,7 +465,7 @@ public class YDecompositionParser {
                 String predicateOrderingStr = flowsIntoElem.getChild("predicate", _yawlNS).
                         getAttributeValue("ordering");
                 if (predicateOrderingStr != null) {
-                    flowStruct._predicateOrdering = Integer.valueOf(predicateOrderingStr);
+                    flowStruct._predicateOrdering = SafeNumberParser.parseIntOrThrow(predicateOrderingStr, "predicate ordering attribute in YAWL spec XML");
                 }
             }
             Element isDefaultFlow = flowsIntoElem.getChild("isDefaultFlow", _yawlNS);

@@ -143,14 +143,14 @@ public class HibernateEngine {
 
         String timeout = props.getProperty("hibernate.c3p0.timeout");
         if (timeout != null) {
-            long timeoutMs = Long.parseLong(timeout);
+            long timeoutMs = SafeNumberParser.parseLongOrThrow(timeout, "hibernate.c3p0.timeout configuration property");
             props.setProperty("hibernate.hikari.connectionTimeout", String.valueOf(timeoutMs));
             props.remove("hibernate.c3p0.timeout");
         }
 
         String idleTestPeriod = props.getProperty("hibernate.c3p0.idle_test_period");
         if (idleTestPeriod != null) {
-            long keepaliveMs = Long.parseLong(idleTestPeriod);
+            long keepaliveMs = SafeNumberParser.parseLongOrThrow(idleTestPeriod, "hibernate.c3p0.idle_test_period configuration property");
             props.setProperty("hibernate.hikari.keepaliveTime", String.valueOf(keepaliveMs));
             props.remove("hibernate.c3p0.idle_test_period");
         }

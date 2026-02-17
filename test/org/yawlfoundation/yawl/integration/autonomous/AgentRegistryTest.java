@@ -131,12 +131,35 @@ public class AgentRegistryTest extends TestCase {
         }
     }
 
+    public void testRegisterAgentWithNullIdThrows() {
+        try {
+            registry.registerAgent(null, "http://localhost:8091", List.of(), Map.of());
+            fail("Expected exception for null agent ID");
+        } catch (Exception e) {
+            assertTrue("Expected IllegalArgumentException or A2AException",
+                    e instanceof IllegalArgumentException || e instanceof A2AException);
+        }
+    }
+
     public void testRegisterAgentWithEmptyEndpointThrows() {
         try {
             registry.registerAgent("agent-x", "", List.of(), Map.of());
             fail("Expected A2AException for empty endpoint");
         } catch (A2AException e) {
             assertNotNull(e.getMessage());
+        }
+    }
+
+    public void testRegisterDuplicateAgentIdThrowsException() throws A2AException {
+        registry.registerAgent("agent-dup", "http://localhost:8083",
+                List.of("Ordering"), Map.of());
+
+        try {
+            registry.registerAgent("agent-dup", "http://localhost:8084",
+                    List.of("Finance"), Map.of());
+            fail("Expected A2AException for duplicate agent ID");
+        } catch (A2AException e) {
+            assertNotNull("Exception should have a message", e.getMessage());
         }
     }
 
