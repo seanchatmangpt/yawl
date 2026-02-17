@@ -96,7 +96,12 @@ public class InteractionGraphs {
 		return graphs;
 	}
 	
-	public InteractionGraph getGraph(EntityMID emid) {
+	/**
+     * Get an interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the InteractionGraph if found, or null if not found
+     */
+    public InteractionGraph getGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue())) {
 				return graph;
@@ -105,7 +110,12 @@ public class InteractionGraphs {
 		return null;
 	}
 	
-	public InteractionGraph getTempGraph(EntityMID emid) {
+	/**
+     * Get a temporary interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the temporary InteractionGraph if found, or null if not found
+     */
+    public InteractionGraph getTempGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue() + "TEMP")) {
 				return graph;

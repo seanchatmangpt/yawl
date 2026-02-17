@@ -19,9 +19,12 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
+import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
+import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
-
-import io.a2a.server.auth.User;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +34,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import org.yawlfoundation.yawl.util.SafeNumberParser;
 import java.util.concurrent.Executors;
 
 /**
@@ -42,6 +45,19 @@ import java.util.concurrent.Executors;
  * Other A2A agents can discover YAWL's capabilities via the AgentCard and invoke
  * workflow operations by sending messages.
  *
+ * <p><b>Security model:</b> Every request (except {@code /.well-known/agent.json})
+ * must carry verifiable credentials. The server validates credentials via a
+ * pluggable {@link A2AAuthenticationProvider} chain before dispatching any
+ * workflow operation. An unauthenticated request receives HTTP 401 with a
+ * {@code WWW-Authenticate} challenge. There is no fallback anonymous identity.
+ *
+ * <p>Supported authentication schemes (configured via environment variables):
+ * <ul>
+ *   <li>mTLS with SPIFFE X.509 SVID ({@code A2A_SPIFFE_TRUST_DOMAIN})</li>
+ *   <li>JWT Bearer token, HS256 ({@code A2A_JWT_SECRET})</li>
+ *   <li>API Key, HMAC-SHA256 ({@code A2A_API_KEY_MASTER} + {@code A2A_API_KEY})</li>
+ * </ul>
+ *
  * Skills exposed:
  *   - launch_workflow: Launch a workflow case from a specification
  *   - query_workflows: List loaded specifications and running cases
@@ -49,10 +65,10 @@ import java.util.concurrent.Executors;
  *   - cancel_workflow: Cancel a running workflow case
  *
  * The server starts on a configurable port (default 8081) and exposes:
- *   - GET  /.well-known/agent.json  - Agent card discovery
- *   - POST /                        - Message send (A2A REST protocol)
- *   - GET  /tasks/{id}              - Get task status
- *   - POST /tasks/{id}/cancel       - Cancel a task
+ *   - GET  /.well-known/agent.json  - Agent card discovery (no auth required)
+ *   - POST /                        - Message send (A2A REST protocol, auth required)
+ *   - GET  /tasks/{id}              - Get task status (auth required)
+ *   - POST /tasks/{id}/cancel       - Cancel a task (auth required)
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -67,20 +83,26 @@ public class YawlA2AServer {
     private final String yawlPassword;
     private final int port;
     private final ZaiFunctionService zaiFunctionService;
+    private final A2AAuthenticationProvider authProvider;
     private HttpServer httpServer;
     private ExecutorService executorService;
     private String sessionHandle;
 
     /**
-     * Construct a YAWL A2A Server.
+     * Construct a YAWL A2A Server with an explicit authentication provider.
      *
-     * @param yawlEngineUrl base URL of YAWL engine (e.g. http://localhost:8080/yawl)
-     * @param username YAWL admin username
-     * @param password YAWL admin password
-     * @param port port to run the A2A server on
+     * @param yawlEngineUrl  base URL of YAWL engine (e.g. http://localhost:8080/yawl)
+     * @param username       YAWL admin username
+     * @param password       YAWL admin password
+     * @param port           port to run the A2A server on
+     * @param authProvider   authentication provider that validates every inbound
+     *                       request; must not be null
      */
-    public YawlA2AServer(String yawlEngineUrl, String username, String password,
-            int port) {
+    public YawlA2AServer(String yawlEngineUrl,
+                         String username,
+                         String password,
+                         int port,
+                         A2AAuthenticationProvider authProvider) {
         if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
             throw new IllegalArgumentException(
                 "YAWL engine URL is required (e.g. http://localhost:8080/yawl)");
@@ -94,6 +116,11 @@ public class YawlA2AServer {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("Port must be between 1 and 65535");
         }
+        if (authProvider == null) {
+            throw new IllegalArgumentException(
+                "An authentication provider is required. "
+                + "Use CompositeAuthenticationProvider.production() for the recommended stack.");
+        }
 
         this.yawlEngineUrl = yawlEngineUrl;
         this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(
@@ -101,6 +128,7 @@ public class YawlA2AServer {
         this.yawlUsername = username;
         this.yawlPassword = password;
         this.port = port;
+        this.authProvider = authProvider;
 
         String zaiApiKey = System.getenv("ZAI_API_KEY");
         if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
@@ -145,25 +173,58 @@ public class YawlA2AServer {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
         httpServer.setExecutor(executorService);
 
+        // Agent card endpoint: no authentication required (public discovery)
         httpServer.createContext("/.well-known/agent.json", exchange -> {
             handleRestCall(exchange, () -> restHandler.getAgentCard());
         });
 
+        // All other endpoints: authentication required
         httpServer.createContext("/", exchange -> {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
-            User anonymousUser = new User() {
-                    @Override public boolean isAuthenticated() { return true; }
-                    @Override public String getUsername() { return "yawl-a2a"; }
-                };
-                ServerCallContext callContext = new ServerCallContext(
-                    anonymousUser, new HashMap<>(), Collections.emptySet());
+
+            // Authenticate before processing any workflow operation
+            AuthenticatedPrincipal principal;
+            try {
+                principal = authProvider.authenticate(exchange);
+            } catch (A2AAuthenticationException authEx) {
+                sendAuthenticationChallenge(exchange, authEx);
+                return;
+            }
+
+            // Reject an expired principal (e.g. certificate whose notAfter
+            // has passed since the TLS handshake).
+            if (principal.isExpired()) {
+                sendAuthenticationChallenge(exchange,
+                    new A2AAuthenticationException(
+                        "Credential has expired. Obtain a new credential and retry.",
+                        authProvider.scheme()));
+                return;
+            }
+
+            ServerCallContext callContext = new ServerCallContext(
+                principal, new HashMap<>(), Collections.emptySet());
 
             if ("POST".equals(method) && "/".equals(path)) {
+                if (!principal.hasPermission(AuthenticatedPrincipal.PERM_WORKFLOW_LAUNCH)
+                        && !principal.hasPermission(AuthenticatedPrincipal.PERM_WORKFLOW_QUERY)
+                        && !principal.hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE)
+                        && !principal.hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
+                    sendForbidden(exchange,
+                        "Insufficient permissions to invoke A2A message endpoint.");
+                    return;
+                }
                 String body = readRequestBody(exchange);
                 handleRestCall(exchange, () ->
                     restHandler.sendMessage(callContext, null, body));
+
             } else if ("GET".equals(method) && path.startsWith("/tasks/")) {
+                if (!principal.hasPermission(AuthenticatedPrincipal.PERM_WORKFLOW_QUERY)
+                        && !principal.hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
+                    sendForbidden(exchange,
+                        "Insufficient permissions to query task status.");
+                    return;
+                }
                 String taskId = path.substring("/tasks/".length());
                 if (taskId.endsWith("/cancel")) {
                     exchange.sendResponseHeaders(405, -1);
@@ -171,12 +232,21 @@ public class YawlA2AServer {
                     handleRestCall(exchange, () ->
                         restHandler.getTask(callContext, taskId, null, null));
                 }
+
             } else if ("POST".equals(method) && path.matches("/tasks/.+/cancel")) {
+                if (!principal.hasPermission(AuthenticatedPrincipal.PERM_WORKFLOW_CANCEL)
+                        && !principal.hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
+                    sendForbidden(exchange,
+                        "Insufficient permissions to cancel a task.");
+                    return;
+                }
                 String taskId = path.replace("/tasks/", "").replace("/cancel", "");
                 handleRestCall(exchange, () ->
                     restHandler.cancelTask(callContext, taskId, null));
+
             } else {
-                byte[] resp = "{\"error\":\"Not Found\"}".getBytes(StandardCharsets.UTF_8);
+                byte[] resp = "{\"error\":\"Not Found\"}"
+                    .getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(404, resp.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -190,6 +260,7 @@ public class YawlA2AServer {
             + " started on port " + port);
         System.out.println("Agent card: http://localhost:" + port
             + "/.well-known/agent.json");
+        System.out.println("Authentication: " + authProvider.scheme());
     }
 
     /**
@@ -579,6 +650,55 @@ public class YawlA2AServer {
         }
     }
 
+    /**
+     * Send an HTTP 401 response with a {@code WWW-Authenticate} challenge.
+     *
+     * <p>The challenge includes all supported schemes so clients can choose
+     * the appropriate one. The response body contains the end-user-safe
+     * rejection reason from the authentication exception.
+     */
+    private void sendAuthenticationChallenge(HttpExchange exchange,
+                                             A2AAuthenticationException authEx)
+            throws IOException {
+        String reason = authEx.getMessage() != null
+            ? authEx.getMessage()
+            : "Authentication required";
+        String schemes = authEx.getSupportedSchemes();
+
+        // Escape double-quotes in the reason before embedding in JSON
+        String safeReason = reason.replace("\"", "'");
+        byte[] body = ("{\"error\":\"" + safeReason + "\"}")
+            .getBytes(StandardCharsets.UTF_8);
+
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.getResponseHeaders().set(
+            "WWW-Authenticate",
+            "Bearer realm=\"YAWL A2A\", supported_schemes=\"" + schemes + "\"");
+        exchange.sendResponseHeaders(401, body.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(body);
+        }
+
+        // Log the rejection server-side (not to the client)
+        System.err.println("A2A auth rejected [" + exchange.getRemoteAddress() + "]: "
+            + reason);
+    }
+
+    /**
+     * Send an HTTP 403 Forbidden response when a principal lacks the required
+     * permission for the requested operation.
+     */
+    private void sendForbidden(HttpExchange exchange, String reason) throws IOException {
+        String safeReason = reason.replace("\"", "'");
+        byte[] body = ("{\"error\":\"" + safeReason + "\"}")
+            .getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(403, body.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(body);
+        }
+    }
+
     private String readRequestBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody()) {
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -620,10 +740,17 @@ public class YawlA2AServer {
      * Entry point for running the YAWL A2A Server.
      *
      * Environment variables:
-     *   YAWL_ENGINE_URL - YAWL engine base URL (default: http://localhost:8080/yawl)
-     *   YAWL_USERNAME   - YAWL admin username (default: admin)
-     *   YAWL_PASSWORD   - YAWL admin password (required - no default; see SECURITY.md)
-     *   A2A_PORT        - Port to run on (default: 8081)
+     *   YAWL_ENGINE_URL          - YAWL engine base URL (default: http://localhost:8080/yawl)
+     *   YAWL_USERNAME            - YAWL admin username (default: admin)
+     *   YAWL_PASSWORD            - YAWL admin password
+     *   A2A_PORT                 - Port to run on (default: 8081)
+     *
+     * Authentication (at least one set required):
+     *   A2A_JWT_SECRET           - JWT HMAC-SHA256 key (min 32 chars)
+     *   A2A_JWT_ISSUER           - Optional JWT issuer claim
+     *   A2A_API_KEY_MASTER       - API key HMAC master key (min 16 chars)
+     *   A2A_API_KEY              - Default API key to auto-register
+     *   A2A_SPIFFE_TRUST_DOMAIN  - SPIFFE trust domain (default: yawl.cloud)
      */
     public static void main(String[] args) {
         String engineUrl = System.getenv("YAWL_ENGINE_URL");
@@ -643,8 +770,8 @@ public class YawlA2AServer {
         String password = System.getenv("YAWL_PASSWORD");
         if (password == null || password.isEmpty()) {
             throw new IllegalStateException(
-                "YAWL_PASSWORD environment variable is required. " +
-                "See SECURITY.md for credential configuration procedures.");
+                "YAWL_PASSWORD environment variable is required.\n" +
+                "Set it with: export YAWL_PASSWORD=YAWL");
         }
 
         int port = 8081;
@@ -653,13 +780,19 @@ public class YawlA2AServer {
             port = SafeNumberParser.parseIntOrThrow(portEnv, "A2A_PORT environment variable");
         }
 
+        // Build the production authentication provider stack.
+        // Throws IllegalStateException if no provider can be configured.
+        A2AAuthenticationProvider authProvider =
+            CompositeAuthenticationProvider.production();
+
         System.out.println("Starting YAWL A2A Server v" + SERVER_VERSION);
         System.out.println("Engine URL: " + engineUrl);
         System.out.println("A2A Port: " + port);
+        System.out.println("Auth schemes: " + authProvider.scheme());
 
         try {
             YawlA2AServer server = new YawlA2AServer(
-                engineUrl, username, password, port);
+                engineUrl, username, password, port, authProvider);
 
             Runtime.getRuntime().addShutdownHook(
                 Thread.ofVirtual().unstarted(() -> {

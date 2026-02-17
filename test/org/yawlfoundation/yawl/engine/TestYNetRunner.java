@@ -90,7 +90,7 @@ class TestYNetRunner {
         assertTrue(_id1.getLocations().contains(anonC));
         assertTrue(((YTask) _netRunner1._net.getNetElement("b-top")).t_enabled(null));
         assertTrue(_netRunner1.isAlive());
-        assertTrue("" + _id1.getLocations(), _netRunner1.getEnabledTasks().size() == 1);
+        assertTrue(_netRunner1.getEnabledTasks().size() == 1, "" + _id1.getLocations());
         YAtomicTask btop = (YAtomicTask) _netRunner1.getNetElement("b-top");
         List btopChildren = null;
         try {
@@ -121,10 +121,8 @@ class TestYNetRunner {
             }
             assertNotNull(f);
         }
-        assertTrue("locations (should be one or zero in here): " +_id1.getLocations(),
-                _id1.getLocations().size() == 1
-                ||
-                _id1.getLocations().size() == 0);
+        assertTrue(_id1.getLocations().size() == 1 || _id1.getLocations().size() == 0,
+                "locations (should be one or zero in here): " + _id1.getLocations());
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
@@ -161,8 +159,7 @@ class TestYNetRunner {
         assertTrue(children.size() == 7 || extraID.getParent().equals(id.getParent()));
     }
     public static void main(String[] args) {
-        TestRunner runner = new TestRunner();
-        runner.doRun(suite());
-        System.exit(0);
+        // JUnit 5 tests are run via the Maven Surefire plugin or IDE JUnit launcher
+        System.out.println("Run via: mvn test -Dtest=TestYNetRunner");
     }
 }

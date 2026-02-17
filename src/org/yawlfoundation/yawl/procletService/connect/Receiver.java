@@ -18,16 +18,20 @@
 
 package org.yawlfoundation.yawl.procletService.connect;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.net.InetAddress;
 
 public class Receiver {
-	
+
+	private static final Logger _log = LogManager.getLogger(Receiver.class);
 	private JavaCPN conn1 = null;
-	
+
 	public Receiver () {
 		conn1 = new JavaCPN();
 	}
-	
+
 	public void initiate () {
 		byte ipAddr[] = {127, 0, 0, 1};
 		try {
@@ -39,25 +43,25 @@ public class Receiver {
 			String message = EncodeDecode.decodeString(conn1.receive());
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to initiate Receiver connection on port 9005", e);
 		}
 	}
-	
+
 	public void send(String message) {
 		try {
 			conn1.send(EncodeDecode.encodeString(message));
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to send message via Receiver: '{}'", message, e);
 		}
 	}
-	
+
 	public String receive() {
 		try {
 			return EncodeDecode.decodeString(conn1.receive());
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to receive message via Receiver", e);
 		}
 		return null;
 	}

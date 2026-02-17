@@ -5,9 +5,8 @@ import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  *
@@ -18,6 +17,7 @@ import java.util.Date;
  */
 class TestMetaDataMarshal{
     private YMetaData metaData;
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @BeforeEach
 
@@ -28,22 +28,23 @@ class TestMetaDataMarshal{
         metaData.addContributor("Lindsay Bradford");
         metaData.addContributor("Guy Redding");
         metaData.setCoverage("covers this example test");
-        metaData.setCreated(new Date());
+        metaData.setCreated(LocalDate.now());
         metaData.addCreator("Peter Pan");
         metaData.setDescription("This tests the metadata class");
         metaData.setStatus("This is not production class meta data");
         metaData.addSubject("testing");
         metaData.addSubject("and more testing");
         metaData.setTitle("Meta Data Test");
-        metaData.setValidFrom(new Date());
-        metaData.setValidUntil(new Date(new Date().getTime() + 86400000));
+        metaData.setValidFrom(LocalDate.now());
+        metaData.setValidUntil(LocalDate.now().plusDays(1));
         metaData.setVersion(new YSpecVersion("1.1"));
     }
 
     @Test
 
     void testToXML(){
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String today = DATE_FORMAT.format(LocalDate.now());
+        String tomorrow = DATE_FORMAT.format(LocalDate.now().plusDays(1));
         assertEquals("<metaData>" +
                 "<title>Meta Data Test</title>" +
                 "<creator>Peter Pan</creator>" +
@@ -55,9 +56,9 @@ class TestMetaDataMarshal{
                 "<contributor>Lindsay Bradford</contributor>" +
                 "<contributor>Guy Redding</contributor>" +
                 "<coverage>covers this example test</coverage>" +
-                "<validFrom>"+df.format(new Date())+"</validFrom>" +
-                "<validUntil>"+df.format(new Date(new Date().getTime() + 86400000))+"</validUntil>" +
-                "<created>"+df.format(new Date())+"</created>" +
+                "<validFrom>" + today + "</validFrom>" +
+                "<validUntil>" + tomorrow + "</validUntil>" +
+                "<created>" + today + "</created>" +
                 "<version>1.1</version>" +
                 "<status>This is not production class meta data</status>" +
                 "<persistent>false</persistent>" +

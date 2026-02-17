@@ -21,6 +21,6 @@ class TestYConnectivityException {
 	{
 		YConnectivityException yce = new YConnectivityException(messageIn);
 		String messageOut = yce.getMessage();
-		this.assertEquals(messageOut, messageIn);
+		assertEquals(messageIn, messageOut);
 	}
 }

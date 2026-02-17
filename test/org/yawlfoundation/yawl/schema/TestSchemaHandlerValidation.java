@@ -50,9 +50,7 @@ class TestSchemaHandlerValidation
 
     private SchemaHandler handler;
 
-    @Override
     @BeforeEach
-
     void setUp() throws Exception
     {
         handler = new SchemaHandler(SCHEMA);

@@ -15,6 +15,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SuiteDisplayName("Stateless Test Suite")
 @SelectClasses({
     TestStatelessEngine.class,
+    StatelessEngineCaseMonitorTest.class,
     YStatelessEngineSuspendResumeTest.class
 })
 public class StatelessTestSuite {

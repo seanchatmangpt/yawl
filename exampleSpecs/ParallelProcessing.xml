@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="ParallelProcessing">
+    <name>Parallel Processing Workflow</name>
+    <documentation>Demonstrates parallel AND splitting and synchronization in YAWL v4.0.</documentation>
+    <metaData/>
+    <decomposition id="ParallelNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Parallel Processing</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="InitializeProcess"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="InitializeProcess">
+          <name>Initialize Process</name>
+          <flowsInto>
+            <nextElementRef id="ParallelTask1"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="ParallelTask1">
+          <name>Parallel Task 1</name>
+          <flowsInto>
+            <nextElementRef id="Synchronize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="ParallelTask2">
+          <name>Parallel Task 2</name>
+          <flowsInto>
+            <nextElementRef id="Synchronize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="ParallelTask3">
+          <name>Parallel Task 3</name>
+          <flowsInto>
+            <nextElementRef id="Synchronize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <condition id="Synchronize">
+          <name>Synchronize</name>
+          <flowsInto>
+            <nextElementRef id="CompleteProcess"/>
+          </flowsInto>
+        </condition>
+        <task id="CompleteProcess">
+          <name>Complete Process</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="and"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

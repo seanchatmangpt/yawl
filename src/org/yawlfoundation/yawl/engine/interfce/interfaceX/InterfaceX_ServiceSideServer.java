@@ -23,6 +23,8 @@ import org.yawlfoundation.yawl.engine.interfce.Marshaller;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 import jakarta.servlet.ServletConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -60,6 +62,7 @@ import java.lang.reflect.Method;
 
 public class InterfaceX_ServiceSideServer extends HttpServlet {
 
+    private static final Logger _log = LogManager.getLogger(InterfaceX_ServiceSideServer.class);
     private InterfaceX_Service _controller;
 
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -81,7 +84,9 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            _log.error("Failed to initialize InterfaceX service controller '{}' - servlet cannot process requests",
+                    controllerClassName, e);
+            throw new ServletException("Failed to initialize InterfaceX service controller: " + controllerClassName, e);
         }
     }
 

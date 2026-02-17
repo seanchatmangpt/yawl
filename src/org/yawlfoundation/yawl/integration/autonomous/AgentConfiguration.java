@@ -81,7 +81,7 @@ public final class AgentConfiguration {
     }
 
     public String getAgentName() {
-        return capability.getDomainName();
+        return capability.domainName();
     }
 
     public DiscoveryStrategy getDiscoveryStrategy() {

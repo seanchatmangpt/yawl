@@ -118,7 +118,9 @@ public class InterfaceB_EnvironmentBasedServer extends HttpServlet {
             context.setAttribute("controller", _controller);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            _logger.error("Failed to initialize InterfaceB controller '{}' - servlet cannot process requests",
+                    controllerClassName, e);
+            throw new ServletException("Failed to initialize InterfaceB controller: " + controllerClassName, e);
         }
     }
 

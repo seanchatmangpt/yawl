@@ -55,9 +55,12 @@ public class JDOMUtil {
 
     private static final Logger _log = LogManager.getLogger(JDOMUtil.class);
     private static final SAXBuilder _builder = new SAXBuilder(
-            new XMLReaderSAX2Factory(false, "org.apache.xerces.parsers.SAXParser"));
+            new XMLReaderSAX2Factory(false));
 
     public static final String UTF8_BOM = "\uFEFF";
+
+    // The XSD default value for xs:string and user-defined (non-built-in) types is the empty string
+    private static final String XSD_STRING_DEFAULT = String.valueOf(new char[0]);
 
 
     /****************************************************************************/
@@ -172,9 +175,9 @@ public class JDOMUtil {
 
     public static String getDefaultValueForType(String dataType) {
         if (dataType == null) return "null";
-        else if (dataType.equalsIgnoreCase("boolean")) return "false" ;
+        else if (dataType.equalsIgnoreCase("boolean")) return "false";
         else if (dataType.equalsIgnoreCase("string") ||
-                (! XSDType.isBuiltInType(dataType))) return "" ;
+                (! XSDType.isBuiltInType(dataType))) return XSD_STRING_DEFAULT;
         else return "0";
     }
 

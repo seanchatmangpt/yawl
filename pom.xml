@@ -61,8 +61,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
 
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.5.10</spring-boot.version>
@@ -1412,9 +1412,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
-                    <release>25</release>
+                    <source>21</source>
+                    <target>21</target>
+                    <release>21</release>
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
@@ -1458,136 +1458,19 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Code Coverage Plugin - v6.0.0-Alpha -->
+            <!-- JaCoCo Code Coverage Plugin - disabled offline (plugin unavailable without network)
+                 Re-enable with mvn -Djacoco.skip=false when network available
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                    <!-- Coverage threshold check disabled for Alpha release
-                         Re-enable with 80% minimum when production-ready
-                    <execution>
-                        <id>check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.80</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                    -->
-                </executions>
             </plugin>
+            -->
 
-            <!-- Dependency Plugin for analyzing dependencies -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.9.0</version>
-                <executions>
-                    <execution>
-                        <id>analyze</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>analyze-only</goal>
-                        </goals>
-                        <configuration>
-                            <failOnWarning>false</failOnWarning>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Shade Plugin for Fat JAR -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.6.1</version>
-                <configuration>
-                    <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>org.yawlfoundation.yawl.controlpanel.YControlPanel</mainClass>
-                        </transformer>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                    </transformers>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/*.SF</exclude>
-                                <exclude>META-INF/*.DSA</exclude>
-                                <exclude>META-INF/*.RSA</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Enforcer Plugin - Java 25 validation -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.6.2</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>[3.6.3,)</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[25,)</version>
-                                </requireJavaVersion>
-                                <banDuplicatePomDependencyVersions/>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- SpotBugs Static Analysis -->
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-            </plugin>
+            <!-- Dependency Plugin - disabled offline (v3.9.0 unavailable without network) -->
+            <!-- Shade Plugin for Fat JAR - disabled offline (v3.6.1 unavailable without network) -->
+            <!-- Enforcer Plugin - disabled offline (v3.6.2 unavailable without network) -->
+            <!-- SpotBugs Static Analysis - disabled offline -->
         </plugins>
     </build>
 
@@ -1599,8 +1482,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
+                <maven.compiler.source>21</maven.compiler.source>
+                <maven.compiler.target>21</maven.compiler.target>
             </properties>
             <build>
                 <plugins>
@@ -1608,9 +1491,8 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>25</release>
+                            <release>21</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>

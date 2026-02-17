@@ -91,9 +91,9 @@ public final class GenericPartyAgent implements AutonomousAgent {
         startHttpServer();
         startDiscoveryLoop();
 
-        System.out.println("Generic Agent [" + config.getCapability().getDomainName()
+        System.out.println("Generic Agent [" + config.getCapability().domainName()
             + "] v" + config.getVersion() + " started on port " + config.getPort());
-        System.out.println("  Capability: " + config.getCapability().getDescription());
+        System.out.println("  Capability: " + config.getCapability().description());
         System.out.println("  Agent card: http://localhost:" + config.getPort() + "/.well-known/agent.json");
     }
 
@@ -114,7 +114,7 @@ public final class GenericPartyAgent implements AutonomousAgent {
                     break;
                 }
             }
-        }, "discovery-" + config.getCapability().getDomainName());
+        }, "discovery-" + config.getCapability().domainName());
         discoveryThread.setDaemon(false);
         discoveryThread.start();
     }
@@ -160,7 +160,7 @@ public final class GenericPartyAgent implements AutonomousAgent {
             System.err.println("Error disconnecting from engine: " + e.getMessage());
         }
 
-        System.out.println("Generic Agent [" + config.getCapability().getDomainName() + "] stopped");
+        System.out.println("Generic Agent [" + config.getCapability().domainName() + "] stopped");
     }
 
     @Override
@@ -204,7 +204,7 @@ public final class GenericPartyAgent implements AutonomousAgent {
 
         httpServer.createContext("/health", exchange -> {
             String json = "{\"status\":\"ok\",\"agent\":\""
-                + escapeJson(config.getCapability().getDomainName()) + "\"}";
+                + escapeJson(config.getCapability().domainName()) + "\"}";
             byte[] body = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
@@ -218,11 +218,11 @@ public final class GenericPartyAgent implements AutonomousAgent {
 
     private String buildAgentCardJson() {
         return "{"
-            + "\"name\":\"" + escapeJson("Generic Agent - " + config.getCapability().getDomainName()) + "\","
-            + "\"description\":\"" + escapeJson("Autonomous agent for " + config.getCapability().getDescription()
+            + "\"name\":\"" + escapeJson("Generic Agent - " + config.getCapability().domainName()) + "\","
+            + "\"description\":\"" + escapeJson("Autonomous agent for " + config.getCapability().description()
                 + ". Discovers work items, reasons about eligibility, produces output dynamically.") + "\","
             + "\"version\":\"" + escapeJson(config.getVersion()) + "\","
-            + "\"capabilities\":{\"domain\":\"" + escapeJson(config.getCapability().getDomainName()) + "\"},"
+            + "\"capabilities\":{\"domain\":\"" + escapeJson(config.getCapability().domainName()) + "\"},"
             + "\"skills\":[{"
             + "\"id\":\"complete_work_item\","
             + "\"name\":\"Complete Work Item\","
@@ -272,15 +272,15 @@ public final class GenericPartyAgent implements AutonomousAgent {
             String checkinResult = interfaceBClient.checkInWorkItem(workItemId, outputData, null, sessionHandle);
 
             if (checkinResult != null && checkinResult.contains("success")) {
-                System.out.println("  [" + config.getCapability().getDomainName() + "] Completed "
+                System.out.println("  [" + config.getCapability().domainName() + "] Completed "
                     + workItemId + " (" + workItem.getTaskName() + ")");
             } else {
-                System.err.println("  [" + config.getCapability().getDomainName() + "] Checkin failed for "
+                System.err.println("  [" + config.getCapability().domainName() + "] Checkin failed for "
                     + workItemId + ": " + checkinResult);
             }
 
         } catch (Exception e) {
-            System.err.println("  [" + config.getCapability().getDomainName() + "] Failed to process "
+            System.err.println("  [" + config.getCapability().domainName() + "] Failed to process "
                 + workItemId + ": " + e.getMessage());
         }
     }

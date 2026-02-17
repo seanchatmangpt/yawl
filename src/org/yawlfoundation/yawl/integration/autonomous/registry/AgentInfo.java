@@ -121,8 +121,8 @@ public final class AgentInfo {
             "\"description\":\"%s\"},\"host\":\"%s\",\"port\":%d,\"lastHeartbeat\":%d}",
             escapeJson(id),
             escapeJson(name),
-            escapeJson(capability.getDomainName()),
-            escapeJson(capability.getDescription()),
+            escapeJson(capability.domainName()),
+            escapeJson(capability.description()),
             escapeJson(host),
             port,
             lastHeartbeat

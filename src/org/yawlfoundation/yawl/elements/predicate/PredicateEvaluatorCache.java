@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements.predicate;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache;
@@ -43,8 +45,8 @@ import java.util.Set;
 public class PredicateEvaluatorCache
         extends YCorePredicateEvaluatorCache<PredicateEvaluator> {
 
-    /** Per-class singleton — carries the lazily-initialised evaluator set. */
-    private static final PredicateEvaluatorCache _instance = new PredicateEvaluatorCache();
+    private static final Logger _log = LogManager.getLogger(PredicateEvaluatorCache.class);
+    private static Set<PredicateEvaluator> _evaluators;
 
     private PredicateEvaluatorCache() { }
 
@@ -74,13 +76,20 @@ public class PredicateEvaluatorCache
     }
 
 
-    // -------------------------------------------------------------------------
-    // YCorePredicateEvaluatorCache contract
-    // -------------------------------------------------------------------------
-
-    @Override
-    protected Set<PredicateEvaluator> loadEvaluators() {
-        return PredicateEvaluatorFactory.getInstances();
+    private static PredicateEvaluator getEvaluator(String predicate) {
+        try {
+            if (_evaluators == null) {
+                _evaluators = PredicateEvaluatorFactory.getInstances();
+            }
+            for (PredicateEvaluator evaluator : _evaluators) {
+                if (evaluator.accept(predicate)) {
+                    return evaluator;
+                }
+            }
+        } catch (Exception e) {
+            _log.error("PredicateEvaluator lookup failed for predicate '{}': {}", predicate, e.getMessage(), e);
+        }
+        return null;
     }
 
 }

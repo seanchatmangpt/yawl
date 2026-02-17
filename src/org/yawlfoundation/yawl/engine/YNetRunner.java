@@ -57,7 +57,7 @@ import java.util.*;
 public class YNetRunner {
 
 
-    private static final Logger logger = LogManager.getLogger(YNetRunner.class);
+    /** Execution lifecycle states for a net runner. */
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
@@ -103,7 +103,7 @@ public class YNetRunner {
          this();
 
         // initialise and persist case identifier - if caseID is null, a new one is supplied
-        _caseIDForNet = new YIdentifier(caseID);   
+        _caseIDForNet = new YIdentifier(caseID);
         if (pmgr != null) pmgr.storeObject(_caseIDForNet);
 
         // get case data from external data gateway, if set for this specification
@@ -287,7 +287,7 @@ public class YNetRunner {
 
     public void setStartTime(long time) { _startTime = time ; }
 
-    
+
     /************************************************/
 
 
@@ -320,7 +320,7 @@ public class YNetRunner {
             if ((_engine != null) && isRootNet()) {
                 announceCaseCompletion();
                 if (endOfNetReached() && warnIfNetNotEmpty()) {
-                    _cancelling = true;                       // flag its not a deadlock                                   
+                    _cancelling = true;                       // flag its not a deadlock
                 }
 
                 // call the external data source, if its set for this specification
@@ -338,7 +338,7 @@ public class YNetRunner {
                         logData = new YLogDataItemList(new YLogDataItem("Predicate",
                                      "OnCompletion", predicate, "string"));
                     }
-                }                
+                }
                 YEventLogger.getInstance().logNetCompleted(_caseIDForNet, logData);
             }
             if (! _cancelling && deadLocked()) notifyDeadLock(pmgr);
@@ -408,13 +408,19 @@ public class YNetRunner {
 
 
     /**
-     * Assumption: there are no enabled tasks
-     * @return if deadlocked
+     * Returns {@code true} if the net is deadlocked.
+     *
+     * <p>A deadlock occurs when no tasks can fire but the case has not completed -
+     * specifically, when at least one net element still has tokens but its postset
+     * is non-empty (meaning flow cannot progress). This is only called when no
+     * enabled tasks exist.</p>
+     *
+     * @return {@code true} if the net is in a deadlocked state
      */
     private boolean deadLocked() {
         for (YNetElement location : _caseIDForNet.getLocations()) {
             if (location instanceof YExternalNetElement extElement) {
-                if (extElement.getPostsetElements().size() > 0) {
+                if (!extElement.getPostsetElements().isEmpty()) {
                     return true;
                 }
             }
@@ -598,7 +604,7 @@ public class YNetRunner {
     private void fireTasks(YEnabledTransitionSet enabledSet, YPersistenceManager pmgr)
             throws YDataStateException, YStateException, YQueryException,
                    YPersistenceException {
-        Set<YTask> enabledTasks = new HashSet<YTask>();
+        Set<YTask> enabledTasks = new HashSet<>();
 
         // A TaskGroup is a group of tasks that are all enabled by a single condition.
         // If the group has more than one task, it's a deferred choice, in which case:
@@ -626,7 +632,7 @@ public class YNetRunner {
                         YAnnouncement announcement = fireAtomicTask(atomic, groupID, pmgr);
                         if (announcement != null) {
                             _announcements.add(announcement);
-                        }    
+                        }
                         enabledTasks.add(atomic) ;
                     }
                 }
@@ -662,7 +668,7 @@ public class YNetRunner {
     private void fireCompositeTask(YCompositeTask task, YPersistenceManager pmgr)
                       throws YDataStateException, YStateException, YQueryException,
                              YPersistenceException {
-        
+
         if (! _busyTasks.contains(task)) {     // don't proceed if task already started
             _busyTasks.add(task);
             _busyTaskNames.add(task.getID());
@@ -682,24 +688,38 @@ public class YNetRunner {
     }
 
 
-    // fire, start and complete a decomposition-less atomic task in situ
-    protected void processEmptyTask(YAtomicTask task,YPersistenceManager pmgr)
+    /**
+     * Fires, starts, and completes a decomposition-less (empty/silent) atomic task in situ.
+     *
+     * <p>Silent tasks have no work item interaction - they are fired and immediately
+     * completed without being offered to any service. This implements the "skip" pattern
+     * (Workflow Pattern WP17) in the Petri net execution semantics.</p>
+     *
+     * @param task the empty atomic task to process
+     * @param pmgr the persistence manager for the current transaction
+     * @throws YDataStateException  if task data processing fails
+     * @throws YStateException      if the task is in an invalid state
+     * @throws YQueryException      if a data mapping query fails
+     * @throws YPersistenceException if persistence operations fail
+     */
+    protected void processEmptyTask(YAtomicTask task, YPersistenceManager pmgr)
             throws YDataStateException, YStateException, YQueryException,
             YPersistenceException {
         try {
             if (task.t_enabled(_caseIDForNet)) {            // may be already processed
-                YIdentifier id = task.t_fire(pmgr).get(0);
+                YIdentifier id = task.t_fire(pmgr).getFirst();  // Java 21+: replaces .get(0)
                 task.t_start(pmgr, id);
                 _busyTasks.add(task);                        // pre-req for completeTask
                 completeTask(pmgr, null, task, id, null);
             }
         }
         catch (YStateException yse) {
-            // ignore - task already removed due to alternate path or case completion
+            _logger.debug("Task already removed during net execution (alternate path or case completion): {}",
+                    yse.getMessage());
         }
     }
 
-    
+
     private void withdrawEnabledTask(YTask task, YPersistenceManager pmgr)
                       throws YPersistenceException {
 
@@ -756,8 +776,8 @@ public class YNetRunner {
                 allowDynamicCreation, false);
 
         if (atomicTask.getDataMappingsForEnablement().size() > 0) {
-            Element data = atomicTask.prepareEnablementData();            
-			      workItem.setData(pmgr, data);
+            Element data = atomicTask.prepareEnablementData();
+		      workItem.setData(pmgr, data);
         }
 
         // copy in relevant data from the task's decomposition
@@ -782,7 +802,7 @@ public class YNetRunner {
 
         // persist the changes
         if (pmgr != null) pmgr.updateObject(workItem);
-        
+
         return workItem;
     }
 
@@ -979,15 +999,24 @@ public class YNetRunner {
         return _enabledTasks;
     }
 
+    /**
+     * Returns the union of busy and enabled tasks.
+     *
+     * @return a new set containing all active (busy and enabled) tasks
+     */
     protected Set<YTask> getActiveTasks() {
-        Set<YTask> activeTasks = new HashSet<YTask>();
-        activeTasks.addAll(_busyTasks);
+        Set<YTask> activeTasks = new HashSet<>(_busyTasks);
         activeTasks.addAll(_enabledTasks);
         return activeTasks;
     }
 
+    /**
+     * Returns {@code true} if there is at least one enabled or busy task.
+     *
+     * @return {@code true} if any tasks are currently active
+     */
     protected boolean hasActiveTasks() {
-        return _enabledTasks.size() > 0 || _busyTasks.size() > 0;
+        return !_enabledTasks.isEmpty() || !_busyTasks.isEmpty();
     }
 
 
@@ -1142,7 +1171,7 @@ public class YNetRunner {
 
 
     // **** TIMER STATE VARIABLES **********//
-    
+
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
         _timerStates = new Hashtable<String, String>();
@@ -1178,7 +1207,7 @@ public class YNetRunner {
         });
     }
 
-    
+
     public Map<String, String> get_timerStates() {
         return _timerStates;
     }

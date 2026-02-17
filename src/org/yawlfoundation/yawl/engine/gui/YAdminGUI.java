@@ -608,7 +608,8 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
 
     private void attemptToCreateWorklist(String userName) throws YPersistenceException, YAuthenticationException {
         if (userName == null) {
-            return;  // do nothing - user must have chosen cancel
+            logger.debug("Worklist creation skipped: no username provided (user cancelled dialog)");
+            return;
         }
         YExternalClient client = _engineManagement.getExternalClient(userName);
         if (client == null) {

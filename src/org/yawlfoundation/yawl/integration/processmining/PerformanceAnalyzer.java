@@ -34,7 +34,7 @@ import java.util.Map;
 public final class PerformanceAnalyzer {
 
 
-    private static final Logger logger = LogManager.getLogger(PerformanceAnalyzer.class);
+    private static final Logger _log = LogManager.getLogger(PerformanceAnalyzer.class);
     /**
      * Result of performance analysis.
      */
@@ -128,7 +128,7 @@ public final class PerformanceAnalyzer {
                 traces.add(new ParsedTrace(caseId, events, startTime, endTime));
             }
         } catch (Exception e) {
-            logger.warn("Failed to parse XES trace data: " + e.getMessage(), e);
+            _log.warn("Failed to parse XES trace data: {}", e.getMessage(), e);
         }
         return traces;
     }
@@ -147,6 +147,7 @@ public final class PerformanceAnalyzer {
         try {
             return java.time.Instant.parse(ts).toEpochMilli();
         } catch (Exception e) {
+            _log.warn("Failed to parse timestamp '{}': {}", ts, e.getMessage());
             return null;
         }
     }

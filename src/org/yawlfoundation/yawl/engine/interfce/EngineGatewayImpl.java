@@ -1068,10 +1068,10 @@ public class EngineGatewayImpl implements EngineGateway {
                     verificationHandler);
         }
         catch (Exception e) {
-            if (e instanceof YPersistenceException persistEx) {
+            if (e instanceof YPersistenceException) {
                 enginePersistenceFailure = true;
             }
-            e.printStackTrace();
+            _logger.error("Failed to load specification into engine", e);
             return failureMessage(e.getMessage());
         }
 

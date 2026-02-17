@@ -48,11 +48,30 @@ public class MailSender extends InterfaceBWebsideController {
 
 
     //private static String _sessionHandle = null;
-    public void handleEnabledWorkItemEvent(WorkItemRecord enabledWorkItem){
-    	
+    /**
+     * MailSender is JSP-driven: work items are submitted via Send.jsp which
+     * invokes SendEmail() directly with form parameters. Engine-initiated work
+     * item events are not supported by this service.
+     *
+     * @param enabledWorkItem the enabled work item
+     * @throws UnsupportedOperationException always - use Send.jsp to trigger email sending
+     */
+    public void handleEnabledWorkItemEvent(WorkItemRecord enabledWorkItem) {
+        throw new UnsupportedOperationException(
+                "MailSender does not handle engine-enabled work item events. " +
+                "Email sending is triggered via Send.jsp with explicit form parameters.");
     }
 
-    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord){
+    /**
+     * MailSender does not track in-flight work items, so there is no
+     * cancellation cleanup to perform. This event is not supported.
+     *
+     * @param workItemRecord the cancelled work item
+     * @throws UnsupportedOperationException always
+     */
+    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        throw new UnsupportedOperationException(
+                "MailSender does not handle cancelled work item events.");
     }
     class MyAuthenticator extends Authenticator
     {  
@@ -84,41 +103,37 @@ public class MailSender extends InterfaceBWebsideController {
 	        org.w3c.dom.Document doc = db.parse(file);
 	        doc.getDocumentElement().normalize();
 
-			System.out.println("Root element " + doc.getDocumentElement().getNodeName());
+	        logger.debug("SMTP config root element: {}", doc.getDocumentElement().getNodeName());
 	        NodeList nodeLst = doc.getElementsByTagName("SMTP");
 	        for (int s = 0; s < nodeLst.getLength(); s++) {
-    	 
+
 	            Node fstNode = nodeLst.item(s);
-         
+
 	            if (fstNode.getNodeType() == Node.ELEMENT_NODE) {
 
 	              org.w3c.dom.Element fstElmnt = (org.w3c.dom.Element) fstNode;
-        
+
 	              NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("SMTP_Address");
 	              org.w3c.dom.Element fstNmElmnt = (org.w3c.dom.Element) fstNmElmntLst.item(0);
 	              NodeList fstNm = fstNmElmnt.getChildNodes();
-	              System.out.println("SMTP_Address : "  + ((Node) fstNm.item(0)).getNodeValue());
 				  SMTP = ((Node) fstNm.item(0)).getNodeValue();
-				  System.out.println("SMTP_Address : " + SMTP);
+	              logger.debug("SMTP_Address from config: {}", SMTP);
 
 	              NodeList lstNmElmntLst = fstElmnt.getElementsByTagName("Port");
 	              org.w3c.dom.Element lstNmElmnt = (org.w3c.dom.Element) lstNmElmntLst.item(0);
 	              NodeList lstNm = lstNmElmnt.getChildNodes();
-	              System.out.println("Port : " + ((Node) lstNm.item(0)).getNodeValue());
 				  Port=((Node) lstNm.item(0)).getNodeValue();
-				  System.out.println("Port : " + Port);
+	              logger.debug("Port from config: {}", Port);
 	            }
 	      }
     	}catch  (Exception e){
     	    // XML parsing failed - fall back to method parameters
     	    // This is acceptable: method already received SMTP/Port as parameters
-    	    logger.info("Could not load SMTP configuration from XML (using provided parameters): {}", 
+    	    logger.info("Could not load SMTP configuration from XML (using provided parameters): {}",
     	            e.getMessage());
     	}
 
     	 Properties props = new Properties();
-        // props.setProperty("mail.transport.protocol", "smtp");
-
          props.setProperty("mail.smtp.host", SMTP);
          props.setProperty("mail.smtp.port", Port);
          props.setProperty("mail.smtp.auth", "true");
@@ -131,32 +146,25 @@ public class MailSender extends InterfaceBWebsideController {
          props.setProperty("mail.smtp.socketFactory.fallback", "false");
         }
 
-         System.out.println("STEP passed");
+        logger.debug("Sending email to: {}, subject: {}, SMTP: {}:{}", To, subject, SMTP, Port);
      try{
          MyAuthenticator auth = new MyAuthenticator (Login,password);
          Session session;
          session = Session.getDefaultInstance(props, auth);
-         System.out.println("STEP passed");
          session.setDebug(true);
-         System.out.println("STEP passed");
          Message message;
          message = new MimeMessage(session);
-         System.out.println("STEP passed");
          InternetAddress addressFrom = new InternetAddress(Alias);
-         //InternetAddress(_Id);
          message.setFrom(addressFrom);
          message.setSentDate(new java.util.Date());
-         System.out.println("STEP passed");
          InternetAddress addressTo = new InternetAddress(To);
          message.addRecipient(Message.RecipientType.TO, addressTo);
          message.setSubject(subject);
-         //message.setText(_Message);
-         System.out.println("STEP passed");
          // create and fill the first message part
          BodyPart MessageContent = new MimeBodyPart();
          MessageContent.setText(content);
-        
-         // set the message body of email 
+
+         // set the message body of email
          final Multipart mimemultipart = new MimeMultipart();
          mimemultipart.addBodyPart(MessageContent);
          if(filename != null) {
@@ -165,15 +173,16 @@ public class MailSender extends InterfaceBWebsideController {
              mimebodypart1.setDataHandler(new DataHandler(filedatasource));
              mimebodypart1.setFileName(filename);
              mimebodypart1.setDisposition("inline");
-             System.out.println(mimebodypart1.getEncoding());
+             logger.debug("Attachment encoding: {}", mimebodypart1.getEncoding());
              mimemultipart.addBodyPart(mimebodypart1);
          }
          message.setContent(mimemultipart);
-        
+
          Transport.send(message);
+         logger.info("Email sent successfully to: {}, subject: {}", To, subject);
      }catch (Exception e) {
          logger.error("Failed to send email to: {}, subject: {}", To, subject, e);
-         e.printStackTrace();
+         throw new IllegalStateException("Email delivery failed to recipient '" + To + "': " + e.getMessage(), e);
      }
     }
 }

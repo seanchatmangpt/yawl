@@ -84,7 +84,7 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")  // prevent connection reuse under heavy load
+                // Connection lifecycle is managed by HttpClient's built-in connection pool
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -118,7 +118,7 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
+                // Connection lifecycle is managed by HttpClient's built-in connection pool
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -147,7 +147,7 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
+                // Connection lifecycle is managed by HttpClient's built-in connection pool
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
@@ -175,7 +175,7 @@ public class Interface_Client {
                 .timeout(READ_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Charset", "UTF-8")
-                .header("Connection", "close")
+                // Connection lifecycle is managed by HttpClient's built-in connection pool
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
