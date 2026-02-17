@@ -137,15 +137,24 @@
         </resources>
 
         <testResources>
+            <!-- Test resources in package directories - preserves structure for getClass().getResource() -->
             <testResource>
                 <directory>../test</directory>
                 <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.yawl</include>
-                    <include>**/*.ywl</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.yawl</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.ywl</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/swingWorklist/**/*.xml</include>
+                    <!-- Engine tests also reference elements and unmarshal resources -->
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xml</include>
                 </includes>
+            </testResource>
+            <!-- Common test resources directory (root level) -->
+            <testResource>
+                <directory>../test/resources</directory>
             </testResource>
             <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
             <testResource>
@@ -183,6 +192,7 @@
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/patternmatching/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
@@ -204,7 +214,6 @@
                                 <exclude>org/yawlfoundation/yawl/integration/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/logging/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/patternmatching/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/schema/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
@@ -230,6 +239,7 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/engine/**</include>
                         <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
+                        <include>**/org/yawlfoundation/yawl/patternmatching/**</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

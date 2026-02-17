@@ -81,7 +81,7 @@ public class YEventLogger {
 
     private final Logger _log = LogManager.getLogger(YEventLogger.class);
     private boolean _enabled = true;
-    private static YEventLogger INSTANCE = null;
+    private static volatile YEventLogger INSTANCE = null;
     private YEngine _engine;
     private HibernateEngine _db;
 
@@ -95,20 +95,53 @@ public class YEventLogger {
     };
 
     /**
-     * Virtual thread executor for async process logging.
-     * Before: Fixed thread pool sized to CPU cores (typically 8-32 threads)
-     * After: Virtual thread executor (unbounded concurrency for logging operations)
+     * Lazily-initialized virtual thread executor for async process logging.
      *
-     * Logging is I/O-bound (database writes), making it ideal for virtual threads.
-     * This eliminates logging queue buildup during high-throughput scenarios.
+     * <p>Using lazy initialization avoids NoClassDefFoundError during class loading
+     * on Java versions prior to 21 (virtual threads require Java 21+). The executor
+     * is only created when first needed, allowing the class to load successfully
+     * even on older Java versions (though logging operations will fail).</p>
      *
-     * Performance Impact:
-     * - Before: Log events queue when concurrent cases exceed core count
-     * - After: All log events process concurrently (tested up to 10,000 concurrent cases)
-     * - Memory: 32MB (32 platform threads) → 2MB (10,000 virtual threads)
+     * <p>This holder class is thread-safe: the JVM guarantees that the static
+     * initializer runs exactly once when the class is first accessed.</p>
+     *
+     * <p>Performance Impact:
+     * <ul>
+     *   <li>Before: Fixed thread pool sized to CPU cores (typically 8-32 threads)</li>
+     *   <li>After: Virtual thread executor (unbounded concurrency for logging operations)</li>
+     *   <li>Memory: 32MB (32 platform threads) to 2MB (10,000 virtual threads)</li>
+     * </ul>
+     * </p>
      */
-    private static final ExecutorService _executor =
-                Executors.newVirtualThreadPerTaskExecutor();
+    private static final class ExecutorHolder {
+        static final ExecutorService INSTANCE;
+
+        static {
+            ExecutorService executor;
+            try {
+                executor = Executors.newVirtualThreadPerTaskExecutor();
+            } catch (Exception e) {
+                System.getLogger(YEventLogger.class.getName())
+                        .log(System.Logger.Level.ERROR,
+                                "Failed to initialize virtual thread executor. " +
+                                "Async logging will not be available. " +
+                                "Virtual threads require Java 21+.", e);
+                executor = null;
+            }
+            INSTANCE = executor;
+        }
+
+        private ExecutorHolder() { }
+    }
+
+    /**
+     * Returns the lazily-initialized executor, or null if unavailable.
+     *
+     * @return the ExecutorService, or null if initialization failed
+     */
+    private static ExecutorService getExecutor() {
+        return ExecutorHolder.INSTANCE;
+    }
 
     // PUBLIC INTERFACE METHODS //
 
@@ -119,7 +152,13 @@ public class YEventLogger {
      * @return an instantiated event logger
      */
     public static YEventLogger getInstance(YEngine engine) {
-        if (INSTANCE == null) INSTANCE = new YEventLogger();
+        if (INSTANCE == null) {
+            synchronized (YEventLogger.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new YEventLogger();
+                }
+            }
+        }
         INSTANCE._engine = engine;
         if (! YEngine.isPersisting()) {
             INSTANCE.disable();
@@ -131,8 +170,31 @@ public class YEventLogger {
 
     /** @return an instantiated event logger */
     public static YEventLogger getInstance() {
-        if (INSTANCE == null) INSTANCE = new YEventLogger();
+        if (INSTANCE == null) {
+            synchronized (YEventLogger.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new YEventLogger();
+                }
+            }
+        }
         return INSTANCE;
+    }
+
+    /**
+     * Resets the singleton instance for testing purposes.
+     *
+     * <p>This method is intended for use in unit tests to ensure a clean
+     * state between tests. It should not be called in production code.</p>
+     */
+    static void resetForTesting() {
+        synchronized (YEventLogger.class) {
+            if (INSTANCE != null) {
+                INSTANCE._enabled = true;
+                INSTANCE._engine = null;
+                INSTANCE._db = null;
+                INSTANCE = null;
+            }
+        }
     }
 
 
@@ -178,7 +240,7 @@ public class YEventLogger {
                                final YIdentifier caseID, final YLogDataItemList datalist,
                                final String serviceRef) {
         if (loggingEnabled()) {
-            _executor.execute(() -> {
+            getExecutor().execute(() -> {
                 long netInstanceID = insertNetInstance(caseID,
                         getRootNetID(ySpecID), -1);
                 long serviceID = getServiceID(serviceRef);
@@ -199,7 +261,7 @@ public class YEventLogger {
     public void logSubNetCreated(final YSpecificationID ySpecID,
                                  final YNetRunner runner, final String engineTaskID, final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
+            getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     // get the required foreign key values
@@ -235,7 +297,7 @@ public class YEventLogger {
     public void logCaseCancelled(final YIdentifier caseID,
                                  final YLogDataItemList datalist, final String serviceRef) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
+            getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     long netInstanceID = YEventLogger.this.getNetInstanceID(caseID);
@@ -258,7 +320,7 @@ public class YEventLogger {
     public void logNetCompleted(final YIdentifier engineNetID,
                                 final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
+            getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     String event;
@@ -283,7 +345,7 @@ public class YEventLogger {
      public void logNetCancelled(final YSpecificationID ySpecID, final YNetRunner runner,
                                  final String engineTaskID, final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(new Runnable() {
+            getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     // get the required foreign key values
@@ -311,7 +373,7 @@ public class YEventLogger {
     public void logWorkItemEvent(final YWorkItem workItem, final String eventName,
                                  final YLogDataItemList datalist) {
         if (loggingEnabled()) {
-            _executor.execute(() -> {
+            getExecutor().execute(() -> {
                 long taskInstanceID = YEventLogger.this.getOrCreateTaskInstanceID(workItem);
                 YEventLogger.this.logEvent(taskInstanceID, eventName, datalist,
                         YEventLogger.this.getServiceID(workItem),
@@ -348,7 +410,7 @@ public class YEventLogger {
     public void logDataEvent(final YWorkItem workitem, final String descriptor,
                              final YLogDataItemList datalist) {
         if (loggingEnabled() && (datalist.size() > 0)) {
-            _executor.execute(new Runnable() {
+            getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     long instanceID = YEventLogger.this.getOrCreateTaskInstanceID(workitem);
@@ -393,7 +455,7 @@ public class YEventLogger {
 
 
     private boolean loggingEnabled() {
-        return _enabled;
+        return _enabled && getExecutor() != null;
     }
 
     private String getWarnMsg(String value) {

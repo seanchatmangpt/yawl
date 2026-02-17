@@ -74,7 +74,10 @@ public class XNodeParser {
 
 
     public XNode parse(Element e) {
-        return parse(JDOMUtil.elementToString(e));
+        // Use compact format to avoid whitespace parsing issues.
+        // PrettyFormat adds newlines and indentation which can be
+        // misinterpreted as text content by the parser.
+        return parse(JDOMUtil.elementToStringDump(e));
     }
 
     

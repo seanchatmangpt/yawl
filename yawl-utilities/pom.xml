@@ -73,6 +73,7 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
         <resources>
+            <!-- Copy schema XSD files to schema/ directory -->
             <resource>
                 <directory>../schema</directory>
                 <targetPath>schema</targetPath>
@@ -81,7 +82,30 @@
                     <include>**/*.xml</include>
                 </includes>
             </resource>
+            <!-- Copy XSD files from unmarshal package to classpath (required for schema validation) -->
+            <resource>
+                <directory>../src</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/*.xsd</include>
+                </includes>
+            </resource>
         </resources>
+
+        <!-- Copy test resources preserving package structure for getClass().getResource() -->
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/**/*.properties</include>
+                </includes>
+            </testResource>
+            <!-- Common test resources directory -->
+            <testResource>
+                <directory>../test/resources</directory>
+            </testResource>
+        </testResources>
 
         <plugins>
             <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->

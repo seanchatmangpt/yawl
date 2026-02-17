@@ -117,10 +117,17 @@ class TestYTimerParametersParsing {
     @DisplayName("parseYTimerType parses epoch millis when xsd:dateTime fails (M-07 fix)")
     void testParseEpochMillisWhenXsdDateTimeFails() throws Exception {
         // An epoch millis value that is NOT a valid xsd:dateTime
-        long epochMillis = Instant.now().plusSeconds(3600).toEpochMilli();
+        // Use a fixed timestamp that clearly looks like epoch millis (large number)
+        // and won't be confused with xsd:dateTime format
+        long epochMillis = 1734567890123L; // Fixed timestamp: 2024-12-19
         String epochStr = String.valueOf(epochMillis);
 
         Element timerElement = createTimerElement("OnEnabled", epochStr);
+
+        // Debug: verify JDOM correctly extracts the text
+        String extractedExpiry = timerElement.getChildText("expiry");
+        assertEquals(epochStr, extractedExpiry,
+                "JDOM getChildText should correctly extract the expiry value");
 
         boolean result = _timer.parseYTimerType(timerElement);
 

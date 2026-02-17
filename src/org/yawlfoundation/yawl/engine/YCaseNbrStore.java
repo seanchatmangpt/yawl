@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -38,16 +38,37 @@ public class YCaseNbrStore {
     private final AtomicInteger caseNbr;
     private boolean persisted = false ;                   // has this been persisted yet?
     private boolean persisting = false ;                  // is persistence on?
-    private static final YCaseNbrStore _instance = new YCaseNbrStore();
+
+    /**
+     * Lazily-initialized singleton holder.
+     *
+     * <p>Using the initialization-on-demand holder idiom avoids eager static
+     * initialization that can cause NoClassDefFoundError if YEngine.getInstance()
+     * is called during class loading (circular dependency). The singleton is
+     * only created when getInstance() is first called, after the class loader
+     * has finished loading YCaseNbrStore.</p>
+     */
+    private static final class InstanceHolder {
+        static final YCaseNbrStore INSTANCE = createInstance();
+
+        private static YCaseNbrStore createInstance() {
+            try {
+                return new YCaseNbrStore();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to initialize YCaseNbrStore singleton", e);
+            }
+        }
+    }
+
     private static final Logger log = LogManager.getLogger(YCaseNbrStore.class) ;
 
     protected YCaseNbrStore() {
         caseNbr = new AtomicInteger();
     }
 
-    /** @return an instance of ths class */
+    /** @return an instance of this class */
     public static YCaseNbrStore getInstance() {
-        return _instance ;
+        return InstanceHolder.INSTANCE;
     }
 
 

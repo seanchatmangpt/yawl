@@ -26,7 +26,6 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.input.sax.XMLReaderSAX2Factory;
 import org.jdom2.output.EscapeStrategy;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
@@ -54,8 +53,15 @@ import java.util.List;
 public class JDOMUtil {
 
     private static final Logger _log = LogManager.getLogger(JDOMUtil.class);
-    private static final SAXBuilder _builder = new SAXBuilder(
-            new XMLReaderSAX2Factory(false, "org.apache.xerces.parsers.SAXParser"));
+
+    /**
+     * SAXBuilder instance using the default Java XML parser.
+     *
+     * <p>Previously this used Xerces explicitly, but Xerces is not bundled with
+     * modern Java versions. The default SAX parser provided by the JRE is used
+     * instead, which is fully compliant and available on all Java 9+ versions.</p>
+     */
+    private static final SAXBuilder _builder = new SAXBuilder();
 
     public static final String UTF8_BOM = "\uFEFF";
 
