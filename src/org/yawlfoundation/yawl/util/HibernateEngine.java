@@ -173,6 +173,7 @@ public class HibernateEngine {
             return hasTable;
         }
         catch (Exception e) {
+            _log.error("Failed to check table availability for '{}': {}", tableName, e.getMessage(), e);
             return false;
         }
      }

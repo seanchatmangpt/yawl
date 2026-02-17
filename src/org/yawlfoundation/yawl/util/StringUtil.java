@@ -18,11 +18,19 @@
 
 package org.yawlfoundation.yawl.util;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -30,16 +38,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
-
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-
 
 public class StringUtil {
+    private static final Logger _log = LogManager.getLogger(StringUtil.class);
     private static final String TIMESTAMP_DELIMITER = " ";
     private static final String DATE_DELIMITER = "-";
     private static final String TIME_DELIMITER = ":";
@@ -354,7 +355,11 @@ public class StringUtil {
      */
     public static String xmlEncode(String s) {
         if (s == null) return s;
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            return s;
+        }
     }
 
     /**
@@ -365,7 +370,11 @@ public class StringUtil {
      */
     public static String xmlDecode(String s) {
         if (s == null) return s;
-        return URLDecoder.decode(s, StandardCharsets.UTF_8);
+        try {
+            return URLDecoder.decode(s, "UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            return s;
+        }
     }
 
     public static boolean isIntegerString(String s) {
@@ -401,6 +410,7 @@ public class StringUtil {
                     File.createTempFile(
                             RandomStringUtils.randomAlphanumeric(12), null), contents);
         } catch (IOException e) {
+            _log.error("Failed to create temporary file", e);
             return null;
         }
     }
@@ -425,6 +435,7 @@ public class StringUtil {
                 InputStream fis = new FileInputStream(f);
                 return streamToString(fis, bufsize);
             } catch (Exception e) {
+                _log.error("Failed to read file to string", e);
                 return null;
             }
         } else return null;
@@ -452,9 +463,10 @@ public class StringUtil {
             inStream.close();
 
             // convert the bytes to a UTF-8 string
-            return outStream.toString(StandardCharsets.UTF_8);
+            return outStream.toString("UTF-8");
 
         } catch (IOException ioe) {
+            _log.error("Failed to convert stream to string", ioe);
             return null;
         }
     }
@@ -609,6 +621,7 @@ public class StringUtil {
                     DatatypeFactory.newInstance().newXMLGregorianCalendar(gregCal);
             return cal.toXMLFormat();
         } catch (DatatypeConfigurationException dce) {
+            _log.error("Failed to convert long to DateTime", dce);
             return null;
         }
     }
