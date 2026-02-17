@@ -335,18 +335,18 @@ public abstract class YTask extends YExternalNetElement {
 
         // contract: all task presetElements are conditions
         switch (_joinType) {
-            case YTask._AND:
+            case YTask._AND -> {
                 for (YExternalNetElement preSetElement : getPresetElements()) {
                     ((YConditionInterface) preSetElement).removeOne(pmgr);
                 }
-                break;
-            case YTask._OR:
+            }
+            case YTask._OR -> {
                 for (YExternalNetElement preSetElement : getPresetElements()) {
-                    YConditionInterface condition = ((YConditionInterface) preSetElement);
+                    YConditionInterface condition = (YConditionInterface) preSetElement;
                     if (condition.containsIdentifier()) condition.removeOne(pmgr);
                 }
-                break;
-            case YTask._XOR:
+            }
+            case YTask._XOR -> {
                 List<YExternalNetElement> conditions =
                         new Vector<YExternalNetElement>(getPresetElements());
                 boolean done = false;
@@ -358,7 +358,7 @@ public abstract class YTask extends YExternalNetElement {
                         done = true;
                     }
                 } while (!done);
-                break;
+            }
         }
         return childIdentifiers;
     }
@@ -446,16 +446,13 @@ public abstract class YTask extends YExternalNetElement {
                 if (yid != null) nonNullIDs.add(yid);
             }
             
-            nonNullIDs.sort(new Comparator<YIdentifier>() {
-                @Override
-                public int compare(YIdentifier o1, YIdentifier o2) {
-                    String s1 = o1.toString();
-                    String s2 = o2.toString();
-                    if (s1 == null && s2 == null) return 0;
-                    if (s1 == null) return -1;
-                    if (s2 == null) return 1;
-                    return s1.compareTo(s2);
-                }
+            nonNullIDs.sort((o1, o2) -> {
+                String s1 = o1.toString();
+                String s2 = o2.toString();
+                if (s1 == null && s2 == null) return 0;
+                if (s1 == null) return -1;
+                if (s2 == null) return 1;
+                return s1.compareTo(s2);
             });
             
             for (YIdentifier id : nonNullIDs) {
@@ -598,19 +595,19 @@ public abstract class YTask extends YExternalNetElement {
 
     private void addDefaultValuesAsRequired(Document dataDoc) {
         if (dataDoc == null) return;
-        Element dataElem = dataDoc.getRootElement();
-        List<YParameter> outputParams = new ArrayList<YParameter>(
+        var dataElem = dataDoc.getRootElement();
+        var outputParams = new ArrayList<YParameter>(
                 _decompositionPrototype.getOutputParameters().values());
         Collections.sort(outputParams);
         for (int index = 0; index < outputParams.size(); index++) {
-            YParameter param = outputParams.get(index);
+            var param = outputParams.get(index);
             String defaultValue = param.getDefaultValue();
             if (! StringUtil.isNullOrEmpty(defaultValue)) {
-                Element paramElem = dataElem.getChild(param.getPreferredName());
+                var paramElem = dataElem.getChild(param.getPreferredName());
 
                 // if there's no element, or it has with no content, add the default
                 if (paramElem == null || paramElem.getContent().isEmpty()) {
-                    Element defElem = JDOMUtil.stringToElement(
+                    var defElem = JDOMUtil.stringToElement(
                             StringUtil.wrap(defaultValue,
                                     param.getPreferredName())).detach();
                     defElem.setNamespace(dataElem.getNamespace());
@@ -766,15 +763,9 @@ public abstract class YTask extends YExternalNetElement {
         }
         purgeLocations(pmgr);
         switch (_splitType) {
-            case YTask._AND:
-                doAndSplit(pmgr, i);
-                break;
-            case YTask._OR:
-                doOrSplit(pmgr, i);
-                break;
-            case YTask._XOR:
-                doXORSplit(pmgr, i);
-                break;
+            case YTask._AND -> doAndSplit(pmgr, i);
+            case YTask._OR  -> doOrSplit(pmgr, i);
+            case YTask._XOR -> doXORSplit(pmgr, i);
         }
         i.removeLocation(pmgr, this);
         _caseToDataMap.remove(i);
@@ -860,7 +851,7 @@ public abstract class YTask extends YExternalNetElement {
 
 
     private Set<String> getLocalVariablesForTaskCompletion() {
-        Set<String> localVars = new HashSet<String>();
+        var localVars = new HashSet<String>();
         for (String query : _dataMappingsForTaskCompletion.keySet()) {
             if (!ExternalDataGatewayFactory.isExternalDataMappingExpression(query)) {
                 localVars.add(_dataMappingsForTaskCompletion.get(query));
@@ -1001,26 +992,26 @@ public abstract class YTask extends YExternalNetElement {
 
         if (_i != null) return false;     // busy tasks are never enabled
 
-        switch (_joinType) {
-            case YTask._AND:
+        return switch (_joinType) {
+            case YTask._AND -> {
                 for (YExternalNetElement condition : getPresetElements()) {
                     if (!((YCondition) condition).containsIdentifier()) {
-                        return false;
+                        yield false;
                     }
                 }
-                return true;
-            case YTask._OR:
-                return _net.orJoinEnabled(this, id);
-            case YTask._XOR:
+                yield true;
+            }
+            case YTask._OR  -> _net.orJoinEnabled(this, id);
+            case YTask._XOR -> {
                 for (YExternalNetElement condition : getPresetElements()) {
                     if (((YCondition) condition).containsIdentifier()) {
-                        return true;
+                        yield true;
                     }
                 }
-                return false;
-            default:
-                return false;
-        }
+                yield false;
+            }
+            default -> false;
+        };
     }
 
 
@@ -1076,8 +1067,8 @@ public abstract class YTask extends YExternalNetElement {
         logger.debug("--> getStartingDataSnapshot");
         if (null == getDecompositionPrototype()) return null;
 
-        Element dataForChildCase = produceDataRootElement();
-        List<YParameter> inputParams =
+        var dataForChildCase = produceDataRootElement();
+        var inputParams =
                 new ArrayList<YParameter>(_decompositionPrototype.getInputParameters().values());
         Collections.sort(inputParams);
         for (YParameter parameter : inputParams) {
@@ -1458,15 +1449,12 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private String decoratorTypeToString(int decType) {
-        switch (decType) {
-            case _AND:
-                return "and";
-            case _OR:
-                return "or";
-            case _XOR:
-                return "xor";
-        }
-        return "invalid";
+        return switch (decType) {
+            case _AND -> "and";
+            case _OR  -> "or";
+            case _XOR -> "xor";
+            default   -> "invalid";
+        };
     }
 
     private String writeExpressionMapping(String expression, String mapsTo) {
@@ -1602,8 +1590,7 @@ public abstract class YTask extends YExternalNetElement {
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");
