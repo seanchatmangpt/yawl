@@ -895,11 +895,11 @@ public class YNetRunner {
 
     public boolean isEmpty() {
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (element instanceof YCondition) {
-                if (((YCondition) element).containsIdentifier()) return false;
+            if (element instanceof YCondition condition) {
+                if (condition.containsIdentifier()) return false;
             }
-            else {
-                if (((YTask) element).t_isBusy()) return false;                
+            else if (element instanceof YTask task) {
+                if (task.t_isBusy()) return false;
             }
         }
         return true;
@@ -916,7 +916,7 @@ public class YNetRunner {
     }
 
     public Set<YTask> getActiveTasks() {
-        Set<YTask> activeTasks = new HashSet<YTask>();
+        Set<YTask> activeTasks = new HashSet<>();
         activeTasks.addAll(_busyTasks);
         activeTasks.addAll(_enabledTasks);
         return activeTasks;
