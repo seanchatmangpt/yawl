@@ -17,7 +17,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SuiteDisplayName("Authentication Test Suite")
 @SelectClasses({
     TestConnections.class,
-    TestJwtManager.class
+    TestJwtManager.class,
+    V6SecurityTest.class
 })
 public class AuthenticationTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

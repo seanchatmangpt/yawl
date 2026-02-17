@@ -18,11 +18,13 @@
 
 package org.yawlfoundation.yawl.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.soap.*;
@@ -37,6 +39,7 @@ import javax.xml.soap.*;
  */
 public class SoapClient {
 
+    private static final Logger _log = LogManager.getLogger(SoapClient.class);
     private static final String NS_PREFIX = "yns";       // a candidate namespace prefix
 
     private String _endpoint;
@@ -133,6 +136,7 @@ public class SoapClient {
         String s = new String(os.toByteArray(), StandardCharsets.UTF_8);
         XNode root = new XNodeParser().parse(s);
         if (root == null) {
+            _log.error("Failed to parse SOAP response from endpoint '{}': XNodeParser returned null for response string", _endpoint);
             return null;
         }
 
@@ -151,18 +155,5 @@ public class SoapClient {
      * @return the list's size, or 0 if the list is null
      */
     private int getSize(List<?> l) { return l != null ? l.size() : 0; }
-
-
-    // a test
-    public static void main(String argsv[]) throws Exception {
-        String ns = "http://www.kayaposoft.com/enrico/ws/v1.0/";
-        String action = "getPublicHolidaysForYear";
-        List<String> argKeys = Arrays.asList("year", "country", "region");
-        List<String> argValues = Arrays.asList("2017", "usa", "Delaware");
-
-        SoapClient client = new SoapClient("http://kayaposoft.com/enrico/ws/v1.0/index.php");
-        String result = client.send(ns, action, argKeys, argValues);
-        System.out.println(result);
-    }
 
 }

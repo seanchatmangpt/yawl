@@ -17,22 +17,20 @@
  */
 
 /**
- * Security configuration for YAWL.
+ * Credential management infrastructure for YAWL.
  *
- * <p>This package provides security-related configurations and utilities
- * for protecting YAWL against common vulnerabilities.</p>
+ * <p>This package defines the contract ({@link org.yawlfoundation.yawl.security.CredentialManager})
+ * and supporting types for all credential access within the YAWL platform. No
+ * hardcoded credentials, environment-variable fallbacks to known defaults, or
+ * plaintext config files are permitted in production code - all credential access
+ * must be routed through a {@code CredentialManager} implementation backed by a
+ * secrets vault.
  *
- * <p>Key components:</p>
+ * <p>See {@code SECURITY.md} at the project root for:
  * <ul>
- *   <li>{@link org.yawlfoundation.yawl.security.ObjectInputStreamConfig} -
- *       Allowlist-based ObjectInputFilter configurations for safe Java deserialization</li>
- * </ul>
- *
- * <p>Security focus areas:</p>
- * <ul>
- *   <li>Safe deserialization (CWE-502 mitigation)</li>
- *   <li>Gadget chain attack prevention</li>
- *   <li>Remote Code Execution (RCE) vulnerability mitigation</li>
+ *   <li>Known credential defaults to be removed</li>
+ *   <li>Required vault integration steps</li>
+ *   <li>Credential rotation procedures</li>
  * </ul>
  */
 package org.yawlfoundation.yawl.security;

@@ -16,7 +16,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SuiteDisplayName("Schema Test Suite")
 @SelectClasses({
     TestSchemaHandler.class,
-    TestSchemaHandlerValidation.class
+    TestSchemaHandlerValidation.class,
+    SpecificationValidationTest.class
 })
 public class SchemaTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

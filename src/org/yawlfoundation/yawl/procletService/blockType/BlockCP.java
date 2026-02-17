@@ -18,9 +18,6 @@
 
 package org.yawlfoundation.yawl.procletService.blockType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -43,6 +40,9 @@ import org.yawlfoundation.yawl.procletService.state.Performatives;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 import org.yawlfoundation.yawl.procletService.util.EntitySID;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BlockCP {
 
@@ -108,7 +108,7 @@ public class BlockCP {
 				}
 			}
 			catch (Exception e) {
-				e.printStackTrace();
+				myLog.error("Exception in BlockCP processing", e);
 			}
 		}
 		myLog.debug("emidsBefore:" + emids);
@@ -144,7 +144,7 @@ public class BlockCP {
 						Thread.sleep(500);
 					}
 					catch (Exception e) {
-						e.printStackTrace();
+						myLog.error("Exception in BlockCP processing", e);
 					}
 					pushAvailableEmidsToUser(emids);
 				}
@@ -290,7 +290,7 @@ public class BlockCP {
 								myLog.debug("trigger send something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in BlockCP processing", e);
 							}
 							// and continue building
 						}

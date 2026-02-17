@@ -18,9 +18,6 @@
 
 package org.yawlfoundation.yawl.procletService.blockType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -38,6 +35,9 @@ import org.yawlfoundation.yawl.procletService.state.Performative;
 import org.yawlfoundation.yawl.procletService.state.Performatives;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BlockFO {
 	
@@ -112,7 +112,7 @@ public class BlockFO {
 									Thread.sleep(1000);
 								}
 								catch (Exception e) {
-									e.printStackTrace();
+									myLog.error("Exception in BlockFO processing", e);
 								}
 							}
 						}
@@ -257,7 +257,7 @@ public class BlockFO {
 			//pemid.extendGraph(options);
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			myLog.error("Exception in BlockFO processing", e);
 		}
 //		List<List<List>> result = pemid.generateNextOptions();
 //		pemid.determineOptionsNonCrBlocks(result.get(1));
@@ -332,7 +332,8 @@ public class BlockFO {
 //		List<List> relations = bfo.calculateRelations();
 //		igraphs.updateGraphPerfOut(relations);
 //		bfo.calcPerformativesOut();
-		System.out.println("done");
+		myLog.debug("done");
 	}
 
 }
+

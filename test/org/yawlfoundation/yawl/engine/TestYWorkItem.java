@@ -53,7 +53,7 @@ class TestYWorkItem{
         assertTrue(child.getStatus().equals(YWorkItemStatus.statusFired));
         assertNotNull(child.getEnablementTime());
         assertEquals(child.getEnablementTime(), _workItem.getEnablementTime());
-        assertFalse( child.getFiringTime().before(_workItem.getEnablementTime()));
+        assertFalse(child.getFiringTime().isBefore(_workItem.getEnablementTime()));
         assertTrue(child.allowsDynamicCreation());
         YClient fred = new YClient("fred", "password", null);
         child.setStatusToStarted(null, fred);

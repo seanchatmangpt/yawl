@@ -42,6 +42,7 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.schema.YDataValidator;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.NullCheckModernizer;
+import org.yawlfoundation.yawl.engine.core.marking.IMarkingTask;
 import org.yawlfoundation.yawl.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
@@ -107,7 +108,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @see YMultiInstanceAttributes
  * @see YDecomposition
  */
-public abstract class YTask extends YExternalNetElement {
+public abstract class YTask extends YExternalNetElement implements IMarkingTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());
@@ -1526,9 +1527,7 @@ public abstract class YTask extends YExternalNetElement {
     }
 
     private String writeExpressionMapping(String expression, String mapsTo) {
-        return """
-            <mapping><expression query="%s"/><mapsTo>%s</mapsTo></mapping>
-            """.formatted(
+        return "<mapping><expression query=\"%s\"/><mapsTo>%s</mapsTo></mapping>".formatted(
                 JDOMUtil.encodeEscapes(expression).replace("\n", "&#xA;"),
                 mapsTo
             );

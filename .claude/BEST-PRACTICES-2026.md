@@ -793,23 +793,23 @@ Claude searches for relevant tools instead of loading all descriptions.
 
 **Pattern**: Large-scale breaking changes (Java 25, Jakarta EE 10, records) can be **managed by Claude** with proper documentation and atomic transformations.
 
-**From YAWL v5.2 -> v6.0.0-Alpha Migration:**
+**From YAWL v5.2 → v6.0.0-Alpha Migration:**
 
 **Breaking Change 1: Namespace Migration**
 - Scope: 589 Java files
-- Changes: javax.* -> jakarta.* (8 namespace updates)
+- Changes: javax.* → jakarta.* (8 namespace updates)
 - Approach: Atomic sed-based transformation + verification
 - Result: 100% success, zero false positives
 
 **Breaking Change 2: YSpecificationID as Record**
 - Scope: ~50 usages across 20 files
-- Changes: Mutable class -> Immutable record with new API
+- Changes: Mutable class → Immutable record with new API
 - Approach: Pattern-based analysis (constructors, setters, getters)
 - Result: All usages updated with backward-compatible fallback
 
 **Breaking Change 3: Hibernate 6.x Query API**
 - Scope: ~100 HQL queries across 25 files
-- Changes: createQuery() -> createSelectionQuery() / createMutationQuery()
+- Changes: createQuery() → createSelectionQuery() / createMutationQuery()
 - Approach: Regex-based detection + semantic preservation
 - Result: 100% conversion, all queries validated
 
@@ -949,7 +949,7 @@ if (event instanceof CaseExecutionEvent(var caseId, var specId, var ts, var stat
 - Identify candidate classes (immutable DTOs)
 - Extract field list and types
 - Generate record definition
-- Update usages (getters -> accessors, pattern matching)
+- Update usages (getters → accessors, pattern matching)
 
 ### 11.4 Pattern Matching Documentation
 

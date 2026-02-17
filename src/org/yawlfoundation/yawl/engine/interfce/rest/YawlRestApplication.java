@@ -18,11 +18,10 @@
 
 package org.yawlfoundation.yawl.engine.interfce.rest;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * JAX-RS Application configuration for YAWL REST APIs.
@@ -33,6 +32,7 @@ import jakarta.ws.rs.core.Application;
  * - Interface B (Client): Case and work item management
  * - Interface E (Events): Event subscriptions and notifications
  * - Interface X (Extended): Advanced engine operations
+ * - Security API: Certificates, signatures
  *
  * @author Michael Adams
  * @date 16/02/2026
@@ -54,6 +54,9 @@ public class YawlRestApplication extends Application {
 
         // Interface X - Extended API (advanced operations)
         resources.add(InterfaceXRestResource.class);
+
+        // Security API (certificates, signatures)
+        resources.add(YawlSecurityRestResource.class);
 
         // Exception mappers for consistent error handling
         resources.add(YawlExceptionMapper.class);

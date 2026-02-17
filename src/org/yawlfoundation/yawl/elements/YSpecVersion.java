@@ -57,10 +57,14 @@ public class YSpecVersion implements Comparable<YSpecVersion> {
 
     public String setVersion(String version) {
         try {
-            if (version.indexOf('.') > -1) {
+            if (version != null && version.indexOf('.') > -1) {
                 String[] part = version.split("\\.");
-                _major = Integer.parseInt(part[0]);
-                _minor = Integer.parseInt(part[1]);
+                if (part.length != 2) {
+                    setVersion(0, 1);     // only X.Y format is valid; reject 1.2.3 etc.
+                } else {
+                    _major = Integer.parseInt(part[0]);
+                    _minor = Integer.parseInt(part[1]);
+                }
             } else {                        // handle versions numbers without a decimal
                 _major = Integer.parseInt(version);
                 _minor = _major == 0 ? 1 : 0;

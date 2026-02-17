@@ -25,6 +25,7 @@ import jakarta.persistence.Query;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Hibernate;
+import jakarta.persistence.TypedQuery;
 import org.yawlfoundation.yawl.authentication.YClient;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
 import org.yawlfoundation.yawl.elements.*;
@@ -154,9 +155,9 @@ public class YEngineRestorer {
      */
     protected YCaseNbrStore restoreNextAvailableCaseNumber() throws YPersistenceException {
         YCaseNbrStore caseNbrStore = YCaseNbrStore.getInstance();
-        Query query = _pmgr.createQuery("from YCaseNbrStore");
+        TypedQuery<Object> query = _pmgr.createQuery("from YCaseNbrStore");
         if (query != null) {
-            List results = query.getResultList();
+            List<?> results = query.getResultList();
             if (results != null && !results.isEmpty()) {
                 caseNbrStore = (YCaseNbrStore) results.get(0);
                 caseNbrStore.setPersisted(true);               // flag to update only
@@ -783,8 +784,8 @@ public class YEngineRestorer {
 
     private <T> List<T> restoreObjects(Class<T> clazz, String queryString) throws YPersistenceException {
         List<T> list = new ArrayList<T>();
-        Query query = _pmgr.createQuery(queryString);
-        List results = query.getResultList();
+        TypedQuery<Object> query = _pmgr.createQuery(queryString);
+        List<?> results = query.getResultList();
         if (results != null) {
             for (Object obj : results) {
                 try {
@@ -792,8 +793,8 @@ public class YEngineRestorer {
                     if (item != null) list.add(item);
                 }
                 catch (ClassCastException cce) {
-                    // ignore this object
-                    _log.warn("Ignored object while restoring: " + cce.getMessage());
+                    _log.warn("Skipping object during engine restore - unexpected type '{}': {}",
+                            obj.getClass().getName(), cce.getMessage());
                 }
             }
         }

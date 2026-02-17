@@ -674,10 +674,16 @@ public class YEngine {
 
 
     public YWorkItem suspendWorkItem(YWorkItem workItem) throws YStateException {
-        if ((workItem != null) && (workItem.hasLiveStatus())) {
-            workItem.setStatusToSuspended();
+        if (workItem == null) {
+            throw new YStateException("Cannot suspend a null work item.");
         }
-        return workItem ;
+        if (! workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
+            throw new YStateException("Work item [" + workItem.getIDString()
+                    + "] cannot be suspended: only executing work items can be suspended"
+                    + " (current status=" + workItem.getStatus() + ").");
+        }
+        workItem.setStatusToSuspended();
+        return workItem;
     }
 
 

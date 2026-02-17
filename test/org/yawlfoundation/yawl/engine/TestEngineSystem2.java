@@ -70,9 +70,8 @@ class TestEngineSystem2 {
             Thread.sleep(_sleepTime);
             //fire btop
             anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
-            assertTrue(
-                    "Expected b-top: got: " + anItem.getTaskID(),
-                    anItem.getTaskID().equals("b-top"));
+            assertTrue(anItem.getTaskID().equals("b-top"),
+                    "Expected b-top: got: " + anItem.getTaskID());
             assertTrue(anItem.getCaseID().toString().indexOf(".")>0);
 
             currWorkItems = _workItemRepository.getEnabledWorkItems();
@@ -87,7 +86,7 @@ class TestEngineSystem2 {
             assertTrue(_workItemRepository.getEnabledWorkItems().size() == 2);
             while(_workItemRepository.getEnabledWorkItems().size() > 0){
                 anItem = (YWorkItem) _workItemRepository.getEnabledWorkItems().iterator().next();
-                assertTrue(anItem.getTaskID(), anItem.getTaskID().equals("c-top") || anItem.getTaskID().equals("d-top"));
+                assertTrue(anItem.getTaskID().equals("c-top") || anItem.getTaskID().equals("d-top"), anItem.getTaskID());
                 anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
                 assertTrue(anItem != null);
             }
@@ -174,7 +173,7 @@ class TestEngineSystem2 {
             assertTrue(_workItemRepository.getEnabledWorkItems().size() == 2);
             while(_workItemRepository.getEnabledWorkItems().size() > 0){
                 anItem = (YWorkItem) _workItemRepository.getEnabledWorkItems().iterator().next();
-                assertTrue(anItem.getTaskID(), anItem.getTaskID().equals("c-top") || anItem.getTaskID().equals("d-top"));
+                assertTrue(anItem.getTaskID().equals("c-top") || anItem.getTaskID().equals("d-top"), anItem.getTaskID());
                 anItem = _engine.startWorkItem(anItem, _engine.getExternalClient("admin"));
                 assertNotNull(anItem);
             }

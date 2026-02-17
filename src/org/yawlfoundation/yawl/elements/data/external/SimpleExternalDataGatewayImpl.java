@@ -30,6 +30,8 @@ import org.yawlfoundation.yawl.elements.data.YParameter;
 import org.yawlfoundation.yawl.elements.data.YVariable;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 
+import org.yawlfoundation.yawl.integration.CredentialManager;
+
 /**
  * Author: Michael Adams
  * Creation Date: 13/08/2009
@@ -44,13 +46,27 @@ public class SimpleExternalDataGatewayImpl implements ExternalDataGateway {
     protected HibernateEngine _dbEngine = HibernateEngine.getInstance();
 
     /**
-     * Configures the engine to the database with default configuration (for postgres).
+     * Configures the engine to the database using credentials from environment variables.
+     *
+     * <p>Reads connection details from:
+     * <ul>
+     *   <li>{@code YAWL_JDBC_URL} or constructed from {@code DB_HOST}/{@code DB_PORT}/{@code DB_NAME}</li>
+     *   <li>{@code YAWL_JDBC_USER} or {@code DB_USER} (default: yawl)</li>
+     *   <li>{@code YAWL_JDBC_PASSWORD} or {@code DB_PASSWORD} (required)</li>
+     * </ul>
+     * </p>
+     *
+     * @throws IllegalStateException if required credential environment variables are missing
      */
     public boolean configure() {
         if (! configured) {
-            _dbEngine.configureSession("org.hibernate.dialect.PostgreSQLDialect",
-                            "org.postgresql.Driver", "jdbc:postgresql:testDB",
-                            "postgres", "yawl", null);
+            _dbEngine.configureSession(
+                    "org.hibernate.dialect.PostgreSQLDialect",
+                    "org.postgresql.Driver",
+                    CredentialManager.getJdbcUrl(),
+                    CredentialManager.getJdbcUser(),
+                    CredentialManager.getJdbcPassword(),
+                    null);
             configured = true;
         }
         return configured;
@@ -114,11 +130,11 @@ public class SimpleExternalDataGatewayImpl implements ExternalDataGateway {
     public void updateFromTaskCompletion(YTask task, String paramName, Element outputData,
                                          Element caseData) {}
 
-    
+
     public Element populateCaseData(YSpecificationID specID, String caseID,
                                     List<YParameter> inputParams,
                                     List<YVariable> localVars, Element caseDataTemplate) {
-        return null; 
+        return null;
     }
 
     public void updateFromCaseData(YSpecificationID specID, String caseID,

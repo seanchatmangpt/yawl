@@ -263,7 +263,8 @@ public final class YMultiInstanceAttributes implements Cloneable, YVerifiable {
         try {
             copy = (YMultiInstanceAttributes) super.clone();
         } catch (CloneNotSupportedException e) {
-            _log.error("Failed to clone YMultiInstanceAttributes for task: {}", _task, e);
+            _log.error("Unexpected CloneNotSupportedException cloning YMultiInstanceAttributes for task: {} - YCloneable contract violated", _task, e);
+            throw new IllegalStateException("YMultiInstanceAttributes is Cloneable but clone() failed", e);
         }
         return copy;
     }

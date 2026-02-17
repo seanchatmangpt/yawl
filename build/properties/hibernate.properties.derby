@@ -174,7 +174,7 @@ hibernate.generate_statistics true
 
 ## set the maximum JDBC 2 batch size (a nonzero value enables batching)
 
-hibernate.jdbc.batch_size 0
+hibernate.jdbc.batch_size 20
 
 
 ## enable use of JDBC 2 scrollable ResultSets (specifying a Dialect will cause Hibernate to use a sensible default)
@@ -248,7 +248,7 @@ hibernate.cache.use_structured_entries true
 
 
 ## choose a cache implementation
-hibernate.cache.region.factory_class org.hibernate.cache.ehcache.EhCacheRegionFactory
+hibernate.cache.region.factory_class org.hibernate.cache.jcache.JCacheRegionFactory
 
 
 

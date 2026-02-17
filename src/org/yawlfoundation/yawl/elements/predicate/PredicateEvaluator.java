@@ -20,12 +20,20 @@ package org.yawlfoundation.yawl.elements.predicate;
 
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.core.predicate.ICorePredicateEvaluator;
 
 /**
+ * Stateful-engine predicate evaluator contract.
+ *
+ * <p>Extends {@link ICorePredicateEvaluator} so that the shared cache logic in
+ * {@link org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache}
+ * can operate on instances of this interface without depending on either engine tree
+ * directly.</p>
+ *
  * @author Michael Adams
  * @date 5/12/12
  */
-public interface PredicateEvaluator {
+public interface PredicateEvaluator extends ICorePredicateEvaluator {
 
     boolean accept(String predicate);
 

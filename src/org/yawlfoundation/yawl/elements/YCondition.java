@@ -144,8 +144,6 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
         else if (this instanceof YOutputCondition) {
             tag = "outputCondition";
         }
-        return """
-            <%s id="%s">%s</%s>
-            """.formatted(tag, getID(), super.toXML(), tag);
+        return "<%s id=\"%s\">%s</%s>".formatted(tag, getID(), super.toXML(), tag);
     }
 }

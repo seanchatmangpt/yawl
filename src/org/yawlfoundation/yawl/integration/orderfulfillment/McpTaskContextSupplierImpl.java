@@ -16,10 +16,11 @@ package org.yawlfoundation.yawl.integration.orderfulfillment;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.modelcontextprotocol.spec.McpSchema;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
-
-import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * MCP-based task context supplier. Spawns YawlMcpServer via STDIO and fetches
@@ -30,6 +31,7 @@ import io.modelcontextprotocol.spec.McpSchema;
  */
 public final class McpTaskContextSupplierImpl implements McpTaskContextSupplier {
 
+    private static final Logger _logger = LogManager.getLogger(McpTaskContextSupplierImpl.class);
     private final YawlMcpClient mcpClient;
     private final String javaPath;
     private final String classpath;
@@ -75,6 +77,8 @@ public final class McpTaskContextSupplierImpl implements McpTaskContextSupplier 
             }
             return sb.length() > 0 ? sb.toString().trim() : null;
         } catch (Exception e) {
+            _logger.error("Failed to retrieve MCP task completion guide for work item '{}': {}",
+                    workItem.getID(), e.getMessage(), e);
             return null;
         }
     }

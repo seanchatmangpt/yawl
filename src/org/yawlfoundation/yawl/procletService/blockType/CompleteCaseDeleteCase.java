@@ -19,9 +19,6 @@
 package org.yawlfoundation.yawl.procletService.blockType;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -40,6 +37,9 @@ import org.yawlfoundation.yawl.procletService.persistence.Item;
 import org.yawlfoundation.yawl.procletService.persistence.StoredItem;
 import org.yawlfoundation.yawl.procletService.selectionProcess.ProcessEntityMID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CompleteCaseDeleteCase {
 
@@ -60,7 +60,8 @@ public class CompleteCaseDeleteCase {
 				}
 			}
 		}
-		return "";
+		myLog.warn("No class ID found in interaction graphs for proclet '{}'", this.procletID);
+		return null;
 	}
 	
 	public void removeFromGraphs (String procletID) {
@@ -146,8 +147,9 @@ public class CompleteCaseDeleteCase {
 			try {
 				Thread.sleep(500);
 			}
-			catch (Exception e) {
-				e.printStackTrace();
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				myLog.error("Thread interrupted while waiting for case block in CompleteCaseDeleteCase", e);
 			}
 		}
 		SingleInstanceClass.getInstance().blockCase(procletID);
@@ -207,7 +209,7 @@ public class CompleteCaseDeleteCase {
 				}
 			}
 			catch (Exception e) {
-				e.printStackTrace();
+				myLog.error("Exception in CompleteCaseDeleteCase processing", e);
 			}
 		}
 		boolean firstPass = false;
@@ -360,7 +362,7 @@ public class CompleteCaseDeleteCase {
 								trigger.send("something");
 							}
 							catch (Exception e) {
-								e.printStackTrace();
+								myLog.error("Exception in CompleteCaseDeleteCase graph extension", e);
 							}
 							// and continue building
 						}
@@ -395,14 +397,11 @@ public class CompleteCaseDeleteCase {
 	
 	public static void publishException (List ec) {
 		List<EntityMID> emids = (List<EntityMID>) ec.get(0);
-		StringBuilder emidsBuilder = new StringBuilder();
+		String emidsStr = "";
 		for (EntityMID emid : emids) {
-			if (emidsBuilder.length() > 0) {
-				emidsBuilder.append(",");
-			}
-			emidsBuilder.append(emid.getValue());
+			emidsStr = emidsStr + emid.getValue() + ",";
 		}
-		String emidsStr = emidsBuilder.toString();
+		emidsStr = emidsStr.substring(0, emidsStr.length()-1);
         DBConnection.insert(new StoredItem((WorkItemRecord) ec.get(1), emidsStr,
             Item.ExceptionCase));
 	}
@@ -527,7 +526,7 @@ public class CompleteCaseDeleteCase {
 	}
 
 	
-	public static void main(String [] args) { 
+	public static void main(String [] args) {
 //		String test = "1";
 //		String[] split = test.split(",");
 //		for (int i=0; i<split.length; i++) {
@@ -535,7 +534,7 @@ public class CompleteCaseDeleteCase {
 //		}
 		CompleteCaseDeleteCase.deleteException("visit","p2","exception");
 		List exc = CompleteCaseDeleteCase.getExceptions();
-		System.out.println();
+		LogManager.getLogger(CompleteCaseDeleteCase.class).info("Exceptions: {}", exc);
 	}
 	
 }

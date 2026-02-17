@@ -70,9 +70,11 @@ public abstract class InterfaceBWebsideController {
     /**
      * Loads the engine logon password from environment variables or system properties.
      * Priority: YAWL_ENGINE_PASSWORD env var, then yawl.engine.password system property.
-     * Returns null if not configured - callers must handle authentication failure explicitly.
+     * Throws UnsupportedOperationException if not configured - callers must not proceed
+     * without a valid credential.
      *
-     * @return the configured password, or null if not configured (requires explicit setup)
+     * @return the configured password
+     * @throws UnsupportedOperationException if no credential source is configured
      */
     private static String loadEnginePassword() {
         String password = System.getenv("YAWL_ENGINE_PASSWORD");
@@ -83,10 +85,10 @@ public abstract class InterfaceBWebsideController {
         if (password != null && !password.isEmpty()) {
             return password;
         }
-        LogManager.getLogger(InterfaceBWebsideController.class).warn(
+        throw new UnsupportedOperationException(
             "Engine password not configured. Set YAWL_ENGINE_PASSWORD environment variable " +
-            "or yawl.engine.password system property. Authentication will fail without password.");
-        return null;
+            "or yawl.engine.password system property before deploying this service. " +
+            "See SECURITY.md for vault integration steps.");
     }
     protected Logger _logger = LogManager.getLogger(getClass());
 

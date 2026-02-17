@@ -40,11 +40,14 @@ import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
- * 
+ *
  * The implementation of a net in the YAWL semantics - A container for tasks and conditions.
  * @author Lachlan Aldred
- * 
+ *
  */
 public final class YNet extends YDecomposition {
 
@@ -55,6 +58,8 @@ public final class YNet extends YDecomposition {
     private Map<String, YVariable> _localVariables = new HashMap<String, YVariable>();
     private String _externalDataGateway;
     private YNet _clone;
+
+    private static final Logger _log = LogManager.getLogger(YNet.class);
 
 
     public YNet(String id, YSpecification specification) {
@@ -279,7 +284,7 @@ public final class YNet extends YDecomposition {
     public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
         Set<YExternalNetElement> postset = new HashSet<YExternalNetElement>();
         for (YExternalNetElement element : elements) {
-            if (! (element instanceof YOutputCondition)) {
+            if (!(element instanceof YOutputCondition)) {
                 postset.addAll(element.getPostsetElements());
             }
         }
@@ -332,10 +337,9 @@ public final class YNet extends YDecomposition {
             return temp;
         }
         catch (CloneNotSupportedException e) {
-            org.apache.logging.log4j.LogManager.getLogger(YNet.class).error(
-                    "Failed to clone YNet: {}", getID(), e);
+            _log.error("Unexpected CloneNotSupportedException cloning YNet (stateless): {} - YCloneable contract violated", getID(), e);
+            throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
         }
-        return null;
     }
 
 

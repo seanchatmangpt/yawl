@@ -18,11 +18,6 @@
 
 package org.yawlfoundation.yawl.procletService.persistence;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +26,11 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.hibernate.HibernateException;
 import org.yawlfoundation.yawl.util.HibernateEngine;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 
 public class DBConnection {
@@ -77,14 +77,14 @@ public class DBConnection {
         props.setProperty("hibernate.query.substitutions", "true 1, false 0, yes 'Y', no 'N'");
         props.setProperty("hibernate.show_sql", "false");
         props.setProperty("hibernate.current_session_context_class", "thread");
-        props.setProperty("hibernate.jdbc.batch_size", "0");
+        props.setProperty("hibernate.jdbc.batch_size", "20");
         props.setProperty("hibernate.jdbc.use_streams_for_binary", "true");
         props.setProperty("hibernate.max_fetch_depth", "1");
         props.setProperty("hibernate.cache.region_prefix", "hibernate.test");
         props.setProperty("hibernate.cache.use_query_cache", "true");
         props.setProperty("hibernate.cache.use_second_level_cache", "true");
         props.setProperty("hibernate.cache.region.factory_class",
-                          "org.hibernate.cache.ehcache.EhCacheRegionFactory");
+                          "org.hibernate.cache.jcache.JCacheRegionFactory");
 
         props.setProperty("hibernate.connection.provider_class",
                           "org.yawlfoundation.yawl.util.HikariCPConnectionProvider");

@@ -52,7 +52,6 @@ class TestSchemaHandlerValidation
     private SchemaHandler handler;
 
     @BeforeEach
-
     void setUp() throws Exception
     {
         handler = new SchemaHandler(SCHEMA);

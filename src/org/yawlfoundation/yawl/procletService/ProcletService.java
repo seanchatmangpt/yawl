@@ -18,10 +18,6 @@
 
 package org.yawlfoundation.yawl.procletService;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -43,6 +39,10 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProcletService extends InterfaceBWebsideController  {
 
@@ -79,8 +79,9 @@ public class ProcletService extends InterfaceBWebsideController  {
             try {
                 Thread.sleep(1000);
             }
-            catch (Exception e) {
-                e.printStackTrace();
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                myLog.error("Thread interrupted while waiting for case block", e);
             }
         }
         myLog.debug("blockcase: " + changeCaseID(wir.getCaseID()));
@@ -162,7 +163,7 @@ public class ProcletService extends InterfaceBWebsideController  {
 	        }
         }
 	    catch (Exception ioe) {
-	        ioe.printStackTrace();
+	        myLog.error("Exception during work item handling for case '{}'", wir.getCaseID(), ioe);
 	    }
     	SingleInstanceClass.getInstance().unblockCase(changeCaseID(wir.getCaseID()));
     }
@@ -213,7 +214,7 @@ public class ProcletService extends InterfaceBWebsideController  {
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            myLog.error("Exception during case launch for classID '{}'", classID, e);
         }
         return newID;
     }
@@ -319,6 +320,7 @@ public class ProcletService extends InterfaceBWebsideController  {
     	WorkItemRecord wir = new WorkItemRecord("103","meet","visit", "");
     	serv.handleEnabledWorkItemEvent(wir);
     	String newOne = ProcletService.changeCaseID("15.1");
-    	System.out.println(newOne);
+    	LogManager.getLogger(ProcletService.class).info("changeCaseID result: {}", newOne);
     }
 }
+

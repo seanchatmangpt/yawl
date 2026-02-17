@@ -18,6 +18,11 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
+import jakarta.servlet.ServletInputStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -40,6 +45,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * 
  */
 public class ServletUtils {
+
+    private static final Logger _log = LogManager.getLogger(ServletUtils.class);
 
     public static  void sendResponse(HttpServletResponse resp, String result)
             throws IOException {
@@ -113,8 +120,8 @@ public class ServletUtils {
             outputWriter.flush();
             outputWriter.close();
         } catch (IOException e) {
-            org.apache.logging.log4j.LogManager.getLogger(ServletUtils.class).error(
-                    "Failed to write HTTP response", e);
+            _log.error("Failed to write 404 Not Found response for URI: {}",
+                    request.getRequestURI(), e);
         }
     }
 

@@ -376,7 +376,8 @@ public class YEventLogger {
                 return Double.valueOf(engineID).intValue();
             }
             catch (Exception e) {
-                // ignore - fallthrough
+                _log.debug("Engine instance ID '{}' is not a numeric case number, " +
+                        "returning 0 as default: {}", engineID, e.getMessage());
             }
         }
         return 0;    // will increment to one on first case start

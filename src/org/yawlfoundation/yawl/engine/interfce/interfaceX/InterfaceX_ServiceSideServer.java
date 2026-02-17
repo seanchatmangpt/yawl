@@ -18,20 +18,21 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceX;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.Marshaller;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 import jakarta.servlet.ServletConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.interfce.Marshaller;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
 
 /**
  *  InterfaceX_ServiceSideServer passes exception event calls from the engine to the
@@ -61,6 +62,7 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 public class InterfaceX_ServiceSideServer extends HttpServlet {
 
+    private static final Logger _log = LogManager.getLogger(InterfaceX_ServiceSideServer.class);
     private InterfaceX_Service _controller;
 
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -82,8 +84,9 @@ public class InterfaceX_ServiceSideServer extends HttpServlet {
             }
         }
         catch (Exception e) {
-            org.apache.logging.log4j.LogManager.getLogger(InterfaceX_ServiceSideServer.class).error(
-                    "Failed to initialize InterfaceX service controller", e);
+            _log.error("Failed to initialize InterfaceX service controller '{}' - servlet cannot process requests",
+                    controllerClassName, e);
+            throw new ServletException("Failed to initialize InterfaceX service controller: " + controllerClassName, e);
         }
     }
 

@@ -31,6 +31,8 @@ import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Parses, or builds, specification objects from XML doclets.
@@ -40,6 +42,8 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 
  */
 class YSpecificationParser {
+
+    private static final Logger _log = LogManager.getLogger(YSpecificationParser.class);
     private YSpecification _specification;
     private YDecompositionParser[] _decompositionParser;
     private Map<String, String> _decompAndTypeMap = new HashMap<String, String>();
@@ -171,8 +175,8 @@ class YSpecificationParser {
             try {
                 metaData.setValidFrom(LocalDate.from(YMetaData.dateFormat.parse(validFrom)));
             } catch (Exception e) {
-                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
-                        "Failed to parse validFrom date: {}", validFrom, e);
+                _log.warn("Failed to parse specification metadata 'validFrom' date '{}' - skipping field",
+                        validFrom, e);
             }
         }
         String validUntil = metaDataElem.getChildText("validUntil", _yawlNS);
@@ -180,8 +184,8 @@ class YSpecificationParser {
             try {
                 metaData.setValidUntil(LocalDate.from(YMetaData.dateFormat.parse(validUntil)));
             } catch (Exception e) {
-                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
-                        "Failed to parse validUntil date: {}", validUntil, e);
+                _log.warn("Failed to parse specification metadata 'validUntil' date '{}' - skipping field",
+                        validUntil, e);
             }
         }
         String created = metaDataElem.getChildText("created", _yawlNS);
@@ -189,8 +193,8 @@ class YSpecificationParser {
             try {
                 metaData.setCreated(LocalDate.from(YMetaData.dateFormat.parse(created)));
             } catch (Exception e) {
-                org.apache.logging.log4j.LogManager.getLogger(YSpecificationParser.class).warn(
-                        "Failed to parse created date: {}", created, e);
+                _log.warn("Failed to parse specification metadata 'created' date '{}' - skipping field",
+                        created, e);
             }
         }
 

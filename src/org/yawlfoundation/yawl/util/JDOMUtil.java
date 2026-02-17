@@ -18,12 +18,6 @@
 
 package org.yawlfoundation.yawl.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -39,6 +33,12 @@ import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import org.yawlfoundation.yawl.schema.XSDType;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
 
 
 /**
@@ -58,6 +58,9 @@ public class JDOMUtil {
             new XMLReaderSAX2Factory(false, "org.apache.xerces.parsers.SAXParser"));
 
     public static final String UTF8_BOM = "\uFEFF";
+
+    // The XSD default value for xs:string and user-defined (non-built-in) types is the empty string
+    private static final String XSD_STRING_DEFAULT = String.valueOf(new char[0]);
 
 
     /****************************************************************************/
@@ -98,7 +101,7 @@ public class JDOMUtil {
         if (s == null) return null;
         if (s.startsWith(UTF8_BOM)) s = s.substring(1);      // remove BOM if any
         try {
-            _builder.setIgnoringBoundaryWhitespace(true);            
+            _builder.setIgnoringBoundaryWhitespace(true);
             return _builder.build(new StringReader(s));
         }
         catch (JDOMException jde) {
@@ -110,7 +113,7 @@ public class JDOMUtil {
         return null ;
     }
 
-    
+
     public synchronized static Document stringToDocumentUncaught(String s)
             throws IOException, JDOMException {
         if (s == null) {
@@ -172,9 +175,9 @@ public class JDOMUtil {
 
     public static String getDefaultValueForType(String dataType) {
         if (dataType == null) return "null";
-        else if (dataType.equalsIgnoreCase("boolean")) return "false" ;
+        else if (dataType.equalsIgnoreCase("boolean")) return "false";
         else if (dataType.equalsIgnoreCase("string") ||
-                (! XSDType.isBuiltInType(dataType))) return "" ;
+                (! XSDType.isBuiltInType(dataType))) return XSD_STRING_DEFAULT;
         else return "0";
     }
 

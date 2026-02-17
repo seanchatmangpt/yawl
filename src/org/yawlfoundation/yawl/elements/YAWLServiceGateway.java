@@ -139,6 +139,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * services when a task is enabled.
      * @deprecated Since 2.0, enablement mappings have no function.
      */
+    @Deprecated
     public Map<String, YParameter> getEnablementParameters() {
         return _enablementParameters;
     }
@@ -148,6 +149,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * @return the set of parameter names.
      * @deprecated Since 2.0, enablement mappings have no function.
      */
+    @Deprecated
     protected Set<String> getEnablementParameterNames() {
         return _enablementParameters.keySet();
     }
@@ -157,6 +159,7 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      * @param parameter the parameter
      * @deprecated Since 2.0, enablement mappings have no function.
      */
+    @Deprecated
     public void setEnablementParameter(YParameter parameter) {
         if (YParameter.getTypeForEnablement().equals(parameter.getDirection())) {
             if (null != parameter.getName()) {

@@ -18,14 +18,11 @@
 
 package org.yawlfoundation.yawl.procletService.models.procletModel;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.swing.*;
-
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletBlock.BlockType;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Direction;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Signature;
@@ -34,11 +31,12 @@ import org.yawlfoundation.yawl.procletService.persistence.StoredBlockRel;
 import org.yawlfoundation.yawl.procletService.persistence.StoredProcletBlock;
 import org.yawlfoundation.yawl.procletService.persistence.StoredProcletPort;
 
-import edu.uci.ics.jung.algorithms.layout.CircleLayout;
-import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.graph.util.EdgeType;
-import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 public class ProcletModel extends DirectedSparseGraph {
 
@@ -196,6 +194,11 @@ public class ProcletModel extends DirectedSparseGraph {
 		return blocks;
 	}
 	
+	/**
+	 * Get a block by its block ID.
+	 * @param blockID the block identifier
+	 * @return the ProcletBlock if found, or null if not found
+	 */
 	public ProcletBlock getBlock(String blockID) {
 		List<ProcletBlock> blocks = this.getBlocks();
 		for (ProcletBlock block : blocks) {
@@ -317,7 +320,7 @@ public class ProcletModel extends DirectedSparseGraph {
         }
 	}
 	
-	
+
 	public void deleteProcletModelFromDB () {
         String template = "delete from %s as s where s.classID='" + classID + "'";
         DBConnection.execUpdate(String.format(template, "StoredProcletBlock"));

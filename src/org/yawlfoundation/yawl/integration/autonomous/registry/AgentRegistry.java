@@ -273,8 +273,8 @@ public final class AgentRegistry {
 
             List<AgentInfo> matching = new ArrayList<>();
             for (AgentInfo agent : agents.values()) {
-                if (agent.getCapability().getDomainName().equalsIgnoreCase(domain) ||
-                    agent.getCapability().getDescription().toLowerCase()
+                if (agent.getCapability().domainName().equalsIgnoreCase(domain) ||
+                    agent.getCapability().description().toLowerCase()
                         .contains(domain.toLowerCase())) {
                     matching.add(agent);
                 }

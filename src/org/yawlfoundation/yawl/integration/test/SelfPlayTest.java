@@ -133,7 +133,13 @@ public class SelfPlayTest {
         }
         final String engUrl = engineUrl;
         final String username = System.getenv("YAWL_USERNAME") != null ? System.getenv("YAWL_USERNAME") : "admin";
-        final String password = System.getenv("YAWL_PASSWORD") != null ? System.getenv("YAWL_PASSWORD") : "YAWL";
+        final String passwordEnv = System.getenv("YAWL_PASSWORD");
+        if (passwordEnv == null || passwordEnv.isEmpty()) {
+            throw new IllegalStateException(
+                "YAWL_PASSWORD environment variable required for MCP Client test. " +
+                "See SECURITY.md for credential configuration procedures.");
+        }
+        final String password = passwordEnv;
 
         runCheck("MCP Client", () -> {
             String cp = "classes:build/3rdParty/lib/*";
@@ -259,7 +265,13 @@ public class SelfPlayTest {
 
             String engineUrl = System.getenv("YAWL_ENGINE_URL");
             final String mcpUsername = System.getenv("YAWL_USERNAME") != null ? System.getenv("YAWL_USERNAME") : "admin";
-            final String mcpPassword = System.getenv("YAWL_PASSWORD") != null ? System.getenv("YAWL_PASSWORD") : "YAWL";
+            final String mcpPasswordEnv = System.getenv("YAWL_PASSWORD");
+            if (mcpPasswordEnv == null || mcpPasswordEnv.isEmpty()) {
+                throw new IllegalStateException(
+                    "YAWL_PASSWORD environment variable required for End-to-End Workflow test. " +
+                    "See SECURITY.md for credential configuration procedures.");
+            }
+            final String mcpPassword = mcpPasswordEnv;
 
             YawlMcpClient mcp = new YawlMcpClient();
             if (engineUrl != null && !engineUrl.isEmpty()) {

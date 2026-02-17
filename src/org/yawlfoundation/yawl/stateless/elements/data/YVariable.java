@@ -29,6 +29,7 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.schema.internal.YInternalType;
 import org.yawlfoundation.yawl.stateless.elements.YDecomposition;
 import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
+import org.yawlfoundation.yawl.engine.core.data.IVariableDescriptor;
 import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -39,7 +40,7 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
  *         Date: 24/09/2003
  *         Time: 16:10:14
  */
-public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable> {
+public class YVariable implements Cloneable, YVerifiable, Comparable<YVariable>, IVariableDescriptor {
     protected YDecomposition _parentDecomposition;
     protected String _dataTypeName;
     protected String _name;

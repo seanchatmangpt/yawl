@@ -18,50 +18,54 @@
 
 package org.yawlfoundation.yawl.procletService.connect;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class Trigger {
-	
+
+	private static final Logger _log = LogManager.getLogger(Trigger.class);
 	private JavaCPN conn = null;
 	private int port = 9005;
-	
+
 	public Trigger () {
 		conn = new JavaCPN();
 	}
-	
+
 	public void initiate () {
 		try {
 			conn.accept(port);
 			conn.send(EncodeDecode.encodeString("something"));
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to initiate Trigger on port {}", port, e);
 		}
 	}
-	
+
 	public String receive() {
 		try {
 			return EncodeDecode.decodeString(conn.receive());
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to receive message via Trigger", e);
 		}
 		return null;
 	}
-	
+
 	public void send(String msg) {
 		try {
 			conn.send(EncodeDecode.encodeString(msg));
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to send message '{}' via Trigger", msg, e);
 		}
 	}
-	
+
 	public void close () {
 		try {
 			conn.disconnect();
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error("Failed to close Trigger connection", e);
 		}
 	}
 }

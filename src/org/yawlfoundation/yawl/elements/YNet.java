@@ -20,6 +20,8 @@ package org.yawlfoundation.yawl.elements;
 
 import java.util.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
@@ -88,6 +90,8 @@ public final class YNet extends YDecomposition {
     private Map<String, YVariable> _localVariables = new HashMap<String, YVariable>();
     private String _externalDataGateway;
     private YNet _clone;
+
+    private static final Logger _log = LogManager.getLogger(YNet.class);
 
 
     public YNet(String id, YSpecification specification) {
@@ -314,7 +318,7 @@ public final class YNet extends YDecomposition {
     public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
         Set<YExternalNetElement> postset = new HashSet<YExternalNetElement>();
         for (YExternalNetElement element : elements) {
-            if (! (element instanceof YOutputCondition outputCond)) {
+            if (! (element instanceof YOutputCondition)) {
                 postset.addAll(element.getPostsetElements());
             }
         }
@@ -368,10 +372,9 @@ public final class YNet extends YDecomposition {
             return temp;
         }
         catch (CloneNotSupportedException e) {
-            org.apache.logging.log4j.LogManager.getLogger(YNet.class).error(
-                    "Failed to clone YNet: {}", getID(), e);
+            _log.error("Unexpected CloneNotSupportedException cloning YNet: {} - YCloneable contract violated", getID(), e);
+            throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
         }
-        return null;
     }
 
 

@@ -18,8 +18,7 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
@@ -27,8 +26,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * 
@@ -39,6 +41,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideContr
 public class AuthenticationResponseServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger _log = LogManager.getLogger(AuthenticationResponseServlet.class);
     private transient InterfaceBWebsideController _controller;
 
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -61,8 +64,9 @@ public class AuthenticationResponseServlet extends HttpServlet {
                     userName, password, proxyHost, proxyPort);
             context.setAttribute("controller", _controller);
         } catch (Exception e) {
-            org.apache.logging.log4j.LogManager.getLogger(AuthenticationResponseServlet.class).error(
-                    "Failed to initialize authentication response servlet", e);
+            _log.error("Failed to initialize InterfaceB controller '{}' - servlet cannot process requests",
+                    controllerClassName, e);
+            throw new ServletException("Failed to initialize InterfaceB controller: " + controllerClassName, e);
         }
     }
 

@@ -18,19 +18,19 @@
 
 package org.yawlfoundation.yawl.engine.interfce.interfaceX;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.logging.log4j.LogManager;
 import org.jdom2.Document;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.interfce.Interface_Client;
 import org.yawlfoundation.yawl.util.JDOMUtil;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  *  InterfaceX_EngineSideClient passes exception event calls from the engine to the
@@ -269,7 +269,8 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
 
             } catch (IOException e) {
                 LogManager.getLogger(InterfaceX_EngineSideClient.class).error(
-                        "failed to call YAWL service", e);
+                        "Failed to call YAWL service at observer URI: {}",
+                        _observerURI, e);
             }
         }
     }

@@ -94,9 +94,7 @@ public class YParameter extends YVariable implements Comparable<YVariable> {
         String bypass = _cutsThroughDecompositionStateSpace ?
             "<bypassesStatespaceForDecomposition/>" : "";
 
-        return """
-            <%s%s>%s%s%s</%s>
-            """.formatted(
+        return "<%s%s>%s%s%s</%s>".formatted(
                 type,
                 attrs,
                 toXMLGuts(),

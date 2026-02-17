@@ -137,7 +137,7 @@ public final class StaticMappingReasoner implements EligibilityReasoner {
         }
 
         String taskName = extractTaskName(workItem);
-        String normalizedCapability = capability.getDomainName().trim();
+        String normalizedCapability = capability.domainName().trim();
 
         Set<String> mappedCapabilities = taskToCapabilities.get(taskName);
         if (mappedCapabilities != null) {

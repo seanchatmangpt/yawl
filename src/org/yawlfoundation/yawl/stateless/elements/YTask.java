@@ -39,6 +39,7 @@ import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.time.YTimerVariable;
 import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.stateless.schema.YDataValidator;
+import org.yawlfoundation.yawl.engine.core.marking.IMarkingTask;
 import org.yawlfoundation.yawl.stateless.util.SaxonUtil;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -52,7 +53,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @author Lachlan Aldred
  * @author Michael Adams (v2.0 and later)
  */
-public abstract class YTask extends YExternalNetElement {
+public abstract class YTask extends YExternalNetElement implements IMarkingTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());

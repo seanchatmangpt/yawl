@@ -25,7 +25,10 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 14:23:09
  *
  */
-class TestImproperCompletion{
+class TestImproperCompletion {
+
+    // Returned by trim() when the input string contains no parseable caseID element
+    private static final String NO_CASE_ID_FOUND = String.valueOf(new char[0]);
     private YWorkItemRepository _workItemRepository;
     private long _sleepTime = 100;
     private YEngine _engine;
@@ -51,7 +54,7 @@ class TestImproperCompletion{
         if(casesRaw.length() > 12){
             return casesRaw.substring(begin, end);
         }
-        else return "";
+        else return NO_CASE_ID_FOUND;
     }
 
     @Test

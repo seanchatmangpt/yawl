@@ -194,9 +194,7 @@ public class YMetaData {
         String statusXML = status != null ? StringUtil.wrap(status, "status") : "";
         String identifierXML = uniqueID != null ? StringUtil.wrap(uniqueID, "identifier") : "";
 
-        return """
-            <metaData>%s%s%s%s%s%s%s%s%s%s%s%s</metaData>
-            """.formatted(
+        return "<metaData>%s%s%s%s%s%s%s%s%s%s%s%s%s</metaData>".formatted(
                 titleXML,
                 creatorsXML,
                 subjectsXML,

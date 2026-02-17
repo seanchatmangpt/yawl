@@ -18,12 +18,10 @@
 
 package org.yawlfoundation.yawl.procletService.interactionGraph;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.*;
-
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionArc.ArcState;
@@ -35,10 +33,10 @@ import org.yawlfoundation.yawl.procletService.persistence.Item;
 import org.yawlfoundation.yawl.procletService.util.EntityID;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
 
-import edu.uci.ics.jung.algorithms.layout.CircleLayout;
-import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.visualization.BasicVisualizationServer;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class InteractionGraphs {
 	
@@ -98,7 +96,12 @@ public class InteractionGraphs {
 		return graphs;
 	}
 	
-	public InteractionGraph getGraph(EntityMID emid) {
+	/**
+     * Get an interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the InteractionGraph if found, or null if not found
+     */
+    public InteractionGraph getGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue())) {
 				return graph;
@@ -107,7 +110,12 @@ public class InteractionGraphs {
 		return null;
 	}
 	
-	public InteractionGraph getTempGraph(EntityMID emid) {
+	/**
+     * Get a temporary interaction graph by entity MID.
+     * @param emid the entity MID
+     * @return the temporary InteractionGraph if found, or null if not found
+     */
+    public InteractionGraph getTempGraph(EntityMID emid) {
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().equals(emid.getValue() + "TEMP")) {
 				return graph;

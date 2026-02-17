@@ -25,7 +25,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYNetRunner.class,
     TestYWorkItem.class,
     TestYWorkItemID.class,
-    TestYWorkItemRepository.class
+    TestYWorkItemRepository.class,
+    HibernateV6ApiTest.class
 })
 public class EngineTestSuite {
     // JUnit 5 suite uses annotations - no main method needed
