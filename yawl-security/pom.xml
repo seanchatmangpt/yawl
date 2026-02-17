@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>5.2</version>
+        <version>6.0.0-Alpha</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -42,8 +42,9 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <version>2.21.0</version>
         </dependency>
 
         <!-- Logging -->

@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.mcp.sdk;
 
+import io.modelcontextprotocol.spec.McpSchema;
 import java.util.List;
 
 /**
