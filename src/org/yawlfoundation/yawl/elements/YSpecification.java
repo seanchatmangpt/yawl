@@ -144,8 +144,8 @@ public final class YSpecification implements Cloneable, YVerifiable {
         xml.append("<specification uri=\"%s\">".formatted(JDOMUtil.encodeEscapes(_specURI)));
         if (_name != null) xml.append(StringUtil.wrapEscaped(_name, "name"));
         if (_documentation != null) xml.append(StringUtil.wrapEscaped(_documentation, "documentation"));
-        xml.append(_metaData.toXML());
-        xml.append(_dataValidator.getSchema());
+        if (_metaData != null) xml.append(_metaData.toXML());
+        if (_dataValidator != null) xml.append(_dataValidator.getSchema());
         xml.append("<decomposition id=\"")
            .append(_rootNet.getID())
            .append("\" isRootNet=\"true\" xsi:type=\"NetFactsType\">");

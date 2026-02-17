@@ -200,7 +200,7 @@ public class YAtomicTask extends YTask {
         var enablementData = produceDataRootElement();
         var serviceGateway = (YAWLServiceGateway) _decompositionPrototype;
         var enablementParams =
-                new ArrayList<YParameter>(serviceGateway.getEnablementParameters().values());
+                new ArrayList<>(serviceGateway.getEnablementParameters().values());
         Collections.sort(enablementParams);
         for (YParameter parameter : enablementParams) {
             String paramName = parameter.getPreferredName();
