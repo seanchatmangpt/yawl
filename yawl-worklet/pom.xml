@@ -79,17 +79,32 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/worklet</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/worklet</testSourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/worklet/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

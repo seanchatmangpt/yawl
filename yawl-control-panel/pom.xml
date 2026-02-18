@@ -59,16 +59,15 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/controlpanel</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/controlpanel</testSourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
         <resources>
             <resource>
-                <directory>../src/org/yawlfoundation/yawl/controlpanel</directory>
+                <directory>../src</directory>
                 <includes>
-                    <include>**/*.png</include>
-                    <include>**/*.gif</include>
-                    <include>**/*.jpg</include>
-                    <include>**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/controlpanel/**/*.png</include>
+                    <include>**/org/yawlfoundation/yawl/controlpanel/**/*.gif</include>
+                    <include>**/org/yawlfoundation/yawl/controlpanel/**/*.jpg</include>
+                    <include>**/org/yawlfoundation/yawl/controlpanel/**/*.properties</include>
                 </includes>
             </resource>
         </resources>
@@ -77,10 +76,29 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/controlpanel/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <exclude>**/*.png</exclude>
+                        <exclude>**/*.gif</exclude>
+                        <exclude>**/*.jpg</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
