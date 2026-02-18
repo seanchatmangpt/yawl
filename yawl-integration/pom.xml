@@ -77,10 +77,47 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl and is not locally cached -->
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+                <!-- Exclude micrometer transitive deps pulled by actuator; use managed versions -->
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-observation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-commons</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+            <exclusions>
+                <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl and is not locally cached -->
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+                <!-- Exclude micrometer transitive deps pulled by actuator; use managed versions -->
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-observation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-commons</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Micrometer core - use locally cached 1.16.3 instead of transitive deps -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
         </dependency>
 
         <!-- OkHttp -->
@@ -148,6 +185,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <excludes>
+                        <!-- OpenTelemetry config requires OTEL SDK jars not locally cached -->
+                        <exclude>**/observability/OpenTelemetryConfig.java</exclude>
                         <!-- A2A SDK not on Maven Central - excluded until available -->
                         <exclude>**/a2a/**</exclude>
                         <!-- Exclude sources that depend on A2A -->

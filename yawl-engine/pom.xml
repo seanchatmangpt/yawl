@@ -183,6 +183,11 @@
                         <include>**/org/yawlfoundation/yawl/logging/YXESBuilder.java</include>
                     </includes>
                     <excludes>
+                        <!-- Actuator, observability and REST classes require Spring Boot/OpenTelemetry/JAX-RS
+                             which are compiled in yawl-webapps module with full Spring Boot support -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/actuator/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/observability/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/rest/**</exclude>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>

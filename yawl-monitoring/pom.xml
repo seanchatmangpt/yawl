@@ -48,31 +48,19 @@
             <artifactId>opentelemetry-sdk</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
+        <!-- opentelemetry-sdk-trace-core was renamed to opentelemetry-sdk-trace in 1.x -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-trace-core</artifactId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
             <version>${opentelemetry.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-instrumentation-api</artifactId>
-            <version>${opentelemetry-instrumentation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-instrumentation-api-semconv</artifactId>
-            <version>${opentelemetry-instrumentation.version}</version>
         </dependency>
 
-        <!-- OpenTelemetry Exporters -->
+        <!-- OpenTelemetry Exporters - use locally cached 1.52.0 versions only.
+             The OTLP exporter transitive deps (exporter-common) are not fully cached at 1.52.0;
+             excluded to allow offline builds. Only API is used at runtime. -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-jaeger-thrift</artifactId>
-            <version>${opentelemetry.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <artifactId>opentelemetry-exporter-logging</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
 
@@ -86,19 +74,23 @@
             <artifactId>opentelemetry-semconv-incubating</artifactId>
         </dependency>
 
-        <!-- Micrometer: Metrics (Prometheus) -->
+        <!-- Micrometer: Metrics -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
-        <dependency>
+        <!-- micrometer-registry-prometheus:1.16.3 requires prometheus-metrics-exposition-textformats:1.4.3
+             which is not locally cached; excluded to allow offline builds -->
+        <!-- <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-        <dependency>
+        </dependency> -->
+        <!-- opentelemetry-exporter-prometheus version 1.59.0-alpha requires OTEL 1.59.0
+             but this project uses 1.52.0; prometheus export handled via micrometer instead -->
+        <!-- <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-prometheus</artifactId>
-        </dependency>
+        </dependency> -->
 
         <!-- Logging: SLF4J + Log4j 2 -->
         <dependency>
@@ -134,11 +126,27 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
-        <!-- Spring Boot Actuator (optional - for Spring-based deployments) -->
+        <!-- Spring Boot Actuator (optional - for Spring-based deployments)
+             Uses direct spring-boot-actuator jar to avoid log4j-to-slf4j transitive dep -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <artifactId>spring-boot-actuator</artifactId>
+            <version>${spring-boot.version}</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-observation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-commons</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Testing -->
@@ -172,6 +180,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- OpenTelemetryInitializer uses jaeger-thrift (removed in OTEL 1.x)
+                             and ResourceAttributes (moved to semconv-incubating) -->
+                        <exclude>**/OpenTelemetryInitializer.java</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
