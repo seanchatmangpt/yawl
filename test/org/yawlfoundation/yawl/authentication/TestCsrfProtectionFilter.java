@@ -600,6 +600,13 @@ public class TestCsrfProtectionFilter {
         }
 
         @Override
+        public void sendRedirect(String location, int sc, boolean clearBuffer)
+                throws IOException {
+            throw new UnsupportedOperationException(
+                    "RecordingResponse.sendRedirect(String, int, boolean): not needed for CSRF filter tests");
+        }
+
+        @Override
         public void setDateHeader(String name, long date) {
             headers.put(name, String.valueOf(date));
         }

@@ -16,7 +16,11 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SuiteDisplayName("Exception Test Suite")
 @SelectClasses({
     TestYConnectivityException.class,
-    TestYSyntaxException.class
+    TestYSyntaxException.class,
+    TestYAWLExceptionEnhancements.class,
+    TestExceptionHierarchy.class,
+    TestExceptionRecovery.class,
+    TestExceptionLogging.class
 })
 public class ExceptionTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

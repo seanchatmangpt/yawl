@@ -26,7 +26,13 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SelectClasses({
     TestMetaDataMarshal.class,
     TestYMarshal.class,
-    TestYMarshalB4.class
+    TestYMarshalB4.class,
+    TestYMarshalRoundtrip.class,
+    TestYDecompositionParser.class,
+    TestYSpecificationParser.class,
+    TestXmlSecurity.class,
+    TestSchemaValidation.class,
+    TestUnmarshalPerformance.class
 })
 public class UnmarshallerTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

@@ -5,9 +5,14 @@ on:
     branches: [main, develop, release/**]
   pull_request:
     branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
   schedule:
     - cron: '0 1 * * 0'  # Weekly artifact cleanup
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   JAVA_VERSION: 25

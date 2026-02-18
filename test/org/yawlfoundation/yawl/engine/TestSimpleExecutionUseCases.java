@@ -33,6 +33,7 @@ class TestSimpleExecutionUseCases{
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
+        assertNotNull(fileURL, "Test resource ImproperCompletion.xml not found in classpath");
 		File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

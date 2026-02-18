@@ -93,6 +93,25 @@ public class YPersistenceManager {
             GroupedMIOutputData.class
     };
 
+    /**
+     * HBM XML mapping files for each persisted class.
+     * Paths are relative to the classpath root, using the package path of each class.
+     */
+    private static final String[] persistedClassHbmResources = {
+            "org/yawlfoundation/yawl/elements/YSpecification.hbm.xml",
+            "org/yawlfoundation/yawl/engine/YNetRunner.hbm.xml",
+            "org/yawlfoundation/yawl/engine/YWorkItem.hbm.xml",
+            "org/yawlfoundation/yawl/elements/state/YIdentifier.hbm.xml",
+            "org/yawlfoundation/yawl/engine/YNetData.hbm.xml",
+            "org/yawlfoundation/yawl/elements/YAWLServiceReference.hbm.xml",
+            "org/yawlfoundation/yawl/authentication/YExternalClient.hbm.xml",
+            "org/yawlfoundation/yawl/engine/time/YWorkItemTimer.hbm.xml",
+            "org/yawlfoundation/yawl/engine/time/YLaunchDelayer.hbm.xml",
+            "org/yawlfoundation/yawl/engine/YCaseNbrStore.hbm.xml",
+            "org/yawlfoundation/yawl/exceptions/Problem.hbm.xml",
+            "org/yawlfoundation/yawl/elements/GroupedMIOutputData.hbm.xml"
+    };
+
     private static final boolean INSERT = false;
     private static final boolean UPDATE = true;
     private static Logger logger = null;
@@ -143,8 +162,9 @@ public class YPersistenceManager {
                 standardRegistry = new StandardServiceRegistryBuilder().configure().build();
 
                 MetadataSources metadataSources = new MetadataSources(standardRegistry);
-                for (Class<?> clazz : persistedClasses) {
-                    metadataSources.addAnnotatedClass(clazz);
+                // Load HBM XML mapping files for all persisted classes
+                for (String hbmResource : persistedClassHbmResources) {
+                    metadataSources.addResource(hbmResource);
                 }
 
                 Metadata metadata = metadataSources.buildMetadata();

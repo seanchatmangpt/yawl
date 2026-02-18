@@ -40,6 +40,7 @@ class TestEngineSystem1 {
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("YAWL_Specification3.xml");
+        assertNotNull(fileURL, "Test specification file YAWL_Specification3.xml must exist in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

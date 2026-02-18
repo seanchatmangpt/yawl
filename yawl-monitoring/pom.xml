@@ -170,7 +170,8 @@
                         <include>**/org/yawlfoundation/yawl/integration/observability/**</include>
                     </includes>
                     <excludes>
-                        <!-- Exclude OpenTelemetryInitializer - uses deprecated JaegerThriftSpanExporter -->
+                        <!-- Exclude OpenTelemetryInitializer - uses SDK internal APIs not visible in this module.
+                             Use OpenTelemetryConfig from integration module instead. -->
                         <exclude>**/observability/OpenTelemetryInitializer.java</exclude>
                         <!-- Exclude autonomous/observability - has source code bugs (duplicate logger field) -->
                         <exclude>**/autonomous/observability/**</exclude>
@@ -180,7 +181,6 @@
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/observability/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/observability/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
@@ -234,9 +234,11 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/observability/**/*Test.java</include>
                         <include>**/org/yawlfoundation/yawl/observability/**/Test*.java</include>
-                        <include>**/org/yawlfoundation/yawl/integration/observability/**/*Test.java</include>
-                        <include>**/org/yawlfoundation/yawl/integration/observability/**/Test*.java</include>
                     </includes>
+                    <excludes>
+                        <!-- Exclude integration tests that require OkHttp/networking -->
+                        <exclude>**/integration/observability/**</exclude>
+                    </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>

@@ -42,9 +42,9 @@ public class ScalabilityTest extends TestCase {
         engine = YEngine.getInstance();
         EngineClearer.clear(engine);
         
-        URL fileURL = getClass().getResource("/test/org/yawlfoundation/yawl/engine/ImproperCompletion.xml");
+        URL fileURL = getClass().getResource("../engine/ImproperCompletion.xml");
         if (fileURL == null) {
-            fileURL = getClass().getResource("../engine/ImproperCompletion.xml");
+            fileURL = getClass().getResource("/test/org/yawlfoundation/yawl/engine/ImproperCompletion.xml");
         }
         
         if (fileURL != null) {

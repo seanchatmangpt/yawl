@@ -142,5 +142,15 @@ public class ReceiptChain {
     public long getTotalCount() {
         return store.getTotalReceiptCount();
     }
+
+    /**
+     * Reset the receipt chain (for testing only).
+     * Clears all receipts and resets counters. This method should only be
+     * used in test setUp/tearDown to ensure test isolation.
+     * In production, receipts are immutable and never cleared.
+     */
+    public void resetForTesting() {
+        store.clear();
+    }
 }
 

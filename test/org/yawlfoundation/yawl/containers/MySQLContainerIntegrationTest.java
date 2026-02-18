@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.yawlfoundation.yawl.infrastructure.RequiresDocker;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,7 +48,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @version 6.0.0
  * @since 2026-02-17
  */
-@Tag("containers")
+@RequiresDocker
+@Tag("docker")
+
 @Testcontainers
 class MySQLContainerIntegrationTest {
 

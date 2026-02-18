@@ -204,12 +204,12 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
         <resources>
+            <!-- Include all hbm.xml files from source, preserving package structure -->
             <resource>
-                <directory>../src/org/yawlfoundation/yawl/engine</directory>
+                <directory>../src</directory>
                 <includes>
                     <include>**/*.hbm.xml</include>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
+                    <include>**/defaultClients.properties</include>
                 </includes>
             </resource>
             <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->

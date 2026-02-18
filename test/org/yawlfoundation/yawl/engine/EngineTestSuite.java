@@ -15,6 +15,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite
 @SuiteDisplayName("Engine Test Suite")
 @SelectClasses({
+    // Core engine tests
     TestYEngineInit.class,
     TestCaseCancellation.class,
     TestEngineSystem2.class,
@@ -26,7 +27,22 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYWorkItem.class,
     TestYWorkItemID.class,
     TestYWorkItemRepository.class,
-    HibernateV6ApiTest.class
+    TestYWorkItemStates.class,
+    // Phase 1 - New comprehensive tests
+    TestYAnnouncer.class,
+    TestObserverGateway.class,
+    TestObserverGatewayController.class,
+    TestWorkItemCompletion.class,
+    TestYWorkItemStatus.class,
+    TestYNetRunnerRepository.class,
+    TestYCaseNbrStore.class,
+    TestYProblemEvent.class,
+    TestYProblemHandler.class,
+    TestYNetData.class,
+    TestYSpecificationTable.class,
+    TestYDefClientsLoader.class,
+    TestYEngineEvent.class,
+    TestAnnouncementContext.class
 })
 public class EngineTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

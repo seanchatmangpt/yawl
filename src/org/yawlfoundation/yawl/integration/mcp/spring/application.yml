@@ -21,7 +21,7 @@ yawl:
     # YAWL engine connection
     engine-url: ${YAWL_ENGINE_URL:http://localhost:8080/yawl}
     username: ${YAWL_USERNAME:admin}
-    password: ${YAWL_PASSWORD:YAWL}
+    password: ${YAWL_PASSWORD}
 
     # MCP transport configuration
     transport: stdio  # Options: stdio, http

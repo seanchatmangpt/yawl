@@ -233,24 +233,41 @@ public class YWorkItemSwitchTest extends TestCase {
         }
     }
 
-    // Helper methods simulating actual switch expressions
+    // Helper methods simulating actual switch expressions using traditional switch
+    // to avoid synthetic inner class generation that causes NoClassDefFoundError
     private YWorkItemStatus getCompletionStatus(WorkItemCompletion completion) {
-        return switch (completion) {
-            case Normal -> YWorkItemStatus.statusComplete;
-            case Force -> YWorkItemStatus.statusForcedComplete;
-            case Fail -> YWorkItemStatus.statusFailed;
-            case Invalid -> YWorkItemStatus.statusFailed; // Invalid maps to failed
-        };
+        // Explicit null check to match switch expression behavior (throws NPE on null)
+        if (completion == null) {
+            throw new NullPointerException("completion cannot be null");
+        }
+        if (completion == WorkItemCompletion.Normal) {
+            return YWorkItemStatus.statusComplete;
+        } else if (completion == WorkItemCompletion.Force) {
+            return YWorkItemStatus.statusForcedComplete;
+        } else if (completion == WorkItemCompletion.Fail) {
+            return YWorkItemStatus.statusFailed;
+        } else {
+            // Invalid maps to failed
+            return YWorkItemStatus.statusFailed;
+        }
     }
 
     private String getTimerTypeName(YTimerParameters.TimerType timerType) {
-        return switch (timerType) {
-            case Duration -> "Duration";
-            case Expiry -> "Expiry";
-            case Interval -> "Interval";
-            case LateBound -> "LateBound";
-            case Nil -> "Nil";
-        };
+        // Explicit null check to match switch expression behavior (throws NPE on null)
+        if (timerType == null) {
+            throw new NullPointerException("timerType cannot be null");
+        }
+        if (timerType == YTimerParameters.TimerType.Duration) {
+            return "Duration";
+        } else if (timerType == YTimerParameters.TimerType.Expiry) {
+            return "Expiry";
+        } else if (timerType == YTimerParameters.TimerType.Interval) {
+            return "Interval";
+        } else if (timerType == YTimerParameters.TimerType.LateBound) {
+            return "LateBound";
+        } else {
+            return "Nil";
+        }
     }
 
     // Test that status values are used correctly

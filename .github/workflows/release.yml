@@ -32,9 +32,19 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   JAVA_VERSION: 25
-  MAVEN_OPTS: -Xmx3g -Djava.awt.headless=true
+  MAVEN_OPTS: >-
+    -Xmx4g
+    -Xms1g
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -Djava.awt.headless=true
+    -Dmaven.artifact.threads=10
 
 jobs:
   # ============================================================================

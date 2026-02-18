@@ -81,6 +81,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
@@ -108,11 +123,16 @@
                     <include>**/org/yawlfoundation/yawl/schema/**/*.xsd</include>
                 </includes>
             </testResource>
-            <!-- Unmarshal test resources needed by TestYSpecification line 42 -->
+            <!-- Unmarshal test resources needed by TestYSpecification and unmarshal tests -->
             <testResource>
                 <directory>../test</directory>
                 <includes>
                     <include>**/org/yawlfoundation/yawl/unmarshal/MakeRecordings.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/MakeRecordings(Beta6).xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/YAWL_Specification.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/RemoveTokens.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/CantParseThis.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/*.xsd</include>
                 </includes>
             </testResource>
             <!-- Engine test resources needed by TestYNet line 92-93 -->
@@ -153,6 +173,7 @@
                     </excludes>
                     <testIncludes>
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
                     </testIncludes>
                     <testExcludes>
                         <exclude>**/*.xsd</exclude>
@@ -185,6 +206,7 @@
                 <configuration>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
                     </includes>
                     <excludes>
                         <!-- Exclude tests from other modules -->
