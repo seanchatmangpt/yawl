@@ -1,0 +1,49 @@
+%%{ init: { 'theme': 'base' } }%%
+graph LR
+    classDef managed fill:#38a169,stroke:#2f855a,color:#fff
+    classDef conflict fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef module fill:#3182ce,stroke:#2b6cb0,color:#fff
+
+    PARENT_POM["Parent POM<br/>dependencyManagement"]:::managed
+
+    subgraph ManagedCategories["Managed Categories"]
+        CAT_JAKARTA[Jakarta EE]:::managed
+        CAT_SPRING[Spring Boot]:::managed
+        CAT_COMMONS[Apache Commons]:::managed
+        CAT_JACKSON[Jackson]:::managed
+        CAT_LOGGING[Logging]:::managed
+        CAT_DB[Database]:::managed
+        CAT_XML[XML Processing]:::managed
+        CAT_SECURITY[Security/Auth]:::managed
+        CAT_MCP[MCP/A2A]:::managed
+        CAT_REST[REST/Jersey]:::managed
+        CAT_OBSERVE[Observability]:::managed
+        CAT_TEST[Testing]:::managed
+    end
+
+    PARENT_POM --> CAT_JAKARTA
+    PARENT_POM --> CAT_SPRING
+    PARENT_POM --> CAT_COMMONS
+    PARENT_POM --> CAT_JACKSON
+    PARENT_POM --> CAT_LOGGING
+    PARENT_POM --> CAT_DB
+    PARENT_POM --> CAT_XML
+    PARENT_POM --> CAT_SECURITY
+    PARENT_POM --> CAT_MCP
+    PARENT_POM --> CAT_REST
+    PARENT_POM --> CAT_OBSERVE
+    PARENT_POM --> CAT_TEST
+
+    subgraph TransitiveHotspots["Known Transitive Conflict Hotspots"]
+        H_LOG["log4j-to-slf4j vs<br/>log4j-slf4j2-impl"]:::conflict
+        H_COMMONS_IO["commons-io<br/>dual groupId"]:::conflict
+        H_COMMONS_CODEC["commons-codec<br/>dual groupId"]:::conflict
+        H_JACKSON["Jackson version<br/>Spring vs explicit"]:::conflict
+        H_JAKARTA["Jakarta API<br/>version alignment"]:::conflict
+    end
+
+    CAT_LOGGING -.->|conflict zone| H_LOG
+    CAT_COMMONS -.->|conflict zone| H_COMMONS_IO
+    CAT_COMMONS -.->|conflict zone| H_COMMONS_CODEC
+    CAT_JACKSON -.->|conflict zone| H_JACKSON
+    CAT_JAKARTA -.->|conflict zone| H_JAKARTA

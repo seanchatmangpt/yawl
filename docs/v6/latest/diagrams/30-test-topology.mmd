@@ -1,0 +1,37 @@
+%%{ init: { 'theme': 'base' } }%%
+graph TD
+    classDef unit fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef integration fill:#805ad5,stroke:#6b46c1,color:#fff
+    classDef notested fill:#a0aec0,stroke:#718096,color:#fff
+    classDef plugin fill:#d69e2e,stroke:#b7791f,color:#fff
+
+    SUREFIRE["maven-surefire-plugin<br/>Unit Tests"]:::plugin
+    FAILSAFE["maven-failsafe-plugin<br/>Integration Tests"]:::plugin
+    SHARED_TEST["test/<br/>Shared Test Root"]
+
+    yawl_utilities["yawl-utilities<br/>unit:70 it:0"]:::unit
+    SUREFIRE --> yawl_utilities
+    SHARED_TEST --> yawl_utilities
+    yawl_elements["yawl-elements<br/>unit:70 it:0"]:::unit
+    SUREFIRE --> yawl_elements
+    SHARED_TEST --> yawl_elements
+    yawl_authentication["yawl-authentication<br/>unit:0 it:0"]:::notested
+    yawl_engine["yawl-engine<br/>unit:70 it:0"]:::unit
+    SUREFIRE --> yawl_engine
+    SHARED_TEST --> yawl_engine
+    yawl_stateless["yawl-stateless<br/>unit:70 it:0"]:::unit
+    SUREFIRE --> yawl_stateless
+    SHARED_TEST --> yawl_stateless
+    yawl_resourcing["yawl-resourcing<br/>unit:1 it:0"]:::unit
+    SUREFIRE --> yawl_resourcing
+    yawl_worklet["yawl-worklet<br/>unit:0 it:0"]:::notested
+    yawl_scheduling["yawl-scheduling<br/>unit:0 it:0"]:::notested
+    yawl_security["yawl-security<br/>unit:70 it:0"]:::unit
+    SUREFIRE --> yawl_security
+    SHARED_TEST --> yawl_security
+    yawl_integration["yawl-integration<br/>unit:15 it:0"]:::unit
+    SUREFIRE --> yawl_integration
+    yawl_monitoring["yawl-monitoring<br/>unit:1 it:0"]:::unit
+    SUREFIRE --> yawl_monitoring
+    yawl_webapps["yawl-webapps<br/>unit:0 it:0"]:::notested
+    yawl_control_panel["yawl-control-panel<br/>unit:0 it:0"]:::notested

@@ -1,0 +1,6 @@
+{
+  "parent_managed_entries": 110,
+  "child_explicit_versions": 21,
+  "strategy": "Parent POM dependencyManagement centralizes all versions. Child POMs use property references.",
+  "conflicts": []
+}

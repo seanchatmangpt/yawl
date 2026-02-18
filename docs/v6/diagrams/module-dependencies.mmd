@@ -1,0 +1,16 @@
+graph TD
+    %% Inter-module dependencies derived from module pom.xml files
+    yawl-elements --> yawl-utilities
+    yawl-authentication --> yawl-elements
+    yawl-engine --> yawl-elements
+    yawl-stateless --> yawl-utilities
+    yawl-stateless --> yawl-elements
+    yawl-stateless --> yawl-engine
+    yawl-resourcing --> yawl-engine
+    yawl-worklet --> yawl-engine
+    yawl-worklet --> yawl-resourcing
+    yawl-scheduling --> yawl-engine
+    yawl-integration --> yawl-engine
+    yawl-integration --> yawl-stateless
+    yawl-monitoring --> yawl-engine
+    yawl-control-panel --> yawl-engine

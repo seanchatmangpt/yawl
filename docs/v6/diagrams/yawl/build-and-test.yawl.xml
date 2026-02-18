@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema
+        http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+
+  <specification uri="BuildAndTestPipeline">
+    <name>YAWL 6.0.0-Alpha Build and Test Pipeline</name>
+    <documentation>Models the Maven build lifecycle and CI test execution for YAWL 6.0.0-Alpha.</documentation>
+    <metaData/>
+
+    <decomposition id="BuildAndTestNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Build and Test Process</name>
+      <processControlElements>
+
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="Compile"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="Compile">
+          <name>mvn clean compile</name>
+          <flowsInto>
+            <nextElementRef id="UnitTest"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <task id="UnitTest">
+          <name>mvn test (JUnit 5 parallel)</name>
+          <flowsInto>
+            <nextElementRef id="Package"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="TestFailureHandler"/>
+            <predicate>false()</predicate>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+        </task>
+
+        <task id="Package">
+          <name>mvn package</name>
+          <flowsInto>
+            <nextElementRef id="Validate"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <task id="Validate">
+          <name>xmllint schema validation</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <task id="TestFailureHandler">
+          <name>Report Test Failures</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

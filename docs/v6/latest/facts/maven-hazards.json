@@ -1,0 +1,9 @@
+{
+  "hazards": [
+    {"code":"H_LOGGING_BRIDGE_CONFLICT","artifact":"log4j-to-slf4j vs log4j-slf4j2-impl","message":"Both logging bridges present; ensure exclusions are in place per module"},
+    {"code":"H_MISSING_SOURCE_DIR","artifact":"yawl-resourcing","message":"Source directory ../src/org/yawlfoundation/yawl/resourcing does not resolve to existing path: /home/user/yawl/yawl-resourcing/../src/org/yawlfoundation/yawl/resourcing"},
+    {"code":"H_MISSING_SOURCE_DIR","artifact":"yawl-worklet","message":"Source directory ../src/org/yawlfoundation/yawl/worklet does not resolve to existing path: /home/user/yawl/yawl-worklet/../src/org/yawlfoundation/yawl/worklet"},
+    {"code":"H_MISSING_SOURCE_DIR","artifact":"yawl-scheduling","message":"Source directory ../src/org/yawlfoundation/yawl/scheduling does not resolve to existing path: /home/user/yawl/yawl-scheduling/../src/org/yawlfoundation/yawl/scheduling"},
+    {"code":"H_MISSING_SOURCE_DIR","artifact":"yawl-control-panel","message":"Source directory ../src/org/yawlfoundation/yawl/controlpanel does not resolve to existing path: /home/user/yawl/yawl-control-panel/../src/org/yawlfoundation/yawl/controlpanel"}
+  ]
+}

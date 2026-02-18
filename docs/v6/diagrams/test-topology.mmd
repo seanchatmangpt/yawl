@@ -1,0 +1,13 @@
+flowchart TD
+    build[Build Java 25] --> unit[Unit Tests<br/>JUnit 5 Parallel]
+    build --> integration[Integration Tests<br/>PostgreSQL + H2]
+    unit --> coverage[JaCoCo Coverage<br/>65% line / 55% branch]
+    unit --> docker[Docker Build<br/>Multi-Arch amd64+arm64]
+    docker --> cscan[Trivy Container Scan]
+    docker --> ctest[Container Health Check]
+    coverage --> report[Pipeline Summary]
+    cscan --> report
+    ctest --> report
+
+    style build fill:#1e3a5f,stroke:#0f2942,color:#bfdbfe
+    style report fill:#166534,stroke:#14532d,color:#dcfce7
