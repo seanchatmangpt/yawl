@@ -30,9 +30,9 @@ log_info "Starting YAWL Static Analysis with Docker Compose..."
 
 # Build the static analysis image
 log_info "Building static analysis image..."
-docker build -f Dockerfile.static-analysis -t yawl/static-analysis:latest .
+docker build -f Dockerfile.static-analysis.simple -t yawl/static-analysis:latest .
 
-# Run static analysis
+# Run static analysis using the correct 'analysis' profile
 log_info "Running static analysis tools..."
 docker compose -f docker-compose.static-analysis.yml up static-analysis
 
@@ -42,9 +42,9 @@ log_info "Checking generated reports..."
 REPORTS_OK=true
 for report in target/spotbugsXml.xml target/pmd.xml target/checkstyle-result.xml; do
     if [[ -f "$report" ]]; then
-        log_info "✓ Generated: $report ($(wc -l < "$report") lines)"
+        log_info "Generated: $report ($(wc -l < "$report") lines)"
     else
-        log_error "✗ Missing: $report"
+        log_error "Missing: $report"
         REPORTS_OK=false
     fi
 done
@@ -55,13 +55,9 @@ if [[ "$REPORTS_OK" == true ]]; then
     log_info "  ./scripts/observatory/observatory.sh"
 else
     log_error "Static analysis failed - some reports are missing"
+    log_info "Troubleshooting:"
+    log_info "  1. Ensure Docker is running"
+    log_info "  2. Check Maven can compile: mvn clean compile -P analysis"
+    log_info "  3. Check static analysis manually: mvn spotbugs:spotbugs pmd:pmd checkstyle:check -P analysis"
     exit 1
-fi
-
-# Clean up containers (optional)
-read -p "Remove containers? [Y/n] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-    log_info "Cleaning up containers..."
-    docker compose -f docker-compose.static-analysis.yml down -v
 fi
