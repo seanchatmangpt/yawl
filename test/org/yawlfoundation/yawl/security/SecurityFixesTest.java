@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.security;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,12 +33,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputFilter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.Security;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
 import java.util.Date;
@@ -400,32 +403,36 @@ class SecurityFixesTest {
 
     /**
      * Generates a self-signed RSA certificate and RSA keypair for PKI tests.
-     * This uses only standard JDK APIs (no test frameworks or mocks).
+     * Registers the BouncyCastle provider (from bcprov-jdk18on) to satisfy the
+     * certificate generator's provider requirement, then removes it afterwards.
      */
+    @SuppressWarnings("deprecation")
     private static KeyAndCertificate generateRsaKeyAndCert() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
-        KeyPair keyPair = kpg.generateKeyPair();
+        // Register BC provider for self-signed cert generation; remove after.
+        BouncyCastleProvider bcProvider = new BouncyCastleProvider();
+        Security.addProvider(bcProvider);
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048, new SecureRandom());
+            KeyPair keyPair = kpg.generateKeyPair();
 
-        // Build a minimal self-signed X.509 certificate using Bouncy Castle
-        // available in yawl-security's compile scope.
-        org.bouncycastle.x509.X509V3CertificateGenerator certGen =
-                new org.bouncycastle.x509.X509V3CertificateGenerator();
+            X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+            certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+            org.bouncycastle.jce.X509Principal subject =
+                    new org.bouncycastle.jce.X509Principal(
+                            "CN=YAWL Test, O=YAWL Foundation, C=AU");
+            certGen.setIssuerDN(subject);
+            certGen.setSubjectDN(subject);
+            certGen.setNotBefore(new Date(System.currentTimeMillis() - 86400_000L));
+            certGen.setNotAfter(new Date(System.currentTimeMillis() + 365L * 86400_000L));
+            certGen.setPublicKey(keyPair.getPublic());
+            certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
-        certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-        org.bouncycastle.jce.X509Principal subject =
-                new org.bouncycastle.jce.X509Principal("CN=YAWL Test, O=YAWL Foundation, C=AU");
-        certGen.setIssuerDN(subject);
-        certGen.setSubjectDN(subject);
-        certGen.setNotBefore(new Date(System.currentTimeMillis() - 86400_000L));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + 365L * 86400_000L));
-        certGen.setPublicKey(keyPair.getPublic());
-        certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
-        X509Certificate cert = certGen.generate(keyPair.getPrivate(),
-                "BC", new java.security.SecureRandom());
-
-        return new KeyAndCertificate(keyPair, cert);
+            X509Certificate cert = certGen.generate(keyPair.getPrivate(), "BC", new SecureRandom());
+            return new KeyAndCertificate(keyPair, cert);
+        } finally {
+            Security.removeProvider(bcProvider.getName());
+        }
     }
 
     private record KeyAndCertificate(KeyPair keyPair, X509Certificate certificate) {}
