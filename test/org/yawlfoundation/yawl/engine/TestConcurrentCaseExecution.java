@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.engine;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.File;
 import java.net.URL;
 import java.util.*;
@@ -27,6 +29,7 @@ import junit.textui.TestRunner;
  * @author YAWL Test Team
  * Date: 2026-02-16
  */
+@Tag("slow")
 public class TestConcurrentCaseExecution extends TestCase {
 
     private YEngine _engine;

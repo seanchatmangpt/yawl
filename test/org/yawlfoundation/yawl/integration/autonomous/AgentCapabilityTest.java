@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 
 /**
@@ -30,6 +32,7 @@ import junit.framework.TestCase;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("unit")
 public class AgentCapabilityTest extends TestCase {
 
     public AgentCapabilityTest(String name) {

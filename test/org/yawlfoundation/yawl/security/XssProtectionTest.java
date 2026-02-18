@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.security;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 6.0
  */
 @DisplayName("XSS Protection Tests")
+@Tag("unit")
 public class XssProtectionTest {
 
     /**

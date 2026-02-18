@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.worklist;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.TaskInformation;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
@@ -13,6 +14,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
  * Time: 14:22:31
  *
  */
+@Tag("unit")
 class TestWorklistController{
 
     @Test

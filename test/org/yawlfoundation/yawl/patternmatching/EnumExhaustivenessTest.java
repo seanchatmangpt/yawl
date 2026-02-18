@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.patternmatching;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YTimerParameters;
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
@@ -20,6 +21,7 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 class EnumExhaustivenessTest {
 
     // Test WorkItemCompletion enum exhaustiveness

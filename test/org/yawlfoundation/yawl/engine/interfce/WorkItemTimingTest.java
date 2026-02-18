@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 
 /**
@@ -22,6 +24,7 @@ import junit.framework.TestCase;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 public class WorkItemTimingTest extends TestCase {
 
     public WorkItemTimingTest(String name) {

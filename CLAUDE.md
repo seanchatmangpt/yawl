@@ -7,6 +7,12 @@ O = {engine, elements, stateless, integration, schema, test}
 ## Quick Commands
 
 ```bash
+# Developer Scripts (Recommended — show estimated time before running)
+./scripts/build-fast.sh                  # Compile only, no tests (~45s)
+./scripts/test-quick.sh                  # Unit tests only, fast feedback (~60s)
+./scripts/test-full.sh                   # All tests with coverage (~90s)
+./scripts/watch-build.sh                 # Auto-rebuild on .java file change
+
 # Build (Optimized for Java 25)
 mvn -T 1.5C clean compile               # Parallel compile (~45 seconds)
 mvn -T 1.5C clean package               # Parallel build (~90 seconds, was ~180s)
@@ -23,6 +29,30 @@ mvn -T 1.5C clean compile && mvn -T 1.5C clean test  # Parallel build + test
 mvn clean verify -P analysis             # Run static analysis (SpotBugs, PMD, SonarQube)
 jdeprscan --for-removal build/libs/yawl.jar  # Detect deprecated APIs
 ```
+
+## Build Best Practices
+
+**Inner Loop** (active editing):
+1. `./scripts/watch-build.sh` in a side terminal — auto-compiles on save
+2. `./scripts/test-quick.sh -pl <module>` — targeted unit tests after editing
+
+**Pre-Commit**:
+1. `./scripts/build-fast.sh` — verify compilation is clean
+2. `./scripts/test-full.sh` — verify all tests pass
+3. `git add <specific files>` — never `git add .`
+
+**Module-Targeted Builds** (faster than full build):
+```bash
+mvn -T 1.5C clean test -pl yawl-engine -am   # Test engine + its dependencies
+mvn -T 1.5C clean test -pl yawl-elements      # Test elements module only
+```
+
+**Profile Selection**:
+- Development: default (no `-P`) — fastest, no analysis overhead
+- Pull requests: `-P ci` — JaCoCo + SpotBugs gates
+- Release: `-P prod` — OWASP CVE gate, fails if CVSS >= 7 dependency found
+
+See **[DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md)** for full documentation.
 
 ## Java 25 Features & Best Practices
 

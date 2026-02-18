@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.build;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -20,6 +22,7 @@ import junit.framework.TestSuite;
  * - Ant build compatibility
  * - Build output validation
  */
+@Tag("slow")
 public class BuildSystemTest extends TestCase {
 
     private static final String PROJECT_ROOT = "/home/user/yawl";

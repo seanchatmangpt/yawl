@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.Vector;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
@@ -16,6 +17,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
+@Tag("unit")
 class TestYIdentifier {
 	
 	private YIdentifier id1 = new YIdentifier(null);

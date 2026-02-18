@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.quality.metrics;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test Maintenance Scoring")
 @EnabledIfSystemProperty(named = "test.sources.dir", matches = ".+")
+@Tag("slow")
 public class TestMaintenanceScorer {
 
     private static final Pattern TEST_METHOD_PATTERN =

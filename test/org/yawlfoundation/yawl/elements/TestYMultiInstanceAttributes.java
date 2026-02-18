@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.elements;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
@@ -16,6 +17,7 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
+@Tag("unit")
 class TestYMultiInstanceAttributes{
     private YTask _aTask;
     private YMultiInstanceAttributes _validMultiInstance;

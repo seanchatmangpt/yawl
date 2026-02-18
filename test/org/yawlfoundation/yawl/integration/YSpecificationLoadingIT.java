@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.integration;
 
+import org.junit.jupiter.api.Tag;
+
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -58,6 +60,7 @@ import static org.junit.Assert.*;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("integration")
 public class YSpecificationLoadingIT {
 
     // =========================================================================

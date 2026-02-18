@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @version 6.0.0
  * @since 2026-02-17
  */
+@Tag("slow")
 class PerformanceRegressionParametrizedTest {
 
     /**

@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.resilience;
 
+import org.junit.jupiter.api.Tag;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,6 +22,7 @@ import junit.framework.TestSuite;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 public class CircuitBreakerUnitTest extends TestCase {
 
     private CircuitBreaker breaker;

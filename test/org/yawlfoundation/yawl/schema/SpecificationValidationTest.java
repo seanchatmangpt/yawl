@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.schema;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -54,6 +56,7 @@ import java.util.List;
  *
  * @author YAWL Engine Team - V6 specification validation 2026-02-17
  */
+@Tag("unit")
 public class SpecificationValidationTest extends TestCase {
 
     // Schema files are in the schema/ directory at project root

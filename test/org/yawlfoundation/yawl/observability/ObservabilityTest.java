@@ -13,6 +13,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test suite for YAWL observability infrastructure.
  * Validates OpenTelemetry tracing, Prometheus metrics, and structured logging.
  */
+@Tag("unit")
 public class ObservabilityTest {
 
     private static OpenTelemetrySdk openTelemetrySdk;

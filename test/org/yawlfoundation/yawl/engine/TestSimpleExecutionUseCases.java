@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -24,6 +25,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 16:19:02
  *
  */
+@Tag("integration")
 class TestSimpleExecutionUseCases{
     private YIdentifier _caseId;
     private YWorkItemRepository _workItemRepository;

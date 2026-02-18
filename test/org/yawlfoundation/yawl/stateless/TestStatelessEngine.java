@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * JUnit tests for the stateless YAWL engine (YStatelessEngine).
  * Covers launchCase, startWorkItem, completeWorkItem, and unmarshal.
  */
+@Tag("integration")
 class TestStatelessEngine implements YCaseEventListener, YWorkItemEventListener {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";

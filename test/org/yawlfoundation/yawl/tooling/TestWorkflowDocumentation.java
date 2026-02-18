@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.tooling;
 
+import org.junit.jupiter.api.Tag;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.yawlfoundation.yawl.elements.YNet;
@@ -40,6 +42,7 @@ import static org.junit.Assert.*;
  * @author YAWL Development Team
  * @since 6.0.0
  */
+@Tag("unit")
 public class TestWorkflowDocumentation {
 
     private static YSpecification spec;

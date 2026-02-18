@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
  * @version 6.0.0-Alpha
  */
 @DisplayName("RdrSet — per-task rule tree collection and multi-task selection")
+@Tag("unit")
 class TestRdrSet {
 
     private RdrSet rdrSet;

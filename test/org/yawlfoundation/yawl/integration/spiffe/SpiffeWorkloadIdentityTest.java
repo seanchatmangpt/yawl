@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 class SpiffeWorkloadIdentityTest {
 
     private X509Certificate[] validCertChain;

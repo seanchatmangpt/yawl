@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.schema.XSDType;
 
 import junit.framework.TestCase;
@@ -17,6 +19,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class XSDTypeSwitchTest extends TestCase {
 
     // Test getString() switch - all 45 type cases

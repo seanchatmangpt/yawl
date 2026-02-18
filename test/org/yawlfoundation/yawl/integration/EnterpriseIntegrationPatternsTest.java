@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.integration;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -61,6 +63,7 @@ import java.util.Set;
  * @author YAWL Foundation
  * @version 6.0.0
  */
+@Tag("integration")
 public class EnterpriseIntegrationPatternsTest extends TestCase {
 
     public static Test suite() {

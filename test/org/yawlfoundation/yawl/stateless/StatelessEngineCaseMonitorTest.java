@@ -13,6 +13,7 @@
 
 package org.yawlfoundation.yawl.stateless;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("integration")
 class StatelessEngineCaseMonitorTest implements YCaseEventListener, YWorkItemEventListener {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";

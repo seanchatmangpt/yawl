@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.engine.receipts;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.Optional;
  * - State recomputation from receipts
  * - Chain integrity verification
  */
+@Tag("unit")
 public class ReceiptChainTest extends TestCase {
 
     private ReceiptChain chain;

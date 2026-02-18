@@ -4,6 +4,8 @@
 
 package org.yawlfoundation.yawl.performance.monitoring;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 
 /**
@@ -12,6 +14,7 @@ import junit.framework.TestCase;
  * @author YAWL Performance Team
  * @version 5.2
  */
+@Tag("slow")
 public class PerformanceMonitoringTest extends TestCase {
 
     private LibraryUpdatePerformanceMonitor monitor;

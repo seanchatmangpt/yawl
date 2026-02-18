@@ -7,6 +7,7 @@ import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
 import au.com.dius.pact.consumer.junit5.PactTestFor;
 import au.com.dius.pact.core.model.RequestResponsePact;
 import au.com.dius.pact.core.model.annotations.Pact;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(PactConsumerTestExt.class)
 @PactTestFor(providerName = "YawlIntegrationApi", port = "0")
 @DisplayName("YAWL Integration API - Consumer Contract")
+@Tag("unit")
 public class IntegrationApiConsumerContractTest {
 
     private static final String CONSUMER_NAME = "YawlExternalAgent";

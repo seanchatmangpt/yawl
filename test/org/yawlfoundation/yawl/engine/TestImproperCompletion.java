@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -25,6 +26,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 14:23:09
  *
  */
+@Tag("integration")
 class TestImproperCompletion {
 
     // Returned by trim() when the input string contains no parseable caseID element

@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.*;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
@@ -24,6 +25,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 18:24:55
  *
  */
+@Tag("unit")
 class TestYMarking{
     private YMarking _marking1;
     private YMarking _marking2;

@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.a2a;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
 
@@ -38,6 +40,7 @@ import java.net.URL;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("integration")
 public class YawlA2AServerTest extends TestCase {
 
     // Use a port unlikely to be in use during tests

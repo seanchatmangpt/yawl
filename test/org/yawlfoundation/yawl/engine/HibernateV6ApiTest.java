@@ -26,6 +26,7 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Engine Team - V6 upgrade 2026-02-17
  */
 @DisplayName("Hibernate V6 API Integration Tests")
+@Tag("integration")
 class HibernateV6ApiTest {
 
     private SessionFactory factory;
