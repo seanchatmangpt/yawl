@@ -145,8 +145,11 @@ public class TestCalendarManager {
         SchedulingException ex = new SchedulingException("test");
         assertInstanceOf(Exception.class, ex,
             "SchedulingException must extend Exception (checked)");
-        assertFalse(ex instanceof RuntimeException,
-            "SchedulingException must not be a RuntimeException");
+        // SchedulingException extends Exception directly, not RuntimeException
+        boolean isRuntime = (ex instanceof Exception)
+                && ex.getClass().getSuperclass().equals(Exception.class);
+        assertTrue(isRuntime,
+            "SchedulingException must extend Exception directly (not RuntimeException)");
     }
 
     @Test

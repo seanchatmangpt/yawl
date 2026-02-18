@@ -19,8 +19,6 @@
 package org.yawlfoundation.yawl.scheduling;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -102,12 +100,14 @@ public class TestSchedulingService {
             "Mappings with different IDs must not have equal IDs");
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {0, 1, 100, Integer.MAX_VALUE})
-    public void testMappingRequestKeyVariousValues(int key) {
-        Mapping m = new Mapping("WI-test-" + key, key, Mapping.WORKITEM_STATUS_PARENT);
-        assertEquals(key, m.getRequestKey(),
-            "Mapping must store request key: " + key);
+    @Test
+    public void testMappingRequestKeyVariousValues() {
+        int[] keys = {0, 1, 100, Integer.MAX_VALUE};
+        for (int key : keys) {
+            Mapping m = new Mapping("WI-test-" + key, key, Mapping.WORKITEM_STATUS_PARENT);
+            assertEquals(key, (int) m.getRequestKey(),
+                "Mapping must store request key: " + key);
+        }
     }
 
     @Test
