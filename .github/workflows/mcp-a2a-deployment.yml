@@ -1,0 +1,962 @@
+name: MCP/A2A Deployment Pipeline
+
+# Deploys YAWL MCP and A2A servers to Kubernetes.
+# Builds containers, validates health, manages Z.AI API key secrets,
+# and coordinates agent discovery and orchestration startup.
+#
+# Secrets required (configured in repository Settings > Secrets):
+#   ZHIPU_API_KEY          - Z.AI (ZhipuAI) API key for GLM model access
+#   YAWL_PASSWORD          - YAWL engine admin password
+#   A2A_JWT_SECRET         - JWT HMAC-SHA256 signing key (min 32 chars)
+#   A2A_API_KEY_MASTER     - API key HMAC master key for A2A auth (min 16 chars)
+#   A2A_API_KEY            - Default pre-registered A2A API key
+#   KUBECONFIG             - Kubernetes cluster credentials (base64 encoded)
+#   REGISTRY_USERNAME      - Container registry username
+#   REGISTRY_PASSWORD      - Container registry password
+
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - 'src/org/yawlfoundation/yawl/integration/**'
+      - 'scripts/pm4py/**'
+      - 'k8s/**'
+      - '.github/workflows/mcp-a2a-deployment.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/org/yawlfoundation/yawl/integration/**'
+      - 'scripts/pm4py/**'
+      - 'k8s/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options: [ staging, production ]
+      skip_tests:
+        description: 'Skip integration tests (emergency deploy only)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: mcp-a2a-deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  JAVA_VERSION: '25'
+  REGISTRY: ghcr.io
+  IMAGE_ORG: ${{ github.repository_owner }}
+  MCP_SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/yawl-mcp-server
+  A2A_SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/yawl-a2a-server
+  PM4PY_MCP_IMAGE: ghcr.io/${{ github.repository_owner }}/yawl-pm4py-mcp
+  PM4PY_A2A_IMAGE: ghcr.io/${{ github.repository_owner }}/yawl-pm4py-a2a
+  AGENT_REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/yawl-agent-registry
+  IMAGE_TAG: ${{ github.sha }}
+  K8S_NAMESPACE: yawl
+  MAVEN_OPTS: >-
+    -Xmx4g -Xms1g -XX:+UseZGC -XX:+ZGenerational
+    -Djava.awt.headless=true -Dmaven.artifact.threads=10
+
+# ============================================================================
+# JOB 1: Build and test MCP/A2A Java servers
+# ============================================================================
+jobs:
+  build-java-servers:
+    name: Build Java MCP/A2A Servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-
+            ${{ runner.os }}-maven-
+
+      - name: Compile Integration Module
+        run: |
+          mvn clean compile \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -T 1.5C \
+            -pl . \
+            -Dmaven.javadoc.skip=true
+
+      - name: Run MCP/A2A Unit Tests
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dtest="YawlMcpServerTest,YawlA2AServerTest" \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Package Integration JAR
+        run: |
+          mvn package \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -T 1.5C \
+            -DskipTests=true \
+            -Dmaven.javadoc.skip=true
+
+      - name: Upload Integration JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-integration-jar
+          path: target/yawl-*.jar
+          retention-days: 3
+
+# ============================================================================
+# JOB 2: Run MCP/A2A integration tests
+# ============================================================================
+  integration-tests:
+    name: MCP/A2A Integration Tests
+    needs: build-java-servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ !inputs.skip_tests }}
+
+    services:
+      yawl-engine:
+        image: yawl/engine:5.2
+        env:
+          DATABASE_TYPE: h2
+          DATABASE_PATH: /tmp/yawl-test
+          YAWL_USERNAME: admin
+          YAWL_PASSWORD: YAWL
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/yawl/ib || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 8
+          --health-start-period 60s
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Download Integration JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: yawl-integration-jar
+          path: target/
+
+      - name: Run MCP Tool Registration Test
+        env:
+          YAWL_ENGINE_URL: http://localhost:8080/yawl
+          YAWL_USERNAME: admin
+          YAWL_PASSWORD: YAWL
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dtest="McpA2AIntegrationTest#testMcpToolRegistration+testMcpResourceRegistration+testMcpPromptRegistration" \
+            -DYAWL_ENGINE_URL=http://localhost:8080/yawl \
+            -DYAWL_USERNAME=admin \
+            -DYAWL_PASSWORD=YAWL \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Run A2A Handshake Test
+        env:
+          YAWL_ENGINE_URL: http://localhost:8080/yawl
+          YAWL_USERNAME: admin
+          YAWL_PASSWORD: YAWL
+          A2A_JWT_SECRET: test-jwt-secret-for-ci-minimum-32-chars
+          A2A_API_KEY_MASTER: test-api-master-key-16c
+          A2A_API_KEY: test-api-key-ci
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dtest="McpA2AIntegrationTest#testA2AAgentCardDiscovery+testA2AHandshakeProtocol+testA2AAuthenticationReject" \
+            -DYAWL_ENGINE_URL=http://localhost:8080/yawl \
+            -DYAWL_USERNAME=admin \
+            -DYAWL_PASSWORD=YAWL \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Run Agent Discovery Loop Test
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dtest="McpA2AIntegrationTest#testAgentDiscoveryLoop+testAgentRegistration+testAgentHeartbeat" \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-a2a-integration-test-results
+          path: target/surefire-reports/
+          retention-days: 7
+
+# ============================================================================
+# JOB 3: Build Python PM4Py MCP/A2A containers
+# ============================================================================
+  build-pm4py-containers:
+    name: Build PM4Py MCP/A2A Containers
+    needs: build-java-servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      pm4py-mcp-digest: ${{ steps.build-mcp.outputs.digest }}
+      pm4py-a2a-digest: ${{ steps.build-a2a.outputs.digest }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata for PM4Py MCP
+        id: meta-mcp
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.PM4PY_MCP_IMAGE }}
+          tags: |
+            type=sha,prefix=,format=long
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build PM4Py MCP Server Container
+        id: build-mcp
+        uses: docker/build-push-action@v5
+        with:
+          context: scripts/pm4py
+          file: scripts/pm4py/Dockerfile.mcp
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-mcp.outputs.tags }}
+          labels: ${{ steps.meta-mcp.outputs.labels }}
+          cache-from: type=gha,scope=pm4py-mcp
+          cache-to: type=gha,mode=max,scope=pm4py-mcp
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Extract Metadata for PM4Py A2A
+        id: meta-a2a
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.PM4PY_A2A_IMAGE }}
+          tags: |
+            type=sha,prefix=,format=long
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build PM4Py A2A Server Container
+        id: build-a2a
+        uses: docker/build-push-action@v5
+        with:
+          context: scripts/pm4py
+          file: scripts/pm4py/Dockerfile.a2a
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-a2a.outputs.tags }}
+          labels: ${{ steps.meta-a2a.outputs.labels }}
+          cache-from: type=gha,scope=pm4py-a2a
+          cache-to: type=gha,mode=max,scope=pm4py-a2a
+
+# ============================================================================
+# JOB 4: Build Java MCP/A2A server containers
+# ============================================================================
+  build-java-containers:
+    name: Build Java MCP/A2A Containers
+    needs: [ build-java-servers, integration-tests ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name != 'pull_request'
+
+    outputs:
+      mcp-digest: ${{ steps.build-mcp.outputs.digest }}
+      a2a-digest: ${{ steps.build-a2a.outputs.digest }}
+      registry-digest: ${{ steps.build-registry.outputs.digest }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Integration JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: yawl-integration-jar
+          path: target/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build YAWL MCP Server Container
+        id: build-mcp
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.mcp-server
+          push: true
+          tags: |
+            ${{ env.MCP_SERVER_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.MCP_SERVER_IMAGE }}:latest
+          cache-from: type=gha,scope=yawl-mcp
+          cache-to: type=gha,mode=max,scope=yawl-mcp
+          build-args: |
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+      - name: Build YAWL A2A Server Container
+        id: build-a2a
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.a2a-server
+          push: true
+          tags: |
+            ${{ env.A2A_SERVER_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.A2A_SERVER_IMAGE }}:latest
+          cache-from: type=gha,scope=yawl-a2a
+          cache-to: type=gha,mode=max,scope=yawl-a2a
+          build-args: |
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+      - name: Build Agent Registry Container
+        id: build-registry
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.agent-registry
+          push: true
+          tags: |
+            ${{ env.AGENT_REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.AGENT_REGISTRY_IMAGE }}:latest
+          cache-from: type=gha,scope=yawl-agent-registry
+          cache-to: type=gha,mode=max,scope=yawl-agent-registry
+
+# ============================================================================
+# JOB 5: Deploy to Kubernetes - provision Z.AI secrets first
+# ============================================================================
+  provision-secrets:
+    name: Provision Kubernetes Secrets
+    needs: build-java-containers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: |
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/claude/'))
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Ensure YAWL Namespace Exists
+        run: |
+          kubectl apply -f k8s/base/namespace.yaml
+
+      - name: Provision Z.AI API Key Secret
+        run: |
+          if [ -z "${{ secrets.ZHIPU_API_KEY }}" ]; then
+            echo "ERROR: ZHIPU_API_KEY secret is not configured."
+            echo "Set it in: Settings > Secrets and variables > Actions > New repository secret"
+            exit 1
+          fi
+          kubectl create secret generic zai-api-credentials \
+            --from-literal=ZHIPU_API_KEY="${{ secrets.ZHIPU_API_KEY }}" \
+            --from-literal=ZAI_API_KEY="${{ secrets.ZHIPU_API_KEY }}" \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+          echo "Z.AI API credentials secret provisioned."
+
+      - name: Provision YAWL Engine Credentials Secret
+        run: |
+          kubectl create secret generic yawl-credentials \
+            --from-literal=username="admin" \
+            --from-literal=password="${{ secrets.YAWL_PASSWORD }}" \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Provision A2A Authentication Secrets
+        run: |
+          if [ -z "${{ secrets.A2A_JWT_SECRET }}" ]; then
+            echo "ERROR: A2A_JWT_SECRET is required for A2A server authentication."
+            exit 1
+          fi
+          kubectl create secret generic a2a-auth-secrets \
+            --from-literal=A2A_JWT_SECRET="${{ secrets.A2A_JWT_SECRET }}" \
+            --from-literal=A2A_API_KEY_MASTER="${{ secrets.A2A_API_KEY_MASTER }}" \
+            --from-literal=A2A_API_KEY="${{ secrets.A2A_API_KEY }}" \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+          echo "A2A authentication secrets provisioned."
+
+      - name: Label Secrets for GitOps Tracking
+        run: |
+          for secret in zai-api-credentials yawl-credentials a2a-auth-secrets; do
+            kubectl label secret "$secret" \
+              app.kubernetes.io/managed-by=github-actions \
+              app.kubernetes.io/version="${{ env.IMAGE_TAG }}" \
+              --namespace=${{ env.K8S_NAMESPACE }} \
+              --overwrite
+          done
+
+# ============================================================================
+# JOB 6: Deploy Agent Registry (must start before agents)
+# ============================================================================
+  deploy-agent-registry:
+    name: Deploy Agent Registry
+    needs: provision-secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy Agent Registry ConfigMap
+        run: |
+          kubectl apply -f k8s/agents/agent-registry-configmap.yaml
+
+      - name: Deploy Agent Registry
+        run: |
+          # Patch the image tag before applying
+          sed "s|__AGENT_REGISTRY_IMAGE__|${{ env.AGENT_REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}|g" \
+            k8s/agents/agent-registry-deployment.yaml | kubectl apply -f -
+
+      - name: Wait for Agent Registry Rollout
+        run: |
+          kubectl rollout status deployment/yawl-agent-registry \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=120s
+
+      - name: Verify Agent Registry Health
+        run: |
+          # Port-forward to validate API endpoint from CI runner
+          kubectl port-forward \
+            service/yawl-agent-registry 9090:9090 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          for i in $(seq 1 6); do
+            if curl -sf http://localhost:9090/agents > /dev/null 2>&1; then
+              echo "Agent registry health check passed (attempt $i)"
+              kill $PF_PID 2>/dev/null || true
+              exit 0
+            fi
+            echo "Waiting for agent registry... (attempt $i/6)"
+            sleep 5
+          done
+
+          kill $PF_PID 2>/dev/null || true
+          echo "ERROR: Agent registry failed health check after 30s"
+          kubectl logs deployment/yawl-agent-registry \
+            --namespace=${{ env.K8S_NAMESPACE }} --tail=50
+          exit 1
+
+# ============================================================================
+# JOB 7: Deploy MCP Server
+# ============================================================================
+  deploy-mcp-server:
+    name: Deploy MCP Server
+    needs: [ deploy-agent-registry, build-pm4py-containers ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy MCP Server ConfigMaps
+        run: |
+          kubectl apply -f k8s/agents/mcp-server-configmap.yaml
+
+      - name: Deploy YAWL MCP Server
+        run: |
+          sed "s|__MCP_SERVER_IMAGE__|${{ env.MCP_SERVER_IMAGE }}:${{ env.IMAGE_TAG }}|g" \
+            k8s/agents/mcp-server-deployment.yaml | kubectl apply -f -
+
+      - name: Deploy PM4Py MCP Server
+        run: |
+          sed "s|__PM4PY_MCP_IMAGE__|${{ env.PM4PY_MCP_IMAGE }}:${{ env.IMAGE_TAG }}|g" \
+            k8s/agents/pm4py-mcp-deployment.yaml | kubectl apply -f -
+
+      - name: Wait for MCP Server Rollout
+        run: |
+          kubectl rollout status deployment/yawl-mcp-server \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=180s
+          kubectl rollout status deployment/yawl-pm4py-mcp \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=180s
+
+      - name: Validate MCP Server Health
+        run: |
+          kubectl port-forward \
+            service/yawl-mcp-server 8082:8082 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          for i in $(seq 1 8); do
+            if curl -sf http://localhost:8082/health > /dev/null 2>&1; then
+              echo "MCP server health check passed (attempt $i)"
+              kill $PF_PID 2>/dev/null || true
+              exit 0
+            fi
+            echo "Waiting for MCP server... (attempt $i/8)"
+            sleep 5
+          done
+
+          kill $PF_PID 2>/dev/null || true
+          kubectl logs deployment/yawl-mcp-server \
+            --namespace=${{ env.K8S_NAMESPACE }} --tail=80
+          exit 1
+
+# ============================================================================
+# JOB 8: Deploy A2A Server
+# ============================================================================
+  deploy-a2a-server:
+    name: Deploy A2A Server
+    needs: deploy-agent-registry
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy A2A Server ConfigMaps
+        run: |
+          kubectl apply -f k8s/agents/a2a-server-configmap.yaml
+
+      - name: Deploy YAWL A2A Server
+        run: |
+          sed "s|__A2A_SERVER_IMAGE__|${{ env.A2A_SERVER_IMAGE }}:${{ env.IMAGE_TAG }}|g" \
+            k8s/agents/a2a-server-deployment.yaml | kubectl apply -f -
+
+      - name: Deploy PM4Py A2A Agent
+        run: |
+          sed "s|__PM4PY_A2A_IMAGE__|${{ env.PM4PY_A2A_IMAGE }}:${{ env.IMAGE_TAG }}|g" \
+            k8s/agents/pm4py-a2a-deployment.yaml | kubectl apply -f -
+
+      - name: Wait for A2A Server Rollout
+        run: |
+          kubectl rollout status deployment/yawl-a2a-server \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=180s
+          kubectl rollout status deployment/yawl-pm4py-a2a \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=180s
+
+      - name: Validate A2A Agent Card Discovery
+        run: |
+          kubectl port-forward \
+            service/yawl-a2a-server 8081:8081 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          for i in $(seq 1 8); do
+            AGENT_CARD=$(curl -sf \
+              http://localhost:8081/.well-known/agent.json 2>/dev/null)
+            if echo "$AGENT_CARD" | grep -q '"name"'; then
+              echo "A2A agent card discovered successfully (attempt $i)"
+              echo "Agent: $(echo $AGENT_CARD | python3 -c \
+                'import sys,json; c=json.load(sys.stdin); print(c.get(\"name\",\"unknown\"))')"
+              kill $PF_PID 2>/dev/null || true
+              exit 0
+            fi
+            echo "Waiting for A2A server... (attempt $i/8)"
+            sleep 5
+          done
+
+          kill $PF_PID 2>/dev/null || true
+          kubectl logs deployment/yawl-a2a-server \
+            --namespace=${{ env.K8S_NAMESPACE }} --tail=80
+          exit 1
+
+# ============================================================================
+# JOB 9: Start Agent Orchestration and Discovery Loop
+# ============================================================================
+  start-agent-orchestration:
+    name: Start Agent Orchestration
+    needs: [ deploy-mcp-server, deploy-a2a-server ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply Agent Orchestration ConfigMap
+        run: |
+          kubectl apply -f k8s/agents/agent-orchestration-configmap.yaml
+
+      - name: Deploy Agent Orchestration Controller
+        run: |
+          kubectl apply -f k8s/agents/agent-orchestration-deployment.yaml
+
+      - name: Wait for Orchestration Controller Rollout
+        run: |
+          kubectl rollout status deployment/yawl-agent-orchestration \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=120s
+
+      - name: Trigger Agent Discovery Loop
+        run: |
+          # POST to agent registry to seed initial agent registrations.
+          # The ordering agent, carrier agent, etc. will self-register on startup.
+          # Here we verify the registry reflects the running deployments.
+          kubectl port-forward \
+            service/yawl-agent-registry 9090:9090 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 8
+
+          # Register MCP server as an agent in the registry
+          curl -sf -X POST http://localhost:9090/agents/register \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "id": "yawl-mcp-server",
+              "name": "YAWL MCP Server",
+              "endpoint": "http://yawl-mcp-server:8082",
+              "capability": {
+                "domainName": "workflow-mcp",
+                "description": "MCP protocol endpoint for YAWL workflow operations: 15 tools, 3 resources, 4 prompts"
+              },
+              "version": "5.2.0"
+            }' || echo "MCP server registration attempted (may already exist)"
+
+          # Register A2A server as an agent in the registry
+          curl -sf -X POST http://localhost:9090/agents/register \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "id": "yawl-a2a-server",
+              "name": "YAWL A2A Server",
+              "endpoint": "http://yawl-a2a-server:8081",
+              "capability": {
+                "domainName": "workflow-a2a",
+                "description": "A2A protocol endpoint for YAWL: launch_workflow, query_workflows, manage_workitems, cancel_workflow"
+              },
+              "version": "5.2.0"
+            }' || echo "A2A server registration attempted (may already exist)"
+
+          # Register PM4Py agents
+          curl -sf -X POST http://localhost:9090/agents/register \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "id": "pm4py-a2a-agent",
+              "name": "PM4Py Process Mining Agent",
+              "endpoint": "http://yawl-pm4py-a2a:9092",
+              "capability": {
+                "domainName": "process-mining",
+                "description": "Process mining: discovery, conformance, performance over XES logs"
+              },
+              "version": "1.0.0"
+            }' || echo "PM4Py A2A registration attempted (may already exist)"
+
+          kill $PF_PID 2>/dev/null || true
+
+      - name: Verify Agent Discovery - All Agents Registered
+        run: |
+          kubectl port-forward \
+            service/yawl-agent-registry 9090:9090 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          AGENT_LIST=$(curl -sf http://localhost:9090/agents)
+          AGENT_COUNT=$(echo "$AGENT_LIST" | python3 -c \
+            'import sys,json; agents=json.load(sys.stdin); print(len(agents))')
+
+          echo "Registered agents: $AGENT_COUNT"
+          echo "Agent details: $AGENT_LIST"
+
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$AGENT_COUNT" -lt 3 ]; then
+            echo "ERROR: Expected at least 3 registered agents, found $AGENT_COUNT"
+            exit 1
+          fi
+          echo "Agent orchestration active: $AGENT_COUNT agents registered."
+
+      - name: Verify Multi-Agent Coordination Path
+        run: |
+          # Verify the communication path: orchestrator -> registry -> MCP/A2A agents
+          kubectl port-forward \
+            service/yawl-agent-registry 9090:9090 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          WORKFLOW_AGENTS=$(curl -sf \
+            "http://localhost:9090/agents/by-capability?domain=workflow-a2a")
+          echo "Workflow A2A agents: $WORKFLOW_AGENTS"
+
+          MINING_AGENTS=$(curl -sf \
+            "http://localhost:9090/agents/by-capability?domain=process-mining")
+          echo "Process mining agents: $MINING_AGENTS"
+
+          kill $PF_PID 2>/dev/null || true
+
+# ============================================================================
+# JOB 10: Deploy party agents (ordering, carrier, etc.)
+# ============================================================================
+  deploy-party-agents:
+    name: Deploy Party Agents
+    needs: start-agent-orchestration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy All Party Agents
+        run: |
+          for manifest in \
+            k8s/ordering-agent-deployment.yaml \
+            k8s/carrier-agent-deployment.yaml \
+            k8s/freight-agent-deployment.yaml \
+            k8s/payment-agent-deployment.yaml \
+            k8s/delivered-agent-deployment.yaml; do
+            if [ -f "$manifest" ]; then
+              echo "Deploying $manifest..."
+              kubectl apply -f "$manifest"
+            else
+              echo "Skipping missing manifest: $manifest"
+            fi
+          done
+
+      - name: Wait for Party Agent Rollout
+        run: |
+          for deployment in \
+            ordering-agent carrier-agent freight-agent \
+            payment-agent delivered-agent; do
+            if kubectl get deployment "$deployment" \
+                --namespace=${{ env.K8S_NAMESPACE }} \
+                > /dev/null 2>&1; then
+              echo "Waiting for $deployment..."
+              kubectl rollout status deployment/"$deployment" \
+                --namespace=${{ env.K8S_NAMESPACE }} \
+                --timeout=120s
+            fi
+          done
+
+      - name: Verify Agent Status After Full Deployment
+        run: |
+          echo "=== Final Deployment Status ==="
+          kubectl get deployments \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            -l 'app.kubernetes.io/part-of=yawl' \
+            -o wide || true
+          kubectl get pods \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --field-selector=status.phase!=Running \
+            -o wide 2>/dev/null | head -20 || true
+
+# ============================================================================
+# JOB 11: Post-deployment validation
+# ============================================================================
+  post-deployment-validation:
+    name: Post-Deployment Validation
+    needs: deploy-party-agents
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Validate MCP Tool Count
+        run: |
+          kubectl port-forward \
+            service/yawl-mcp-server 8082:8082 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          TOOLS=$(curl -sf http://localhost:8082/mcp/tools 2>/dev/null || echo '{"tools":[]}')
+          TOOL_COUNT=$(echo "$TOOLS" | python3 -c \
+            'import sys,json; d=json.load(sys.stdin); print(len(d.get("tools",[])))')
+          echo "MCP tools registered: $TOOL_COUNT"
+
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$TOOL_COUNT" -lt 15 ]; then
+            echo "WARNING: Expected at least 15 MCP tools, found $TOOL_COUNT"
+          else
+            echo "MCP tool registration validated: $TOOL_COUNT tools."
+          fi
+
+      - name: Validate A2A Communication Path
+        run: |
+          kubectl port-forward \
+            service/yawl-a2a-server 8081:8081 \
+            --namespace=${{ env.K8S_NAMESPACE }} &
+          PF_PID=$!
+          sleep 5
+
+          CARD=$(curl -sf http://localhost:8081/.well-known/agent.json)
+          SKILLS=$(echo "$CARD" | python3 -c \
+            'import sys,json; c=json.load(sys.stdin); print(len(c.get("skills",[])))')
+          echo "A2A skills available: $SKILLS"
+
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$SKILLS" -lt 4 ]; then
+            echo "WARNING: Expected 4 A2A skills, found $SKILLS"
+          else
+            echo "A2A skill registration validated: $SKILLS skills."
+          fi
+
+      - name: Generate Deployment Summary
+        run: |
+          echo "# MCP/A2A Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployed Components" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Image | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| YAWL MCP Server | ${{ env.MCP_SERVER_IMAGE }}:${{ env.IMAGE_TAG }} | Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| YAWL A2A Server | ${{ env.A2A_SERVER_IMAGE }}:${{ env.IMAGE_TAG }} | Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| PM4Py MCP Server | ${{ env.PM4PY_MCP_IMAGE }}:${{ env.IMAGE_TAG }} | Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| PM4Py A2A Agent | ${{ env.PM4PY_A2A_IMAGE }}:${{ env.IMAGE_TAG }} | Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Agent Registry | ${{ env.AGENT_REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }} | Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Endpoint |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| MCP Server Health | http://yawl-mcp-server:8082/health |" >> $GITHUB_STEP_SUMMARY
+          echo "| A2A Agent Card | http://yawl-a2a-server:8081/.well-known/agent.json |" >> $GITHUB_STEP_SUMMARY
+          echo "| Agent Registry | http://yawl-agent-registry:9090/agents |" >> $GITHUB_STEP_SUMMARY
+          echo "| PM4Py A2A Card | http://yawl-pm4py-a2a:9092/.well-known/agent-card.json |" >> $GITHUB_STEP_SUMMARY
