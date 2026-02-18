@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.containers.WorkflowDataFactory;
 import org.yawlfoundation.yawl.containers.YawlContainerFixtures;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
@@ -62,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 2026-02-17
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)  // YEngine.getInstance() is a singleton
 class MultiModuleIntegrationTest {
 
     private Connection db;

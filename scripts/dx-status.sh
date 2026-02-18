@@ -26,9 +26,10 @@ STAGED=$(git diff --name-only --cached 2>/dev/null | wc -l)
 echo "Git: branch=${BRANCH} changed=${CHANGED} staged=${STAGED}"
 
 # ── Changed modules ──────────────────────────────────────────────────────
+# NOTE: yawl-worklet removed - not in pom.xml
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
-    yawl-stateless yawl-resourcing yawl-worklet yawl-scheduling
+    yawl-stateless yawl-resourcing yawl-scheduling
     yawl-security yawl-integration yawl-monitoring yawl-webapps
     yawl-control-panel
 )

@@ -21,9 +21,10 @@ cd "${REPO_ROOT}"
 
 MODE="${1:-mount}"
 
+# NOTE: yawl-worklet removed - not in pom.xml
 MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
-    yawl-stateless yawl-resourcing yawl-worklet yawl-scheduling
+    yawl-stateless yawl-resourcing yawl-scheduling
     yawl-security yawl-integration yawl-monitoring yawl-webapps
     yawl-control-panel
 )

@@ -28,9 +28,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# NOTE: yawl-worklet removed - not in pom.xml
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
-    yawl-stateless yawl-resourcing yawl-worklet yawl-scheduling
+    yawl-stateless yawl-resourcing yawl-scheduling
     yawl-security yawl-integration yawl-monitoring yawl-webapps
     yawl-control-panel
 )
