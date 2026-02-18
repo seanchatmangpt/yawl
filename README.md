@@ -83,3 +83,53 @@ YAWL offers these distinctive features:
 - **3 Load Test Scenarios**: Sustained, burst, ramp-up
 - **3 Scalability Tests**: Case scaling, memory efficiency, load recovery
 
+---
+
+## Maven Build — Root POM (`pom.xml`)
+
+**Artifact:** `org.yawlfoundation:yawl-parent:6.0.0-Alpha` | `packaging: pom`
+
+The root POM is the aggregator and Bill of Materials (BOM) for the entire multi-module build.
+All dependency versions and plugin versions are centralised here; child modules never
+redeclare version numbers.
+
+### Module Build Order
+
+| # | Module | Artifact |
+|---|--------|----------|
+| 1 | `yawl-utilities` | common utils, schema, unmarshal |
+| 2 | `yawl-elements` | Petri net model (YNet, YTask, YSpec) |
+| 3 | `yawl-authentication` | session, JWT, CSRF |
+| 4 | `yawl-engine` | stateful engine + persistence |
+| 5 | `yawl-stateless` | event-driven engine, no DB |
+| 6 | `yawl-resourcing` | resource allocators, work queues |
+| 7 | `yawl-worklet` | dynamic worklet selection, RDR exceptions |
+| 8 | `yawl-scheduling` | timers, calendar |
+| 9 | `yawl-security` | PKI / digital signatures |
+| 10 | `yawl-integration` | MCP + A2A connectors |
+| 11 | `yawl-monitoring` | OpenTelemetry, Prometheus |
+| 12 | `yawl-webapps` | WAR aggregator |
+| 13 | `yawl-control-panel` | Swing desktop UI |
+
+### Build Profiles
+
+| Profile | Trigger | Extra Tooling |
+|---------|---------|---------------|
+| `java21` | **default** | compiler target 21, JaCoCo skipped |
+| `java24` | `-P java24` | forward-compat testing on JDK 24 |
+| `ci` | `-P ci` | JaCoCo + SpotBugs |
+| `prod` | `-P prod` | JaCoCo + SpotBugs + OWASP CVE (fails ≥ CVSS 7) |
+| `security-audit` | `-P security-audit` | OWASP CVE report only, never fails |
+| `analysis` | `-P analysis` | JaCoCo + SpotBugs + Checkstyle + PMD |
+| `sonar` | `-P sonar` | SonarQube push (`SONAR_TOKEN`, `SONAR_HOST_URL`) |
+| `online` | `-P online` | upstream BOMs: Spring Boot, OTel, Resilience4j, TestContainers, Jackson |
+
+### Enforcer Rules
+
+Enforced at `validate` phase — build fails if:
+- Maven < 3.9 or Java < 21
+- Duplicate dependency declarations exist in any POM
+- Any plugin lacks an explicit version
+
+Each module has its own README.md with detailed documentation. See the module directories.
+
