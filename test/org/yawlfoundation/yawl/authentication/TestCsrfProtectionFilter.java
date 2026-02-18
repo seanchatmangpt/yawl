@@ -722,6 +722,11 @@ public class TestCsrfProtectionFilter {
         }
 
         @Override
+        public String getAuthType() {
+            return null;
+        }
+
+        @Override
         public String getMethod() {
             return method;
         }

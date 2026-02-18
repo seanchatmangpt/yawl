@@ -353,6 +353,11 @@ public class TestCsrfTokenManager {
         }
 
         @Override
+        public String getAuthType() {
+            return null;
+        }
+
+        @Override
         public String getMethod() {
             return "POST";
         }
