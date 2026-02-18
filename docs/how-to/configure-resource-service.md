@@ -1,242 +1,178 @@
-# How to Configure the Resource Service
+# How to Configure Resource Allocation in YAWL v6
 
-## Prerequisites
+> YAWL v6 does not have a standalone resource service. The `yawl-resourcing` Maven module
+> is a stub with no Java implementation. There is no resource service WAR, no worklist
+> gateway, and no `ResourceManager` class.
 
-- YAWL engine deployed and reachable at `http://localhost:8080/yawl`
-- Resource service WAR deployed at `http://localhost:8080/resourceService`
-- A YAWL specification loaded into the engine with resourcing directives on at least one task
-- PostgreSQL (or another supported database) accessible to the resource service
+## What "Resource Service" Meant in YAWL v4
 
-## Steps
+In YAWL v4, the Resource Service was a separate web application that maintained an
+organisational model (participants, roles, capabilities, positions) and distributed work
+items to human participants via a worklist. It implemented offer/allocate/start lifecycle
+stages for each work item.
 
-### 1. Configure the Resource Service Back-end URI
+None of this is implemented in YAWL v6.
 
-The resource service needs to know where the YAWL engine's Interface B endpoint is. Edit
-`build/resourceService/web.xml` (or the equivalent deployed configuration) and set the
-engine connection properties:
+## How Work Item Assignment Works in YAWL v6
 
-```xml
-<!-- web.xml context params for resource service -->
-<context-param>
-    <param-name>InterfaceBBackEnd</param-name>
-    <param-value>http://localhost:8080/yawl/ib</param-value>
-</context-param>
-<context-param>
-    <param-name>EngineLogonName</param-name>
-    <param-value>admin</param-value>
-</context-param>
-<context-param>
-    <param-name>EngineLogonPassword</param-name>
-    <param-value>YAWL</param-value>
-</context-param>
-```
+Work item routing in YAWL v6 uses two mechanisms:
 
-If you are connecting from the scheduling service, also update
-`build/schedulingService/properties/yawl.properties`:
+1. **MCP tools** — AI agents check out and check in work items programmatically via
+   `yawl_checkout_work_item` and `yawl_checkin_work_item`.
 
-```properties
-InterfaceBClient.backEndURI=http://localhost:8080/yawl/ib
-ResourceGatewayClient.backEndURI=http://localhost:8080/resourceService/gateway
-WorkQueueGatewayClient.backEndURI=http://localhost:8080/resourceService/workqueuegateway
-```
+2. **A2A skills** — The A2A protocol (`YawlA2AServer`) lets named agent skills be
+   invoked when a work item fires. The skill performs the work and checks in the item.
 
-### 2. Configure the Persistence Database
+Human tasks — tasks that require a person to make a decision — are handled by your
+application. Your application polls the engine for available work items, presents them
+to users through your own UI, and calls the engine's Interface B to check out and check
+in items on the user's behalf.
 
-The resource service stores participants, roles, capabilities, and positions in a relational
-database. Configure `build/properties/hibernate.properties` for your database:
+## Access Control: Who Can Touch Which Work Items
 
-```properties
-# PostgreSQL (recommended for production)
-hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-hibernate.connection.driver_class=org.postgresql.Driver
-hibernate.connection.url=jdbc:postgresql://localhost:5432/yawl
-hibernate.connection.username=postgres
-hibernate.connection.password=yawl
+YAWL v6 enforces access control through OAuth2 scopes and JWT claims, implemented in
+`RbacAuthorizationEnforcer` and `YawlOAuth2Scopes`.
 
-# HikariCP connection pool
-hibernate.hikari.maximumPoolSize=20
-hibernate.hikari.minimumIdle=5
-hibernate.hikari.connectionTimeout=30000
-hibernate.hikari.leakDetectionThreshold=60000
-hibernate.connection.provider_class=org.yawlfoundation.yawl.util.HikariCPConnectionProvider
-```
+The relevant scopes for work item access are:
 
-For development, H2 in-memory works without setup:
+| Scope | Permitted operations |
+|---|---|
+| `yawl:operator` | Launch cases, cancel cases, check out/in work items |
+| `yawl:agent` | Same as operator, plus MCP and A2A integration endpoints |
+| `yawl:monitor` | Read-only: get case status, list work items, get case data |
+| `yawl:admin` | All operations |
 
-```properties
-hibernate.dialect=org.hibernate.dialect.H2Dialect
-hibernate.connection.driver_class=org.h2.Driver
-hibernate.connection.url=jdbc:h2:mem:yawl;DB_CLOSE_DELAY=-1
-hibernate.connection.username=sa
-hibernate.connection.password=
-```
+A human participant's JWT must carry `yawl:operator` (or `yawl:admin`) to check out
+and complete work items. An automated agent's service account JWT must carry `yawl:agent`.
 
-### 3. Define Participants
+Configure scopes in your OIDC provider (Keycloak, Auth0, Azure AD). The `YawlOAuth2Scopes`
+class in `src/org/yawlfoundation/yawl/integration/oauth2/YawlOAuth2Scopes.java` has the
+canonical scope string constants.
 
-Participants represent people who can be assigned work items. Add participants via the
-resource service gateway HTTP API (once deployed):
+## Practical Pattern: Routing Work Items to Human Participants
+
+Since there is no built-in worklist, you build the routing logic in your application:
+
+### 1. Poll for available work items
 
 ```bash
-# Register a participant
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addParticipant" \
-  -d "userid=jsmith" \
-  -d "firstname=John" \
-  -d "lastname=Smith" \
-  -d "password=secret" \
-  -d "isAdmin=false" \
-  -d "sessionHandle=$(cat /tmp/session)"
+# Get all enabled work items across all running cases
+curl -s -H "Authorization: Bearer $JWT" \
+  "http://localhost:8080/yawl/ib?action=getCompleteListOfLiveWorkItems&sessionHandle=$SESSION"
 ```
 
-Participants hold work items from their worklist. A participant without any role
-assignment receives no items from role-based routing; assign roles in step 4.
+The response is an XML list of `WorkItemRecord` elements. Each carries the task ID,
+case ID, specification URI, and current status.
 
-### 4. Define Roles and Assign Participants
+### 2. Filter by task type to determine which human should act
 
-Roles group participants for routing. A task's resourcing spec references a role by name,
-and all participants with that role can receive the work item:
+Your application determines which participant should handle each work item. Because
+there is no org model in v6, this mapping lives in your application. Common patterns:
+
+- Store task-to-role mappings in your own database and look them up by `taskID`.
+- Read a claim from the user's JWT (e.g. `department`, `role`) and match it to the
+  task's `specURI` using rules you define.
+- For automated tasks, match by task name prefix and route to the appropriate
+  A2A skill or MCP tool.
+
+### 3. Check out a work item for a specific participant
 
 ```bash
-# Create the Approver role
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addRole" \
-  -d "roleName=Approver" \
-  -d "sessionHandle=$(cat /tmp/session)"
-
-# Assign jsmith to the Approver role (use the role ID returned above)
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=updateParticipant" \
-  -d "participantID=<pid>" \
-  -d "roles=<roleID>" \
-  -d "sessionHandle=$(cat /tmp/session)"
+# Check out work item on behalf of participant (using their session handle)
+curl -s -X POST "http://localhost:8080/yawl/ib" \
+  -d "action=checkOutWorkItem" \
+  -d "workItemID=42:ApproveOrder" \
+  -d "sessionHandle=$PARTICIPANT_SESSION"
 ```
 
-### 5. Configure the Allocation Strategy in the Specification
+The participant must hold a token with `yawl:operator` scope. The `sessionHandle` here
+is the participant's own YAWL session (obtained by authenticating to the engine with
+their credentials), not an admin handle.
 
-In the YAWL specification XML, each task that uses the resource service carries a
-`resourcing` element. The `allocate` child specifies the strategy:
+### 4. Check in the work item with output data
 
-```xml
-<resourcing>
-  <offer initiator="system">
-    <distributionSet>
-      <initialSet>
-        <role>Approver</role>
-      </initialSet>
-    </distributionSet>
-    <filters/>
-    <constraints/>
-  </offer>
-  <allocate initiator="system">
-    <allocator>
-      <!-- RandomChoice: pick a random participant from those who were offered the item -->
-      <name>RandomChoice</name>
-      <params/>
-    </allocator>
-  </allocate>
-  <start initiator="user"/>
-</resourcing>
+```bash
+# Check in the work item after the participant has taken action
+curl -s -X POST "http://localhost:8080/yawl/ib" \
+  -d "action=checkInWorkItem" \
+  -d "workItemID=42:ApproveOrder" \
+  -d "data=<ApproveOrder><decision>approved</decision></ApproveOrder>" \
+  -d "sessionHandle=$PARTICIPANT_SESSION"
 ```
 
-Built-in allocators available in YAWL's resource service:
+## Routing Automated Work Items to AI Agents
 
-| Allocator name | Behaviour |
-|---|---|
-| `RandomChoice` | Selects a random participant from the offered set |
-| `RoundRobin` | Cycles through participants in round-robin order |
-| `ShortestQueue` | Picks the participant with the fewest active work items |
-| `MostCapable` | Ranks by capability match score, picks the highest |
+For tasks that should be handled by AI agents rather than humans, use the MCP tools
+directly. The agent:
 
-To use a custom allocator, implement the allocator interface and reference it by fully
-qualified class name in the `<name>` element.
+1. Calls `yawl_get_work_items` to discover available work items.
+2. Calls `yawl_checkout_work_item` with the work item ID.
+3. Performs its task (external API call, data transformation, decision, etc.).
+4. Calls `yawl_checkin_work_item` with the output data.
 
-### 6. Configure Mail Notifications (optional)
+For more structured routing, register a custom `YawlMcpTool` (see
+`docs/tutorials/06-write-a-custom-work-item-handler.md`) that encapsulates the agent's
+decision logic and is invoked by name.
 
-When work items are offered to a participant, the resource service can send an email
-notification. Edit `build/resourceService/mail.properties`:
+## Interface B Direct Access
 
-```properties
-# Use Courier for SMTP relay
-provider=Courier
-uid=<your-courier-uid>
-
-# Or configure a custom SMTP server
-provider=Custom
-host=smtp.example.com
-port=587
-strategy=TLS
-user=alerts@example.com
-password=<smtp-password>
-fromName=YAWL Workflow
-
-# Message body template (placeholders: {firstname}, {id}, {doco}, {ui_url})
-content=<p>Hello {firstname}</p><p>You have a new work item: ID={id}</p>
-ui_url=http://localhost:8080/yawlui/
-```
-
-### 7. Annotate Work Items with Resource Status
-
-The engine signals the resource service when work items are enabled. The resource service
-tracks them through a lifecycle that maps to `WorkItemRecord` resource status constants:
-
-| Constant | Meaning |
-|---|---|
-| `statusResourceUnresourced` | Item exists but no resource assigned yet |
-| `statusResourceOffered` | Offered to one or more participants |
-| `statusResourceAllocated` | Assigned to one specific participant |
-| `statusResourceStarted` | Participant has started working on the item |
-
-Monitor allocation progress programmatically via the Interface B client:
+For Java-based applications, the `InterfaceB_EnvironmentBasedClient` class
+(`src/org/yawlfoundation/yawl/engine/interfce/interfaceB/InterfaceB_EnvironmentBasedClient.java`)
+wraps all Interface B HTTP calls. Include `yawl-engine` as a dependency and use it
+directly:
 
 ```java
-InterfaceBClient ibClient = new InterfaceBClient("http://localhost:8080/yawl/ib");
-String handle = ibClient.connect("admin", "YAWL");
+InterfaceB_EnvironmentBasedClient ibClient =
+    new InterfaceB_EnvironmentBasedClient("http://localhost:8080/yawl/ib");
 
-List<WorkItemRecord> items = ibClient.getWorkItemsWithIdentifier("Approve_Order", handle);
-for (WorkItemRecord item : items) {
-    System.out.printf("Item %s: engine status=%s, resource status=%s%n",
-        item.getID(), item.getStatus(), item.getResourceStatus());
-}
+String sessionHandle = ibClient.connect("operator-user", "password");
+
+// Get work items for a specific case
+List<WorkItemRecord> items = ibClient.getWorkItemsForCase("42", sessionHandle);
+
+// Check out the first enabled item
+WorkItemRecord item = items.get(0);
+String result = ibClient.checkOutWorkItem(item.getID(), sessionHandle);
+
+// Check in with output data
+ibClient.checkInWorkItem(
+    item.getID(),
+    "<data><decision>approved</decision></data>",
+    null,
+    sessionHandle);
 ```
 
 ## Verify
 
-1. Start both the engine and the resource service. In the engine log you should see:
-   ```
-   Resource Service connected on Interface B.
-   ```
+Confirm the engine is accepting work item operations:
 
-2. Navigate to `http://localhost:8080/resourceService` and log in as `admin / YAWL`.
-   The admin view shows participants, roles, and active work items.
+```bash
+# Get a session handle
+SESSION=$(curl -s -X POST "http://localhost:8080/yawl/ib" \
+  -d "action=connect&userid=admin&password=YAWL" | grep -oP '(?<=<response>)[^<]+')
 
-3. Launch a case that has a task with `<offer initiator="system">` using a role you
-   configured. The task's work item should appear in the worklist of every participant
-   who holds that role.
+# List all live work items
+curl -s "http://localhost:8080/yawl/ib?action=getCompleteListOfLiveWorkItems&sessionHandle=$SESSION"
+```
 
-4. Log in as a participant and check the worklist endpoint:
-   ```bash
-   curl "http://localhost:8080/resourceService/workqueuegateway?action=getQueuedWorkItems&participantID=<pid>&sessionHandle=<sh>"
-   ```
-   The response XML contains all items currently on that participant's queue.
+A successful response returns an XML document containing zero or more `workItem` elements.
+An `<failure>` element indicates an authentication or engine connectivity problem.
 
 ## Troubleshooting
 
-**Resource service shows "Not connected to engine"**
-Check that the `InterfaceBBackEnd` context param in `web.xml` matches the running engine
-URL. The resource service polls the engine on startup; restart the resource service after
-fixing the URL.
+**"Not authorised" on checkOutWorkItem**
+The caller's token does not include `yawl:operator` or `yawl:admin` scope. Verify the
+JWT claims using `jwt.io` or your OIDC provider's token introspection endpoint. Update
+the client scope assignment in your OIDC provider.
 
-**Work items not appearing in any worklist**
-Verify the specification's `<resourcing>` block has `initiator="system"` on `<offer>`.
-If `initiator="user"` is set, the participant manually allocates from an unresourced
-queue, and no automatic distribution occurs.
+**Work item is in "Enabled" status but checkOut fails**
+A work item can only be checked out if it is in `Enabled` or `Fired` status. If the
+engine returned it as `Enabled` but the check-out fails with "item not found", another
+caller checked it out between your list and check-out calls. Re-query the work item list
+and retry.
 
-**AllocationStrategy not found**
-Custom allocator class names must be on the resource service classpath. Place the JAR in
-`WEB-INF/lib` and restart the service.
-
-**Participant has no capacity left (all items at capacity)**
-The scheduling service imposes capacity constraints. If `msgHasNoRole` or capacity
-rejection messages appear in the log, confirm the participant's role assignment and
-reduce the `maximumPoolSize` on HikariCP to prevent over-allocation of database
-connections competing with workflow threads.
+**No work items returned despite a running case**
+Verify the case is actively executing (not suspended). Call
+`getCaseState(caseId, sessionHandle)` and confirm the net has active tokens. If the case
+is suspended, resume it with `yawl_resume_case` via the MCP server or call
+`unsuspendWorkItem` directly via Interface B.

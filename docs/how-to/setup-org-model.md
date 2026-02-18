@@ -1,259 +1,247 @@
-# How to Set Up the Organisational Model
+# How to Manage Participant Access in YAWL v6
 
-## Prerequisites
+> YAWL v6 does not implement an organisational model. There are no `YOrganisationModel`,
+> `ResourceManager`, roles, capabilities, positions, or org group classes in v6. The
+> `yawl-resourcing` module is a stub with no Java implementation.
 
-- Resource service deployed and connected to the engine (see
-  `docs/how-to/configure-resource-service.md`)
-- Admin credentials for the resource service (default: `admin / YAWL`)
-- An active session handle obtained from the resource service gateway
+## What the Org Model Was in YAWL v4
 
-## Steps
+In YAWL v4, the Resource Service maintained an organisational model consisting of:
 
-### 1. Obtain an Admin Session Handle
+- **Participants** — individual people who could be assigned work items
+- **Roles** — job functions used for work item routing (e.g. "CreditAnalyst")
+- **Capabilities** — skills or certifications used as routing filters
+- **Positions** — organisational titles used to scope routing
+- **Org groups** — containers (teams, departments) acting as tenancy boundaries
 
-All resource gateway calls require a valid session handle. Authenticate first:
+Task resourcing specs in v4 referenced these entities to determine which participants
+received which work items.
 
-```bash
-SESSION=$(curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=connect" \
-  -d "userid=admin" \
-  -d "password=YAWL" | grep -oP '(?<=<response>)[^<]+')
-echo "Session: $SESSION"
+None of this infrastructure exists in YAWL v6.
+
+## How YAWL v6 Manages Participant Identity and Access
+
+YAWL v6 delegates identity and access management entirely to your external OIDC provider.
+The authoritative implementation is in:
+
+- `src/org/yawlfoundation/yawl/integration/oauth2/YawlOAuth2Scopes.java` — scope constants
+- `src/org/yawlfoundation/yawl/integration/oauth2/RbacAuthorizationEnforcer.java` — scope enforcement
+
+### Scope-Based RBAC
+
+Access to workflow operations is controlled by OAuth2 scopes in the caller's JWT. The
+scope hierarchy is:
+
+```
+yawl:admin
+  |-- yawl:designer   (specification management, participant administration)
+  |-- yawl:operator   (case and work item operations)
+  |-- yawl:monitor    (read-only access to cases, work items, specifications)
+  |-- yawl:agent      (operator operations plus MCP and A2A endpoints)
 ```
 
-Store `$SESSION` for use in subsequent calls. Sessions expire after 60 minutes of
-inactivity; re-authenticate if you receive an `invalid session` response.
+These are not YAWL-internal roles. They are OAuth2 scopes you configure in your OIDC
+provider (Keycloak, Auth0, Okta, Azure AD) and assign to users and service accounts.
 
-### 2. Create Roles
+### Operation-to-Scope Mapping
 
-Roles define job functions. A task's `<offer>` block references one or more roles to
-select which participants receive each work item:
+`RbacAuthorizationEnforcer` maps each YAWL workflow operation to the scopes that permit it:
 
-```bash
-# Create a role named "CreditAnalyst"
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addRole" \
-  -d "roleName=CreditAnalyst" \
-  -d "description=Reviews and approves credit applications" \
-  -d "sessionHandle=$SESSION"
-# Returns: <response>RoleID_<uuid></response>
-CREDIT_ANALYST_ROLE_ID="<uuid returned above>"
+| Operation | Required scope (any one suffices) |
+|---|---|
+| Launch case | `yawl:operator`, `yawl:admin` |
+| Cancel case | `yawl:operator`, `yawl:admin` |
+| Get case status | `yawl:monitor`, `yawl:operator`, `yawl:designer`, `yawl:agent`, `yawl:admin` |
+| Check out work item | `yawl:operator`, `yawl:agent`, `yawl:admin` |
+| Check in work item | `yawl:operator`, `yawl:agent`, `yawl:admin` |
+| Load specification | `yawl:designer`, `yawl:admin` |
+| Access MCP tools | `yawl:agent`, `yawl:admin` |
+| Access A2A protocol | `yawl:agent`, `yawl:admin` |
 
-# Create a subordinate role that "belongs to" another (hierarchy)
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addRole" \
-  -d "roleName=SeniorCreditAnalyst" \
-  -d "description=Senior analyst, can override decisions" \
-  -d "belongsToID=$CREDIT_ANALYST_ROLE_ID" \
-  -d "sessionHandle=$SESSION"
+## Setting Up Scope-Based Access
+
+### 1. Configure scopes in your OIDC provider
+
+In Keycloak, create client scopes matching the constants in `YawlOAuth2Scopes`:
+
+```
+yawl:admin
+yawl:designer
+yawl:operator
+yawl:monitor
+yawl:agent
 ```
 
-A role hierarchy lets routing constraints use `belongsTo` filters — for example,
-"offer to any participant whose role belongs to the CreditAnalyst family."
+Assign the scopes to users or service accounts based on their role in your organisation:
 
-### 3. Create Capabilities
+- Human workflow participants: `yawl:operator`
+- Read-only monitoring dashboards: `yawl:monitor`
+- Workflow designers: `yawl:designer`
+- AI agent service accounts: `yawl:agent`
+- System administrators: `yawl:admin`
 
-Capabilities describe specific skills or certifications. They can be attached to
-participants and used as constraints in the `<filters>` block of a task's resourcing spec:
+### 2. Configure the YAWL engine as an OAuth2 resource server
 
-```bash
-# Create a capability
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addCapability" \
-  -d "capabilityName=RegulatoryReview" \
-  -d "description=Authorised to perform regulatory compliance checks" \
-  -d "sessionHandle=$SESSION"
-REGULATORY_CAP_ID="<uuid returned above>"
+Add the following to your Spring application configuration (typically `application.yml`):
+
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${YAWL_OAUTH2_ISSUER_URI}
+          audiences:
+            - yawl-api
 ```
 
-### 4. Create Positions
+The `YAWL_OAUTH2_ISSUER_URI` environment variable points to your OIDC provider's
+discovery endpoint (e.g. `https://auth.example.com/realms/yawl`).
 
-Positions represent organisational units (job titles, departments). They are used
-alongside roles to scope routing to a particular organisational context:
+### 3. Wire `RbacAuthorizationEnforcer` into your security filter chain
 
-```bash
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addPosition" \
-  -d "positionName=LoanOfficer" \
-  -d "positionID=LO-001" \
-  -d "description=Responsible for originating loan applications" \
-  -d "sessionHandle=$SESSION"
-LOAN_OFFICER_POS_ID="<uuid returned above>"
+```java
+@Configuration
+@EnableWebSecurity
+public class YawlSecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/specifications/**")
+                    .hasAuthority("SCOPE_" + YawlOAuth2Scopes.DESIGNER)
+                .requestMatchers(HttpMethod.POST, "/api/v1/cases")
+                    .hasAnyAuthority(
+                        "SCOPE_" + YawlOAuth2Scopes.OPERATOR,
+                        "SCOPE_" + YawlOAuth2Scopes.ADMIN)
+                .requestMatchers("/api/v1/workitems/**")
+                    .hasAnyAuthority(
+                        "SCOPE_" + YawlOAuth2Scopes.OPERATOR,
+                        "SCOPE_" + YawlOAuth2Scopes.AGENT,
+                        "SCOPE_" + YawlOAuth2Scopes.ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/v1/**")
+                    .hasAnyAuthority(
+                        "SCOPE_" + YawlOAuth2Scopes.MONITOR,
+                        "SCOPE_" + YawlOAuth2Scopes.OPERATOR,
+                        "SCOPE_" + YawlOAuth2Scopes.DESIGNER,
+                        "SCOPE_" + YawlOAuth2Scopes.AGENT,
+                        "SCOPE_" + YawlOAuth2Scopes.ADMIN)
+                .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(yawlJwtConverter()))
+            )
+            .sessionManagement(s ->
+                s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .build();
+    }
+
+    @Bean
+    public JwtAuthenticationConverter yawlJwtConverter() {
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
+            new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthorityPrefix("SCOPE_");
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        return converter;
+    }
+}
 ```
 
-### 5. Create Org Groups
+### 4. Encode participant identity in JWT claims
 
-Org groups are organisational containers (teams, divisions, cost centres). They act as
-a tenancy-like boundary — participants in different org groups can be isolated from
-each other's worklists:
+Because there is no org model in YAWL v6, participant-level identity (who the specific
+person is, not just what they are permitted to do) is carried in standard JWT claims:
 
-```bash
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addOrgGroup" \
-  -d "groupName=RetailLending" \
-  -d "groupType=Team" \
-  -d "description=Retail lending division" \
-  -d "sessionHandle=$SESSION"
-RETAIL_GROUP_ID="<uuid returned above>"
-```
+| JWT claim | Meaning | Example value |
+|---|---|---|
+| `sub` | Unique participant identifier | `"alice@example.com"` |
+| `name` | Display name | `"Alice Smith"` |
+| `email` | Contact address | `"alice@example.com"` |
+| `roles` (custom) | Application-level roles | `["loan-officer", "credit-analyst"]` |
+| `department` (custom) | Organisational unit | `"retail-lending"` |
 
-Valid `groupType` values: `Division`, `Group`, `Team`, `Unit`.
+Your application reads these claims from the token and uses them to:
 
-### 6. Create Participants and Assign Org Model Entities
+- Display the participant's name in your worklist UI.
+- Filter which work items are shown to this participant.
+- Record which participant checked out and completed each work item (for audit).
 
-Create each participant, then assign their role, capability, position, and org group in
-one update call:
+YAWL itself does not inspect these claims for routing — that is your application's
+responsibility.
 
-```bash
-# Create participant
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addParticipant" \
-  -d "userid=asmith" \
-  -d "firstname=Alice" \
-  -d "lastname=Smith" \
-  -d "password=changeme" \
-  -d "isAdmin=false" \
-  -d "sessionHandle=$SESSION"
-PARTICIPANT_ID="<uuid returned above>"
+## Participant-Level Routing Without an Org Model
 
-# Assign role
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addParticipantToRole" \
-  -d "participantID=$PARTICIPANT_ID" \
-  -d "roleID=$CREDIT_ANALYST_ROLE_ID" \
-  -d "sessionHandle=$SESSION"
+Since YAWL v6 has no built-in worklist, task-to-participant matching is done by your
+application. The recommended pattern:
 
-# Assign capability
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addParticipantToCapability" \
-  -d "participantID=$PARTICIPANT_ID" \
-  -d "capabilityID=$REGULATORY_CAP_ID" \
-  -d "sessionHandle=$SESSION"
+1. Your application fetches all enabled work items from the engine via Interface B.
+2. It reads each work item's `taskID` and `specURI`.
+3. It looks up the task in its own configuration to determine which application role
+   should handle it.
+4. It shows only matching work items to each participant, based on the participant's
+   JWT claims.
+5. The participant clicks "take" in your UI; your application calls
+   `checkOutWorkItem` on their behalf.
+6. After the participant completes the form, your application calls
+   `checkInWorkItem` with the output data.
 
-# Assign position
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=addParticipantToPosition" \
-  -d "participantID=$PARTICIPANT_ID" \
-  -d "positionID=$LOAN_OFFICER_POS_ID" \
-  -d "sessionHandle=$SESSION"
-```
+This is architecturally equivalent to what the YAWL v4 Resource Service did, but
+implemented as part of your application rather than as a separate YAWL service.
 
-### 7. Reference Roles and Capabilities in Specification Resourcing
+## SPIFFE/SPIRE for Service Account Identity
 
-With the org model in place, reference roles and capabilities directly in the
-specification XML. The resource service resolves names to IDs at runtime:
+For service-to-service calls (e.g. an A2A agent calling the engine), YAWL v6 supports
+SPIFFE/SPIRE for workload identity. Rather than long-lived service account credentials,
+each workload receives a short-lived X.509 SVID. This is fully implemented in the
+`yawl-integration` module.
 
-```xml
-<resourcing>
-  <offer initiator="system">
-    <distributionSet>
-      <initialSet>
-        <!-- Offer to everyone in the CreditAnalyst role -->
-        <role>CreditAnalyst</role>
-      </initialSet>
-      <filters>
-        <!-- Further restrict to participants with RegulatoryReview capability -->
-        <filter>
-          <name>CapabilityFilter</name>
-          <params>
-            <param>
-              <key>Capability</key>
-              <value>RegulatoryReview</value>
-            </param>
-          </params>
-        </filter>
-      </filters>
-    </distributionSet>
-  </offer>
-  <allocate initiator="system">
-    <allocator>
-      <name>ShortestQueue</name>
-      <params/>
-    </allocator>
-  </allocate>
-  <start initiator="user"/>
-</resourcing>
-```
-
-### 8. Bulk-Load the Org Model from XML
-
-For large deployments, define the entire org model in XML and import it via the gateway
-rather than making individual API calls:
-
-```xml
-<!-- orgmodel.xml -->
-<orgModel>
-  <roles>
-    <role id="r1" name="CreditAnalyst"
-          description="Reviews credit applications"/>
-  </roles>
-  <capabilities>
-    <capability id="c1" name="RegulatoryReview"
-                description="Compliance authorisation"/>
-  </capabilities>
-  <positions>
-    <position id="p1" name="LoanOfficer" positionID="LO-001"/>
-  </positions>
-  <orgGroups>
-    <orgGroup id="g1" name="RetailLending" groupType="Team"/>
-  </orgGroups>
-  <participants>
-    <participant id="u1" userid="asmith" firstname="Alice" lastname="Smith"
-                 isAdmin="false">
-      <roles><roleref id="r1"/></roles>
-      <capabilities><capref id="c1"/></capabilities>
-      <positions><posref id="p1"/></positions>
-    </participant>
-  </participants>
-</orgModel>
-```
-
-```bash
-curl -s -X POST "http://localhost:8080/resourceService/gateway" \
-  -d "action=importOrgData" \
-  -d "xml=$(cat orgmodel.xml)" \
-  -d "sessionHandle=$SESSION"
-```
+Configure SPIFFE by setting `SPIFFE_ENDPOINT_SOCKET` to the path of your SPIRE agent
+socket. The engine verifies the SVID's SPIFFE ID against an allowlist you configure.
 
 ## Verify
 
-Query the org model to confirm everything was created:
+Confirm that scope enforcement is working:
 
 ```bash
-# List all roles
-curl -s "http://localhost:8080/resourceService/gateway?action=getRoles&sessionHandle=$SESSION"
+# Get a token for a user with yawl:monitor scope
+MONITOR_TOKEN=$(curl -s -X POST "$OIDC_TOKEN_URL" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=monitor-service" \
+  -d "client_secret=$SECRET" \
+  -d "scope=yawl:monitor" | jq -r '.access_token')
 
-# List all participants with their roles
-curl -s "http://localhost:8080/resourceService/gateway?action=getParticipants&sessionHandle=$SESSION"
+# Read-only operations should succeed
+curl -s -H "Authorization: Bearer $MONITOR_TOKEN" \
+  "http://localhost:8080/yawl/ib?action=getCompleteListOfLiveWorkItems&sessionHandle=$SESSION"
 
-# Check a specific participant's roles
-curl -s "http://localhost:8080/resourceService/gateway?action=getParticipantRoles\
-&participantID=$PARTICIPANT_ID&sessionHandle=$SESSION"
+# Mutating operations should be rejected (HTTP 403)
+curl -s -X POST -H "Authorization: Bearer $MONITOR_TOKEN" \
+  "http://localhost:8080/yawl/ib" \
+  -d "action=checkOutWorkItem&workItemID=1:Task1&sessionHandle=$SESSION"
 ```
 
-Each response is an XML document. Presence of the created entities in the response
-confirms the org model is active and persisted.
-
-Launch a case whose specification routes to the `CreditAnalyst` role. Navigate to
-`http://localhost:8080/resourceService` and log in as `asmith`. The work item should
-appear in Alice's offered queue.
+The second call must return HTTP 403 if RBAC is correctly enforced.
 
 ## Troubleshooting
 
-**"Resource with this id has not such role" in scheduling service log**
-The participant ID used in the scheduling service's properties no longer matches the
-resource service database. Re-fetch participant IDs from `getParticipants` and update
-`yawl.properties`.
+**JWT does not contain expected scopes**
+Use `jwt.io` to decode the token and inspect the `scope` claim. Ensure your OIDC client
+configuration requests the YAWL scopes when obtaining tokens. In Keycloak, verify that
+the client scope mappings include the `yawl:*` scopes you created.
 
-**Work items not routed to a participant despite correct role assignment**
-Confirm the specification's `<offer>` block uses `initiator="system"` and that the role
-name in XML matches exactly (case-sensitive) the role name in the org model.
+**SCOPE_ prefix mismatch**
+Spring Security prefixes OAuth2 scopes with `SCOPE_` by default. `YawlOAuth2Scopes.OPERATOR`
+is `"yawl:operator"`, but the authority in the `SecurityContext` is `"SCOPE_yawl:operator"`.
+Use `"SCOPE_" + YawlOAuth2Scopes.OPERATOR` (or `hasAuthority("SCOPE_yawl:operator")`)
+in your security configuration. Do not use `hasRole()` — that adds a `ROLE_` prefix which
+does not match OAuth2 scopes.
 
-**Import via `importOrgData` silently ignores entries**
-The resource service rejects duplicate IDs without error. Export the current model first
-with `action=exportOrgData` and merge rather than overwriting.
-
-**Participant appears in role but receives no worklist items**
-Check if a `CapabilityFilter` or `PositionFilter` in the spec is excluding the
-participant. Remove filters temporarily to confirm the base routing works, then re-add
-filters one at a time.
+**"Invalid session" from Interface B despite valid JWT**
+The YAWL engine session handle (used in Interface B calls) is separate from the JWT.
+Authenticate to the engine with `action=connect` to obtain a session handle, then include
+both the JWT header and the session handle parameter in subsequent calls if your deployment
+requires both layers of authentication.
