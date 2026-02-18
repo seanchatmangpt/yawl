@@ -1,278 +1,247 @@
-# How to Implement the Worklet Service
+# How to Implement Dynamic Task Routing (Worklet Service Alternative)
 
-## Prerequisites
+The YAWL v4 Worklet Service is not available in YAWL v6. This guide shows the actual
+v6 mechanism for achieving the same result: adding a custom MCP tool to `YawlMcpServer`
+that implements conditional workflow routing logic.
 
-- YAWL engine (stateful `YEngine`) deployed and running
-- Worklet service WAR deployed at `http://localhost:8080/workletService`
-- A "parent" specification that has one or more atomic tasks you want to replace
-  dynamically with sub-workflows (worklets)
-- One or more "worklet" specifications — regular YAWL specifications that implement the
-  substituted behaviour
+## What the Worklet Service Used to Do
 
-## Background
+In YAWL v4, the Worklet Service evaluated Ripple Down Rule (RDR) trees to decide which
+sub-specification to launch when a task fired. The v4 pattern was:
 
-The Worklet Service implements Ripple Down Rule (RDR) based exception handling and
-dynamic task substitution for the stateful YAWL engine. When a task fires, the Worklet
-Service evaluates an RDR rule tree against the current work item data. If a rule
-matches, the Worklet Service:
+1. A placeholder task fires in the main case.
+2. The Worklet Service evaluates a rule tree against live case data.
+3. The Worklet Service launches the matching sub-specification as a new case.
+4. When the sub-case completes, the Worklet Service checks in the original work item.
 
-1. Removes the original work item from the worklist.
-2. Launches a worklet case (a separate YAWL specification) in its place.
-3. When the worklet case completes, maps its output data back to the parent case and
-   resumes execution from the original task's completion point.
+## The v6 Approach: A Custom MCP Tool
 
-The worklet directory at `build/workletService/samples/` provides working examples:
-`OrganiseConcert` (parent) with worklets `CancelShow`, `ChangeToLargerVenue`, etc.
+In YAWL v6, this logic lives in a custom MCP tool. An AI agent calls the tool with case
+data; the tool applies its routing rules and interacts with the engine directly via the
+existing 15 MCP tools (`yawl_launch_case`, `yawl_checkout_work_item`, etc.).
 
-## Steps
+Adding a custom tool requires two steps:
 
-### 1. Create Worklet Specifications
+1. Implement `YawlMcpTool` in the `yawl-integration` module.
+2. Register the tool with `YawlMcpToolRegistry`.
 
-A worklet is a standard YAWL specification. The only requirement is that its input/output
-variable names match what the parent specification passes in and expects back. Use YAWL
-Editor or write the XML directly:
+## Step 1: Implement the Routing Tool
 
-```xml
-<!-- CancelOrder.yawl — worklet for order cancellation path -->
-<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema" version="4.0">
-  <specification uri="CancelOrder">
-    <name>Cancel Order</name>
-    <metaData>
-      <version>1.0</version>
-      <persistent>false</persistent>
-    </metaData>
-    <decomposition id="CancelOrder" isRootNet="true" xsi:type="NetFactsType">
-      <!-- net variables must match parent task variable names -->
-      <localVariable>
-        <name>orderID</name>
-        <type>string</type>
-        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
-      </localVariable>
-      <!-- ... tasks, conditions, flows ... -->
-    </decomposition>
-  </specification>
-</specificationSet>
+The relevant source directory is:
+
+```
+src/org/yawlfoundation/yawl/integration/mcp/spring/tools/
 ```
 
-Place the worklet `.yawl` files in the worklet service's repository directory. The
-default location is the `worklets/` subdirectory of the Worklet Service deployment
-(configured in `workletService/web.xml` as the `WorkletDirectory` context param).
+The existing `LaunchCaseTool` in that directory is a working example to follow. Create a
+new file `ConditionalRoutingTool.java` in the same package:
 
-### 2. Upload Worklet Specifications to the Engine
+```java
+package org.yawlfoundation.yawl.integration.mcp.spring.tools;
 
-Before the Worklet Service can launch a worklet, the specification must be loaded into
-the engine:
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-```bash
-# Authenticate with the engine
-SESSION=$(curl -s "http://localhost:8080/yawl/ib?action=connect&userid=admin&password=YAWL")
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpSessionManager;
+import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpTool;
 
-# Upload worklet spec to the engine
-curl -s -X POST "http://localhost:8080/yawl/ib" \
-  -d "action=uploadSpecification" \
-  -d "specXML=$(cat CancelOrder.yawl)" \
-  -d "sessionHandle=$SESSION"
+import io.modelcontextprotocol.spec.McpSchema;
+
+/**
+ * MCP tool that routes a work item to one of several sub-specifications based
+ * on case data, providing the same conditional routing that the YAWL v4 Worklet
+ * Service delivered via RDR trees.
+ *
+ * The caller (an AI agent) supplies the current case data and a routing key.
+ * The tool selects the appropriate sub-specification, launches it as a new case,
+ * and returns the sub-case ID. The agent can then monitor the sub-case via
+ * yawl_get_case_status and check in the original work item when it completes.
+ */
+public class ConditionalRoutingTool implements YawlMcpTool {
+
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final YawlMcpSessionManager sessionManager;
+
+    /** Maps routing keys to specification identifiers. */
+    private static final Map<String, String> ROUTE_MAP = Map.of(
+        "high-value",    "HighValueApproval",
+        "standard",      "StandardProcess",
+        "expedited",     "ExpeditedProcess"
+    );
+
+    public ConditionalRoutingTool(InterfaceB_EnvironmentBasedClient interfaceBClient,
+                                  YawlMcpSessionManager sessionManager) {
+        if (interfaceBClient == null) {
+            throw new IllegalArgumentException("interfaceBClient is required");
+        }
+        if (sessionManager == null) {
+            throw new IllegalArgumentException("sessionManager is required");
+        }
+        this.interfaceBClient = interfaceBClient;
+        this.sessionManager = sessionManager;
+    }
+
+    @Override
+    public String getName() {
+        return "yawl_route_work_item";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Select and launch the appropriate sub-workflow for a work item based on " +
+               "a routing key derived from case data. Returns the sub-case ID. " +
+               "Valid routing keys: high-value, standard, expedited.";
+    }
+
+    @Override
+    public McpSchema.JsonSchema getInputSchema() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("routingKey", Map.of(
+            "type", "string",
+            "description", "Routing key derived from case data (high-value, standard, expedited)"
+        ));
+        props.put("caseData", Map.of(
+            "type", "string",
+            "description", "XML input data to pass to the launched sub-specification"
+        ));
+
+        return new McpSchema.JsonSchema(
+            "object", props, List.of("routingKey"), false, null, null);
+    }
+
+    @Override
+    public McpSchema.CallToolResult execute(Map<String, Object> params) {
+        Object keyObj = params.get("routingKey");
+        if (keyObj == null) {
+            return new McpSchema.CallToolResult("Required parameter missing: routingKey", true);
+        }
+        String routingKey = keyObj.toString();
+
+        String specIdentifier = ROUTE_MAP.get(routingKey);
+        if (specIdentifier == null) {
+            return new McpSchema.CallToolResult(
+                "Unknown routing key '" + routingKey + "'. " +
+                "Valid keys: " + String.join(", ", ROUTE_MAP.keySet()), true);
+        }
+
+        Object dataObj = params.get("caseData");
+        String caseData = dataObj != null ? dataObj.toString() : null;
+
+        try {
+            String sessionHandle = sessionManager.getSessionHandle();
+            YSpecificationID specId = new YSpecificationID(specIdentifier, "0.1", specIdentifier);
+            String subCaseId = interfaceBClient.launchCase(specId, caseData, null, sessionHandle);
+
+            if (subCaseId == null || subCaseId.contains("<failure>")) {
+                return new McpSchema.CallToolResult(
+                    "Failed to launch sub-case for routing key '" + routingKey +
+                    "' (spec: " + specIdentifier + "): " + subCaseId, true);
+            }
+
+            return new McpSchema.CallToolResult(
+                "Routed to '" + specIdentifier + "'. Sub-case ID: " + subCaseId +
+                "\nMonitor progress with yawl_get_case_status, caseId=" + subCaseId, false);
+
+        } catch (IllegalStateException e) {
+            return new McpSchema.CallToolResult("YAWL connection error: " + e.getMessage(), true);
+        } catch (Exception e) {
+            return new McpSchema.CallToolResult("Routing error: " + e.getMessage(), true);
+        }
+    }
+
+    @Override
+    public int getPriority() {
+        return 200;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}
 ```
 
-Repeat for each worklet specification. The engine returns the specification identifier
-(`uri`) to use in the RDR rule tree.
+## Step 2: Register the Tool with the Registry
 
-### 3. Define the RDR Rule Tree
+The `YawlMcpToolRegistry` (`src/org/yawlfoundation/yawl/integration/mcp/spring/YawlMcpToolRegistry.java`)
+manages all MCP tools. Register the new tool by passing it to the registry's
+`registerCustomTool` method. In a Spring application this is done in a `@Configuration`
+class:
 
-The Worklet Service uses an RDR (Ripple Down Rule) rule tree to decide which worklet to
-substitute for a given task at runtime. The rule tree is stored as XML and evaluated
-against the work item's data element.
+```java
+@Configuration
+public class CustomToolConfiguration {
 
-Each rule node has:
-- A condition (XPath expression evaluated against the work item data)
-- A conclusion (worklet URI to launch if the condition is true)
-- Optional child `exception` and `else` nodes for refinement
+    @Bean
+    public ConditionalRoutingTool conditionalRoutingTool(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            YawlMcpSessionManager sessionManager) {
+        return new ConditionalRoutingTool(interfaceBClient, sessionManager);
+    }
 
-```xml
-<!-- rules/ProcessOrder.xrs — RDR rule set for task ProcessOrder in spec SalesProcess -->
-<ruleSet taskID="ProcessOrder" specID="SalesProcess" specVersion="1.0">
-
-  <rdrNode id="1" type="ItemSelection">
-    <!-- Root node — always evaluated first -->
-    <condition>true()</condition>
-    <conclusion>
-      <!-- Default worklet when no rule matches -->
-      <worklet>StandardProcess</worklet>
-    </conclusion>
-    <exception>
-      <!-- More specific rule: if order value > 10000, use the approval worklet -->
-      <rdrNode id="2" type="ItemSelection">
-        <condition>
-          //orderValue &gt; 10000
-        </condition>
-        <conclusion>
-          <worklet>HighValueApproval</worklet>
-        </conclusion>
-        <exception>
-          <!-- Even more specific: high value + international = senior approval -->
-          <rdrNode id="3" type="ItemSelection">
-            <condition>
-              //orderValue &gt; 10000 and //destinationCountry != 'AU'
-            </condition>
-            <conclusion>
-              <worklet>SeniorApprovalInternational</worklet>
-            </conclusion>
-          </rdrNode>
-        </exception>
-      </rdrNode>
-    </exception>
-    <else>
-      <!-- Low value orders: use quick-approval worklet -->
-      <rdrNode id="4" type="ItemSelection">
-        <condition>//orderValue &lt; 500</condition>
-        <conclusion>
-          <worklet>QuickApproval</worklet>
-        </conclusion>
-      </rdrNode>
-    </else>
-  </rdrNode>
-
-</ruleSet>
+    @Bean
+    public YawlMcpToolRegistry toolRegistry(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            InterfaceA_EnvironmentBasedClient interfaceAClient,
+            YawlMcpSessionManager sessionManager,
+            ZaiFunctionService zaiFunctionService,
+            ConditionalRoutingTool conditionalRoutingTool) {
+        YawlMcpToolRegistry registry = new YawlMcpToolRegistry(
+            interfaceBClient, interfaceAClient, sessionManager, zaiFunctionService);
+        registry.registerCustomTool(conditionalRoutingTool);
+        return registry;
+    }
+}
 ```
 
-Rule file naming convention: `<specID>.xrs` placed in the `rules/` subdirectory of the
-Worklet Service deployment.
+Without Spring, pass the tool directly to the registry's `registerCustomTool` method
+before calling `getAllToolSpecs()` to build the MCP server's tool list.
 
-### 4. Register the Worklet Service with the Engine
+## How an AI Agent Uses This Tool
 
-The Worklet Service connects to the engine via Interface B (for work item events) and
-Interface X (for exception announcements). Configure the connection in
-`workletService/web.xml`:
+An agent connected to `YawlMcpServer` via the MCP protocol calls the tool as it would
+call any other MCP tool:
 
-```xml
-<context-param>
-    <param-name>InterfaceBBackend</param-name>
-    <param-value>http://localhost:8080/yawl/ib</param-value>
-</context-param>
-<context-param>
-    <param-name>EngineLogonName</param-name>
-    <param-value>workletService</param-value>
-</context-param>
-<context-param>
-    <param-name>EngineLogonPassword</param-name>
-    <param-value>worklet</param-value>
-</context-param>
-<context-param>
-    <param-name>WorkletServiceURL</param-name>
-    <param-value>http://localhost:8080/workletService/ixe</param-value>
-</context-param>
+```json
+{
+  "tool": "yawl_route_work_item",
+  "arguments": {
+    "routingKey": "high-value",
+    "caseData": "<data><orderValue>15000</orderValue></data>"
+  }
+}
 ```
 
-On startup, the Worklet Service registers itself as an exception observer with the
-engine by calling `setExceptionObserver`. The engine then forwards `checkWorkItemConstraints`
-announcements to the Worklet Service for each enabled work item.
+The tool returns the sub-case ID. The agent then polls `yawl_get_case_status` until
+the sub-case completes, then calls `yawl_checkin_work_item` on the original work item
+with the sub-case's output data, completing the routing cycle.
 
-### 5. Annotate Parent Tasks to Use Worklet Selection
+## Adapting the Routing Logic
 
-In the parent specification, tasks that should be subject to worklet selection must
-carry a custom service URI pointing to the Worklet Service:
+The `ROUTE_MAP` constant in `ConditionalRoutingTool` is intentionally simple. Replace it
+with any logic you need:
 
-```xml
-<task id="ProcessOrder">
-  <name>Process Order</name>
-  <!-- Route this task's work item to the Worklet Service for selection -->
-  <customForm>
-    <uri>http://localhost:8080/workletService/worklist</uri>
-  </customForm>
-  <!-- OR: set decomposition to the workletService service -->
-  <decomposesTo id="workletService"/>
-</task>
-```
+- A database lookup mapping case attribute values to specification identifiers
+- A call to an external rules engine or ML classifier
+- A chain of `if`/`else` conditions equivalent to an RDR tree
+- A call to the `yawl_natural_language` MCP tool to let the AI agent itself decide
 
-Alternatively, specify the worklet selection at the resourcing level by pointing the
-allocator at the Worklet Service. The exact mechanism depends on the YAWL version; in
-5.2, the interface X exception observer approach is the canonical path.
-
-### 6. Test a Rule Fires Correctly
-
-Launch a parent case with data that matches one of your rules:
-
-```bash
-# Launch the parent case with order data that should trigger HighValueApproval
-curl -s -X POST "http://localhost:8080/yawl/ib" \
-  -d "action=launchCase" \
-  -d "specID=SalesProcess" \
-  -d "specVersion=1.0" \
-  -d "caseParams=<SalesProcess><orderValue>15000</orderValue><destinationCountry>AU</destinationCountry></SalesProcess>" \
-  -d "sessionHandle=$SESSION"
-```
-
-Check the Worklet Service log for rule evaluation output:
-
-```bash
-tail -f logs/workletService.log | grep -E "rule|worklet|match"
-```
-
-Expected log entries (order matters):
-1. `checkWorkItemConstraints received for task ProcessOrder`
-2. `Evaluating rdrNode 1: condition=true() → matched`
-3. `Evaluating rdrNode 2: condition=//orderValue > 10000 → matched`
-4. `Launching worklet: HighValueApproval for case <parentCaseID>`
-
-### 7. Handle Worklet Completion and Data Mapping
-
-When the launched worklet case completes, the Worklet Service maps output data back to
-the parent task. Define the mapping in the rule node's `conclusion`:
-
-```xml
-<conclusion>
-  <worklet>HighValueApproval</worklet>
-  <outputMappings>
-    <!-- Map worklet output variable 'approvalDecision' to parent variable 'status' -->
-    <mapping>
-      <workletVar>approvalDecision</workletVar>
-      <parentVar>status</parentVar>
-    </mapping>
-  </outputMappings>
-</conclusion>
-```
-
-If no output mappings are defined, the Worklet Service uses name-matching: worklet
-output variables with the same name as parent variables are mapped automatically.
+The key point is that the routing decision is made in Java code (or agent reasoning)
+rather than in an RDR tree stored in the Worklet Service database.
 
 ## Verify
 
-1. Deploy both the parent spec and all worklet specs to the engine.
-2. Launch a parent case with data that matches a specific rule.
-3. In the Worklet Service admin UI (`http://localhost:8080/workletService`), navigate to
-   "Running Worklets." The launched worklet case should appear there.
-4. Complete the worklet case. Return to the parent case — the parent task should now be
-   complete and the case should have progressed to the next task.
-
 ```bash
-# Confirm the worklet case was launched
-curl -s "http://localhost:8080/yawl/ib?action=getActiveCaseIDs&sessionHandle=$SESSION"
-# Expect two case IDs: the parent and the worklet
+# Build the integration module
+mvn -T 1.5C clean compile -pl yawl-integration
 
-# After worklet completion, parent should progress
-curl -s "http://localhost:8080/yawl/ib?action=getWorkItemsForCase&caseID=<parentID>&sessionHandle=$SESSION"
+# Confirm the tool compiles and the tool name appears in the tool list
+mvn -T 1.5C clean test -pl yawl-integration -Dtest=YawlMcpServerTest
 ```
 
-## Troubleshooting
-
-**No worklet launched despite data matching the rule condition**
-Verify the rule file name matches `<specID>.xrs` exactly (case-sensitive) and is placed
-in the Worklet Service's `rules/` directory. Also confirm the task ID in `taskID=` matches
-the task's `id` attribute in the specification XML, not its name.
-
-**`YStateException: worklet specification not found`**
-The worklet URI in the rule's `<worklet>` element must exactly match the `uri` attribute
-in the worklet specification's `<specification>` tag. Upload the worklet to the engine
-first (step 2) and verify the URI with `getSpecificationList`.
-
-**Parent case stalls after worklet completes**
-The Worklet Service receives the worklet's `CASE_COMPLETED` event and then calls
-`completeWorkItem` on the parent's original work item. If the parent work item has been
-cancelled or timed out in the interim, this call fails silently. Enable DEBUG logging on
-`WorkletService` to see the completion attempt and its result.
-
-**RDR evaluation order unexpected**
-Rules are evaluated depth-first, `exception` branch before `else` branch. If two rules
-can match the same data, the deeper (more specific) rule in the `exception` chain takes
-priority. Restructure the tree so more specific conditions are always in the `exception`
-subtree of their parent.
+The `YawlMcpServerTest` (`test/org/yawlfoundation/yawl/integration/mcp/YawlMcpServerTest.java`)
+verifies that all registered tools are callable. Add a test case for the new tool
+following the same pattern as the existing tests.
