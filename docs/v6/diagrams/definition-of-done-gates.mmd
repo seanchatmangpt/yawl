@@ -1,0 +1,52 @@
+%%{ init: { 'theme': 'base' } }%%
+graph TD
+    classDef compile fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef test fill:#38a169,stroke:#2f855a,color:#fff
+    classDef guard fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef analysis fill:#d69e2e,stroke:#b7791f,color:#fff
+    classDef security fill:#805ad5,stroke:#6b46c1,color:#fff
+    classDef docs fill:#dd6b20,stroke:#c05621,color:#fff
+    classDef release fill:#2d3748,stroke:#1a202c,color:#fff
+    classDef enforcement fill:#718096,stroke:#4a5568,color:#fff
+
+    START["Work Unit Submitted"]
+
+    subgraph WriteTime["Write-Time Enforcement"]
+        G_GUARD["G_guard<br/>14 Anti-Pattern Checks<br/>hyper-validate.sh"]:::guard
+    end
+
+    subgraph PreCommit["Pre-Commit (Omega Workflow)"]
+        G_COMPILE["G_compile<br/>mvn -T 1.5C clean compile<br/>Target: < 90s"]:::compile
+        G_TEST["G_test<br/>mvn -T 1.5C clean test<br/>100% pass rate"]:::test
+    end
+
+    subgraph MergeGate["CI/CD Pipeline"]
+        G_ANALYSIS["G_analysis<br/>SpotBugs + PMD + Checkstyle<br/>JaCoCo >= 75%"]:::analysis
+        G_SECURITY["G_security<br/>SBOM + CVE Scan<br/>TLS 1.3 + RSA 3072"]:::security
+        G_DOCS["G_documentation<br/>package-info.java<br/>Javadoc matches behavior"]:::docs
+    end
+
+    G_RELEASE["G_release<br/>Integration Tests + Performance<br/>FMEA + Observatory"]:::release
+
+    DONE["DONE"]
+
+    START --> G_GUARD
+    G_GUARD -->|PASS| G_COMPILE
+    G_COMPILE -->|PASS| G_TEST
+    G_TEST -->|PASS| G_ANALYSIS
+    G_TEST -->|PASS| G_SECURITY
+    G_TEST -->|PASS| G_DOCS
+    G_ANALYSIS -->|PASS| G_RELEASE
+    G_SECURITY -->|PASS| G_RELEASE
+    G_DOCS -->|PASS| G_RELEASE
+    G_RELEASE -->|ALL PASS| DONE
+
+    G_GUARD -->|FAIL: exit 2| BLOCK1["BLOCKED<br/>Fix anti-pattern"]:::guard
+    G_COMPILE -->|FAIL| BLOCK2["BLOCKED<br/>Fix compilation"]:::guard
+    G_TEST -->|FAIL| BLOCK3["BLOCKED<br/>Fix tests"]:::guard
+
+    subgraph Legend["Enforcement Points"]
+        E1["PostToolUse Hook<br/>Immediate (< 1s)"]:::enforcement
+        E2["Pre-Commit Script<br/>Before git commit"]:::enforcement
+        E3["GitHub Actions<br/>On push/PR"]:::enforcement
+    end

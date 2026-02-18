@@ -9,6 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-security</artifactId>
@@ -18,21 +19,18 @@
     <description>Public Key Infrastructure (PKI) and digital signature module for YAWL</description>
 
     <dependencies>
-        <!-- Bouncycastle for cryptographic operations -->
+        <!-- Bouncycastle for cryptographic operations (version managed by parent) -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.77</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcmail-jdk18on</artifactId>
-            <version>1.77</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.77</version>
         </dependency>
 
         <!-- Apache Commons -->

@@ -1,10 +1,5 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
 import io.a2a.A2A;
 import io.a2a.client.Client;
 import io.a2a.client.MessageEvent;
@@ -12,6 +7,13 @@ import io.a2a.client.TaskEvent;
 import io.a2a.client.transport.rest.RestTransport;
 import io.a2a.client.transport.rest.RestTransportConfig;
 import io.a2a.spec.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Agent-to-Agent (A2A) Client for YAWL using the official A2A Java SDK.
@@ -26,6 +28,8 @@ import io.a2a.spec.*;
  * @version 5.2
  */
 public class YawlA2AClient implements AutoCloseable {
+
+    private static final Logger _logger = LogManager.getLogger(YawlA2AClient.class);
 
     private final String agentUrl;
     private AgentCard agentCard;
@@ -64,8 +68,7 @@ public class YawlA2AClient implements AutoCloseable {
             .build();
 
         connected = true;
-        System.out.println("Connected to A2A agent: " + agentCard.name()
-            + " v" + agentCard.version());
+        _logger.info("Connected to A2A agent: {} v{}", agentCard.name(), agentCard.version());
     }
 
     /**
@@ -234,9 +237,10 @@ public class YawlA2AClient implements AutoCloseable {
      * Usage: java YawlA2AClient &lt;agent-url&gt;
      */
     public static void main(String[] args) {
+        Logger mainLogger = LogManager.getLogger(YawlA2AClient.class);
         if (args.length < 1) {
-            System.err.println("Usage: java YawlA2AClient <agent-url>");
-            System.err.println("Example: java YawlA2AClient http://localhost:8081");
+            mainLogger.error("Usage: java YawlA2AClient <agent-url>");
+            mainLogger.error("Example: java YawlA2AClient http://localhost:8081");
             System.exit(1);
         }
 
@@ -247,22 +251,21 @@ public class YawlA2AClient implements AutoCloseable {
             client.connect();
 
             AgentCard card = client.getAgentCard();
-            System.out.println("Agent: " + card.name());
-            System.out.println("Description: " + card.description());
-            System.out.println("Version: " + card.version());
-            System.out.println("Provider: " + card.provider().organization());
+            mainLogger.info("Agent: {}", card.name());
+            mainLogger.info("Description: {}", card.description());
+            mainLogger.info("Version: {}", card.version());
+            mainLogger.info("Provider: {}", card.provider().organization());
 
-            System.out.println("\nSkills:");
+            mainLogger.info("Skills:");
             for (AgentSkill skill : client.getSkills()) {
-                System.out.println("  - " + skill.name() + ": " + skill.description());
+                mainLogger.info("  - {}: {}", skill.name(), skill.description());
             }
 
-            System.out.println("\nSending test message...");
+            mainLogger.info("Sending test message...");
             String response = client.sendMessage("List all loaded workflow specifications");
-            System.out.println("Response: " + response);
+            mainLogger.info("Response: {}", response);
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            mainLogger.error("Error connecting to A2A agent: {}", e.getMessage(), e);
         } finally {
             client.close();
         }

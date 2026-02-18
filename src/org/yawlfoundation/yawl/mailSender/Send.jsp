@@ -10,12 +10,13 @@
      org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException,
      org.apache.commons.fileupload.*,
      java.io.*,
+	 javax.xml.XMLConstants,
 	 javax.xml.parsers.DocumentBuilder,
 	 javax.xml.parsers.DocumentBuilderFactory,
 
 	 org.w3c.dom.Node,
 	 org.w3c.dom.NodeList"%>
-     
+
 
 
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
@@ -46,49 +47,56 @@
 </head>
 <body>
 <%
-try{ 
-            System.out.println("in send.jsp");
+try{
 			String Port = null;
 			String SMTP = null;
             String Login = null;
-            String password =null;
+            String password = null;
             String To = null;
             String Alias = null;
             String object = null;
             String content = null;
             String fileLocation = null;
-           	
-            
+
+
 			File file = new File(getServletContext().getRealPath("/files/"), "SMTP.xml");
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            // SOC2 CRITICAL: Disable XXE to prevent external entity injection via SMTP.xml
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+            try { dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, ""); }
+            catch (IllegalArgumentException e2) { /* not supported by this parser */ }
+            try { dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""); }
+            catch (IllegalArgumentException e2) { /* not supported by this parser */ }
             DocumentBuilder db = dbf.newDocumentBuilder();
             org.w3c.dom.Document doc = db.parse(file);
             doc.getDocumentElement().normalize();
-            
-			System.out.println("Root element " + doc.getDocumentElement().getNodeName());
+
             NodeList nodeLst = doc.getElementsByTagName("SMTP");
             for (int s = 0; s < nodeLst.getLength(); s++) {
 
                 Node fstNode = nodeLst.item(s);
-                
+
                 if (fstNode.getNodeType() == Node.ELEMENT_NODE) {
-              
+
                   org.w3c.dom.Element fstElmnt = (org.w3c.dom.Element) fstNode;
                   NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("SMTP_Address");
                   org.w3c.dom.Element fstNmElmnt = (org.w3c.dom.Element) fstNmElmntLst.item(0);
                   NodeList fstNm = fstNmElmnt.getChildNodes();
-                  System.out.println("SMTP_Address : "  + ((Node) fstNm.item(0)).getNodeValue());
 				  SMTP = ((Node) fstNm.item(0)).getNodeValue();
                   NodeList lstNmElmntLst = fstElmnt.getElementsByTagName("Port");
                   org.w3c.dom.Element lstNmElmnt = (org.w3c.dom.Element) lstNmElmntLst.item(0);
                   NodeList lstNm = lstNmElmnt.getChildNodes();
-                  System.out.println("Port : " + ((Node) lstNm.item(0)).getNodeValue());
-				  Port=((Node) lstNm.item(0)).getNodeValue();
+				  Port = ((Node) lstNm.item(0)).getNodeValue();
                 }
           }
-   
-            
-            
+
+
+
         	if (ServletFileUpload.isMultipartContent(request))
 			{
 			  // Parse the HTTP request...
@@ -115,10 +123,9 @@ try{
 				else
 				{
 				  /* The file item contains an uploaded file */
-		  		 if(fileItem.getFieldName().equals("fileLocation")) 
+		  		 if(fileItem.getFieldName().equals("fileLocation"))
 		  			 if((fileItem.getName() != null) && (fileItem.getName().length() > 0)) {
 		  				fileLocation = FilenameUtils.getName(fileItem.getName());
-				 		System.out.println(fileLocation);
 						String fileName = fileItem.getName();
 						File fullFile = new File(fileName);
 						File savedFile = new File(getServletContext().getRealPath("/files/"), fullFile.getName());
@@ -127,17 +134,18 @@ try{
 				}
 			  }
 			}
-           	         	        	
-           	
+
+
 		MailSender _MailController = (MailSender) application.getAttribute("controller");
 		_MailController.SendEmail( SMTP, Port, Login, password, To, Alias, object, content, fileLocation);
-			
-			String redirectURL = "http://localhost:8080/resourceService/" + 
+
+			String redirectURL = "http://localhost:8080/resourceService/" +
 			"faces/userWorkQueues.jsp";
 			response.sendRedirect(response.encodeURL(redirectURL));
 } catch  (Exception e){
-    e.printStackTrace();
+    // Log the exception server-side without leaking details to the client
+    application.log("Send.jsp: error sending email", e);
 }
-%>		
+%>
 </body>
 </html>

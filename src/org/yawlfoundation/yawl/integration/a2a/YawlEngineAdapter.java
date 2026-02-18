@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
@@ -22,6 +24,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
  */
 public class YawlEngineAdapter {
 
+    private static final Logger _logger = LogManager.getLogger(YawlEngineAdapter.class);
     private static final int RECONNECT_ATTEMPTS = 3;
     private static final long RECONNECT_DELAY_MS = 1000;
 
@@ -576,48 +579,38 @@ public class YawlEngineAdapter {
      * Main method for testing
      */
     public static void main(String[] args) {
-        System.out.println("YAWL Engine Adapter Test");
-        System.out.println("========================");
+        Logger mainLogger = LogManager.getLogger(YawlEngineAdapter.class);
+        mainLogger.info("YAWL Engine Adapter Test");
 
         YawlEngineAdapter adapter;
         try {
             adapter = YawlEngineAdapter.fromEnvironment();
         } catch (IllegalStateException e) {
-            System.err.println("Configuration error: " + e.getMessage());
-            System.err.println("\nSet the required environment variables:");
-            System.err.println("  export YAWL_ENGINE_URL=http://localhost:8080/yawl");
-            System.err.println("  export YAWL_USERNAME=admin");
-            System.err.println("  export YAWL_PASSWORD=<your-password>  # see SECURITY.md");
+            mainLogger.error("Configuration error: {}", e.getMessage());
+            mainLogger.error("Set required environment variables: YAWL_ENGINE_URL, YAWL_USERNAME, YAWL_PASSWORD");
             return;
         }
 
-        System.out.println("Engine URL: " + adapter.getEngineUrl());
-        System.out.println();
+        mainLogger.info("Engine URL: {}", adapter.getEngineUrl());
 
-        // Test connection
-        System.out.println("Testing connection...");
         try {
             adapter.connect();
-            System.out.println("Connection: SUCCESS");
+            mainLogger.info("Connection: SUCCESS");
 
-            // Get specifications
-            System.out.println("\nFetching specifications...");
             List<String> specs = adapter.getSpecifications();
-            System.out.println("Loaded specifications (" + specs.size() + "):");
+            mainLogger.info("Loaded specifications ({})", specs.size());
             for (String spec : specs) {
-                System.out.println("  - " + spec);
+                mainLogger.info("  - {}", spec);
             }
 
-            // Get work items
-            System.out.println("\nFetching work items...");
             List<WorkItemRecord> items = adapter.getWorkItems();
-            System.out.println("Active work items: " + items.size());
+            mainLogger.info("Active work items: {}", items.size());
 
             adapter.disconnect();
-            System.out.println("\nDisconnected.");
+            mainLogger.info("Disconnected.");
 
         } catch (A2AException e) {
-            System.err.println("Error: " + e.getFullReport());
+            mainLogger.error("A2A engine adapter error: {}", e.getFullReport());
         }
     }
 }

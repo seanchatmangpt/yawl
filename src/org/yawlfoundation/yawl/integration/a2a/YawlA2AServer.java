@@ -1,5 +1,33 @@
 package org.yawlfoundation.yawl.integration.a2a;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+import io.a2a.A2A;
+import io.a2a.server.ServerCallContext;
+import io.a2a.server.agentexecution.AgentExecutor;
+import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.events.InMemoryQueueManager;
+import io.a2a.server.events.MainEventBus;
+import io.a2a.server.events.MainEventBusProcessor;
+import io.a2a.server.requesthandlers.DefaultRequestHandler;
+import io.a2a.server.tasks.AgentEmitter;
+import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
+import io.a2a.server.tasks.InMemoryTaskStore;
+import io.a2a.spec.*;
+import io.a2a.transport.rest.handler.RestHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
+import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
+import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.util.SafeNumberParser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,36 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-
-import io.a2a.A2A;
-import io.a2a.server.ServerCallContext;
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
-import io.a2a.server.auth.User;
-import io.a2a.server.events.InMemoryQueueManager;
-import io.a2a.server.events.MainEventBus;
-import io.a2a.server.events.MainEventBusProcessor;
-import io.a2a.server.requesthandlers.DefaultRequestHandler;
-import io.a2a.server.tasks.AgentEmitter;
-import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
-import io.a2a.server.tasks.InMemoryTaskStore;
-import io.a2a.spec.*;
-
-import io.a2a.transport.rest.handler.RestHandler;
-
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
-import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
-import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
-import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 /**
  * Agent-to-Agent (A2A) Server for YAWL using the official A2A Java SDK.
@@ -79,6 +77,7 @@ import org.yawlfoundation.yawl.util.SafeNumberParser;
  */
 public class YawlA2AServer {
 
+    private static final Logger _logger = LogManager.getLogger(YawlA2AServer.class);
     private static final String SERVER_VERSION = "5.2.0";
 
     private final String yawlEngineUrl;
@@ -260,11 +259,9 @@ public class YawlA2AServer {
         });
 
         httpServer.start();
-        System.out.println("YAWL A2A Server v" + SERVER_VERSION
-            + " started on port " + port);
-        System.out.println("Agent card: http://localhost:" + port
-            + "/.well-known/agent.json");
-        System.out.println("Authentication: " + authProvider.scheme());
+        _logger.info("YAWL A2A Server v{} started on port {}", SERVER_VERSION, port);
+        _logger.info("Agent card: http://localhost:{}/.well-known/agent.json", port);
+        _logger.info("Authentication: {}", authProvider.scheme());
     }
 
     /**
@@ -280,7 +277,7 @@ public class YawlA2AServer {
             executorService = null;
         }
         disconnectFromEngine();
-        System.out.println("YAWL A2A Server stopped");
+        _logger.info("YAWL A2A Server stopped");
     }
 
     /**
@@ -683,9 +680,8 @@ public class YawlA2AServer {
             os.write(body);
         }
 
-        // Log the rejection server-side (not to the client)
-        System.err.println("A2A auth rejected [" + exchange.getRemoteAddress() + "]: "
-            + reason);
+        // Log the rejection server-side at WARN level (SOC2: security events must be logged)
+        _logger.warn("A2A auth rejected [{}]: {}", exchange.getRemoteAddress(), reason);
     }
 
     /**
@@ -732,9 +728,7 @@ public class YawlA2AServer {
             try {
                 interfaceBClient.disconnect(sessionHandle);
             } catch (IOException e) {
-                System.err.println(
-                    "Warning: failed to disconnect from YAWL engine: "
-                    + e.getMessage());
+                _logger.warn("Failed to disconnect from YAWL engine: {}", e.getMessage());
             }
             sessionHandle = null;
         }
@@ -789,10 +783,10 @@ public class YawlA2AServer {
         A2AAuthenticationProvider authProvider =
             CompositeAuthenticationProvider.production();
 
-        System.out.println("Starting YAWL A2A Server v" + SERVER_VERSION);
-        System.out.println("Engine URL: " + engineUrl);
-        System.out.println("A2A Port: " + port);
-        System.out.println("Auth schemes: " + authProvider.scheme());
+        _logger.info("Starting YAWL A2A Server v{}", SERVER_VERSION);
+        _logger.info("Engine URL: {}", engineUrl);
+        _logger.info("A2A Port: {}", port);
+        _logger.info("Auth schemes: {}", authProvider.scheme());
 
         try {
             YawlA2AServer server = new YawlA2AServer(
@@ -800,17 +794,17 @@ public class YawlA2AServer {
 
             Runtime.getRuntime().addShutdownHook(
                 Thread.ofVirtual().unstarted(() -> {
-                    System.out.println("Shutting down YAWL A2A Server...");
+                    _logger.info("Shutting down YAWL A2A Server...");
                     server.stop();
                 })
             );
 
             server.start();
 
-            System.out.println("Press Ctrl+C to stop");
+            _logger.info("Server running. Send SIGTERM or press Ctrl+C to stop.");
             Thread.sleep(Long.MAX_VALUE);
         } catch (IOException e) {
-            System.err.println("Failed to start A2A server: " + e.getMessage());
+            _logger.error("Failed to start A2A server: {}", e.getMessage(), e);
             System.exit(1);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

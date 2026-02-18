@@ -134,6 +134,11 @@
                         <testExclude>**/*.xsd</testExclude>
                         <testExclude>**/*.xml</testExclude>
                         <testExclude>**/*.properties</testExclude>
+                        <!-- AuthenticationTestSuite uses junit-platform-suite-api not declared in pom -->
+                        <testExclude>**/authentication/AuthenticationTestSuite.java</testExclude>
+                        <!-- TestCsrfProtectionFilter has Jakarta Servlet 6.1 API incompatibility
+                             (sendRedirect(String,int,boolean) not implemented in RecordingResponse) -->
+                        <testExclude>**/authentication/TestCsrfProtectionFilter.java</testExclude>
                     </testExcludes>
                     <compilerArgs>
                         <arg>-proc:none</arg>

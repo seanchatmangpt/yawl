@@ -59,7 +59,7 @@
 
     <context-param>
         <param-name>AllowGenericAdminID</param-name>
-        <param-value>true</param-value>
+        <param-value>false</param-value>
         <description>
             When set to 'true', allows services and applications to connect to the
             YAWL engine using the generic administrator account 'admin', password 'YAWL'.
@@ -189,6 +189,19 @@
         <!--</description>-->
     <!--</context-param>-->
 
+    <!-- Security Headers Filter (SOC2 HIGH): must be first filter to ensure all responses
+         carry mandatory security headers (HSTS, X-Content-Type-Options, X-Frame-Options,
+         Content-Security-Policy, X-XSS-Protection). -->
+    <filter>
+        <filter-name>SecurityHeadersFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.SecurityHeadersFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>SecurityHeadersFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!--CharsetFilter -->
 
      <filter>
@@ -205,10 +218,51 @@
        <url-pattern>/*</url-pattern>
      </filter-mapping>
 
-    <!-- CORS Filter for REST API -->
+    <!-- Rate Limit Filter (SOC2 HIGH): Enforces per-IP brute-force protection on
+         all Interface A and B endpoints (authentication, connect, checkConnection). -->
+    <filter>
+        <filter-name>RateLimitFilter</filter-name>
+        <filter-class>org.yawlfoundation.yawl.authentication.RateLimitFilter</filter-class>
+        <init-param>
+            <param-name>maxRequests</param-name>
+            <param-value>10</param-value>
+        </init-param>
+        <init-param>
+            <param-name>windowSeconds</param-name>
+            <param-value>60</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/ia/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/ib/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+
+    <!-- CORS Filter for REST API (SOC2 CRITICAL): wildcard origin prohibited;
+         configure allowedOrigins init-param with explicit trusted origin list. -->
     <filter>
         <filter-name>CorsFilter</filter-name>
         <filter-class>org.yawlfoundation.yawl.engine.interfce.rest.CorsFilter</filter-class>
+        <init-param>
+            <param-name>allowedOrigins</param-name>
+            <!-- SOC2: Set to your actual UI origins. No wildcard permitted.
+                 Example: https://yawl-ui.example.com,https://admin.example.com -->
+            <param-value></param-value>
+        </init-param>
+        <init-param>
+            <param-name>allowCredentials</param-name>
+            <param-value>false</param-value>
+        </init-param>
     </filter>
 
     <filter-mapping>

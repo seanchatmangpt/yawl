@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.authentication;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -25,7 +26,25 @@ public class CsrfTokenManager {
     
     private static final String CSRF_TOKEN_ATTR = "_csrf_token";
     private static final int TOKEN_LENGTH = 32;
-    private static final SecureRandom RANDOM = new SecureRandom();
+
+    /**
+     * SOC2 CRITICAL: Use SecureRandom.getInstanceStrong() for CSRF token generation.
+     * getInstanceStrong() returns a SecureRandom instance using the strongest algorithm
+     * configured for the platform (e.g. NativePRNGBlocking on Linux, Windows-PRNG on
+     * Windows). This guarantees proper OS-level entropy seeding, unlike new SecureRandom()
+     * which may use a weaker algorithm.
+     */
+    private static final SecureRandom RANDOM = createStrongRandom();
+
+    private static SecureRandom createStrongRandom() {
+        try {
+            return SecureRandom.getInstanceStrong();
+        } catch (NoSuchAlgorithmException e) {
+            // Guaranteed not to happen: JDK requires at least one strong algorithm
+            throw new IllegalStateException(
+                    "No strong SecureRandom algorithm available on this platform", e);
+        }
+    }
     
     /**
      * Generates a new CSRF token and stores it in the session.

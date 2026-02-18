@@ -109,9 +109,13 @@ public class InterfaceB_EnvironmentBasedServer extends HttpServlet {
             _controller.setRemoteAuthenticationDetails(
                     userName, password, proxyHost, proxyPort);
             
-            // if there are overridden engine logon & password, set them for the service
+            // if there are overridden engine logon & password, set them for the service.
+            // SOC2 CRITICAL: Environment variables take precedence over web.xml values to
+            // prevent plaintext credential storage in deployment descriptors.
             String logonName = context.getInitParameter("EngineLogonUserName");
-            String logonPassword = context.getInitParameter("EngineLogonPassword");
+            String logonPassword = resolveCredential(
+                    context.getInitParameter("EngineLogonPassword"),
+                    "YAWL_ENGINE_PASSWORD");
             if (logonName != null) _controller.setEngineLogonName(logonName);
             if (logonPassword != null) _controller.setEngineLogonPassword(logonPassword);
 
@@ -122,6 +126,31 @@ public class InterfaceB_EnvironmentBasedServer extends HttpServlet {
                     controllerClassName, e);
             throw new ServletException("Failed to initialize InterfaceB controller: " + controllerClassName, e);
         }
+    }
+
+
+    /**
+     * Resolves a credential value from environment variable (preferred) or web.xml fallback.
+     *
+     * SOC2 CRITICAL: Credentials must not be stored in plaintext in web.xml. The environment
+     * variable takes absolute precedence. The web.xml value is accepted only when the env var
+     * is absent (e.g. developer workstation without secrets infrastructure).
+     *
+     * @param webXmlValue  value read from the servlet context init parameter (may be null)
+     * @param envVarName   name of the environment variable to prefer
+     * @return the credential from the environment variable if present, otherwise webXmlValue
+     */
+    private String resolveCredential(String webXmlValue, String envVarName) {
+        String envValue = System.getenv(envVarName);
+        if (envValue != null && !envValue.isEmpty()) {
+            _logger.debug("Resolved credential '{}' from environment variable", envVarName);
+            return envValue;
+        }
+        if (webXmlValue != null && !webXmlValue.isEmpty()) {
+            _logger.warn("Credential '{}' is configured in web.xml; migrate to environment " +
+                    "variable '{}' for SOC2 compliance", "EngineLogonPassword", envVarName);
+        }
+        return webXmlValue;
     }
 
 
