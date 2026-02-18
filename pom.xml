@@ -211,6 +211,11 @@
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
         <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <jacoco.line.coverage>0.50</jacoco.line.coverage>
+        <jacoco.branch.coverage>0.40</jacoco.branch.coverage>
+        <maven.javadoc.version>3.10.1</maven.javadoc.version>
+        <spotless.version>2.44.4</spotless.version>
         <spotbugs.plugin.version>4.9.3.2</spotbugs.plugin.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <pmd.plugin.version>3.26.0</pmd.plugin.version>
@@ -1081,6 +1086,11 @@
                                 <banRelease>true</banRelease>
                                 <banSnapshots>true</banSnapshots>
                             </requirePluginVersions>
+                            <!-- Prevent SNAPSHOT dependencies from appearing in release builds -->
+                            <requireReleaseDeps>
+                                <onlyWhenRelease>true</onlyWhenRelease>
+                                <message>Release builds must not contain SNAPSHOT dependencies.</message>
+                            </requireReleaseDeps>
                         </rules>
                         <fail>true</fail>
                     </configuration>
@@ -1133,6 +1143,31 @@
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                        </execution>
+                        <execution>
+                            <id>jacoco-check</id>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                            <configuration>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.line.coverage}</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.branch.coverage}</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                                <haltOnFailure>false</haltOnFailure>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -1225,6 +1260,58 @@
                             <format>HTML</format>
                             <format>JSON</format>
                         </formats>
+                    </configuration>
+                </plugin>
+
+                <!-- ===== Javadoc Generation ===== -->
+                <!-- Usage: mvn package (auto-attaches -javadoc.jar)             -->
+                <!--        mvn javadoc:javadoc (standalone report)              -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc.version}</version>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <quiet>true</quiet>
+                        <show>package</show>
+                        <failOnError>false</failOnError>
+                        <additionalJOption>-Xdoclint:none</additionalJOption>
+                        <detectJavaApiLink>false</detectJavaApiLink>
+                        <source>21</source>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <phase>package</phase>
+                            <goals><goal>jar</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ===== Spotless Code Formatting ===== -->
+                <!-- Usage: mvn spotless:check  (verify formatting)             -->
+                <!--        mvn spotless:apply  (auto-format in place)          -->
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <java>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                            <indent>
+                                <spaces>true</spaces>
+                                <spacesPerTab>4</spacesPerTab>
+                            </indent>
+                        </java>
+                        <pom>
+                            <sortPom>
+                                <expandEmptyElements>false</expandEmptyElements>
+                                <keepBlankLines>true</keepBlankLines>
+                            </sortPom>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                        </pom>
                     </configuration>
                 </plugin>
 
@@ -1321,17 +1408,48 @@
         <!-- ================================================================ -->
         <!-- CI profile: adds coverage and static analysis                      -->
         <!-- Usage: mvn -P ci clean verify                                      -->
+        <!-- Auto-activates when the CI environment variable is set.            -->
         <!-- ================================================================ -->
         <profile>
             <id>ci</id>
+            <activation>
+                <property>
+                    <name>env.CI</name>
+                </property>
+            </activation>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
             </properties>
             <build>
                 <plugins>
+                    <!-- Enforcer: stricter convergence checks in CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <rules>
+                                <requireUpperBoundDeps/>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9,)</version>
+                                </requireMavenVersion>
+                                <banDuplicatePomDependencyVersions/>
+                                <requireReleaseDeps>
+                                    <onlyWhenRelease>true</onlyWhenRelease>
+                                </requireReleaseDeps>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </plugin>
+                    <!-- JaCoCo: fail the build when coverage thresholds are not met in CI -->
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <haltOnFailure>true</haltOnFailure>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>

@@ -1,0 +1,3 @@
+# Diataxis Documentation Framework
+
+Diataxis (https://diataxis.fr/) is a systematic framework for organising technical documentation around four distinct user needs: tutorials (learning by doing), how-to guides (accomplishing a specific task), reference (looking up accurate facts), and explanation (understanding concepts and decisions). Each quadrant serves a different purpose and a different reader state of mind — confusing them is the primary reason documentation frustrates users. In this project, every document belongs to exactly one quadrant, and the master index at `INDEX.md` maps all existing docs accordingly, making it straightforward to find what you need or to identify what is missing.

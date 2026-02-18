@@ -1,5 +1,13 @@
 # YAWL v6.0.0 Developer Contribution Guide
 
+## Quick Start for Developers
+
+New to YAWL? Start here: [**Developer Quickstart**](../.claude/DEVELOPER-QUICKSTART.md)
+
+- [Module Architecture](v6/latest/facts/modules.json)
+- [Quality Gates](v6/latest/facts/gates.json)
+- [Observatory Index](v6/latest/INDEX.md)
+
 ## Code of Conduct
 
 Be respectful, inclusive, and professional. Contribute because you want to improve YAWL for everyone.

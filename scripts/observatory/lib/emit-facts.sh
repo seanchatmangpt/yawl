@@ -739,6 +739,7 @@ emit_all_facts() {
     emit_tests
     emit_gates
     emit_maven_hazards
+    emit_coverage
     FACTS_ELAPSED=$(timer_elapsed_ms)
     log_ok "All facts emitted in ${FACTS_ELAPSED}ms"
 }
