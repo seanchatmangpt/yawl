@@ -43,6 +43,22 @@
         </contributor>
     </contributors>
 
+    <!-- ======================================================================
+         DISTRIBUTION MANAGEMENT
+         For deploying releases and snapshots to Maven Central via Sonatype OSSRH.
+         Usage: mvn deploy -P release
+         ====================================================================== -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <modules>
         <module>yawl-utilities</module>
         <module>yawl-elements</module>
@@ -189,8 +205,8 @@
         <!-- Testing                                                            -->
         <!-- ================================================================ -->
         <junit.version>4.13.2</junit.version>
-        <junit.jupiter.version>6.0.3</junit.jupiter.version>
-        <junit.platform.version>6.0.3</junit.platform.version>
+        <junit.jupiter.version>5.12.0</junit.jupiter.version>
+        <junit.platform.version>1.12.0</junit.platform.version>
         <hamcrest.version>3.0</hamcrest.version>
         <quartz.version>2.5.0</quartz.version>
         <xmlunit.version>1.6</xmlunit.version>
@@ -206,22 +222,28 @@
         <maven.war.plugin.version>3.4.0</maven.war.plugin.version>
         <maven.clean.plugin.version>3.4.1</maven.clean.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
-        <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
-        <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
+        <maven.install.plugin.version>3.1.5</maven.install.plugin.version>
+        <maven.deploy.plugin.version>3.1.5</maven.deploy.plugin.version>
         <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
-        <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
-        <jacoco.version>0.8.13</jacoco.version>
-        <jacoco.line.coverage>0.50</jacoco.line.coverage>
-        <jacoco.branch.coverage>0.40</jacoco.branch.coverage>
-        <maven.javadoc.version>3.10.1</maven.javadoc.version>
+        <jacoco.plugin.version>0.8.15</jacoco.plugin.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.line.coverage>0.80</jacoco.line.coverage>
+        <jacoco.branch.coverage>0.70</jacoco.branch.coverage>
+        <maven.javadoc.version>3.11.1</maven.javadoc.version>
         <spotless.version>2.44.4</spotless.version>
         <spotbugs.plugin.version>4.9.3.2</spotbugs.plugin.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <pmd.plugin.version>3.26.0</pmd.plugin.version>
         <sonar.plugin.version>5.1.0.4882</sonar.plugin.version>
         <owasp.dependency.check.version>12.2.0</owasp.dependency.check.version>
+        <cyclonedx.plugin.version>2.9.1</cyclonedx.plugin.version>
+        <flyway.version>10.22.1</flyway.version>
+        <nexus.staging.plugin.version>1.7.0</nexus.staging.plugin.version>
+        <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
+        <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+        <surefire.threadCount>2</surefire.threadCount>
     </properties>
 
     <repositories>
@@ -949,6 +971,12 @@
             <!-- JUnit Platform -->
             <dependency>
                 <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-api</artifactId>
                 <version>${junit.platform.version}</version>
                 <scope>test</scope>
@@ -1009,6 +1037,41 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Testcontainers BOM for container-based integration tests -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Testcontainers explicit versions (BOM import order issue workaround) -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mysql</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1043,8 +1106,23 @@
          BUILD
          ====================================================================== -->
     <build>
+        <!-- Default goal when running `mvn` without arguments -->
+        <defaultGoal>clean compile</defaultGoal>
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
+
+        <!-- Test resources: include schema files in test classpath -->
+        <testResources>
+            <testResource>
+                <directory>test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>schema</directory>
+                <includes>
+                    <include>**/*.xsd</include>
+                </includes>
+            </testResource>
+        </testResources>
 
         <!-- ================================================================ -->
         <!-- PLUGIN MANAGEMENT                                                  -->
@@ -1054,16 +1132,21 @@
         <pluginManagement>
             <plugins>
 
-                <!-- Compile plugin - targets Java 21, enables preview features -->
+                <!-- Compile plugin - targets Java 25, enables preview features and incremental compilation -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.compiler.plugin.version}</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
+                        <useIncrementalCompilation>true</useIncrementalCompilation>
+                        <fork>true</fork>
+                        <meminitial>256m</meminitial>
+                        <maxmem>1024m</maxmem>
                         <compilerArgs>
                             <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
+                            <arg>-parameters</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1084,8 +1167,11 @@
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
-                        <parallel>classes</parallel>
-                        <threadCount>4</threadCount>
+                        <parallel>classesAndMethods</parallel>
+                        <threadCount>${surefire.threadCount}</threadCount>
+                        <perCoreThreadCount>true</perCoreThreadCount>
+                        <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                        <skipAfterFailureCount>5</skipAfterFailureCount>
                     </configuration>
                 </plugin>
 
@@ -1181,7 +1267,7 @@
                             </requireMavenVersion>
                             <requireJavaVersion>
                                 <version>[21,)</version>
-                                <message>YAWL requires Java 21 or later.</message>
+                                <message>YAWL requires Java 25 or later.</message>
                             </requireJavaVersion>
                             <!-- No duplicate dependency declarations in the same POM -->
                             <banDuplicatePomDependencyVersions/>
@@ -1197,6 +1283,14 @@
                                 <onlyWhenRelease>true</onlyWhenRelease>
                                 <message>Release builds must not contain SNAPSHOT dependencies.</message>
                             </requireReleaseDeps>
+                            <!-- Ban dependency version ranges - explicit versions required -->
+                            <banDependencyVersionRanges>
+                                <message>Version ranges are not allowed - use explicit versions.</message>
+                            </banDependencyVersionRanges>
+                            <!-- Ensure dependency versions converge to a single version -->
+                            <dependencyConvergence/>
+                            <!-- Ban circular dependencies -->
+                            <banCircularDependencies/>
                         </rules>
                         <fail>true</fail>
                     </configuration>
@@ -1340,7 +1434,7 @@
                         <printFailingErrors>true</printFailingErrors>
                         <includeTests>false</includeTests>
                         <excludeFromFailureFile>${maven.multiModuleProjectDirectory}/pmd-exclusions.properties</excludeFromFailureFile>
-                        <targetJdk>21</targetJdk>
+                        <targetJdk>25</targetJdk>
                     </configuration>
                 </plugin>
 
@@ -1383,7 +1477,7 @@
                         <failOnError>false</failOnError>
                         <additionalJOption>-Xdoclint:none</additionalJOption>
                         <detectJavaApiLink>false</detectJavaApiLink>
-                        <source>21</source>
+                        <source>25</source>
                     </configuration>
                     <executions>
                         <execution>
@@ -1403,12 +1497,20 @@
                     <version>${spotless.version}</version>
                     <configuration>
                         <java>
+                            <!-- Google Java Format for consistent code style -->
+                            <googleJavaFormat>
+                                <version>1.25.2</version>
+                                <style>GOOGLE</style>
+                                <reflowLongStrings>true</reflowLongStrings>
+                                <formatJavadoc>false</formatJavadoc>
+                            </googleJavaFormat>
+                            <!-- Import ordering: java, jakarta, javax, org, com, then static -->
+                            <importOrder>
+                                <order>java,jakarta,javax,org,com,</order>
+                            </importOrder>
+                            <removeUnusedImports/>
                             <trimTrailingWhitespace/>
                             <endWithNewline/>
-                            <indent>
-                                <spaces>true</spaces>
-                                <spacesPerTab>4</spacesPerTab>
-                            </indent>
                         </java>
                         <pom>
                             <sortPom>
@@ -1418,6 +1520,77 @@
                             <trimTrailingWhitespace/>
                             <endWithNewline/>
                         </pom>
+                    </configuration>
+                </plugin>
+
+                <!-- ===== Nexus Staging Plugin ===== -->
+                <!-- Automates release staging to Maven Central via Sonatype OSSRH -->
+                <!-- Usage: mvn deploy -P release                                    -->
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>${nexus.staging.plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    </configuration>
+                </plugin>
+
+                <!-- ===== Maven Source Plugin ===== -->
+                <!-- Attaches source JAR for Maven Central deployment requirements -->
+                <!-- Usage: Automatically runs during release profile              -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven.source.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ===== Maven GPG Plugin ===== -->
+                <!-- Signs artifacts for Maven Central deployment requirements -->
+                <!-- Requires GPG key configured in settings.xml               -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven.gpg.plugin.version}</version>
+                    <configuration>
+                        <gpgArguments>
+                            <arg>--pinentry-mode</arg>
+                            <arg>loopback</arg>
+                        </gpgArguments>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ===== CycloneDX SBOM Plugin ===== -->
+                <!-- Generates Software Bill of Materials for supply chain security -->
+                <!-- Usage: mvn cyclonedx:makeBom                                    -->
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${cyclonedx.plugin.version}</version>
+                    <configuration>
+                        <schemaVersion>1.5</schemaVersion>
+                        <includeBomSerialNumber>true</includeBomSerialNumber>
+                        <outputFormat>all</outputFormat>
+                        <outputName>bom</outputName>
                     </configuration>
                 </plugin>
 
@@ -1464,10 +1637,10 @@
     <profiles>
 
         <!-- ================================================================ -->
-        <!-- Default profile: Java 21 LTS (current production target)          -->
+        <!-- Default profile: Java 25 LTS (current production target)          -->
         <!-- ================================================================ -->
         <profile>
-            <id>java21</id>
+            <id>java25</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -1536,7 +1709,7 @@
                             <rules>
                                 <requireUpperBoundDeps/>
                                 <requireJavaVersion>
-                                    <version>[21,)</version>
+                                    <version>[25,)</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
                                     <version>[3.9,)</version>
@@ -1794,7 +1967,7 @@
                 <!-- Source configuration -->
                 <sonar.sources>src</sonar.sources>
                 <sonar.tests>test</sonar.tests>
-                <sonar.java.source>21</sonar.java.source>
+                <sonar.java.source>25</sonar.java.source>
                 <!-- Coverage report paths (JaCoCo XML) -->
                 <sonar.coverage.jacoco.xmlReportPaths>
                     ${project.reporting.outputDirectory}/jacoco/jacoco.xml
@@ -1871,6 +2044,14 @@
             <id>online</id>
             <dependencyManagement>
                 <dependencies>
+                    <!-- JUnit BOM: manage JUnit versions (must come before Spring Boot to take precedence) -->
+                    <dependency>
+                        <groupId>org.junit</groupId>
+                        <artifactId>junit-bom</artifactId>
+                        <version>${junit.jupiter.version}</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
                     <!-- Spring Boot BOM: manages spring-*, logback, and many commons -->
                     <dependency>
                         <groupId>org.springframework.boot</groupId>
@@ -1921,6 +2102,152 @@
                     </dependency>
                 </dependencies>
             </dependencyManagement>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Fast profile: excludes slow integration tests for CI             -->
+        <!-- This profile is active by default for quick feedback loops.      -->
+        <!-- Usage: mvn clean test                   (fast - default)         -->
+        <!--        mvn clean test -P docker         (full integration)       -->
+        <!-- Excluded groups: integration, docker, containers                 -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>fast</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <test.docker.enabled>false</test.docker.enabled>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>integration,docker,containers</excludedGroups>
+                            <systemPropertyVariables>
+                                <test.docker.enabled>false</test.docker.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Docker profile: includes all integration and container tests     -->
+        <!-- Requires Docker daemon running for testcontainers.               -->
+        <!-- Usage: mvn clean test -P docker                                   -->
+        <!-- Included groups: integration, docker (excludes slow containers)   -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>docker</id>
+            <properties>
+                <test.docker.enabled>true</test.docker.enabled>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- TestContainers BOM: manages testcontainers and DB container modules -->
+                    <dependency>
+                        <groupId>org.testcontainers</groupId>
+                        <artifactId>testcontainers-bom</artifactId>
+                        <version>${testcontainers.version}</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+            <dependencies>
+                <!-- Testcontainers core for Docker-based integration tests -->
+                <dependency>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>testcontainers</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <!-- PostgreSQL testcontainer module for database integration tests -->
+                <dependency>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <!-- MySQL testcontainer module for database integration tests -->
+                <dependency>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>mysql</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>integration,docker</groups>
+                            <excludedGroups>containers,slow</excludedGroups>
+                            <systemPropertyVariables>
+                                <test.docker.enabled>true</test.docker.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Release profile: deploys to Maven Central via Sonatype OSSRH     -->
+        <!-- Signs artifacts with GPG and stages to Nexus repository.         -->
+        <!-- Usage: mvn clean deploy -P release                                -->
+        <!--                                                                  -->
+        <!-- Required configuration in ~/.m2/settings.xml:                    -->
+        <!--   <server>                                                       -->
+        <!--     <id>ossrh</id>                                               -->
+        <!--     <username>YOUR_SONATYPE_USERNAME</username>                  -->
+        <!--     <password>YOUR_SONATYPE_PASSWORD</password>                  -->
+        <!--   </server>                                                      -->
+        <!--   <profile>                                                      -->
+        <!--     <id>gpg</id>                                                 -->
+        <!--     <properties>                                                 -->
+        <!--       <gpg.keyname>YOUR_GPG_KEY_ID</gpg.keyname>                 -->
+        <!--     </properties>                                                -->
+        <!--   </profile>                                                     -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <!-- GPG signing for Maven Central requirements -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Attach source JAR -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                    <!-- Attach javadoc JAR -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                    <!-- Nexus staging for automated release to Maven Central -->
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
     </profiles>

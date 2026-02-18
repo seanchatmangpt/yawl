@@ -87,7 +87,9 @@ public class YHttpServlet extends HttpServlet {
         try {
             return PasswordEncryptor.encrypt(s);
         } catch (NoSuchAlgorithmException nsae) {
-            // nothing to do - call will return 'incorrect password'
+            _log.warn("Password encryption unavailable (algorithm not found), returning plaintext. " +
+                      "This may indicate a JCE configuration issue. Authentication will fail. Error: {}",
+                      nsae.getMessage());
             return s;
         }
     }
