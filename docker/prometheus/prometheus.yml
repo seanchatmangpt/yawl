@@ -1,0 +1,250 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Prometheus Configuration
+# =============================================================================
+# Production-ready Prometheus scrape configuration for YAWL workflow engine.
+# Includes: YAWL engine metrics, JVM metrics, OpenTelemetry exporters,
+# database monitoring, and AlertManager integration.
+#
+# Usage:
+#   prometheus --config.file=/etc/prometheus/prometheus.yml
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'yawl-production'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+      scheme: http
+      timeout: 10s
+      api_version: v2
+
+# Load alert rules
+rule_files:
+  - '/etc/prometheus/alert_rules.yml'
+  - '/etc/prometheus/yawl_alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ==========================================================================
+  # Prometheus self-monitoring
+  # ==========================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+    scheme: http
+
+  # ==========================================================================
+  # YAWL Engine - Primary Application Metrics
+  # ==========================================================================
+  - job_name: 'yawl-engine'
+    scrape_interval: 10s
+    scrape_timeout: 10s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 'yawl-engine:8080'
+        labels:
+          application: 'yawl-engine'
+          component: 'workflow-engine'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(:\d+)?'
+        replacement: '${1}'
+
+  # ==========================================================================
+  # YAWL Engine - OpenTelemetry Prometheus Exporter (Port 9464)
+  # ==========================================================================
+  - job_name: 'yawl-otel-metrics'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - 'yawl-engine:9464'
+        labels:
+          application: 'yawl-engine'
+          exporter: 'opentelemetry'
+    metric_relabel_configs:
+      # Rename OTEL metric names to match YAWL conventions
+      - source_labels: [__name__]
+        regex: 'otel_metrics_(.*)'
+        target_label: __name__
+        replacement: 'yawl_${1}'
+
+  # ==========================================================================
+  # YAWL Resource Service
+  # ==========================================================================
+  - job_name: 'yawl-resource-service'
+    scrape_interval: 15s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 'yawl-resource:8081'
+        labels:
+          application: 'yawl-resource-service'
+          component: 'resource-management'
+
+  # ==========================================================================
+  # YAWL Worklet Service
+  # ==========================================================================
+  - job_name: 'yawl-worklet'
+    scrape_interval: 30s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 'yawl-worklet:8082'
+        labels:
+          application: 'yawl-worklet'
+          component: 'exception-handling'
+
+  # ==========================================================================
+  # PostgreSQL Exporter (if using postgres_exporter sidecar)
+  # ==========================================================================
+  - job_name: 'postgres'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'postgres-exporter:9187'
+        labels:
+          database: 'yawl'
+          type: 'postgresql'
+
+  # ==========================================================================
+  # MySQL Exporter (if using mysql_exporter sidecar)
+  # ==========================================================================
+  - job_name: 'mysql'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'mysql-exporter:9104'
+        labels:
+          database: 'yawl'
+          type: 'mysql'
+    # Only scrape if MySQL is configured
+    # Comment out this job if using PostgreSQL
+
+  # ==========================================================================
+  # H2 Database (development mode - embedded metrics)
+  # ==========================================================================
+  - job_name: 'h2-console'
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - 'yawl-engine:8082'
+        labels:
+          database: 'h2'
+          environment: 'development'
+    # Only for development environments
+
+  # ==========================================================================
+  # JVM Metrics via JMX Exporter (if enabled)
+  # ==========================================================================
+  - job_name: 'yawl-jmx'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'yawl-engine:9010'
+        labels:
+          application: 'yawl-engine'
+          component: 'jvm'
+    metric_relabel_configs:
+      # Filter to relevant JVM metrics
+      - source_labels: [__name__]
+        regex: 'jvm_(memory|threads|gc|classes).*'
+        action: keep
+
+  # ==========================================================================
+  # Node Exporter - Host Metrics
+  # ==========================================================================
+  - job_name: 'node'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'node-exporter:9100'
+        labels:
+          component: 'host'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(:\d+)?'
+        replacement: '${1}'
+
+  # ==========================================================================
+  # cAdvisor - Container Metrics
+  # ==========================================================================
+  - job_name: 'cadvisor'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'cadvisor:8080'
+        labels:
+          component: 'containers'
+
+  # ==========================================================================
+  # OpenTelemetry Collector (if using OTLP collector)
+  # ==========================================================================
+  - job_name: 'otel-collector'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'otel-collector:8888'
+        labels:
+          component: 'telemetry-collector'
+    # Collector's own Prometheus metrics endpoint
+
+  # ==========================================================================
+  # Blackbox Exporter - Endpoint Probes
+  # ==========================================================================
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - 'http://yawl-engine:8080/actuator/health'
+          - 'http://yawl-engine:8080/actuator/health/liveness'
+          - 'http://yawl-engine:8080/actuator/health/readiness'
+          - 'http://yawl-engine:8080/yawl/api/beginSession'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # TCP probes for database connectivity
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+          - 'postgres:5432'
+          - 'yawl-engine:8080'
+          - 'yawl-engine:9090'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+# =============================================================================
+# Remote Write Configuration (for long-term storage)
+# =============================================================================
+# remote_write:
+#   - url: "http://remote-storage:9090/api/v1/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500

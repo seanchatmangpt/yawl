@@ -18,12 +18,13 @@
 
 package org.yawlfoundation.yawl.swingWorklist;
 
-import org.yawlfoundation.yawl.engine.gui.YAdminGUI;
-import org.yawlfoundation.yawl.swingWorklist.util.TableSorter;
+import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.*;
+
+import org.yawlfoundation.yawl.engine.gui.YAdminGUI;
+import org.yawlfoundation.yawl.swingWorklist.util.TableSorter;
 
 /**
  * 

@@ -18,6 +18,12 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -26,12 +32,6 @@ import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Author: Michael Adams
@@ -285,7 +285,7 @@ public class YXESBuilder {
 
 
     private Map<String, String> parseComplexTypeDefinition(XNode typeNode) {
-        Map<String, String> element2TypeMap = new Hashtable<String, String>();
+        Map<String, String> element2TypeMap = new HashMap<String, String>();
         if (typeNode.hasChildren()) {
             for (XNode child : typeNode.getChildren()) {
                 if (child.getName().endsWith("element")) {

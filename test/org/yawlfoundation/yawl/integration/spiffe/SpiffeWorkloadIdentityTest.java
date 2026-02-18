@@ -1,8 +1,6 @@
 package org.yawlfoundation.yawl.integration.spiffe;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -10,7 +8,9 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for SpiffeWorkloadIdentity.

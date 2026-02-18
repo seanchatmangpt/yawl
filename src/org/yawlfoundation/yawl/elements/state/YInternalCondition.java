@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.elements.state;
 
+import java.util.List;
+
 import org.yawlfoundation.yawl.elements.YConditionInterface;
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.YTask;
@@ -26,8 +28,6 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YIdentifierBag;
-
-import java.util.List;
 
 /**
  * 

@@ -18,16 +18,14 @@
 
 package org.yawlfoundation.yawl.procletService.editor.block;
 
+import javax.swing.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-
 import org.yawlfoundation.yawl.procletService.connect.Receiver;
 import org.yawlfoundation.yawl.procletService.editor.InternalCoordinator;
 import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionNode;
 import org.yawlfoundation.yawl.procletService.util.EntityMID;
-
-import javax.swing.*;
 
 public class BlockCoordinator extends InternalCoordinator {
 
@@ -163,4 +161,3 @@ public class BlockCoordinator extends InternalCoordinator {
     return this.getControl().getBlockControl();
   }
 }
-

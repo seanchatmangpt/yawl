@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.schema;
 
-import org.yawlfoundation.yawl.util.StringUtil;
-
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * An enumeration of schema versions, with associated methods

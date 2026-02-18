@@ -313,5 +313,3 @@ public class JavaCPN implements JavaCPNInterface
         socket.close();
     }
 }
-
-

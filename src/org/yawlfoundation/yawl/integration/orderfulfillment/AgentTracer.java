@@ -13,10 +13,10 @@
 
 package org.yawlfoundation.yawl.integration.orderfulfillment;
 
+import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.UUID;
 
 /**
  * Observability tracer for agent operations. Records spans for eligibility,

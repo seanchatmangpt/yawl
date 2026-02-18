@@ -15,6 +15,8 @@ import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
 import io.a2a.server.tasks.InMemoryTaskStore;
 import io.a2a.spec.*;
 import io.a2a.transport.rest.handler.RestHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -23,8 +25,6 @@ import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
 import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
 import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 

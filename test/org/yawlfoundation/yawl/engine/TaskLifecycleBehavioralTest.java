@@ -16,9 +16,15 @@
  */
 package org.yawlfoundation.yawl.engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.Set;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.JDOMException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,14 +36,6 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Behavioral tests for YAWL Task lifecycle semantics.

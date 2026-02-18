@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp.sdk;
 
 import io.modelcontextprotocol.spec.McpSchema;
+
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -136,7 +137,7 @@ public final class McpServerFeatures {
     }
 
     /**
-     * Pairs a Reference with its synchronous completion handler.
+     * Pairs a CompleteReference with its synchronous completion handler.
      * Register via {@link McpServer.SyncServerBuilder#completions(java.util.List)}.
      */
     public static final class SyncCompletionSpecification {

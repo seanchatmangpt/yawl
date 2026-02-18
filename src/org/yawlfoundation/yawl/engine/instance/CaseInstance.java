@@ -18,18 +18,18 @@
 
 package org.yawlfoundation.yawl.engine.instance;
 
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
-import org.yawlfoundation.yawl.logging.YLogDataItemList;
-
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.Map;
 
 /**
  * Author: Michael Adams
@@ -46,7 +46,7 @@ public class CaseInstance implements YInstance {
 
 
     public CaseInstance() {
-        workitems = new Hashtable<String, WorkItemInstance>();
+        workitems = new ConcurrentHashMap<String, WorkItemInstance>();
     }
 
     public CaseInstance(String caseID, YSpecificationID specID,

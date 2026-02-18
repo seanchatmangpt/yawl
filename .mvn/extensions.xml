@@ -1,1 +1,5 @@
-<extensions/>
+<?xml version="1.0" encoding="UTF-8"?>
+<extensions>
+    <!-- Build cache extension disabled for offline compatibility -->
+    <!-- Re-enable when network access is available -->
+</extensions>

@@ -1,5 +1,15 @@
 package org.yawlfoundation.yawl.resilience.provider;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.resilience.config.ResilienceConfig;
+import org.yawlfoundation.yawl.resilience.config.YawlResilienceProperties;
+
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.decorators.Decorators;
@@ -7,15 +17,6 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.resilience.config.ResilienceConfig;
-import org.yawlfoundation.yawl.resilience.config.YawlResilienceProperties;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 /**
  * Platform-level resilience provider for YAWL.

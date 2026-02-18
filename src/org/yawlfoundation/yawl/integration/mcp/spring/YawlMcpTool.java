@@ -1,8 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.spring;
 
-import io.modelcontextprotocol.spec.McpSchema;
-
 import java.util.Map;
+
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
  * Interface for Spring-managed YAWL MCP tools.

@@ -1,0 +1,55 @@
+{
+  "run_id": "20260217T230032Z",
+  "status": "GREEN",
+  "repo": {
+    "path": "/home/user/yawl",
+    "git": {
+      "branch": "claude/add-diagram-generation-script-AgqzD",
+      "commit": "abec388",
+      "dirty": true
+    }
+  },
+  "toolchain": {
+    "java": "21",
+    "maven": "unknown"
+  },
+  "inputs": {
+    "root_pom_sha256": "sha256:9149d52a3bf3ed2661c0472482643e7e45737c9f1724accdfbb9c0c4e6ec222f"
+  },
+  "facts_emitted": ["modules","reactor","shared-src","dual-family","duplicates","deps-conflicts","tests","gates","maven-hazards"],
+  "diagrams_emitted": ["10-maven-reactor.mmd","15-shared-src-map.mmd","16-dual-family-map.mmd","17-deps-conflicts.mmd","30-test-topology.mmd","40-ci-gates.mmd","50-risk-surfaces.mmd","yawl/build-and-test.yawl.xml"],
+  "refusals": [
+  ],
+  "warnings": [
+  ],
+  "outputs": {
+    "index_sha256": "sha256:28cac6eed865ff12bcf18b75cb812079e9fbe66877c8e482fe9d4177ceae1371",
+    "facts_sha256": {
+      "modules.json": "sha256:674657795eb1c0ca1d51143891476a66f5484cc355799ca3bc045d0943bbd43e",
+      "reactor.json": "sha256:ca32c3b2149382dc2ad32a54989ea77b7f110479d8ceb5c9ef13dde4f52fe6ef",
+      "shared-src.json": "sha256:3dce329428ed9d6b2113a0b0cb74d9643d7bce3efc7101de2a44d2498fda4a8d",
+      "dual-family.json": "sha256:e067149c080a948875b1ac2650ddaeb58de50b3aab377be0d49bffb8251ef468",
+      "duplicates.json": "sha256:09cac1cd53248efb29cbc126eb891bef6ed83a96955208e4cec05b0cf2c9160b",
+      "deps-conflicts.json": "sha256:f9c1be0c2052005399cb03f23977f20d8fe8c4389b5c35145a31b07a3bd6909c",
+      "tests.json": "sha256:c6450490c62d827d54e2a4eb545e158fc1d3c9abd1d02526b9b825f9fbc1d011",
+      "gates.json": "sha256:c476aed25512cdb6b3dc94218ef0c668d203d883a90c1cb1e81fa3caf93a0973",
+      "maven-hazards.json": "sha256:c3468a231b977dd17ad9eafff1228c657391fdb513ad115d793726e0e068226d"
+    },
+    "diagrams_sha256": {
+      "10-maven-reactor.mmd": "sha256:5e2049a5d84154eb89fa530e8f20db272e1e0c1a293e50dd2c4cc6d6f490796e",
+      "15-shared-src-map.mmd": "sha256:0c5715d33be274fd95044cdf88268c497190d34cd079952daadbdaea013f37ae",
+      "16-dual-family-map.mmd": "sha256:a926bcfc7ddaaed170f40829db6e2583c90065a4f5d82b72e21fadebc67eb41c",
+      "17-deps-conflicts.mmd": "sha256:6b10364e0d3470f563c4561c28507b953c0848577891a2f1c51334fdca900229",
+      "30-test-topology.mmd": "sha256:8cfcd2724ef8f749990cb8027cb8fa2935eb8fb6139eca4a1240a40000bf9c72",
+      "40-ci-gates.mmd": "sha256:3e41c56b1dd00af55a2f4071e17b9c84ec2bd7fa61dbb165673b654c79fff535",
+      "50-risk-surfaces.mmd": "sha256:5c2563f07975548578c64362b44f7f48001e466f91ed12b4d7c24eaf18c65d9d"
+    },
+    "yawl_xml_sha256": "sha256:a132a137bbfa6a3d1dc2c07543d123f8366e1fa094fdb808282506239add26d7"
+  },
+  "timing_ms": {
+    "total": 15953,
+    "facts": 13132,
+    "diagrams": 1471,
+    "yawl_xml": 53
+  }
+}

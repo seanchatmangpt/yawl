@@ -18,9 +18,9 @@
 
 package org.yawlfoundation.yawl.exceptions;
 
-import org.yawlfoundation.yawl.elements.YExternalNetElement;
-
 import java.io.Serial;
+
+import org.yawlfoundation.yawl.elements.YExternalNetElement;
 
 /**
  * Exception thrown when a syntax error is encountered in YAWL specification.

@@ -1,0 +1,127 @@
+# EditorConfig - https://editorconfig.org
+# YAWL v6.0 - Consistent code style across all editors and IDEs.
+# This file enforces the project's formatting contract.
+# Supported by: IntelliJ IDEA, Eclipse, VS Code, Vim, Emacs, Sublime Text.
+
+root = true
+
+# ============================================================================
+# Global defaults for all files
+# ============================================================================
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+tab_width = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+max_line_length = 120
+
+# ============================================================================
+# Java source files - primary language
+# ============================================================================
+[*.java]
+indent_style = space
+indent_size = 4
+tab_width = 4
+max_line_length = 120
+# Java block comment alignment
+# Enforce real implementations per HYPER_STANDARDS (no stubs, no TODOs)
+
+# ============================================================================
+# XML files - Maven POMs, Spring config, YAWL specs
+# ============================================================================
+[*.xml]
+indent_style = space
+indent_size = 4
+max_line_length = 160
+
+[pom.xml]
+indent_style = space
+indent_size = 4
+max_line_length = 160
+
+[{pom-*.xml,maven-*.xml}]
+indent_style = space
+indent_size = 4
+
+# ============================================================================
+# YAWL specification files
+# ============================================================================
+[*.yawl]
+indent_style = space
+indent_size = 2
+max_line_length = 200
+
+[*.xsd]
+indent_style = space
+indent_size = 2
+max_line_length = 200
+
+# ============================================================================
+# Shell scripts
+# ============================================================================
+[*.sh]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+
+# ============================================================================
+# YAML - CI/CD, Docker Compose, Helm
+# ============================================================================
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# ============================================================================
+# JSON - package metadata, config files
+# ============================================================================
+[*.json]
+indent_style = space
+indent_size = 2
+max_line_length = 200
+
+# ============================================================================
+# TOML - ggen config, tool manifests
+# ============================================================================
+[*.toml]
+indent_style = space
+indent_size = 4
+
+# ============================================================================
+# Markdown - documentation
+# ============================================================================
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# ============================================================================
+# Properties files - Hibernate, JDBC, application config
+# ============================================================================
+[*.properties]
+indent_style = space
+indent_size = 4
+
+# ============================================================================
+# Makefile - tabs are mandatory
+# ============================================================================
+[Makefile]
+indent_style = tab
+tab_width = 4
+
+# ============================================================================
+# Docker
+# ============================================================================
+[Dockerfile*]
+indent_style = space
+indent_size = 4
+
+# ============================================================================
+# SQL migration scripts
+# ============================================================================
+[*.sql]
+indent_style = space
+indent_size = 4
+max_line_length = 160

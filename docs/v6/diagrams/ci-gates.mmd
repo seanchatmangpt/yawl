@@ -1,0 +1,20 @@
+flowchart LR
+    PR[Pull Request] --> hyper[Hyper Standards<br/>14 anti-pattern checks]
+    PR --> compile[Compile Gate<br/>Java 25]
+    PR --> style[Checkstyle<br/>Google Java Style]
+    PR --> pmd[PMD Quality Rules]
+    PR --> spotbugs[SpotBugs<br/>HIGH+MEDIUM threshold]
+
+    hyper --> gate{Quality Gate}
+    compile --> gate
+    style --> gate
+    pmd --> gate
+    spotbugs --> gate
+
+    gate -->|pass| merge[Merge Allowed]
+    gate -->|fail| block[PR Blocked]
+
+    note["7 CI workflow files active"]
+
+    style merge fill:#166534,stroke:#14532d,color:#dcfce7
+    style block fill:#991b1b,stroke:#7f1d1d,color:#fecaca

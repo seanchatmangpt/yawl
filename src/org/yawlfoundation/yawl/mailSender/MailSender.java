@@ -18,12 +18,9 @@
 
 package org.yawlfoundation.yawl.mailSender;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
+import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
 
 import jakarta.activation.DataHandler;
 import jakarta.activation.FileDataSource;
@@ -35,13 +32,17 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.util.Properties;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
 
 
 public class MailSender extends InterfaceBWebsideController {

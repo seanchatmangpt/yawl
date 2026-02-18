@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  YAWL v5.2 - Maven Module Template
+  YAWL v6.0.0-Alpha - Maven Module Template
 
   This template provides a consistent structure for YAWL modules.
 
   Usage:
     1. Copy this file to your module directory as pom.xml
     2. Update <artifactId>, <name>, and <description>
-    3. Add module-specific dependencies (versions managed by parent)
-    4. Follow BOM-managed dependencies where possible
+    3. Add module-specific dependencies (versions managed by parent BOM imports)
+    4. Remove dependency sections that do not apply to this module
 
   Key principles:
-    - Use parent POM version management (no hardcoded versions)
-    - Apply proper scopes (compile, provided, runtime, test)
-    - Leverage BOMs for Jakarta, Spring, OpenTelemetry, Resilience4j
-    - Include only necessary dependencies (avoid transitive bloat)
+    - Do NOT redeclare version numbers: all versions live in the parent POM
+      <properties> block and are propagated via <dependencyManagement>
+    - Apply correct scopes: provided (container), runtime (no compile API),
+      test (testing only)
+    - Declare only what this module directly uses; never pull in transitive
+      dependencies explicitly
+    - The parent already imports Spring Boot BOM, OpenTelemetry BOM,
+      Resilience4j BOM, Jackson BOM, and TestContainers BOM - use artifacts
+      from these BOMs without a <version> element
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -22,170 +27,262 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Parent POM - inherits BOMs and version management -->
+    <!-- Parent POM - inherits BOM imports and version management -->
     <parent>
         <groupId>org.yawlfoundation</groupId>
-        <artifactId>yawl</artifactId>
-        <version>5.2</version>
+        <artifactId>yawl-parent</artifactId>
+        <version>6.0.0-Alpha</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <!-- Module Identification -->
+    <!-- Module Identification - update these three fields -->
     <artifactId>yawl-module-name</artifactId>
     <packaging>jar</packaging>
 
     <name>YAWL Module Name</name>
     <description>Brief module description</description>
 
-    <!-- Module-Specific Properties (override parent if needed) -->
-    <properties>
-        <!-- Add module-specific properties here -->
-    </properties>
-
     <dependencies>
-        <!-- ========================================== -->
-        <!-- CORE DEPENDENCIES (compile scope)         -->
-        <!-- ========================================== -->
+        <!-- ============================================================== -->
+        <!-- YAWL INTER-MODULE DEPENDENCIES                                 -->
+        <!-- ============================================================== -->
 
-        <!-- Jakarta APIs (versions managed by Jakarta EE BOM) -->
+        <!-- Example: depends on yawl-utilities -->
+        <!--
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-utilities</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        -->
+
+        <!-- ============================================================== -->
+        <!-- JAKARTA EE APIs                                                -->
+        <!-- ============================================================== -->
+
+        <!-- Servlet API - provided by container at runtime -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
+        <!-- Annotation API -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
 
-        <!-- Commons Libraries (versions from parent) -->
+        <!-- ============================================================== -->
+        <!-- CORE LIBRARIES                                                 -->
+        <!-- ============================================================== -->
+
+        <!-- String utilities, collections helpers -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
-        <!-- Logging (Log4j2 with SLF4J bridge) -->
+        <!-- JDOM2 XML processing (YAWL's primary XML library) -->
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+        </dependency>
+
+        <!-- ============================================================== -->
+        <!-- LOGGING                                                        -->
+        <!-- Log4j2 is the implementation; SLF4J is the API facade.        -->
+        <!-- Only declare log4j-core in modules that own the lifecycle      -->
+        <!-- (e.g., the main application entry point). All other modules   -->
+        <!-- declare only log4j-api.                                        -->
+        <!-- ============================================================== -->
+
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>
+        <!-- Uncomment in the module that bootstraps the application: -->
+        <!--
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
+        -->
 
-        <!-- ========================================== -->
-        <!-- OBSERVABILITY (runtime scope)             -->
-        <!-- ========================================== -->
+        <!-- ============================================================== -->
+        <!-- SPRING BOOT (version managed by spring-boot-dependencies BOM)  -->
+        <!-- Remove if this module does not use Spring Boot.               -->
+        <!-- ============================================================== -->
 
-        <!-- OpenTelemetry (versions managed by OpenTelemetry BOM) -->
+        <!--
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        -->
+
+        <!-- ============================================================== -->
+        <!-- OBSERVABILITY (version managed by opentelemetry-bom)          -->
+        <!-- Remove if this module does not emit telemetry.                -->
+        <!-- ============================================================== -->
+
+        <!--
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
-            <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-annotations</artifactId>
-            <scope>runtime</scope>
         </dependency>
+        -->
 
-        <!-- ========================================== -->
-        <!-- RESILIENCE (if module needs fault tolerance) -->
-        <!-- ========================================== -->
+        <!-- ============================================================== -->
+        <!-- FAULT TOLERANCE (version managed by resilience4j-bom)         -->
+        <!-- Remove if this module does not require circuit-breaker /       -->
+        <!-- retry / rate-limiter patterns.                                 -->
+        <!-- ============================================================== -->
 
-        <!-- Resilience4j (versions managed by Resilience4j BOM) -->
+        <!--
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-retry</artifactId>
         </dependency>
+        -->
 
-        <!-- ========================================== -->
-        <!-- TEST DEPENDENCIES (test scope)            -->
-        <!-- ========================================== -->
+        <!-- ============================================================== -->
+        <!-- TEST DEPENDENCIES (test scope - never enter production JARs)   -->
+        <!-- ============================================================== -->
 
+        <!-- JUnit 4 (legacy tests) -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- JUnit 5 Jupiter (new tests should use this) -->
+        <!--
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        -->
+
+        <!-- Hamcrest matchers -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- H2 Database for in-memory testing -->
+        <!-- H2 in-memory database for persistence tests -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- TestContainers (if integration tests needed) -->
+        <!-- TestContainers (version managed by testcontainers-bom) -->
+        <!-- Use for integration tests that require real containers. -->
+        <!--
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        -->
+
     </dependencies>
 
     <build>
-        <!-- Use standard Maven directory layout or customize -->
-        <sourceDirectory>src/main/java</sourceDirectory>
-        <testSourceDirectory>src/test/java</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-            </testResource>
-        </testResources>
+        <!-- Override source directories only if this module deviates from -->
+        <!-- the standard layout (../src / ../test relative to module dir). -->
+        <!-- <sourceDirectory>../src/org/yawlfoundation/yawl/modulename</sourceDirectory> -->
+        <!-- <testSourceDirectory>../test/org/yawlfoundation/yawl/modulename</testSourceDirectory> -->
 
         <plugins>
-            <!-- Compiler plugin (inherits from parent) -->
+            <!--
+              Compiler plugin: inherits release, compilerArgs from parent.
+              Override here only for module-specific include/exclude patterns.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <!--
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/modulename/**</include>
+                    </includes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/modulename/**</testInclude>
+                    </testIncludes>
+                </configuration>
+                -->
             </plugin>
 
-            <!-- Surefire for unit tests -->
+            <!--
+              Surefire: inherits parallel/threadCount/argLine from parent.
+              Override here only for module-specific test include/exclude.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <!--
+                <configuration>
+                    <includes>
+                        <include>**/modulename/**Test.java</include>
+                    </includes>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
+                -->
             </plugin>
 
-            <!-- Failsafe for integration tests -->
+            <!--
+              Failsafe: for integration tests (*IT.java / *ITCase.java).
+              Uncomment if this module has integration tests.
+            -->
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
+            -->
 
-            <!-- JaCoCo code coverage -->
+            <!-- JAR: inherits manifest settings from parent -->
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

@@ -18,10 +18,11 @@
 
 package org.yawlfoundation.yawl.procletService.editor.pconns;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.*;
 
 public class FocusTest extends JDialog{
     JRadioButton button1;

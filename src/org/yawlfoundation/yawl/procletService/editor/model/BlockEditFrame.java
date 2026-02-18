@@ -30,13 +30,14 @@ package org.yawlfoundation.yawl.procletService.editor.model;
  * Created on 19-dec-2009, 22:18:36
  */
 
+import java.awt.*;
+import java.util.ArrayList;
+
+import javax.swing.*;
+
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletBlock;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModel;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModels;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
 
 /**
  *

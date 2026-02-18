@@ -18,10 +18,8 @@
 
 package org.yawlfoundation.yawl.authentication;
 
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
-
 import java.util.UUID;
+
 
 /**
  * Base class which represents an active session between the engine and an external

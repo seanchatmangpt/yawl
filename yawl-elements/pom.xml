@@ -71,6 +71,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
@@ -86,45 +96,48 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
-        <resources>
-            <!-- Copy YAWL schema XSD files into the classpath location expected by YSchemaVersion -->
-            <resource>
-                <directory>../schema</directory>
-                <targetPath>org/yawlfoundation/yawl/unmarshal</targetPath>
-                <includes>
-                    <include>YAWL_Schema*.xsd</include>
-                </includes>
-            </resource>
-        </resources>
-
+        <!-- Copy test resources preserving package structure for getClass().getResource() -->
         <testResources>
             <testResource>
                 <directory>../test</directory>
                 <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.yawl</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xsd</include>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/schema/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/schema/**/*.xsd</include>
+                </includes>
+            </testResource>
+            <!-- Unmarshal test resources needed by TestYSpecification line 42 -->
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/MakeRecordings.xml</include>
+                </includes>
+            </testResource>
+            <!-- Engine test resources needed by TestYNet line 92-93 -->
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/engine/ImproperCompletion.xml</include>
                 </includes>
             </testResource>
         </testResources>
 
         <plugins>
-            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <failOnError>false</failOnError>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <includes>
+                        <!-- Core elements module packages -->
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
                         <include>**/org/yawlfoundation/yawl/schema/**</include>
+                        <!-- Utilities needed by tests: util, exceptions, unmarshal -->
+                        <include>**/org/yawlfoundation/yawl/util/**</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/**</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
+                        <!-- Engine classes needed by tests -->
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
@@ -133,23 +146,41 @@
                         <include>**/org/yawlfoundation/yawl/engine/YEngine*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YEngineID*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YSpecificationID*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YWorkItemStatus*</include>
+                        <include>**/org/yawlfoundation/yawl/engine/time/**</include>
+                        <include>**/org/yawlfoundation/yawl/engine/core/**</include>
                     </includes>
                     <excludes>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
-                    <!-- Only compile tests that depend on elements + utilities module classes -->
                     <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/schema/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
                     </testIncludes>
                     <testExcludes>
-                        <testExclude>**/*.xsd</testExclude>
-                        <testExclude>**/*.xml</testExclude>
-                        <testExclude>**/*.properties</testExclude>
-                        <testExclude>**/*.class</testExclude>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <!-- Exclude tests from other modules -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/integration/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/stateless/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resourcing/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/swingWorklist/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/wsif/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/patternmatching/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/performance/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resilience/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/build/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/database/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/deployment/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/exceptions/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/logging/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/workflow/**</exclude>
                     </testExcludes>
                 </configuration>
             </plugin>
@@ -157,8 +188,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Exclude conflicting logging bridge to prevent ExceptionInInitializerError -->
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                        <include>**/org/yawlfoundation/yawl/schema/**</include>
+                    </includes>
+                    <excludes>
+                        <!-- Exclude tests from other modules -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/integration/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/stateless/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resourcing/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/swingWorklist/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/wsif/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/patternmatching/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/performance/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resilience/**</exclude>
+                    </excludes>
                     <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                 </configuration>

@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.apache.commons.codec.binary.Base64;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Provides simple one-way encryption for passwords

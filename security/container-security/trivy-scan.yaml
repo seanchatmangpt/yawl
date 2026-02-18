@@ -1,143 +1,170 @@
-# Trivy Security Scanner Configuration
+# =============================================================================
+# YAWL v6.0.0 – Trivy Security Scanner Configuration
 # https://aquasecurity.github.io/trivy/
+# =============================================================================
+# Usage:
+#   # Full image scan (CI/CD gate)
+#   trivy image --config security/container-security/trivy-scan.yaml \
+#     yawl/engine:6.0.0
+#
+#   # Filesystem scan (source tree, Dockerfiles, IaC)
+#   trivy fs --config security/container-security/trivy-scan.yaml .
+#
+#   # Generate SBOM
+#   trivy image --format cyclonedx --output sbom/yawl-engine-6.0.0.cdx.json \
+#     yawl/engine:6.0.0
+# =============================================================================
 
-# Scan configuration for YAWL containers
+# Scanners to activate
 scan:
-  # Scanner types to run
   scanners:
-    - vuln      # Vulnerability scanning
-    - misconfig # IaC misconfiguration scanning
-    - secret    # Secret detection
-    - sbom      # Software Bill of Materials
+    - vuln        # OS + library CVEs
+    - misconfig   # Dockerfile / IaC misconfigurations (Rego policies)
+    - secret      # Hardcoded credentials / API keys
+    - license     # License compliance (fail on GPL in LGPL project)
 
-  # Skip files/directories
   skip-files:
     - "**/test/**"
     - "**/tests/**"
     - "**/.git/**"
-    - "**/node_modules/**"
+    - "**/target/**"
+    - "**/.m2/**"
 
-  # Skip directories
   skip-dirs:
-    - tests
+    - target
+    - .m2
     - docs
-    - examples
+    - performance-reports
 
-# Vulnerability scanning configuration
+# ---------------------------------------------------------------------------
+# Vulnerability scanning
+# ---------------------------------------------------------------------------
 vulnerability:
-  # Security checking level
   type:
-    - os      # OS package vulnerabilities
-    - library # Application dependency vulnerabilities
+    - os        # Alpine apk packages
+    - library   # Maven JAR dependencies (via pom.xml / jar manifest)
 
-  # Ignore unfixed vulnerabilities
+  # Fail build on unfixed vulnerabilities at HIGH+ severity
   ignore-unfixed: false
 
-  # Show all vulnerabilities including low severity
   severity:
     - CRITICAL
     - HIGH
     - MEDIUM
     - LOW
 
-  # Vulnerability databases
   db:
-    # Update vulnerability database
     update: true
-    # Skip database update (use cached)
     skip-update: false
+    # Use GitHub Advisory Database + NVD + OSV
+    java-db:
+      update: true
 
-  # Ignore file for specific vulnerabilities
   ignore-file: .trivyignore
 
-# Misconfiguration scanning (IaC)
+# ---------------------------------------------------------------------------
+# Misconfiguration scanning (Dockerfile, K8s manifests, Helm, Terraform)
+# ---------------------------------------------------------------------------
 misconfiguration:
-  # Configuration scanning
   include-non-failures: false
-
-  # Policy bundles to use
   policy:
-    # Use built-in policies
     bundle-embedded: true
 
-  # Cloud Formation, Terraform, Kubernetes, Dockerfile scanning
+  # Minimum severity to fail build on misconfig findings
+  severity:
+    - CRITICAL
+    - HIGH
+
   scanners:
     - dockerfile
     - kubernetes
     - terraform
+    - helm
 
-# Secret scanning configuration
+# ---------------------------------------------------------------------------
+# Secret scanning
+# ---------------------------------------------------------------------------
 secret:
-  # Enable secret scanning
   enable: true
-
-  # Custom patterns to detect
   patterns:
     - name: "AWS Access Key"
       regex: "AKIA[0-9A-Z]{16}"
-      severity: "CRITICAL"
+      severity: CRITICAL
     - name: "AWS Secret Key"
       regex: "(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+=]{40}['\"]"
-      severity: "CRITICAL"
-    - name: "Private Key"
+      severity: CRITICAL
+    - name: "GCP Service Account Key"
+      regex: "\"type\":\\s*\"service_account\""
+      severity: CRITICAL
+    - name: "Azure Client Secret"
+      regex: "(?i)azure(.{0,20})?client.secret.{0,10}['\"][0-9a-zA-Z+/=]{20,}['\"]"
+      severity: CRITICAL
+    - name: "Private Key (PEM)"
       regex: "-----BEGIN (?:RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----"
-      severity: "CRITICAL"
+      severity: CRITICAL
     - name: "Generic API Key"
       regex: "(?i)(api_key|apikey|api-secret|api_secret)['\"]?\\s*[:=]\\s*['\"]?[a-zA-Z0-9_\\-]{20,}"
-      severity: "HIGH"
-    - name: "Database Connection String"
-      regex: "(?i)(jdbc|mongodb|postgres|mysql|redis)://[^\\s]+:[^\\s]+@"
-      severity: "HIGH"
-    - name: "JWT Token"
-      regex: "eyJ[a-zA-Z0-9_-]*\\.eyJ[a-zA-Z0-9_-]*\\.[a-zA-Z0-9_-]*"
-      severity: "MEDIUM"
+      severity: HIGH
+    - name: "Database Connection String with Password"
+      regex: "(?i)(jdbc|mongodb|postgres|mysql|redis)://[^\\s]+:[^\\s@]+@"
+      severity: HIGH
+    - name: "JWT Bearer Token"
+      regex: "eyJ[a-zA-Z0-9_-]*\\.eyJ[a-zA-Z0-9_-]*\\.[a-zA-Z0-9_-]+"
+      severity: MEDIUM
+    - name: "YAWL Admin Password (hardcoded)"
+      regex: "(?i)yawl.*password.*=.*(?!\\$\\{)"
+      severity: HIGH
 
+# ---------------------------------------------------------------------------
+# License scanning – enforce LGPL-3.0 compatibility
+# ---------------------------------------------------------------------------
+license:
+  # Packages with these licenses are FORBIDDEN in the distribution JAR
+  forbidden:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+    - AGPL-1.0
+    - CC-BY-NC-4.0
+    - SSPL-1.0
+  # Warn on these
+  notice:
+    - LGPL-2.0
+    - LGPL-2.1
+    - MPL-1.1
+    - CDDL-1.0
+
+# ---------------------------------------------------------------------------
 # Output configuration
+# ---------------------------------------------------------------------------
 format:
-  # Output formats: table, json, sarif, template
-  type: table
+  type: table    # table | json | sarif | cyclonedx | spdx-json | github
 
-  # Template for custom output
-  template: "@.trivy/template.tmpl"
-
-# Report configuration
 report:
-  # Exit code on findings
+  # Non-zero exit on findings at or above this severity
   exit-code: 1
-
-  # Ignore policy violations below this severity
   severity: HIGH
 
-# Registry configuration
+# ---------------------------------------------------------------------------
+# Registry mirrors (replace with your internal registry)
+# ---------------------------------------------------------------------------
 registry:
-  # Mirror configuration
-  mirrors:
-    docker.io: registry.internal.example.com/docker
+  mirrors: {}
+  auths: {}
 
-  # Authentication
-  auths:
-    - registry: registry.internal.example.com
-      username: "${REGISTRY_USER}"
-      password: "${REGISTRY_PASSWORD}"
-
-# Cache configuration
+# ---------------------------------------------------------------------------
+# Local cache
+# ---------------------------------------------------------------------------
 cache:
-  # Enable caching
   enable: true
-
-  # Cache directory
   dir: /tmp/trivy-cache
-
-  # Cache TTL
   ttl: 24h
 
-# SBOM configuration
+# ---------------------------------------------------------------------------
+# SBOM output (CycloneDX JSON + SPDX JSON)
+# Generated separately via CI pipeline – see .github/workflows/security.yml
+# ---------------------------------------------------------------------------
 sbom:
-  # Generate SBOM
   enable: true
-
-  # SBOM formats: spdx, spdx-json, cyclonedx, cyclonedx-json
-  format: spdx-json
-
-  # Output file
-  output: sbom.spdx.json
+  format: cyclonedx    # primary format
+  output: sbom/yawl-engine.cdx.json

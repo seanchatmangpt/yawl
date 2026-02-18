@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.engine.actuator.health;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
@@ -27,9 +30,6 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Health indicator for YAWL database connectivity and performance.

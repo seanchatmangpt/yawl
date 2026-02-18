@@ -1,7 +1,6 @@
 # YAWL v5.2 - Cloud-Native Container Image
 # Production-ready image with Maven build and Java 25 for Kubernetes/Cloud Run
 
-<<<<<<< HEAD
 # Build Stage
 FROM eclipse-temurin:25-jdk-alpine AS builder
 

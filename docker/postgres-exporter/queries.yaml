@@ -1,0 +1,142 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - PostgreSQL Exporter Custom Queries
+# =============================================================================
+# Custom queries for YAWL-specific PostgreSQL monitoring
+# =============================================================================
+
+# YAWL case statistics
+yawl_case_stats:
+  query: |
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'Running') as running,
+      COUNT(*) FILTER (WHERE status = 'Complete') as complete,
+      COUNT(*) FILTER (WHERE status = 'Failed') as failed,
+      COUNT(*) FILTER (WHERE status = 'Cancelled') as cancelled,
+      COUNT(*) as total
+    FROM yawl_case
+    WHERE created_date > NOW() - INTERVAL '24 hours'
+  metrics:
+    - running:
+        usage: "GAUGE"
+        description: "Number of running cases in the last 24 hours"
+    - complete:
+        usage: "GAUGE"
+        description: "Number of completed cases in the last 24 hours"
+    - failed:
+        usage: "GAUGE"
+        description: "Number of failed cases in the last 24 hours"
+    - cancelled:
+        usage: "GAUGE"
+        description: "Number of cancelled cases in the last 24 hours"
+    - total:
+        usage: "GAUGE"
+        description: "Total cases created in the last 24 hours"
+
+# YAWL work item statistics
+yawl_workitem_stats:
+  query: |
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'Enabled') as enabled,
+      COUNT(*) FILTER (WHERE status = 'Executing') as executing,
+      COUNT(*) FILTER (WHERE status = 'Suspended') as suspended,
+      COUNT(*) FILTER (WHERE status = 'Deadlocked') as deadlocked,
+      COUNT(*) as total
+    FROM yawl_workitem
+    WHERE created_date > NOW() - INTERVAL '1 hour'
+  metrics:
+    - enabled:
+        usage: "GAUGE"
+        description: "Number of enabled work items in the last hour"
+    - executing:
+        usage: "GAUGE"
+        description: "Number of executing work items in the last hour"
+    - suspended:
+        usage: "GAUGE"
+        description: "Number of suspended work items in the last hour"
+    - deadlocked:
+        usage: "GAUGE"
+        description: "Number of deadlocked work items in the last hour"
+    - total:
+        usage: "GAUGE"
+        description: "Total work items in the last hour"
+
+# YAWL specification statistics
+yawl_spec_stats:
+  query: |
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'Loaded') as loaded,
+      COUNT(*) FILTER (WHERE status = 'Unloaded') as unloaded,
+      COUNT(*) FILTER (WHERE status = 'Error') as error,
+      COUNT(*) as total
+    FROM yawl_specification
+  metrics:
+    - loaded:
+        usage: "GAUGE"
+        description: "Number of loaded specifications"
+    - unloaded:
+        usage: "GAUGE"
+        description: "Number of unloaded specifications"
+    - error:
+        usage: "GAUGE"
+        description: "Number of specifications with errors"
+    - total:
+        usage: "GAUGE"
+        description: "Total specifications"
+
+# Table size monitoring
+yawl_table_sizes:
+  query: |
+    SELECT
+      schemaname,
+      tablename,
+      pg_size_pretty(pg_total_relation_size(schemaname || '.' || tablename)) as size,
+      pg_total_relation_size(schemaname || '.' || tablename) as bytes
+    FROM pg_tables
+    WHERE schemaname = 'public'
+    ORDER BY bytes DESC
+    LIMIT 20
+  metrics:
+    - bytes:
+        usage: "GAUGE"
+        description: "Size of table in bytes"
+
+# Query performance
+yawl_query_performance:
+  query: |
+    SELECT
+      query,
+      calls,
+      total_exec_time,
+      mean_exec_time,
+      max_exec_time
+    FROM pg_stat_statements
+    WHERE query NOT LIKE '%pg_stat%'
+    ORDER BY total_exec_time DESC
+    LIMIT 10
+  metrics:
+    - calls:
+        usage: "COUNTER"
+        description: "Number of times query was executed"
+    - total_exec_time:
+        usage: "COUNTER"
+        description: "Total execution time in milliseconds"
+    - mean_exec_time:
+        usage: "GAUGE"
+        description: "Mean execution time in milliseconds"
+    - max_exec_time:
+        usage: "GAUGE"
+        description: "Maximum execution time in milliseconds"
+
+# Connection pool status
+yawl_connection_pool:
+  query: |
+    SELECT
+      state,
+      COUNT(*) as count
+    FROM pg_stat_activity
+    WHERE datname = 'yawl'
+    GROUP BY state
+  metrics:
+    - count:
+        usage: "GAUGE"
+        description: "Number of connections in this state"

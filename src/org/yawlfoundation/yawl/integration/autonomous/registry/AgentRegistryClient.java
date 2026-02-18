@@ -13,10 +13,6 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.registry;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -27,6 +23,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Client library for interacting with the Agent Registry.

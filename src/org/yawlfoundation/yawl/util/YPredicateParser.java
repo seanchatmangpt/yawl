@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.jdom2.Document;
-import org.jdom2.Element;
-
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.Set;
+
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Parses strings, replacing substrings within of the form ${expression} with the

@@ -18,14 +18,14 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.logging.table.*;
 import org.yawlfoundation.yawl.util.HibernateEngine;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-
-import java.util.*;
 
 /**
  * @author Michael Adams

@@ -10,7 +10,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/part-of: yawl
+      {{- include "yawl.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress

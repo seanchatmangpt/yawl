@@ -1,15 +1,16 @@
 package org.yawlfoundation.yawl.engine;
 
-import org.yawlfoundation.yawl.elements.YAtomicTask;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.YTask;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 import java.util.Iterator;
 import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.yawlfoundation.yawl.elements.YTask;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  *

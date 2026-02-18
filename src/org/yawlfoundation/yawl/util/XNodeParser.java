@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.jdom2.Document;
-import org.jdom2.Element;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.apache.logging.log4j.LogManager;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Author: Michael Adams
@@ -74,7 +74,10 @@ public class XNodeParser {
 
 
     public XNode parse(Element e) {
-        return parse(JDOMUtil.elementToString(e));
+        // Use compact format to avoid whitespace parsing issues.
+        // PrettyFormat adds newlines and indentation which can be
+        // misinterpreted as text content by the parser.
+        return parse(JDOMUtil.elementToStringDump(e));
     }
 
     

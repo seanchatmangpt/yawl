@@ -13,14 +13,14 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.reasoners;
 
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
-import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
+import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
 
 /**
  * Static rule-based eligibility reasoner.

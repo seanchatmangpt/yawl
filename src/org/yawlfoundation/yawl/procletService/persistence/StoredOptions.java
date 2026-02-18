@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.procletService.persistence;
 
-import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionNode;
-import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.yawlfoundation.yawl.procletService.interactionGraph.InteractionNode;
+import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
 
 /**
  * @author Michael Adams

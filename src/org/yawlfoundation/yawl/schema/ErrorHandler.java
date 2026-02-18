@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.schema;
 
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 /**
  * This class implements the SAX ErrorHandler interface

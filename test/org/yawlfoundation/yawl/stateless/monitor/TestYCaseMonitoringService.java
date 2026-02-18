@@ -1,10 +1,11 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
-import junit.framework.TestCase;
+import java.util.Map;
+
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitoringService.CaseStatistics;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitoringService.TaskMetrics;
 
-import java.util.Map;
+import junit.framework.TestCase;
 
 /**
  * Test cases for YCaseMonitoringService.

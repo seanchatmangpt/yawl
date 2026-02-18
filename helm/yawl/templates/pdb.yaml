@@ -16,7 +16,5 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "yawl.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/part-of: yawl
+      {{- include "yawl.selectorLabels" . | nindent 6 }}
 {{- end }}

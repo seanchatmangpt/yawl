@@ -1,13 +1,14 @@
 package org.yawlfoundation.yawl.elements.state;
 
-import org.yawlfoundation.yawl.elements.YCondition;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.yawlfoundation.yawl.elements.YNetElement;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YCondition;
+import org.yawlfoundation.yawl.elements.YNetElement;
 
 /**
  /**

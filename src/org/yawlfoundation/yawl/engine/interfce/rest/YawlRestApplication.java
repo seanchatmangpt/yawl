@@ -32,6 +32,7 @@ import java.util.Set;
  * - Interface B (Client): Case and work item management
  * - Interface E (Events): Event subscriptions and notifications
  * - Interface X (Extended): Advanced engine operations
+ * - Security API: Certificates, signatures
  *
  * @author Michael Adams
  * @date 16/02/2026

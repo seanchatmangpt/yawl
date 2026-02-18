@@ -1,12 +1,12 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for instanceof pattern variable conversions
@@ -193,7 +193,7 @@ class InstanceofPatternTest {
     // Test externalInteraction element (gateway-specific, not for nets)
     @Test
     void testToXML_GatewayExternalInteraction_Manual() {
-        gateway.setManualInteraction(true);
+        gateway.setExternalInteraction(true);
         String xml = spec.toXML();
 
         assertTrue(xml.contains("<externalInteraction>manual</externalInteraction>"),
@@ -202,7 +202,7 @@ class InstanceofPatternTest {
 
     @Test
     void testToXML_GatewayExternalInteraction_Automated() {
-        gateway.setManualInteraction(false);
+        gateway.setExternalInteraction(false);
         String xml = spec.toXML();
 
         assertTrue(xml.contains("<externalInteraction>automated</externalInteraction>"),

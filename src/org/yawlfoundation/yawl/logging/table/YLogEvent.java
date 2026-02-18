@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.logging.table;
 
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.util.StringUtil;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * One row of the logEvent table, representing a single net or task instance runtime event

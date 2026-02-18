@@ -19,6 +19,11 @@
 package org.yawlfoundation.yawl.stateless.engine.time;
 
 
+import java.util.Date;
+import java.util.Set;
+
+import javax.xml.datatype.Duration;
+
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.engine.time.YTimedObject;
@@ -29,10 +34,6 @@ import org.yawlfoundation.yawl.stateless.engine.YEngine;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
-
-import javax.xml.datatype.Duration;
-import java.util.Date;
-import java.util.Set;
 
 /**
  * A timer associated with an Atomic Task.
@@ -122,7 +123,8 @@ public class YWorkItemTimer implements YTimedObject {
             // first use, this timer will fully complete (expire) before the case
             // begins unloading. If it has 2nd use, the unload will have closed this
             // timer.
-            synchronized (engine.UNLOAD_MUTEX) {
+            engine.UNLOAD_MUTEX.lock();
+            try {
 
                 // if case has been unloaded, which includes closing this timer,
                 // no further action is required
@@ -165,6 +167,8 @@ public class YWorkItemTimer implements YTimedObject {
                 catch (Exception e) {
                     // handle exc.
                 }
+            } finally {
+                engine.UNLOAD_MUTEX.unlock();
             }
         }
     }

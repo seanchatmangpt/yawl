@@ -1,6 +1,10 @@
-# YAWL Helm Chart - Default Values
-# This file contains default configuration values for YAWL deployment
-# Override these values with environment-specific values files
+# =============================================================================
+# YAWL v6.0.0 – Helm Chart Default Values
+# =============================================================================
+# Override these values with environment-specific values files:
+#   helm install yawl ./helm/yawl -f values-aws.yaml
+#   helm install yawl ./helm/yawl -f values-gcp.yaml
+# =============================================================================
 
 # -----------------------------------------------------------------------------
 # Global Settings
@@ -16,22 +20,25 @@ global:
 # -----------------------------------------------------------------------------
 # YAWL Version
 # -----------------------------------------------------------------------------
-yawlVersion: "5.2"
-buildNumber: "1724"
+yawlVersion: "6.0.0"
+buildNumber: "1"
 
 # -----------------------------------------------------------------------------
 # Cloud Provider Configuration
+# One of: gcp, aws, azure, oracle, ibm, or "" for generic
 # -----------------------------------------------------------------------------
-cloudProvider: ""  # gcp, aws, azure, oracle, ibm, or empty for generic
+cloudProvider: ""
 
 # -----------------------------------------------------------------------------
 # Image Configuration
 # -----------------------------------------------------------------------------
 image:
-  registry: docker.io
-  repository: yawl/yawl
-  tag: "5.2"
+  registry: ghcr.io
+  repository: yawlfoundation/yawl/engine
+  tag: "6.0.0"
   pullPolicy: IfNotPresent
+  # Image digest for immutable reference (set in production)
+  digest: ""
 
 # -----------------------------------------------------------------------------
 # Database Configuration
@@ -39,16 +46,30 @@ image:
 postgresql:
   enabled: true
   auth:
-    postgresPassword: "yawl"
-    password: "yawl"
+    postgresPassword: ""    # Provide via --set or external secret
+    password: ""
     database: "yawl"
+    existingSecret: ""
   primary:
     persistence:
       enabled: true
       size: 20Gi
       storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
   readReplicas:
     replicaCount: 0
+  metrics:
+    enabled: true
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+    retentionDays: 7
 
 # External PostgreSQL (when postgresql.enabled is false)
 externalDatabase:
@@ -67,15 +88,14 @@ redis:
   enabled: true
   auth:
     enabled: true
-    password: "yawl-redis"
+    password: ""
   master:
     persistence:
       enabled: true
-      size: 8Gi
+      size: 4Gi
   replica:
     replicaCount: 1
 
-# External Redis (when redis.enabled is false)
 externalRedis:
   host: ""
   port: 6379
@@ -84,7 +104,7 @@ externalRedis:
   existingSecretPasswordKey: password
 
 # -----------------------------------------------------------------------------
-# Service Configuration (7 Core Services)
+# Service Definitions (7 Core Services)
 # -----------------------------------------------------------------------------
 services:
   engine:
@@ -92,13 +112,20 @@ services:
     enabled: true
     replicaCount: 2
     image:
-      repository: yawl/engine
+      repository: yawlfoundation/yawl/engine
       tag: ""
       pullPolicy: IfNotPresent
+    # Set clustering.enabled=true to use StatefulSet instead of Deployment
+    clustering:
+      enabled: false
+    persistence:
+      size: 5Gi
+      storageClass: ""
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
+      managementPort: 9090
       annotations: {}
     resources:
       requests:
@@ -113,22 +140,34 @@ services:
       maxReplicas: 10
       targetCPUUtilizationPercentage: 70
       targetMemoryUtilizationPercentage: 80
+    # Probes use Spring Boot Actuator on management port 9090
     livenessProbe:
       httpGet:
-        path: /engine/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       timeoutSeconds: 5
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /engine/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 3
+    startupProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 18
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
     env: []
     extraVolumes: []
     extraVolumeMounts: []
@@ -138,14 +177,14 @@ services:
     enabled: true
     replicaCount: 2
     image:
-      repository: yawl/resource-service
+      repository: yawlfoundation/yawl/resource-service
       tag: ""
       pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 250m
@@ -161,20 +200,27 @@ services:
       targetMemoryUtilizationPercentage: 80
     livenessProbe:
       httpGet:
-        path: /resourceService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       timeoutSeconds: 5
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /resourceService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 3
+    startupProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      failureThreshold: 12
     env: []
     extraVolumes: []
     extraVolumeMounts: []
@@ -184,14 +230,14 @@ services:
     enabled: true
     replicaCount: 2
     image:
-      repository: yawl/worklet-service
+      repository: yawlfoundation/yawl/worklet-service
       tag: ""
       pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 250m
@@ -207,20 +253,27 @@ services:
       targetMemoryUtilizationPercentage: 80
     livenessProbe:
       httpGet:
-        path: /workletService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       timeoutSeconds: 5
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /workletService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 3
+    startupProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      failureThreshold: 12
     env: []
     extraVolumes: []
     extraVolumeMounts: []
@@ -230,14 +283,13 @@ services:
     enabled: true
     replicaCount: 1
     image:
-      repository: yawl/monitor-service
+      repository: yawlfoundation/yawl/monitor-service
       tag: ""
-      pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 100m
@@ -247,24 +299,19 @@ services:
         memory: 512Mi
     autoscaling:
       enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
     livenessProbe:
       httpGet:
-        path: /monitorService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /monitorService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       failureThreshold: 3
     env: []
     extraVolumes: []
@@ -275,14 +322,13 @@ services:
     enabled: true
     replicaCount: 1
     image:
-      repository: yawl/cost-service
+      repository: yawlfoundation/yawl/cost-service
       tag: ""
-      pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 100m
@@ -292,24 +338,19 @@ services:
         memory: 512Mi
     autoscaling:
       enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
     livenessProbe:
       httpGet:
-        path: /costService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /costService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       failureThreshold: 3
     env: []
     extraVolumes: []
@@ -320,14 +361,13 @@ services:
     enabled: true
     replicaCount: 1
     image:
-      repository: yawl/scheduling-service
+      repository: yawlfoundation/yawl/scheduling-service
       tag: ""
-      pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 100m
@@ -337,24 +377,19 @@ services:
         memory: 512Mi
     autoscaling:
       enabled: false
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 70
     livenessProbe:
       httpGet:
-        path: /schedulingService/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /schedulingService/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       failureThreshold: 3
     env: []
     extraVolumes: []
@@ -365,14 +400,13 @@ services:
     enabled: true
     replicaCount: 2
     image:
-      repository: yawl/balancer
+      repository: yawlfoundation/yawl/balancer
       tag: ""
-      pullPolicy: IfNotPresent
     service:
       type: ClusterIP
       port: 8080
       targetPort: 8080
-      annotations: {}
+      managementPort: 9090
     resources:
       requests:
         cpu: 100m
@@ -384,99 +418,31 @@ services:
       enabled: true
       minReplicas: 2
       maxReplicas: 5
-      targetCPUUtilizationPercentage: 70
     livenessProbe:
       httpGet:
-        path: /balancer/health
-        port: 8080
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
+        path: /actuator/health/liveness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 15
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /balancer/ready
-        port: 8080
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      timeoutSeconds: 3
+        path: /actuator/health/readiness
+        port: 9090
+      initialDelaySeconds: 0
+      periodSeconds: 10
       failureThreshold: 3
     env: []
     extraVolumes: []
     extraVolumeMounts: []
 
 # -----------------------------------------------------------------------------
-# Additional Services
-# -----------------------------------------------------------------------------
-additionalServices:
-  mailService:
-    name: mail-service
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/mail-service
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
-
-  digitalSignature:
-    name: digital-signature
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/digital-signature
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
-
-  documentStore:
-    name: document-store
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/document-store
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
-
-  procletService:
-    name: proclet-service
-    enabled: true
-    replicaCount: 1
-    image:
-      repository: yawl/proclet-service
-      tag: ""
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 250m
-        memory: 512Mi
-
-# -----------------------------------------------------------------------------
-# Ingress Configuration
+# Ingress
 # -----------------------------------------------------------------------------
 ingress:
   enabled: true
   className: nginx
   annotations:
-    kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
@@ -487,11 +453,12 @@ ingress:
       add_header X-Content-Type-Options "nosniff" always;
       add_header X-XSS-Protection "1; mode=block" always;
       add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: yawl.example.com
       paths:
-        - path: /engine
+        - path: /yawl
           pathType: Prefix
           service: engine
         - path: /resourceService
@@ -509,18 +476,6 @@ ingress:
         - path: /schedulingService
           pathType: Prefix
           service: scheduling-service
-        - path: /mailService
-          pathType: Prefix
-          service: mail-service
-        - path: /digitalSignature
-          pathType: Prefix
-          service: digital-signature
-        - path: /documentStore
-          pathType: Prefix
-          service: document-store
-        - path: /procletService
-          pathType: Prefix
-          service: proclet-service
         - path: /balancer
           pathType: Prefix
           service: balancer
@@ -537,7 +492,7 @@ serviceAccount:
   name: ""
   annotations: {}
   labels: {}
-  automountServiceAccountToken: true
+  automountServiceAccountToken: false   # v6: disabled by default, override per-container
 
 # -----------------------------------------------------------------------------
 # Pod Disruption Budget
@@ -545,10 +500,9 @@ serviceAccount:
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
-  # maxUnavailable: 1
 
 # -----------------------------------------------------------------------------
-# Network Policy
+# Network Policy (default-deny with explicit allow-list)
 # -----------------------------------------------------------------------------
 networkPolicy:
   enabled: true
@@ -557,63 +511,81 @@ networkPolicy:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
       ports:
         - protocol: TCP
           port: 8080
+        - protocol: TCP
+          port: 9090
   egress:
     - to:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
-          port: 5432  # PostgreSQL
+          port: 5432    # PostgreSQL
         - protocol: TCP
-          port: 6379  # Redis
-    - to:
-        - namespaceSelector: {}
+          port: 6379    # Redis
+        - protocol: TCP
+          port: 4317    # OTLP gRPC
+        - protocol: TCP
+          port: 4318    # OTLP HTTP
+    - to: []            # DNS
       ports:
         - protocol: TCP
-          port: 53  # DNS
+          port: 53
         - protocol: UDP
           port: 53
 
 # -----------------------------------------------------------------------------
-# Security Context
+# Pod Security Context (enforced by Kyverno policy; UID must be >= 10001)
 # -----------------------------------------------------------------------------
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  fsGroupChangePolicy: OnRootMismatch
   seccompProfile:
     type: RuntimeDefault
 
 containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
-    drop:
-      - ALL
+    drop: [ALL]
   readOnlyRootFilesystem: true
   runAsNonRoot: true
-  runAsUser: 1000
+  runAsUser: 10001
+  runAsGroup: 10001
 
 # -----------------------------------------------------------------------------
 # JVM Configuration
 # -----------------------------------------------------------------------------
 jvm:
-  opts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-  catalinaOpts: "-Djava.security.egd=file:/dev/./urandom"
+  opts: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=25.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+UseStringDeduplication
+    -XX:+ExitOnOutOfMemoryError
+    -Djdk.virtualThreadScheduler.parallelism=64
+    -Djdk.virtualThreadScheduler.maxPoolSize=512
+    -Djava.security.egd=file:/dev/./urandom
 
 # -----------------------------------------------------------------------------
-# Logging Configuration
+# Logging
 # -----------------------------------------------------------------------------
 logging:
-  yawl: WARN
+  yawl: INFO
   worklet: INFO
   resource: INFO
-  scheduling: DEBUG
+  scheduling: INFO
   proclet: INFO
   hibernate: ERROR
-  root: ERROR
+  root: WARN
   mail: INFO
 
 # -----------------------------------------------------------------------------
@@ -624,7 +596,7 @@ secrets:
     create: true
     name: ""
     user: postgres
-    password: yawl
+    password: ""          # Override via --set secrets.database.password=<value>
   apiKeys:
     create: true
     name: ""
@@ -633,9 +605,32 @@ secrets:
     workletServiceKey: ""
 
 # -----------------------------------------------------------------------------
-# Cloud-Specific Settings
+# Istio Service Mesh (disabled by default)
 # -----------------------------------------------------------------------------
-# GCP CloudSQL Proxy
+istio:
+  enabled: false
+  ingressNamespace: istio-system
+  canary:
+    enabled: false
+    weight: 0             # percentage of traffic to canary subset
+    stableWeight: 100
+
+# -----------------------------------------------------------------------------
+# Monitoring (Prometheus Operator)
+# -----------------------------------------------------------------------------
+monitoring:
+  enabled: true
+  namespace: ""           # defaults to release namespace
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+  serviceMonitorLabels:
+    release: prometheus   # match your Prometheus Operator release name
+  ruleLabels:
+    release: prometheus
+
+# -----------------------------------------------------------------------------
+# Cloud-Specific Proxies
+# -----------------------------------------------------------------------------
 cloudsqlProxy:
   enabled: false
   instanceConnectionName: ""
@@ -643,51 +638,35 @@ cloudsqlProxy:
   serviceAccountJson: ""
   proxyPort: 5432
 
-# AWS RDS Proxy
 awsRdsProxy:
   enabled: false
   endpoint: ""
   port: 5432
 
-# Azure Database
 azureDatabase:
   enabled: false
   serverName: ""
 
-# Oracle Cloud
 oracleDatabase:
   enabled: false
   ocid: ""
 
-# IBM Cloud
 ibmDatabase:
   enabled: false
   instanceId: ""
 
 # -----------------------------------------------------------------------------
-# Node Selector, Tolerations, Affinity
+# Scheduling
 # -----------------------------------------------------------------------------
 nodeSelector: {}
 tolerations: []
 affinity: {}
 topologySpreadConstraints: []
-
-# -----------------------------------------------------------------------------
-# Priority Class
-# -----------------------------------------------------------------------------
 priorityClassName: ""
+terminationGracePeriodSeconds: 60
 
 # -----------------------------------------------------------------------------
-# Termination Grace Period
-# -----------------------------------------------------------------------------
-terminationGracePeriodSeconds: 30
-
-# -----------------------------------------------------------------------------
-# Init Containers
+# Init Containers / Extra Resources
 # -----------------------------------------------------------------------------
 initContainers: []
-
-# -----------------------------------------------------------------------------
-# Extra Resources
-# -----------------------------------------------------------------------------
 extraDeploy: []

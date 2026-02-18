@@ -20,13 +20,13 @@ package org.yawlfoundation.yawl.stateless.elements;
 
 
 
+import java.util.*;
+
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.YVerifiable;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YNetElementDocoParser;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.*;
 
 
 /**

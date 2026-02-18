@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.stateless.elements.data;
 
+import java.util.Map;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YAttributeMap;
 import org.yawlfoundation.yawl.elements.YVerifiable;
@@ -32,8 +34,6 @@ import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
-
-import java.util.Map;
 
 /**
  * @author Lachlan Aldred

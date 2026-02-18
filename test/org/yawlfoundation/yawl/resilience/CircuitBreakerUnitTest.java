@@ -1,14 +1,15 @@
 package org.yawlfoundation.yawl.resilience;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker.CircuitBreakerOpenException;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker.State;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Unit tests for CircuitBreaker resilience pattern.
@@ -93,6 +94,7 @@ public class CircuitBreakerUnitTest extends TestCase {
                 breaker.execute(failingOp);
                 fail("Operation should throw exception");
             } catch (Exception e) {
+                // Expected: operation intentionally fails to trigger circuit breaker threshold
                 assertEquals("Failure count should increment", i + 1, breaker.getConsecutiveFailures());
             }
         }
@@ -109,6 +111,7 @@ public class CircuitBreakerUnitTest extends TestCase {
             try {
                 breaker.execute(failingOp);
             } catch (Exception e) {
+                // Expected: intentionally triggering failures to open the circuit
             }
         }
 
@@ -134,6 +137,7 @@ public class CircuitBreakerUnitTest extends TestCase {
             try {
                 breaker.execute(failingOp);
             } catch (Exception e) {
+                // Expected: intentionally triggering failures to open the circuit
             }
         }
 
@@ -155,6 +159,7 @@ public class CircuitBreakerUnitTest extends TestCase {
             try {
                 breaker.execute(failingOp);
             } catch (Exception e) {
+                // Expected: intentionally triggering failures to open the circuit
             }
         }
 
@@ -178,6 +183,7 @@ public class CircuitBreakerUnitTest extends TestCase {
             try {
                 breaker.execute(failingOp);
             } catch (Exception e) {
+                // Expected: intentionally triggering failures to open the circuit
             }
         }
 
@@ -200,10 +206,12 @@ public class CircuitBreakerUnitTest extends TestCase {
         try {
             breaker.execute(failingOp);
         } catch (Exception e) {
+            // Expected: intentionally triggering partial failures below threshold
         }
         try {
             breaker.execute(failingOp);
         } catch (Exception e) {
+            // Expected: intentionally triggering partial failures below threshold
         }
 
         assertEquals("Should have 2 failures", 2, breaker.getConsecutiveFailures());
@@ -225,6 +233,7 @@ public class CircuitBreakerUnitTest extends TestCase {
             try {
                 breaker.execute(failingOp);
             } catch (Exception e) {
+                // Expected: intentionally triggering failures to open the circuit
             }
         }
 
@@ -282,6 +291,7 @@ public class CircuitBreakerUnitTest extends TestCase {
                 try {
                     breaker.execute(failingOp);
                 } catch (Exception e) {
+                    // Expected: intentionally triggering concurrent failures to test thread safety
                 } finally {
                     latch.countDown();
                 }

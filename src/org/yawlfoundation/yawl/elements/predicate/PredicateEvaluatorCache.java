@@ -18,13 +18,13 @@
 
 package org.yawlfoundation.yawl.elements.predicate;
 
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.core.predicate.YCorePredicateEvaluatorCache;
-
-import java.util.Set;
 
 /**
  * Stateful-engine thin wrapper around

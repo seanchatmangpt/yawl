@@ -19,6 +19,19 @@
 package org.yawlfoundation.yawl.engine.gui;
 
 
+import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.prefs.Preferences;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.authentication.YExternalClient;
@@ -44,17 +57,6 @@ import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.*;
-import java.util.List;
-import java.util.prefs.Preferences;
 
 /**
  * 
@@ -105,7 +107,7 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
     private InterfaceBInterop _engineInterop;
 
     // RTE_TOOLIT
-    private static Hashtable<String, File> specTestDataDirs = new Hashtable<String, File>();
+    private static ConcurrentHashMap<String, File> specTestDataDirs = new ConcurrentHashMap<String, File>();
 
     private YAdminGUI() {
         super();
@@ -428,7 +430,6 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
                     _loadedSpecificationsTableModel.removeRow(specID);
                 } catch (YStateException e1) {
                     logError("Specification could not be unloaded - " + e1.getMessage(), e1);
-                    e1.printStackTrace();
                 } catch (YPersistenceException ex) {
                     logError("Failure to unload specifcation", ex);
                 }
@@ -653,7 +654,8 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
                         fileWriter.flush();
                         fileWriter.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LogManager.getLogger(YAdminGUI.class).error(
+                                "Failed to write specification XML to file: {}", toWriteXMLHere, e);
                     }
                 }
             } catch (Exception e) {

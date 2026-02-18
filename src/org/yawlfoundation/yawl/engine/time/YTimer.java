@@ -18,8 +18,9 @@
 
 package org.yawlfoundation.yawl.engine.time;
 
-import javax.xml.datatype.Duration;
 import java.util.*;
+
+import javax.xml.datatype.Duration;
 
 /**
  * Author: Michael Adams

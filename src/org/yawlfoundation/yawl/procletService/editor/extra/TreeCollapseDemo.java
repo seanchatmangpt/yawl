@@ -28,6 +28,24 @@ package org.yawlfoundation.yawl.procletService.editor.extra;
  */
 
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.swing.*;
+
+import org.apache.commons.collections15.Factory;
+import org.apache.commons.collections15.Transformer;
+import org.apache.commons.collections15.functors.ConstantTransformer;
+
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
@@ -45,22 +63,6 @@ import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
-import org.apache.commons.collections15.Factory;
-import org.apache.commons.collections15.Transformer;
-import org.apache.commons.collections15.functors.ConstantTransformer;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Demonstrates "collapsing"/"expanding" of a tree's subtrees.
@@ -383,4 +385,3 @@ public class TreeCollapseDemo extends JApplet {
         frame.setVisible(true);
     }
 }
-

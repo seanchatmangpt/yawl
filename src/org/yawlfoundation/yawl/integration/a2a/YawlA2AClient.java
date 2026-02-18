@@ -2,7 +2,6 @@ package org.yawlfoundation.yawl.integration.a2a;
 
 import io.a2a.A2A;
 import io.a2a.client.Client;
-import io.a2a.client.ClientEvent;
 import io.a2a.client.MessageEvent;
 import io.a2a.client.TaskEvent;
 import io.a2a.client.transport.rest.RestTransport;

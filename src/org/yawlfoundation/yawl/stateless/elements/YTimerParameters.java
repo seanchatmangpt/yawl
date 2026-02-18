@@ -18,25 +18,26 @@
 
 package org.yawlfoundation.yawl.stateless.elements;
 
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+import jakarta.xml.bind.DatatypeConverter;
+
+import javax.xml.datatype.Duration;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.engine.time.YTimer;
-import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.engine.time.workdays.WorkDayAdjuster;
+import org.yawlfoundation.yawl.stateless.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
-import org.yawlfoundation.yawl.util.XNodeParser;
-
-import jakarta.xml.bind.DatatypeConverter;
-import javax.xml.datatype.Duration;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusEnabled;
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting;
 
 /**
  * @author Michael Adams
@@ -178,19 +179,20 @@ public class YTimerParameters {
 
 
     public boolean parseYTimerType(Element eTimerTypeValue) throws IllegalArgumentException {
-        XNode node = new XNodeParser(true).parse(eTimerTypeValue);
-        if (node == null) throw new IllegalArgumentException("Invalid YTimerType XML");
+        if (eTimerTypeValue == null) throw new IllegalArgumentException("Invalid YTimerType XML");
 
-        String triggerStr = node.getChildText("trigger");
+        // Use JDOM directly instead of XNodeParser to avoid string conversion issues
+        // with large numbers (e.g., epoch millis values)
+        String triggerStr = eTimerTypeValue.getChildText("trigger");
         if (triggerStr == null) throw new IllegalArgumentException("Missing 'trigger' parameter");
 
         // throws IllegalArgumentException if triggerStr is not a valid Trigger
         YWorkItemTimer.Trigger trigger = YWorkItemTimer.Trigger.valueOf(triggerStr);
 
-        String expiry = node.getChildText("expiry");
+        String expiry = eTimerTypeValue.getChildText("expiry");
         if (expiry == null) throw new IllegalArgumentException("Missing 'expiry' parameter");
 
-        setWorkDaysOnly(node.getChild("workdays") != null);
+        setWorkDaysOnly(eTimerTypeValue.getChild("workdays") != null);
 
         if (expiry.startsWith("P")) {         // duration types start with P
             Duration duration = StringUtil.strToDuration(expiry);

@@ -18,6 +18,14 @@
 
 package org.yawlfoundation.yawl.unmarshal;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.time.Instant;
+import java.util.*;
+
+import javax.xml.datatype.Duration;
+
 import org.apache.logging.log4j.LogManager;
 import org.jdom2.Attribute;
 import org.jdom2.Element;
@@ -33,13 +41,6 @@ import org.yawlfoundation.yawl.util.DynamicValue;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 import org.yawlfoundation.yawl.util.StringUtil;
-
-import javax.xml.datatype.Duration;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.time.Instant;
-import java.util.*;
 
 /**
  * Builds decomposition objects from XML doclets.
@@ -657,7 +658,7 @@ public class YDecompositionParser {
             }
 
             for (YTask externalTask : _removeSetIDs.keySet()) {
-                List<YExternalNetElement> removeSetObjects = new Vector<YExternalNetElement>();
+                List<YExternalNetElement> removeSetObjects = new ArrayList<YExternalNetElement>();
                 for (String id : _removeSetIDs.get(externalTask)) {
                     removeSetObjects.add(decomposition.getNetElement(id));
                 }
@@ -702,7 +703,7 @@ public class YDecompositionParser {
         public void add(String id, List<FlowStruct> postsetStruct) {
             List<FlowStruct> oldRefIDs = _postsetMap.get(id);
             if (oldRefIDs == null) {
-                oldRefIDs = new Vector<FlowStruct>();
+                oldRefIDs = new ArrayList<FlowStruct>();
             }
             oldRefIDs.addAll(postsetStruct);
             _postsetMap.put(id, oldRefIDs);
@@ -715,7 +716,7 @@ public class YDecompositionParser {
 
 
         public List getPostset(List<String> ids) {
-            List<FlowStruct> postset = new Vector<FlowStruct>();
+            List<FlowStruct> postset = new ArrayList<FlowStruct>();
             for (String id : ids) {
                 postset.addAll(_postsetMap.get(id));
             }
@@ -724,7 +725,7 @@ public class YDecompositionParser {
 
 
         public void addImplicitConditions() {
-            List<String> elementIDs = new Vector<String>(_postsetMap.keySet());
+            List<String> elementIDs = new ArrayList<String>(_postsetMap.keySet());
             for (String currentElementID : elementIDs) {
                 YExternalNetElement currentNetElement = getNetElement(currentElementID);
                 if (currentNetElement instanceof YTask) {
@@ -742,7 +743,7 @@ public class YDecompositionParser {
                             ((YNet) _decomposition).addNetElement(condition);
                             String tempElemID = flowStruct._flowInto;
                             flowStruct._flowInto = condition.getID();
-                            List<FlowStruct> dom = new Vector<FlowStruct>();
+                            List<FlowStruct> dom = new ArrayList<FlowStruct>();
                             dom.add(new FlowStruct(tempElemID, null, null));
                             _postsetMap.put(condition.getID(), dom);
                         }

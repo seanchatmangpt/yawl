@@ -1,6 +1,11 @@
 # Makefile
 #
-# YAWL Shell-Based Testing
+# YAWL V6 Build Control Plane + Shell-Based Testing
+#
+# Control plane targets (observatory):
+#   make verify        # Run Maven verify gates; emit receipt
+#   make observatory   # Generate observatory facts/diagrams/receipt
+#   make closure       # verify + observatory (final status line)
 #
 # Black-box testing with zero tolerance for mocks/stubs.
 # All tests verify real system behavior through observable interfaces.
@@ -321,4 +326,97 @@ resilience-help:
 	@echo "  docs/resilience/README.md                      Platform overview"
 	@echo "  docs/resilience/RESILIENCE_OPERATIONS_GUIDE.md Tuning guide"
 	@echo "  docs/resilience/QUICK_START.md                 5-minute setup"
+	@echo ""
+
+# ========================================
+# V6 Observatory Control Plane
+# ========================================
+
+.PHONY: verify observatory closure observatory-help
+
+# Observatory output directories
+V6_LATEST := $(PROJECT_DIR)/docs/v6/latest
+V6_RECEIPTS := $(V6_LATEST)/receipts
+OBSERVATORY_SCRIPT := $(PROJECT_DIR)/scripts/observatory/observatory.sh
+
+# Run Maven verify gates and emit a receipt
+verify:
+	@echo ""
+	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)$(BOLD) V6 Control Plane: verify$(NC)"
+	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@mkdir -p $(V6_RECEIPTS)
+	@RUN_ID=$$(date -u +%Y%m%dT%H%M%SZ); \
+	VERIFY_START=$$(date +%s); \
+	MVN_CMD="mvn -T 1.5C clean verify -DskipITs=true"; \
+	echo "[verify] Running: $$MVN_CMD"; \
+	if $$MVN_CMD > $(V6_RECEIPTS)/verify.log 2>&1; then \
+		VERIFY_EXIT=0; \
+		VERIFY_STATUS="GREEN"; \
+	else \
+		VERIFY_EXIT=$$?; \
+		VERIFY_STATUS="RED"; \
+	fi; \
+	VERIFY_END=$$(date +%s); \
+	VERIFY_DURATION=$$(( (VERIFY_END - VERIFY_START) * 1000 )); \
+	LOG_SHA=$$(sha256sum $(V6_RECEIPTS)/verify.log 2>/dev/null | awk '{print "sha256:" $$1}' || echo "sha256:unavailable"); \
+	printf '{\n  "run_id": "%s",\n  "status": "%s",\n  "target": "verify",\n  "command": "%s",\n  "exit_code": %d,\n  "duration_ms": %d,\n  "refusals": [],\n  "outputs": {\n    "log_ref": "docs/v6/latest/receipts/verify.log",\n    "sha256": "%s"\n  }\n}\n' \
+		"$$RUN_ID" "$$VERIFY_STATUS" "$$MVN_CMD" "$$VERIFY_EXIT" "$$VERIFY_DURATION" "$$LOG_SHA" \
+		> $(V6_RECEIPTS)/verify.json; \
+	echo ""; \
+	echo "STATUS=$$VERIFY_STATUS RUN_ID=$$RUN_ID RECEIPT=docs/v6/latest/receipts/verify.json"
+
+# Generate observatory (facts + diagrams + YAWL XML + receipt)
+observatory:
+	@echo ""
+	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)$(BOLD) V6 Control Plane: observatory$(NC)"
+	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@chmod +x $(OBSERVATORY_SCRIPT)
+	@bash $(OBSERVATORY_SCRIPT)
+
+# Full closure: verify + observatory
+closure: verify observatory
+	@echo ""
+	@echo "$(GREEN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(GREEN)$(BOLD) V6 Control Plane: closure COMPLETE$(NC)"
+	@echo "$(GREEN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "Receipts:"
+	@echo "  - docs/v6/latest/receipts/verify.json"
+	@echo "  - docs/v6/latest/receipts/observatory.json"
+	@echo ""
+	@echo "Index:  docs/v6/latest/INDEX.md"
+	@echo ""
+	@if [ -f $(V6_RECEIPTS)/observatory.json ]; then \
+		OBS_STATUS=$$(grep -oP '(?<="status": ")[^"]+' $(V6_RECEIPTS)/observatory.json | head -1); \
+		VER_STATUS=$$(grep -oP '(?<="status": ")[^"]+' $(V6_RECEIPTS)/verify.json | head -1); \
+		if [ "$$OBS_STATUS" = "GREEN" ] && [ "$$VER_STATUS" = "GREEN" ]; then \
+			FINAL="GREEN"; \
+		elif [ "$$OBS_STATUS" = "RED" ] || [ "$$VER_STATUS" = "RED" ]; then \
+			FINAL="RED"; \
+		else \
+			FINAL="YELLOW"; \
+		fi; \
+		echo "STATUS=$$FINAL CLOSURE=COMPLETE"; \
+	fi
+
+# Observatory help
+observatory-help:
+	@echo ""
+	@echo "$(CYAN)$(BOLD)V6 Observatory Control Plane$(NC)"
+	@echo ""
+	@echo "$(BOLD)Targets:$(NC)"
+	@echo "  verify         Run Maven verify gates; emit docs/v6/latest/receipts/verify.json"
+	@echo "  observatory    Generate facts + diagrams + YAWL XML + receipt"
+	@echo "  closure        verify then observatory (full pipeline)"
+	@echo ""
+	@echo "$(BOLD)Output:$(NC)"
+	@echo "  docs/v6/latest/INDEX.md                Entry point"
+	@echo "  docs/v6/latest/receipts/*.json         Machine-readable receipts"
+	@echo "  docs/v6/latest/facts/*.json            9 fact files"
+	@echo "  docs/v6/latest/diagrams/*.mmd          7 Mermaid diagrams"
+	@echo "  docs/v6/latest/diagrams/yawl/*.xml     YAWL build workflow"
 	@echo ""

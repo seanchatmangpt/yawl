@@ -1,11 +1,11 @@
 package org.yawlfoundation.yawl.stateless.listener.event;
 
+import java.time.Instant;
+
 import org.jdom2.Document;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
-
-import java.time.Instant;
 
 /**
  * @author Michael Adams

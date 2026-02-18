@@ -18,17 +18,17 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.YAWLServiceGateway;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 
 /**
  * A cache of active workitems.

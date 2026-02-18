@@ -18,18 +18,17 @@
 
 package org.yawlfoundation.yawl.stateless.unmarshal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
-
-import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.SchemaHandler;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Marshals & Unmarshals specifications

@@ -1,0 +1,568 @@
+# YAWL v6.0.0-Alpha - Kubernetes Deployment
+# Production-ready configuration with auto-scaling and observability
+#
+# Components:
+# - Namespace isolation
+# - Deployment with replicas and resource limits
+# - Service definitions (ClusterIP, NodePort)
+# - ConfigMap for application configuration
+# - Secret for sensitive data
+# - PersistentVolumeClaim for data persistence
+# - Liveness and readiness probes
+# - HorizontalPodAutoscaler for scaling
+# - PodDisruptionBudget for high availability
+# - NetworkPolicy for security
+
+---
+# Namespace for YAWL workflow engine
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/version: "6.0.0-alpha"
+    app.kubernetes.io/managed-by: kubectl
+
+---
+# ConfigMap for YAWL application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: configmap
+data:
+  # Application profile
+  SPRING_PROFILES_ACTIVE: "production,kubernetes"
+
+  # Database configuration (non-sensitive)
+  DB_TYPE: "postgres"
+  DB_HOST: "postgres.yawl.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "yawl"
+
+  # JVM Options optimized for containers and Java 25
+  JAVA_OPTS: |-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=50.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+UseStringDeduplication
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+    -Djava.security.egd=file:/dev/./urandom
+    -Djava.io.tmpdir=/app/temp
+    -Dfile.encoding=UTF-8
+    -Djdk.virtualThreadScheduler.parallelism=200
+    -Djdk.virtualThreadScheduler.maxPoolSize=256
+    -Djdk.tracePinnedThreads=short
+
+  # Actuator configuration
+  MANAGEMENT_HEALTH_PROBES_ENABLED: "true"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "when-authorized"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+
+  # Logging configuration
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_ORG_YAWLFOUNDATION: "DEBUG"
+  TZ: "UTC"
+
+  # OpenTelemetry configuration
+  OTEL_SERVICE_NAME: "yawl-engine"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "prometheus"
+  OTEL_LOGS_EXPORTER: "otlp"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.yawl.svc.cluster.local:4317"
+
+  # Ports
+  MAIN_PORT: "8080"
+  MANAGEMENT_PORT: "9090"
+  RESOURCE_PORT: "8081"
+
+---
+# Secret for YAWL sensitive configuration
+# NOTE: In production, use external secret management (Vault, AWS Secrets Manager, etc.)
+# Base64 encoded values (echo -n 'value' | base64)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yawl-secrets
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: secret
+type: Opaque
+data:
+  # Database credentials (base64 encoded)
+  # Default: yawl_user / yawl_secure_password_change_me
+  # Generate new: kubectl create secret generic yawl-secrets --from-literal=DB_PASSWORD=<password> -n yawl --dry-run=client -o yaml
+  DB_USER: eWF3bF91c2Vy
+  DB_PASSWORD: eWF3bF9zZWN1cmVfcGFzc3dvcmRfY2hhbmdlX21l
+
+  # JWT signing key (base64 encoded)
+  # Generate: openssl rand -base64 64 | tr -d '\n'
+  JWT_SIGNING_KEY: Y2hhbmdlX3RoaXNfdG9fYV9zZWN1cmVfcmFuZG9tX2tleV9mb3JfcHJvZHVjdGlvbl9hdF9sZWFzdF82NF9ieXRlcw==
+
+  # Admin API key (base64 encoded)
+  ADMIN_API_KEY: Y2hhbmdlX3RoaXNfYXBpX2tleV9mb3JfcHJvZHVjdGlvbg==
+
+  # Encryption key for sensitive workflow data (base64 encoded)
+  ENCRYPTION_KEY: Y2hhbmdlX3RoaXNfZW5jcnlwdGlvbl9rZXlfZm9yX3Byb2R1Y3Rpb25fMzJfYnl0ZXM=
+
+---
+# PersistentVolumeClaim for YAWL data persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yawl-data-pvc
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # Adjust based on your cluster's storage classes
+  # For production, consider:
+  # volumeName: yawl-data-pv  # Bind to specific PV
+  # selector:
+  #   matchLabels:
+  #     app: yawl
+
+---
+# PersistentVolumeClaim for YAWL logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yawl-logs-pvc
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# Deployment for YAWL workflow engine
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/version: "6.0.0-alpha"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl
+      app.kubernetes.io/component: engine
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Maintain full availability during updates
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl
+        app.kubernetes.io/component: engine
+        app.kubernetes.io/version: "6.0.0-alpha"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      # Security context for pod-level settings
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Service account for the pod
+      serviceAccountName: yawl-service-account
+
+      # Graceful termination period
+      terminationGracePeriodSeconds: 60
+
+      # Pod anti-affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: yawl
+                    app.kubernetes.io/component: engine
+                topologyKey: kubernetes.io/hostname
+        # Node affinity for specific node pools (uncomment if needed)
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: node-pool
+        #         operator: In
+        #         values:
+        #         - workload
+
+      # Topology spread constraints for even distribution
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl
+              app.kubernetes.io/component: engine
+
+      # Container definitions
+      containers:
+        - name: yawl-engine
+          image: yawl/engine:6.0.0-alpha
+          imagePullPolicy: IfNotPresent
+
+          # Container ports
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 9090
+              protocol: TCP
+            - name: resource
+              containerPort: 8081
+              protocol: TCP
+
+          # Environment variables from ConfigMap and Secret
+          envFrom:
+            - configMapRef:
+                name: yawl-config
+            - secretRef:
+                name: yawl-secrets
+
+          # Additional environment variables
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          # Resource limits and requests
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "4000m"
+              memory: "8Gi"
+
+          # Liveness probe - checks if application is running
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 120  # Allow JVM warmup time
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 3
+            successThreshold: 1
+
+          # Readiness probe - checks if application is ready to receive traffic
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+
+          # Startup probe - for slow-starting containers
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 30  # 30 * 10s = 300s max startup time
+
+          # Volume mounts
+          volumeMounts:
+            - name: yawl-data
+              mountPath: /app/data
+            - name: yawl-logs
+              mountPath: /app/logs
+            - name: yawl-specifications
+              mountPath: /app/specifications
+            - name: yawl-temp
+              mountPath: /app/temp
+
+          # Container security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # Required for logs and temp
+            capabilities:
+              drop:
+                - ALL
+
+      # Volumes
+      volumes:
+        - name: yawl-data
+          persistentVolumeClaim:
+            claimName: yawl-data-pvc
+        - name: yawl-logs
+          persistentVolumeClaim:
+            claimName: yawl-logs-pvc
+        - name: yawl-specifications
+          emptyDir: {}  # Use emptyDir or create separate PVC for specifications
+        - name: yawl-temp
+          emptyDir: {}
+
+      # Image pull secrets (if using private registry)
+      # imagePullSecrets:
+      #   - name: docker-registry-secret
+
+      # Tolerations for node taints (uncomment if needed)
+      # tolerations:
+      #   - key: "dedicated"
+      #     operator: "Equal"
+      #     value: "yawl"
+      #     effect: "NoSchedule"
+
+---
+# Service for YAWL main application (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-engine
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: service
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: engine
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+    - name: management
+      port: 9090
+      targetPort: management
+      protocol: TCP
+    - name: resource
+      port: 8081
+      targetPort: resource
+      protocol: TCP
+
+---
+# Service for YAWL external access (NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-engine-external
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: service
+    app.kubernetes.io/type: external
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: engine
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      nodePort: 30080  # Choose available port in range 30000-32767
+      protocol: TCP
+
+---
+# HorizontalPodAutoscaler for YAWL engine
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yawl-engine-hpa
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yawl-engine
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU utilization target
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Memory utilization target
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min  # Use the most conservative policy
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max  # Use the most aggressive policy
+
+---
+# PodDisruptionBudget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yawl-engine-pdb
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: pdb
+spec:
+  minAvailable: 1  # Always keep at least 1 pod running during disruptions
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl
+      app.kubernetes.io/component: engine
+
+---
+# ServiceAccount for YAWL pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-service-account
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: service-account
+automountServiceAccountToken: false  # Disable if not needed for security
+
+---
+# NetworkPolicy for YAWL (restrict ingress/egress traffic)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-network-policy
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: yawl
+      app.kubernetes.io/component: engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 9090
+          protocol: TCP
+    # Allow ingress from monitoring (Prometheus)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - port: 9090
+          protocol: TCP
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow egress to database
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - port: 5432
+          protocol: TCP
+    # Allow egress to OpenTelemetry collector
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP

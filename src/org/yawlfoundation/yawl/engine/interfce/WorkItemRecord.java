@@ -18,16 +18,15 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.util.JDOMUtil;
-import org.yawlfoundation.yawl.util.StringUtil;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
  * A 'stringified' record of a workitem for passing across various HTTP interfaces.

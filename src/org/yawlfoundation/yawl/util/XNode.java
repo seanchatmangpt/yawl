@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.util;
 
+import java.util.*;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
-
-import java.util.*;
 
 /**
  * A utility for building xml strings. Handles elements, attributes, comments, text

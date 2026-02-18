@@ -18,10 +18,10 @@
 
 package org.yawlfoundation.yawl.logging;
 
+import java.util.ArrayList;
+
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.JDOMUtil;
-
-import java.util.ArrayList;
 
 /**
  * Author: Michael Adams

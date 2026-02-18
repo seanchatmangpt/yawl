@@ -18,11 +18,11 @@
 
 package org.yawlfoundation.yawl.stateless.engine;
 
-import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 
 /**
  * 

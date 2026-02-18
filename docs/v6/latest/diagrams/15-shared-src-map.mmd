@@ -1,0 +1,66 @@
+%%{ init: { 'theme': 'base' } }%%
+graph LR
+    classDef srcroot fill:#fed7d7,stroke:#c53030
+    classDef fullmod fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef pkgmod fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef pkg fill:#edf2f7,stroke:#4a5568
+
+    SRC["src/<br/>Shared Source Root"]:::srcroot
+    TEST["test/<br/>Shared Test Root"]:::srcroot
+
+    subgraph FullShared["Full Shared Access Modules"]
+        yawl_elements[yawl-elements]:::fullmod
+        yawl_engine[yawl-engine]:::fullmod
+        yawl_stateless[yawl-stateless]:::fullmod
+        yawl_utilities[yawl-utilities]:::fullmod
+        yawl_security[yawl-security]:::fullmod
+    end
+
+    subgraph PackageScoped["Package-Scoped Modules"]
+        yawl_authentication[yawl-authentication]:::pkgmod
+        yawl_control_panel[yawl-control-panel]:::pkgmod
+        yawl_integration[yawl-integration]:::pkgmod
+        yawl_monitoring[yawl-monitoring]:::pkgmod
+        yawl_resourcing[yawl-resourcing]:::pkgmod
+        yawl_scheduling[yawl-scheduling]:::pkgmod
+        yawl_worklet[yawl-worklet]:::pkgmod
+    end
+
+    subgraph Packages["Source Packages"]
+        elements[elements/]:::pkg
+        engine[engine/]:::pkg
+        stateless[stateless/]:::pkg
+        util[util/]:::pkg
+        schema_pkg[schema/]:::pkg
+        unmarshal[unmarshal/]:::pkg
+        authentication[authentication/]:::pkg
+        resourcing[resourcing/]:::pkg
+        scheduling[scheduling/]:::pkg
+        worklet[worklet/]:::pkg
+        integration_pkg[integration/]:::pkg
+        observability[observability/]:::pkg
+        controlpanel[controlpanel/]:::pkg
+        security_pkg[security/]:::pkg
+    end
+
+    SRC --> yawl_elements
+    SRC --> yawl_engine
+    SRC --> yawl_stateless
+    SRC --> yawl_utilities
+    SRC --> yawl_security
+
+    yawl_authentication --> authentication
+    yawl_control_panel --> controlpanel
+    yawl_integration --> integration_pkg
+    yawl_monitoring --> observability
+    yawl_resourcing --> resourcing
+    yawl_scheduling --> scheduling
+    yawl_worklet --> worklet
+
+    yawl_elements -.->|includes filter| elements
+    yawl_elements -.->|includes filter| schema_pkg
+    yawl_engine -.->|includes filter| engine
+    yawl_stateless -.->|includes filter| stateless
+    yawl_utilities -.->|includes filter| util
+    yawl_utilities -.->|includes filter| unmarshal
+    yawl_security -.->|includes filter| security_pkg

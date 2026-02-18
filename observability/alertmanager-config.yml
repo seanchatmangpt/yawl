@@ -1,0 +1,214 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: ${SLACK_WEBHOOK_URL}
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+
+  routes:
+    # Critical alerts - send to PagerDuty and Slack immediately
+    - match:
+        severity: critical
+      receiver: pagerduty-critical
+      group_wait: 0s
+      group_interval: 2m
+      repeat_interval: 1h
+      continue: true
+
+    # YAWL service specific routing
+    - match:
+        service: yawl
+      receiver: slack-yawl
+      group_interval: 5m
+      repeat_interval: 2h
+
+    # YAWL SLO violations - escalate to management
+    - match:
+        service: yawl
+        slo_type: availability
+      receiver: slack-yawl-sre
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: true
+
+    # Database alerts - notify database team
+    - match:
+        service: yawl
+        component: database
+      receiver: slack-database-team
+      group_interval: 5m
+      continue: true
+
+    # Kubernetes infrastructure alerts
+    - match:
+        component: kubernetes
+      receiver: slack-platform-team
+      group_interval: 5m
+
+    # Warning level - Slack only
+    - match:
+        severity: warning
+      receiver: slack-warnings
+
+    # Info level - suppress by default
+    - match:
+        severity: info
+      receiver: 'null'
+
+receivers:
+  # Default receiver (black hole)
+  - name: 'default'
+    slack_configs:
+      - channel: '#alerts'
+        title: '[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Description: {{ .Annotations.description }}
+          Dashboard: {{ .Annotations.dashboard }}
+          {{ end }}
+        send_resolved: true
+
+  # PagerDuty for critical alerts - wake up on-call
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: ${PAGERDUTY_INTEGRATION_KEY}
+        description: '[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }}'
+        details:
+          cluster: '{{ .GroupLabels.cluster }}'
+          service: '{{ .GroupLabels.service }}'
+          firing: |
+            {{ range .Alerts.Firing }}
+              - {{ .Annotations.summary }}
+                Runbook: {{ .Annotations.runbook }}
+            {{ end }}
+        client: YAWL AlertManager
+        client_url: '{{ .ExternalURL }}'
+
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_CRITICAL}
+        channel: '#critical-incidents'
+        title: '🚨 CRITICAL ALERT'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Service: {{ .Labels.service }}
+          Component: {{ .Labels.component }}
+          Dashboard: {{ .Annotations.dashboard }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+  # YAWL team Slack channel
+  - name: 'slack-yawl'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_YAWL}
+        channel: '#yawl-alerts'
+        title: '[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Details: {{ .Annotations.description }}
+          Dashboard: {{ .Annotations.dashboard }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}{{ if eq .GroupLabels.severity "warning" }}warning{{ else }}danger{{ end }}{{ else }}good{{ end }}'
+
+  # YAWL SRE team - SLO violations
+  - name: 'slack-yawl-sre'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_YAWL_SRE}
+        channel: '#yawl-sre'
+        title: '[SLO VIOLATION] {{ .GroupLabels.alertname }}'
+        text: |
+          *Service Level Objective Violation*
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Current SLI: {{ .Annotations.description }}
+          Dashboard: {{ .Annotations.dashboard }}
+          {{ end }}
+        send_resolved: true
+
+  # Database team
+  - name: 'slack-database-team'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_DATABASE}
+        channel: '#database-team'
+        title: '[DB Alert] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+        send_resolved: true
+
+  # Platform/Kubernetes team
+  - name: 'slack-platform-team'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_PLATFORM}
+        channel: '#platform-alerts'
+        title: '[Kubernetes] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+        send_resolved: true
+
+  # General warnings channel
+  - name: 'slack-warnings'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_WARNINGS}
+        channel: '#warnings'
+        title: '[WARNING] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+        send_resolved: false
+
+  # Null receiver - discards alerts
+  - name: 'null'
+
+inhibit_rules:
+  # Suppress warning if critical of same alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+  # Suppress alerts for nodes with memory pressure
+  - source_match:
+      alertname: 'YawlNodeMemoryPressure'
+    target_match_re:
+      alertname: 'Yawl.*'
+    equal: ['node']
+
+  # Suppress pod alerts if node itself is down
+  - source_match:
+      component: 'kubernetes'
+      alertname: 'YawlNodeNotReady'
+    target_match_re:
+      alertname: 'Yawl.*'
+    equal: ['node']
+
+  # Suppress high latency if database is slow
+  - source_match:
+      alertname: 'YawlDbQueryLatencyHigh'
+    target_match:
+      alertname: 'YawlCaseLatencyP95High'
+    equal: ['cluster']
+
+  # Suppress throughput low if queue is backed up
+  - source_match:
+      alertname: 'YawlQueueDepthCritical'
+    target_match:
+      alertname: 'YawlTaskThroughputLow'
+    equal: ['cluster']

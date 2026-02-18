@@ -1,14 +1,15 @@
 package org.yawlfoundation.yawl.miscellaneousPrograms;
 
+import java.io.StringReader;
+
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamSource;
+
 import net.sf.saxon.Configuration;
 import net.sf.saxon.om.DocumentInfo;
 import net.sf.saxon.query.DynamicQueryContext;
 import net.sf.saxon.query.XQueryExpression;
 import net.sf.saxon.trans.XPathException;
-
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
 
 /**
  * 

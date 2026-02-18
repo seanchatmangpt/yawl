@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.time.Instant;
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
@@ -27,9 +30,6 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.XNodeParser;
-
-import java.time.Instant;
-import java.util.*;
 
 /**
  * @author Michael Adams
@@ -209,7 +209,7 @@ public class CaseImporter {
             String pid = parent.getId();
             Set<YIdentifier> children = parentChildMap.get(pid);
             if (children != null) {
-                parent.set_children(new Vector<YIdentifier>(children));
+                parent.set_children(new ArrayList<YIdentifier>(children));
                 for (YIdentifier child : children) {
                     child.set_parent(parent);
                 }

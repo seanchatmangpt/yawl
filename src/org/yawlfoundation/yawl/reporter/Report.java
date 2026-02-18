@@ -18,12 +18,12 @@
 
 package org.yawlfoundation.yawl.reporter;
 
-import org.yawlfoundation.yawl.util.XNode;
-import org.yawlfoundation.yawl.util.XNodeParser;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.yawlfoundation.yawl.util.XNode;
+import org.yawlfoundation.yawl.util.XNodeParser;
 
 /**
  * @author Michael Adams

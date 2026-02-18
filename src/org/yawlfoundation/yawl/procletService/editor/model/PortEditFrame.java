@@ -19,16 +19,17 @@
 package org.yawlfoundation.yawl.procletService.editor.model;
 
 
+import java.awt.*;
+import java.util.ArrayList;
+
+import javax.swing.*;
+
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletBlock;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModel;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletModels;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Direction;
 import org.yawlfoundation.yawl.procletService.models.procletModel.ProcletPort.Signature;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
 
 public class PortEditFrame extends JDialog {
 

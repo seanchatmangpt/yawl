@@ -1,0 +1,277 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yawl.fullname" . }}
+  namespace: {{ include "yawl.namespace" . }}
+  labels:
+    {{- include "yawl.labels" . | nindent 4 }}
+  {{- with .Values.global.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "yawl.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "yawl.podLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "yawl.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: yawl-engine
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: {{ include "yawl.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+            - name: management
+              containerPort: {{ .Values.service.managementTargetPort }}
+              protocol: TCP
+            - name: resource
+              containerPort: {{ .Values.service.resourceTargetPort }}
+              protocol: TCP
+          env:
+            # Service identification
+            - name: SERVICE_NAME
+              value: "yawl-engine"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+            # Spring Boot configuration
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.spring.profilesActive | quote }}
+            - name: SPRING_APPLICATION_NAME
+              value: {{ .Values.spring.application.name | quote }}
+
+            # Database configuration
+            - name: DB_TYPE
+              value: postgres
+            - name: DB_HOST
+              value: {{ include "yawl.databaseHost" . | quote }}
+            - name: DB_PORT
+              value: {{ include "yawl.databasePort" . | quote }}
+            - name: DB_NAME
+              value: {{ include "yawl.databaseName" . | quote }}
+            {{- if .Values.postgresql.enabled }}
+            - name: DB_USER
+              value: {{ .Values.postgresql.auth.password | default "yawl" | quote }}
+            {{- else }}
+            - name: DB_USER
+              value: {{ .Values.externalDatabase.user | quote }}
+            {{- end }}
+
+            # Redis configuration
+            - name: REDIS_HOST
+              value: {{ include "yawl.redisHost" . | quote }}
+            - name: REDIS_PORT
+              value: {{ include "yawl.redisPort" . | quote }}
+
+            # JVM configuration
+            - name: JAVA_OPTS
+              value: {{ include "yawl.jvmOpts" . | quote }}
+
+            # Actuator configuration
+            - name: MANAGEMENT_HEALTH_PROBES_ENABLED
+              value: {{ .Values.actuator.health.probes.enabled | quote }}
+            - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
+              value: {{ .Values.actuator.health.showDetails | quote }}
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: {{ .Values.actuator.endpoints.web.exposure.include | quote }}
+
+            # OpenTelemetry configuration
+            {{- if .Values.opentelemetry.enabled }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.opentelemetry.serviceName | quote }}
+            - name: OTEL_TRACES_EXPORTER
+              value: {{ .Values.opentelemetry.tracesExporter | quote }}
+            - name: OTEL_METRICS_EXPORTER
+              value: {{ .Values.opentelemetry.metricsExporter | quote }}
+            - name: OTEL_LOGS_EXPORTER
+              value: {{ .Values.opentelemetry.logsExporter | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.opentelemetry.exporter.otlp.endpoint | quote }}
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: {{ include "yawl.otelResourceAttributes" . | quote }}
+            {{- end }}
+
+            # Logging configuration
+            - name: LOGGING_LEVEL_ROOT
+              value: {{ .Values.logging.level.root | quote }}
+            - name: LOGGING_LEVEL_ORG_YAWLFOUNDATION
+              value: {{ .Values.logging.level.yawlfoundation | quote }}
+            - name: LOGGING_LEVEL_ORG_HIBERNATE
+              value: {{ .Values.logging.level.hibernate | quote }}
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK
+              value: {{ .Values.logging.level.springframework | quote }}
+            - name: TZ
+              value: UTC
+
+            # YAWL version
+            - name: YAWL_VERSION
+              value: {{ .Values.yawlVersion | quote }}
+            - name: YAWL_BUILD_NUMBER
+              value: {{ .Values.buildNumber | quote }}
+
+            # Cloud provider
+            - name: CLOUD_PROVIDER
+              value: {{ .Values.cloudProvider | default "" | quote }}
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "yawl.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yawl.databaseSecretName" . }}
+                optional: true
+
+          {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- if .Values.healthcheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.liveness.path }}
+              port: {{ .Values.healthcheck.liveness.port }}
+            initialDelaySeconds: {{ .Values.healthcheck.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthcheck.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthcheck.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthcheck.liveness.failureThreshold }}
+            successThreshold: {{ .Values.healthcheck.liveness.successThreshold }}
+          {{- end }}
+
+          {{- if .Values.healthcheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.readiness.path }}
+              port: {{ .Values.healthcheck.readiness.port }}
+            initialDelaySeconds: {{ .Values.healthcheck.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthcheck.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthcheck.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthcheck.readiness.failureThreshold }}
+            successThreshold: {{ .Values.healthcheck.readiness.successThreshold }}
+          {{- end }}
+
+          {{- if .Values.healthcheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.startup.path }}
+              port: {{ .Values.healthcheck.startup.port }}
+            initialDelaySeconds: {{ .Values.healthcheck.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthcheck.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthcheck.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthcheck.startup.failureThreshold }}
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: temp
+              mountPath: /app/temp
+            {{- if .Values.persistence.specifications.enabled }}
+            - name: specifications
+              mountPath: /app/specifications
+            {{- end }}
+            {{- if .Values.persistence.logs.enabled }}
+            - name: logs
+              mountPath: /app/logs
+            {{- end }}
+            {{- if .Values.persistence.data.enabled }}
+            - name: data
+              mountPath: /app/data
+            {{- end }}
+            {{- if .Values.persistence.config.enabled }}
+            - name: config-vol
+              mountPath: /app/config
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: temp
+          emptyDir: {}
+        {{- if .Values.persistence.specifications.enabled }}
+        - name: specifications
+          persistentVolumeClaim:
+            claimName: {{ include "yawl.fullname" . }}-specifications
+        {{- end }}
+        {{- if .Values.persistence.logs.enabled }}
+        - name: logs
+          persistentVolumeClaim:
+            claimName: {{ include "yawl.fullname" . }}-logs
+        {{- end }}
+        {{- if .Values.persistence.data.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "yawl.fullname" . }}-data
+        {{- end }}
+        {{- if .Values.persistence.config.enabled }}
+        - name: config-vol
+          persistentVolumeClaim:
+            claimName: {{ include "yawl.fullname" . }}-config
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
