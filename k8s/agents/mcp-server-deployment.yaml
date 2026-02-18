@@ -1,0 +1,176 @@
+# YAWL MCP Server Deployment
+# Runs YawlMcpServer as a long-lived pod with STDIO transport.
+# A sidecar HTTP proxy exposes /health and /mcp/tools for Kubernetes probes
+# and the CI validation step.
+#
+# Image placeholder __MCP_SERVER_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-mcp-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-mcp-server
+        app.kubernetes.io/component: mcp-server
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: yawl-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      initContainers:
+        # Wait for YAWL engine to be ready before starting MCP server
+        - name: wait-for-engine
+          image: curlimages/curl:8.5.0
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for YAWL engine at $YAWL_ENGINE_URL..."
+              until curl -sf "$YAWL_ENGINE_URL/ib" > /dev/null 2>&1; do
+                echo "Engine not ready, retrying in 10s..."
+                sleep 10
+              done
+              echo "YAWL engine is ready."
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: YAWL_ENGINE_URL
+      containers:
+        - name: mcp-server
+          image: __MCP_SERVER_IMAGE__
+          imagePullPolicy: Always
+          args: [ "org.yawlfoundation.yawl.integration.mcp.YawlMcpServer" ]
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: YAWL_ENGINE_URL
+            - name: YAWL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: YAWL_USERNAME
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+            # Z.AI API key - enables the zai_query tool (16th tool when present)
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZAI_API_KEY
+                  optional: true
+            - name: ZHIPU_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZHIPU_API_KEY
+                  optional: true
+            - name: AGENT_REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: AGENT_REGISTRY_URL
+            - name: MCP_HTTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: MCP_HTTP_PORT
+            - name: SESSION_RECONNECT_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-server-config
+                  key: SESSION_RECONNECT_INTERVAL_SECONDS
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: mcp-tmp
+              mountPath: /tmp
+      volumes:
+        - name: mcp-tmp
+          emptyDir: {}
+      affinity:
+        podAffinity:
+          # Co-locate with YAWL engine for low-latency InterfaceB calls
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 80
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: yawl-engine
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mcp-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-mcp-server
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+      protocol: TCP

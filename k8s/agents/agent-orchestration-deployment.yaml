@@ -1,0 +1,205 @@
+# Agent Orchestration Controller Deployment
+# Runs the AgentOrchestrationService and agent discovery loop.
+# This controller watches YAWL work items and routes them to registered agents
+# via the AgentRegistry, coordinating multi-agent workflows.
+#
+# Uses the same YAWL integration JAR as the MCP/A2A servers.
+# Image placeholder resolved from the CI build of the java-servers container.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-agent-orchestration
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-orchestration
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  # Single replica: orchestration coordinator (stateless routing)
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-agent-orchestration
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-agent-orchestration
+        app.kubernetes.io/component: orchestration
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: yawl-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      initContainers:
+        # Wait for agent registry before starting discovery loop
+        - name: wait-for-registry
+          image: curlimages/curl:8.5.0
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for agent registry at $AGENT_REGISTRY_URL..."
+              until curl -sf "$AGENT_REGISTRY_URL/agents" > /dev/null 2>&1; do
+                echo "Registry not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "Agent registry is ready."
+          env:
+            - name: AGENT_REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: AGENT_REGISTRY_URL
+        # Wait for YAWL engine
+        - name: wait-for-engine
+          image: curlimages/curl:8.5.0
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for YAWL engine at $YAWL_ENGINE_URL..."
+              until curl -sf "$YAWL_ENGINE_URL/ib" > /dev/null 2>&1; do
+                echo "Engine not ready, retrying in 10s..."
+                sleep 10
+              done
+              echo "YAWL engine is ready."
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: YAWL_ENGINE_URL
+      containers:
+        - name: orchestration
+          image: ghcr.io/yawlfoundation/yawl-mcp-server:latest
+          imagePullPolicy: Always
+          args:
+            - "org.yawlfoundation.yawl.integration.autonomous.launcher.GenericWorkflowLauncher"
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: YAWL_ENGINE_URL
+            - name: YAWL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: YAWL_USERNAME
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+            - name: AGENT_REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: AGENT_REGISTRY_URL
+            - name: A2A_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: A2A_SERVER_URL
+            - name: MCP_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: MCP_SERVER_URL
+            - name: DISCOVERY_POLL_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: DISCOVERY_POLL_INTERVAL_SECONDS
+            - name: DISCOVERY_MAX_RETRIES
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-orchestration-config
+                  key: DISCOVERY_MAX_RETRIES
+            # Z.AI for orchestration reasoning
+            - name: ZHIPU_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZHIPU_API_KEY
+                  optional: true
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZAI_API_KEY
+                  optional: true
+          volumeMounts:
+            - name: agent-definitions
+              mountPath: /etc/yawl/agents
+              readOnly: true
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: agent-definitions
+          configMap:
+            name: yawl-agent-orchestration-config
+            items:
+              - key: agent-definitions.json
+                path: agent-definitions.json
+              - key: agent-memory-config.json
+                path: agent-memory-config.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-agent-orchestration
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-orchestration
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-agent-orchestration
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085
+      protocol: TCP

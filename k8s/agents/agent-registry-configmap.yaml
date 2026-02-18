@@ -1,0 +1,34 @@
+# Agent Registry ConfigMap
+# Central configuration for the YAWL agent registry server.
+# The registry provides agent registration, heartbeat, and capability discovery
+# for MCP/A2A agent coordination.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-agent-registry-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-registry
+    app.kubernetes.io/component: agent-registry
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+data:
+  # Registry HTTP server port
+  REGISTRY_PORT: "9090"
+
+  # Heartbeat timeout: agents missing heartbeat for this duration are removed
+  AGENT_HEARTBEAT_TIMEOUT_SECONDS: "120"
+
+  # Health monitor check interval
+  HEALTH_MONITOR_INTERVAL_SECONDS: "30"
+
+  # Log level for registry operations
+  REGISTRY_LOG_LEVEL: "INFO"
+
+  # Known agent endpoints for initial seeding (comma-separated JSON)
+  # The registry will attempt to contact these at startup for pre-registration
+  SEED_AGENT_ENDPOINTS: |
+    [
+      {"id": "yawl-a2a-server",  "endpoint": "http://yawl-a2a-server:8081"},
+      {"id": "yawl-pm4py-a2a",   "endpoint": "http://yawl-pm4py-a2a:9092"}
+    ]

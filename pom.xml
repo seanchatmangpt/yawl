@@ -243,7 +243,7 @@
         <nexus.staging.plugin.version>1.7.0</nexus.staging.plugin.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
-        <surefire.threadCount>2</surefire.threadCount>
+        <surefire.threadCount>1C</surefire.threadCount>
     </properties>
 
     <repositories>
@@ -1170,8 +1170,19 @@
                         <parallel>classesAndMethods</parallel>
                         <threadCount>${surefire.threadCount}</threadCount>
                         <perCoreThreadCount>true</perCoreThreadCount>
+                        <forkCount>1</forkCount>
+                        <reuseForks>true</reuseForks>
                         <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
                         <skipAfterFailureCount>5</skipAfterFailureCount>
+                        <properties>
+                            <configurationParameters>
+                                junit.jupiter.execution.parallel.enabled=true
+                                junit.jupiter.execution.parallel.mode.default=concurrent
+                                junit.jupiter.execution.parallel.mode.classes.default=concurrent
+                                junit.jupiter.execution.parallel.config.strategy=dynamic
+                                junit.jupiter.execution.parallel.config.dynamic.factor=1.5
+                            </configurationParameters>
+                        </properties>
                     </configuration>
                 </plugin>
 

@@ -1,0 +1,55 @@
+# PM4Py A2A Agent Container
+# Python process mining A2A agent, HTTP server on port 9092.
+# Exposes 3 skills: process_discovery, conformance_check, performance_analysis.
+# Agent card: /.well-known/agent-card.json
+#
+# Build args:
+#   BUILD_DATE - OCI build date label
+#   VCS_REF    - Git commit SHA label
+
+FROM python:3.13-slim-bookworm AS base
+
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL org.opencontainers.image.title="PM4Py A2A Agent" \
+      org.opencontainers.image.description="Process mining A2A agent: discovery, conformance, performance" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="YAWL Foundation"
+
+# System dependencies for pm4py
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        graphviz \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r pm4py --gid=1000 && \
+    useradd -r -g pm4py --uid=1000 --home-dir=/app --shell=/bin/false pm4py
+
+WORKDIR /app
+
+# Copy requirements first for Docker layer caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application source
+COPY a2a_agent.py pm4py_backend.py ./
+
+# A2A HTTP server port
+EXPOSE 9092
+
+USER pm4py
+
+ENV PM4PY_A2A_PORT=9092
+
+# A2A HTTP server (Starlette/uvicorn)
+CMD ["python", "a2a_agent.py"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -sf http://localhost:${PM4PY_A2A_PORT}/.well-known/agent-card.json | \
+        grep -q '"name"' || exit 1

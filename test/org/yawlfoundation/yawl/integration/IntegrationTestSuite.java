@@ -16,6 +16,9 @@ package org.yawlfoundation.yawl.integration;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 import org.junit.platform.suite.api.SuiteDisplayName;
+import org.yawlfoundation.yawl.integration.a2a.A2AAuthenticationTest;
+import org.yawlfoundation.yawl.integration.a2a.A2AClientTest;
+import org.yawlfoundation.yawl.integration.a2a.A2AProtocolTest;
 import org.yawlfoundation.yawl.integration.a2a.YawlA2AServerTest;
 import org.yawlfoundation.yawl.integration.autonomous.AgentCapabilityTest;
 import org.yawlfoundation.yawl.integration.autonomous.AgentConfigurationTest;
@@ -23,6 +26,9 @@ import org.yawlfoundation.yawl.integration.autonomous.AgentRegistryTest;
 import org.yawlfoundation.yawl.integration.autonomous.CircuitBreakerTest;
 import org.yawlfoundation.yawl.integration.autonomous.RetryPolicyTest;
 import org.yawlfoundation.yawl.integration.autonomous.StaticMappingReasonerTest;
+import org.yawlfoundation.yawl.integration.mcp.McpLoggingHandlerTest;
+import org.yawlfoundation.yawl.integration.mcp.McpPerformanceTest;
+import org.yawlfoundation.yawl.integration.mcp.McpProtocolTest;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpServerTest;
 import org.yawlfoundation.yawl.integration.V6EndToEndIntegrationTest;
 
@@ -41,9 +47,15 @@ import org.yawlfoundation.yawl.integration.V6EndToEndIntegrationTest;
  *
  * MCP SERVER TESTS:
  *   - YawlMcpServer: constructor validation, lifecycle, failed connection handling
+ *   - McpProtocolTest: server capabilities, resource URI formats, logging levels
+ *   - McpLoggingHandlerTest: level filtering, null-server handling, helper methods
+ *   - McpPerformanceTest: construction latency, throughput, concurrent access
  *
  * A2A SERVER TESTS:
  *   - YawlA2AServer: constructor validation, HTTP lifecycle, agent card endpoint
+ *   - A2AAuthenticationTest: AuthenticatedPrincipal, ApiKey, JWT, Composite providers
+ *   - A2AProtocolTest: HTTP transport layer, auth enforcement, agent card format
+ *   - A2AClientTest: client construction guards, close idempotency
  *
  * SPIFFE IDENTITY TESTS: See SpiffeExceptionTest, SpiffeWorkloadIdentityTest
  *   (package-private JUnit 5 classes, included in ExcludedModulesTestSuite)
@@ -67,9 +79,15 @@ import org.yawlfoundation.yawl.integration.V6EndToEndIntegrationTest;
 
     // MCP server tests
     YawlMcpServerTest.class,
+    McpProtocolTest.class,
+    McpLoggingHandlerTest.class,
+    McpPerformanceTest.class,
 
     // A2A server tests
     YawlA2AServerTest.class,
+    A2AAuthenticationTest.class,
+    A2AProtocolTest.class,
+    A2AClientTest.class,
 
     // V6 end-to-end integration tests
     V6EndToEndIntegrationTest.class

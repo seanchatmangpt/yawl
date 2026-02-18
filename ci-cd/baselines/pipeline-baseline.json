@@ -1,0 +1,11 @@
+{
+  "updated_at": "2026-02-18T00:00:00Z",
+  "git_sha": "90e6435",
+  "cpu_cores": 16,
+  "java_version": "25",
+  "maven_flags": "-T 1.5C",
+  "surefire_thread_count": "1C",
+  "compile_ms": 45000,
+  "unit_test_ms": 45000,
+  "notes": "Initial baseline: estimated from -T 1.5C parallel build on 16-core runner. Replace with measured values via update-baseline.sh."
+}

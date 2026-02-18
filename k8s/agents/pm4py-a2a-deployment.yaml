@@ -1,0 +1,104 @@
+# PM4Py A2A Agent Deployment
+# Runs the Python PM4Py process mining A2A agent (HTTP, port 9092).
+# Exposes 3 skills: process_discovery, conformance_check, performance_analysis.
+# Agent card at: /.well-known/agent-card.json
+#
+# Image placeholder __PM4PY_A2A_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-pm4py-a2a
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-pm4py-a2a
+    app.kubernetes.io/component: pm4py-a2a
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-pm4py-a2a
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-pm4py-a2a
+        app.kubernetes.io/component: pm4py-a2a
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9092"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: pm4py-a2a
+          image: __PM4PY_A2A_IMAGE__
+          imagePullPolicy: Always
+          command: [ "python", "a2a_agent.py" ]
+          ports:
+            - name: http
+              containerPort: 9092
+              protocol: TCP
+          env:
+            - name: PM4PY_A2A_PORT
+              value: "9092"
+            - name: AGENT_REGISTRY_URL
+              value: "http://yawl-agent-registry:9090"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "800m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /.well-known/agent-card.json
+              port: 9092
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /.well-known/agent-card.json
+              port: 9092
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-xes
+              mountPath: /tmp
+      volumes:
+        - name: tmp-xes
+          emptyDir:
+            sizeLimit: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-pm4py-a2a
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-pm4py-a2a
+    app.kubernetes.io/component: pm4py-a2a
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-pm4py-a2a
+  ports:
+    - name: http
+      port: 9092
+      targetPort: 9092
+      protocol: TCP
