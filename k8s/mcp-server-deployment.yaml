@@ -1,0 +1,368 @@
+# YAWL MCP Server - Kubernetes Deployment
+#
+# Deploys the YAWL Model Context Protocol server as a Kubernetes workload.
+#
+# Architecture:
+#   - The MCP server uses STDIO transport (stdin/stdout).
+#   - It runs as a sidecar or standalone process alongside the YAWL engine.
+#   - Agent-to-agent (A2A) communication flows through the service mesh (Istio/Linkerd).
+#   - Secrets are mounted from Kubernetes Secrets (never baked into images).
+#   - ZHIPU/Z.AI API key is optional: the server operates without it but the
+#     yawl_natural_language tool will be unavailable.
+#
+# Service Mesh Integration:
+#   - Istio sidecar injection is enabled via the namespace label
+#     "istio-injection: enabled" (see namespace.yaml).
+#   - mTLS is enforced between MCP server and YAWL engine via PeerAuthentication.
+#   - Traffic policy uses STRICT mode to reject plain-text connections.
+#
+# Rollout Strategy:
+#   - RollingUpdate with maxUnavailable=0 ensures zero-downtime deploys.
+#   - readinessProbe gates traffic until the process confirms it is ready.
+#   - livenessProbe restarts the container if the JVM crashes.
+#   - PodDisruptionBudget (below) maintains at least 1 replica during node drains.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-mcp-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "6.0.0-Alpha"
+    app.kubernetes.io/managed-by: kubectl
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    prometheus.io/scrape: "false"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-mcp-server
+        app.kubernetes.io/component: mcp-server
+        app.kubernetes.io/part-of: yawl
+        app.kubernetes.io/version: "6.0.0-Alpha"
+        # Istio sidecar injection (service mesh mTLS)
+        sidecar.istio.io/inject: "true"
+      annotations:
+        # Force rolling restart when secrets change (checksum annotation)
+        prometheus.io/scrape: "false"
+    spec:
+      serviceAccountName: yawl-mcp-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Init container: wait for YAWL engine to be ready before starting MCP server
+      initContainers:
+        - name: wait-for-engine
+          image: alpine/curl:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          command:
+            - sh
+            - -c
+            - |
+              ENGINE_URL="${YAWL_ENGINE_URL:-http://yawl-engine:8080/yawl}"
+              HEALTH_URL="${ENGINE_URL%/yawl}/actuator/health"
+              echo "Waiting for YAWL engine at ${HEALTH_URL}..."
+              ATTEMPT=0
+              MAX_ATTEMPTS=30
+              until curl -sf "${HEALTH_URL}" > /dev/null 2>&1 || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
+                ATTEMPT=$((ATTEMPT + 1))
+                echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS}: engine not ready, retrying in 5s..."
+                sleep 5
+              done
+              if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+                echo "ERROR: YAWL engine did not become ready in $((MAX_ATTEMPTS * 5)) seconds"
+                exit 1
+              fi
+              echo "YAWL engine is ready after $((ATTEMPT * 5)) seconds"
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: engine_url
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "32Mi"
+
+      containers:
+        - name: mcp-server
+          image: ghcr.io/yawlfoundation/yawl/mcp-server:6.0.0-Alpha
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+
+          env:
+            # YAWL engine connection
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-config
+                  key: engine_url
+            - name: YAWL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: username
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+
+            # Z.AI / ZHIPU API key (optional - natural language tool)
+            # Set ZHIPU_API_KEY as the primary; ZAI_API_KEY is the MCP server env var name
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-secrets
+                  key: zhipu_api_key
+                  optional: true
+
+            # MCP server tuning
+            - name: MCP_LOG_LEVEL
+              value: "INFO"
+            - name: TZ
+              value: "UTC"
+
+            # JVM container support
+            - name: JAVA_OPTS
+              value: >-
+                -XX:+UseContainerSupport
+                -XX:MaxRAMPercentage=75.0
+                -XX:InitialRAMPercentage=40.0
+                -XX:+UseZGC
+                -XX:+ZGenerational
+                -XX:+UseCompactObjectHeaders
+                -XX:+ExitOnOutOfMemoryError
+                -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+                -Djava.security.egd=file:/dev/./urandom
+                -Djdk.virtualThreadScheduler.parallelism=64
+                -Djdk.virtualThreadScheduler.maxPoolSize=128
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # Process-based liveness probe (MCP uses STDIO, not HTTP)
+          livenessProbe:
+            exec:
+              command:
+                - /app/healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+
+          # Readiness: same process check - pod receives traffic only when healthy
+          readinessProbe:
+            exec:
+              command:
+                - /app/healthcheck.sh
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+
+          # Startup probe: allow up to 60s for JVM startup + YAWL engine connection
+          startupProbe:
+            exec:
+              command:
+                - /app/healthcheck.sh
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+            successThreshold: 1
+
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+            - name: temp
+              mountPath: /app/temp
+
+      volumes:
+        - name: logs
+          emptyDir:
+            medium: ""
+            sizeLimit: "256Mi"
+        - name: temp
+          emptyDir:
+            medium: ""
+            sizeLimit: "64Mi"
+
+      # Pod topology spread for multi-zone high availability
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-mcp-server
+
+      # Graceful shutdown: allow in-flight MCP tool calls to complete (30s)
+      terminationGracePeriodSeconds: 30
+
+      restartPolicy: Always
+
+---
+# ServiceAccount for the MCP server pod
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yawl-mcp-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+  annotations:
+    # IRSA / Workload Identity annotation for cloud-provider secret managers:
+    # eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT:role/yawl-mcp-server
+    # iam.gke.io/gcp-service-account: yawl-mcp-server@PROJECT.iam.gserviceaccount.com
+    description: "ServiceAccount for YAWL MCP Server - minimal permissions"
+automountServiceAccountToken: false
+
+---
+# PodDisruptionBudget: maintain at least 1 replica during node drains
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yawl-mcp-server-pdb
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-server
+
+---
+# Horizontal Pod Autoscaler: scale on CPU (MCP tool call load)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yawl-mcp-server-hpa
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yawl-mcp-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+
+---
+# Istio PeerAuthentication: enforce mTLS for service mesh communication
+# Requires Istio to be installed in the cluster.
+# If using Linkerd, replace with a Server + ServerAuthorization policy.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: yawl-mcp-server-mtls
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-server
+  mtls:
+    mode: STRICT
+
+---
+# Istio AuthorizationPolicy: allow only the YAWL engine and agent pods to call the MCP server
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: yawl-mcp-server-authz
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-mcp-server
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-server
+  action: ALLOW
+  rules:
+    # Allow YAWL engine to communicate with MCP server
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/yawl/sa/yawl-engine"
+              - "cluster.local/ns/yawl/sa/carrier-agent"
+              - "cluster.local/ns/yawl/sa/ordering-agent"
+              - "cluster.local/ns/yawl/sa/payment-agent"
+              - "cluster.local/ns/yawl/sa/freight-agent"
+              - "cluster.local/ns/yawl/sa/delivered-agent"

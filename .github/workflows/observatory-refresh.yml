@@ -1,0 +1,368 @@
+# YAWL Observatory CI/CD Integration - Scheduled Fact Refresh
+#
+# Generates fresh Observatory facts on a schedule and commits them back to
+# the repository. This keeps docs/v6/latest/ current and ensures CI's
+# observatory-validate stage finds fresh data.
+#
+# Schedule:
+#   - Daily (02:30 UTC): Full observatory run (facts + diagrams + receipt + INDEX)
+#   - Weekly (Sunday 03:00 UTC): Full run + archive historical facts for trend analysis
+#
+# Triggers also on:
+#   - pom.xml changes (dependency graph may have changed)
+#   - Manual dispatch (with optional archive flag)
+#
+# Outputs:
+#   - Updated docs/v6/latest/ (committed back to branch)
+#   - Historical archive in docs/v6/archive/YYYY-MM-DD/ (weekly only)
+#   - Artifact upload of all generated files (30-day retention)
+#
+# INDEX.md update policy:
+#   - Always regenerated (reflects current fact counts and dependency state)
+#   - pom.xml hash embedded in receipt for drift detection (CI stage reads this)
+#
+# Branch strategy:
+#   - On scheduled runs: commits directly to the triggering branch (master/main)
+#   - On PR: runs read-only (no commit), uploads artifacts only
+
+name: Observatory Refresh
+
+on:
+  schedule:
+    # Daily refresh at 02:30 UTC (off-peak, avoids CI contention at 02:00)
+    - cron: '30 2 * * *'
+    # Weekly archive at 03:00 UTC every Sunday
+    - cron: '0 3 * * 0'
+  push:
+    paths:
+      # Re-run when dependency definitions change (pom files affect facts)
+      - '**/pom.xml'
+      # Re-run when observatory scripts change (output format may differ)
+      - 'scripts/observatory/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Observatory run mode'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - facts-only
+          - diagrams-only
+      archive:
+        description: 'Archive historical facts (creates dated snapshot)'
+        required: false
+        default: 'false'
+        type: boolean
+      commit_results:
+        description: 'Commit results back to repository'
+        required: false
+        default: 'true'
+        type: boolean
+
+concurrency:
+  group: observatory-refresh-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+env:
+  OBSERVATORY_OUTPUT_DIR: docs/v6/latest
+  ARCHIVE_BASE_DIR: docs/v6/archive
+
+jobs:
+  # ============================================================================
+  # Observatory Fact Generation
+  # ============================================================================
+  observatory-refresh:
+    name: Refresh Observatory Facts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Full history for accurate git metadata in observatory facts
+          fetch-depth: 0
+          # Use bot token for push-back permission on scheduled runs
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 25 (for Maven dependency analysis)
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+          check-latest: true
+
+      - name: Cache Maven Local Repository
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml', '.mvn/**') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-java25-
+            ${{ runner.os }}-maven-
+
+      - name: Install Observatory Dependencies
+        run: |
+          # jq for JSON manipulation in observatory scripts
+          # bc for floating-point time calculations
+          sudo apt-get update -qq
+          sudo apt-get install -qq --no-install-recommends jq bc
+
+      - name: Determine Run Mode
+        id: run-mode
+        run: |
+          # Detect weekly schedule (Sunday = archive run)
+          DAY_OF_WEEK=$(date -u +%u)  # 7 = Sunday
+          IS_WEEKLY_SCHEDULE=false
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY_OF_WEEK" = "7" ]; then
+            IS_WEEKLY_SCHEDULE=true
+          fi
+
+          # Determine observatory mode flag
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          case "$MODE" in
+            facts-only)    OBS_FLAG="--facts"    ;;
+            diagrams-only) OBS_FLAG="--diagrams" ;;
+            *)             OBS_FLAG=""            ;;
+          esac
+
+          # Archive: weekly schedule OR manual dispatch with archive=true
+          SHOULD_ARCHIVE=false
+          if [ "$IS_WEEKLY_SCHEDULE" = "true" ] || [ "${{ github.event.inputs.archive }}" = "true" ]; then
+            SHOULD_ARCHIVE=true
+          fi
+
+          # Commit: always on scheduled/push triggers; respect manual input
+          SHOULD_COMMIT=true
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.commit_results }}" = "false" ]; then
+            SHOULD_COMMIT=false
+          fi
+          # Never commit on PRs
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            SHOULD_COMMIT=false
+          fi
+
+          echo "obs_flag=${OBS_FLAG}"           >> $GITHUB_OUTPUT
+          echo "should_archive=${SHOULD_ARCHIVE}" >> $GITHUB_OUTPUT
+          echo "should_commit=${SHOULD_COMMIT}"   >> $GITHUB_OUTPUT
+          echo "is_weekly=${IS_WEEKLY_SCHEDULE}"  >> $GITHUB_OUTPUT
+          echo "run_date=$(date -u +%Y-%m-%d)"   >> $GITHUB_OUTPUT
+
+          echo "Run mode: ${MODE} (flag: '${OBS_FLAG}')"
+          echo "Should archive: ${SHOULD_ARCHIVE}"
+          echo "Should commit: ${SHOULD_COMMIT}"
+          echo "Is weekly: ${IS_WEEKLY_SCHEDULE}"
+
+      - name: Compute pom.xml Hash (for dependency drift detection)
+        id: pom-hash
+        run: |
+          POM_HASH=$(find . -name "pom.xml" -not -path "*/target/*" | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1)
+          echo "pom_hash=${POM_HASH}" >> $GITHUB_OUTPUT
+          echo "Current pom.xml hash: ${POM_HASH}"
+
+      - name: Make Observatory Scripts Executable
+        run: chmod +x scripts/observatory/*.sh scripts/observatory/lib/*.sh 2>/dev/null || true
+
+      - name: Run Observatory
+        id: observatory-run
+        run: |
+          # Expose pom hash as environment variable for emit-receipt.sh to embed
+          export YAWL_POM_HASH="${{ steps.pom-hash.outputs.pom_hash }}"
+          export YAWL_CI_RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          export YAWL_CI_TRIGGER="${{ github.event_name }}"
+
+          set +e
+          ./scripts/observatory/observatory.sh ${{ steps.run-mode.outputs.obs_flag }}
+          OBS_EXIT=$?
+          set -e
+
+          echo "observatory_exit=${OBS_EXIT}" >> $GITHUB_OUTPUT
+
+          if [ $OBS_EXIT -ne 0 ]; then
+            echo "::error::Observatory run failed with exit code ${OBS_EXIT}"
+            exit $OBS_EXIT
+          fi
+
+          # Verify required outputs exist
+          if [ ! -f "docs/v6/latest/receipts/observatory.json" ]; then
+            echo "::error::Observatory receipt not generated. Check observatory.sh output."
+            exit 1
+          fi
+
+          echo "Observatory run completed successfully"
+
+      - name: Archive Historical Facts (Weekly / On-Demand)
+        if: steps.run-mode.outputs.should_archive == 'true'
+        run: |
+          ARCHIVE_DIR="${{ env.ARCHIVE_BASE_DIR }}/${{ steps.run-mode.outputs.run_date }}"
+          mkdir -p "$ARCHIVE_DIR"
+
+          # Copy current facts snapshot to dated archive directory
+          if [ -d "docs/v6/latest/facts" ]; then
+            cp -r "docs/v6/latest/facts" "$ARCHIVE_DIR/"
+          fi
+
+          # Copy receipt (contains timing and hash metadata for trend analysis)
+          if [ -f "docs/v6/latest/receipts/observatory.json" ]; then
+            mkdir -p "$ARCHIVE_DIR/receipts"
+            cp "docs/v6/latest/receipts/observatory.json" "$ARCHIVE_DIR/receipts/"
+          fi
+
+          # Maintain archive index (append entry)
+          ARCHIVE_INDEX="${{ env.ARCHIVE_BASE_DIR }}/index.json"
+          ENTRY="{\"date\":\"${{ steps.run-mode.outputs.run_date }}\",\"trigger\":\"${{ github.event_name }}\",\"sha\":\"${{ github.sha }}\",\"pom_hash\":\"${{ steps.pom-hash.outputs.pom_hash }}\",\"path\":\"$ARCHIVE_DIR\"}"
+
+          if [ -f "$ARCHIVE_INDEX" ]; then
+            # Append to existing array
+            jq --argjson entry "$ENTRY" '. + [$entry]' "$ARCHIVE_INDEX" > /tmp/archive-index-new.json
+            mv /tmp/archive-index-new.json "$ARCHIVE_INDEX"
+          else
+            echo "[$ENTRY]" > "$ARCHIVE_INDEX"
+          fi
+
+          echo "Historical facts archived to: $ARCHIVE_DIR"
+          echo "Archive index updated: $ARCHIVE_INDEX"
+
+      - name: Generate Observatory Summary
+        if: always()
+        run: |
+          echo "## Observatory Refresh Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Run Date** | ${{ steps.run-mode.outputs.run_date }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trigger** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Mode** | ${{ github.event.inputs.mode || 'full' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **pom.xml Hash** | \`${{ steps.pom-hash.outputs.pom_hash }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Archived** | ${{ steps.run-mode.outputs.should_archive }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Committed** | ${{ steps.run-mode.outputs.should_commit }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Fact file counts
+          if [ -d "docs/v6/latest/facts" ]; then
+            FACT_COUNT=$(ls docs/v6/latest/facts/*.json 2>/dev/null | wc -l | tr -d ' ')
+            echo "**Facts generated:** ${FACT_COUNT} files" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -d "docs/v6/latest/diagrams" ]; then
+            DIAG_COUNT=$(ls docs/v6/latest/diagrams/*.mmd 2>/dev/null | wc -l | tr -d ' ')
+            echo "**Diagrams generated:** ${DIAG_COUNT} files" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Observatory Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observatory-facts-${{ steps.run-mode.outputs.run_date }}-${{ github.run_number }}
+          path: |
+            docs/v6/latest/facts/
+            docs/v6/latest/diagrams/
+            docs/v6/latest/receipts/
+            docs/v6/latest/INDEX.md
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload Archive Snapshot (Weekly)
+        if: steps.run-mode.outputs.should_archive == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observatory-archive-${{ steps.run-mode.outputs.run_date }}
+          path: ${{ env.ARCHIVE_BASE_DIR }}/${{ steps.run-mode.outputs.run_date }}/
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Commit Observatory Results to Repository
+        if: steps.run-mode.outputs.should_commit == 'true' && steps.observatory-run.outputs.observatory_exit == '0'
+        run: |
+          git config --local user.email "observatory-bot@yawlfoundation.org"
+          git config --local user.name "YAWL Observatory Bot"
+
+          # Stage observatory outputs
+          git add docs/v6/latest/ || true
+
+          # Stage archive if it was generated
+          if [ "${{ steps.run-mode.outputs.should_archive }}" = "true" ]; then
+            git add "${{ env.ARCHIVE_BASE_DIR }}/" || true
+          fi
+
+          # Check if there are staged changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit - observatory output is identical to previous run"
+            exit 0
+          fi
+
+          # Build commit message
+          TRIGGER="${{ github.event_name }}"
+          DATE="${{ steps.run-mode.outputs.run_date }}"
+          IS_WEEKLY="${{ steps.run-mode.outputs.is_weekly }}"
+          POM_HASH="${{ steps.pom-hash.outputs.pom_hash }}"
+
+          if [ "$IS_WEEKLY" = "true" ]; then
+            MSG="chore(observatory): weekly fact refresh + archive ${DATE}"
+          else
+            MSG="chore(observatory): daily fact refresh ${DATE} [trigger: ${TRIGGER}]"
+          fi
+
+          git commit -m "${MSG}
+
+          - Refreshed facts, diagrams, receipt, and INDEX.md
+          - pom.xml hash: ${POM_HASH:0:12}
+          - Trigger: ${TRIGGER}
+          - Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          git push origin HEAD:${{ github.ref_name }}
+          echo "Observatory results committed and pushed to ${{ github.ref_name }}"
+
+  # ============================================================================
+  # INDEX.md Dependency Update Check
+  # Triggered on pom.xml changes to alert when INDEX.md is potentially stale
+  # ============================================================================
+  dependency-drift-alert:
+    name: Dependency Drift Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: observatory-refresh
+    if: github.event_name == 'push' && contains(toJSON(github.event.commits.*.modified), 'pom.xml')
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for Dependency Changes vs Observatory Receipt
+        run: |
+          RECEIPT="docs/v6/latest/receipts/observatory.json"
+
+          if [ ! -f "$RECEIPT" ]; then
+            echo "::notice::Observatory receipt not found - no drift check possible"
+            exit 0
+          fi
+
+          RECORDED_HASH=$(jq -r '.inputs.root_pom_sha256 // empty' "$RECEIPT" 2>/dev/null || echo "")
+          CURRENT_HASH=$(find . -name "pom.xml" -not -path "*/target/*" | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1)
+
+          if [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
+            echo "::notice::pom.xml dependencies changed since last observatory run. The daily scheduled refresh will update INDEX.md automatically. To refresh immediately, trigger the observatory-refresh workflow manually."
+          else
+            echo "pom.xml hash matches observatory receipt - no drift detected"
+          fi
+
+          echo "## Dependency Drift Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Current pom.xml hash** | \`${CURRENT_HASH:0:12}...\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Recorded hash** | \`${RECORDED_HASH:0:12}...\` |" >> $GITHUB_STEP_SUMMARY
+          if [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
+            echo "| **Drift** | Detected - refresh scheduled |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Drift** | None |" >> $GITHUB_STEP_SUMMARY
+          fi
