@@ -23,7 +23,6 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-elements</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Jakarta Persistence -->
@@ -34,6 +33,13 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jakarta REST (JAX-RS) for REST resources -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -101,10 +107,109 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- Metrics - Micrometer for workflow metrics -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <exclusions>
+                <!-- prometheus-metrics-exposition-textformats:1.4.3 JAR not in local Maven cache -->
+                <exclusion>
+                    <groupId>io.prometheus</groupId>
+                    <artifactId>prometheus-metrics-exposition-textformats</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Spring Boot Actuator for health indicators -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <!-- log4j-to-slf4j:2.25.3 POM not in local Maven cache; conflicts with log4j-slf4j2-impl -->
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- JSON Processing - Jackson for REST -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- OpenTelemetry for observability -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <exclusions>
+                <!-- opentelemetry-exporter-common:1.52.0 JAR not in local Maven cache -->
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-exporter-common</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- opentelemetry-exporter-prometheus:1.52.0-alpha POM not in local Maven cache;
+             excluded to allow offline builds. Prometheus metrics handled via micrometer-registry-prometheus -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-logging</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- junit-vintage-engine:6.0.3 POM not in local Maven cache; JUnit 4 tests run via junit:junit directly -->
+        <!-- <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency> -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -205,6 +310,8 @@
                         <testExclude>**/*.ywl</testExclude>
                         <testExclude>**/*.properties</testExclude>
                         <testExclude>**/*.class</testExclude>
+                        <!-- CORS tests use org.mockito which requires mockito-core dependency not in local cache -->
+                        <testExclude>**/engine/interfce/rest/TestCorsFilter*.java</testExclude>
                     </testExcludes>
                 </configuration>
                 <executions>
@@ -214,21 +321,29 @@
                             <excludes>
                                 <!-- Exclude tests from other modules -->
                                 <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/chaos/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/containers/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/elements/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/integration/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/logging/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/observability/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/parametrized/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/quality/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/reporting/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/schema/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/util/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/workflow/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/wsif/**</exclude>
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.xsd</exclude>
                                 <exclude>**/*.properties</exclude>

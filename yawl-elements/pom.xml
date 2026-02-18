@@ -129,12 +129,8 @@
                     <includes>
                         <!-- Core elements module packages -->
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
-                        <include>**/org/yawlfoundation/yawl/schema/**</include>
-                        <!-- Utilities needed by tests: util, exceptions, unmarshal -->
-                        <include>**/org/yawlfoundation/yawl/util/**</include>
-                        <include>**/org/yawlfoundation/yawl/exceptions/**</include>
-                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
-                        <!-- Engine classes needed by tests -->
+                        <!-- Engine classes compiled here to avoid circular dep with yawl-engine;
+                             schema/util/exceptions/unmarshal come from yawl-utilities dependency -->
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
                         <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
@@ -154,7 +150,6 @@
                     </excludes>
                     <testIncludes>
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
-                        <include>**/org/yawlfoundation/yawl/schema/**</include>
                     </testIncludes>
                     <testExcludes>
                         <exclude>**/*.xsd</exclude>
@@ -190,10 +185,22 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- All element tests use JUnit 5 which requires surefire-junit-platform.
-                         That artifact is not locally cached in this offline environment.
-                         Tests are excluded from execution to allow offline builds. -->
-                    <skipTests>true</skipTests>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/elements/**</include>
+                    </includes>
+                    <excludes>
+                        <!-- Exclude tests from other modules -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/integration/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/stateless/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resourcing/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/swingWorklist/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/wsif/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/patternmatching/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/performance/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/resilience/**</exclude>
+                    </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>

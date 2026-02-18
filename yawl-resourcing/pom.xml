@@ -79,18 +79,28 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/resourcing</sourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test/org/yawlfoundation/yawl/resourcing</testSourceDirectory>
         <resources>
             <resource>
-                <directory>../src/org/yawlfoundation/yawl/resourcing</directory>
+                <directory>../src</directory>
                 <includes>
-                    <include>**/*.hbm.xml</include>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/resourcing/**/*.hbm.xml</include>
+                    <include>**/org/yawlfoundation/yawl/resourcing/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/resourcing/**/*.properties</include>
                 </includes>
             </resource>
         </resources>
@@ -99,10 +109,26 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/resourcing/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

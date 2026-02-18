@@ -102,11 +102,7 @@ public class YWorklistTableModel extends AbstractTableModel {
     public synchronized void addRow(String key, Object[] rowValues) {
         _rows.put(key, rowValues);
         final int position = new ArrayList<>(_rows.keySet()).indexOf(key);
-        EventQueue.invokeLater(new Thread() {
-            public void run() {
-                fireTableRowsInserted(position, position);
-            }
-        });
+        EventQueue.invokeLater(() -> fireTableRowsInserted(position, position));
     }
 
 
@@ -122,11 +118,7 @@ public class YWorklistTableModel extends AbstractTableModel {
         final int rowIndex = getRowIndex(caseAndTaskID);
         if (rowIndex >= 0) {
             _rows.remove(caseAndTaskID);
-            EventQueue.invokeLater(new Thread() {
-                public void run() {
-                    fireTableRowsDeleted(rowIndex, rowIndex);
-                }
-            });
+            EventQueue.invokeLater(() -> fireTableRowsDeleted(rowIndex, rowIndex));
         }
     }
 

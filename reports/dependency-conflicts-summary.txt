@@ -1,0 +1,57 @@
+============================================================================
+YAWL DEPENDENCY CONFLICT ANALYSIS - 2026-02-17
+============================================================================
+
+Total conflict mediation lines in tree: 696
+Parsed structured entries:              672
+
+── TOP 30 MOST-CONFLICTED ARTIFACTS ──────────────────────────────────────
+
+  Count  Artifact
+  -----  --------
+     62  jakarta.xml.bind:jakarta.xml.bind-api
+     51  org.slf4j:slf4j-api
+     50  org.jspecify:jspecify
+     49  org.apache.logging.log4j:log4j-api
+     34  jakarta.activation:jakarta.activation-api
+     33  org.apache.commons:commons-lang3
+     32  org.jdom:jdom2
+     22  org.eclipse.angus:angus-activation
+     21  jakarta.persistence:jakarta.persistence-api
+     21  com.sun.xml.bind:jaxb-impl
+     20  org.hibernate.orm:hibernate-core
+     20  org.apache.logging.log4j:log4j-core
+     19  org.jboss.logging:jboss-logging
+     17  com.zaxxer:HikariCP
+     13  org.apache.commons:commons-collections4
+     13  com.fasterxml.jackson.core:jackson-databind
+     12  org.hamcrest:hamcrest-core
+     12  com.fasterxml.jackson.core:jackson-core
+     11  jaxen:jaxen
+     11  commons-io:commons-io
+     11  commons-codec:commons-codec
+     10  net.bytebuddy:byte-buddy
+     10  io.smallrye:jandex
+     10  com.sun.istack:istack-commons-runtime
+     10  com.fasterxml:classmate
+      9  org.apache.commons:commons-pool2
+      9  com.h2database:h2
+      9  com.fasterxml.jackson.core:jackson-annotations
+      8  org.postgresql:postgresql
+      8  org.hibernate.orm:hibernate-hikaricp
+
+── CONFLICT TYPES BREAKDOWN ──────────────────────────────────────────────
+
+    672  managed
+
+── CONFLICTS PER MODULE ──────────────────────────────────────────────────
+
+    531  yawl-utilities
+     93  yawl-engine
+     41  yawl-elements
+      7  yawl-security
+
+── VERSION SPREAD (artifacts with 3+ distinct requested versions) ────────
+
+      3 versions  jakarta.xml.bind:jakarta.xml.bind-api
+      3 versions  com.fasterxml.jackson.core:jackson-databind

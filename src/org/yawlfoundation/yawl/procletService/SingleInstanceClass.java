@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public class SingleInstanceClass {
@@ -36,51 +37,64 @@ public class SingleInstanceClass {
 	private List<ThreadNotify> registeredClasses = new ArrayList<ThreadNotify>();
 	private HashMap<ThreadNotify,InternalRunner> mapping = new HashMap<ThreadNotify,InternalRunner>();
 	private HashMap<ThreadNotify,Boolean> mappingDone = new HashMap<ThreadNotify,Boolean>();
-	private Object mutex = new Object();
-	private Object mutex2 = new Object();
-	private Object mutex3 = new Object();
+	private final ReentrantLock _mutex = new ReentrantLock();
+	private final ReentrantLock _mutex2 = new ReentrantLock();
+	private final ReentrantLock _mutex3 = new ReentrantLock();
 	private List<String> blockedCases = new ArrayList<String>();
 
 	private SingleInstanceClass() {
 		super();
 	}
-	
+
 	public void blockCase(String caseid) {
-		synchronized(mutex3) {
+		_mutex3.lock();
+		try {
 			if (!blockedCases.contains(caseid)) {
 				blockedCases.add(caseid);
 			}
+		} finally {
+			_mutex3.unlock();
 		}
 	}
-	
+
 	public boolean isCaseBlocked(String caseid) {
-		synchronized(mutex3) {
+		_mutex3.lock();
+		try {
 			return blockedCases.contains(caseid);
+		} finally {
+			_mutex3.unlock();
 		}
 	}
-	
+
 	public void unblockCase(String caseid) {
-		synchronized(mutex3) {
+		_mutex3.lock();
+		try {
 			blockedCases.remove(caseid);
+		} finally {
+			_mutex3.unlock();
 		}
 	}
-	
+
 	public InternalRunner registerAndWait(ThreadNotify thread, long w) {
 		InternalRunner ir = null;
-		synchronized (mutex) {
+		_mutex.lock();
+		try {
 			if (!registeredClasses.contains(thread)) {
 				registeredClasses.add(thread);
 				// add a sleep thread
-				ir = new InternalRunner(thread,w);
+				ir = new InternalRunner(thread, w);
 				//mapping.put(thread, ir);
 			}
 			ir.start();
+		} finally {
+			_mutex.unlock();
 		}
 		return ir;
 	}
-	
+
 	public InternalRunner registerAndWaitDuringNotify(ThreadNotify thread, long w) {
-		synchronized (mutex2) {
+		_mutex2.lock();
+		try {
 			// remove old thread from mapping done and registeredclasses
 			InternalRunner ir = null;
 			// assume registeredClasses is empty
@@ -92,15 +106,17 @@ public class SingleInstanceClass {
 			if (!registeredClasses.contains(thread)) {
 				registeredClasses.add(thread);
 				// add a sleep thread
-				ir = new InternalRunner(thread,w);
+				ir = new InternalRunner(thread, w);
 				mapping.put(thread, ir);
 				ir.start();
 			}
 			return ir;
+		} finally {
+			_mutex2.unlock();
 		}
 	}
-	
-	public void notifyPerformativeListeners (List<Performative> perfs) {
+
+	public void notifyPerformativeListeners(List<Performative> perfs) {
 		/* DEADLOCK FIX: Snapshot registered listeners before dispatching notifications.
 		 * Previously the entire method (including spin-wait and tn.notification() calls)
 		 * ran inside synchronized(mutex). InternalRunner.run() also acquires mutex before
@@ -109,7 +125,8 @@ public class SingleInstanceClass {
 		 * state inside mutex, then release mutex before dispatching notifications and
 		 * before the completion spin-wait so other threads can acquire mutex freely. */
 		List<ThreadNotify> listenersToNotify;
-		synchronized(mutex) {
+		_mutex.lock();
+		try {
 			// first add performatives
 			Performatives perfsInst = Performatives.getInstance();
 			for (Performative perf : perfs) {
@@ -126,6 +143,8 @@ public class SingleInstanceClass {
 			listenersToNotify = new ArrayList<ThreadNotify>(this.registeredClasses);
 			this.mapping.clear();
 			this.registeredClasses.clear();
+		} finally {
+			_mutex.unlock();
 		}
 		// dispatch notifications outside mutex so listeners (and InternalRunner) can
 		// re-acquire mutex without deadlocking
@@ -135,10 +154,11 @@ public class SingleInstanceClass {
 		// wait for all listeners to complete outside mutex
 		while (true) {
 			try {
-				Thread.currentThread().sleep(500);
+				Thread.sleep(500);
 				// everybody done
 				boolean done = true;
-				synchronized(mutex) {
+				_mutex.lock();
+				try {
 					Iterator<ThreadNotify> it = this.mappingDone.keySet().iterator();
 					while (it.hasNext()) {
 						ThreadNotify notif = it.next();
@@ -148,6 +168,8 @@ public class SingleInstanceClass {
 							break;
 						}
 					}
+				} finally {
+					_mutex.unlock();
 				}
 				if (done) {
 					break;
@@ -158,47 +180,61 @@ public class SingleInstanceClass {
 			}
 		}
 	}
-	
+
 	public void done(ThreadNotify notify) {
 		if (this.mappingDone.containsKey(notify)) {
 			this.mappingDone.put(notify, true);
 		}
 	}
-	
+
 	public void unregister(ThreadNotify thread) {
-		synchronized(mutex2) {
+		_mutex2.lock();
+		try {
 			registeredClasses.remove(thread);
 			mapping.remove(thread);
+		} finally {
+			_mutex2.unlock();
 		}
 	}
-	
+
 	public static SingleInstanceClass getInstance() {
 		return singleInstance;
 	}
-	
-	public class InternalRunner extends Thread {
+
+	public class InternalRunner implements Runnable {
 		private long started = 0;
 		private long interval = 0;
 		private ThreadNotify tn = null;
-		//private SingleInstanceClass sic = null;
-		public InternalRunner (ThreadNotify tn, long interval) {
+		private volatile Thread _thread;
+
+		public InternalRunner(ThreadNotify tn, long interval) {
 			this.tn = tn;
 			this.interval = interval;
-			//this.sic = sic;
 		}
-		
+
+		public void start() {
+			_thread = Thread.ofVirtual().name("proclet-internal-runner").start(this);
+		}
+
+		public boolean isAlive() {
+			Thread t = _thread;
+			return t != null && t.isAlive();
+		}
+
 		public void setThreadNotify(ThreadNotify tn) {
 			this.tn = tn;
 		}
-		
-		public void run () {
+
+		@Override
+		public void run() {
 			try {
 				started = System.currentTimeMillis();
 				System.out.println("sleep:" + interval);
-				sleep(interval);
+				Thread.sleep(interval);
 				System.out.println("done sleeping");
 				// done sleeping
-				synchronized(mutex) {
+				_mutex.lock();
+				try {
 					System.out.println("inside mutex!");
 					System.out.println(tn);
 					//System.out.println(sic.mapping.containsValue(this));
@@ -210,17 +246,18 @@ public class SingleInstanceClass {
 					else {
 						System.out.println("thread died without doing anything!");
 					}
+				} finally {
+					_mutex.unlock();
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
-		public long leftOver () {
+
+		public long leftOver() {
 			return System.currentTimeMillis() - this.started;
 		}
 	}
-	
-}
 
+}

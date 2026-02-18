@@ -141,11 +141,8 @@ public final class OAuth2TokenValidator {
         refreshJwksCache();
 
         // Scheduled background refresh for key rotation handling
-        this.refreshScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "yawl-jwks-refresh");
-            t.setDaemon(true);
-            return t;
-        });
+        this.refreshScheduler = Executors.newSingleThreadScheduledExecutor(r ->
+                Thread.ofVirtual().name("yawl-jwks-refresh").unstarted(r));
         this.refreshScheduler.scheduleAtFixedRate(
                 this::refreshJwksCache,
                 JWKS_REFRESH_INTERVAL,
