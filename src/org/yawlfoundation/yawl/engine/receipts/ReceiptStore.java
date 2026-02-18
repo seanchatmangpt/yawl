@@ -216,4 +216,16 @@ public class ReceiptStore {
     public long getTotalReceiptCount() {
         return receiptsById.size();
     }
+
+    /**
+     * Clear all receipts (for testing only).
+     * This method should only be used in test setUp/tearDown to ensure
+     * test isolation. In production, receipts are immutable and never cleared.
+     */
+    public void clear() {
+        receiptsByCase.clear();
+        receiptsById.clear();
+        receiptsByHash.clear();
+        nextReceiptId.set(1L);
+    }
 }

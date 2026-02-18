@@ -12,6 +12,10 @@
 # Or with engine on host:
 #   YAWL_ENGINE_URL=http://host.docker.internal:8888/yawl docker compose
 #     -f docker-compose.simulation.yml up
+#
+# Port Configuration:
+#   Override default ports via environment variables:
+#     ORDERING_AGENT_PORT=8091 CARRIER_AGENT_PORT=8092 docker compose up
 # =============================================================================
 
 services:
@@ -24,18 +28,24 @@ services:
     working_dir: /workspace
     environment:
       - "AGENT_CAPABILITY=Ordering: procurement, purchase orders, approvals, order lifecycle"
-      - AGENT_PORT=8091
+      - AGENT_PORT=${ORDERING_AGENT_PORT:-8091}
       - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
       - YAWL_USERNAME=${YAWL_USERNAME:-admin}
       - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
       - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
-      - "8091:8091"
+      - "${ORDERING_AGENT_PORT:-8091}:${ORDERING_AGENT_PORT:-8091}"
     networks:
       - yawl-network
     restart: unless-stopped
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${ORDERING_AGENT_PORT:-8091}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   carrier-agent:
     build:
@@ -46,18 +56,24 @@ services:
     working_dir: /workspace
     environment:
       - "AGENT_CAPABILITY=Carrier: transportation, quotes, pickup/delivery, BOL, manifest, shipment notice"
-      - AGENT_PORT=8092
+      - AGENT_PORT=${CARRIER_AGENT_PORT:-8092}
       - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
       - YAWL_USERNAME=${YAWL_USERNAME:-admin}
       - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
       - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
-      - "8092:8092"
+      - "${CARRIER_AGENT_PORT:-8092}:${CARRIER_AGENT_PORT:-8092}"
     networks:
       - yawl-network
     restart: unless-stopped
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${CARRIER_AGENT_PORT:-8092}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   freight-agent:
     build:
@@ -68,18 +84,24 @@ services:
     working_dir: /workspace
     environment:
       - "AGENT_CAPABILITY=Freight: in-transit tracking, trackpoints, acceptance certificate"
-      - AGENT_PORT=8093
+      - AGENT_PORT=${FREIGHT_AGENT_PORT:-8093}
       - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
       - YAWL_USERNAME=${YAWL_USERNAME:-admin}
       - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
       - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
-      - "8093:8093"
+      - "${FREIGHT_AGENT_PORT:-8093}:${FREIGHT_AGENT_PORT:-8093}"
     networks:
       - yawl-network
     restart: unless-stopped
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FREIGHT_AGENT_PORT:-8093}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   payment-agent:
     build:
@@ -90,18 +112,24 @@ services:
     working_dir: /workspace
     environment:
       - "AGENT_CAPABILITY=Payment: invoices, payment orders, remittance, freight payment"
-      - AGENT_PORT=8094
+      - AGENT_PORT=${PAYMENT_AGENT_PORT:-8094}
       - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
       - YAWL_USERNAME=${YAWL_USERNAME:-admin}
       - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
       - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
-      - "8094:8094"
+      - "${PAYMENT_AGENT_PORT:-8094}:${PAYMENT_AGENT_PORT:-8094}"
     networks:
       - yawl-network
     restart: unless-stopped
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PAYMENT_AGENT_PORT:-8094}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   delivered-agent:
     build:
@@ -112,18 +140,24 @@ services:
     working_dir: /workspace
     environment:
       - "AGENT_CAPABILITY=Delivered: claims, returns, adjustments, post-delivery"
-      - AGENT_PORT=8095
+      - AGENT_PORT=${DELIVERED_AGENT_PORT:-8095}
       - YAWL_ENGINE_URL=${YAWL_ENGINE_URL:-http://engine:8080/yawl}
       - YAWL_USERNAME=${YAWL_USERNAME:-admin}
       - YAWL_PASSWORD=${YAWL_PASSWORD:-YAWL}
       - ZAI_API_KEY=${ZAI_API_KEY}
     ports:
-      - "8095:8095"
+      - "${DELIVERED_AGENT_PORT:-8095}:${DELIVERED_AGENT_PORT:-8095}"
     networks:
       - yawl-network
     restart: unless-stopped
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${DELIVERED_AGENT_PORT:-8095}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   pm4py-agent:
     image: python:3.12-slim
@@ -133,13 +167,19 @@ services:
       - ./scripts/pm4py:/app
       - .:/workspace
     environment:
-      - PM4PY_A2A_PORT=9092
+      - PM4PY_A2A_PORT=${PM4PY_A2A_PORT:-9092}
     ports:
-      - "9092:9092"
+      - "${PM4PY_A2A_PORT:-9092}:${PM4PY_A2A_PORT:-9092}"
     networks:
       - yawl-network
     profiles:
       - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PM4PY_A2A_PORT:-9092}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   yawl-network:

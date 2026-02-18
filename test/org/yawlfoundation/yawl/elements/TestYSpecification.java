@@ -39,7 +39,7 @@ class TestYSpecification {
     @BeforeEach
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
-        File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
+        File specificationFile = new File(getClass().getResource("../unmarshal/MakeRecordings.xml").getFile());
         List specifications = null;
         specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));
 

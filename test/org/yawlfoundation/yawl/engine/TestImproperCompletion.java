@@ -37,14 +37,16 @@ class TestImproperCompletion {
 
     @BeforeEach
 
-    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YEngineStateException, YPersistenceException {
         URL fileURL = getClass().getResource("TestImproperCompletion.xml");
+        assertNotNull(fileURL, "Test resource TestImproperCompletion.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(
                                     yawlXMLFile.getAbsolutePath())).get(0);
 
         _engine = YEngine.getInstance();
+        EngineClearer.clear(_engine);
         _workItemRepository = _engine.getWorkItemRepository();
     }
 
@@ -62,7 +64,6 @@ class TestImproperCompletion {
     void testImproperCompletion() throws YStateException, YDataStateException,
             YEngineStateException, YQueryException, YSchemaBuildingException,
             YPersistenceException, YLogException {
-        EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);
         _id = _engine.startCase(_specification.getSpecificationID(), null, null, null,
                 new YLogDataItemList(), null, false);

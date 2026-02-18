@@ -18,6 +18,9 @@
 
 package org.yawlfoundation.yawl.authentication;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.XNode;
 
@@ -31,10 +34,17 @@ import org.yawlfoundation.yawl.util.XNode;
  * @since 2.1
  * @date 11/05/2010
  */
+@MappedSuperclass
 public class YClient {
 
+    @Id
+    @Column(name = "user_name", length = 255)
     protected String _userName;
+
+    @Column(name = "password", length = 255)
     protected String _password;
+
+    @Column(name = "documentation", length = 1000)
     protected String _documentation;
 
     public YClient() {}

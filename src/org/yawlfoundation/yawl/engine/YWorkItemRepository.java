@@ -216,6 +216,11 @@ public class YWorkItemRepository {
         Set<String> itemsToRemove = new HashSet<String>();
         for (YWorkItem workitem : _itemMap.values()) {
 
+            // keep deadlocked items in repository for visibility and handling
+            if (workitem.getStatus() == statusDeadlocked) {
+                continue;
+            }
+
             // keep completed mi tasks in repository until parent completes
             if (workitem.getTask().isMultiInstance() && workitem.hasCompletedStatus()) {
                 continue;

@@ -41,8 +41,9 @@ public class ReceiptChainTest extends TestCase {
 
     @Override
     protected void setUp() {
-        // Fresh instance for each test
+        // Fresh instance for each test - reset to ensure test isolation
         chain = ReceiptChain.getInstance();
+        chain.resetForTesting();
     }
 
     /**

@@ -50,6 +50,7 @@ class TestCaseCancellation {
         _logdata = new YLogDataItemList();
         _repository = _engine.getWorkItemRepository();
         URL fileURL = getClass().getResource("CaseCancellation.xml");
+        assertNotNull(fileURL, "Test resource CaseCancellation.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.unmarshalSpecifications(
                 StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

@@ -43,9 +43,16 @@ on:
         default: 'false'
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   MAVEN_OPTS: >-
-    -Xmx3g
+    -Xmx4g
+    -Xms1g
+    -XX:+UseZGC
+    -XX:+ZGenerational
     -Djava.awt.headless=true
     -Dmaven.artifact.threads=10
     -Dhttp.keepAlive=false
@@ -88,8 +95,10 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
             ${{ runner.os }}-maven-java${{ matrix.java }}-
             ${{ runner.os }}-maven-
@@ -107,7 +116,7 @@ jobs:
             --no-transfer-progress \
             --enable-preview \
             -P${{ matrix.profile }} \
-            -T 1C \
+            -T 1.5C \
             -DskipTests=${{ github.event.inputs.skip_tests || 'false' }}
 
       - name: Upload build artifacts
@@ -148,8 +157,10 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ matrix.java }}-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
             ${{ runner.os }}-maven-java${{ matrix.java }}-
             ${{ runner.os }}-maven-
@@ -162,7 +173,7 @@ jobs:
             --no-transfer-progress \
             --enable-preview \
             -Pjava25 \
-            -T 2C \
+            -T 1.5C \
             -Ddatabase.type=h2 \
             -Dhibernate.dialect=org.hibernate.dialect.H2Dialect \
             -Dsurefire.parallel=classes \
@@ -274,8 +285,10 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
             ${{ runner.os }}-maven-java25-
             ${{ runner.os }}-maven-
@@ -331,8 +344,10 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java25-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
             ${{ runner.os }}-maven-java25-
             ${{ runner.os }}-maven-
@@ -344,7 +359,7 @@ jobs:
             -DfailBuildOnCVSS=7 \
             -Dformats=HTML,JSON,XML \
             -DsuppressionFiles=owasp-suppressions.xml
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
 
       - name: Upload OWASP Report
         if: always()
@@ -392,9 +407,12 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-
             ${{ runner.os }}-maven-
 
       - name: Run Tests with Coverage
@@ -614,8 +632,8 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
           ignore-unfixed: true
-          exit-code: '0'
-        continue-on-error: true
+          exit-code: '1'
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
 
       - name: Upload Trivy SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -632,7 +650,8 @@ jobs:
           output: 'trivy-results.json'
           severity: 'CRITICAL,HIGH,MEDIUM'
           ignore-unfixed: true
-        continue-on-error: true
+          exit-code: '1'
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
 
       - name: Run Trivy Vulnerability Scanner (Table Summary)
         uses: aquasecurity/trivy-action@master
@@ -642,7 +661,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
           exit-code: '1'
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
 
       - name: Upload Trivy Reports
         uses: actions/upload-artifact@v4
@@ -799,9 +818,12 @@ jobs:
       - name: Cache Maven Local Repository
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-${{ hashFiles('**/pom.xml', '.mvn/**') }}
           restore-keys: |
+            ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-
             ${{ runner.os }}-maven-
 
       - name: Analyze Dependencies

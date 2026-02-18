@@ -27,12 +27,24 @@ on:
     branches: [master, main, develop]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
-  JAVA_VERSION: 21
+  JAVA_VERSION: 25
   MAVEN_OPTS: >-
-    -Xmx2g
+    -Xmx4g
+    -Xms1g
+    -XX:+UseZGC
+    -XX:+ZGenerational
     -Djava.awt.headless=true
-    -Dmaven.artifact.threads=8
+    -Dmaven.artifact.threads=10
     -Dhttp.keepAlive=false
   MAVEN_BATCH_FLAGS: --batch-mode --no-transfer-progress
 
@@ -137,7 +149,7 @@ jobs:
         run: |
           mvn clean compile \
             ${{ env.MAVEN_BATCH_FLAGS }} \
-            -T 1C
+            -T 1.5C
 
       - name: Upload compiled classes
         uses: actions/upload-artifact@v4
@@ -219,7 +231,7 @@ jobs:
         run: |
           mvn clean compile \
             ${{ env.MAVEN_BATCH_FLAGS }} \
-            -T 1C \
+            -T 1.5C \
             --quiet
 
       - name: Run SpotBugs

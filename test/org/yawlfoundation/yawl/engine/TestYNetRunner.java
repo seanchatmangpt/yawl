@@ -38,6 +38,7 @@ class TestYNetRunner {
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("YAWL_Specification2.xml");
+        assertNotNull(fileURL, "Test resource YAWL_Specification2.xml not found in classpath");
         File yawlXMLFile1 = new File(fileURL.getFile());
         YSpecification specification = null;
         specification = (YSpecification) YMarshal.

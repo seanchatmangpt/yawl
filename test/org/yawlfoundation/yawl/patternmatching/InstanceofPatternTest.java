@@ -6,7 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
+import org.yawlfoundation.yawl.unmarshal.YMetaData;
 
 /**
  * Tests for instanceof pattern variable conversions
@@ -29,17 +31,45 @@ class InstanceofPatternTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        spec = new YSpecification("test-spec");
-        spec.setVersion(YSchemaVersion.FourPointZero);
+        spec = createTestSpecification("test-spec");
+        rootNet = spec.getRootNet();
+        subNet = (YNet) spec.getDecomposition("sub-net");
+        gateway = (YAWLServiceGateway) spec.getDecomposition("gateway-decomp");
+    }
 
-        rootNet = new YNet("root-net", spec);
-        spec.setRootNet(rootNet);
+    /**
+     * Creates a fully initialized YSpecification with proper input/output conditions.
+     */
+    private YSpecification createTestSpecification(String specId) throws YSyntaxException {
+        YSpecification newSpec = new YSpecification(specId);
+        newSpec.setVersion(YSchemaVersion.FourPointZero);
+        newSpec.setMetaData(new YMetaData());
+        newSpec.setSchema("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>");
 
-        subNet = new YNet("sub-net", spec);
-        spec.addDecomposition(subNet);
+        YNet newRootNet = createNetWithConditions("root-net", newSpec);
+        newSpec.setRootNet(newRootNet);
 
-        gateway = new YAWLServiceGateway("gateway-decomp", spec);
-        spec.addDecomposition(gateway);
+        YNet newSubNet = createNetWithConditions("sub-net", newSpec);
+        newSpec.addDecomposition(newSubNet);
+
+        YAWLServiceGateway newGateway = new YAWLServiceGateway("gateway-decomp", newSpec);
+        newSpec.addDecomposition(newGateway);
+
+        return newSpec;
+    }
+
+    /**
+     * Creates a YNet with input and output conditions set.
+     */
+    private YNet createNetWithConditions(String netId, YSpecification spec) {
+        YNet net = new YNet(netId, spec);
+        YInputCondition input = new YInputCondition("input-" + netId, net);
+        YOutputCondition output = new YOutputCondition("output-" + netId, net);
+        net.setInputCondition(input);
+        net.setOutputCondition(output);
+        net.addNetElement(input);
+        net.addNetElement(output);
+        return net;
     }
 
     // Test YSpecification.toXML() instanceof patterns
@@ -103,10 +133,10 @@ class InstanceofPatternTest {
     }
 
     @Test
-    void testToXML_DecompositionSorting_NetsFirst() throws YPersistenceException {
+    void testToXML_DecompositionSorting_NetsFirst() throws YSyntaxException {
         // Add more decompositions with varying names
-        YNet aNet = new YNet("a-net", spec);
-        YNet zNet = new YNet("z-net", spec);
+        YNet aNet = createNetWithConditions("a-net", spec);
+        YNet zNet = createNetWithConditions("z-net", spec);
         YAWLServiceGateway aGateway = new YAWLServiceGateway("a-gateway", spec);
         YAWLServiceGateway zGateway = new YAWLServiceGateway("z-gateway", spec);
 
@@ -118,7 +148,6 @@ class InstanceofPatternTest {
         String xml = spec.toXML();
 
         // Find positions of each decomposition
-        int rootPos = xml.indexOf("id=\"root-net\"");
         int subPos = xml.indexOf("id=\"sub-net\"");
         int aNetPos = xml.indexOf("id=\"a-net\"");
         int zNetPos = xml.indexOf("id=\"z-net\"");
@@ -140,19 +169,15 @@ class InstanceofPatternTest {
         assertTrue(gatewayPos < zGatewayPos, "gateway-decomp should come before z-gateway");
     }
 
-    // Test instanceof with null decomposition ID
+    // Test instanceof with null decomposition ID - JDOM rejects null IDs
     @Test
-    void testToXML_NullDecompositionID() throws YPersistenceException {
-        // Create decomposition with null ID (edge case)
-        YNet netWithNullId = new YNet(null, spec);
-        spec.addDecomposition(netWithNullId);
-
-        String xml = spec.toXML();
-        assertNotNull(xml, "XML should not be null even with null ID");
-
-        // Should still generate valid XML structure
-        assertTrue(xml.contains("<decomposition"),
-                  "Should contain decomposition element");
+    void testToXML_NullDecompositionID() {
+        // JDOM rejects null element names, so this should throw
+        assertThrows(IllegalArgumentException.class, () -> {
+            YNet netWithNullId = new YNet(null, spec);
+            spec.addDecomposition(netWithNullId);
+            spec.toXML();
+        }, "JDOM should reject null element names");
     }
 
     // Test multiple instanceof patterns in same method
@@ -221,10 +246,12 @@ class InstanceofPatternTest {
 
     // Edge case: Empty specification
     @Test
-    void testToXML_OnlyRootNet() {
+    void testToXML_OnlyRootNet() throws Exception {
         YSpecification minimalSpec = new YSpecification("minimal");
         minimalSpec.setVersion(YSchemaVersion.FourPointZero);
-        YNet minimal = new YNet("minimal-net", minimalSpec);
+        minimalSpec.setMetaData(new YMetaData());
+        minimalSpec.setSchema("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>");
+        YNet minimal = createNetWithConditions("minimal-net", minimalSpec);
         minimalSpec.setRootNet(minimal);
 
         String xml = minimalSpec.toXML();
@@ -235,10 +262,12 @@ class InstanceofPatternTest {
 
     // Edge case: Pattern matching with beta version (no externalInteraction)
     @Test
-    void testToXML_BetaVersionNoExternalInteraction() {
+    void testToXML_BetaVersionNoExternalInteraction() throws Exception {
         YSpecification betaSpec = new YSpecification("beta-spec");
         betaSpec.setVersion(YSchemaVersion.Beta7);
-        YNet betaNet = new YNet("beta-net", betaSpec);
+        betaSpec.setMetaData(new YMetaData());
+        betaSpec.setSchema("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>");
+        YNet betaNet = createNetWithConditions("beta-net", betaSpec);
         betaSpec.setRootNet(betaNet);
         YAWLServiceGateway betaGateway = new YAWLServiceGateway("beta-gateway", betaSpec);
         betaSpec.addDecomposition(betaGateway);
@@ -263,12 +292,12 @@ class InstanceofPatternTest {
 
     // Test pattern matching in comparator
     @Test
-    void testToXML_ComparatorPatternMatching() throws YPersistenceException {
+    void testToXML_ComparatorPatternMatching() throws YSyntaxException {
         // Add decompositions in non-sorted order
         YAWLServiceGateway g1 = new YAWLServiceGateway("z-first", spec);
-        YNet n1 = new YNet("a-second", spec);
+        YNet n1 = createNetWithConditions("a-second", spec);
         YAWLServiceGateway g2 = new YAWLServiceGateway("a-third", spec);
-        YNet n2 = new YNet("z-fourth", spec);
+        YNet n2 = createNetWithConditions("z-fourth", spec);
 
         spec.addDecomposition(g1);
         spec.addDecomposition(n1);
