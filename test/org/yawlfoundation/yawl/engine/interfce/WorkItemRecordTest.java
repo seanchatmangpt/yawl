@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.engine.interfce;
 
+import org.junit.jupiter.api.Tag;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +27,7 @@ import junit.framework.TestCase;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 public class WorkItemRecordTest extends TestCase {
 
     private WorkItemRecord workItem;

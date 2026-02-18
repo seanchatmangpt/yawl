@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.stateless;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +44,7 @@ import junit.framework.TestCase;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("integration")
 public class YStatelessEngineSuspendResumeTest extends TestCase
         implements YCaseEventListener, YWorkItemEventListener {
 

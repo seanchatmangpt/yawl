@@ -13,6 +13,7 @@ import java.util.Map;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.data.YParameter;
@@ -33,6 +34,7 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * Time: 15:52:30
  *
  */
+@Tag("unit")
 class TestYExternalTask{
     private YCondition _aCondition;
     private YTask _validTask;

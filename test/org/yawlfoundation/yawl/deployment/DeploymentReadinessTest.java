@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.deployment;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.*;
 import java.util.Properties;
 
@@ -21,6 +23,7 @@ import junit.framework.TestSuite;
  * - Configuration from environment variables
  * - Kubernetes compatibility
  */
+@Tag("integration")
 public class DeploymentReadinessTest extends TestCase {
 
     private static final String PROJECT_ROOT = "/home/user/yawl";

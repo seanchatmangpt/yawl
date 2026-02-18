@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.quality.architecture;
 
+import org.junit.jupiter.api.Tag;
+
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -24,6 +26,7 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  *
  * @version 6.0.0
  */
+@Tag("slow")
 @AnalyzeClasses(
     packages = "org.yawlfoundation.yawl",
     importOptions = {ImportOption.DoNotIncludeTests.class}

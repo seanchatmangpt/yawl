@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.elements;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
  * Time: 11:14:05
  *
  */
+@Tag("unit")
 class TestYNetElement{
 
     @Test

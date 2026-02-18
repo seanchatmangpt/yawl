@@ -2,12 +2,14 @@ package org.yawlfoundation.yawl.engine;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * Smoke test for YEngine initialization with H2 config.
  * Ensures YEngine.getInstance() succeeds when build.properties has database.type=h2.
  */
+@Tag("integration")
 class TestYEngineInit {
 
     @Test

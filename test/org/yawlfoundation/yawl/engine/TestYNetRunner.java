@@ -10,6 +10,7 @@ import java.util.List;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
@@ -29,6 +30,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 17:08:14
  *
  */
+@Tag("integration")
 class TestYNetRunner {
     private YNetRunner _netRunner1;
     private YIdentifier _id1;
@@ -38,6 +40,7 @@ class TestYNetRunner {
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("YAWL_Specification2.xml");
+        assertNotNull(fileURL, "Test resource YAWL_Specification2.xml not found in classpath");
         File yawlXMLFile1 = new File(fileURL.getFile());
         YSpecification specification = null;
         specification = (YSpecification) YMarshal.

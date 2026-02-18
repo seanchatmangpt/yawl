@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.authentication;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import org.jdom2.Element;
 
 /**
@@ -31,7 +33,8 @@ import org.jdom2.Element;
  * @date 23/11/2009
  *
  */
-
+@Entity
+@Table(name = "external_clients")
 public class YExternalClient extends YClient {
 
     public YExternalClient() { super(); }

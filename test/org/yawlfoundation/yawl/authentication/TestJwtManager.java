@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.authentication;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,7 @@ import io.jsonwebtoken.Claims;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("unit")
 public class TestJwtManager {
     
     /**

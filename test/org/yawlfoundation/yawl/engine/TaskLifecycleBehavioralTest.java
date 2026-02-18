@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +51,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * @see YTask#t_complete(YPersistenceManager, YIdentifier, Document)
  */
 @DisplayName("Task Lifecycle Behavioral Tests (Petri Net Semantics)")
+@Tag("integration")
 class TaskLifecycleBehavioralTest {
 
     private YEngine engine;
@@ -87,7 +89,7 @@ class TaskLifecycleBehavioralTest {
         @DisplayName("AND join NOT enabled when only ONE preset has token")
         void testAndJoinNotEnabledWithPartialTokens() throws Exception {
             // Load specification with AND join
-            URL fileURL = getClass().getResource("YAWL_Specification2.xml");
+            URL fileURL = getClass().getResource("YAWL_Specification_AndJoin.xml");
             assertNotNull(fileURL, "Test specification file must exist");
             File yawlXMLFile = new File(fileURL.getFile());
             specification = YMarshal.unmarshalSpecifications(
@@ -103,23 +105,46 @@ class TaskLifecycleBehavioralTest {
             YNetRunner runner = engine.getNetRunnerRepository().get(caseID);
             assertNotNull(runner, "NetRunner must exist for case");
 
-            // Get the first enabled task (a-top with XOR join, not AND)
-            Set<YTask> enabledTasks = runner.getEnabledTasks();
-            assertFalse(enabledTasks.isEmpty(), "At least one task should be enabled");
+            // Verify AND join behavior in spec - join-task has AND join
+            YTask joinTask = (YTask) runner.getNetElement("join-task");
+            assertNotNull(joinTask, "Task 'join-task' must exist");
+            assertEquals(YTask._AND, joinTask.getJoinType(),
+                    "Task 'join-task' should have AND join type");
 
-            // Fire the first task to progress the net
-            YAtomicTask firstTask = (YAtomicTask) runner.getNetElement("a-top");
-            assertNotNull(firstTask, "Task 'a-top' must exist");
+            // Get the preset conditions for the join task
+            Set<YExternalNetElement> presets = joinTask.getPresetElements();
+            assertEquals(2, presets.size(), "AND join task should have exactly 2 preset conditions");
 
-            // Verify AND join behavior in spec - b-top has AND join
-            YTask bTop = (YTask) runner.getNetElement("b-top");
-            assertNotNull(bTop, "Task 'b-top' must exist");
-            assertEquals(YTask._AND, bTop.getJoinType(),
-                    "Task 'b-top' should have AND join type");
+            // Find the two input conditions
+            YCondition cJoinInputA = null;
+            YCondition cJoinInputB = null;
+            for (YExternalNetElement elem : presets) {
+                if (elem.getID().equals("c-join-input-a")) {
+                    cJoinInputA = (YCondition) elem;
+                } else if (elem.getID().equals("c-join-input-b")) {
+                    cJoinInputB = (YCondition) elem;
+                }
+            }
+            assertNotNull(cJoinInputA, "Condition 'c-join-input-a' must exist");
+            assertNotNull(cJoinInputB, "Condition 'c-join-input-b' must exist");
 
-            // b-top should NOT be enabled initially (only one path has token)
-            assertFalse(bTop.t_enabled(caseID),
-                    "AND join task should NOT be enabled with partial preset tokens");
+            // Initially, join-task should NOT be enabled (no tokens in any preset)
+            assertFalse(joinTask.t_enabled(caseID),
+                    "AND join task should NOT be enabled with no preset tokens");
+
+            // Manually add a token to only ONE preset condition
+            cJoinInputA.add(null, caseID);
+
+            // Now join-task should still NOT be enabled (only ONE preset has token)
+            assertFalse(joinTask.t_enabled(caseID),
+                    "AND join task should NOT be enabled with only ONE preset token (need ALL)");
+
+            // Add token to the second preset condition
+            cJoinInputB.add(null, caseID);
+
+            // Now join-task SHOULD be enabled (ALL presets have tokens)
+            assertTrue(joinTask.t_enabled(caseID),
+                    "AND join task SHOULD be enabled when ALL preset conditions have tokens");
         }
 
         /**
@@ -580,11 +605,16 @@ class TaskLifecycleBehavioralTest {
                     specification.getSpecificationID(), null, null, null,
                     new YLogDataItemList(), null, false);
 
-            // Get enabled work item
+            // Get enabled work item - filter to only this case's items
             Set<YWorkItem> availableItems = engine.getAvailableWorkItems();
             assertFalse(availableItems.isEmpty(), "Should have available work items");
 
-            YWorkItem workItem = availableItems.iterator().next();
+            // Find work item belonging to our case (getAvailableWorkItems returns ALL cases)
+            YWorkItem workItem = availableItems.stream()
+                    .filter(item -> item.getCaseID().toString().equals(caseID.toString()))
+                    .findFirst()
+                    .orElse(null);
+            assertNotNull(workItem, "Should have work item for case " + caseID);
             assertEquals(YWorkItemStatus.statusEnabled, workItem.getStatus(),
                     "Initial work item should be enabled");
 

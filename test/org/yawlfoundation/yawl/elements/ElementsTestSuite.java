@@ -26,7 +26,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYNet.class,
     TestYNetElement.class,
     TestYOutputCondition.class,
-    TestYSpecification.class
+    TestYSpecification.class,
+    TestYSpecificationModel.class
 })
 public class ElementsTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

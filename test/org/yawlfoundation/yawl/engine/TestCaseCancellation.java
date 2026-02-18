@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YAWLServiceReference;
@@ -31,6 +32,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Date: 21/05/2004
  * Time: 15:41:36
  */
+@Tag("integration")
 class TestCaseCancellation {
     private YIdentifier _idForTopNet;
     private YEngine _engine;
@@ -50,6 +52,7 @@ class TestCaseCancellation {
         _logdata = new YLogDataItemList();
         _repository = _engine.getWorkItemRepository();
         URL fileURL = getClass().getResource("CaseCancellation.xml");
+        assertNotNull(fileURL, "Test resource CaseCancellation.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.unmarshalSpecifications(
                 StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

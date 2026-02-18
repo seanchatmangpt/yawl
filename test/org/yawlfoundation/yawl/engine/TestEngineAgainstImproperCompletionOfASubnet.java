@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -21,6 +22,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 12:24:13
  *
  */
+@Tag("integration")
 class TestEngineAgainstImproperCompletionOfASubnet {
 
     private YIdentifier _idForTopNet;

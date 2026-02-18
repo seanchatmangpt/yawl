@@ -181,11 +181,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -193,6 +188,41 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -281,32 +311,23 @@
                              ===================================================================== -->
                         <exclude>**/mcp/spec/YawlToolSpecifications.java</exclude>
                     </excludes>
-                    <testIncludes>
-                        <testInclude>**/observability/**</testInclude>
-                        <testInclude>**/mcp/**</testInclude>
-                        <testInclude>**/spiffe/**</testInclude>
-                        <testInclude>**/dedup/**</testInclude>
-                    </testIncludes>
                     <testExcludes>
-                        <!-- Exclude test files for A2A/autonomous packages (source excluded above) -->
-                        <testExclude>**/a2a/**</testExclude>
-                        <testExclude>**/orderfulfillment/**</testExclude>
-                        <testExclude>**/autonomous/**</testExclude>
-                        <testExclude>**/zai/**</testExclude>
-                        <testExclude>**/processmining/**</testExclude>
-                        <testExclude>**/SelfPlayTest.java</testExclude>
-                        <!-- IntegrationTestSuite references excluded classes - exclude it too -->
-                        <testExclude>**/IntegrationTestSuite.java</testExclude>
-                        <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 which is not exported in Java 21+ -->
-                        <testExclude>**/spiffe/SpiffeWorkloadIdentityTest.java</testExclude>
-                        <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL 1.59.0 -->
-                        <testExclude>**/observability/OpenTelemetryConfigTest.java</testExclude>
-                        <!-- V6EndToEndIntegrationTest references excluded classes -->
-                        <testExclude>**/V6EndToEndIntegrationTest.java</testExclude>
-                        <!-- IT tests require failsafe plugin not available offline -->
-                        <testExclude>**/*IT.java</testExclude>
-                        <!-- YawlMcpServerTest references YawlMcpServer which is excluded from source compilation -->
-                        <testExclude>**/mcp/YawlMcpServerTest.java</testExclude>
+                        <!-- Exclude test files that depend on excluded source classes -->
+                        <exclude>**/a2a/**</exclude>
+                        <exclude>**/autonomous/**</exclude>
+                        <exclude>**/orderfulfillment/**</exclude>
+                        <exclude>**/zai/**</exclude>
+                        <exclude>**/processmining/**</exclude>
+                        <exclude>**/test/SelfPlayTest.java</exclude>
+                        <exclude>**/IntegrationTestSuite.java</exclude>
+                        <exclude>**/multimodule/**</exclude>
+                        <exclude>**/V6EndToEndIntegrationTest.java</exclude>
+                        <exclude>**/EnterpriseIntegrationPatternsTest.java</exclude>
+                        <exclude>**/spiffe/SpiffeWorkloadIdentityTest.java</exclude>
+                        <exclude>**/observability/OpenTelemetryConfigTest.java</exclude>
+                        <exclude>**/mcp/zai/**</exclude>
+                        <!-- YawlMcpServerTest depends on excluded YawlMcpServer source -->
+                        <exclude>**/mcp/YawlMcpServerTest.java</exclude>
                     </testExcludes>
                 </configuration>
             </plugin>

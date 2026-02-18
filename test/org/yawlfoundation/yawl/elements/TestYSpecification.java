@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
@@ -23,6 +24,7 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * Time: 14:35:09
  *
  */
+@Tag("unit")
 class TestYSpecification {
     private YSpecification _goodSpecification;
     private YSpecification _badSpecification;
@@ -39,7 +41,7 @@ class TestYSpecification {
     @BeforeEach
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
-        File specificationFile = new File(YMarshal.class.getResource("MakeRecordings.xml").getFile());
+        File specificationFile = new File(getClass().getResource("../unmarshal/MakeRecordings.xml").getFile());
         List specifications = null;
         specifications = YMarshal.unmarshalSpecifications(StringUtil.fileToString(specificationFile.getAbsolutePath()));
 

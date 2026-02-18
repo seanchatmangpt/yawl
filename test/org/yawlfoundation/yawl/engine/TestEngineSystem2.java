@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YCondition;
@@ -30,6 +31,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 12:28:34
  *
  */
+@Tag("integration")
 class TestEngineSystem2 {
     private YIdentifier _idForBottomNet;
 //    private YIdentifier _idForTopNet;
@@ -41,13 +43,15 @@ class TestEngineSystem2 {
 
     @BeforeEach
 
-    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YEngineStateException, YPersistenceException {
         URL fileURL = getClass().getResource("YAWL_Specification4.xml");
+        assertNotNull(fileURL, "Test specification file YAWL_Specification4.xml must exist in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
                 unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
 
         _engine = YEngine.getInstance();
+        EngineClearer.clear(_engine);
         _workItemRepository = _engine.getWorkItemRepository();
     }
 
@@ -56,6 +60,7 @@ class TestEngineSystem2 {
     void testMultimergeNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized(this){
         EngineClearer.clear(_engine);
+        _workItemRepository.clear();
         _engine.loadSpecification(_specification);
         YIdentifier id = _engine.startCase(_specification.getSpecificationID(), null,
                 null, null, new YLogDataItemList(), null, false);
@@ -147,6 +152,7 @@ class TestEngineSystem2 {
     void testMultimergeWorkItems() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized(this){
         EngineClearer.clear(_engine);
+        _workItemRepository.clear();
         _engine.loadSpecification(_specification);
             YIdentifier id = _engine.startCase(_specification.getSpecificationID(), null,
                     null, null, new YLogDataItemList(), null, false);
@@ -234,6 +240,7 @@ class TestEngineSystem2 {
     void testStateAlignmentBetween_WorkItemRepository_and_Net()
             throws YSchemaBuildingException, YSyntaxException, JDOMException, YEngineStateException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL = getClass().getResource("TestOrJoin.xml");
+        assertNotNull(fileURL, "Test specification file TestOrJoin.xml must exist in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = null;
         specification = (YSpecification) YMarshal.

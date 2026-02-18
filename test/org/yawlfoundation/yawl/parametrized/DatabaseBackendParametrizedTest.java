@@ -8,6 +8,7 @@
 
 package org.yawlfoundation.yawl.parametrized;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @version 6.0.0
  * @since 2026-02-17
  */
+@Tag("integration")
 class DatabaseBackendParametrizedTest {
 
     /**

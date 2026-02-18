@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.quality.metrics;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test Execution Time Analysis and Optimization")
 @EnabledIfSystemProperty(named = "surefire.reports.dir", matches = ".+")
+@Tag("slow")
 public class TestExecutionTimeAnalyzer {
 
     /** Individual test execution time above this threshold fails the build. */

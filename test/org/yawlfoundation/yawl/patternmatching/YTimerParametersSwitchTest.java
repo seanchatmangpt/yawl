@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.elements.YTimerParameters;
 
 import junit.framework.TestCase;
@@ -16,6 +18,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class YTimerParametersSwitchTest extends TestCase {
 
     // Test trigger type switches

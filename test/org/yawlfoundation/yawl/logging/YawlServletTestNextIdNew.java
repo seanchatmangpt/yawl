@@ -1,11 +1,14 @@
 package org.yawlfoundation.yawl.logging;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.engine.YEngine;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+@Tag("unit")
 public class YawlServletTestNextIdNew extends TestCase {
 
     public YawlServletTestNextIdNew(String name) {
@@ -47,7 +50,6 @@ public class YawlServletTestNextIdNew extends TestCase {
         }
 
     }
-
 
     public static Test suite() {
 

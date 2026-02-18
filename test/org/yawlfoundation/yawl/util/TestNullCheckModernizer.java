@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.Test;
  * @since YAWL 6.0.0-Alpha
  */
 @DisplayName("NullCheckModernizer")
+@Tag("unit")
 class TestNullCheckModernizer {
 
 

@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Tag;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,6 +27,7 @@ import junit.framework.TestSuite;
  * - CPU efficiency
  * - Database query performance
  */
+@Tag("slow")
 public class PerformanceTest extends TestCase {
 
     private static final int WARMUP_ITERATIONS = 100;

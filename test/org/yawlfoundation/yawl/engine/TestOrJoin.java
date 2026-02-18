@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Iterator;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -24,23 +25,24 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 15:03:20
  *
  */
+@Tag("integration")
 class TestOrJoin {
     private long _sleepTime = 100;
     private YEngine _engine;
 
     @BeforeEach
-    void setUp() {
-
+    void setUp() throws YPersistenceException, YEngineStateException {
+        _engine = YEngine.getInstance();
+        EngineClearer.clear(_engine);
     }
 
     @Test
     void testImproperCompletion() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YAuthenticationException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL = getClass().getResource("TestOrJoin.xml");
+        assertNotNull(fileURL, "Test resource TestOrJoin.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
-        _engine = YEngine.getInstance();
-        EngineClearer.clear(_engine);
         _engine.loadSpecification(specification);
         YIdentifier id = _engine.startCase(specification.getSpecificationID(), null, null,
                 null, new YLogDataItemList(), null, false);
@@ -156,11 +158,10 @@ class TestOrJoin {
     @Test
     void testImproperCompletion2() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YDataStateException, YStateException, YQueryException, YPersistenceException {
         URL fileURL2 = getClass().getResource("Test55.xml");
+        assertNotNull(fileURL2, "Test resource Test55.xml not found in classpath");
         File yawlXMLFile2 = new File(fileURL2.getFile());
         YSpecification specification2 = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile2.getAbsolutePath())).get(0);
-        _engine = YEngine.getInstance();
-        EngineClearer.clear(_engine);
         _engine.loadSpecification(specification2);
         YIdentifier id = _engine.startCase(specification2.getSpecificationID(), null,
                 null, null, new YLogDataItemList(), null, false);

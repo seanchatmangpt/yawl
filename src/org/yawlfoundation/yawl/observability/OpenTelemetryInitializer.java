@@ -1,27 +1,25 @@
 package org.yawlfoundation.yawl.observability;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.exporter.jaeger.thrift.JaegerThriftSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
-import io.opentelemetry.semconv.ResourceAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Initializes OpenTelemetry SDK with support for multiple trace exporters.
+ * Initializes OpenTelemetry SDK with support for OTLP trace exporters.
  *
  * Supports configuration through system properties:
  * - otel.exporter.otlp.endpoint: OTLP/gRPC endpoint (e.g., http://localhost:4317)
- * - otel.exporter.jaeger.endpoint: Jaeger Thrift endpoint (e.g., http://localhost:14268/api/traces)
  * - otel.service.name: Service name for resource (default: yawl-engine)
  * - otel.service.version: Service version (default: 6.0.0)
  * - otel.resource.attributes: Comma-separated key=value resource attributes
@@ -61,11 +59,7 @@ public class OpenTelemetryInitializer {
      */
     private static OpenTelemetrySdk buildOpenTelemetrySdk() {
         Resource resource = buildResource();
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                .setResource(resource)
-                .build();
-
-        configureExporters(tracerProvider);
+        SdkTracerProvider tracerProvider = createTracerProvider(resource);
 
         return OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
@@ -79,12 +73,12 @@ public class OpenTelemetryInitializer {
         String serviceName = System.getProperty("otel.service.name", "yawl-engine");
         String serviceVersion = System.getProperty("otel.service.version", "6.0.0");
 
-        AttributesBuilder attributesBuilder = Attributes.builder()
-                .put(ResourceAttributes.SERVICE_NAME, serviceName)
-                .put(ResourceAttributes.SERVICE_VERSION, serviceVersion)
-                .put(ResourceAttributes.SERVICE_NAMESPACE, "org.yawlfoundation")
-                .put("process.runtime.name", System.getProperty("java.runtime.name"))
-                .put("process.runtime.version", System.getProperty("java.version"));
+        Attributes.Builder attributesBuilder = Attributes.builder()
+                .put(AttributeKey.stringKey("service.name"), serviceName)
+                .put(AttributeKey.stringKey("service.version"), serviceVersion)
+                .put(AttributeKey.stringKey("service.namespace"), "org.yawlfoundation")
+                .put(AttributeKey.stringKey("process.runtime.name"), System.getProperty("java.runtime.name"))
+                .put(AttributeKey.stringKey("process.runtime.version"), System.getProperty("java.version"));
 
         String resourceAttributesStr = System.getProperty("otel.resource.attributes");
         if (resourceAttributesStr != null && !resourceAttributesStr.isEmpty()) {
@@ -96,45 +90,34 @@ public class OpenTelemetryInitializer {
             }
         }
 
-        return Resource.create(attributesBuilder.build());
+        return Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
     }
 
     /**
-     * Configures span exporters based on system properties.
-     * Supports OTLP/gRPC and Jaeger Thrift exporters.
+     * Creates tracer provider with OTLP exporter if configured.
      */
-    private static void configureExporters(SdkTracerProvider tracerProvider) {
+    private static SdkTracerProvider createTracerProvider(Resource resource) {
         String otlpEndpoint = System.getProperty("otel.exporter.otlp.endpoint");
-        String jaegerEndpoint = System.getProperty("otel.exporter.jaeger.endpoint");
+
+        SdkTracerProvider.Builder builder = SdkTracerProvider.builder()
+                .setResource(resource);
 
         if (otlpEndpoint != null && !otlpEndpoint.isEmpty()) {
             try {
                 OtlpGrpcSpanExporter exporter = OtlpGrpcSpanExporter.builder()
                         .setEndpoint(otlpEndpoint)
+                        .setTimeout(Duration.ofSeconds(10))
                         .build();
-                tracerProvider.addSpanProcessor(SimpleSpanProcessor.create(exporter));
+                builder.addSpanProcessor(SimpleSpanProcessor.create(exporter));
                 LOGGER.info("Configured OTLP/gRPC span exporter: {}", otlpEndpoint);
             } catch (Exception e) {
                 LOGGER.warn("Failed to configure OTLP exporter", e);
             }
+        } else {
+            LOGGER.warn("No span exporters configured. Set otel.exporter.otlp.endpoint");
         }
 
-        if (jaegerEndpoint != null && !jaegerEndpoint.isEmpty()) {
-            try {
-                JaegerThriftSpanExporter exporter = JaegerThriftSpanExporter.builder()
-                        .setEndpoint(jaegerEndpoint)
-                        .build();
-                tracerProvider.addSpanProcessor(SimpleSpanProcessor.create(exporter));
-                LOGGER.info("Configured Jaeger Thrift span exporter: {}", jaegerEndpoint);
-            } catch (Exception e) {
-                LOGGER.warn("Failed to configure Jaeger exporter", e);
-            }
-        }
-
-        if ((otlpEndpoint == null || otlpEndpoint.isEmpty()) &&
-                (jaegerEndpoint == null || jaegerEndpoint.isEmpty())) {
-            LOGGER.warn("No span exporters configured. Set otel.exporter.otlp.endpoint or otel.exporter.jaeger.endpoint");
-        }
+        return builder.build();
     }
 
     /**

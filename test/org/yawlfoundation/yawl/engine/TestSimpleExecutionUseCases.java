@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -24,6 +25,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 16:19:02
  *
  */
+@Tag("integration")
 class TestSimpleExecutionUseCases{
     private YIdentifier _caseId;
     private YWorkItemRepository _workItemRepository;
@@ -33,6 +35,7 @@ class TestSimpleExecutionUseCases{
 
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
+        assertNotNull(fileURL, "Test resource ImproperCompletion.xml not found in classpath");
 		File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

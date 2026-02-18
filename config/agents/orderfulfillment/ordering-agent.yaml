@@ -63,7 +63,7 @@ agent:
 yawl:
   engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
   username: "${YAWL_USERNAME:-admin}"
-  password: "${YAWL_PASSWORD:-YAWL}"
+  password: "${YAWL_PASSWORD}"
 
 zai:
   api_key: "${ZAI_API_KEY}"

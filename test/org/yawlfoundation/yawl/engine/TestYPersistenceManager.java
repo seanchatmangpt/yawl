@@ -1,13 +1,13 @@
 package org.yawlfoundation.yawl.engine;
 
 import jakarta.persistence.TypedQuery;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
@@ -23,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive tests for the V6-upgraded YPersistenceManager with real H2
@@ -41,21 +43,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author YAWL Engine Team - V6 upgrade 2026-02-17
  */
-public class TestYPersistenceManager extends TestCase {
+@Tag("unit")
+class TestYPersistenceManager {
 
     private YEngine _engine;
     private YPersistenceManager _pmgr;
     private YSpecification _specification;
     private YIdentifier _caseID;
 
-    public TestYPersistenceManager(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        _engine = YEngine.getInstance();
+    @BeforeEach
+    void setUp() throws Exception {
+        // Initialize engine with persistence enabled for SessionFactory tests
+        _engine = YEngine.getInstance(true);
         _pmgr = _engine.getPersistenceManager();
 
         URL fileURL = getClass().getResource("YAWL_Specification1.xml");
@@ -66,8 +65,8 @@ public class TestYPersistenceManager extends TestCase {
         }
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (_caseID != null && _engine != null) {
             try {
                 _engine.cancelCase(_caseID);
@@ -75,7 +74,6 @@ public class TestYPersistenceManager extends TestCase {
                 // Ignore cleanup errors - case may already be completed
             }
         }
-        super.tearDown();
     }
 
     // =========================================================================
@@ -86,15 +84,16 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that the Hibernate 6.x SessionFactory initialises correctly and
      * that the V6-upgraded persistence manager API is fully operational.
      */
-    public void testSessionFactoryInitialization() throws YPersistenceException {
-        assertNotNull("PersistenceManager must not be null", _pmgr);
+    @Test
+    void testSessionFactoryInitialization() throws YPersistenceException {
+        assertNotNull(_pmgr, "PersistenceManager must not be null");
 
         SessionFactory factory = _pmgr.getFactory();
-        assertNotNull("SessionFactory must be initialised for V6 tests", factory);
-        assertFalse("SessionFactory must not be closed", factory.isClosed());
+        assertNotNull(factory, "SessionFactory must be initialised for V6 tests");
+        assertFalse(factory.isClosed(), "SessionFactory must not be closed");
 
-        assertTrue("Persistence must be enabled", _pmgr.isEnabled());
-        assertTrue("isPersisting() must report enabled state", _pmgr.isPersisting());
+        assertTrue(_pmgr.isEnabled(), "Persistence must be enabled");
+        assertTrue(_pmgr.isPersisting(), "isPersisting() must report enabled state");
     }
 
     // =========================================================================
@@ -106,17 +105,18 @@ public class TestYPersistenceManager extends TestCase {
      * returns a {@link TypedQuery} (not the deprecated raw {@code Query}) and that
      * the TypedQuery executes correctly.
      */
-    public void testCreateQueryReturnsTypedQuery() throws YPersistenceException {
+    @Test
+    void testCreateQueryReturnsTypedQuery() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.startTransaction();
         try {
             TypedQuery<Object> query = _pmgr.createQuery("from YCaseNbrStore");
-            assertNotNull("V6 createQuery() must return a TypedQuery, not null", query);
+            assertNotNull(query, "V6 createQuery() must return a TypedQuery, not null");
             // TypedQuery.getResultList() must work without ClassCastException
             List<Object> results = query.getResultList();
-            assertNotNull("getResultList() must return a non-null list", results);
+            assertNotNull(results, "getResultList() must return a non-null list");
         } finally {
             _pmgr.commit();
         }
@@ -131,7 +131,8 @@ public class TestYPersistenceManager extends TestCase {
      * uses named parameters, not string concatenation. A value containing HQL special
      * characters must be handled correctly without throwing a parse exception.
      */
-    public void testSelectScalarUsesParameterizedQuery() throws YPersistenceException {
+    @Test
+    void testSelectScalarUsesParameterizedQuery() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -143,7 +144,7 @@ public class TestYPersistenceManager extends TestCase {
             Object result = _pmgr.selectScalar("YCaseNbrStore", "caseNbr", "9999");
             // Null is the correct result when no matching row exists
             // The important thing is that no HQL parse exception is thrown
-            assertNull("No YCaseNbrStore with caseNbr=9999 should exist", result);
+            assertNull(result, "No YCaseNbrStore with caseNbr=9999 should exist");
         } finally {
             _pmgr.commit();
         }
@@ -153,14 +154,15 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that {@link YPersistenceManager#selectScalar(String, String, long)}
      * also uses parameterized binding for long values.
      */
-    public void testSelectScalarLongParameterized() throws YPersistenceException {
+    @Test
+    void testSelectScalarLongParameterized() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.startTransaction();
         try {
             Object result = _pmgr.selectScalar("YCaseNbrStore", "caseNbr", 99999L);
-            assertNull("No record with caseNbr=99999 should exist", result);
+            assertNull(result, "No record with caseNbr=99999 should exist");
         } finally {
             _pmgr.commit();
         }
@@ -174,14 +176,15 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that {@link YPersistenceManager#execQuery(String)} returns a non-null
      * list (possibly empty) for a valid HQL query.
      */
-    public void testExecQueryString() throws YPersistenceException {
+    @Test
+    void testExecQueryString() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.startTransaction();
         try {
             List<?> results = _pmgr.execQuery("from YCaseNbrStore");
-            assertNotNull("execQuery(String) must return non-null list", results);
+            assertNotNull(results, "execQuery(String) must return non-null list");
         } finally {
             _pmgr.commit();
         }
@@ -192,7 +195,8 @@ public class TestYPersistenceManager extends TestCase {
      * {@link YPersistenceException} for an invalid HQL query, not a raw
      * Hibernate exception.
      */
-    public void testExecQueryInvalidHQLThrowsYPersistenceException() {
+    @Test
+    void testExecQueryInvalidHQLThrowsYPersistenceException() {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -202,7 +206,7 @@ public class TestYPersistenceManager extends TestCase {
             _pmgr.commit();
             fail("Invalid HQL must throw YPersistenceException");
         } catch (YPersistenceException e) {
-            assertNotNull("YPersistenceException must have a message", e.getMessage());
+            assertNotNull(e.getMessage(), "YPersistenceException must have a message");
             // The exception message may mention query error or Hibernate problem
         }
     }
@@ -217,18 +221,19 @@ public class TestYPersistenceManager extends TestCase {
      * Raw {@code List} assignments (from pre-V6 test code) now require explicit
      * unchecked cast to the target type.
      */
-    public void testGetObjectsForClassWildcardReturn() throws YPersistenceException {
+    @Test
+    void testGetObjectsForClassWildcardReturn() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.startTransaction();
         try {
             List<?> results = _pmgr.getObjectsForClass("YCaseNbrStore");
-            assertNotNull("getObjectsForClass() must return non-null list", results);
+            assertNotNull(results, "getObjectsForClass() must return non-null list");
             for (Object obj : results) {
-                assertNotNull("Each retrieved object must be non-null", obj);
-                assertTrue("Each object must be a YCaseNbrStore",
-                        obj instanceof YCaseNbrStore);
+                assertNotNull(obj, "Each retrieved object must be non-null");
+                assertTrue(obj instanceof YCaseNbrStore,
+                        "Each object must be a YCaseNbrStore");
             }
         } finally {
             _pmgr.commit();
@@ -243,7 +248,8 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that {@link YPersistenceManager#getObjectsForClassWhere(String, String)}
      * returns a {@code List<?>} and works with a valid WHERE clause.
      */
-    public void testGetObjectsForClassWhere() throws YPersistenceException {
+    @Test
+    void testGetObjectsForClassWhere() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -251,7 +257,7 @@ public class TestYPersistenceManager extends TestCase {
         try {
             // HQL clause: the caseNbr field exists on YCaseNbrStore
             List<?> results = _pmgr.getObjectsForClassWhere("YCaseNbrStore", "caseNbr > 0");
-            assertNotNull("getObjectsForClassWhere() must return non-null list", results);
+            assertNotNull(results, "getObjectsForClassWhere() must return non-null list");
         } finally {
             _pmgr.commit();
         }
@@ -264,7 +270,8 @@ public class TestYPersistenceManager extends TestCase {
     /**
      * Verifies the complete transaction lifecycle: startTransaction -> commit.
      */
-    public void testTransactionStartAndCommit() throws YPersistenceException {
+    @Test
+    void testTransactionStartAndCommit() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -280,14 +287,15 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that calling {@code startTransaction()} twice does not start a new
      * transaction if one is already active (idempotent behaviour).
      */
-    public void testStartTransactionIdempotent() throws YPersistenceException {
+    @Test
+    void testStartTransactionIdempotent() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
         boolean first = _pmgr.startTransaction();
         if (first) {
             boolean second = _pmgr.startTransaction();
-            assertFalse("Second startTransaction() must return false when one is active", second);
+            assertFalse(second, "Second startTransaction() must return false when one is active");
             _pmgr.commit();
         }
     }
@@ -300,7 +308,8 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that {@link YPersistenceManager#rollbackTransaction()} rolls back
      * without throwing exceptions when an active transaction is present.
      */
-    public void testRollbackTransaction() throws YPersistenceException {
+    @Test
+    void testRollbackTransaction() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -318,7 +327,8 @@ public class TestYPersistenceManager extends TestCase {
     /**
      * Verifies that session retrieval returns the thread-bound Hibernate session.
      */
-    public void testSessionRetrieval() throws YPersistenceException {
+    @Test
+    void testSessionRetrieval() throws YPersistenceException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -326,12 +336,12 @@ public class TestYPersistenceManager extends TestCase {
         if (started) {
             try {
                 Session session = _pmgr.getSession();
-                assertNotNull("Session must be non-null when transaction is active", session);
-                assertTrue("Session must be open during active transaction", session.isOpen());
+                assertNotNull(session, "Session must be non-null when transaction is active");
+                assertTrue(session.isOpen(), "Session must be open during active transaction");
 
                 Transaction tx = _pmgr.getTransaction();
-                assertNotNull("Transaction must be retrievable during active transaction", tx);
-                assertTrue("Transaction must be active", tx.isActive());
+                assertNotNull(tx, "Transaction must be retrievable during active transaction");
+                assertTrue(tx.isActive(), "Transaction must be active");
             } finally {
                 _pmgr.commit();
             }
@@ -347,14 +357,15 @@ public class TestYPersistenceManager extends TestCase {
      * This validates that the V6 resource management keeps the factory alive for
      * subsequent operations.
      */
-    public void testCloseSessionKeepsFactoryOpen() {
+    @Test
+    void testCloseSessionKeepsFactoryOpen() {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.closeSession();
         SessionFactory factory = _pmgr.getFactory();
-        assertNotNull("Factory must remain non-null after closeSession()", factory);
-        assertFalse("Factory must remain open after closeSession()", factory.isClosed());
+        assertNotNull(factory, "Factory must remain non-null after closeSession()");
+        assertFalse(factory.isClosed(), "Factory must remain open after closeSession()");
     }
 
     // =========================================================================
@@ -364,39 +375,41 @@ public class TestYPersistenceManager extends TestCase {
     /**
      * Verifies that Hibernate statistics can be enabled and queried via the V6 API.
      */
-    public void testStatisticsEnableAndQuery() {
+    @Test
+    void testStatisticsEnableAndQuery() {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.setStatisticsEnabled(true);
-        assertTrue("Statistics must be enabled after setStatisticsEnabled(true)",
-                _pmgr.isStatisticsEnabled());
+        assertTrue(_pmgr.isStatisticsEnabled(),
+                "Statistics must be enabled after setStatisticsEnabled(true)");
 
         Map<String, Object> statsMap = _pmgr.getStatisticsMap();
-        assertNotNull("getStatisticsMap() must return a non-null map", statsMap);
+        assertNotNull(statsMap, "getStatisticsMap() must return a non-null map");
         // When statistics are enabled, the map should contain at least one entry
-        assertFalse("Statistics map must be populated when enabled", statsMap.isEmpty());
-        assertTrue("Stats must include 'sessionOpenCount'",
-                statsMap.containsKey("sessionOpenCount"));
-        assertTrue("Stats must include 'transactionCount'",
-                statsMap.containsKey("transactionCount"));
+        assertFalse(statsMap.isEmpty(), "Statistics map must be populated when enabled");
+        assertTrue(statsMap.containsKey("sessionOpenCount"),
+                "Stats must include 'sessionOpenCount'");
+        assertTrue(statsMap.containsKey("transactionCount"),
+                "Stats must include 'transactionCount'");
 
         _pmgr.setStatisticsEnabled(false);
-        assertFalse("Statistics must be disabled after setStatisticsEnabled(false)",
-                _pmgr.isStatisticsEnabled());
+        assertFalse(_pmgr.isStatisticsEnabled(),
+                "Statistics must be disabled after setStatisticsEnabled(false)");
     }
 
     /**
      * Verifies that the XML statistics output is well-formed when statistics are enabled.
      */
-    public void testStatisticsXMLOutput() {
+    @Test
+    void testStatisticsXMLOutput() {
         if (!_pmgr.isEnabled()) {
             return;
         }
         _pmgr.setStatisticsEnabled(true);
         String xml = _pmgr.getStatistics();
-        assertNotNull("getStatistics() must return non-null XML string", xml);
-        assertTrue("Statistics XML must start with an XML tag", xml.trim().startsWith("<"));
+        assertNotNull(xml, "getStatistics() must return non-null XML string");
+        assertTrue(xml.trim().startsWith("<"), "Statistics XML must start with an XML tag");
         _pmgr.setStatisticsEnabled(false);
     }
 
@@ -409,9 +422,10 @@ public class TestYPersistenceManager extends TestCase {
      * {@link YPersistenceManager#isPersisting()} return the same value, as they
      * are documented to be equivalent.
      */
-    public void testIsEnabledAndIsPersistingEquivalent() {
-        assertEquals("isEnabled() and isPersisting() must return same value",
-                _pmgr.isEnabled(), _pmgr.isPersisting());
+    @Test
+    void testIsEnabledAndIsPersistingEquivalent() {
+        assertEquals(_pmgr.isEnabled(), _pmgr.isPersisting(),
+                "isEnabled() and isPersisting() must return same value");
     }
 
     // =========================================================================
@@ -423,9 +437,10 @@ public class TestYPersistenceManager extends TestCase {
      * {@link YPersistenceManager#getFactory()} return the same object reference,
      * as documented in the V6 API.
      */
-    public void testGetSessionFactoryEqualsGetFactory() {
-        assertSame("getSessionFactory() and getFactory() must return same instance",
-                _pmgr.getSessionFactory(), _pmgr.getFactory());
+    @Test
+    void testGetSessionFactoryEqualsGetFactory() {
+        assertSame(_pmgr.getSessionFactory(), _pmgr.getFactory(),
+                "getSessionFactory() and getFactory() must return same instance");
     }
 
     // =========================================================================
@@ -436,11 +451,12 @@ public class TestYPersistenceManager extends TestCase {
      * Verifies that {@link YPersistenceManager#getInstance()} returns the same
      * object as retrieved from the engine, confirming the singleton behaviour.
      */
-    public void testGetInstanceReturnsSingleton() {
+    @Test
+    void testGetInstanceReturnsSingleton() {
         YPersistenceManager viaStatic = YPersistenceManager.getInstance();
         YPersistenceManager viaEngine = _engine.getPersistenceManager();
-        assertSame("getInstance() must return same instance as engine.getPersistenceManager()",
-                viaStatic, viaEngine);
+        assertSame(viaStatic, viaEngine,
+                "getInstance() must return same instance as engine.getPersistenceManager()");
     }
 
     // =========================================================================
@@ -454,7 +470,8 @@ public class TestYPersistenceManager extends TestCase {
      * <p>Note: Hibernate's current-session strategy is thread-bound. Each thread
      * operates on its own session and transaction.</p>
      */
-    public void testConcurrentQueryExecution() throws InterruptedException {
+    @Test
+    void testConcurrentQueryExecution() throws InterruptedException {
         if (!_pmgr.isEnabled()) {
             return;
         }
@@ -484,8 +501,8 @@ public class TestYPersistenceManager extends TestCase {
 
         boolean completed = latch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
-        assertTrue("All threads must complete within timeout", completed);
-        assertTrue("At least one concurrent session must succeed", successCount.get() >= 1);
+        assertTrue(completed, "All threads must complete within timeout");
+        assertTrue(successCount.get() >= 1, "At least one concurrent session must succeed");
     }
 
     // =========================================================================
@@ -497,37 +514,24 @@ public class TestYPersistenceManager extends TestCase {
      * net runner was persisted, then cancel case. Validates the complete V6
      * persistence pipeline (persist, query, remove) end-to-end.
      */
-    public void testH2InMemoryRoundTrip() throws Exception {
+    @Test
+    void testH2InMemoryRoundTrip() throws Exception {
         if (_specification == null || !_pmgr.isEnabled()) {
             return;
         }
         _engine.loadSpecification(_specification);
         _caseID = _engine.startCase(
                 _specification.getSpecificationID(), null, null, null, null, null, false);
-        assertNotNull("Case must be started for round-trip test", _caseID);
+        assertNotNull(_caseID, "Case must be started for round-trip test");
 
         _pmgr.startTransaction();
         try {
             List<?> runners = _pmgr.getObjectsForClass("YNetRunner");
-            assertNotNull("YNetRunner query must return non-null list", runners);
-            assertTrue("At least one YNetRunner must be persisted after case start",
-                    !runners.isEmpty());
+            assertNotNull(runners, "YNetRunner query must return non-null list");
+            assertTrue(!runners.isEmpty(),
+                    "At least one YNetRunner must be persisted after case start");
         } finally {
             _pmgr.commit();
         }
-    }
-
-    // =========================================================================
-    //   Test suite
-    // =========================================================================
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("YPersistenceManager V6 Upgrade Tests");
-        suite.addTestSuite(TestYPersistenceManager.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
     }
 }

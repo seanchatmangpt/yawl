@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.quality;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Dependency Security Policy: No CVSS >= 7.0 in production dependencies")
 @EnabledIfSystemProperty(named = "owasp.report.path", matches = ".+")
+@Tag("slow")
 public class DependencySecurityPolicyTest {
 
     /**

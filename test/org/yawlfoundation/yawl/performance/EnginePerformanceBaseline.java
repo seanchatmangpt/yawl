@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import junit.framework.TestCase;
  * @version 5.2
  * @since 2026-02-16
  */
+@Tag("slow")
 public class EnginePerformanceBaseline extends TestCase {
     
     private YEngine engine;
@@ -65,9 +68,9 @@ public class EnginePerformanceBaseline extends TestCase {
         EngineClearer.clear(engine);
         
         // Load test specification
-        URL fileURL = getClass().getResource("/test/org/yawlfoundation/yawl/engine/ImproperCompletion.xml");
+        URL fileURL = getClass().getResource("../engine/ImproperCompletion.xml");
         if (fileURL == null) {
-            fileURL = getClass().getResource("../engine/ImproperCompletion.xml");
+            fileURL = getClass().getResource("/test/org/yawlfoundation/yawl/engine/ImproperCompletion.xml");
         }
         
         if (fileURL != null) {

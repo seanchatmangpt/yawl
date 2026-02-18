@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
@@ -16,6 +17,7 @@ import org.yawlfoundation.yawl.elements.YSpecVersion;
  * Time: 08:27:49
  *
  */
+@Tag("unit")
 class TestMetaDataMarshal{
     private YMetaData metaData;
     private LocalDate today;

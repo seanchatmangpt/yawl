@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.authentication;
 import jakarta.servlet.*;
 import jakarta.servlet.descriptor.JspConfigDescriptor;
 import jakarta.servlet.http.*;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("unit")
 public class TestCsrfProtectionFilter {
 
     private CsrfProtectionFilter filter;
@@ -597,6 +599,13 @@ public class TestCsrfProtectionFilter {
         public void sendRedirect(String location) throws IOException {
             throw new UnsupportedOperationException(
                     "RecordingResponse.sendRedirect: not needed for CSRF filter tests");
+        }
+
+        @Override
+        public void sendRedirect(String location, int sc, boolean clearBuffer)
+                throws IOException {
+            throw new UnsupportedOperationException(
+                    "RecordingResponse.sendRedirect(String, int, boolean): not needed for CSRF filter tests");
         }
 
         @Override

@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -25,6 +26,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 14:23:09
  *
  */
+@Tag("integration")
 class TestImproperCompletion {
 
     // Returned by trim() when the input string contains no parseable caseID element
@@ -37,14 +39,16 @@ class TestImproperCompletion {
 
     @BeforeEach
 
-    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
+    void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YEngineStateException, YPersistenceException {
         URL fileURL = getClass().getResource("TestImproperCompletion.xml");
+        assertNotNull(fileURL, "Test resource TestImproperCompletion.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(
                                     yawlXMLFile.getAbsolutePath())).get(0);
 
         _engine = YEngine.getInstance();
+        EngineClearer.clear(_engine);
         _workItemRepository = _engine.getWorkItemRepository();
     }
 
@@ -62,7 +66,6 @@ class TestImproperCompletion {
     void testImproperCompletion() throws YStateException, YDataStateException,
             YEngineStateException, YQueryException, YSchemaBuildingException,
             YPersistenceException, YLogException {
-        EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);
         _id = _engine.startCase(_specification.getSpecificationID(), null, null, null,
                 new YLogDataItemList(), null, false);

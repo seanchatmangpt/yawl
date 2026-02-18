@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.engine.interfce;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Claude (Virtual Threads Migration)
  * @date 2026-02-16
  */
+@Tag("slow")
 public class Interface_ClientVirtualThreadsTest {
 
     private HttpServer testServer;

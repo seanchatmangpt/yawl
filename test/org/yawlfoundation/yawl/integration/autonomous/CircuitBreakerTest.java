@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker.CircuitBreakerOpenException;
@@ -40,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("unit")
 public class CircuitBreakerTest extends TestCase {
 
     public CircuitBreakerTest(String name) {

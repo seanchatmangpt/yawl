@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.quality.architecture;
 
+import org.junit.jupiter.api.Tag;
+
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -24,6 +26,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
  *
  * @version 6.0.0
  */
+@Tag("slow")
 @AnalyzeClasses(
     packages = "org.yawlfoundation.yawl",
     importOptions = {ImportOption.DoNotIncludeTests.class}

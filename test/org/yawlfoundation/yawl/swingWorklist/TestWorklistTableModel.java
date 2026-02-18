@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.swingWorklist;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
  * Time: 10:45:17
  *
  */
+@Tag("unit")
 class TestWorklistTableModel{
     private YWorklistTableModel _tableModel;
 

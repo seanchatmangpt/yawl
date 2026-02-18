@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("unit")
 class TestYAWLExceptionEnhancements {
 
     @Test

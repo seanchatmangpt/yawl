@@ -238,6 +238,17 @@
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- JUnit Platform Suite for @Suite annotation -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Testing - JUnit 4 (legacy tests) -->
         <dependency>
@@ -284,6 +295,12 @@
                     <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xml</include>
                     <include>**/org/yawlfoundation/yawl/unmarshal/**/*.xsd</include>
                     <include>**/org/yawlfoundation/yawl/unmarshal/**/*.properties</include>
+                    <!-- Include all XML test resources needed by unmarshal tests -->
+                    <include>**/org/yawlfoundation/yawl/unmarshal/MakeRecordings.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/MakeRecordings(Beta6).xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/YAWL_Specification.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/RemoveTokens.xml</include>
+                    <include>**/org/yawlfoundation/yawl/unmarshal/CantParseThis.xml</include>
                 </includes>
             </testResource>
             <!-- Common test resources directory -->
@@ -346,6 +363,8 @@
                         <testInclude>**/org/yawlfoundation/yawl/util/*Test.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/schema/Test*.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/schema/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/*Test.java</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.class</testExclude>
@@ -380,6 +399,8 @@
                         <include>**/org/yawlfoundation/yawl/util/*Test.java</include>
                         <include>**/org/yawlfoundation/yawl/schema/Test*.java</include>
                         <include>**/org/yawlfoundation/yawl/schema/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/unmarshal/*Test.java</include>
                     </includes>
                     <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>

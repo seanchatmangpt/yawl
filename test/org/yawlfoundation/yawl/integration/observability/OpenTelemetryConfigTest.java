@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.integration.observability;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 class OpenTelemetryConfigTest {
 
     private OpenTelemetryConfig config;

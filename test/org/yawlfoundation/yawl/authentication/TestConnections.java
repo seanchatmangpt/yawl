@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.authentication;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.exceptions.YAuthenticationException;
@@ -15,6 +16,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  * Time: 16:17:58
  *
  */
+@Tag("integration")
 class TestConnections {
     private YSessionCache _sessionCache;
     private YEngine _engine;

@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.elements;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
@@ -15,6 +16,7 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * Time: 10:16:44
  *
  */
+@Tag("unit")
 class TestYFlowsInto{
     private YFlow _flowsInto, _flowsInto2,  _flowsInto4, _flowsInto5;
     private YExternalNetElement _XORSplit;

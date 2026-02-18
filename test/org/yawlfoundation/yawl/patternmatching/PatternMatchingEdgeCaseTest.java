@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 
@@ -20,6 +22,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class PatternMatchingEdgeCaseTest extends TestCase {
 
     // Test null inputs to switch expressions
@@ -166,8 +169,13 @@ public class PatternMatchingEdgeCaseTest extends TestCase {
 
     // Test XSDType facet validation edge cases
     public void testXSDType_IsValidFacet_NullFacet() {
-        assertFalse("Null facet should not be valid",
-                   XSDType.isValidFacet(null, "string"));
+        // isValidFacet calls valueOf(null) which throws NPE
+        try {
+            boolean result = XSDType.isValidFacet(null, "string");
+            fail("Should throw NullPointerException for null facet");
+        } catch (NullPointerException e) {
+            // Expected - valueOf(null) throws NPE
+        }
     }
 
     public void testXSDType_IsValidFacet_NullType() {

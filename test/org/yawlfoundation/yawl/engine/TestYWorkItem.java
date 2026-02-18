@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.engine;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.authentication.YClient;
@@ -17,6 +18,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  * Time: 16:07:19
  *
  */
+@Tag("integration")
 class TestYWorkItem{
     private YIdentifier _identifier;
     private YWorkItemID _workItemID;
