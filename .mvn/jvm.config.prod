@@ -1,0 +1,39 @@
+# Production JVM Configuration
+# Optimized for maximum throughput and low latency
+-Xms2g
+-Xmx8g
+-XX:MetaspaceSize=256m
+-XX:MaxMetaspaceSize=512m
+
+# Java 25 Optimizations
+-XX:+UseCompactObjectHeaders     # 5-10% throughput, 10-20% memory
+-XX:+UseZGC -XX:+ZGenerational   # Better pause times with generational
+-XX:+UseStringDeduplication
+
+# Maximum performance with full tiered compilation
+-XX:+TieredCompilation
+-XX:TieredStopAtLevel=4          # Enable C2 for peak performance
+-XX:CompileThreshold=10000       # Higher threshold for production
+
+# Production optimizations
+-XX:+OptimizeStringConcat
+-XX:+UseCompressedOops
+-XX:+UseCompressedClassPointers
+-XX:+AlwaysPreTouch
+
+# Low-latency tuning
+-XX:+UseLargePages
+-XX:-UseBiasedLocking
+-XX:InitiatingHeapOccupancyPercent=40
+-XX:G1RSetRegionEntries=More
+-XX:G1HeapRegionSize=8m
+
+# Parallelism
+-Djava.util.concurrent.ForkJoinPool.common.parallelism=24
+-Dfile.encoding=UTF-8
+--enable-preview
+
+# Monitoring
+-Dotel.traces.sampler=parentbased_traceidratio
+-Dotel.traces.sampler.arg=0.1
+-Dotel.exporter.otlp.endpoint=http://otel-collector:4317

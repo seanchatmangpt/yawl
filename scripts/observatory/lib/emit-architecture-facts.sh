@@ -244,6 +244,7 @@ emit_duplicates() {
 
 # ==========================================================================
 # TESTS: Test inventory and coverage hints
+# Phase 1: Scan shared test/ directory at $REPO_ROOT/test/
 # ==========================================================================
 emit_tests() {
     local out="$FACTS_DIR/tests.json"
@@ -255,22 +256,20 @@ emit_tests() {
     local total_tests=0
     local total_modules=0
 
-    # Scan each module for tests
-    while IFS= read -r mod; do
-        [[ -z "$mod" ]] && continue
-        local test_dir="$REPO_ROOT/$mod/src/test/java"
-        [[ -d "$test_dir" ]] || continue
+    # Phase 1: Primary scan - shared test directory at $REPO_ROOT/test/
+    local shared_test_dir="$REPO_ROOT/test"
+    local junit5_count=0
+    local junit4_count=0
+    local shared_test_count=0
 
-        ((total_modules++))
+    if [[ -d "$shared_test_dir" ]]; then
+        log_info "Scanning shared test directory: $shared_test_dir"
 
-        local test_count=0
-        local junit5_count=0
-        local junit4_count=0
-
-        # Count test files
+        # Count test files in shared directory
         while IFS= read -r test_file; do
             [[ -z "$test_file" ]] && continue
-            ((test_count++))
+            ((shared_test_count++))
+            ((total_tests++))
 
             # Detect JUnit version by imports
             if grep -q "org.junit.jupiter" "$test_file" 2>/dev/null; then
@@ -278,11 +277,45 @@ emit_tests() {
             elif grep -q "org.junit.Test\|org.junit.Before" "$test_file" 2>/dev/null; then
                 ((junit4_count++))
             fi
-        done < <(find "$test_dir" -name "*Test.java" -o -name "*Tests.java" -o -name "*IT.java" 2>/dev/null)
+        done < <(find "$shared_test_dir" \( -name "*Test.java" -o -name "*Tests.java" -o -name "*IT.java" \) -type f 2>/dev/null)
 
-        if [[ $test_count -gt 0 ]]; then
-            test_inventory+=("{\"module\": \"$mod\", \"test_count\": $test_count, \"junit5\": $junit5_count, \"junit4\": $junit4_count}")
-            total_tests=$((total_tests + test_count))
+        if [[ $shared_test_count -gt 0 ]]; then
+            test_inventory+=("{\"module\": \"shared-root-test\", \"test_count\": $shared_test_count, \"junit5\": $junit5_count, \"junit4\": $junit4_count, \"source\": \"test/\"}")
+            ((total_modules++))
+            log_ok "Found $shared_test_count tests in shared test/ directory"
+        fi
+    fi
+
+    # Secondary scan: module-specific src/test/java directories
+    while IFS= read -r mod; do
+        [[ -z "$mod" ]] && continue
+        local test_dir="$REPO_ROOT/$mod/src/test/java"
+        [[ -d "$test_dir" ]] || continue
+
+        ((total_modules++))
+
+        local mod_test_count=0
+        local mod_junit5_count=0
+        local mod_junit4_count=0
+
+        # Count test files
+        while IFS= read -r test_file; do
+            [[ -z "$test_file" ]] && continue
+            ((mod_test_count++))
+
+            # Detect JUnit version by imports
+            if grep -q "org.junit.jupiter" "$test_file" 2>/dev/null; then
+                ((mod_junit5_count++))
+            elif grep -q "org.junit.Test\|org.junit.Before" "$test_file" 2>/dev/null; then
+                ((mod_junit4_count++))
+            fi
+        done < <(find "$test_dir" \( -name "*Test.java" -o -name "*Tests.java" -o -name "*IT.java" \) -type f 2>/dev/null)
+
+        if [[ $mod_test_count -gt 0 ]]; then
+            test_inventory+=("{\"module\": \"$mod\", \"test_count\": $mod_test_count, \"junit5\": $mod_junit5_count, \"junit4\": $mod_junit4_count, \"source\": \"$mod/src/test/java/\"}")
+            total_tests=$((total_tests + mod_test_count))
+            junit5_count=$((junit5_count + mod_junit5_count))
+            junit4_count=$((junit4_count + mod_junit4_count))
         fi
     done < <(ls -d "$REPO_ROOT"/yawl-* 2>/dev/null | xargs -n1 basename)
 
@@ -290,7 +323,7 @@ emit_tests() {
     local test_resource_count=0
     while IFS= read -r resource; do
         [[ -n "$resource" ]] && ((test_resource_count++))
-    done < <(find "$REPO_ROOT" -path "*/src/test/resources/*" -type f 2>/dev/null | head -200)
+    done < <(find "$REPO_ROOT" -path "*/test/resources/*" -type f 2>/dev/null | head -200)
 
     # Check for JaCoCo data
     local jacoco_exec_exists=false
@@ -304,7 +337,9 @@ emit_tests() {
         printf '    "total_test_files": %d,\n' "$total_tests"
         printf '    "modules_with_tests": %d,\n' "${#test_inventory[@]}"
         printf '    "test_resource_files": %d,\n' "$test_resource_count"
-        printf '    "jacoco_exec_available": %s\n' "$jacoco_exec_exists"
+        printf '    "jacoco_exec_available": %s,\n' "$jacoco_exec_exists"
+        printf '    "junit5_count": %d,\n' "$junit5_count"
+        printf '    "junit4_count": %d\n' "$junit4_count"
         printf '  },\n'
         printf '  "test_inventory": [\n'
         local first=true
@@ -317,15 +352,15 @@ emit_tests() {
         printf '  "coverage_hints": {\n'
         printf '    "minimum_line_coverage": 0.65,\n'
         printf '    "minimum_branch_coverage": 0.55,\n'
-        printf '    "profile": "analysis",\n'
-        printf '    "run_command": "mvn clean verify -P analysis"\n'
+        printf '    "profile": "coverage",\n'
+        printf '    "run_command": "mvn -T 1.5C clean verify -P coverage"\n'
         printf '  }\n'
         printf '}\n'
     } > "$out"
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_tests" "$op_elapsed"
-    log_ok "Tests: $total_tests files in ${#test_inventory[@]} modules"
+    log_ok "Tests: $total_tests files in ${#test_inventory[@]} modules (shared: $shared_test_count)"
 }
 
 # ==========================================================================

@@ -1,0 +1,33 @@
+# CI JVM Configuration
+# Optimized for parallel builds and test execution
+-Xms2g
+-Xmx8g
+-XX:MetaspaceSize=256m
+-XX:MaxMetaspaceSize=512m
+
+# Java 25 Optimizations
+-XX:+UseCompactObjectHeaders     # 5-10% throughput, 10-20% memory
+-XX:+UseZGC -XX:+ZGenerational   # Better pause times with generational
+-XX:+UseStringDeduplication
+
+# Tiered compilation balanced for CI
+-XX:+TieredCompilation
+-XX:TieredStopAtLevel=3          # Use C1 + some C2 for good balance
+-XX:CompileThreshold=7500
+
+# Parallelism for CI
+-Djava.util.concurrent.ForkJoinPool.common.parallelism=24
+-Dfile.encoding=UTF-8
+--enable-preview
+
+# CI specific
+-Dmaven.build.cache.enabled=true
+-Djacoco.skip=false
+-Dtest.skip=false
+-Dsurefire.skip=false
+-Dfailsafe.skip=false
+
+# Coverage collection
+-Djacoco.output.dir=./target/coverage-reports
+-Djacoco.output.format=xml
+-Djacoco.output.name=yawl-coverage

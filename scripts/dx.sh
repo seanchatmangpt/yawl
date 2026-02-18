@@ -109,6 +109,13 @@ fi
 # ── Build Maven command ──────────────────────────────────────────────────
 MVN_ARGS=()
 
+# Prefer mvnd if available
+if command -v mvnd >/dev/null 2>&1; then
+    MVN_CMD="mvnd"
+else
+    MVN_CMD="mvn"
+fi
+
 # Profile
 MVN_ARGS+=("-P" "agent-dx")
 
@@ -135,7 +142,10 @@ if [[ "$SCOPE" == "explicit" && -n "$EXPLICIT_MODULES" ]]; then
 fi
 
 # Fail strategy
+# Fail strategy - fast fail by default
 if [[ "${DX_FAIL_AT:-fast}" == "fast" ]]; then
+    MVN_ARGS+=("--fail-fast")
+else
     MVN_ARGS+=("--fail-at-end")
 fi
 
@@ -147,19 +157,20 @@ else
     LABEL+=" [all modules]"
 fi
 
-START_MS=$(date +%s%3N)
+# Use Python for cross-platform millisecond precision
+START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 
 echo "dx: ${LABEL}"
 echo "dx: mvn ${GOALS[*]} ${MVN_ARGS[*]}"
 
 set +e
-mvn "${GOALS[@]}" "${MVN_ARGS[@]}"
+$MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}"
 EXIT_CODE=$?
 set -e
 
-END_MS=$(date +%s%3N)
+END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(awk "BEGIN{printf \"%.1f\", ${ELAPSED_MS}/1000}")
+ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
 
 if [[ $EXIT_CODE -eq 0 ]]; then
     echo "dx: OK (${ELAPSED_S}s)"

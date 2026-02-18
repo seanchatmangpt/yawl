@@ -1,0 +1,32 @@
+# Development JVM Configuration
+# Optimized for fast iteration and debugging
+-Xms2g
+-Xmx8g
+-XX:MetaspaceSize=256m
+-XX:MaxMetaspaceSize=512m
+
+# Java 25 Optimizations
+-XX:+UseCompactObjectHeaders     # 5-10% throughput, 10-20% memory
+-XX:+UseZGC -XX:+ZGenerational   # Better pause times with generational
+-XX:+UseStringDeduplication
+
+# Tiered compilation with fast startup
+-XX:+TieredCompilation
+-XX:TieredStopAtLevel=2          # Reduce to C1 for faster dev builds
+-XX:CompileThreshold=5000        # Lower threshold for faster warmup
+
+# Debugging friendly
+-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=/tmp/yawl-dev-heapdump.hprof
+-XX:ErrorFile=/tmp/yawl-dev-error.log
+
+# Parallelism
+-Djava.util.concurrent.ForkJoinPool.common.parallelism=24
+-Dfile.encoding=UTF-8
+--enable-preview
+
+# Development specific
+-Dlogback.configurationFile=file:./config/logback-dev.xml
+-Dspring.profiles.active=dev
+-Dotel.traces.sampler=always_on
+-Dotel.metrics.exporter=logging

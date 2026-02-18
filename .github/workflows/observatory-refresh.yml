@@ -172,6 +172,12 @@ jobs:
       - name: Make Observatory Scripts Executable
         run: chmod +x scripts/observatory/*.sh scripts/observatory/lib/*.sh 2>/dev/null || true
 
+      - name: Run Static Analysis (generates reports for observatory)
+        run: |
+          echo "Running Maven static analysis to generate SpotBugs, PMD, and Checkstyle reports..."
+          mvn -T 1.5C clean verify -P analysis -DskipTests || true
+          echo "Static analysis reports generated (or skipped if analysis profile unavailable)"
+
       - name: Run Observatory
         id: observatory-run
         run: |

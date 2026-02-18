@@ -73,10 +73,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [25]
+        java: [21, 25]
         include:
+          - java: 21
+            profile: java21-lts
           - java: 25
-            profile: java25
+            profile: java25-preview
 
     steps:
       - name: Checkout Repository

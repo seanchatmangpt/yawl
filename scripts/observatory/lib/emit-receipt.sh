@@ -14,13 +14,18 @@ emit_receipt() {
     local run_id="${RUN_ID}"
     local total_elapsed="${TOTAL_ELAPSED:-0}"
 
-    # Determine status
+    # Determine status - Phase 1: WARNINGS = YELLOW, not RED
+    # Only REFUSALS produce RED status
+    # Missing static analysis reports are now WARNINGS (YELLOW)
     local status="GREEN"
     if [[ ${#REFUSALS[@]} -gt 0 ]]; then
         status="RED"
     elif [[ ${#WARNINGS[@]} -gt 0 ]]; then
         status="YELLOW"
     fi
+
+    # Log status determination for debugging
+    log_info "Status determination: refusals=${#REFUSALS[@]} warnings=${#WARNINGS[@]} -> ${status}"
 
     # Compute input checksums
     local root_pom_sha
@@ -123,9 +128,13 @@ emit_index() {
     log_info "Emitting INDEX.md ..."
 
     local run_id="${RUN_ID}"
+    # Phase 1: Status follows same logic as receipt - warnings produce YELLOW not RED
     local status="GREEN"
-    [[ ${#REFUSALS[@]} -gt 0 ]] && status="RED"
-    [[ ${#WARNINGS[@]} -gt 0 && "$status" == "GREEN" ]] && status="YELLOW"
+    if [[ ${#REFUSALS[@]} -gt 0 ]]; then
+        status="RED"
+    elif [[ ${#WARNINGS[@]} -gt 0 ]]; then
+        status="YELLOW"
+    fi
 
     # Count outputs
     local facts_count diagrams_count

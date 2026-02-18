@@ -81,7 +81,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release.java25>25</maven.compiler.release.java25>
 
         <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
@@ -248,6 +249,16 @@
         <!-- Cryptography (BouncyCastle)                                       -->
         <!-- ================================================================ -->
         <bouncycastle.version>1.77</bouncycastle.version>
+
+        <!-- ================================================================ -->
+        <!-- Static Analysis - Error Prone                                     -->
+        <!-- ================================================================ -->
+        <error.prone.version>2.38.0</error.prone.version>
+
+        <!-- ================================================================ -->
+        <!-- Static Analysis - NullAway with JSpecify                          -->
+        <!-- ================================================================ -->
+        <nullaway.version>0.12.3</nullaway.version>
     </properties>
 
     <repositories>
@@ -1696,7 +1707,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
@@ -1708,7 +1720,8 @@
         <profile>
             <id>java24</id>
             <properties>
-                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <jacoco.skip>true</jacoco.skip>
             </properties>
             <build>
@@ -1749,9 +1762,19 @@
             </activation>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
             </properties>
             <build>
                 <plugins>
+                    <!-- Enable Surefire for test execution in CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
                     <!-- Enforcer: stricter convergence checks in CI -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -1880,7 +1903,7 @@
 
         <!-- ================================================================ -->
         <!-- Analysis profile: full static analysis suite                       -->
-        <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo in a single command     -->
+        <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo + Error Prone           -->
         <!-- Usage: mvn clean package -P analysis                               -->
         <!--                                                                    -->
         <!-- Reports generated under:                                           -->
@@ -1888,14 +1911,69 @@
         <!--   target/checkstyle-result.xml                                     -->
         <!--   target/pmd.xml                                                   -->
         <!--   target/site/jacoco/                                              -->
+        <!--   Error Prone warnings in compile output                           -->
         <!-- ================================================================ -->
         <profile>
             <id>analysis</id>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
             </properties>
             <build>
                 <plugins>
+
+                    <!-- Enable Surefire for test execution in analysis profile -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Error Prone: compile-time static analysis for Java 25 features -->
+                    <!-- Catches bugs specific to virtual threads, structured concurrency, -->
+                    <!-- scoped values, pattern matching, and modern switch expressions.   -->
+                    <!-- Usage: mvn compile -P analysis                                    -->
+                    <!--                                                                    -->
+                    <!-- Java 25 Checks (available in Error Prone 2.38.0):                 -->
+                    <!--   ThreadJoinTimeout - join() without timeout (ERROR)              -->
+                    <!--   ThreadLocalCleanup - ThreadLocal not removed (WARN)             -->
+                    <!--   SwitchDefaultOnlyCase - suspicious switch default (WARN)        -->
+                    <!--                                                                    -->
+                    <!-- Future Java 25 checks (when available in Error Prone):            -->
+                    <!--   VirtualThreadCapture - capturing platform thread locals         -->
+                    <!--   StructuredConcurrencyShutdown - improper StructuredTaskScope    -->
+                    <!--   ScopedValueLeak - scoped value escaping context                 -->
+                    <!--   ModernSwitchExpression - non-exhaustive pattern matching        -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>21</source>
+                            <target>21</target>
+                            <release>21</release>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                                <arg>-Xlint:all</arg>
+                                <arg>-XDcompilePolicy=simple</arg>
+                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -Xep:ExcludedPath:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
+                            </compilerArgs>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>com.google.errorprone</groupId>
+                                    <artifactId>error_prone_core</artifactId>
+                                    <version>${error.prone.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>com.uber.nullaway</groupId>
+                                    <artifactId>nullaway</artifactId>
+                                    <version>${nullaway.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </plugin>
 
                     <!-- JaCoCo: instrument tests and generate coverage report -->
                     <plugin>
@@ -1991,6 +2069,81 @@
                         </executions>
                     </plugin>
 
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Coverage profile: dedicated JaCoCo coverage with threshold check  -->
+        <!-- Usage: mvn -T 1.5C clean verify -P coverage                       -->
+        <!--                                                                    -->
+        <!-- This profile focuses purely on coverage without other analysis    -->
+        <!-- tools, making it faster for coverage-only requirements.           -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Enable Surefire for test execution -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
+                    <!-- JaCoCo: instrument tests and generate coverage report -->
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jacoco-prepare</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.65</minimum>
+                                                </limit>
+                                                <limit>
+                                                    <counter>BRANCH</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.55</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                    <haltOnFailure>false</haltOnFailure>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
