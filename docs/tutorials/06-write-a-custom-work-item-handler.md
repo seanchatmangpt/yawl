@@ -1,556 +1,367 @@
-# Tutorial 06: Write a Custom Work Item Handler
+# Tutorial 06: Extend YAWL with a Custom MCP Tool
 
-By the end of this tutorial you will have written a Java class that extends `InterfaceBWebsideController`, deployed it as a web application alongside the YAWL engine, and seen the engine call your handler automatically every time a task fires in a running case. The concrete example is a string-reversal handler: when the engine announces a work item, the handler checks it out, reads an input string, reverses it, and checks the item back in with the reversed value.
+By the end of this tutorial you will have written a Java class that implements
+`YawlMcpTool`, registered it with `YawlMcpToolRegistry`, and understood how an AI agent
+calls it via the Model Context Protocol. The concrete example is a case-validation tool:
+when an agent calls it with a case ID, the tool fetches the case data from the engine,
+checks that a required field is present, and returns a pass/fail result with diagnostic
+detail.
 
 ---
 
 ## Prerequisites
 
-- Tutorial 01 completed: you can build YAWL from source and the engine is running.
-- Tutorial 05 completed: you understand how the engine authenticates callers and what check-out/check-in means.
-- Maven 3.9 or later with access to the YAWL artifacts in your local Maven repository (run `mvn install` from the YAWL source root to populate them).
-- You have a servlet container (Tomcat 10 or later) where you will deploy the handler as a WAR.
+- Tutorial 01 completed: you can build YAWL from source.
+- Tutorial 05 completed: you understand how the engine handles work items and sessions.
+- The YAWL engine is running and reachable at `http://localhost:8080/yawl`.
 
 ---
 
-## Background: how the engine calls custom services
+## Background: how extension works in YAWL v6
 
-The YAWL engine does not call custom code in-process. Instead it sends HTTP POST requests to a URL that you register. The sequence is:
+YAWL v6 does not use the v4 codelet or Worklet Service extension mechanisms. Those
+features were not ported to v6.
 
-1. Your service registers a URL with the engine (done once at startup via Interface A).
-2. When a task fires that is assigned to your service, the engine sends `announceItemEnabled` to your URL.
-3. Your servlet (`InterfaceB_EnvironmentBasedServer`) receives the POST and calls `handleEnabledWorkItemEvent` on your controller.
-4. Your controller checks out the work item, processes it, and checks it back in.
+The extension mechanism in v6 is the Model Context Protocol (MCP). `YawlMcpServer`
+exposes 15 built-in tools covering case and work item management. Custom behavior is
+added by implementing the `YawlMcpTool` interface and registering the implementation with
+`YawlMcpToolRegistry`. AI agents that connect to the MCP server see both the built-in
+tools and any custom tools you register, and they call all tools through the same MCP
+protocol.
 
-The class you extend, `InterfaceBWebsideController`, lives in the YAWL engine module and provides all the HTTP client logic. You never write raw HTTP — you call its `checkOut`, `checkInWorkItem`, and `connect` helper methods.
+The classes involved are all in:
 
-The servlet that dispatches engine announcements to your controller is `InterfaceB_EnvironmentBasedServer`. You configure it in `web.xml` with the fully-qualified name of your controller class.
-
----
-
-## Step 1: Create the Maven project
-
-```bash
-mvn archetype:generate \
-    -DgroupId=com.example.yawl \
-    -DartifactId=string-reversal-handler \
-    -DarchetypeArtifactId=maven-archetype-webapp \
-    -DinteractiveMode=false
-
-cd string-reversal-handler
+```
+src/org/yawlfoundation/yawl/integration/mcp/
 ```
 
-Add the YAWL engine dependency to `pom.xml`. The group and artifact IDs match the YAWL multi-module build:
+Key files for this tutorial:
 
-```xml
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example.yawl</groupId>
-  <artifactId>string-reversal-handler</artifactId>
-  <version>1.0.0</version>
-  <packaging>war</packaging>
-
-  <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
-  <dependencies>
-    <!-- YAWL engine interfaces and utilities -->
-    <dependency>
-      <groupId>org.yawlfoundation.yawl</groupId>
-      <artifactId>yawl-engine</artifactId>
-      <version>6.0.0-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Jakarta Servlet API (provided by the container) -->
-    <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-      <version>6.0.0</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <finalName>string-reversal-handler</finalName>
-  </build>
-</project>
-```
-
-Expected: `mvn validate` reports `BUILD SUCCESS`.
+| File | Role |
+|---|---|
+| `spring/YawlMcpTool.java` | Interface you implement |
+| `spring/YawlMcpToolRegistry.java` | Manages registered tools |
+| `spring/tools/LaunchCaseTool.java` | Working example tool to follow |
+| `spec/YawlToolSpecifications.java` | 15 built-in tool implementations |
+| `YawlMcpServer.java` | MCP server entry point |
 
 ---
 
-## Step 2: Write the controller class
+## Step 1: Read the existing tool example
 
-Create `src/main/java/com/example/yawl/StringReversalHandler.java`:
+Before writing new code, read `LaunchCaseTool.java` in:
+
+```
+src/org/yawlfoundation/yawl/integration/mcp/spring/tools/LaunchCaseTool.java
+```
+
+Observe the pattern:
+
+1. The class implements `YawlMcpTool`.
+2. The constructor takes `InterfaceB_EnvironmentBasedClient` and `YawlMcpSessionManager`
+   as injected dependencies.
+3. `getName()` returns a unique tool name (lowercase with underscores).
+4. `getDescription()` explains what the tool does in plain English for the agent.
+5. `getInputSchema()` returns a `McpSchema.JsonSchema` describing the tool's parameters.
+6. `execute(Map<String, Object> params)` does the real work and returns a
+   `McpSchema.CallToolResult`.
+
+Your tool follows the same structure.
+
+---
+
+## Step 2: Create the validation tool class
+
+Create a new file in the same directory as `LaunchCaseTool.java`:
+
+```
+src/org/yawlfoundation/yawl/integration/mcp/spring/tools/ValidateCaseDataTool.java
+```
 
 ```java
-package com.example.yawl;
+package org.yawlfoundation.yawl.integration.mcp.spring.tools;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jdom2.Element;
-import org.yawlfoundation.yawl.elements.data.YParameter;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBWebsideController;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-import java.io.IOException;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpSessionManager;
+import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpTool;
+
+import io.modelcontextprotocol.spec.McpSchema;
 
 /**
- * A YAWL custom service that reverses a string input parameter.
+ * MCP tool that validates a running case's data contains a required field.
  *
- * When the engine fires a task assigned to this service, it calls
- * handleEnabledWorkItemEvent with the enabled work item. This handler
- * checks the item out, reads the "inputText" parameter, reverses it,
- * and checks the item back in with "reversedText" set to the result.
+ * The agent supplies a case ID and a required field name. The tool fetches
+ * the case data from the YAWL engine, checks whether the field is present and
+ * non-empty, and returns a structured pass/fail result.
+ *
+ * This is a concrete, runnable example of the YawlMcpTool extension pattern.
+ * It uses only real YAWL engine operations via InterfaceB_EnvironmentBasedClient.
  */
-public class StringReversalHandler extends InterfaceBWebsideController {
+public class ValidateCaseDataTool implements YawlMcpTool {
 
-    private static final Logger log = LogManager.getLogger(StringReversalHandler.class);
+    private final InterfaceB_EnvironmentBasedClient interfaceBClient;
+    private final YawlMcpSessionManager sessionManager;
 
-    /** Singleton. InterfaceB_EnvironmentBasedServer calls getInstance() if it exists. */
-    private static final StringReversalHandler INSTANCE = new StringReversalHandler();
-
-    private String _handle;
-
-    private StringReversalHandler() {
-        // private: use getInstance()
+    public ValidateCaseDataTool(InterfaceB_EnvironmentBasedClient interfaceBClient,
+                                YawlMcpSessionManager sessionManager) {
+        if (interfaceBClient == null) {
+            throw new IllegalArgumentException("interfaceBClient is required");
+        }
+        if (sessionManager == null) {
+            throw new IllegalArgumentException("sessionManager is required");
+        }
+        this.interfaceBClient = interfaceBClient;
+        this.sessionManager = sessionManager;
     }
 
-    public static StringReversalHandler getInstance() {
-        return INSTANCE;
-    }
-
-    /**
-     * Called by the engine when a task assigned to this service fires.
-     * The work item arrives in Enabled status.
-     */
     @Override
-    public void handleEnabledWorkItemEvent(WorkItemRecord enabledItem) {
-        log.info("Received enabled work item: {}", enabledItem.getID());
+    public String getName() {
+        return "yawl_validate_case_data";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Validate that a running YAWL case has a required field in its case data. " +
+               "Returns PASS if the field is present and non-empty, FAIL with diagnostics " +
+               "if it is missing or blank. Use before checking in a work item to guard " +
+               "against incomplete data.";
+    }
+
+    @Override
+    public McpSchema.JsonSchema getInputSchema() {
+        Map<String, Object> props = new LinkedHashMap<>();
+
+        props.put("caseId", Map.of(
+            "type", "string",
+            "description", "The running case ID to validate (e.g. '42')"
+        ));
+        props.put("requiredField", Map.of(
+            "type", "string",
+            "description", "The XML element name that must be present and non-empty " +
+                           "in the case data (e.g. 'approvalDecision')"
+        ));
+
+        return new McpSchema.JsonSchema(
+            "object", props, List.of("caseId", "requiredField"), false, null, null);
+    }
+
+    @Override
+    public McpSchema.CallToolResult execute(Map<String, Object> params) {
+        Object caseIdObj = params.get("caseId");
+        if (caseIdObj == null) {
+            return new McpSchema.CallToolResult("Required parameter missing: caseId", true);
+        }
+
+        Object fieldObj = params.get("requiredField");
+        if (fieldObj == null) {
+            return new McpSchema.CallToolResult("Required parameter missing: requiredField", true);
+        }
+
+        String caseId = caseIdObj.toString();
+        String requiredField = fieldObj.toString();
+
         try {
-            // Establish a session with the engine if not already connected.
-            if (!connected()) {
-                _handle = connect(engineLogonName, engineLogonPassword);
+            String sessionHandle = sessionManager.getSessionHandle();
+            String caseDataXml = interfaceBClient.getCaseData(caseId, sessionHandle);
+
+            if (caseDataXml == null || caseDataXml.contains("<failure>")) {
+                return new McpSchema.CallToolResult(
+                    "FAIL: Could not retrieve data for case " + caseId +
+                    ". Engine response: " + caseDataXml, true);
             }
 
-            // Check the item out: transitions it from Enabled to Executing.
-            WorkItemRecord executingItem = checkOut(enabledItem.getID(), _handle);
+            // Check for the required field using simple XML text search.
+            // The field must appear as an opening tag: <fieldName>
+            String openTag = "<" + requiredField + ">";
+            String closeTag = "</" + requiredField + ">";
 
-            // Read the input parameter "inputText" from the work item's data.
-            Element data = executingItem.getDataList();
-            String inputText = "";
-            if (data != null) {
-                Element inputEl = data.getChild("inputText");
-                if (inputEl != null) {
-                    inputText = inputEl.getText();
-                }
-            }
-            log.info("Processing work item {}. Input: '{}'", executingItem.getID(), inputText);
-
-            // Perform the actual work: reverse the string.
-            String reversed = new StringBuilder(inputText).reverse().toString();
-            log.info("Reversed text: '{}'", reversed);
-
-            // Build the output data element.
-            // The root element name must match the task's decomposition name.
-            Element outputData = prepareReplyRootElement(enabledItem, _handle);
-            Element reversedEl = new Element("reversedText");
-            reversedEl.setText(reversed);
-            outputData.addContent(reversedEl);
-
-            // Keep the original input parameter in the output (required by the engine
-            // so it can merge input and output correctly for net-level data flow).
-            Element inputEchoEl = new Element("inputText");
-            inputEchoEl.setText(inputText);
-            outputData.addContent(inputEchoEl);
-
-            // Check the item back in. This completes the task in the engine.
-            String result = checkInWorkItem(
-                    executingItem.getID(),
-                    executingItem.getDataList(),   // original input data
-                    outputData,                    // merged output data
-                    _handle);
-
-            if (!successful(result)) {
-                log.error("Check-in failed for work item {}: {}", executingItem.getID(), result);
-            } else {
-                log.info("Work item {} completed successfully.", executingItem.getID());
+            if (!caseDataXml.contains(openTag)) {
+                return new McpSchema.CallToolResult(
+                    "FAIL: Field '" + requiredField + "' not found in case data for case " +
+                    caseId + ".\nCase data:\n" + caseDataXml, false);
             }
 
-        } catch (IOException e) {
-            log.error("IO error processing work item {}: {}", enabledItem.getID(), e.getMessage(), e);
+            int start = caseDataXml.indexOf(openTag) + openTag.length();
+            int end = caseDataXml.indexOf(closeTag, start);
+            String fieldValue = (end > start) ? caseDataXml.substring(start, end).trim() : "";
+
+            if (fieldValue.isEmpty()) {
+                return new McpSchema.CallToolResult(
+                    "FAIL: Field '" + requiredField + "' is present in case " + caseId +
+                    " but has no value.", false);
+            }
+
+            return new McpSchema.CallToolResult(
+                "PASS: Field '" + requiredField + "' in case " + caseId +
+                " has value: '" + fieldValue + "'.", false);
+
+        } catch (IllegalStateException e) {
+            return new McpSchema.CallToolResult("YAWL connection error: " + e.getMessage(), true);
         } catch (Exception e) {
-            log.error("Unexpected error processing work item {}: {}", enabledItem.getID(), e.getMessage(), e);
+            return new McpSchema.CallToolResult("Validation error: " + e.getMessage(), true);
         }
     }
 
-    /**
-     * Called when the engine cancels a work item that this service had checked out.
-     * The engine expects this method to clean up any local state held for the item.
-     */
     @Override
-    public void handleCancelledWorkItemEvent(WorkItemRecord cancelledItem) {
-        log.info("Work item {} was cancelled by the engine.", cancelledItem.getID());
-        // Remove from local cache so it does not appear as a phantom executing item.
-        _ibCache.removeRemotelyCachedWorkItem(cancelledItem.getID());
+    public int getPriority() {
+        return 150;
     }
 
-    /**
-     * Declares the parameters this service expects to find on any task decomposition
-     * it is assigned to. The YAWL Editor reads this list and pre-populates the task's
-     * parameter panel when the service is selected.
-     */
     @Override
-    public YParameter[] describeRequiredParams() {
-        YParameter inputParam = new YParameter(null, YParameter._INPUT_PARAM_TYPE);
-        inputParam.setDataTypeAndName("string", "inputText", XSD_NAMESPACE);
-        inputParam.setDocumentation("The text to reverse.");
-        inputParam.setOptional(false);
-
-        YParameter outputParam = new YParameter(null, YParameter._OUTPUT_PARAM_TYPE);
-        outputParam.setDataTypeAndName("string", "reversedText", XSD_NAMESPACE);
-        outputParam.setDocumentation("The reversed text returned to the net.");
-        outputParam.setOptional(false);
-
-        return new YParameter[] { inputParam, outputParam };
+    public boolean isEnabled() {
+        return true;
     }
 }
 ```
 
-Expected: `mvn compile` reports `BUILD SUCCESS`.
+---
+
+## Step 3: Understand what the tool does
+
+`execute` calls `interfaceBClient.getCaseData(caseId, sessionHandle)`. This is the same
+engine operation exposed by the built-in `yawl_get_case_data` MCP tool — the tool calls
+it directly via the Java client rather than over MCP. The `InterfaceB_EnvironmentBasedClient`
+is the Java wrapper around the engine's Interface B HTTP endpoint.
+
+The tool returns a `McpSchema.CallToolResult`. The second constructor argument is a
+boolean `isError`: `false` means the tool ran to completion (even if validation failed),
+`true` means the tool itself encountered a runtime error (connection failure, missing
+parameter). An agent uses `isError=true` to decide whether to retry or report a system
+fault rather than a domain validation outcome.
 
 ---
 
-## Step 3: Understand what `handleEnabledWorkItemEvent` receives
+## Step 4: Understand what `YawlMcpTool` requires
 
-The engine sends the work item to your handler as an XML snippet in the HTTP POST body. The `InterfaceB_EnvironmentBasedServer` servlet deserialises this into a `WorkItemRecord` before calling your method. The important fields are:
+The `YawlMcpTool` interface in
+`src/org/yawlfoundation/yawl/integration/mcp/spring/YawlMcpTool.java` has four mandatory
+methods and two optional defaults:
 
-| `WorkItemRecord` method | What it returns |
-|------------------------|----------------|
-| `getID()` | The work item identifier, e.g. `"1:ReverseTask"` |
-| `getCaseID()` | The running case's ID, e.g. `"1"` |
-| `getTaskID()` | The task's definition ID in the specification |
-| `getTaskName()` | The task's human-readable name |
-| `getStatus()` | At this point always `"Enabled"` |
-| `getDataList()` | A JDOM `Element` containing the task's current input values |
-
-After `checkOut` the returned `WorkItemRecord` has `status = "Executing"` and `getDataList()` returns the task's input data populated from the running case's net variables.
+| Method | Required | What to return |
+|---|---|---|
+| `getName()` | Yes | Unique lowercase-underscore tool name |
+| `getDescription()` | Yes | Plain English; agents read this to decide when to call the tool |
+| `getInputSchema()` | Yes | `McpSchema.JsonSchema` describing parameters |
+| `execute(params)` | Yes | `McpSchema.CallToolResult` with result text and `isError` flag |
+| `getPriority()` | No (default 0) | Lower value = registered earlier in tool list |
+| `isEnabled()` | No (default true) | Return `false` to suppress registration |
 
 ---
 
-## Step 4: Configure the deployment descriptor
+## Step 5: Register the tool with the registry
 
-Replace `src/main/webapp/WEB-INF/web.xml` with:
+`YawlMcpToolRegistry` in
+`src/org/yawlfoundation/yawl/integration/mcp/spring/YawlMcpToolRegistry.java`
+manages the full tool list. Register the new tool by calling `registerCustomTool`.
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
-             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0">
+In a Spring application, add a `@Bean` to your configuration class:
 
-  <display-name>String Reversal Handler</display-name>
+```java
+@Configuration
+public class ValidationToolConfiguration {
 
-  <!--
-    InterfaceB_EnvironmentBasedServer reads "InterfaceBWebSideController" to find
-    your controller class. It calls Class.forName() on this value and then calls
-    getInstance() if that method exists, or the no-arg constructor otherwise.
-  -->
-  <context-param>
-    <param-name>InterfaceBWebSideController</param-name>
-    <param-value>com.example.yawl.StringReversalHandler</param-value>
-  </context-param>
-
-  <!--
-    The engine's Interface B URL. The server servlet uses this to call back to the
-    engine for check-out, check-in, and connection operations.
-  -->
-  <context-param>
-    <param-name>InterfaceB_BackEnd</param-name>
-    <param-value>http://localhost:8080/yawl/ib</param-value>
-  </context-param>
-
-  <!--
-    Credentials this service uses when it connects to the engine.
-    Override YAWL_ENGINE_PASSWORD environment variable to avoid storing passwords
-    in web.xml (see SECURITY.md). The values below are the YAWL defaults.
-  -->
-  <context-param>
-    <param-name>EngineLogonUserName</param-name>
-    <param-value>admin</param-value>
-  </context-param>
-  <context-param>
-    <param-name>EngineLogonPassword</param-name>
-    <param-value>YAWL</param-value>
-  </context-param>
-
-  <!--
-    The servlet that receives "announceItemEnabled" and similar POSTs from the engine.
-    It deserialises the work item and dispatches it to your controller.
-  -->
-  <servlet>
-    <servlet-name>InterfaceB_EnvironmentBasedServer</servlet-name>
-    <servlet-class>
-      org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedServer
-    </servlet-class>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-
-  <servlet-mapping>
-    <servlet-name>InterfaceB_EnvironmentBasedServer</servlet-name>
-    <url-pattern>/ib</url-pattern>
-  </servlet-mapping>
-
-</web-app>
+    @Bean
+    public ValidateCaseDataTool validateCaseDataTool(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            YawlMcpSessionManager sessionManager) {
+        return new ValidateCaseDataTool(interfaceBClient, sessionManager);
+    }
+}
 ```
 
-The engine will POST events to `http://<your-host>:<port>/string-reversal-handler/ib`.
+When the `YawlMcpToolRegistry` bean initialises, it calls `isEnabled()` on every
+`YawlMcpTool` bean in the Spring context and registers those that return `true`.
+
+Without Spring, construct the tool directly and pass it to the registry before calling
+`getAllToolSpecs()`:
+
+```java
+YawlMcpToolRegistry registry = new YawlMcpToolRegistry(
+    interfaceBClient, interfaceAClient, sessionManager, null);
+registry.registerCustomTool(new ValidateCaseDataTool(interfaceBClient, sessionManager));
+List<McpServerFeatures.SyncToolSpecification> allTools = registry.getAllToolSpecs();
+```
 
 ---
 
-## Step 5: Build and deploy the WAR
+## Step 6: Verify the tool is registered
+
+Build the integration module:
 
 ```bash
-mvn clean package
+mvn -T 1.5C clean compile -pl yawl-integration
 ```
 
-This produces `target/string-reversal-handler.war`. Copy it to Tomcat's webapps directory:
+Run the MCP server test suite to confirm all tools are callable:
 
 ```bash
-cp target/string-reversal-handler.war /path/to/tomcat/webapps/
+mvn -T 1.5C clean test -pl yawl-integration -Dtest=YawlMcpServerTest
 ```
 
-Wait for Tomcat to hot-deploy the WAR. You will see log output like:
+The test file is at:
 
 ```
-INFO  InterfaceB_EnvironmentBasedServer - Controller 'com.example.yawl.StringReversalHandler'
-      initialised and connected to engine at http://localhost:8080/yawl/ib
+test/org/yawlfoundation/yawl/integration/mcp/YawlMcpServerTest.java
 ```
 
-Expected: no `ERROR` or `WARN` lines. If you see `ClassNotFoundException` the YAWL engine JAR is not on the WAR's classpath — change the dependency scope from `provided` to `compile` if the YAWL classes are not already provided by the container.
+It creates a `YawlMcpServer` and verifies that each registered tool returns a valid
+result. Add a test case for `yawl_validate_case_data` following the same pattern as the
+existing tool tests.
 
 ---
 
-## Step 6: Register the service with the engine
+## Step 7: Call the tool from an agent
 
-The engine only sends work item announcements to services it knows about. Register the service URI using the Interface A `addYAWLService` action. You can do this with `curl`:
+An AI agent connected to `YawlMcpServer` via the MCP protocol discovers the tool in the
+server's tool list and calls it using standard MCP tool-call syntax:
 
-```bash
-# 1. Get a session handle
-SESSION=$(curl -s -X POST http://localhost:8080/yawl/ia \
-    -d "action=connect&userid=admin&password=a321c4f618a0948e96da4748e9a6eef8" \
-    | sed 's/.*<response>//;s/<\/response>.*//')
-
-echo "Session: $SESSION"
-
-# 2. Register the service
-curl -s -X POST http://localhost:8080/yawl/ia \
-    -d "action=addYAWLService" \
-    -d "sessionHandle=$SESSION" \
-    -d "serviceURI=http://localhost:8080/string-reversal-handler/ib" \
-    -d "serviceID=StringReversalHandler" \
-    -d "serviceName=String Reversal Handler" \
-    -d "serviceDescription=Reverses a string input parameter" \
-    -d "assignable=true"
+```json
+{
+  "tool": "yawl_validate_case_data",
+  "arguments": {
+    "caseId": "42",
+    "requiredField": "approvalDecision"
+  }
+}
 ```
 
-Expected response from the registration call:
-
-```xml
-<success/>
-```
-
-The MD5 hash for `YAWL` shown above (`a321c4f618a0948e96da4748e9a6eef8`) is the same hash produced by `PasswordEncryptor.encrypt("YAWL")` in the YAWL source. If your engine uses a different password, replace it with `echo -n 'YourPassword' | md5sum | cut -c1-32`.
-
----
-
-## Step 7: Create a specification that uses the handler
-
-Create a file `string-reversal.yawl` with the following content. This is the minimal valid YAWL specification XML for a single automatic task:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema
-                      http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd"
-                  version="4.0">
-
-  <specification uri="StringReversal">
-    <name>String Reversal</name>
-    <documentation>Reverses a string via a custom handler.</documentation>
-    <metaData>
-      <creator>Tutorial</creator>
-      <version>0.1</version>
-      <validFrom>2026-01-01</validFrom>
-      <validUntil>2099-12-31</validUntil>
-    </metaData>
-
-    <schema xmlns="http://www.w3.org/2001/XMLSchema">
-      <element name="inputText"   type="string"/>
-      <element name="reversedText" type="string"/>
-    </schema>
-
-    <decomposition id="StringReversal" isRootNet="true" xsi:type="NetFactsType">
-      <inputParam>
-        <index>0</index>
-        <name>inputText</name>
-        <type>string</type>
-        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
-      </inputParam>
-      <outputParam>
-        <index>0</index>
-        <name>reversedText</name>
-        <type>string</type>
-        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
-      </outputParam>
-
-      <processControlElements>
-        <inputCondition id="InputCondition">
-          <flowsInto>
-            <nextElementRef id="ReverseTask"/>
-          </flowsInto>
-        </inputCondition>
-
-        <task id="ReverseTask">
-          <name>Reverse String</name>
-          <flowsInto>
-            <nextElementRef id="OutputCondition"/>
-          </flowsInto>
-          <join code="xor"/>
-          <split code="and"/>
-          <startingMappings>
-            <mapping>
-              <expression query="/StringReversal/inputText/text()"/>
-              <mapsTo>inputText</mapsTo>
-            </mapping>
-          </startingMappings>
-          <completedMappings>
-            <mapping>
-              <expression query="/ReverseTask/reversedText/text()"/>
-              <mapsTo>reversedText</mapsTo>
-            </mapping>
-          </completedMappings>
-          <resourcing>
-            <offer initiator="system"/>
-            <allocate initiator="system"/>
-            <start initiator="system"/>
-            <yawlService id="StringReversalHandler" uri="http://localhost:8080/string-reversal-handler/ib"/>
-          </resourcing>
-          <decomposesTo id="ReverseTask"/>
-        </task>
-
-        <outputCondition id="OutputCondition"/>
-      </processControlElements>
-    </decomposition>
-
-    <decomposition id="ReverseTask" xsi:type="WebServiceGatewayFactsType">
-      <inputParam>
-        <index>0</index>
-        <name>inputText</name>
-        <type>string</type>
-        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
-      </inputParam>
-      <outputParam>
-        <index>0</index>
-        <name>reversedText</name>
-        <type>string</type>
-        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
-      </outputParam>
-      <yawlService id="StringReversalHandler" uri="http://localhost:8080/string-reversal-handler/ib"/>
-    </decomposition>
-
-  </specification>
-</specificationSet>
-```
-
----
-
-## Step 8: Load the specification and run a case
-
-Use the commands from Tutorial 05 (Step 5 of that tutorial covers loading a spec; Step 6 covers launching a case). With `curl`:
-
-```bash
-# Load the specification
-curl -s -X POST http://localhost:8080/yawl/ia \
-    -d "action=upload" \
-    -d "sessionHandle=$SESSION" \
-    --data-urlencode "specXML@string-reversal.yawl"
-```
-
-Expected:
-
-```xml
-<success/>
-```
-
-```bash
-# Launch a case with initial data
-curl -s -X POST http://localhost:8080/yawl/ib \
-    -d "action=launchCase" \
-    -d "sessionHandle=$SESSION" \
-    -d "specidentifier=StringReversal" \
-    -d "specversion=0.1" \
-    -d "specuri=StringReversal" \
-    -d "caseParams=<data><inputText>Hello YAWL</inputText></data>"
-```
-
-Expected:
-
-```xml
-<response>1</response>
-```
-
-Within a fraction of a second, the engine fires `ReverseTask` and POSTs `announceItemEnabled` to your handler at `http://localhost:8080/string-reversal-handler/ib`. You will see in the handler's log:
+A response indicating `PASS` looks like:
 
 ```
-INFO  StringReversalHandler - Received enabled work item: 1:ReverseTask
-INFO  StringReversalHandler - Processing work item 1:ReverseTask. Input: 'Hello YAWL'
-INFO  StringReversalHandler - Reversed text: 'LWAV olleH'
-INFO  StringReversalHandler - Work item 1:ReverseTask completed successfully.
+PASS: Field 'approvalDecision' in case 42 has value: 'approved'.
 ```
 
----
+A response indicating `FAIL` looks like:
 
-## Step 9: Verify the case completed with the correct output
-
-After the handler checks the item in, the engine advances through `OutputCondition` and completes the case. Retrieve the case's final data to confirm the `reversedText` variable holds the correct value:
-
-```bash
-curl -s "http://localhost:8080/yawl/ib?action=getCaseData&caseID=1&sessionHandle=$SESSION"
+```
+FAIL: Field 'approvalDecision' is present in case 42 but has no value.
 ```
 
-Expected:
-
-```xml
-<response>
-  <StringReversal>
-    <inputText>Hello YAWL</inputText>
-    <reversedText>LWAV olleH</reversedText>
-  </StringReversal>
-</response>
-```
-
-If the case data response shows `reversedText` is empty or unchanged, the handler's check-in call returned an error. Check the handler's log for the error message from the engine.
+The agent uses the result to decide its next step — for example, refusing to call
+`yawl_checkin_work_item` until the validation passes.
 
 ---
 
 ## What you learned
 
-- How `InterfaceBWebsideController` is the single abstract class you extend to create a YAWL custom service.
-- How `InterfaceB_EnvironmentBasedServer` — the included servlet — receives engine announcements and dispatches them to your controller's event handlers.
-- How `handleEnabledWorkItemEvent` is the primary extension point: the engine calls it every time a task assigned to your service fires.
-- How `checkOut` and `checkInWorkItem` drive the task lifecycle: check out to claim the work, check in to complete it with output data.
-- How `describeRequiredParams` advertises the expected parameters to the YAWL Editor so it can pre-populate the task decomposition form.
-- How to wire the deployment together: `web.xml` maps your controller class name and the engine's back-end URL.
-- How to register your service with the engine via the Interface A `addYAWLService` call so the engine knows where to send announcements.
+- `YawlMcpTool` is the single interface to implement when extending YAWL v6 with custom
+  behavior. There is no servlet, no WAR deployment, and no separate service to run.
+- `YawlMcpToolRegistry` manages both the 15 built-in tools and any custom tools you add.
+- Custom tools call real YAWL engine operations via `InterfaceB_EnvironmentBasedClient`
+  (the same Java client used by the built-in tools).
+- `McpSchema.CallToolResult` carries both the result text and an `isError` flag so agents
+  can distinguish domain outcomes from system failures.
+- The extension point is in-process: your tool class runs inside the MCP server JVM, not
+  in a separate container.
 
 ## What next
 
-To write a service that handles multiple tasks concurrently, look at the virtual thread batch operations in `InterfaceB_EnvironmentBasedClient.checkOutWorkItemsBatch`. For services that need to initiate cases themselves rather than waiting for the engine, use `AbstractEngineClient` as the base class — it wraps both Interface A and Interface B and provides connection management via `ReentrantLock` for thread safety.
+To add a tool that makes decisions using the AI agent's own reasoning, look at the
+`yawl_natural_language` tool in `YawlToolSpecifications.java`. It delegates to
+`ZaiFunctionService`, which sends a prompt to the connected LLM and interprets the reply
+as a tool call. Custom tools can do the same by injecting `ZaiFunctionService` and calling
+`processWithFunctions(prompt)` to let the LLM select and execute further tools.
