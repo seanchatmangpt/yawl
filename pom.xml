@@ -1086,6 +1086,11 @@
                                 <banRelease>true</banRelease>
                                 <banSnapshots>true</banSnapshots>
                             </requirePluginVersions>
+                            <!-- Prevent SNAPSHOT dependencies from appearing in release builds -->
+                            <requireReleaseDeps>
+                                <onlyWhenRelease>true</onlyWhenRelease>
+                                <message>Release builds must not contain SNAPSHOT dependencies.</message>
+                            </requireReleaseDeps>
                         </rules>
                         <fail>true</fail>
                     </configuration>
@@ -1403,17 +1408,48 @@
         <!-- ================================================================ -->
         <!-- CI profile: adds coverage and static analysis                      -->
         <!-- Usage: mvn -P ci clean verify                                      -->
+        <!-- Auto-activates when the CI environment variable is set.            -->
         <!-- ================================================================ -->
         <profile>
             <id>ci</id>
+            <activation>
+                <property>
+                    <name>env.CI</name>
+                </property>
+            </activation>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
             </properties>
             <build>
                 <plugins>
+                    <!-- Enforcer: stricter convergence checks in CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <rules>
+                                <requireUpperBoundDeps/>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9,)</version>
+                                </requireMavenVersion>
+                                <banDuplicatePomDependencyVersions/>
+                                <requireReleaseDeps>
+                                    <onlyWhenRelease>true</onlyWhenRelease>
+                                </requireReleaseDeps>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </plugin>
+                    <!-- JaCoCo: fail the build when coverage thresholds are not met in CI -->
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <haltOnFailure>true</haltOnFailure>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>

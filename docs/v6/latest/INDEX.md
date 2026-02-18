@@ -75,3 +75,19 @@ Petri-net-based workflow with:
 - **Documentation** on each task linking to specific refusal codes
 
 This makes the build process **executable** and **verifiable** — not just documented.
+
+## 2026 DX/QoL Initiative — Status
+
+| Gap | Description | Status |
+|-----|-------------|--------|
+| G1 | JaCoCo coverage enforcement (50% line / 40% branch) | Done |
+| G2 | Git pre-commit + pre-push hooks | Done |
+| G3 | Javadoc auto-generation (-javadoc.jar on package) | Done |
+| G4 | Coverage dashboard instrument (emit-coverage.sh) | Done |
+| G5 | Spotless code formatting enforcement | Done |
+| G6 | Integration tests (*IT.java for failsafe) | Done |
+| G7 | Build profiling script (build-profiler.sh) | Done |
+| G8 | Developer Quickstart (.claude/DEVELOPER-QUICKSTART.md) | Done |
+| G+ | Maven enforcer rules + check-deps.sh | Done |
+
+**Observatory:** H_MISSING_SOURCE_DIR: 4->0 | Ambiguities: 7->3 | STATUS=GREEN
