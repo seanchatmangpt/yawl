@@ -225,12 +225,29 @@ topology = hierarchical(μ) | mesh(integration)
 **CRITICAL**: Before every commit, you MUST:
 
 1. **Compile + Test**: `bash scripts/dx.sh all` (fast) or `mvn -T 1.5C clean compile && mvn -T 1.5C clean test` (full)
-3. **Stage Specific Files**: `git add <files>` (no `git add .`)
-4. **Commit with Message**: Include session URL
-5. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`
+2. **Stage Specific Files**: `git add <files>` (no `git add .`)
+3. **Commit with Message**: Include session URL
+4. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`
 
 **Stop Hook**: Runs `.claude/hooks/validate-no-mocks.sh` after response completion.
 **Git Check**: Verifies no uncommitted changes remain.
+
+## Γ (Git Protocol) — Toyota Production System Inspired
+
+**ABSOLUTE ZERO FORCE POLICY**:
+- **NEVER use `--force` or `--force-with-lease`** unless explicitly instructed
+- **NEVER amend commits** that have been pushed - create a new commit instead
+- **ALWAYS preserve history** - think Toyota: build quality in, don't hide defects
+- **Respect the remote** - if rejected, understand why and adapt
+
+**Git Rules (Like Andon Cord)**:
+1. **Stage properly**: `git add <specific-files>` - be precise
+2. **Commit atomicity**: One logical change per commit
+3. **Push clean**: No working directory changes before push
+4. **Respect merges**: If rejected, `git pull` and integrate properly
+5. **No history rewriting**: What's done is done - document mistakes as learning
+
+**Why**: Toyota Production System respects every step as valuable. Force pushing hides problems and prevents learning from mistakes.
 
 ## Channels
 

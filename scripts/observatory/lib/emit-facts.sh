@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 # ==========================================================================
-# emit-facts.sh — Generates all 9 fact JSON files for the observatory
+# emit-facts.sh — Generates all fact JSON files for the observatory
 #
 # Each emit_* function writes one file to $FACTS_DIR.
 # Sources util.sh for constants and helpers.
+#
+# Fact Categories:
+#   Core: modules, reactor, integration
+#   Architecture: shared-src, dual-family, duplicates, tests, gates
+#   Static Analysis: spotbugs-findings, pmd-violations, checkstyle-warnings, static-analysis
+#   Coverage: coverage
 # ==========================================================================
 
 # Source emission scripts
 source "$(dirname "${BASH_SOURCE[0]}")/emit-coverage.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/emit-static-analysis.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/emit-architecture-facts.sh"
 
 # ── 1. modules.json ───────────────────────────────────────────────────────
 emit_modules() {
@@ -197,12 +204,24 @@ emit_integration() {
 emit_all_facts() {
     timer_start
     record_memory "facts_start"
+
+    # Core facts
     emit_modules
     emit_reactor
     emit_integration
+
+    # Architecture facts (shared-src, dual-family, duplicates, tests, gates)
+    emit_all_architecture_facts
+
+    # Coverage and static analysis
     emit_coverage
     emit_static_analysis_facts
+
     FACTS_ELAPSED=$(timer_elapsed_ms)
     record_phase_timing "facts" "$FACTS_ELAPSED"
-    log_ok "All facts emitted in ${FACTS_ELAPSED}ms"
+
+    # Count total facts
+    local facts_count
+    facts_count=$(ls "$FACTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+    log_ok "All $facts_count facts emitted in ${FACTS_ELAPSED}ms"
 }
