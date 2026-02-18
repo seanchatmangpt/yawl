@@ -1,6 +1,11 @@
 # Makefile
 #
-# YAWL Shell-Based Testing
+# YAWL V6 Build Control Plane + Shell-Based Testing
+#
+# Control plane targets (observatory):
+#   make verify        # Run Maven verify gates; emit receipt
+#   make observatory   # Generate observatory facts/diagrams/receipt
+#   make closure       # verify + observatory (final status line)
 #
 # Black-box testing with zero tolerance for mocks/stubs.
 # All tests verify real system behavior through observable interfaces.
@@ -27,14 +32,6 @@ PROJECT_DIR := $(PWD)
 TEST_DIR := $(PROJECT_DIR)/test/shell
 SCRIPTS_DIR := $(PROJECT_DIR)/scripts/shell-test
 REPORT_DIR := $(PROJECT_DIR)/reports
-
-# V6 Documentation directories
-V6_LATEST := $(PROJECT_DIR)/docs/v6/latest
-V6_RECEIPTS := $(V6_LATEST)/receipts
-OBSERVATORY_SCRIPT := $(PROJECT_DIR)/scripts/observatory/observatory.sh
-DIAGRAMS_SCRIPT := $(PROJECT_DIR)/tools/gen_v6_diagrams.sh
-DEPS_CHECK_SCRIPT := $(PROJECT_DIR)/.claude/check-dependencies.sh
-DOCS_V6_DIR := $(PROJECT_DIR)/docs/v6
 
 # Tools
 ANT ?= ant
@@ -68,7 +65,6 @@ export MCP_PORT
 .PHONY: help test test-quick test-phase clean
 .PHONY: test-schema test-stub test-build test-engine test-a2a test-mcp test-patterns test-report
 .PHONY: list-phases check-deps
-.PHONY: diagrams observatory analyze-deps docs-all validate-diagrams clean-diagrams verify closure
 
 # Default target
 help:
@@ -96,18 +92,6 @@ help:
 	@echo "  list-phases   List all test phases"
 	@echo "  check-deps    Check required dependencies"
 	@echo "  clean         Clean test artifacts"
-	@echo ""
-	@echo "Documentation Generation:"
-	@echo "  diagrams          Generate Mermaid diagrams and facts (tools/gen_v6_diagrams.sh)"
-	@echo "  observatory       Generate observatory facts/diagrams/receipt"
-	@echo "  docs-all          Generate all documentation (diagrams + observatory)"
-	@echo "  validate-diagrams Validate generated diagram files"
-	@echo "  clean-diagrams    Clean generated diagram files"
-	@echo "  analyze-deps      Run dependency security and health analysis"
-	@echo ""
-	@echo "V6 Control Plane:"
-	@echo "  verify            Run Maven verify gates; emit receipt"
-	@echo "  closure           verify + observatory (full pipeline)"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  ENGINE_PORT   YAWL engine port (default: 8080)"
@@ -350,6 +334,11 @@ resilience-help:
 
 .PHONY: verify observatory closure observatory-help
 
+# Observatory output directories
+V6_LATEST := $(PROJECT_DIR)/docs/v6/latest
+V6_RECEIPTS := $(V6_LATEST)/receipts
+OBSERVATORY_SCRIPT := $(PROJECT_DIR)/scripts/observatory/observatory.sh
+
 # Run Maven verify gates and emit a receipt
 verify:
 	@echo ""
@@ -431,112 +420,3 @@ observatory-help:
 	@echo "  docs/v6/latest/diagrams/*.mmd          7 Mermaid diagrams"
 	@echo "  docs/v6/latest/diagrams/yawl/*.xml     YAWL build workflow"
 	@echo ""
-
-# ========================================
-# Documentation Generation Targets
-# ========================================
-
-# Generate Mermaid diagrams and facts snapshots
-diagrams:
-	@echo ""
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo "$(CYAN)$(BOLD) V6 Diagram Generation$(NC)"
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo ""
-	@if [ ! -x "$(DIAGRAMS_SCRIPT)" ]; then \
-		chmod +x "$(DIAGRAMS_SCRIPT)"; \
-	fi
-	@bash $(DIAGRAMS_SCRIPT)
-	@echo ""
-	@echo "$(GREEN)Diagrams generated in: docs/v6/diagrams/$(NC)"
-
-# Run dependency security and health analysis
-analyze-deps:
-	@echo ""
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo "$(CYAN)$(BOLD) Dependency Security & Health Analysis$(NC)"
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo ""
-	@if [ ! -x "$(DEPS_CHECK_SCRIPT)" ]; then \
-		chmod +x "$(DEPS_CHECK_SCRIPT)"; \
-	fi
-	@bash $(DEPS_CHECK_SCRIPT)
-
-# Generate all documentation (diagrams + observatory)
-docs-all: diagrams observatory
-	@echo ""
-	@echo "$(GREEN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo "$(GREEN)$(BOLD) All Documentation Generated$(NC)"
-	@echo "$(GREEN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo ""
-	@echo "Generated artifacts:"
-	@echo "  - docs/v6/diagrams/     Mermaid diagrams and facts"
-	@echo "  - docs/v6/latest/       Observatory facts, diagrams, receipts"
-	@echo ""
-
-# Validate generated diagram files
-validate-diagrams:
-	@echo ""
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo "$(CYAN)$(BOLD) Diagram Validation$(NC)"
-	@echo "$(CYAN)$(BOLD)═══════════════════════════════════════════════════════════$(NC)"
-	@echo ""
-	@DIAGRAM_DIR="$(DOCS_V6_DIR)/diagrams"; \
-	LATEST_DIAG_DIR="$(V6_LATEST)/diagrams"; \
-	ERRORS=0; \
-	echo "Checking $$DIAGRAM_DIR ..."; \
-	if [ -d "$$DIAGRAM_DIR" ]; then \
-		for f in $$DIAGRAM_DIR/*.mmd; do \
-			if [ -f "$$f" ]; then \
-				if grep -qE '^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|%%\{)' "$$f"; then \
-					echo "  $(GREEN)OK$(NC)   $$(basename $$f)"; \
-				else \
-					echo "  $(RED)ERR$(NC) $$(basename $$f) - invalid Mermaid header"; \
-					ERRORS=$$((ERRORS + 1)); \
-				fi; \
-			fi; \
-		done; \
-		for f in $$DIAGRAM_DIR/yawl/*.xml; do \
-			if [ -f "$$f" ]; then \
-				if xmllint --noout "$$f" 2>/dev/null; then \
-					echo "  $(GREEN)OK$(NC)   yawl/$$(basename $$f)"; \
-				else \
-					echo "  $(RED)ERR$(NC) yawl/$$(basename $$f) - invalid XML"; \
-					ERRORS=$$((ERRORS + 1)); \
-				fi; \
-			fi; \
-		done; \
-	else \
-		echo "  $(YELLOW)SKIP$(NC) $$DIAGRAM_DIR not found"; \
-	fi; \
-	echo ""; \
-	echo "Checking $$LATEST_DIAG_DIR ..."; \
-	if [ -d "$$LATEST_DIAG_DIR" ]; then \
-		for f in $$LATEST_DIAG_DIR/*.mmd; do \
-			if [ -f "$$f" ]; then \
-				if grep -qE '^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|%%\{)' "$$f"; then \
-					echo "  $(GREEN)OK$(NC)   latest/$$(basename $$f)"; \
-				else \
-					echo "  $(RED)ERR$(NC) latest/$$(basename $$f) - invalid Mermaid header"; \
-					ERRORS=$$((ERRORS + 1)); \
-				fi; \
-			fi; \
-		done; \
-	else \
-		echo "  $(YELLOW)SKIP$(NC) $$LATEST_DIAG_DIR not found"; \
-	fi; \
-	echo ""; \
-	if [ $$ERRORS -gt 0 ]; then \
-		echo "$(RED)Validation failed with $$ERRORS error(s)$(NC)"; \
-		exit 1; \
-	else \
-		echo "$(GREEN)All diagrams validated successfully$(NC)"; \
-	fi
-
-# Clean generated diagram files
-clean-diagrams:
-	@echo "Cleaning generated diagram files..."
-	@rm -rf $(DOCS_V6_DIR)/diagrams
-	@rm -rf $(V6_LATEST)/diagrams
-	@rm -f $(V6_RECEIPTS)/observatory.json
-	@echo "$(GREEN)Diagram files cleaned$(NC)"

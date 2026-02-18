@@ -18,44 +18,50 @@
 
 package org.yawlfoundation.yawl.procletService.util;
 
-public class ThreadTest extends ThreadNotify{
-	
-	private boolean threadSuspended = true;
-	
-	public ThreadTest() {
-		
-	}
-	
-    public synchronized void press() {
-        threadSuspended = !threadSuspended;
-        if (!threadSuspended)
-            notify();
+/**
+ * Test subclass of ThreadNotify. Previously used synchronized(this)+wait/notify which
+ * pins virtual thread carriers. Updated to use the inherited ReentrantLock+Condition
+ * from ThreadNotify so virtual threads are not pinned.
+ */
+public class ThreadTest extends ThreadNotify {
+
+    public ThreadTest() {
     }
 
-	
+    @Override
+    public void press() {
+        _suspendLock.lock();
+        try {
+            threadSuspended = !threadSuspended;
+            if (!threadSuspended) {
+                _resumeCondition.signal();
+            }
+        } finally {
+            _suspendLock.unlock();
+        }
+    }
+
+    @Override
     public void run() {
-    	synchronized(this) {
-    		try {
-              while (threadSuspended) {
-                  	System.out.println("before");
-                    this.wait();
-                    System.out.println("after");
-             }
-           }
-           catch (InterruptedException e){
-               // InterruptedException is intentionally ignored: thread termination signal
-               // during wait() does not require special handling in this test utility
-               Thread.currentThread().interrupt();
-           }
-    	}
+        _suspendLock.lock();
+        try {
+            while (threadSuspended) {
+                System.out.println("before");
+                _resumeCondition.await();
+                System.out.println("after");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            _suspendLock.unlock();
+        }
     }
 
-	
-	public static void main(String [] args) {
-		ThreadTest t = new ThreadTest();
-		t.start();
-		System.out.println();
-		t.press();
-		System.out.println();
-	}
+    public static void main(String[] args) {
+        ThreadTest t = new ThreadTest();
+        t.start();
+        System.out.println();
+        t.press();
+        System.out.println();
+    }
 }

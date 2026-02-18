@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.smsModule;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,6 +60,10 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
 
     public static String _sendURI ;
     public static String _receiveURI;
+
+    // P-5: ReentrantLock replaces synchronized(this) blocks to prevent carrier-thread
+    // pinning when virtual threads call getReplies() or checkInWorkItem() (both HTTP I/O).
+    private final ReentrantLock _smsLock = new ReentrantLock();
 
     //param names
     private static final String SMS_MESSAGE_PARAMNAME = "SMSMessage";
@@ -189,7 +194,8 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
      * the engine.
      */
     public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
-        synchronized (this) {
+        _smsLock.lock();
+        try {
             System.out.println("PreCancel::_outStandingInteractions = " + _outStandingInteractions);
             System.out.println("\tCancel:_archivedInteractions = " + _archivedInteractions);
             for (int i = 0; i < _outStandingInteractions.size(); i++) {
@@ -201,6 +207,8 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
                     _archivedInteractions.add(inter);
                 }
             }
+        } finally {
+            _smsLock.unlock();
         }
         System.out.println("\tPostCancel::_outStandingInteractions = " + _outStandingInteractions);
         System.out.println("\tPostCancel::_archivedInteractions = " + _archivedInteractions);
@@ -255,7 +263,11 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
         while (_outStandingInteractions.size() > 0) {
             _logger.info("---> Outstandaing interactions loop");
 
-            synchronized (this) {
+            // P-5: ReentrantLock instead of synchronized(this) — getReplies() and
+            // checkInWorkItem() perform blocking HTTP I/O; synchronized would pin the
+            // carrier thread when running on a virtual thread.
+            _smsLock.lock();
+            try {
                 for (int i = 0; i < _outStandingInteractions.size(); i++) {
                     Interaction inter = (Interaction) _outStandingInteractions.get(i);
                     try {
@@ -290,6 +302,8 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
                         _archivedInteractions.add(inter);
                     }
                 }
+            } finally {
+                _smsLock.unlock();
             }
             _logger.info("outStandingInteractions = " + _outStandingInteractions);
             _logger.info("_archivedInteractions = " + _archivedInteractions);

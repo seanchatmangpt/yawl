@@ -266,11 +266,36 @@
                         <!-- MCP ZAI tests depend on excluded mcp/zai/ sources -->
                         <exclude>**/mcp/zai/**</exclude>
                     </excludes>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <testSourceDirectory>../test/org/yawlfoundation/yawl/integration</testSourceDirectory>
+                    <includes>
+                        <include>**/*IT.java</include>
+                    </includes>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

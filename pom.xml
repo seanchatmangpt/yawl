@@ -150,11 +150,6 @@
         <okhttp.version>5.1.0</okhttp.version>
 
         <!-- ================================================================ -->
-        <!-- Scheduling                                                         -->
-        <!-- ================================================================ -->
-        <quartz.version>2.5.0</quartz.version>
-
-        <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
         <mcp.version>0.17.2</mcp.version>
@@ -216,6 +211,11 @@
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
         <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <jacoco.line.coverage>0.50</jacoco.line.coverage>
+        <jacoco.branch.coverage>0.40</jacoco.branch.coverage>
+        <maven.javadoc.version>3.10.1</maven.javadoc.version>
+        <spotless.version>2.44.4</spotless.version>
         <spotbugs.plugin.version>4.9.3.2</spotbugs.plugin.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <pmd.plugin.version>3.26.0</pmd.plugin.version>
@@ -275,80 +275,7 @@
         <dependencies>
 
             <!-- ============================================================== -->
-            <!-- 0. YAWL INTERNAL MODULES                                       -->
-            <!--    All child modules are declared here with ${project.version} -->
-            <!--    so inter-module dependencies don't need version numbers.    -->
-            <!-- ============================================================== -->
-
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-utilities</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-elements</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-authentication</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-engine</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-stateless</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-resourcing</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-worklet</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-scheduling</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-security</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-integration</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-monitoring</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-control-panel</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yawlfoundation</groupId>
-                <artifactId>yawl-engine-webapp</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-
-            <!-- ============================================================== -->
-            <!-- 1. SPRING BOOT STARTERS                                       -->
+            <!-- 0. SPRING BOOT STARTERS                                       -->
             <!--    Explicit entries provide offline fallback when the Spring   -->
             <!--    Boot BOM (online profile) is not active.                   -->
             <!-- ============================================================== -->
@@ -699,16 +626,6 @@
             </dependency>
 
             <!-- ============================================================== -->
-            <!-- 10. SCHEDULING (Quartz)                                        -->
-            <!-- ============================================================== -->
-
-            <dependency>
-                <groupId>org.quartz-scheduler</groupId>
-                <artifactId>quartz</artifactId>
-                <version>${quartz.version}</version>
-            </dependency>
-
-            <!-- ============================================================== -->
             <!-- 10. MCP / A2A INTEGRATION SDKs                                -->
             <!--     Both SDKs are installed from local JARs (not Maven         -->
             <!--     Central). Versions are pinned here so child modules do     -->
@@ -820,58 +737,10 @@
 
             <!-- ============================================================== -->
             <!-- 13. OBSERVABILITY / METRICS                                    -->
-            <!--     OTel artifacts: explicit versions for offline fallback;     -->
-            <!--     BOM imports in 'online' profile take precedence.          -->
-            <!--     Semconv and Micrometer are not in the OTel BOM.           -->
+            <!--     OTel artifacts version-managed by opentelemetry-bom above. -->
+            <!--     Semconv and Micrometer are not in that BOM.               -->
             <!-- ============================================================== -->
 
-            <!-- OpenTelemetry API and SDK -->
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-api</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk-trace</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-
-            <!-- OpenTelemetry Instrumentation API -->
-            <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-instrumentation-api</artifactId>
-                <version>${opentelemetry-instrumentation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-instrumentation-api-semconv</artifactId>
-                <version>${opentelemetry-instrumentation.version}</version>
-            </dependency>
-
-            <!-- OpenTelemetry Exporters -->
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-otlp</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-jaeger-thrift</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-prometheus</artifactId>
-                <version>${opentelemetry.version}-alpha</version>
-            </dependency>
-
-            <!-- OpenTelemetry Semantic Conventions -->
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
@@ -882,8 +751,11 @@
                 <artifactId>opentelemetry-semconv-incubating</artifactId>
                 <version>${opentelemetry.semconv.version}-alpha</version>
             </dependency>
-
-            <!-- Micrometer Metrics -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-prometheus</artifactId>
+                <version>${opentelemetry.version}-alpha</version>
+            </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-core</artifactId>
@@ -990,18 +862,6 @@
             <!-- JUnit Platform -->
             <dependency>
                 <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-engine</artifactId>
-                <version>${junit.platform.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-launcher</artifactId>
-                <version>${junit.platform.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-api</artifactId>
                 <version>${junit.platform.version}</version>
                 <scope>test</scope>
@@ -1010,14 +870,6 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-engine</artifactId>
                 <version>${junit.platform.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- JUnit Vintage (for running JUnit 4 tests on JUnit 5 platform) -->
-            <dependency>
-                <groupId>org.junit.vintage</groupId>
-                <artifactId>junit-vintage-engine</artifactId>
-                <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -1104,107 +956,41 @@
                     <configuration>
                         <release>${maven.compiler.release}</release>
                         <compilerArgs>
+                            <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
 
-                <!-- Surefire - unit test runner (JUnit 5 Platform primary, Vintage for legacy JUnit 4) -->
+                <!-- Surefire - unit test runner -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
                     <configuration>
+                        <argLine>--enable-preview</argLine>
                         <includes>
                             <include>**/*Test.java</include>
                             <include>**/*Tests.java</include>
                             <include>**/*TestSuite.java</include>
                         </includes>
-                        <!-- Exclude integration tests from unit test runs -->
-                        <excludes>
-                            <exclude>**/*IT.java</exclude>
-                            <exclude>**/*Integration*.java</exclude>
-                            <exclude>**/*IntegrationTest.java</exclude>
-                        </excludes>
                         <systemPropertyVariables>
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
                         <parallel>classes</parallel>
                         <threadCount>4</threadCount>
-                        <!-- Fail fast on test hangs - Toyota Production System -->
-                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
-                        <forkedProcessExitTimeoutInSeconds>30</forkedProcessExitTimeoutInSeconds>
                     </configuration>
-                    <dependencies>
-                        <!-- JUnit 5 Platform Engine discovery and execution -->
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-engine</artifactId>
-                            <version>${junit.platform.version}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-launcher</artifactId>
-                            <version>${junit.platform.version}</version>
-                        </dependency>
-                        <!-- JUnit 5 Jupiter Engine for JUnit 5 tests -->
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${junit.jupiter.version}</version>
-                        </dependency>
-                        <!-- JUnit Vintage Engine for running legacy JUnit 4 tests on JUnit 5 platform -->
-                        <dependency>
-                            <groupId>org.junit.vintage</groupId>
-                            <artifactId>junit-vintage-engine</artifactId>
-                            <version>${junit.jupiter.version}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
 
-                <!-- Failsafe - integration test runner (JUnit 5 Platform primary, Vintage for legacy JUnit 4) -->
+                <!-- Failsafe - integration test runner -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven.failsafe.plugin.version}</version>
                     <configuration>
                         <argLine>--enable-preview</argLine>
-                        <!-- Explicitly include integration test patterns -->
-                        <includes>
-                            <include>**/*IT.java</include>
-                            <include>**/*Integration*.java</include>
-                            <include>**/*IntegrationTest.java</include>
-                        </includes>
-                        <!-- Fail fast on test hangs - Toyota Production System -->
-                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                        <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                     </configuration>
-                    <dependencies>
-                        <!-- JUnit 5 Platform Engine discovery and execution -->
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-engine</artifactId>
-                            <version>${junit.platform.version}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-launcher</artifactId>
-                            <version>${junit.platform.version}</version>
-                        </dependency>
-                        <!-- JUnit 5 Jupiter Engine for JUnit 5 tests -->
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${junit.jupiter.version}</version>
-                        </dependency>
-                        <!-- JUnit Vintage Engine for running legacy JUnit 4 tests on JUnit 5 platform -->
-                        <dependency>
-                            <groupId>org.junit.vintage</groupId>
-                            <artifactId>junit-vintage-engine</artifactId>
-                            <version>${junit.jupiter.version}</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <goals>
@@ -1300,6 +1086,11 @@
                                 <banRelease>true</banRelease>
                                 <banSnapshots>true</banSnapshots>
                             </requirePluginVersions>
+                            <!-- Prevent SNAPSHOT dependencies from appearing in release builds -->
+                            <requireReleaseDeps>
+                                <onlyWhenRelease>true</onlyWhenRelease>
+                                <message>Release builds must not contain SNAPSHOT dependencies.</message>
+                            </requireReleaseDeps>
                         </rules>
                         <fail>true</fail>
                     </configuration>
@@ -1352,6 +1143,31 @@
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                        </execution>
+                        <execution>
+                            <id>jacoco-check</id>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                            <configuration>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.line.coverage}</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.branch.coverage}</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                                <haltOnFailure>false</haltOnFailure>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -1444,6 +1260,58 @@
                             <format>HTML</format>
                             <format>JSON</format>
                         </formats>
+                    </configuration>
+                </plugin>
+
+                <!-- ===== Javadoc Generation ===== -->
+                <!-- Usage: mvn package (auto-attaches -javadoc.jar)             -->
+                <!--        mvn javadoc:javadoc (standalone report)              -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc.version}</version>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <quiet>true</quiet>
+                        <show>package</show>
+                        <failOnError>false</failOnError>
+                        <additionalJOption>-Xdoclint:none</additionalJOption>
+                        <detectJavaApiLink>false</detectJavaApiLink>
+                        <source>21</source>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <phase>package</phase>
+                            <goals><goal>jar</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ===== Spotless Code Formatting ===== -->
+                <!-- Usage: mvn spotless:check  (verify formatting)             -->
+                <!--        mvn spotless:apply  (auto-format in place)          -->
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <java>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                            <indent>
+                                <spaces>true</spaces>
+                                <spacesPerTab>4</spacesPerTab>
+                            </indent>
+                        </java>
+                        <pom>
+                            <sortPom>
+                                <expandEmptyElements>false</expandEmptyElements>
+                                <keepBlankLines>true</keepBlankLines>
+                            </sortPom>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                        </pom>
                     </configuration>
                 </plugin>
 
@@ -1540,20 +1408,49 @@
         <!-- ================================================================ -->
         <!-- CI profile: adds coverage and static analysis                      -->
         <!-- Usage: mvn -P ci clean verify                                      -->
+        <!-- Auto-activates when the CI environment variable is set.            -->
         <!-- ================================================================ -->
         <profile>
             <id>ci</id>
+            <activation>
+                <property>
+                    <name>env.CI</name>
+                </property>
+            </activation>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
             </properties>
             <build>
                 <plugins>
-                    <!-- JaCoCo: code coverage -->
+                    <!-- Enforcer: stricter convergence checks in CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <rules>
+                                <requireUpperBoundDeps/>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9,)</version>
+                                </requireMavenVersion>
+                                <banDuplicatePomDependencyVersions/>
+                                <requireReleaseDeps>
+                                    <onlyWhenRelease>true</onlyWhenRelease>
+                                </requireReleaseDeps>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </plugin>
+                    <!-- JaCoCo: fail the build when coverage thresholds are not met in CI -->
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <haltOnFailure>true</haltOnFailure>
+                        </configuration>
                     </plugin>
-                    <!-- SpotBugs: bytecode analysis -->
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
@@ -1566,45 +1463,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                    <!-- Checkstyle: code style enforcement -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>checkstyle-check</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- PMD: code quality analysis -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-pmd-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>pmd-check</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- Parallel test execution for faster CI -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <parallel>classesAndMethods</parallel>
-                            <threadCount>4</threadCount>
-                            <useUnlimitedThreads>false</useUnlimitedThreads>
-                            <perCoreThreadCount>true</perCoreThreadCount>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -1684,58 +1542,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- ================================================================ -->
-        <!-- Integration Test profile: dedicated IT test execution              -->
-        <!-- Usage: mvn verify -P integration-test                               -->
-        <!-- Runs only *IT.java and *Integration*.java tests via Failsafe       -->
-        <!-- ================================================================ -->
-        <profile>
-            <id>integration-test</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <argLine>--enable-preview</argLine>
-                            <includes>
-                                <include>**/*IT.java</include>
-                                <include>**/*Integration*.java</include>
-                                <include>**/*IntegrationTest.java</include>
-                            </includes>
-                            <!-- Skip unit tests in this profile -->
-                            <excludes>
-                                <exclude>**/*Test.java</exclude>
-                            </excludes>
-                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>integration-test</id>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>verify</id>
-                                <goals>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- Skip Surefire in integration-test profile -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

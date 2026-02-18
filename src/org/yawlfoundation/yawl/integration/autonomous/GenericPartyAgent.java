@@ -100,7 +100,7 @@ public final class GenericPartyAgent implements AutonomousAgent {
 
     private void startDiscoveryLoop() {
         discoveryThread = Thread.ofVirtual()
-            .name("GenericPartyAgent-Discovery")
+            .name("discovery-" + config.getCapability().domainName())
             .start(() -> {
             while (running.get()) {
                 try {
@@ -115,9 +115,8 @@ public final class GenericPartyAgent implements AutonomousAgent {
                     break;
                 }
             }
-        }, "discovery-" + config.getCapability().domainName());
+        });
         discoveryThread.setDaemon(false);
-        discoveryThread.start();
     }
 
     private void runDiscoveryCycle() throws IOException {

@@ -77,11 +77,8 @@ public class YawlLanguageServer {
     private final YawlDiagnosticProvider diagnosticProvider;
 
     /** Single-thread executor for LSP message handling (LSP is sequential per document) */
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "yawl-lsp-handler");
-        t.setDaemon(true);
-        return t;
-    });
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r ->
+            Thread.ofVirtual().name("yawl-lsp-handler").unstarted(r));
 
     private volatile boolean initialized = false;
     private volatile boolean shutdown    = false;

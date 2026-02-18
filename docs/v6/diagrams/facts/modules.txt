@@ -1,0 +1,13 @@
+yawl-authentication
+yawl-control-panel
+yawl-elements
+yawl-engine
+yawl-integration
+yawl-monitoring
+yawl-resourcing
+yawl-scheduling
+yawl-security
+yawl-stateless
+yawl-utilities
+yawl-webapps
+yawl-worklet

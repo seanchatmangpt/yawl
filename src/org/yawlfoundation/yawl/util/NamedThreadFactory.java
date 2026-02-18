@@ -20,9 +20,9 @@ public class NamedThreadFactory implements ThreadFactory {
 
    @Override
    public Thread newThread(Runnable runnable) {
-       Thread thread = new Thread(runnable);
-       thread.setName(_prefix + _index.getAndIncrement());
-       return thread;
+       return Thread.ofVirtual()
+               .name(_prefix, _index.getAndIncrement())
+               .unstarted(runnable);
    }
 
 }
