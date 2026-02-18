@@ -207,13 +207,13 @@ Then implement Phase 1 (Weeks 1-2):
 1. Implement feature (engineer agent mindset)
 2. PostToolUse hook validates automatically (14 guards checked)
 3. If blocked: Read specific guard in `HYPER_STANDARDS.md`, fix, retry
-4. Run `mvn -T 1.5C clean test` to verify (parallel execution)
+4. Run `bash scripts/dx.sh` to verify (auto-detects changed modules)
 
 ### 4. Before Committing (Every Time)
 
 ```bash
-# Step 1: Parallel build + test (new Java 25 optimized)
-mvn -T 1.5C clean compile && mvn -T 1.5C clean test
+# Step 1: Fast build + test (all modules, agent-dx profile)
+bash scripts/dx.sh all
 
 # Step 2: Security scan (new)
 jdeprscan --for-removal build/libs/yawl.jar
@@ -260,22 +260,31 @@ git push -u origin claude/<desc>-<sessionId>
 
 ## 📊 Quick Reference Cards
 
-### Java 25 Build Commands (NEW - 50% Faster)
+### Agent DX Fast Loop (PREFERRED)
 ```bash
-# Parallel compile (was ~90s sequential, now ~45s parallel)
+# Auto-detect changed modules, compile + test (~5-15s for 1 module)
+bash scripts/dx.sh
+
+# Compile only (fastest feedback)
+bash scripts/dx.sh compile
+
+# All modules (pre-commit check, ~30-60s)
+bash scripts/dx.sh all
+
+# Target specific module
+bash scripts/dx.sh -pl yawl-engine
+```
+
+### Standard Maven Commands
+```bash
+# Parallel compile (~45s)
 mvn -T 1.5C clean compile
 
-# Parallel build + test (was ~150s, now ~75s)
+# Parallel build + test (~75s)
 mvn -T 1.5C clean package
 
-# Parallel tests only (was ~60s, now ~30s)
-mvn -T 1.5C clean test
-
-# With static analysis (security + quality)
+# With static analysis
 mvn clean verify -P analysis
-
-# Detect deprecated APIs
-jdeprscan --for-removal build/libs/yawl.jar
 ```
 
 ### Classic Quick Reference
@@ -283,21 +292,21 @@ jdeprscan --for-removal build/libs/yawl.jar
 ┌──────────────────────────────────────────────────────────────┐
 │ YAWL v5.2 + Java 25 Quick Reference                          │
 ├──────────────────────────────────────────────────────────────┤
-│ Build (Parallel):     mvn -T 1.5C clean compile (~45s)      │
-│ Test (Parallel):      mvn -T 1.5C clean test (~30s)         │
-│ Validate:             xmllint --schema schema/... spec.xml   │
-│ Security:             jdeprscan --for-removal build/...     │
+│ Agent DX (fast):    bash scripts/dx.sh (~5-15s changed)     │
+│ Agent DX (all):     bash scripts/dx.sh all (~30-60s)        │
+│ Build (full):       mvn -T 1.5C clean compile (~45s)        │
+│ Test (full):        mvn -T 1.5C clean test (~30s)           │
+│ Validate:           xmllint --schema schema/... spec.xml     │
 │                                                              │
-│ Guards:               14 anti-patterns (blocked by hook)     │
-│ Features:             Records, sealed classes, virtual       │
-│                       threads, scoped values (J25)           │
+│ Guards:             14 anti-patterns (blocked by hook)       │
+│ Features:           Records, sealed classes, virtual         │
+│                     threads, scoped values (J25)             │
 │                                                              │
 │ Before Commit:                                               │
-│  1. mvn -T 1.5C clean compile && mvn -T 1.5C test           │
-│  2. jdeprscan --for-removal build/libs/yawl.jar             │
-│  3. git add <files>                                          │
-│  4. git commit -m "msg\n\nhttps://claude.ai/code/session"    │
-│  5. git push -u origin claude/<desc>-<sessionId>             │
+│  1. bash scripts/dx.sh all                                   │
+│  2. git add <files>                                          │
+│  3. git commit -m "msg\n\nhttps://claude.ai/code/session"    │
+│  4. git push -u origin claude/<desc>-<sessionId>             │
 └──────────────────────────────────────────────────────────────┘
 ```
 

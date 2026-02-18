@@ -49,18 +49,29 @@ When using `--coverage`, the skill generates a JaCoCo coverage report:
 - Requires JaCoCo plugin configuration in pom.xml
 - Shows line and branch coverage metrics
 
-## Equivalent Commands
+## Agent DX Fast Path
 
-Instead of using the skill, you can run Maven directly:
+By default, `/yawl-test` delegates to `scripts/dx.sh` for fast feedback:
+auto-detects changed modules, uses `agent-dx` profile (2C parallelism, no
+JaCoCo overhead, fail-fast). Use `--coverage` or `--no-dx` to bypass.
 
 ```bash
-# Instead of /yawl-test
+# Fast: auto-detects changed modules (~5-15s)
+/yawl-test                    # delegates to: bash scripts/dx.sh
+/yawl-test --module=yawl-engine  # delegates to: bash scripts/dx.sh -pl yawl-engine
+
+# Direct dx.sh usage (equivalent)
+bash scripts/dx.sh
+bash scripts/dx.sh -pl yawl-engine
+bash scripts/dx.sh all
+```
+
+## Equivalent Maven Commands
+
+```bash
+# Full Maven (bypasses dx.sh fast path)
 mvn clean test
-
-# Instead of /yawl-test --module=yawl-engine
 mvn -pl yawl-engine clean test
-
-# Instead of /yawl-test --coverage
 mvn clean test jacoco:report
 ```
 

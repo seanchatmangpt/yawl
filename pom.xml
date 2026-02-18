@@ -243,7 +243,7 @@
         <nexus.staging.plugin.version>1.7.0</nexus.staging.plugin.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
-        <surefire.threadCount>1C</surefire.threadCount>
+        <surefire.threadCount>1.5C</surefire.threadCount>
     </properties>
 
     <repositories>
@@ -1141,8 +1141,8 @@
                         <release>${maven.compiler.release}</release>
                         <useIncrementalCompilation>true</useIncrementalCompilation>
                         <fork>true</fork>
-                        <meminitial>256m</meminitial>
-                        <maxmem>1024m</maxmem>
+                        <meminitial>512m</meminitial>
+                        <maxmem>2048m</maxmem>
                         <compilerArgs>
                             <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
@@ -2137,6 +2137,42 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>integration,docker,containers</excludedGroups>
+                            <systemPropertyVariables>
+                                <test.docker.enabled>false</test.docker.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
+        <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
+        <!-- Usage: mvn compile test -P agent-dx                              -->
+        <!--        mvn compile test -P agent-dx -pl module -amd              -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>agent-dx</id>
+            <properties>
+                <jacoco.skip>true</jacoco.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.source.skip>true</maven.source.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <pmd.skip>true</pmd.skip>
+                <enforcer.skip>true</enforcer.skip>
+                <surefire.threadCount>2C</surefire.threadCount>
+                <test.docker.enabled>false</test.docker.enabled>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>integration,docker,containers,slow</excludedGroups>
+                            <skipAfterFailureCount>1</skipAfterFailureCount>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
                             </systemPropertyVariables>

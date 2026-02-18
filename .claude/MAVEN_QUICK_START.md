@@ -2,6 +2,22 @@
 
 ## Essential Commands
 
+### Agent DX Fast Loop (Preferred for Iterative Development)
+
+```bash
+# Auto-detect changed modules, compile + test (~5-15s)
+bash scripts/dx.sh
+
+# Compile changed modules only (~3-5s)
+bash scripts/dx.sh compile
+
+# All modules, compile + test (~30-60s)
+bash scripts/dx.sh all
+
+# Target specific module
+bash scripts/dx.sh -pl yawl-engine
+```
+
 ### Core Build Operations
 
 ```bash

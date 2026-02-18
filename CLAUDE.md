@@ -7,7 +7,14 @@ O = {engine, elements, stateless, integration, schema, test}
 ## Quick Commands
 
 ```bash
-# Build (Optimized for Java 25)
+# Agent DX — Fast Build-Test Loop (PREFERRED)
+bash scripts/dx.sh                       # Compile + test CHANGED modules only
+bash scripts/dx.sh compile               # Compile changed modules (fastest feedback)
+bash scripts/dx.sh test                  # Test changed modules (assumes compiled)
+bash scripts/dx.sh all                   # Compile + test ALL modules
+bash scripts/dx.sh -pl yawl-engine       # Target specific module(s)
+
+# Standard Build (Optimized for Java 25)
 mvn -T 1.5C clean compile               # Parallel compile (~45 seconds)
 mvn -T 1.5C clean package               # Parallel build (~90 seconds, was ~180s)
 mvn clean                                # Clean build artifacts
@@ -17,7 +24,8 @@ mvn -T 1.5C clean test                  # Parallel tests (JUnit 5.14.0 LTS)
 xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml  # Validate specifications
 
 # Before Committing
-mvn -T 1.5C clean compile && mvn -T 1.5C clean test  # Parallel build + test
+bash scripts/dx.sh all                   # Fast: agent-dx profile, all modules
+mvn -T 1.5C clean compile && mvn -T 1.5C clean test  # Full: standard profiles
 
 # Security & Analysis
 mvn clean verify -P analysis             # Run static analysis (SpotBugs, PMD, SonarQube)
@@ -135,21 +143,26 @@ If ANY guard is detected, the operation is **blocked** (exit 2) with violation d
 
 ## Δ (Build System) - Java 25 Optimized
 
+**Δ_dx** = `bash scripts/dx.sh` (agent inner loop: changed-module-only, incremental, 2C parallel, no overhead)
 **Δ_build** = mvn -T 1.5C {clean compile | clean package | clean | clean test}
 **Δ_test** = mvn -T 1.5C clean test (with JUnit 5.14.0 LTS, parallel execution at method level)
 **Δ_validate** = xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml
 **Δ_analyze** = mvn clean verify -P analysis (SpotBugs, PMD, SonarQube)
 
 **Build sequence**: clean → compile → test → validate → deploy
+**Agent DX loop**: `bash scripts/dx.sh` (auto-detects changed modules, ~5-15s per cycle)
 **Fast verification**: `mvn -T 1.5C clean compile` (~45 seconds, parallel)
 **Full verification**: `mvn -T 1.5C clean package` (~90 seconds, was ~180s without parallelization)
 **With CI caching**: ~50% additional improvement
 
 **Key optimizations**:
+- **Module targeting**: `dx.sh` auto-detects git changes, builds only affected modules + dependents
+- **Incremental compilation**: No `clean` by default — only recompiles changed files
+- **agent-dx profile**: 2C test parallelism, fail-fast, no JaCoCo/javadoc/analysis overhead
 - `-T 1.5C` enables parallel execution (1.5 × CPU cores)
 - JUnit 5 method-level parallelization via `@Execution(ExecutionMode.CONCURRENT)`
 - Maven BOM (Bill of Materials) for dependency alignment
-- Profiles: `fast` (no analysis), `analysis` (static checks), `security` (SBOM + scanning)
+- Profiles: `fast` (no analysis), `agent-dx` (max speed), `analysis` (static checks), `security` (SBOM + scanning)
 
 ## Ψ (Observatory) — Observe ≺ Act
 
@@ -211,8 +224,7 @@ topology = hierarchical(μ) | mesh(integration)
 
 **CRITICAL**: Before every commit, you MUST:
 
-1. **Compile**: `mvn clean compile` (must succeed)
-2. **Test**: `mvn clean test` (must pass 100%)
+1. **Compile + Test**: `bash scripts/dx.sh all` (fast) or `mvn -T 1.5C clean compile && mvn -T 1.5C clean test` (full)
 3. **Stage Specific Files**: `git add <files>` (no `git add .`)
 4. **Commit with Message**: Include session URL
 5. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`

@@ -5,15 +5,22 @@
 ## 1. First Build
 
 ```bash
-# From the repo root
+# From the repo root — fast agent DX loop (preferred)
 cd /home/user/yawl
+bash scripts/dx.sh compile       # Incremental compile, changed modules only
+bash scripts/dx.sh               # Compile + test changed modules
+bash scripts/dx.sh all           # Compile + test ALL modules
+
+# Standard Maven commands (when you need full control)
 mvn -T 1.5C compile -o          # ~45s parallel compile
 mvn -T 1.5C test -o             # ~90s with tests
 ```
 
 Requires: Java 25 (minimum Java 21), Maven 3.9+. Network not required—all
-dependencies are cached locally. The `-T 1.5C` flag parallelises across 1.5x
-CPU cores; omit it only when debugging classpath conflicts.
+dependencies are cached locally. The `dx.sh` script auto-detects changed
+modules, uses the `agent-dx` profile (2C parallelism, no JaCoCo/javadoc
+overhead, fail-fast), and skips `clean` for incremental builds. Fall back to
+raw Maven commands when debugging classpath conflicts or running analysis.
 
 ## 2. Module Map
 
@@ -75,8 +82,11 @@ own tests via `maven-surefire-plugin` `<testIncludes>` configuration—test file
 for `yawl-engine` belong in packages under `engine/`, not `elements/`.
 
 ```bash
-# Run tests for one module only
-mvn test -pl yawl-engine -o
+# Fast: test changed modules only (auto-detected from git)
+bash scripts/dx.sh
+
+# Fast: test a specific module
+bash scripts/dx.sh -pl yawl-engine
 
 # Run a single test class
 mvn test -pl yawl-engine -Dtest=YNetRunnerTest -o
@@ -169,9 +179,14 @@ mismatch. Re-run `observatory.sh --facts` to refresh.
 bash scripts/install-git-hooks.sh
 
 # Before committing—compile + test must both pass
-mvn -T 1.5C compile test -o
-git add <specific-files>        # Never: git add .
+bash scripts/dx.sh all           # Fast: agent-dx profile, all modules
+git add <specific-files>         # Never: git add .
 git commit -m "feat: description"
+
+# Agent inner loop (edit → compile → test → fix)
+bash scripts/dx.sh               # Auto-detect changed modules, compile + test
+bash scripts/dx.sh compile       # Compile only (fastest feedback)
+bash scripts/dx.sh -pl mod       # Target specific module
 
 # Profile build performance
 bash scripts/build-profiler.sh              # Compile timing breakdown
