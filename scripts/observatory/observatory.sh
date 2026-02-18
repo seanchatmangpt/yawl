@@ -22,6 +22,7 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 
 source "${LIB_DIR}/util.sh"
 source "${LIB_DIR}/emit-facts.sh"
+source "${LIB_DIR}/emit-coverage.sh"
 source "${LIB_DIR}/emit-diagrams.sh"
 source "${LIB_DIR}/emit-yawl-xml.sh"
 source "${LIB_DIR}/emit-receipt.sh"

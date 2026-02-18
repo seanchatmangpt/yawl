@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-02-18T00:00:00Z",
+  "aggregate": {
+    "line_pct": 0,
+    "branch_pct": 0,
+    "lines_covered": 0,
+    "lines_missed": 0,
+    "target_line_pct": 65,
+    "target_branch_pct": 55,
+    "meets_line_target": false,
+    "meets_branch_target": false,
+    "note": "Run 'mvn test' then 'bash scripts/observatory/observatory.sh --facts' to update"
+  },
+  "modules": [
+    {"module":"yawl-utilities","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-elements","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-authentication","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-engine","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-stateless","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-resourcing","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-worklet","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-scheduling","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-security","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-integration","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-monitoring","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0},
+    {"module":"yawl-control-panel","status":"no_report","line_pct":0,"branch_pct":0,"instruction_pct":0,"lines_covered":0,"lines_missed":0}
+  ]
+}
