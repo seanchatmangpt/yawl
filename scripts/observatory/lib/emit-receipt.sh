@@ -86,7 +86,7 @@ emit_receipt() {
     }
   },
   "toolchain": {
-    "java": "$(detect_java_version)",
+    "java": $(detect_java_version | jq -c '.'),
     "maven": "$(detect_maven_version)"
   },
   "inputs": {

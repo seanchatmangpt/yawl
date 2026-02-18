@@ -521,7 +521,7 @@ emit_integration_facts() {
     if [[ -f "$A2A_ROOT/YawlA2AServer.java" ]]; then
         while IFS= read -r skill; do
             [[ -n "$skill" ]] && a2a_skills+=("$skill")
-        done < <(grep -oE 'id\("[^"]+"' "$A2A_ROOT/YawlA2AServer.java" 2>/dev/null | sed 's/id("//; s/")//')
+        done < <(grep -oE 'id\("[^"]*")' "$A2A_ROOT/YawlA2AServer.java" 2>/dev/null | sed 's/id("//; s/")//')
     fi
 
     # Detect auth providers

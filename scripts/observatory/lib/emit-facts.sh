@@ -6,6 +6,10 @@
 # Sources util.sh for constants and helpers.
 # ==========================================================================
 
+# Source emission scripts
+source "$(dirname "${BASH_SOURCE[0]}")/emit-coverage.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/emit-static-analysis.sh"
+
 # ── 1. modules.json ───────────────────────────────────────────────────────
 emit_modules() {
     local out="$FACTS_DIR/modules.json"
@@ -196,6 +200,8 @@ emit_all_facts() {
     emit_modules
     emit_reactor
     emit_integration
+    emit_coverage
+    emit_static_analysis_facts
     FACTS_ELAPSED=$(timer_elapsed_ms)
     record_phase_timing "facts" "$FACTS_ELAPSED"
     log_ok "All facts emitted in ${FACTS_ELAPSED}ms"
