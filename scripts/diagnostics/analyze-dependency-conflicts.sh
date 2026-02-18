@@ -1,370 +1,148 @@
-#!/usr/bin/env bash
-# ============================================================================
-# analyze-dependency-conflicts.sh
-# YAWL Dependency Conflict Analyzer
+#!/bin/bash
 #
-# Runs `mvn dependency:tree -Dverbose` across all modules, parses the output,
-# and produces a structured report of every version conflict Maven had to
-# mediate.  Groups conflicts by artifact, ranks by frequency, and identifies
-# the modules responsible for pulling in each conflicting version.
+# Analyze Maven dependency conflicts from dependency tree output
+# Captures groupId:artifactId:version:scope and reports conflicts with scope info
 #
-# Output:  reports/dependency-conflicts-YYYY-MM-DD.md
-#          reports/dependency-conflicts-YYYY-MM-DD.json
-#          reports/dependency-conflicts-summary.txt
-# ============================================================================
+# Usage:
+#   ./analyze-dependency-conflicts.sh [dependency-tree-file]
+#   mvn dependency:tree -Dverbose | ./analyze-dependency-conflicts.sh -
+#
+
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-REPORT_DIR="$PROJECT_ROOT/reports"
-DATE_STAMP=$(date +%Y-%m-%d)
-TREE_RAW="$REPORT_DIR/raw-dependency-tree-${DATE_STAMP}.txt"
-CONFLICTS_CSV="$REPORT_DIR/conflicts-${DATE_STAMP}.csv"
-REPORT_MD="$REPORT_DIR/dependency-conflicts-${DATE_STAMP}.md"
-REPORT_JSON="$REPORT_DIR/dependency-conflicts-${DATE_STAMP}.json"
-SUMMARY="$REPORT_DIR/dependency-conflicts-summary.txt"
+# Colors for output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
 
-mkdir -p "$REPORT_DIR"
+# Input file (default to stdin)
+INPUT_FILE="${1:--}"
 
-# ── colour helpers (disabled in CI / piped output) ──────────────────────────
-if [[ -t 1 ]]; then
-    RED='\033[0;31m'; GRN='\033[0;32m'; YLW='\033[0;33m'
-    CYN='\033[0;36m'; BLD='\033[1m'; RST='\033[0m'
+# Temporary file for processing
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
+
+# Read input into temp file
+if [[ "$INPUT_FILE" == "-" ]]; then
+    cat > "$TEMP_FILE"
 else
-    RED=''; GRN=''; YLW=''; CYN=''; BLD=''; RST=''
+    cp "$INPUT_FILE" "$TEMP_FILE"
 fi
 
-info()  { echo -e "${CYN}[INFO]${RST}  $*"; }
-warn()  { echo -e "${YLW}[WARN]${RST}  $*"; }
-err()   { echo -e "${RED}[ERR]${RST}   $*" >&2; }
-ok()    { echo -e "${GRN}[OK]${RST}    $*"; }
+echo -e "${YELLOW}=== Maven Dependency Conflict Analysis ===${NC}"
+echo ""
 
-# ── Step 1: Generate verbose dependency tree ────────────────────────────────
-info "Generating verbose dependency tree (this takes 60-90 seconds)..."
+# Regex pattern explanation:
+# Format: (groupId:artifactId:type:version:scope - omitted for conflict with version)
+# Captures: group:artifact, type, current_version, current_scope, other_version
+# The scope is captured from the current dependency (before "omitted for conflict")
+# Note: Maven doesn't include scope for the conflicting version in "omitted for conflict" messages
+#
+# Example input: |  \- (jakarta.transaction:jakarta.transaction-api:jar:1.3.3:compile - omitted for conflict with 2.0.1)
+# Pattern breakdown:
+#   \(([a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+)   - Opening paren and capture groupId:artifactId
+#   :([a-zA-Z0-9.-]+)                      - Type (jar, war, pom, etc.)
+#   :([0-9a-zA-Z.-]+)                      - Version
+#   :([a-zA-Z]+)                           - Scope (compile, test, runtime, provided, etc.)
+#   [^)]*omitted for conflict with          - Text between scope and conflict marker
+#   ([0-9a-zA-Z.-]+)\)                     - Conflicting version and closing paren
 
-cd "$PROJECT_ROOT"
-if ! mvn -B -ntp dependency:tree \
-        -Dverbose \
-        -DoutputType=text \
-        -DoutputFile="$TREE_RAW" \
-        -DappendOutput=true \
-        > "$REPORT_DIR/mvn-dep-tree.log" 2>&1; then
-    warn "mvn dependency:tree returned non-zero; partial results may be available."
-    warn "Check $REPORT_DIR/mvn-dep-tree.log for details."
-fi
+CONFLICT_PATTERN='\(([a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+):([a-zA-Z0-9.-]+):([0-9a-zA-Z._-]+):([a-zA-Z]+)[^)]*omitted for conflict with ([0-9a-zA-Z._-]+)\)'
 
-if [[ ! -s "$TREE_RAW" ]]; then
-    # Fallback: aggregate per-module output files
-    info "Aggregating per-module dependency tree files..."
-    : > "$TREE_RAW"
-    for mod_dir in "$PROJECT_ROOT"/yawl-*/; do
-        mod_name=$(basename "$mod_dir")
-        tree_file="$mod_dir/target/dependency-tree.txt"
-        if [[ -f "$tree_file" ]]; then
-            echo "=== MODULE: $mod_name ===" >> "$TREE_RAW"
-            cat "$tree_file" >> "$TREE_RAW"
-            echo "" >> "$TREE_RAW"
+# Extract and parse conflicts
+echo -e "${YELLOW}Detected Conflicts:${NC}"
+echo ""
+
+# Temporary file for conflict output
+CONFLICT_OUTPUT=$(mktemp)
+trap "rm -f $TEMP_FILE $CONFLICT_OUTPUT" EXIT
+
+# Process conflicts - capture group:artifact:type:version:scope and conflicting version
+# The pattern captures:
+#   \1 = groupId:artifactId
+#   \2 = type (jar, war, pom, etc.)
+#   \3 = current_version
+#   \4 = current_scope
+#   \5 = conflicting_version
+while IFS= read -r line; do
+    if [[ "$line" =~ $CONFLICT_PATTERN ]]; then
+        GROUP_ARTIFACT="${BASH_REMATCH[1]}"
+        DEP_TYPE="${BASH_REMATCH[2]}"
+        CURRENT_VERSION="${BASH_REMATCH[3]}"
+        CURRENT_SCOPE="${BASH_REMATCH[4]}"
+        CONFLICTING_VERSION="${BASH_REMATCH[5]}"
+
+        # Output in format: group:artifact:type:version:scope conflicts with version:scope
+        # Note: Maven's "omitted for conflict with" only reports version, not scope
+        # We indicate this by showing the known scope vs unknown scope
+        echo -e "  ${RED}conflict:${NC} ${GROUP_ARTIFACT}:${DEP_TYPE}:${CURRENT_VERSION}:${CURRENT_SCOPE} conflicts with ${CONFLICTING_VERSION}:<scope-unknown>"
+    fi
+done < "$TEMP_FILE" | sort -u > "$CONFLICT_OUTPUT"
+
+# Display conflicts and count
+cat "$CONFLICT_OUTPUT"
+CONFLICT_COUNT=$(wc -l < "$CONFLICT_OUTPUT" | tr -d ' ')
+
+echo ""
+echo -e "${YELLOW}Summary:${NC}"
+echo "  Total unique conflicts: $CONFLICT_COUNT"
+echo ""
+
+# Additional analysis: Find duplicates with different scopes
+echo -e "${YELLOW}Dependencies with Multiple Scope Declarations:${NC}"
+echo ""
+
+# Pattern for any dependency declaration (not just conflicts)
+# Captures: groupId:artifactId:version:scope
+DEP_PATTERN='([a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+):[a-zA-Z0-9.-]+:([0-9a-zA-Z.-]+):([a-zA-Z]+)'
+
+# Extract all dependencies with scope
+grep -oE '[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+:[a-zA-Z0-9.-]+:[0-9a-zA-Z.-]+:[a-zA-Z]+' "$TEMP_FILE" 2>/dev/null | \
+    sort | uniq -c | sort -rn | \
+    while read -r count dep; do
+        if [[ $count -gt 1 ]]; then
+            echo -e "  ${YELLOW}$count occurrences:${NC} $dep"
         fi
     done
-fi
 
-if [[ ! -s "$TREE_RAW" ]]; then
-    # Second fallback: capture stdout directly
-    info "Using stdout capture fallback..."
-    mvn -B -ntp dependency:tree -Dverbose 2>/dev/null > "$TREE_RAW" || true
-fi
+echo ""
 
-TOTAL_LINES=$(wc -l < "$TREE_RAW")
-info "Dependency tree: $TOTAL_LINES lines"
+# Group conflicts by artifact for easier review
+echo -e "${YELLOW}Conflicts Grouped by Artifact:${NC}"
+echo ""
 
-# ── Step 2: Extract conflict lines ─────────────────────────────────────────
-info "Extracting conflicts (omitted for conflict, version managed)..."
-
-# Lines matching "omitted for conflict" or "version managed from"
-CONFLICT_PATTERN="omitted for conflict|version managed from|managed from"
-
-CONFLICT_COUNT=$(grep -ciE "$CONFLICT_PATTERN" "$TREE_RAW" 2>/dev/null || echo 0)
-info "Found $CONFLICT_COUNT conflict mediation lines"
-
-# ── Step 3: Parse and structure conflicts ───────────────────────────────────
-info "Parsing conflict details..."
-
-# Build CSV: artifact,requested_version,resolved_version,module,conflict_type
-echo "artifact,requested_version,resolved_version,module,conflict_type" > "$CONFLICTS_CSV"
-
-current_module="unknown"
+# Use awk for grouping (compatible with older bash versions)
+# Extract: groupId:artifactId, version:scope, conflicting_version
 while IFS= read -r line; do
-    # Track module boundaries
-    if [[ "$line" =~ ===\ MODULE:\ ([a-zA-Z0-9_-]+) ]]; then
-        current_module="${BASH_REMATCH[1]}"
-        continue
+    if [[ "$line" =~ $CONFLICT_PATTERN ]]; then
+        GROUP_ARTIFACT="${BASH_REMATCH[1]}"
+        CURRENT_VERSION="${BASH_REMATCH[3]}"
+        CURRENT_SCOPE="${BASH_REMATCH[4]}"
+        CONFLICTING_VERSION="${BASH_REMATCH[5]}"
+        echo "${GROUP_ARTIFACT}|${CURRENT_VERSION}:${CURRENT_SCOPE}|${CONFLICTING_VERSION}"
     fi
-    # Detect module from artifact root line (e.g., "org.yawlfoundation:yawl-engine:jar:6.0.0-Alpha")
-    if [[ "$line" =~ org\.yawlfoundation:([a-zA-Z0-9_-]+):.*:6\.0\.0 ]]; then
-        current_module="${BASH_REMATCH[1]}"
-        continue
-    fi
-
-    # Pattern 1: "omitted for conflict with X.Y.Z"
-    # e.g., "(commons-io:commons-io:jar:2.11.0 - omitted for conflict with 2.21.0)"
-    if [[ "$line" =~ \(([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+):[a-z]+:([0-9a-zA-Z._-]+)\ -\ omitted\ for\ conflict\ with\ ([0-9a-zA-Z._-]+)\) ]]; then
-        group="${BASH_REMATCH[1]}"
-        artifact="${BASH_REMATCH[2]}"
-        requested="${BASH_REMATCH[3]}"
-        resolved="${BASH_REMATCH[4]}"
-        echo "${group}:${artifact},${requested},${resolved},${current_module},conflict" >> "$CONFLICTS_CSV"
-        continue
-    fi
-
-    # Pattern 2: "version managed from X.Y.Z"
-    # e.g., "commons-codec:commons-codec:jar:1.15 (version managed from 1.11)"
-    if [[ "$line" =~ ([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+):[a-z]+:([0-9a-zA-Z._-]+).*\(version\ managed\ from\ ([0-9a-zA-Z._-]+)\) ]]; then
-        group="${BASH_REMATCH[1]}"
-        artifact="${BASH_REMATCH[2]}"
-        resolved="${BASH_REMATCH[3]}"
-        requested="${BASH_REMATCH[4]}"
-        echo "${group}:${artifact},${requested},${resolved},${current_module},managed" >> "$CONFLICTS_CSV"
-        continue
-    fi
-
-    # Pattern 3: "managed from X.Y.Z" (alternate form)
-    if [[ "$line" =~ ([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+):[a-z]+:([0-9a-zA-Z._-]+).*managed\ from\ ([0-9a-zA-Z._-]+) ]]; then
-        group="${BASH_REMATCH[1]}"
-        artifact="${BASH_REMATCH[2]}"
-        resolved="${BASH_REMATCH[3]}"
-        requested="${BASH_REMATCH[4]}"
-        echo "${group}:${artifact},${requested},${resolved},${current_module},managed" >> "$CONFLICTS_CSV"
-        continue
-    fi
-done < "$TREE_RAW"
-
-CSV_LINES=$(($(wc -l < "$CONFLICTS_CSV") - 1))
-info "Parsed $CSV_LINES structured conflict entries"
-
-# ── Step 4: Generate ranked summary ────────────────────────────────────────
-info "Generating conflict ranking..."
-
+done < "$TEMP_FILE" | sort -u | awk -F'|' '
 {
-    echo "============================================================================"
-    echo "YAWL DEPENDENCY CONFLICT ANALYSIS - $DATE_STAMP"
-    echo "============================================================================"
-    echo ""
-    echo "Total conflict mediation lines in tree: $CONFLICT_COUNT"
-    echo "Parsed structured entries:              $CSV_LINES"
-    echo ""
-    echo "── TOP 30 MOST-CONFLICTED ARTIFACTS ──────────────────────────────────────"
-    echo ""
-    echo "  Count  Artifact"
-    echo "  -----  --------"
+    artifact = $1
+    version_scope = $2
+    conflicting = $3
+    value = version_scope " vs " conflicting
 
-    if [[ $CSV_LINES -gt 0 ]]; then
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f1 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | head -30 \
-            | while read -r count artifact; do
-                printf "  %5d  %s\n" "$count" "$artifact"
-            done
-    fi
+    if (artifact in conflicts) {
+        if (index(conflicts[artifact], value) == 0) {
+            conflicts[artifact] = conflicts[artifact] ", " value
+        }
+    } else {
+        conflicts[artifact] = value
+        artifacts[++n] = artifact
+    }
+}
+END {
+    for (i = 1; i <= n; i++) {
+        printf "  \033[0;32m%s\033[0m\n", artifacts[i]
+        printf "    %s\n\n", conflicts[artifacts[i]]
+    }
+}'
 
-    echo ""
-    echo "── CONFLICT TYPES BREAKDOWN ──────────────────────────────────────────────"
-    echo ""
-    if [[ $CSV_LINES -gt 0 ]]; then
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f5 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | while read -r count ctype; do
-                printf "  %5d  %s\n" "$count" "$ctype"
-            done
-    fi
-
-    echo ""
-    echo "── CONFLICTS PER MODULE ──────────────────────────────────────────────────"
-    echo ""
-    if [[ $CSV_LINES -gt 0 ]]; then
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f4 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | while read -r count mod; do
-                printf "  %5d  %s\n" "$count" "$mod"
-            done
-    fi
-
-    echo ""
-    echo "── VERSION SPREAD (artifacts with 3+ distinct requested versions) ────────"
-    echo ""
-    if [[ $CSV_LINES -gt 0 ]]; then
-        tail -n +2 "$CONFLICTS_CSV" \
-            | awk -F',' '{print $1","$2}' \
-            | sort -u \
-            | cut -d',' -f1 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | awk '$1 >= 3 {printf "  %5d versions  %s\n", $1, $2}'
-    fi
-
-} > "$SUMMARY"
-
-cat "$SUMMARY"
-
-# ── Step 5: Generate Markdown report ───────────────────────────────────────
-info "Generating Markdown report..."
-
-{
-    echo "# YAWL Dependency Conflict Analysis"
-    echo ""
-    echo "**Date:** $DATE_STAMP"
-    echo "**Total conflicts requiring mediation:** $CONFLICT_COUNT"
-    echo "**Parsed structured entries:** $CSV_LINES"
-    echo ""
-    echo "## Summary"
-    echo ""
-    echo "Maven dependency mediation resolved **$CONFLICT_COUNT** version conflicts across"
-    echo "13 modules. This report identifies which artifacts cause the most conflicts,"
-    echo "which modules are most affected, and where version spread is highest."
-    echo ""
-    echo "## Top Conflicted Artifacts"
-    echo ""
-    echo "| Rank | Artifact | Conflicts | Versions Seen |"
-    echo "|------|----------|-----------|---------------|"
-
-    if [[ $CSV_LINES -gt 0 ]]; then
-        rank=0
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f1 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | head -30 \
-            | while read -r count artifact; do
-                rank=$((rank + 1))
-                versions=$(tail -n +2 "$CONFLICTS_CSV" \
-                    | grep "^${artifact}," \
-                    | cut -d',' -f2,3 \
-                    | tr ',' '\n' \
-                    | sort -uV \
-                    | tr '\n' ' ')
-                echo "| $rank | \`$artifact\` | $count | $versions |"
-            done
-    fi
-
-    echo ""
-    echo "## Conflicts by Module"
-    echo ""
-    echo "| Module | Conflict Count | Primary Culprits |"
-    echo "|--------|---------------|-------------------|"
-
-    if [[ $CSV_LINES -gt 0 ]]; then
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f4 \
-            | sort \
-            | uniq -c \
-            | sort -rn \
-            | while read -r count mod; do
-                top_culprits=$(tail -n +2 "$CONFLICTS_CSV" \
-                    | grep ",${mod}," \
-                    | cut -d',' -f1 \
-                    | sort \
-                    | uniq -c \
-                    | sort -rn \
-                    | head -3 \
-                    | awk '{print $2}' \
-                    | tr '\n' ', ' \
-                    | sed 's/,$//')
-                echo "| \`$mod\` | $count | $top_culprits |"
-            done
-    fi
-
-    echo ""
-    echo "## Conflict Type Distribution"
-    echo ""
-    echo "| Type | Count | Description |"
-    echo "|------|-------|-------------|"
-    echo "| \`conflict\` | $(tail -n +2 "$CONFLICTS_CSV" 2>/dev/null | grep -c ',conflict$' || echo 0) | Transitive dependency pulled different version; Maven chose nearest/first |"
-    echo "| \`managed\` | $(tail -n +2 "$CONFLICTS_CSV" 2>/dev/null | grep -c ',managed$' || echo 0) | \`dependencyManagement\` in parent POM forced a specific version |"
-    echo ""
-    echo "## Remediation Priority"
-    echo ""
-    echo "Artifacts should be addressed in order of conflict count. For each:"
-    echo ""
-    echo "1. **Already managed** (type=managed): Parent POM is correctly pinning. No action needed."
-    echo "2. **Not managed** (type=conflict): Add to parent \`<dependencyManagement>\` to pin version."
-    echo "3. **High version spread**: Multiple incompatible versions pulled transitively."
-    echo "   Consider adding \`<exclusions>\` on the dependency that pulls the wrong version."
-    echo ""
-    echo "## Files Generated"
-    echo ""
-    echo "| File | Description |"
-    echo "|------|-------------|"
-    echo "| \`reports/raw-dependency-tree-${DATE_STAMP}.txt\` | Full verbose dependency tree |"
-    echo "| \`reports/conflicts-${DATE_STAMP}.csv\` | Structured conflict data (CSV) |"
-    echo "| \`reports/dependency-conflicts-${DATE_STAMP}.json\` | Machine-readable conflict data |"
-    echo "| \`reports/dependency-conflicts-summary.txt\` | Console-friendly summary |"
-
-} > "$REPORT_MD"
-
-# ── Step 6: Generate JSON report ───────────────────────────────────────────
-info "Generating JSON report..."
-
-{
-    echo "{"
-    echo "  \"date\": \"$DATE_STAMP\","
-    echo "  \"total_conflict_lines\": $CONFLICT_COUNT,"
-    echo "  \"parsed_entries\": $CSV_LINES,"
-    echo "  \"artifacts\": ["
-
-    if [[ $CSV_LINES -gt 0 ]]; then
-        first=true
-        tail -n +2 "$CONFLICTS_CSV" \
-            | cut -d',' -f1 \
-            | sort -u \
-            | while read -r artifact; do
-                count=$(tail -n +2 "$CONFLICTS_CSV" | grep -c "^${artifact}," || echo 0)
-                versions=$(tail -n +2 "$CONFLICTS_CSV" \
-                    | grep "^${artifact}," \
-                    | cut -d',' -f2,3 \
-                    | tr ',' '\n' \
-                    | sort -uV \
-                    | tr '\n' ',' \
-                    | sed 's/,$//')
-                modules=$(tail -n +2 "$CONFLICTS_CSV" \
-                    | grep "^${artifact}," \
-                    | cut -d',' -f4 \
-                    | sort -u \
-                    | tr '\n' ',' \
-                    | sed 's/,$//')
-
-                if [[ "$first" == "true" ]]; then
-                    first=false
-                else
-                    echo ","
-                fi
-                printf '    {"artifact": "%s", "conflict_count": %d, "versions": [%s], "modules": [%s]}' \
-                    "$artifact" "$count" \
-                    "$(echo "$versions" | sed 's/\([^,]*\)/"\1"/g')" \
-                    "$(echo "$modules" | sed 's/\([^,]*\)/"\1"/g')"
-            done
-    fi
-
-    echo ""
-    echo "  ]"
-    echo "}"
-} > "$REPORT_JSON"
-
-# ── Done ────────────────────────────────────────────────────────────────────
-echo ""
-ok "Reports generated in $REPORT_DIR/"
-ok "  - $REPORT_MD"
-ok "  - $REPORT_JSON"
-ok "  - $SUMMARY"
-ok "  - $CONFLICTS_CSV"
-echo ""
-info "Total conflicts requiring mediation: ${BLD}$CONFLICT_COUNT${RST}"
+echo -e "${GREEN}Analysis complete.${NC}"

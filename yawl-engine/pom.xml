@@ -23,7 +23,6 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-elements</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Jakarta Persistence -->
@@ -34,6 +33,13 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jakarta REST (JAX-RS) for REST resources -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -101,10 +107,90 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- Metrics - Micrometer for workflow metrics -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Actuator for health indicators -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JSON Processing - Jackson for REST -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- OpenTelemetry for observability -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-logging</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -209,21 +295,29 @@
                             <excludes>
                                 <!-- Exclude tests from other modules -->
                                 <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/chaos/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/containers/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/elements/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/integration/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/logging/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/observability/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/parametrized/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/quality/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/reporting/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/schema/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/util/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/workflow/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/wsif/**</exclude>
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.xsd</exclude>
                                 <exclude>**/*.properties</exclude>

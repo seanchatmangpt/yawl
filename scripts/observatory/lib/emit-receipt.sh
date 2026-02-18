@@ -26,29 +26,35 @@ emit_receipt() {
     local root_pom_sha
     root_pom_sha=$(sha256_of_file "$REPO_ROOT/pom.xml")
 
-    # Compute fact checksums
-    local -a fact_names=("modules" "reactor" "shared-src" "dual-family" "duplicates" "deps-conflicts" "tests" "gates" "maven-hazards")
+    # List fact files
+    local -a fact_files=()
+    while IFS= read -r f; do
+        [[ -n "$f" ]] && fact_files+=("$(basename "$f")")
+    done < <(ls "$FACTS_DIR"/*.json 2>/dev/null)
+
+    # List diagram files
+    local -a diagram_files=()
+    while IFS= read -r f; do
+        [[ -n "$f" ]] && diagram_files+=("$(basename "$f")")
+    done < <(ls "$DIAGRAMS_DIR"/*.mmd 2>/dev/null)
+
+    # Build fact checksums
     local facts_sha_entries=""
-    for fn in "${fact_names[@]}"; do
+    for fn in "${fact_files[@]}"; do
         local sha
-        sha=$(sha256_of_file "$FACTS_DIR/${fn}.json")
+        sha=$(sha256_of_file "$FACTS_DIR/$fn")
         [[ -n "$facts_sha_entries" ]] && facts_sha_entries+=","
-        facts_sha_entries+=$'\n'"      \"${fn}.json\": \"${sha}\""
+        facts_sha_entries+=$'\n'"      \"${fn}\": \"${sha}\""
     done
 
-    # Compute diagram checksums
-    local -a diagram_names=("10-maven-reactor.mmd" "15-shared-src-map.mmd" "16-dual-family-map.mmd" "17-deps-conflicts.mmd" "30-test-topology.mmd" "40-ci-gates.mmd" "50-risk-surfaces.mmd")
+    # Build diagram checksums
     local diagrams_sha_entries=""
-    for dn in "${diagram_names[@]}"; do
+    for dn in "${diagram_files[@]}"; do
         local sha
-        sha=$(sha256_of_file "$DIAGRAMS_DIR/${dn}")
+        sha=$(sha256_of_file "$DIAGRAMS_DIR/$dn")
         [[ -n "$diagrams_sha_entries" ]] && diagrams_sha_entries+=","
         diagrams_sha_entries+=$'\n'"      \"${dn}\": \"${sha}\""
     done
-
-    # YAWL XML checksum
-    local yawl_sha
-    yawl_sha=$(sha256_of_file "$YAWL_DIR/build-and-test.yawl.xml")
 
     # Build refusals JSON array
     local refusals_json=""
@@ -67,7 +73,7 @@ emit_receipt() {
         done
     fi
 
-    cat > "$out" << RECEIPT_EOF
+    cat > "$out" << RECEIPT_JSON
 {
   "run_id": "${run_id}",
   "status": "${status}",
@@ -86,8 +92,8 @@ emit_receipt() {
   "inputs": {
     "root_pom_sha256": "${root_pom_sha}"
   },
-  "facts_emitted": $(json_arr "${fact_names[@]}"),
-  "diagrams_emitted": $(json_arr "${diagram_names[@]}" "yawl/build-and-test.yawl.xml"),
+  "facts_emitted": $(json_arr "${fact_files[@]}"),
+  "diagrams_emitted": $(json_arr "${diagram_files[@]}"),
   "refusals": [${refusals_json}
   ],
   "warnings": [${warnings_json}
@@ -97,8 +103,7 @@ emit_receipt() {
     "facts_sha256": {${facts_sha_entries}
     },
     "diagrams_sha256": {${diagrams_sha_entries}
-    },
-    "yawl_xml_sha256": "${yawl_sha}"
+    }
   },
   "timing_ms": {
     "total": ${total_elapsed},
@@ -107,7 +112,7 @@ emit_receipt() {
     "yawl_xml": ${YAWL_XML_ELAPSED:-0}
   }
 }
-RECEIPT_EOF
+RECEIPT_JSON
 
     log_ok "Receipt written: status=${status} refusals=${#REFUSALS[@]} warnings=${#WARNINGS[@]}"
 }
@@ -122,81 +127,80 @@ emit_index() {
     [[ ${#REFUSALS[@]} -gt 0 ]] && status="RED"
     [[ ${#WARNINGS[@]} -gt 0 && "$status" == "GREEN" ]] && status="YELLOW"
 
-    cat > "$out" << INDEX_EOF
+    # Count outputs
+    local facts_count diagrams_count
+    facts_count=$(ls "$FACTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+    diagrams_count=$(ls "$DIAGRAMS_DIR"/*.mmd 2>/dev/null | wc -l | tr -d ' ')
+
+    # Get health score from static analysis if available
+    local health_score="N/A"
+    if [[ -f "$FACTS_DIR/static-analysis.json" ]]; then
+        health_score=$(python3 -c "import json; print(json.load(open('$FACTS_DIR/static-analysis.json')).get('health_score', 'N/A'))" 2>/dev/null || echo "N/A")
+    fi
+
+    cat > "$out" << INDEX_MD
 # v6 Observatory (Latest)
 
-Run: ${run_id}  Status: ${status}
+Run: ${run_id}  Status: ${status}  Health Score: ${health_score}
 
 ## Receipt
-- [receipts/observatory.json](receipts/observatory.json)
+- [receipts/observatory.json](receipts/observatory.json) — Verification receipt
 
-## Facts
-- [facts/modules.json](facts/modules.json) — Module inventory (names, paths, source strategy)
-- [facts/reactor.json](facts/reactor.json) — Maven reactor order and inter-module dependencies
-- [facts/shared-src.json](facts/shared-src.json) — Shared source roots and ownership ambiguities
-- [facts/dual-family.json](facts/dual-family.json) — Stateful/stateless mirror class families
-- [facts/duplicates.json](facts/duplicates.json) — Duplicate FQCNs within and across artifacts
-- [facts/deps-conflicts.json](facts/deps-conflicts.json) — Dependency version convergence analysis
-- [facts/tests.json](facts/tests.json) — Test topology (surefire/failsafe, counts per module)
-- [facts/gates.json](facts/gates.json) — Quality gates (SpotBugs, PMD, Checkstyle, JaCoCo)
-- [facts/maven-hazards.json](facts/maven-hazards.json) — Maven cache hazards and build traps
+## Facts (${facts_count} files)
 
-## Diagrams
-- [diagrams/10-maven-reactor.mmd](diagrams/10-maven-reactor.mmd) — Maven reactor dependency graph
-- [diagrams/15-shared-src-map.mmd](diagrams/15-shared-src-map.mmd) — Shared source ownership map
-- [diagrams/16-dual-family-map.mmd](diagrams/16-dual-family-map.mmd) — Stateful/stateless mirror families
-- [diagrams/17-deps-conflicts.mmd](diagrams/17-deps-conflicts.mmd) — Dependency conflict hotspot map
-- [diagrams/30-test-topology.mmd](diagrams/30-test-topology.mmd) — Test distribution across modules
-- [diagrams/40-ci-gates.mmd](diagrams/40-ci-gates.mmd) — CI quality gate lifecycle
-- [diagrams/50-risk-surfaces.mmd](diagrams/50-risk-surfaces.mmd) — FMEA risk surface analysis
+### Core Analysis
+- [facts/modules.json](facts/modules.json) — Module inventory
+- [facts/reactor.json](facts/reactor.json) — Maven reactor order
+- [facts/integration.json](facts/integration.json) — MCP/A2A integration status
+
+### Static Analysis
+- [facts/static-analysis.json](facts/static-analysis.json) — Aggregated code health summary
+- [facts/spotbugs-findings.json](facts/spotbugs-findings.json) — SpotBugs bug findings
+- [facts/pmd-violations.json](facts/pmd-violations.json) — PMD rule violations
+- [facts/checkstyle-warnings.json](facts/checkstyle-warnings.json) — Checkstyle warnings
+
+## Diagrams (${diagrams_count} files)
+
+### Architecture
+- [diagrams/10-maven-reactor.mmd](diagrams/10-maven-reactor.mmd) — Maven reactor graph
+
+### Code Health
+- [diagrams/60-code-health-dashboard.mmd](diagrams/60-code-health-dashboard.mmd) — Code health dashboard
+- [diagrams/61-static-analysis-trends.mmd](diagrams/61-static-analysis-trends.mmd) — Trend visualization
+
+### Integration
+- [diagrams/70-mcp-integration.mmd](diagrams/70-mcp-integration.mmd) — MCP integration flow
+- [diagrams/71-a2a-integration.mmd](diagrams/71-a2a-integration.mmd) — A2A integration flow
 
 ## YAWL Workflow
 - [diagrams/yawl/build-and-test.yawl.xml](diagrams/yawl/build-and-test.yawl.xml) — Build lifecycle as YAWL net
 
-## FMEA Risk Priority Numbers
+## How to Generate Static Analysis Reports
 
-| ID | Failure Mode | S | O | D | RPN | Mitigation |
-|----|-------------|---|---|---|-----|------------|
-| FM1 | Shared Source Path Confusion | 9 | 8 | 3 | 216 | shared-src.json + 15-shared-src-map.mmd |
-| FM2 | Dual-Family Class Confusion | 8 | 7 | 4 | 224 | dual-family.json + 16-dual-family-map.mmd |
-| FM3 | Dependency Version Skew | 7 | 6 | 5 | 210 | deps-conflicts.json + 17-deps-conflicts.mmd |
-| FM4 | Maven Cached Missing Artifacts | 6 | 5 | 2 | 60 | maven-hazards.json |
-| FM5 | Test Selection Ambiguity | 7 | 4 | 3 | 84 | tests.json + 30-test-topology.mmd |
-| FM6 | Gate Bypass via Skip Flags | 8 | 3 | 6 | 144 | gates.json + 40-ci-gates.mmd |
-| FM7 | Reactor Order Violation | 5 | 3 | 7 | 105 | reactor.json + 10-maven-reactor.mmd |
+Before running the observatory with static analysis, generate the tool reports:
 
-**S**=Severity **O**=Occurrence **D**=Detection (1=best, 10=worst) **RPN**=S*O*D
+\`\`\`bash
+# Generate all static analysis reports
+mvn -P ci spotbugs:spotbugs pmd:pmd checkstyle:checkstyle
 
-## How Mermaid Diagrams Solve Path Confusion
+# Then run the observatory
+./scripts/observatory/observatory.sh
+\`\`\`
 
-The 7 Mermaid diagrams provide **visual topology truth** that eliminates guessing:
+## Code Health Scoring
 
-1. **10-maven-reactor.mmd** — Shows which modules depend on which, preventing wrong build order
-2. **15-shared-src-map.mmd** — Maps every module to its actual source root and include filters,
-   so agents know exactly which files belong to which module
-3. **16-dual-family-map.mmd** — Explicitly maps every stateful class to its stateless mirror,
-   preventing edits to the wrong variant
-4. **17-deps-conflicts.mmd** — Shows dependency management categories and conflict hotspots,
-   so version issues are visible before they cause runtime errors
-5. **30-test-topology.mmd** — Shows which modules have tests and where they live,
-   preventing test selection errors
-6. **40-ci-gates.mmd** — Shows the full gate lifecycle and what skip flags disable,
-   preventing accidental gate bypass
-7. **50-risk-surfaces.mmd** — FMEA risk surface map with RPN scores and mitigations
+The health score (0-100) is calculated as:
+\`\`\`
+health_score = 100 - (spotbugs * 3 + pmd * 2 + checkstyle * 1)
+\`\`\`
 
-## How YAWL XML Solves Build Workflow Ambiguity
+- **GREEN**: Score >= 80
+- **YELLOW**: Score 60-79
+- **RED**: Score < 60
 
-The YAWL XML specification (build-and-test.yawl.xml) models the build lifecycle as a
-Petri-net-based workflow with:
-
-- **Input/Output conditions** bounding the lifecycle
-- **Sequential tasks** (Validate -> Compile -> UnitTests) enforcing order
-- **Parallel AND-split** for quality gates (SpotBugs, PMD, Checkstyle run concurrently)
-- **AND-join** synchronization before integration tests
-- **Documentation** on each task linking to specific refusal codes
-
-This makes the build process **executable** and **verifiable** — not just documented.
-INDEX_EOF
+---
+Generated by YAWL V6 Observatory
+INDEX_MD
 
     log_ok "INDEX.md written"
 }
@@ -204,8 +208,17 @@ INDEX_EOF
 # ── Main dispatcher ──────────────────────────────────────────────────────
 emit_receipt_and_index() {
     timer_start
+    record_memory "receipt_start"
+
+    # Generate performance reports before receipt
+    generate_performance_report
+    update_performance_history
+    analyze_diagram_speed
+    generate_performance_summary
+
     emit_receipt
     emit_index
     RECEIPT_ELAPSED=$(timer_elapsed_ms)
+    record_phase_timing "receipt" "$RECEIPT_ELAPSED"
     log_ok "Receipt and INDEX emitted in ${RECEIPT_ELAPSED}ms"
 }

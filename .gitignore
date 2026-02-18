@@ -98,6 +98,8 @@ nb-configuration.xml
 ehthumbs.db
 Thumbs.db
 desktop.ini
+.fseventsd
+.VolumeIcon.icns
 
 # =============================================================================
 # Local developer environment
@@ -143,9 +145,13 @@ logs/
 
 # =============================================================================
 # YAWL specification generated schemas (derived from XSD, not source)
+# Exclude generated XSDs but keep official YAWL schemas
 # =============================================================================
 exampleSpecs/xml/*.xsd
 src/org/yawlfoundation/yawl/unmarshal/*.xsd
+# Keep official YAWL schemas
+!schema/YAWL_Schema*.xsd
+!schema/**/*.xsd
 
 # =============================================================================
 # Docker runtime state
@@ -202,6 +208,13 @@ pom.xml.backup
 pom-monolithic-backup.xml
 
 # =============================================================================
+# Editor temporary files
+# =============================================================================
+*.swp
+*.swo
+*~
+
+# =============================================================================
 # Performance reports (generated)
 # =============================================================================
 performance-reports/*.json
@@ -218,3 +231,10 @@ findbugs.xml
 # =============================================================================
 checksums/*.sha256
 checksums/*.md5
+
+# =============================================================================
+# Observatory output (generated analysis reports)
+# =============================================================================
+docs/v6/latest/
+docs/v6/performance-history/
+docs/v6/static-analysis-history/

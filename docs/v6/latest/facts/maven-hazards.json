@@ -1,5 +1,0 @@
-{
-  "hazards": [
-    {"code":"H_LOGGING_BRIDGE_CONFLICT","artifact":"log4j-to-slf4j vs log4j-slf4j2-impl","message":"Both logging bridges present; ensure exclusions are in place per module"}
-  ]
-}

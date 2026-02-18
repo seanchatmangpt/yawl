@@ -66,7 +66,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
 
         <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
@@ -103,7 +103,7 @@
         <!-- Apache Commons                                                     -->
         <!-- ================================================================ -->
         <commons.lang3.version>3.20.0</commons.lang3.version>
-        <commons.io.version>2.21.0</commons.io.version>
+        <commons.io.version>2.18.0</commons.io.version>
         <commons.codec.version>1.19.0</commons.codec.version>
         <commons.vfs2.version>2.10.0</commons.vfs2.version>
         <commons.collections4.version>4.5.0-M2</commons.collections4.version>
@@ -192,6 +192,7 @@
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <junit.platform.version>6.0.3</junit.platform.version>
         <hamcrest.version>3.0</hamcrest.version>
+        <quartz.version>2.5.0</quartz.version>
         <xmlunit.version>1.6</xmlunit.version>
         <jmh.version>1.37</jmh.version>
 
@@ -273,6 +274,65 @@
          ====================================================================== -->
     <dependencyManagement>
         <dependencies>
+
+            <!-- ============================================================== -->
+            <!-- 0. YAWL INTERNAL MODULES                                      -->
+            <!-- ============================================================== -->
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-utilities</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-elements</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-engine</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-authentication</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-stateless</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-resourcing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-worklet</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-scheduling</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-integration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-monitoring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- ============================================================== -->
             <!-- 0. SPRING BOOT STARTERS                                       -->
@@ -412,11 +472,6 @@
             <!-- commons-io: legacy groupId still used by many transitive deps -->
             <dependency>
                 <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${commons.io.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons.io.version}</version>
             </dependency>
@@ -741,6 +796,38 @@
             <!--     Semconv and Micrometer are not in that BOM.               -->
             <!-- ============================================================== -->
 
+            <!-- OpenTelemetry Core - explicit versions for offline builds -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk-trace</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-otlp</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-logging</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-api</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
@@ -872,6 +959,18 @@
                 <version>${junit.platform.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
 
             <!-- Hamcrest matchers -->
             <dependency>
@@ -879,6 +978,13 @@
                 <artifactId>hamcrest-core</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Quartz Scheduler -->
+            <dependency>
+                <groupId>org.quartz-scheduler</groupId>
+                <artifactId>quartz</artifactId>
+                <version>${quartz.version}</version>
             </dependency>
 
             <!-- XMLUnit for XML comparison in tests -->
@@ -1366,7 +1472,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.release>21</maven.compiler.release>
+                <maven.compiler.release>25</maven.compiler.release>
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
@@ -1378,7 +1484,7 @@
         <profile>
             <id>java24</id>
             <properties>
-                <maven.compiler.release>24</maven.compiler.release>
+                <maven.compiler.release>25</maven.compiler.release>
                 <jacoco.skip>true</jacoco.skip>
             </properties>
             <build>

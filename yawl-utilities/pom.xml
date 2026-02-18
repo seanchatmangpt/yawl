@@ -9,14 +9,14 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-    <relativePath>../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-utilities</artifactId>
     <packaging>jar</packaging>
 
     <name>YAWL Utilities</name>
-    <description>Common utilities - authentication, logging, schema handling, unmarshal tools</description>
+    <description>Common utilities - base authentication, logging, schema handling, unmarshal tools, exceptions</description>
 
     <dependencies>
         <!-- Apache Commons -->
@@ -32,11 +32,43 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
+
+        <!-- JWT Authentication (required by JwtManager) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- XML Processing -->
         <dependency>
             <groupId>org.jdom</groupId>
             <artifactId>jdom2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -45,6 +77,53 @@
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- SOAP API (required by SoapClient) -->
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Jakarta Persistence (required by HibernateEngine) -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+
+        <!-- Jakarta Servlet (required by CharsetFilter, HttpURLValidator) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+
+        <!-- Hibernate ORM (required by HibernateEngine, HikariCPConnectionProvider) -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+        </dependency>
+
+        <!-- Database Connection Pooling -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <!-- Database Drivers (for HibernateEngine testing and runtime) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Logging -->
@@ -56,15 +135,54 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
         </dependency>
+
+        <!-- Email (required by MailSettings) -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <!-- Testing -->
+        <!-- Apache Ant (required by CheckSummer tasks) -->
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Testing - JUnit 5 Jupiter (used by exception and util tests) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testing - JUnit 4 (legacy tests) -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testing - Hamcrest matchers -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -129,6 +247,11 @@
                         <include>**/org/yawlfoundation/yawl/exceptions/**</include>
                     </includes>
                     <excludes>
+                        <!-- Exclude authentication classes that depend on engine/elements - they compile in yawl-engine -->
+                        <exclude>**/org/yawlfoundation/yawl/authentication/YSessionCache.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/YSession.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/YServiceSession.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/authentication/YExternalSession.java</exclude>
                         <!-- Exclude logging classes that depend on engine - they compile in yawl-engine -->
                         <exclude>**/org/yawlfoundation/yawl/logging/YEventLogger.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/logging/YEventKeyCache.java</exclude>
@@ -136,16 +259,26 @@
                         <exclude>**/org/yawlfoundation/yawl/logging/YLogPredicateWorkItemParser.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/logging/YLogServer.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/logging/YXESBuilder.java</exclude>
+                        <!-- Exclude util classes that depend on engine - they compile in yawl-engine -->
+                        <exclude>**/org/yawlfoundation/yawl/util/AbstractEngineClient.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/util/Sessions.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/util/YIdentifierBag.java</exclude>
+                        <!-- Exclude non-Java files -->
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
+                        <exclude>**/*.hbm.xml</exclude>
                     </excludes>
                     <!-- Only compile tests that depend solely on utilities module classes -->
+                    <!-- Patterns match both Test*.java and *Test.java naming conventions -->
                     <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/TestInfrastructureSmokeTest.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/*Test.java</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.class</testExclude>
@@ -171,11 +304,15 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- Only run tests that depend solely on utilities module classes -->
+                    <!-- Patterns match both Test*.java and *Test.java naming conventions -->
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</include>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</include>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</include>
-                        <include>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</include>
+                        <include>**/org/yawlfoundation/yawl/TestInfrastructureSmokeTest.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/util/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/util/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/schema/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/schema/*Test.java</include>
                     </includes>
                     <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>

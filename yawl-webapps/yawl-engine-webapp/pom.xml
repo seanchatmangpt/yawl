@@ -9,6 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-webapps</artifactId>
         <version>6.0.0-Alpha</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-engine-webapp</artifactId>
@@ -18,40 +19,60 @@
     <description>YAWL workflow engine web application (primary service endpoint)</description>
 
     <dependencies>
-        <!-- YAWL Engine Module -->
+        <!-- YAWL Modules -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-authentication</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-resourcing</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
-        <!-- Jakarta Servlet API -->
+        <!-- Jakarta Servlet API (provided by servlet container) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- Jersey JAX-RS -->
+        <!-- Jakarta REST API (provided by servlet container or Jersey) -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jersey JAX-RS Implementation -->
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+        </dependency>
+
+        <!-- Jackson JSON Provider for Jersey -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Skip compilation - this is a WAR packaging module only -->
+            <!-- Skip compilation - this is a WAR packaging module only (no Java sources) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -66,6 +87,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Skip surefire - no tests in WAR packaging module -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- WAR packaging configuration -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
