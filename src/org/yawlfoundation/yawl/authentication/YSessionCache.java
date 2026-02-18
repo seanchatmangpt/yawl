@@ -18,6 +18,12 @@
 
 package org.yawlfoundation.yawl.authentication;
 
+import org.yawlfoundation.yawl.elements.YAWLServiceReference;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.logging.table.YAuditEvent;
+import org.yawlfoundation.yawl.util.Argon2PasswordEncryptor;
+import org.yawlfoundation.yawl.util.HibernateEngine;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -404,37 +410,72 @@ public final class YSessionCache implements ISessionCache {
     }
 
     /**
-     * Validates client credentials using constant-time comparison to prevent timing attacks.
-     * <p>
-     * SECURITY NOTE: Passwords are currently stored in plaintext. This is a known security
-     * limitation that will be addressed in v6.1 with bcrypt migration. The constant-time
-     * comparison at least prevents timing-based password disclosure attacks.
-     * </p>
+     * Validates client credentials with support for both Argon2id (new) and SHA-1 (legacy)
+     * stored hashes to enable backward-compatible migration.
+     *
+     * <p>SOC2 CRITICAL#4 remediation (2026-02-17): New accounts created by
+     * {@code YDefClientsLoader} use Argon2id PHC strings (prefixed {@code $argon2id$}).
+     * Existing SHA-1 hashes (Base64-encoded, no prefix) are verified with constant-time
+     * comparison during the migration window. Once all hashes have been rotated to
+     * Argon2id, SHA-1 verification can be removed.
+     *
+     * <p>Migration: when a user authenticates successfully with a SHA-1 hash, the operator
+     * should trigger a password rotation via the admin API to upgrade the stored hash to
+     * Argon2id. See SECURITY.md section "SHA-1 to Argon2id migration procedure".
      *
      * @param client the client to validate
-     * @param password the password to verify
+     * @param password the password to verify (may be SHA-1 pre-hashed by the client)
      * @return true if credentials are valid, false otherwise
      */
     private boolean validateClientCredentials(YExternalClient client, String password) {
         String storedPassword = client.getPassword();
-        return constantTimeEquals(storedPassword, password);
+        return verifyPassword(storedPassword, password);
     }
 
     /**
-     * Validates service credentials using constant-time comparison to prevent timing attacks.
-     * <p>
-     * SECURITY NOTE: Passwords are currently stored in plaintext. This is a known security
-     * limitation that will be addressed in v6.1 with bcrypt migration. The constant-time
-     * comparison at least prevents timing-based password disclosure attacks.
-     * </p>
+     * Validates service credentials with support for both Argon2id (new) and SHA-1 (legacy)
+     * stored hashes. See {@link #validateClientCredentials} for migration details.
      *
      * @param service the service to validate
-     * @param password the password to verify
+     * @param password the password to verify (may be SHA-1 pre-hashed by the client)
      * @return true if credentials are valid, false otherwise
      */
     private boolean validateServiceCredentials(YAWLServiceReference service, String password) {
         String storedPassword = service.getServicePassword();
-        return constantTimeEquals(storedPassword, password);
+        return verifyPassword(storedPassword, password);
+    }
+
+    /**
+     * Verifies a password against a stored hash, supporting both Argon2id (new) and
+     * SHA-1 (legacy) hash formats for backward-compatible migration.
+     *
+     * <p>Detection: if the stored hash starts with {@code $argon2id$}, it is an Argon2id
+     * PHC string and is verified via {@link Argon2PasswordEncryptor#verify}. Otherwise,
+     * it is treated as a SHA-1 Base64-encoded hash and compared with constant-time equality.
+     *
+     * <p>SOC2 CRITICAL#4: All new password hashes use Argon2id. SHA-1 hashes remain
+     * supported only for the migration window. See SECURITY.md.
+     *
+     * @param storedHash the stored password hash (Argon2id PHC string or SHA-1 Base64)
+     * @param provided   the password as provided by the client
+     * @return true if the password matches the stored hash, false otherwise
+     */
+    private boolean verifyPassword(String storedHash, String provided) {
+        if (storedHash == null || provided == null) {
+            return false;
+        }
+        if (storedHash.startsWith("$argon2id$")) {
+            // SOC2 CRITICAL#4: New Argon2id hash - use proper Argon2id verification
+            try {
+                return Argon2PasswordEncryptor.verify(storedHash, provided);
+            } catch (Exception e) {
+                LOGGER.warning("Argon2id verification failed for stored hash: " + e.getMessage());
+                return false;
+            }
+        }
+        // Legacy SHA-1 hash: constant-time comparison for migration window
+        // MIGRATION NOTE: Trigger password rotation via admin API to upgrade to Argon2id.
+        return constantTimeEquals(storedHash, provided);
     }
 
     /**
@@ -491,10 +532,13 @@ public final class YSessionCache implements ISessionCache {
         // Schedule timeout
         scheduleTimeout(session);
 
-        // Write audit log
+        // Write audit log (database)
         YClient client = session.getClient();
         if (client != null) {
             writeAuditEvent(client.getUserName(), YAuditEvent.Action.logon);
+            // SOC2 HIGH: All successful logins must be logged with timestamp, user, result
+            SecurityAuditLogger.loginSuccess(client.getUserName(), "engine", "session created");
+            SecurityAuditLogger.sessionCreated(client.getUserName(), handle, "engine");
         }
 
         return handle;
@@ -577,11 +621,15 @@ public final class YSessionCache implements ISessionCache {
 
     private String handleBadPassword(String username) {
         writeAuditEvent(username, YAuditEvent.Action.invalid);
+        // SOC2 HIGH: All authentication failures must be logged with timestamp, user, result
+        SecurityAuditLogger.loginFailure(username, "engine", "bad credentials");
         return failureMessage("Incorrect Password");
     }
 
     private String handleUnknownUser(String username) {
         writeAuditEvent(username, YAuditEvent.Action.unknown);
+        // SOC2 HIGH: Unknown user attempts must be logged as auth failures
+        SecurityAuditLogger.loginFailure(username, "engine", "unknown user");
         return failureMessage("Unknown service or client: " + username);
     }
 

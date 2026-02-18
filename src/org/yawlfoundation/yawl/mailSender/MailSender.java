@@ -33,6 +33,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -101,6 +102,17 @@ public class MailSender extends InterfaceBWebsideController {
     	try{
 			File file = new File(_Pathway, "SMTP.xml");
 	        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+	        // SOC2 CRITICAL: Disable XXE to prevent external entity injection via SMTP.xml
+	        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+	        dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+	        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+	        dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+	        dbf.setXIncludeAware(false);
+	        dbf.setExpandEntityReferences(false);
+	        try { dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, ""); }
+	        catch (IllegalArgumentException ignored) { /* not supported by this parser */ }
+	        try { dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""); }
+	        catch (IllegalArgumentException ignored) { /* not supported by this parser */ }
 	        DocumentBuilder db = dbf.newDocumentBuilder();
 	        org.w3c.dom.Document doc = db.parse(file);
 	        doc.getDocumentElement().normalize();
@@ -139,7 +151,10 @@ public class MailSender extends InterfaceBWebsideController {
          props.setProperty("mail.smtp.host", SMTP);
          props.setProperty("mail.smtp.port", Port);
          props.setProperty("mail.smtp.auth", "true");
-         props.setProperty("mail.debug", "true");
+         // SOC2 CRITICAL: SMTP debug logging is disabled in production to prevent credential
+         // leakage. SMTP debug mode logs the full SMTP session including AUTH commands with
+         // base64-encoded credentials in plaintext to stdout.
+         props.setProperty("mail.debug", "false");
          props.setProperty("mail.smtp.starttls.enable", "true");
 
         if(Port.compareTo("25") != 0 ){
@@ -153,7 +168,9 @@ public class MailSender extends InterfaceBWebsideController {
          MyAuthenticator auth = new MyAuthenticator (Login,password);
          Session session;
          session = Session.getDefaultInstance(props, auth);
-         session.setDebug(true);
+         // SOC2 CRITICAL: Session debug mode disabled; would log plaintext SMTP traffic
+         // including credentials. Never enable in production.
+         session.setDebug(false);
          Message message;
          message = new MimeMessage(session);
          InternetAddress addressFrom = new InternetAddress(Alias);

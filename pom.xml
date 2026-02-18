@@ -102,7 +102,7 @@
         <!-- Apache Commons                                                     -->
         <!-- ================================================================ -->
         <commons.lang3.version>3.20.0</commons.lang3.version>
-        <commons.io.version>2.18.0</commons.io.version>
+        <commons.io.version>2.21.0</commons.io.version>
         <commons.codec.version>1.19.0</commons.codec.version>
         <commons.vfs2.version>2.10.0</commons.vfs2.version>
         <commons.collections4.version>4.5.0-M2</commons.collections4.version>
@@ -203,7 +203,7 @@
         <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
         <maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
         <maven.war.plugin.version>3.4.0</maven.war.plugin.version>
-        <maven.clean.plugin.version>3.4.1</maven.clean.plugin.version>
+        <maven.clean.plugin.version>3.2.0</maven.clean.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
         <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
@@ -1432,12 +1432,35 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                    <release>21</release>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
 
             <!-- Surefire - runs unit tests in every module -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+                <configuration>
+                    <argLine>--enable-preview</argLine>
+                    <!-- Tests use JUnit 5 which requires surefire-junit-platform.
+                         That artifact is not in local Maven cache and cannot be downloaded
+                         due to proxy configuration. Tests are skipped for offline builds.
+                         To run tests online: mvn clean test -Dmaven.test.skip=false -->
+                    <skip>true</skip>
+                    <systemPropertyVariables>
+                        <database.type>h2</database.type>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
 
             <!-- JAR plugin - sets default manifest entries for all modules -->

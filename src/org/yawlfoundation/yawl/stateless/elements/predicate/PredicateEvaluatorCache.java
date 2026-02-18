@@ -46,11 +46,16 @@ public class PredicateEvaluatorCache
         extends YCorePredicateEvaluatorCache<PredicateEvaluator> {
 
     private static final Logger _log = LogManager.getLogger(PredicateEvaluatorCache.class);
-    private static Set<PredicateEvaluator> _evaluators;
+
+    /** Singleton used by all static public API methods. */
     private static final PredicateEvaluatorCache _instance = new PredicateEvaluatorCache();
 
     private PredicateEvaluatorCache() { }
 
+
+    // -------------------------------------------------------------------------
+    // YCorePredicateEvaluatorCache contract
+    // -------------------------------------------------------------------------
 
     @Override
     protected Set<PredicateEvaluator> loadEvaluators() {
@@ -80,23 +85,6 @@ public class PredicateEvaluatorCache
 
     public static boolean accept(String predicate) {
         return _instance.doAccept(predicate);
-    }
-
-
-    private static PredicateEvaluator getEvaluator(String predicate) {
-        try {
-            if (_evaluators == null) {
-                _evaluators = PredicateEvaluatorFactory.getInstances();
-            }
-            for (PredicateEvaluator evaluator : _evaluators) {
-                if (evaluator.accept(predicate)) {
-                    return evaluator;
-                }
-            }
-        } catch (Exception e) {
-            _log.error("PredicateEvaluator lookup failed for predicate '{}': {}", predicate, e.getMessage(), e);
-        }
-        return null;
     }
 
 }

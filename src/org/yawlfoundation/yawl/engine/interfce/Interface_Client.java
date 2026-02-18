@@ -63,6 +63,14 @@ public class Interface_Client {
             .executor(Executors.newVirtualThreadPerTaskExecutor())
             .build();
 
+    /**
+     * P5 MEDIUM - HTTP Connection Pool Observability:
+     * Singleton metrics tracker for in-flight count, latency, and error rate.
+     * Populated on every executePost/executeGet call.
+     */
+    private static final HttpConnectionPoolMetrics POOL_METRICS =
+            HttpConnectionPoolMetrics.getInstance();
+
     // allows the prevention of socket reads from blocking indefinitely
     private static Duration READ_TIMEOUT = Duration.ofMillis(120000);  // default: 2 minutes
 
@@ -88,14 +96,23 @@ public class Interface_Client {
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
+        long poolMetricStart = POOL_METRICS.recordRequestStart();
+        boolean isError = false;
         try {
             HttpResponse<String> response = HTTP_CLIENT.send(request,
                     HttpResponse.BodyHandlers.ofString());
+            isError = response.statusCode() >= 400;
             String result = response.body();
             return stripOuterElement(result);
         } catch (InterruptedException e) {
+            isError = true;
             Thread.currentThread().interrupt();
             throw new IOException("HTTP request interrupted", e);
+        } catch (IOException e) {
+            isError = true;
+            throw e;
+        } finally {
+            POOL_METRICS.recordRequestComplete(poolMetricStart, isError);
         }
     }
 
@@ -151,13 +168,22 @@ public class Interface_Client {
                 .POST(HttpRequest.BodyPublishers.ofString(encodedData))
                 .build();
 
+        long poolMetricStartGet = POOL_METRICS.recordRequestStart();
+        boolean isErrorGet = false;
         try {
             HttpResponse<String> response = HTTP_CLIENT.send(request,
                     HttpResponse.BodyHandlers.ofString());
+            isErrorGet = response.statusCode() >= 400;
             return response.body();  // don't strip outer element for GET requests
         } catch (InterruptedException e) {
+            isErrorGet = true;
             Thread.currentThread().interrupt();
             throw new IOException("HTTP request interrupted", e);
+        } catch (IOException e) {
+            isErrorGet = true;
+            throw e;
+        } finally {
+            POOL_METRICS.recordRequestComplete(poolMetricStartGet, isErrorGet);
         }
     }
 
@@ -247,6 +273,15 @@ public class Interface_Client {
 
 
     /*******************************************************************************/
+
+    /**
+     * P5 - Returns the HTTP connection pool metrics for observability.
+     *
+     * @return the singleton {@link HttpConnectionPoolMetrics} instance
+     */
+    public static HttpConnectionPoolMetrics getPoolMetrics() {
+        return POOL_METRICS;
+    }
 
     // PRIVATE METHODS //
 
