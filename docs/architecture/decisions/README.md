@@ -48,6 +48,8 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 | [ADR-009](ADR-009-multi-cloud-strategy.md) | Multi-Cloud Strategy (GCP/AWS/Azure/Oracle) | ACCEPTED | 2026-02-13 | Cloud |
 | [ADR-010](ADR-010-virtual-threads-scalability.md) | Virtual Threads for Scalability | ACCEPTED | 2026-02-14 | Performance |
 | [ADR-014](ADR-014-clustering-and-horizontal-scaling.md) | Clustering and Horizontal Scaling Architecture | ACCEPTED | 2026-02-17 | Scalability |
+| [ADR-023](ADR-023-mcp-a2a-cicd-deployment.md) | MCP/A2A CI/CD Deployment Architecture | ACCEPTED | 2026-02-18 | Deployment |
+| [ADR-024](ADR-024-multi-cloud-agent-deployment.md) | Multi-Cloud Agent Deployment Topology | ACCEPTED | 2026-02-18 | Cloud |
 
 ### API Design & Documentation
 
@@ -75,6 +77,7 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 | ADR | Title | Status | Date | Category |
 |-----|-------|--------|------|----------|
 | [ADR-019](ADR-019-autonomous-agent-framework.md) | Autonomous Agent Framework Architecture | ACCEPTED | 2026-02-17 | Agent Architecture |
+| [ADR-025](ADR-025-agent-coordination-protocol.md) | Agent Coordination Protocol and Conflict Resolution | ACCEPTED | 2026-02-18 | Agent Architecture |
 
 ### Migration & Compatibility
 
@@ -118,6 +121,8 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 **Cloud & Deployment:**
 - ADR-009: Multi-Cloud Strategy
 - ADR-014: Clustering and Horizontal Scaling (v6.1)
+- ADR-023: MCP/A2A CI/CD Deployment Architecture (v6.0)
+- ADR-024: Multi-Cloud Agent Deployment Topology (v6.1)
 
 **API Design:**
 - ADR-012: OpenAPI-First Design (v6.0)
@@ -132,6 +137,7 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 
 **Agent Architecture:**
 - ADR-019: Autonomous Agent Framework (v6.0)
+- ADR-025: Agent Coordination Protocol and Conflict Resolution (v6.0/v6.1)
 
 **Documentation:**
 - ADR-020: Workflow Pattern Library (v6.0)
@@ -149,7 +155,7 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 
 ## Reading Order for New Team Members
 
-**v5.x baseline (ADRs 001–011):**
+**v5.x baseline (ADRs 001-011):**
 1. ADR-001: Dual Engine Architecture
 2. ADR-004: Spring Boot + Java 25
 3. ADR-003: Maven Primary
@@ -159,17 +165,20 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 7. ADR-006: OpenTelemetry
 8. ADR-008: Circuit Breaking
 
-**v6.0 additions (ADRs 012–021):**
+**v6.0 additions (ADRs 012-025):**
 9. ADR-012: OpenAPI-First Design
 10. ADR-013: Schema Versioning
 11. ADR-015: Persistence Layer
 12. ADR-017: JWT Authentication
 13. ADR-019: Autonomous Agent Framework
 14. ADR-021: Engine Selection
-15. ADR-014: Clustering (planned for v6.1)
-16. ADR-016: Deprecation Policy
-17. ADR-018: Doc Generation
-18. ADR-020: Pattern Library
+15. ADR-023: MCP/A2A CI/CD Deployment
+16. ADR-025: Agent Coordination Protocol
+17. ADR-014: Clustering (planned for v6.1)
+18. ADR-024: Multi-Cloud Agent Deployment (planned for v6.1)
+19. ADR-016: Deprecation Policy
+20. ADR-018: Doc Generation
+21. ADR-020: Pattern Library
 
 ---
 
@@ -229,6 +238,7 @@ or an existing ADR's status changes.
 - **Pattern Library:** `/home/user/yawl/docs/patterns/README.md`
 - **Production Readiness:** `/home/user/yawl/docs/PRODUCTION_READINESS_CHECKLIST.md`
 - **ADR Machine Index:** `ADR-INDEX.json`
+- **Architecture Patterns (Java 25):** `/home/user/yawl/.claude/ARCHITECTURE-PATTERNS-JAVA25.md`
 
 ---
 
@@ -247,6 +257,7 @@ or an existing ADR's status changes.
 - **Caching:** Repository pattern (Caffeine)
 - **Resilience:** Circuit breaker (Resilience4j)
 - **Clustering:** Redis lease protocol (v6.1)
+- **Agent Registry:** CockroachDB federation (v6.1, multi-cloud)
 
 ### API Design
 - **Contract:** OpenAPI 3.1.0 (docs/api/openapi-v6.yaml)
@@ -260,6 +271,12 @@ or an existing ADR's status changes.
 - **Deployment:** Multi-cloud (GCP, AWS, Azure, Oracle)
 - **Scalability:** Virtual threads (Project Loom) + clustering (v6.1)
 
+### Agent & Integration
+- **MCP:** STDIO transport (local), SSE transport (cloud) via YawlMcpServer
+- **A2A:** HTTP REST via YawlA2AServer, authenticated with JWT/SPIFFE/API key
+- **Agent Coordination:** Partition strategy, handoff protocol, conflict resolution
+- **Claude SDK:** MCP tool use (Path 1) + A2A orchestration (Path 2)
+
 ---
 
 ## Contact
@@ -270,5 +287,5 @@ or an existing ADR's status changes.
 
 ---
 
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-02-18
 **Maintained by:** YAWL Architecture Team
