@@ -9,7 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-    <relativePath>../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-worklet</artifactId>
@@ -23,12 +23,10 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-resourcing</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Jakarta Persistence -->
@@ -48,10 +46,20 @@
             <artifactId>hibernate-core</artifactId>
         </dependency>
 
+        <!-- Database for persistence (H2 for dev/testing) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+
         <!-- Apache Commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
         </dependency>
 
         <!-- XML Processing -->
@@ -66,6 +74,10 @@
             <artifactId>log4j-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -76,20 +88,127 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/worklet</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/worklet</testSourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
+
+        <resources>
+            <resource>
+                <directory>../src/org/yawlfoundation/yawl/worklet</directory>
+                <includes>
+                    <include>**/*.hbm.xml</include>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <testResources>
+            <!-- Test resources in package directories - preserves structure for getClass().getResource() -->
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/worklet/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/worklet/**/*.yawl</include>
+                    <include>**/org/yawlfoundation/yawl/worklet/**/*.ywl</include>
+                    <include>**/org/yawlfoundation/yawl/worklet/**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/worklet/**/*.xsd</include>
+                    <!-- Worklet tests also reference engine resources -->
+                    <include>**/org/yawlfoundation/yawl/engine/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
+                </includes>
+            </testResource>
+            <!-- Common test resources directory (root level) -->
+            <testResource>
+                <directory>../test/resources</directory>
+            </testResource>
+            <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
+            <testResource>
+                <directory>../build/properties</directory>
+                <includes>
+                    <include>hibernate.cfg.xml</include>
+                    <include>*.properties</include>
+                </includes>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/worklet/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <exclude>**/*.jpg</exclude>
+                        <exclude>**/*.png</exclude>
+                        <exclude>**/*.gif</exclude>
+                    </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/worklet/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.ywl</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <excludes>
+                                <!-- Exclude tests from other modules -->
+                                <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/elements/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/integration/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/logging/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/schema/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/util/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>**/*.xml</exclude>
+                                <exclude>**/*.xsd</exclude>
+                                <exclude>**/*.properties</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/worklet/**</include>
+                    </includes>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

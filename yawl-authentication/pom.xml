@@ -19,81 +19,139 @@
     <description>Session management, JWT handling, CSRF protection, and client authentication</description>
 
     <dependencies>
-        <!-- YAWL Modules -->
+        <!-- YAWL Engine (provides YEngine, HibernateEngine, logging, etc.) -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-elements</artifactId>
-            <version>${project.version}</version>
+            <artifactId>yawl-engine</artifactId>
         </dependency>
 
-        <!-- Jakarta Persistence -->
+        <!-- JWT Security -->
         <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
         </dependency>
-
-        <!-- Hibernate ORM -->
         <dependency>
-            <groupId>org.hibernate.orm</groupId>
-            <artifactId>hibernate-core</artifactId>
-        </dependency>
-
-        <!-- Database Drivers -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
-        <!-- Apache Commons -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <!-- Testing -->
+        <!-- Testing - JUnit 4 (for V6SecurityTest extending TestCase) -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Testing - JUnit Jupiter (for TestJwtManager with JUnit 5 annotations) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/authentication</sourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
+
         <resources>
             <resource>
-                <directory>../src/org/yawlfoundation/yawl/authentication</directory>
+                <directory>../src</directory>
                 <includes>
-                    <include>**/*.hbm.xml</include>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/authentication/**/*.hbm.xml</include>
+                    <include>**/org/yawlfoundation/yawl/authentication/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/authentication/**/*.properties</include>
                 </includes>
             </resource>
         </resources>
 
+        <testResources>
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
+            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/authentication/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                    </testExcludes>
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                    </compilerArgs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-proc:none</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                    </includes>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>

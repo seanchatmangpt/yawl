@@ -9,21 +9,28 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-    <relativePath>../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-control-panel</artifactId>
     <packaging>jar</packaging>
 
     <name>YAWL Control Panel</name>
-    <description>Desktop control panel application - Swing-based YAWL management interface</description>
+    <description>Desktop control panel application - Swing-based YAWL management interface for engine administration, deployment, and monitoring</description>
 
     <dependencies>
         <!-- YAWL Modules -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-stateless</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-resourcing</artifactId>
         </dependency>
 
         <!-- Apache Commons -->
@@ -34,6 +41,36 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+
+        <!-- XML Processing -->
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+
+        <!-- HTTP Client for engine communication -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <!-- JSON processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
 
         <!-- Logging -->
@@ -46,8 +83,9 @@
             <artifactId>log4j-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Testing -->
@@ -56,11 +94,27 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/controlpanel</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/controlpanel</testSourceDirectory>
+        <!-- Use standard source layout - controlpanel package will be created under src/ -->
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
         <resources>
             <resource>
                 <directory>../src/org/yawlfoundation/yawl/controlpanel</directory>
@@ -68,19 +122,68 @@
                     <include>**/*.png</include>
                     <include>**/*.gif</include>
                     <include>**/*.jpg</include>
+                    <include>**/*.svg</include>
                     <include>**/*.properties</include>
+                    <include>**/*.xml</include>
                 </includes>
             </resource>
         </resources>
 
+        <testResources>
+            <testResource>
+                <directory>../test/org/yawlfoundation/yawl/controlpanel</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.yawl</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <directory>../test/resources</directory>
+            </testResource>
+        </testResources>
+
         <plugins>
+            <!-- Clean plugin with failOnError=false for 9p overlay filesystems -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- Compile only the controlpanel package -->
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/controlpanel/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/controlpanel/**</testInclude>
+                    </testIncludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/controlpanel/**</include>
+                    </includes>
+                    <!-- Skip tests if no test classes exist yet -->
+                    <failIfNoTests>false</failIfNoTests>
+                    <!-- Exclude conflicting logging bridge -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

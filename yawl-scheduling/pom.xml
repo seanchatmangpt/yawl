@@ -9,21 +9,26 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-    <relativePath>../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-scheduling</artifactId>
     <packaging>jar</packaging>
 
     <name>YAWL Scheduling Service</name>
-    <description>Workflow scheduling and timing service - timer management, calendar integration</description>
+    <description>Workflow scheduling and timing service - timer management, calendar integration, cron-based task execution</description>
 
     <dependencies>
         <!-- YAWL Modules -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Quartz Scheduler -->
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
         </dependency>
 
         <!-- Apache Commons -->
@@ -32,10 +37,20 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+        <!-- XML Processing -->
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -48,20 +63,118 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>../src/org/yawlfoundation/yawl/scheduling</sourceDirectory>
-        <testSourceDirectory>../test/org/yawlfoundation/yawl/scheduling</testSourceDirectory>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>../src/org/yawlfoundation/yawl/scheduling</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <testResources>
+            <!-- Test resources in package directories - preserves structure for getClass().getResource() -->
+            <testResource>
+                <directory>../test</directory>
+                <includes>
+                    <include>**/org/yawlfoundation/yawl/scheduling/**/*.xml</include>
+                    <include>**/org/yawlfoundation/yawl/scheduling/**/*.properties</include>
+                    <include>**/org/yawlfoundation/yawl/scheduling/**/*.yawl</include>
+                    <include>**/org/yawlfoundation/yawl/scheduling/**/*.ywl</include>
+                </includes>
+            </testResource>
+            <!-- Common test resources directory (root level) -->
+            <testResource>
+                <directory>../test/resources</directory>
+            </testResource>
+            <!-- Hibernate configuration needed by YEngine.getInstance() during tests -->
+            <testResource>
+                <directory>../build/properties</directory>
+                <includes>
+                    <include>hibernate.cfg.xml</include>
+                    <include>*.properties</include>
+                </includes>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/scheduling/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*.xsd</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                    </excludes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/scheduling/**</testInclude>
+                    </testIncludes>
+                    <testExcludes>
+                        <testExclude>**/*.xml</testExclude>
+                        <testExclude>**/*.xsd</testExclude>
+                        <testExclude>**/*.ywl</testExclude>
+                        <testExclude>**/*.properties</testExclude>
+                        <testExclude>**/*.class</testExclude>
+                    </testExcludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <excludes>
+                                <!-- Exclude tests from other modules -->
+                                <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/elements/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/integration/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/logging/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/schema/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/util/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/resourcing/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>**/*.xml</exclude>
+                                <exclude>**/*.xsd</exclude>
+                                <exclude>**/*.properties</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/scheduling/**</include>
+                    </includes>
+                    <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

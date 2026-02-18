@@ -15,7 +15,19 @@
     "yawl-webapps",
     "yawl-control-panel"
   ],
-  "module_deps": [
-
-  ]
+  "module_deps": {
+    "yawl-utilities": [],
+    "yawl-elements": ["yawl-utilities"],
+    "yawl-engine": ["yawl-elements"],
+    "yawl-authentication": ["yawl-engine"],
+    "yawl-stateless": ["yawl-utilities", "yawl-elements", "yawl-engine"],
+    "yawl-resourcing": ["yawl-engine"],
+    "yawl-worklet": ["yawl-engine", "yawl-resourcing"],
+    "yawl-scheduling": ["yawl-engine"],
+    "yawl-security": [],
+    "yawl-integration": ["yawl-engine", "yawl-stateless"],
+    "yawl-monitoring": ["yawl-engine", "yawl-stateless"],
+    "yawl-webapps": ["yawl-engine", "yawl-authentication", "yawl-resourcing"],
+    "yawl-control-panel": ["yawl-engine", "yawl-stateless", "yawl-resourcing"]
+  }
 }

@@ -150,6 +150,11 @@
         <okhttp.version>5.1.0</okhttp.version>
 
         <!-- ================================================================ -->
+        <!-- Scheduling                                                         -->
+        <!-- ================================================================ -->
+        <quartz.version>2.5.0</quartz.version>
+
+        <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
         <mcp.version>0.17.2</mcp.version>
@@ -270,7 +275,80 @@
         <dependencies>
 
             <!-- ============================================================== -->
-            <!-- 0. SPRING BOOT STARTERS                                       -->
+            <!-- 0. YAWL INTERNAL MODULES                                       -->
+            <!--    All child modules are declared here with ${project.version} -->
+            <!--    so inter-module dependencies don't need version numbers.    -->
+            <!-- ============================================================== -->
+
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-utilities</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-elements</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-authentication</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-engine</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-stateless</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-resourcing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-worklet</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-scheduling</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-integration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-monitoring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-control-panel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-engine-webapp</artifactId>
+                <version>${project.version}</version>
+                <type>war</type>
+            </dependency>
+
+            <!-- ============================================================== -->
+            <!-- 1. SPRING BOOT STARTERS                                       -->
             <!--    Explicit entries provide offline fallback when the Spring   -->
             <!--    Boot BOM (online profile) is not active.                   -->
             <!-- ============================================================== -->
@@ -621,6 +699,16 @@
             </dependency>
 
             <!-- ============================================================== -->
+            <!-- 10. SCHEDULING (Quartz)                                        -->
+            <!-- ============================================================== -->
+
+            <dependency>
+                <groupId>org.quartz-scheduler</groupId>
+                <artifactId>quartz</artifactId>
+                <version>${quartz.version}</version>
+            </dependency>
+
+            <!-- ============================================================== -->
             <!-- 10. MCP / A2A INTEGRATION SDKs                                -->
             <!--     Both SDKs are installed from local JARs (not Maven         -->
             <!--     Central). Versions are pinned here so child modules do     -->
@@ -732,10 +820,58 @@
 
             <!-- ============================================================== -->
             <!-- 13. OBSERVABILITY / METRICS                                    -->
-            <!--     OTel artifacts version-managed by opentelemetry-bom above. -->
-            <!--     Semconv and Micrometer are not in that BOM.               -->
+            <!--     OTel artifacts: explicit versions for offline fallback;     -->
+            <!--     BOM imports in 'online' profile take precedence.          -->
+            <!--     Semconv and Micrometer are not in the OTel BOM.           -->
             <!-- ============================================================== -->
 
+            <!-- OpenTelemetry API and SDK -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk-trace</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+
+            <!-- OpenTelemetry Instrumentation API -->
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-api</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-api-semconv</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+            </dependency>
+
+            <!-- OpenTelemetry Exporters -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-otlp</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-jaeger-thrift</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-prometheus</artifactId>
+                <version>${opentelemetry.version}-alpha</version>
+            </dependency>
+
+            <!-- OpenTelemetry Semantic Conventions -->
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
@@ -746,11 +882,8 @@
                 <artifactId>opentelemetry-semconv-incubating</artifactId>
                 <version>${opentelemetry.semconv.version}-alpha</version>
             </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-prometheus</artifactId>
-                <version>${opentelemetry.version}-alpha</version>
-            </dependency>
+
+            <!-- Micrometer Metrics -->
             <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-core</artifactId>
@@ -868,6 +1001,14 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- JUnit Vintage (for running JUnit 4 tests on JUnit 5 platform) -->
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+
             <!-- Hamcrest matchers -->
             <dependency>
                 <groupId>org.hamcrest</groupId>
@@ -951,7 +1092,6 @@
                     <configuration>
                         <release>${maven.compiler.release}</release>
                         <compilerArgs>
-                            <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
                         </compilerArgs>
                     </configuration>
@@ -963,7 +1103,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
                         <includes>
                             <include>**/*Test.java</include>
                             <include>**/*Tests.java</include>

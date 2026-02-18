@@ -19,11 +19,10 @@
     <description>Workflow element definitions - core Petri net components, specifications, and process structures</description>
 
     <dependencies>
-        <!-- YAWL Utilities (for exceptions) -->
+        <!-- YAWL Utilities (for exceptions, util, unmarshal, schema) -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-utilities</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- XML Processing -->
@@ -62,6 +61,33 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- ORM - Hibernate for elements/data/external/HibernateEngine -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+
+        <!-- Jakarta Servlet (required by util classes compiled by elements) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Apache Ant (required by util checksum tasks compiled by elements) -->
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Database - H2 for tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Testing -->
@@ -129,24 +155,30 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
                     <includes>
                         <!-- Core elements module packages -->
                         <include>**/org/yawlfoundation/yawl/elements/**</include>
                         <include>**/org/yawlfoundation/yawl/schema/**</include>
-                        <!-- Utilities needed by tests: util, exceptions, unmarshal -->
+                        <!-- Utilities needed by elements: util, exceptions, unmarshal -->
                         <include>**/org/yawlfoundation/yawl/util/**</include>
                         <include>**/org/yawlfoundation/yawl/exceptions/**</include>
                         <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
-                        <!-- Engine classes needed by tests -->
-                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceException*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YQueryException*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YDataStateException*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YStateException*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YEngine*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YEngineID*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YSpecificationID*</include>
-                        <include>**/org/yawlfoundation/yawl/engine/YWorkItemStatus*</include>
+                        <!-- Engine classes needed by elements source -->
+                        <include>**/org/yawlfoundation/yawl/engine/YEngine.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YNetData.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceManager.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YPersistenceException.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YQueryException.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YDataStateException.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YStateException.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YSpecificationID.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YWorkItem.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YWorkItemID.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/YWorkItemStatus.java</include>
+                        <!-- Engine subpackages needed by elements -->
                         <include>**/org/yawlfoundation/yawl/engine/time/**</include>
                         <include>**/org/yawlfoundation/yawl/engine/core/**</include>
                     </includes>
