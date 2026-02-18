@@ -53,3 +53,23 @@ mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-control-panel clean packag
 # Run
 java -jar yawl-control-panel/target/yawl-control-panel-6.0.0-Alpha.jar
 ```
+
+## Test Coverage
+
+**No tests exist.** The test directory `../test/org/yawlfoundation/yawl/controlpanel/` does not exist.
+
+Coverage gaps (entire module):
+- Engine start/stop command invocation — no unit tests
+- Specification deployment logic — no unit tests
+- HTTP connection to the engine — no unit tests
+- UI component rendering — no tests (would require Swing/TestFX harness)
+
+## Roadmap
+
+- **TestFX UI test suite** — add `YControlPanelTest` using the TestFX library to drive the Swing UI programmatically; assert button states, table population, and status label updates
+- **Engine connection unit tests** — add `TestEngineConnector` mocking the HTTP layer to verify connection establishment, retry logic, and error presentation in the UI
+- **Specification deployment tests** — add `TestSpecificationDeployer` verifying file selection, upload progress, and success/failure feedback flow
+- **JavaFX migration** — evaluate migrating from Swing to JavaFX 21 (LTS) for a modern UI toolkit with CSS theming and better HiDPI support
+- **Dark mode** — implement a theme toggle (light/dark) using the system `LookAndFeel` or a JavaFX CSS theme
+- **Auto-update mechanism** — implement a background version check against the GitHub Releases API and present an in-app upgrade prompt when a newer version is available
+- **Modular JAR (JPMS)** — declare a `module-info.java` for the control panel to reduce the distribution size via `jlink` by including only the required JDK modules

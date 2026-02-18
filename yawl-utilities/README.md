@@ -48,3 +48,31 @@ None — this is the base module with no YAWL dependencies.
 ```bash
 mvn -pl yawl-utilities clean package
 ```
+
+## Test Coverage
+
+| Test Class | Package | Tests | Notes |
+|------------|---------|-------|-------|
+| `TestYConnectivityException` | `exceptions` | 2 | Connectivity error message and cause chain |
+| `TestYSyntaxException` | `exceptions` | 1 | Syntax error construction |
+| `TestYAWLExceptionEnhancements` | `exceptions` | 1 | Exception hierarchy and wrapping |
+| `TestDynamicValueLogging` | `util` | ~4 | Dynamic log-level value capture |
+
+**Total active tests: ~8** (scoped to the four classes that have no transitive engine dependency)
+
+Tests run with: `mvn -pl yawl-utilities test`
+
+Coverage gaps:
+- `util` package helpers (string, XML, IO utilities) — untested at module scope
+- `unmarshal` package — tested via `yawl-elements`
+- `schema` package — tested via `yawl-elements`
+- Partial `authentication` and `logging` classes compiled here — covered in `yawl-authentication` and `yawl-engine`
+
+## Roadmap
+
+- **JSpecify null-safety sweep** — annotate all public APIs with `@Nullable` / `@NonNull`; enforce via NullAway in CI
+- **Virtual-thread-safe utilities** — audit and document thread-safety guarantees on shared utility classes for virtual-thread environments
+- **Jakarta JAXB 4.0 migration** — replace `com.sun.xml.bind:jaxb-impl` with the standard `org.glassfish.jaxb:jaxb-runtime` once all modules are on Jakarta EE 10
+- **Expand exception tests** — cover all 12 exception types in `YException` hierarchy with JUnit 5 parameterised tests
+- **Commons IO / Codec upgrade** — migrate from legacy `commons-io` groupId to `org.apache.commons` groupId throughout the monorepo
+- **`util` unit test suite** — add `TestYXMLHelper`, `TestYStringHelper`, `TestYFileUtil` to reach >80% line coverage on the util package

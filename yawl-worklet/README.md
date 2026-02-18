@@ -41,3 +41,26 @@ Dynamic worklet selection and exception handling service:
 ```bash
 mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-resourcing,yawl-worklet clean package
 ```
+
+## Test Coverage
+
+**No tests exist.** The test directory `../test/org/yawlfoundation/yawl/worklet/` does not exist.
+
+All worklet behaviour is validated only through manual integration testing.
+
+Coverage gaps (entire module):
+- RDR rule evaluation logic — no unit tests
+- Worklet selection from repository — no unit tests
+- Exception type handlers (abort, time-out, constraint violation) — no unit tests
+- Worklet repository persistence (Hibernate round-trip) — no unit tests
+- Resourcing integration (task-level exception routing) — no unit tests
+
+## Roadmap
+
+- **RDR unit test suite** — add `TestRDRCondition`, `TestRDRTree`, `TestRDRNode` covering rule evaluation, tree traversal, and conclusion selection
+- **Worklet selection tests** — add `TestWorkletSelector` with a test worklet repository covering single-match, multi-match, and no-match scenarios
+- **Exception handler tests** — add tests for each `YExceptionHandler` subtype: item abort, time-out, pre/post condition failure, constraint violation
+- **Repository persistence tests** — add Hibernate round-trip tests using an in-memory H2 database for `WorkletRecord` and `RDRSet`
+- **Online RDR learning** — implement the Ripple-Down Rules induction algorithm so the worklet service can propose new rules from past exception resolutions
+- **REST API for worklet management** — expose worklet repository CRUD and rule editing over a JAX-RS endpoint to enable GUI-free administration
+- **Testcontainers integration test** — add a full end-to-end test that launches a case, triggers a time-out exception, verifies worklet selection, and confirms case resumption

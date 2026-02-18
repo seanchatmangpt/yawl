@@ -38,3 +38,22 @@ dependencies beyond what is inherited transitively from `yawl-engine`.
 ```bash
 mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-scheduling clean package
 ```
+
+## Test Coverage
+
+**No tests exist.** The test directory `../test/org/yawlfoundation/yawl/scheduling/` does not exist.
+
+Coverage gaps (entire module):
+- Timer firing and deadline calculation — no unit tests
+- Calendar-aware duration computation (working hours, holidays) — no unit tests
+- Calendar query API — no unit tests
+- Engine timer integration (timer task creation / cancellation) — no tests
+
+## Roadmap
+
+- **Timer unit tests** — add `TestSchedulingTimer` covering deadline calculation, interval parsing, and cancellation semantics
+- **Calendar service tests** — add `TestCalendarService` with synthetic business-hours calendars verifying working-time computation and holiday exclusions
+- **iCal (RFC 5545) import** — implement an `ICalendarImporter` so calendar definitions can be loaded from standard `.ics` files
+- **Quartz Scheduler integration** — add an optional Quartz-backed `YQuartzScheduler` for clustered, persistent timer management (currently in-JVM only)
+- **REST API for calendar management** — expose calendar CRUD and schedule query over JAX-RS to allow runtime calendar updates without engine restart
+- **Time zone awareness** — enforce `ZoneId`-based arithmetic throughout; replace any remaining `Date` / `Calendar` usages with `java.time` types

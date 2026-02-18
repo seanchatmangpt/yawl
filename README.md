@@ -133,3 +133,35 @@ Enforced at `validate` phase — build fails if:
 
 Each module has its own README.md with detailed documentation. See the module directories.
 
+### Test Coverage Summary (All Modules)
+
+| Module | Test Classes | Active Tests | Coverage Status |
+|--------|-------------|-------------|-----------------|
+| `yawl-utilities` | 4 | ~8 | Partial — util/schema packages untested at module scope |
+| `yawl-elements` | 20 | ~115 | Good — all element types and schema validation covered |
+| `yawl-authentication` | 2 | 23 | Partial — CSRF filter and session persistence not tested |
+| `yawl-engine` | 25 | ~157 | Good — core execution paths, OR-join, persistence, virtual threads |
+| `yawl-stateless` | 2 | 20 | Minimal — JSON round-trip and suspend/resume not tested |
+| `yawl-resourcing` | 1 | 15 | Minimal — allocator strategies and Hibernate CRUD not tested |
+| `yawl-worklet` | 0 | 0 | **No coverage** |
+| `yawl-scheduling` | 0 | 0 | **No coverage** |
+| `yawl-security` | 0 | 0 | **No coverage** |
+| `yawl-integration` | 4 active | 28 | Partial — MCP tools and A2A excluded; dedup untested |
+| `yawl-monitoring` | 1 | 21 | Partial — exporter config and log format not asserted |
+| `yawl-webapps` | N/A | 0 | Aggregator — no source |
+| `yawl-engine-webapp` | N/A | 0 | Packaging-only — covered by integration module |
+| `yawl-control-panel` | 0 | 0 | **No coverage** |
+| **Total** | **~59** | **~387** | |
+
+Run the full test suite: `mvn -T 1.5C clean test`
+
+### Roadmap
+
+- **Fill zero-coverage modules** — `yawl-worklet`, `yawl-scheduling`, `yawl-security`, `yawl-control-panel` all have no tests; each module README contains a specific testing roadmap
+- **JaCoCo gate in CI** — enable the `ci` profile on every pull request; enforce 65% line / 55% branch coverage targets defined in the `analysis` profile
+- **Testcontainers integration suite** — add a `yawl-it` integration test module that starts the full engine WAR in a Testcontainers-managed Tomcat and runs end-to-end HTTP tests
+- **Java 25 preview adoption** — track Java 25 LTS (expected September 2025); adopt value types, module system enhancements, and any new virtual thread APIs
+- **A2A SDK enablement** — re-enable the commented-out A2A dependencies and tests once `io.anthropic:a2a-java-sdk-*` is published to Maven Central
+- **SonarQube quality gate** — configure the `sonar` profile in CI to fail PRs that reduce the overall code quality rating below A
+- **Dependency update automation** — enable Renovate Bot or Dependabot to open PRs for version bumps guided by the parent BOM; require green CI before merge
+

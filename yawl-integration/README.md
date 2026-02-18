@@ -68,3 +68,35 @@ local Maven repository, then uncomment the dependency declarations.
 ```bash
 mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-stateless,yawl-integration clean package
 ```
+
+## Test Coverage
+
+| Test Class | Package | Tests | Status | Focus |
+|------------|---------|-------|--------|-------|
+| `SpiffeExceptionTest` | `spiffe` | 11 | Active | SPIFFE exception types and messages |
+| `EndToEndWorkflowExecutionTest` | `multimodule` | 4 | Active | Full case execution across modules |
+| `MultiModuleIntegrationTest` | `multimodule` | 6 | Active | Cross-module integration assertions |
+| `TestDataSeedingPatterns` | `multimodule` | 7 | Active | Test data seeding and teardown patterns |
+| `OpenTelemetryConfigTest` | `observability` | 17 | **Excluded** | Internal OTel API changed in 1.59.0 |
+| `SpiffeWorkloadIdentityTest` | `spiffe` | 31 | **Excluded** | Uses `sun.security.x509` (not exported in Java 21+) |
+| `YawlMcpServerTest` | `mcp` | 0 | Placeholder | MCP server tool registration — no assertions |
+| `YawlA2AServerTest` | `a2a` | 0 | Placeholder | A2A server — excluded until A2A SDK available |
+
+**Total active tests: 28** (excluding placeholders and excluded tests)
+
+Run with: `mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-stateless,yawl-integration test`
+
+Coverage gaps:
+- MCP tool invocation and response serialisation — placeholder only
+- A2A message routing and task delegation — excluded (SDK unavailable)
+- Deduplication idempotency — not explicitly tested
+- OTel configuration after API change in 1.59.0 — excluded
+
+## Roadmap
+
+- **A2A SDK Maven Central publication** — track Anthropic's A2A SDK release; uncomment A2A dependencies and re-enable `YawlA2AServerTest` once available
+- **`YawlMcpServerTest` implementation** — write tests covering tool registration, tool invocation with valid/invalid arguments, and streaming response handling
+- **Fix `OpenTelemetryConfigTest`** — update to use the public OTel API after the 1.59.0 internal API change; re-enable in surefire
+- **Fix `SpiffeWorkloadIdentityTest`** — replace `sun.security.x509` usage with `java.security.cert` public API; re-enable in Java 21+
+- **Deduplication test suite** — add `TestDeduplicationFilter` covering at-least-once delivery idempotency with in-memory and Redis-backed stores
+- **MCP streaming responses** — implement SSE-based streaming for long-running workflow tool calls (case status polling, event subscriptions)

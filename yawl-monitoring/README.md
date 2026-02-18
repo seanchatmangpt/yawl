@@ -54,3 +54,29 @@ Test dependencies: JUnit 4, JUnit 5 Jupiter, Hamcrest.
 ```bash
 mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-monitoring clean package
 ```
+
+## Test Coverage
+
+| Test Class | Tests | Focus |
+|------------|-------|-------|
+| `ObservabilityTest` | 21 | Tracer initialisation, span lifecycle, Prometheus metric registration, structured log format |
+
+**Total: 21 tests across 1 test class**
+
+Run with: `mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-monitoring test`
+
+Coverage gaps:
+- Jaeger exporter configuration and connectivity — not tested (requires external Jaeger instance)
+- OTLP exporter configuration — not tested
+- Micrometer counter / timer / gauge emission — partially covered by `ObservabilityTest`
+- Log4j 2 JSON layout output format — not validated by schema assertion
+- Spring Boot Actuator endpoint (`/actuator/prometheus`, `/actuator/health`) — requires Spring context
+
+## Roadmap
+
+- **OTel 2.0 migration** — update to OpenTelemetry Java SDK 2.x when stable; replace deprecated `opentelemetry-exporter-jaeger-thrift` with the OTLP exporter (Jaeger 1.35+ supports OTLP natively)
+- **Grafana dashboard provisioning** — publish a Grafana dashboard JSON definition for YAWL workflow metrics (case throughput, work item latency, queue depth) to the `observability/` directory
+- **Log correlation** — inject OTel `trace_id` and `span_id` into every Log4j 2 JSON log entry via `OpenTelemetryAppender` for unified trace-to-log correlation in Grafana Loki
+- **Testcontainers observability tests** — add integration tests that start a Prometheus container and assert that YAWL metrics are scraped correctly
+- **Custom workflow semantic conventions** — define YAWL-specific OTel attribute keys (`yawl.case.id`, `yawl.task.name`, `yawl.net.name`) as a published `YawlSemconv` class
+- **Alert rule definitions** — publish Prometheus alerting rules (e.g., case stuck > 1h, queue depth > threshold) as a `prometheus-alerts.yaml` in the `observability/` directory
