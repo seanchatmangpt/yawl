@@ -1,0 +1,74 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#d69e2e' } } }%%
+graph LR
+    classDef mcp fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef a2a fill:#805ad5,stroke:#6b46c1,color:#fff
+    classDef autonomous fill:#d69e2e,stroke:#b7791f,color:#fff
+    classDef yawl fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef shared fill:#38a169,stroke:#2f855a,color:#fff
+
+    subgraph MCPCapabilities["MCP Server Capabilities"]
+        MCP_TOOLS[15+ Tools<br/>Workflow Operations]:::mcp
+        MCP_RESOURCES[3 Static Resources<br/>specs, cases, workitems]:::mcp
+        MCP_TEMPLATES[3 Resource Templates<br/>parameterized access]:::mcp
+        MCP_PROMPTS[4 Prompts<br/>Analysis Guides]:::mcp
+        MCP_COMPLETE[3 Completions<br/>ID Autocomplete]:::mcp
+    end
+
+    subgraph A2ACapabilities["A2A Server Capabilities"]
+        A2A_SKILLS[4 Skills<br/>Workflow Actions]:::a2a
+        A2A_DISCOVERY[Agent Card<br/>JSON-LD Discovery]:::a2a
+        A2A_AUTH[Multi-Scheme Auth<br/>mTLS/JWT/API Key]:::a2a
+        A2A_REST[REST Endpoints<br/>/tasks, /message]:::a2a
+    end
+
+    subgraph AutonomousAgents["Autonomous Agents (10)"]
+        AgentFactory[AgentFactory]:::autonomous
+        GenericPartyAgent[GenericPartyAgent]:::autonomous
+        AgentConfigLoader[AgentConfigLoader]:::autonomous
+        AgentRegistry[AgentRegistry]:::autonomous
+        AgentCapability[AgentCapability]:::autonomous
+        AgentConfiguration[AgentConfiguration]:::autonomous
+        AgentRegistry[AgentRegistry]:::autonomous
+        AgentRegistryClient[AgentRegistryClient]:::autonomous
+        AgentInfo[AgentInfo]:::autonomous
+        AgentHealthMonitor[AgentHealthMonitor]:::autonomous
+    end
+
+    subgraph SharedCapabilities["Shared YAWL Engine"]
+        ENGINE_API[InterfaceB API<br/>Workflow Operations]:::shared
+        SPEC_MGMT[Specification Management<br/>Load/Unload/Query]:::shared
+        CASE_MGMT[Case Management<br/>Launch/Cancel/Query]:::shared
+        WORKITEM_MGMT[Work Item Management<br/>Checkout/Complete]:::shared
+    end
+
+    subgraph ZAICapabilities["Z.AI Reasoning"]
+        ZAI_FUNCTIONS[Function Calling<br/>GLM-4 Tool Use]:::autonomous
+        ZAI_NLU[Natural Language<br/>Intent Recognition]:::autonomous
+        ZAI_CONTEXT[Context Management<br/>Session Memory]:::autonomous
+    end
+
+    %% MCP capabilities map to YAWL
+    MCP_TOOLS --> ENGINE_API
+    MCP_RESOURCES --> CASE_MGMT
+    MCP_TEMPLATES --> WORKITEM_MGMT
+
+    %% A2A capabilities map to YAWL
+    A2A_SKILLS --> ENGINE_API
+    A2A_DISCOVERY -.->|advertises| SPEC_MGMT
+
+    %% Autonomous agents use both protocols
+    AgentFactory --> ENGINE_API
+    GenericPartyAgent --> ENGINE_API
+    AgentConfigLoader --> ENGINE_API
+    AgentRegistry --> ENGINE_API
+    AgentCapability --> ENGINE_API
+    AgentConfiguration --> ENGINE_API
+    AgentRegistry --> ENGINE_API
+    AgentRegistryClient --> ENGINE_API
+    AgentInfo --> ENGINE_API
+    AgentHealthMonitor --> ENGINE_API
+
+    %% Z.AI enhances all capabilities
+    ZAI_FUNCTIONS -.->|enhances| MCP_TOOLS
+    ZAI_NLU -.->|enhances| A2A_SKILLS
+    ZAI_CONTEXT -.->|enhances| AutonomousAgents

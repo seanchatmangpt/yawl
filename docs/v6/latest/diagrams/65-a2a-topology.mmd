@@ -1,0 +1,93 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#805ad5' } } }%%
+graph TB
+    classDef agent fill:#805ad5,stroke:#6b46c1,color:#fff
+    classDef yawl fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef client fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef auth fill:#d69e2e,stroke:#b7791f,color:#fff
+    classDef transport fill:#38a169,stroke:#2f855a,color:#fff
+
+    subgraph ExternalAgents["A2A Agent Ecosystem"]
+        AGENT1[Planning Agent<br/>workflow design]:::client
+        AGENT2[Execution Agent<br/>task automation]:::client
+        AGENT3[Monitoring Agent<br/>state tracking]:::client
+        AGENT4[Human Agent<br/>approval workflows]:::client
+    end
+
+    subgraph A2ATransport["A2A REST Protocol"]
+        HTTP[HTTP/1.1<br/>com.sun.net.httpserver]:::transport
+        REST[REST Handler<br/>io.a2a.transport.rest]:::transport
+    end
+
+    subgraph YawlA2A["YawlA2AServer v5.2"]
+        A2ASERVER[YawlA2AServer<br/>Port 8081]:::agent
+        EXECUTOR[YawlAgentExecutor<br/>Message Processing]:::agent
+        ADAPTER[YawlEngineAdapter<br/>Protocol Translation]:::agent
+    end
+
+    subgraph Discovery["Agent Discovery"]
+        AGENTCARD[AgentCard<br/>JSON-LD Descriptor]:::agent
+        WELLKNOWN[/.well-known/agent.json<br/>No Auth Required]:::transport
+    end
+
+    subgraph Skills["A2A Skills"]
+        SKILL_LAUNCH[launch_workflow<br/>Start workflow case]:::yawl
+        SKILL_QUERY[query_workflows<br/>List specs and cases]:::yawl
+        SKILL_MANAGE[manage_workitems<br/>Get/complete work items]:::yawl
+        SKILL_CANCEL[cancel_workflow<br/>Stop running case]:::yawl
+    end
+
+    subgraph Authentication["Authentication Layer"]
+        AUTHPROV[CompositeAuthenticationProvider]:::auth
+        MTLS[mTLS/SPIFFE<br/>X.509 SVID]:::auth
+        JWT[JWT Bearer<br/>HS256]:::auth
+        APIKEY[API Key<br/>HMAC-SHA256]:::auth
+    end
+
+    subgraph YAWLEngine["YAWL Engine"]
+        INTERFACEB2[InterfaceB<br/>Workflow Operations]:::yawl
+        ENGINE2[YEngine<br/>Petri Net Runtime]:::yawl
+    end
+
+    subgraph ZAI2["Z.AI Reasoning"]
+        ZAI2SERVICE[ZaiFunctionService<br/>Natural Language Processing]:::auth
+    end
+
+    %% Agent connections to transport
+    AGENT1 --> HTTP
+    AGENT2 --> HTTP
+    AGENT3 --> HTTP
+    AGENT4 --> HTTP
+
+    HTTP --> REST
+    REST --> A2ASERVER
+
+    %% Discovery (no auth)
+    WELLKNOWN --> AGENTCARD
+    AGENTCARD -.->|advertises| A2ASERVER
+
+    %% Authentication flow
+    A2ASERVER --> AUTHPROV
+    AUTHPROV --> MTLS
+    AUTHPROV --> JWT
+    AUTHPROV --> APIKEY
+
+    %% Execution flow
+    A2ASERVER --> EXECUTOR
+    EXECUTOR --> ADAPTER
+    EXECUTOR -.->|optional| ZAI2SERVICE
+
+    %% Skills to engine
+    EXECUTOR --> SKILL_LAUNCH
+    EXECUTOR --> SKILL_QUERY
+    EXECUTOR --> SKILL_MANAGE
+    EXECUTOR --> SKILL_CANCEL
+
+    SKILL_LAUNCH --> INTERFACEB2
+    SKILL_QUERY --> INTERFACEB2
+    SKILL_MANAGE --> INTERFACEB2
+    SKILL_CANCEL --> INTERFACEB2
+    INTERFACEB2 --> ENGINE2
+
+    %% Protocol: A2A (Agent-to-Agent) v0.2.0
+    %% Transport: HTTP REST with JSON payloads
+    %% Auth: Multi-scheme (mTLS/JWT/API Key)

@@ -596,6 +596,7 @@ emit_integration_facts() {
 # ── Main dispatcher ──────────────────────────────────────────────────────────
 emit_all_integration_diagrams() {
     timer_start
+    record_memory "integration_start"
 
     # Emit diagrams
     emit_mcp_architecture_diagram
@@ -607,5 +608,6 @@ emit_all_integration_diagrams() {
     emit_integration_facts
 
     INTEGRATION_ELAPSED=$(timer_elapsed_ms)
+    record_phase_timing "integration" "$INTEGRATION_ELAPSED"
     log_ok "All integration diagrams and facts emitted in ${INTEGRATION_ELAPSED}ms"
 }

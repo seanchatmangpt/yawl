@@ -1,0 +1,45 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#2d3748' } } }%%
+graph TD
+    classDef parent fill:#4a5568,stroke:#2d3748,color:#fff
+    classDef fullshared fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef pkgscoped fill:#3182ce,stroke:#2b6cb0,color:#fff
+    classDef infra fill:#38a169,stroke:#2f855a,color:#fff
+
+    PARENT[yawl-parent<br/>6.0.0-Alpha]:::parent
+
+    yawl_utilities[yawl-utilities]:::pkgscoped
+    yawl_elements[yawl-elements]:::pkgscoped
+    yawl_authentication[yawl-authentication]:::pkgscoped
+    yawl_engine[yawl-engine]:::pkgscoped
+    yawl_stateless[yawl-stateless]:::pkgscoped
+    yawl_resourcing[yawl-resourcing]:::pkgscoped
+    yawl_worklet[yawl-worklet]:::pkgscoped
+    yawl_scheduling[yawl-scheduling]:::pkgscoped
+    yawl_security[yawl-security]:::pkgscoped
+    yawl_integration[yawl-integration]:::pkgscoped
+    yawl_monitoring[yawl-monitoring]:::pkgscoped
+    yawl_webapps[yawl-webapps]:::pkgscoped
+    yawl_control_panel[yawl-control-panel]:::pkgscoped
+
+    %% Reactor ordering (parent -> all modules)
+    PARENT --> yawl_utilities
+    PARENT --> yawl_elements
+    PARENT --> yawl_authentication
+    PARENT --> yawl_engine
+    PARENT --> yawl_stateless
+    PARENT --> yawl_resourcing
+    PARENT --> yawl_worklet
+    PARENT --> yawl_scheduling
+    PARENT --> yawl_security
+    PARENT --> yawl_integration
+    PARENT --> yawl_monitoring
+    PARENT --> yawl_webapps
+    PARENT --> yawl_control_panel
+
+    %% Inter-module dependencies
+
+    %% Legend
+    subgraph Legend
+        L1[Full Shared ../src]:::fullshared
+        L2[Package Scoped]:::pkgscoped
+    end

@@ -1,0 +1,141 @@
+name: Observatory
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'scripts/observatory/**'
+      - '.github/workflows/observatory.yml'
+  pull_request:
+    branches:
+      - master
+      - main
+    paths:
+      - 'scripts/observatory/**'
+      - '.github/workflows/observatory.yml'
+
+jobs:
+  observatory:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact-name: observatory-linux
+          - os: macos-latest
+            artifact-name: observatory-macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup bash environment
+        shell: bash
+        run: |
+          echo "Setting up bash environment..."
+          # Ensure scripts are executable
+          chmod +x scripts/observatory/*.sh 2>/dev/null || true
+          # Create output directories
+          mkdir -p observatory-output/diagrams
+          mkdir -p observatory-output/facts
+          # Log system information
+          echo "System: $(uname -a)"
+          echo "Bash version: ${BASH_VERSION:-unknown}"
+          echo "Working directory: $(pwd)"
+
+      - name: Run observatory scripts
+        shell: bash
+        run: |
+          set -e  # Fail on any error
+
+          OBSERVATORY_DIR="scripts/observatory"
+
+          if [ -d "$OBSERVATORY_DIR" ]; then
+            echo "Running observatory scripts from $OBSERVATORY_DIR"
+
+            # Find and run all shell scripts in the observatory directory
+            for script in "$OBSERVATORY_DIR"/*.sh; do
+              if [ -f "$script" ]; then
+                echo "========================================="
+                echo "Running: $script"
+                echo "========================================="
+
+                # Run the script and capture exit code
+                set +e
+                "$script"
+                exit_code=$?
+                set -e
+
+                if [ $exit_code -ne 0 ]; then
+                  echo "ERROR: Script $script failed with exit code $exit_code"
+                  exit $exit_code
+                fi
+
+                echo "Completed: $script"
+              fi
+            done
+
+            echo "========================================="
+            echo "All observatory scripts completed successfully"
+            echo "========================================="
+          else
+            echo "WARNING: Observatory directory $OBSERVATORY_DIR not found"
+            echo "Skipping observatory script execution"
+          fi
+
+      - name: Collect generated artifacts
+        shell: bash
+        run: |
+          echo "Collecting generated artifacts..."
+
+          # Create artifact directory structure
+          mkdir -p artifacts/diagrams
+          mkdir -p artifacts/facts
+
+          # Copy diagrams if they exist
+          if [ -d "diagrams" ]; then
+            cp -r diagrams/* artifacts/diagrams/ 2>/dev/null || true
+          fi
+
+          # Copy facts if they exist
+          if [ -d "facts" ]; then
+            cp -r facts/* artifacts/facts/ 2>/dev/null || true
+          fi
+
+          # Copy any observatory output
+          if [ -d "observatory-output" ]; then
+            cp -r observatory-output/* artifacts/ 2>/dev/null || true
+          fi
+
+          # List collected artifacts
+          echo "Collected artifacts:"
+          find artifacts -type f 2>/dev/null || echo "No artifacts found"
+
+      - name: Upload observatory artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # Summary job that requires all matrix jobs to pass
+  observatory-summary:
+    needs: observatory
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check observatory results
+        run: |
+          if [ "${{ needs.observatory.result }}" == "failure" ]; then
+            echo "Observatory workflow failed on one or more platforms"
+            exit 1
+          fi
+          echo "All observatory scripts completed successfully on all platforms"

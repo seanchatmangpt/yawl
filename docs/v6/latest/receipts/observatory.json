@@ -1,0 +1,56 @@
+{
+  "run_id": "20260218T004318Z",
+  "status": "YELLOW",
+  "repo": {
+    "path": "/Users/sac/cre/vendors/yawl",
+    "git": {
+      "branch": "claude/v6-quality-improvements-1771309877",
+      "commit": "4a298c6",
+      "dirty": true
+    }
+  },
+  "toolchain": {
+    "java": "unknown",
+    "maven": "unknown"
+  },
+  "inputs": {
+    "root_pom_sha256": "sha256:9149d52a3bf3ed2661c0472482643e7e45737c9f1724accdfbb9c0c4e6ec222f"
+  },
+  "facts_emitted": ["checkstyle-warnings.json","integration-facts.json","integration.json","modules.json","pmd-violations.json","reactor.json","spotbugs-findings.json","static-analysis.json"],
+  "diagrams_emitted": ["10-maven-reactor.mmd","60-code-health-dashboard.mmd","60-mcp-architecture.mmd","61-static-analysis-trends.mmd","65-a2a-topology.mmd","70-agent-capabilities.mmd","75-protocol-sequences.mmd"],
+  "refusals": [
+  ],
+  "warnings": [
+    "No SpotBugs reports found. Run: mvn -P ci spotbugs:spotbugs",
+    "No PMD reports found. Run: mvn -P ci pmd:pmd",
+    "No Checkstyle reports found. Run: mvn -P ci checkstyle:checkstyle"
+  ],
+  "outputs": {
+    "index_sha256": "sha256:missing",
+    "facts_sha256": {
+      "checkstyle-warnings.json": "sha256:b3444c5596a0a82ba2d9a35a02ab3fca1f4a4b9fa4585f79f9f19c4a4cf7f46a",
+      "integration-facts.json": "sha256:2f8b1bb5a1d2d1b7135548cbc380b559b0664e84c472f4d8357ca39cf9026603",
+      "integration.json": "sha256:3c3218a9aa7c3ecde06fe8c8d96eb3d1d229465eb62f923676a3c40c4d8c5437",
+      "modules.json": "sha256:5eb4997aa8889f0bb31fd9e641affe034a414c131787e1ca4dc1caf11a9bd2b5",
+      "pmd-violations.json": "sha256:839b94a9f31323da4962dfcfcfd6610fcccece816d7a64a60a902bc8f01fa758",
+      "reactor.json": "sha256:ad2fd62bee7a2f1bce0469eb3a4d773de5dd24d9b6a3f24882d7fce6ce5f7d2a",
+      "spotbugs-findings.json": "sha256:47192e0fed617269bed32165208a5f2739b4073a105953777a5d6dcb5b694912",
+      "static-analysis.json": "sha256:8bd0364cd9095322740758aaadc5b8eca5d7a11217b637365fdc5547c1dcde19"
+    },
+    "diagrams_sha256": {
+      "10-maven-reactor.mmd": "sha256:30547d8ca06eba46f0a61a428f302df3b4e89e2327149eeaa0fd21b1e9c8149c",
+      "60-code-health-dashboard.mmd": "sha256:48f108f96b68036d0b6b8db2730aa99756afd963d698cad25ef708d73959d510",
+      "60-mcp-architecture.mmd": "sha256:03efa81801b2650016f18561c111c029b0eca9d32b0160718c0b213983143bfa",
+      "61-static-analysis-trends.mmd": "sha256:c6d35da33ea772e5712ad87bcb6efb576052d5a5d8b3bf9fddf25c3b7bd021ad",
+      "65-a2a-topology.mmd": "sha256:093f4d6d49701930648987a7bf90c1c046115820739c5edf1c0a6df82802c7fb",
+      "70-agent-capabilities.mmd": "sha256:4221002579325009ea851b37249a36bf9a9e8ef82f313306600e1431dabcefad",
+      "75-protocol-sequences.mmd": "sha256:e15502ec08d51c3ba7cb734f052becd2786e5aeb856a9c081573ea2f8e8cd083"
+    }
+  },
+  "timing_ms": {
+    "total": 2337,
+    "facts": 166,
+    "diagrams": 108,
+    "yawl_xml": 29
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "reactor_order": [
+    "yawl-parent",
+    "yawl-utilities",
+    "yawl-elements",
+    "yawl-authentication",
+    "yawl-engine",
+    "yawl-stateless",
+    "yawl-resourcing",
+    "yawl-worklet",
+    "yawl-scheduling",
+    "yawl-security",
+    "yawl-integration",
+    "yawl-monitoring",
+    "yawl-webapps",
+    "yawl-control-panel"
+  ],
+  "module_deps": [
+
+  ]
+}

@@ -1,0 +1,70 @@
+%%{ init: { 'theme': 'base' } }%%
+sequenceDiagram
+    autonumber
+    participant C as MCP/A2A Client
+    participant M as YawlMcpServer
+    participant A as YawlA2AServer
+    participant Z as ZaiFunctionService
+    participant Y as YAWL Engine
+    participant E as InterfaceB
+
+    rect rgb(49, 130, 206, 0.1)
+        Note over C,E: MCP Tool Invocation Sequence
+        C->>M: initialize request
+        M->>E: connect(username, password)
+        E-->>M: sessionHandle
+        M-->>C: initialize response + capabilities
+        
+        C->>M: tools/call launch_case
+        M->>E: launchCase(specID, data, handle)
+        E->>Y: Create case instance
+        Y-->>E: caseId
+        E-->>M: caseId XML
+        M-->>C: tool result (caseId)
+    end
+
+    rect rgb(128, 90, 213, 0.1)
+        Note over C,E: A2A Message Sequence
+        C->>A: GET /.well-known/agent.json
+        A-->>C: AgentCard (no auth)
+        
+        C->>A: POST / (message)
+        Note right of A: Validate auth (mTLS/JWT/API Key)
+        A->>A: Authenticate request
+        A->>E: Execute workflow operation
+        E->>Y: Process request
+        Y-->>E: Result
+        E-->>A: Result
+        A-->>C: A2A response message
+    end
+
+    rect rgb(214, 158, 46, 0.1)
+        Note over C,E: Z.AI Enhanced Sequence
+        C->>M: tools/call (natural language)
+        M->>Z: processWithFunctions(text)
+        Z->>Z: Extract intent + entities
+        Z->>Z: Select appropriate function
+        Z->>E: Call YAWL operation
+        E-->>Z: Result
+        Z->>Z: Format natural response
+        Z-->>M: Formatted response
+        M-->>C: tool result (human-readable)
+    end
+
+    rect rgb(229, 62, 62, 0.1)
+        Note over C,E: Error Handling Sequence
+        C->>M: tools/call invalid_case
+        M->>E: getCaseState(invalidId, handle)
+        E-->>M: failure XML
+        M->>M: Log error via MCP logging
+        M-->>C: tool error (isError: true)
+        
+        C->>A: POST / (expired JWT)
+        A->>A: Validate JWT
+        A-->>C: HTTP 401 + WWW-Authenticate
+    end
+
+    %% Protocol Details:
+    %% MCP: JSON-RPC 2.0 over STDIO
+    %% A2A: HTTP REST with JSON payloads
+    %% Auth: MCP=transport-level, A2A=mTLS/JWT/API Key

@@ -1,0 +1,18 @@
+%%{ init: { 'theme': 'base' } }%%
+graph LR
+    classDef good fill:#38a169,stroke:#2f855a,color:#fff
+    classDef warning fill:#d69e2e,stroke:#b7791f,color:#fff
+    classDef bad fill:#e53e3e,stroke:#c53030,color:#fff
+    classDef header fill:#4a5568,stroke:#2d3748,color:#fff
+
+    HEADER["Static Analysis Trends<br/>Last 10 Commits"]:::header
+
+    subgraph Timeline["Code Health Over Time"]
+    end
+
+    HEADER --> Timeline
+
+    %% Summary statistics
+    subgraph Stats["Trend Statistics"]
+        AVG["Average Score: 0"]
+    end
