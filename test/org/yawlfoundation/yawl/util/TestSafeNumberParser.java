@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
  * underflow, leading/trailing garbage, and all three behavioural contracts
  * (OrDefault, OrNull, OrThrow) for each numeric type (int, long, double, BigDecimal).
  */
+@Tag("unit")
 class TestSafeNumberParser {
 
     // -------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.elements.YTimerParameters;
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
@@ -19,6 +21,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class YWorkItemSwitchTest extends TestCase {
 
     // Test completion type to status mapping

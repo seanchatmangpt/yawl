@@ -10,6 +10,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YNet;
@@ -25,6 +26,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 15:21:49
  *
  */
+@Tag("unit")
 class TestYMarshal {
     private YSpecification _originalSpec;
     private YSpecification _copy;

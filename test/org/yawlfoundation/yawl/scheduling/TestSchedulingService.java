@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.scheduling;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("integration")
 public class TestSchedulingService {
 
     // --- Mapping state machine ---

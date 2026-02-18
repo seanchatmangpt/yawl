@@ -11,6 +11,7 @@
 package org.yawlfoundation.yawl.elements;
 
 import org.jdom2.Element;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Chicago TDD: All tests use real YTimerParameters and real JDOM objects.
  */
 @DisplayName("YTimerParameters - Parse Error Path and Fallback Behavior")
+@Tag("unit")
 class TestYTimerParametersParsing {
 
     private YTimerParameters _timer;

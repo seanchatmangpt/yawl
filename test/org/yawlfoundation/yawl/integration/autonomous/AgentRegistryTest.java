@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.junit.jupiter.api.Tag;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ import junit.framework.TestCase;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 public class AgentRegistryTest extends TestCase {
 
     private AgentRegistry registry;

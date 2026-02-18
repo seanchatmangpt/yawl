@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.data.YParameter;
 
@@ -18,6 +20,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class SwitchExpressionBranchTest extends TestCase {
 
     // Test YParameter type switch (getParamTypeStr)

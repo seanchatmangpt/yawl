@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.engine;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import org.junit.jupiter.api.Tag;
 
 import org.jdom2.JDOMException;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -19,6 +20,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 15:54:07
  * 
  */
+@Tag("integration")
 public class TestMarlonsEagerNessExperiment {
     private static YIdentifier _idForTopNet;
     private static YWorkItemRepository _workItemRepository;

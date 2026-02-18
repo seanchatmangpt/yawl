@@ -11,6 +11,7 @@ import javax.swing.*;
 
 import org.jdom2.Document;
 import org.jdom2.input.SAXBuilder;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
@@ -23,6 +24,7 @@ import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
  * Time: 12:31:17
  *
  */
+@Tag("integration")
 class TestWSIFInvoker {
     private static AuthenticationConfig _authconfig;
     private SAXBuilder _builder;

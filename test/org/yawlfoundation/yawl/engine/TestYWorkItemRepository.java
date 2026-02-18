@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
@@ -19,6 +20,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  * Time: 15:32:26
  *
  */
+@Tag("integration")
 class TestYWorkItemRepository {
     private YWorkItemRepository _workitemRepository;
     private YWorkItem _parentWorkItem;

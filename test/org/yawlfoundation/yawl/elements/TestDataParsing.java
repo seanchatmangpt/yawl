@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.exceptions.YSchemaBuildingException;
@@ -20,6 +21,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 17:23:58
  *
  */
+@Tag("unit")
 class TestDataParsing {
     private YSpecification _badSpecification;
 

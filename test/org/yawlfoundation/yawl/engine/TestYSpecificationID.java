@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.engine;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecVersion;
 import org.yawlfoundation.yawl.util.XNode;
@@ -12,6 +13,7 @@ import org.yawlfoundation.yawl.util.XNode;
  *
  * @author Claude Code 2026-02
  */
+@Tag("unit")
 public class TestYSpecificationID {
 
     @Test

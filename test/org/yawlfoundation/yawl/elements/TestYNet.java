@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
@@ -28,6 +29,7 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * To enable and disable the creation of type comments go to
  * Window>Preferences>Java>Code Generation.
  */
+@Tag("unit")
 class TestYNet {
     private YNet _goodNet;
     private YNet _badNet;

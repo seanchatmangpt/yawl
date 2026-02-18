@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Tag;
+
 import jakarta.persistence.TypedQuery;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -57,6 +59,7 @@ import java.util.Properties;
  *
  * @author YAWL Engine Team - V6 performance validation 2026-02-17
  */
+@Tag("slow")
 public class HibernatePerformanceRegressionTest extends TestCase {
 
     private static final int ENTITY_COUNT = 100;

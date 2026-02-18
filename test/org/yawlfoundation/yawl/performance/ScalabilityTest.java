@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import junit.framework.TestCase;
  * @version 5.2
  * @since 2026-02-16
  */
+@Tag("slow")
 public class ScalabilityTest extends TestCase {
     
     private YEngine engine;

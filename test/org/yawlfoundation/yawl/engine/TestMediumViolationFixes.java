@@ -9,6 +9,7 @@
  */
 package org.yawlfoundation.yawl.engine;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * No mocks, no stubs - only real integration.
  */
 @DisplayName("MEDIUM Violations 7-12 - Fix Verification Tests")
+@Tag("integration")
 class TestMediumViolationFixes {
 
     /**

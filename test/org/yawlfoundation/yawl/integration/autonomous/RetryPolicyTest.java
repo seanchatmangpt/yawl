@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 import org.yawlfoundation.yawl.integration.autonomous.resilience.RetryPolicy;
 
@@ -37,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("unit")
 public class RetryPolicyTest extends TestCase {
 
     // Use 10ms backoff so tests don't sleep for 2 full seconds

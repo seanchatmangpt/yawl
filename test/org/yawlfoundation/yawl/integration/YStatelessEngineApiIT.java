@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.integration;
 
+import org.junit.jupiter.api.Tag;
+
 import org.junit.Test;
 import org.junit.Before;
 
@@ -57,6 +59,7 @@ import static org.junit.Assert.*;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("integration")
 public class YStatelessEngineApiIT {
 
     private Class<?> engineClass;

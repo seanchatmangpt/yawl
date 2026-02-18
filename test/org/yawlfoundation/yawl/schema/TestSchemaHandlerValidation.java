@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.schema;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
  * @author Mike Fowler
  *         Date: 04-Jul-2006
  */
+@Tag("unit")
 class TestSchemaHandlerValidation
 {
     private static final String SCHEMA = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +

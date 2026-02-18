@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Instant;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
  * @version 6.0.0-Alpha
  */
 @DisplayName("WorkletRecord — worklet instance lifecycle and state transitions")
+@Tag("unit")
 class TestWorkletRecord {
 
     private WorkletRecord record;

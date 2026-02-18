@@ -7,6 +7,7 @@
  */
 package org.yawlfoundation.yawl.util;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Chicago TDD: Tests real DynamicValue behavior with real objects.
  */
 @DisplayName("DynamicValue - Reflection Error Handling")
+@Tag("unit")
 class TestDynamicValueLogging {
 
     /** A simple target object with accessible methods */

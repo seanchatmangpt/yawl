@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
@@ -19,6 +20,7 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 public class ResourceLogicUnitTest {
 
     @Test

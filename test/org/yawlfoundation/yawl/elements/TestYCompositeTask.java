@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,6 +28,7 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
  * @author YAWL Test Suite (expanded)
  */
 @DisplayName("YCompositeTask Tests")
+@Tag("unit")
 class TestYCompositeTask {
     private YCompositeTask _compositeTask1;
     private YCompositeTask _compositeTask2;

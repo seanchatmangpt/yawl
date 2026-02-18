@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.tooling;
 
+import org.junit.jupiter.api.Tag;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -54,6 +56,7 @@ import static org.junit.Assert.*;
  * @author YAWL Development Team
  * @since 6.0.0
  */
+@Tag("unit")
 public class TestYawlCli {
 
     @Rule

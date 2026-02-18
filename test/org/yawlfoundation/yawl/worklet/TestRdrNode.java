@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
  * @version 6.0.0-Alpha
  */
 @DisplayName("RdrNode — RDR node condition evaluation and tree traversal")
+@Tag("unit")
 class TestRdrNode {
 
     private Map<String, String> context;

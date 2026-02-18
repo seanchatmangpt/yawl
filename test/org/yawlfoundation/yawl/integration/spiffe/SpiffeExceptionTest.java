@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.integration.spiffe;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("unit")
 class SpiffeExceptionTest {
 
     private static final String TEST_SPIFFE_ID = "spiffe://yawl.cloud/test";

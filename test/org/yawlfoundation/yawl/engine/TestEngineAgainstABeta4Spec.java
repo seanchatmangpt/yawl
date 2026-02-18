@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -28,6 +29,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * For more information about the YAWL licence refer to the 'downloads' section under
  * http://www.yawl-system.com
  */
+@Tag("integration")
 class TestEngineAgainstABeta4Spec {
     private YSpecification _specification;
     private YEngine _engine;

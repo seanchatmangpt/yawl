@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.sql.*;
@@ -40,6 +42,7 @@ import junit.framework.TestCase;
  * @version 5.2
  * @since 2026-02-16
  */
+@Tag("slow")
 public class MigrationPerformanceBenchmark extends TestCase {
     
     private static final Logger logger = LogManager.getLogger(MigrationPerformanceBenchmark.class);

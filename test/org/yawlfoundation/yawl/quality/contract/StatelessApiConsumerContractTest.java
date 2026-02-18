@@ -7,6 +7,7 @@ import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
 import au.com.dius.pact.consumer.junit5.PactTestFor;
 import au.com.dius.pact.core.model.RequestResponsePact;
 import au.com.dius.pact.core.model.annotations.Pact;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(PactConsumerTestExt.class)
 @PactTestFor(providerName = "YawlStatelessApi", port = "0")
 @DisplayName("YAWL Stateless Engine API - Consumer Contract")
+@Tag("unit")
 public class StatelessApiConsumerContractTest {
 
     private static final String CONSUMER_NAME = "YawlBatchProcessor";

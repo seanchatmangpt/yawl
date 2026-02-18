@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.stateless.monitor;
 
+import org.junit.jupiter.api.Tag;
+
 import java.util.Map;
 
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitoringService.CaseStatistics;
@@ -13,6 +15,7 @@ import junit.framework.TestCase;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("integration")
 public class TestYCaseMonitoringService extends TestCase {
 
     private YCaseMonitor caseMonitor;

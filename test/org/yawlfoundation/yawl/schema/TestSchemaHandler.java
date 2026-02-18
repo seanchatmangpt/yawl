@@ -2,12 +2,14 @@ package org.yawlfoundation.yawl.schema;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Mike Fowler
  *         Date: 04-Jul-2006
  */
+@Tag("unit")
 class TestSchemaHandler
 {
     @Test

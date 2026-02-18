@@ -85,6 +85,23 @@ YAWL offers these distinctive features:
 
 ---
 
+## Developer Build Guide
+
+For complete build and test documentation, see **[DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md)**.
+
+Quick reference:
+
+```bash
+./scripts/build-fast.sh        # Compile only (~45s)
+./scripts/test-quick.sh        # Unit tests only (~60s)
+./scripts/test-full.sh         # All tests with coverage (~90s)
+./scripts/watch-build.sh       # Auto-rebuild on file change
+```
+
+Build performance metrics and optimization details: **[PERFORMANCE.md](PERFORMANCE.md)**
+
+---
+
 ## Maven Build — Root POM (`pom.xml`)
 
 **Artifact:** `org.yawlfoundation:yawl-parent:6.0.0-Alpha` | `packaging: pom`

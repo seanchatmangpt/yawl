@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.build;
 
+import org.junit.jupiter.api.Tag;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -47,6 +49,7 @@ import junit.framework.TestSuite;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Tag("slow")
 public class Java25BuildWorkflowIntegrationTest extends TestCase {
 
     private static final String PROJECT_ROOT = "/home/user/yawl";

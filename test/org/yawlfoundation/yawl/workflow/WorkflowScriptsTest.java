@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
  * @author YAWL Development Team
  * @version 5.2
  */
+@Tag("unit")
 public class WorkflowScriptsTest {
 
     private static final String PROJECT_ROOT = System.getProperty("user.dir");

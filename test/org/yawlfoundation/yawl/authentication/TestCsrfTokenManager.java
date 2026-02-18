@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpUpgradeHandler;
 import jakarta.servlet.http.Part;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Development Team
  * @since 5.2
  */
+@Tag("unit")
 public class TestCsrfTokenManager {
 
     private InMemorySession session;

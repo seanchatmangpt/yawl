@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YCondition;
@@ -30,6 +31,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 12:28:34
  *
  */
+@Tag("integration")
 class TestEngineSystem2 {
     private YIdentifier _idForBottomNet;
 //    private YIdentifier _idForTopNet;

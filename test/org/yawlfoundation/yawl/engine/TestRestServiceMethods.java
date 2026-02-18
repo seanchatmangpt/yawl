@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -25,6 +26,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 12:43:53
  *
  */
+@Tag("integration")
 class TestRestServiceMethods{
     private YEngine _engine;
     private YSpecification _specification;

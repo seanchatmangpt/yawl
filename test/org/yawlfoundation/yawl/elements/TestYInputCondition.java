@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.elements;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
@@ -14,6 +15,7 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
  * Time: 11:13:27
  *
  */
+@Tag("unit")
 class TestYInputCondition{
     private YInputCondition _invalidInputCondition;
 

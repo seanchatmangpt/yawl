@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 3. Java 21+ is available (project minimum requirement)
  */
 @DisplayName("Test Infrastructure Smoke Test")
+@Tag("integration")
 class TestInfrastructureSmokeTest {
 
     @Test

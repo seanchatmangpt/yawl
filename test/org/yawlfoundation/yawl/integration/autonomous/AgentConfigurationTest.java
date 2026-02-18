@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.TestCase;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
@@ -37,6 +39,7 @@ import java.util.List;
  * @author YAWL Foundation
  * @version 6.0
  */
+@Tag("unit")
 public class AgentConfigurationTest extends TestCase {
 
     // Real strategy implementations for testing (no mocks)

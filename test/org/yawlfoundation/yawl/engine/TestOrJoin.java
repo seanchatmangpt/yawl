@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Iterator;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -24,6 +25,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 15:03:20
  *
  */
+@Tag("integration")
 class TestOrJoin {
     private long _sleepTime = 100;
     private YEngine _engine;

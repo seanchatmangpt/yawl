@@ -81,8 +81,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.release.java25>25</maven.compiler.release.java25>
+        <maven.compiler.release>25</maven.compiler.release>
+        <!-- Default value for JaCoCo late-binding argLine; overridden by jacoco:prepare-agent -->
+        <argLine></argLine>
 
         <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
@@ -243,7 +244,15 @@
         <nexus.staging.plugin.version>1.7.0</nexus.staging.plugin.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
-        <surefire.threadCount>1.5C</surefire.threadCount>
+        <!-- Number of forked JVMs launched in parallel during surefire test runs.
+             1.5C means 1.5 x CPU cores; balances JVM startup cost against
+             parallelism gains. Each forked JVM runs tests concurrently via
+             JUnit Platform parallel execution (see junit-platform.properties).
+             Override per-environment: -Dsurefire.forkCount=2 -->
+        <surefire.forkCount>1.5C</surefire.forkCount>
+        <!-- threadCount is kept for legacy Surefire parallel mode fallback.
+             JUnit 5 parallel execution is controlled by junit-platform.properties. -->
+        <surefire.threadCount>4</surefire.threadCount>
 
         <!-- ================================================================ -->
         <!-- Cryptography (BouncyCastle)                                       -->
@@ -1069,8 +1078,21 @@
                 <scope>test</scope>
             </dependency>
 
+<<<<<<< HEAD
             <!-- Testcontainers explicit versions (BOM import moved to docker profile
                  to avoid offline resolution failures; these pins are sufficient) -->
+=======
+            <!-- Testcontainers BOM for container-based integration tests -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Testcontainers explicit versions (BOM import order issue workaround) -->
+>>>>>>> origin/master
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
@@ -1165,8 +1187,13 @@
                         <release>${maven.compiler.release}</release>
                         <useIncrementalCompilation>true</useIncrementalCompilation>
                         <fork>true</fork>
+<<<<<<< HEAD
                         <meminitial>512m</meminitial>
                         <maxmem>2048m</maxmem>
+=======
+                        <meminitial>256m</meminitial>
+                        <maxmem>1024m</maxmem>
+>>>>>>> origin/master
                         <compilerArgs>
                             <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
@@ -1175,13 +1202,39 @@
                     </configuration>
                 </plugin>
 
-                <!-- Surefire - unit test runner -->
+                <!-- Surefire - unit test runner.
+                     Key tuning decisions:
+                     - forkCount=${surefire.forkCount}: spawn 1.5x CPU forked JVMs in
+                       parallel so module-level isolation does not bottleneck the build.
+                       Each forked JVM receives the full Java 25 argLine.
+                     - reuseForks=true: forked JVMs execute multiple test classes before
+                       exiting; amortises the 300-500ms JVM startup cost across the suite.
+                     - useModulePath=false: enable-preview is incompatible with automatic
+                       module-path resolution in Maven Surefire 3.x. The classpath mode is
+                       stable and required for preview-feature tests.
+                     - parallel/threadCount are retained as a fallback but JUnit Platform
+                       concurrency (junit-platform.properties) supersedes these for
+                       JUnit 5 tests. JUnit 4 tests still benefit from threadCount.
+                     - trimStackTrace=false: full stack traces shorten debugging time. -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
+                        <!-- enable-preview required for Java 25 pattern matching,
+                             sealed classes, and other preview features used in tests.
+                             @{argLine} interpolates JaCoCo's agent argument when
+                             jacoco.skip=false; it is empty when JaCoCo is skipped. -->
+                        <argLine>--enable-preview @{argLine}</argLine>
+                        <!-- useModulePath=false forces classpath mode; prevents Surefire
+                             from misidentifying modules and rejecting enable-preview flag. -->
+                        <useModulePath>false</useModulePath>
+                        <!-- Fork 1.5x CPU JVMs in parallel; each runs its own JUnit
+                             Platform executor governed by junit-platform.properties. -->
+                        <forkCount>${surefire.forkCount}</forkCount>
+                        <!-- Reuse forked JVMs across test classes rather than launching
+                             a new JVM per class; saves ~400ms per class on warm runs. -->
+                        <reuseForks>true</reuseForks>
                         <includes>
                             <include>**/*Test.java</include>
                             <include>**/*Tests.java</include>
@@ -1191,6 +1244,7 @@
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
+<<<<<<< HEAD
                         <parallel>classesAndMethods</parallel>
                         <threadCount>${surefire.threadCount}</threadCount>
                         <perCoreThreadCount>true</perCoreThreadCount>
@@ -1211,6 +1265,20 @@
                                 junit.jupiter.execution.parallel.config.dynamic.factor=1.5
                             </configurationParameters>
                         </properties>
+=======
+                        <!-- Legacy parallel mode for JUnit 4 tests still in the suite.
+                             JUnit 5 tests use junit-platform.properties instead. -->
+                        <parallel>classesAndMethods</parallel>
+                        <threadCount>${surefire.threadCount}</threadCount>
+                        <perCoreThreadCount>true</perCoreThreadCount>
+                        <!-- 600s covers the slowest Petri-net simulation tests. -->
+                        <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                        <!-- Abort after 5 consecutive failures to cut CI feedback time. -->
+                        <skipAfterFailureCount>5</skipAfterFailureCount>
+                        <!-- Full stack traces are needed to diagnose engine-level
+                             failures in YNetRunner and YWorkItem state machines. -->
+                        <trimStackTrace>false</trimStackTrace>
+>>>>>>> origin/master
                     </configuration>
                 </plugin>
 
@@ -2309,11 +2377,19 @@
         </profile>
 
         <!-- ================================================================ -->
+<<<<<<< HEAD
         <!-- Fast profile: excludes slow integration tests for CI             -->
         <!-- This profile is active by default for quick feedback loops.      -->
         <!-- Usage: mvn clean test                   (fast - default)         -->
         <!--        mvn clean test -P docker         (full integration)       -->
         <!-- Excluded groups: integration, docker, containers                 -->
+=======
+        <!-- Fast profile: excludes slow/integration/docker tests by default  -->
+        <!-- This profile is active by default for quick feedback loops.      -->
+        <!-- Usage: mvn clean test                   (fast - default)         -->
+        <!--        mvn clean test -P docker         (full integration)       -->
+        <!-- Excluded groups: integration, slow, docker, containers, chaos    -->
+>>>>>>> origin/master
         <!-- ================================================================ -->
         <profile>
             <id>fast</id>
@@ -2329,7 +2405,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+<<<<<<< HEAD
                             <excludedGroups>integration,docker,containers</excludedGroups>
+=======
+                            <excludedGroups>integration,slow,docker,containers,chaos</excludedGroups>
+>>>>>>> origin/master
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
                             </systemPropertyVariables>
@@ -2340,6 +2420,7 @@
         </profile>
 
         <!-- ================================================================ -->
+<<<<<<< HEAD
         <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
         <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
         <!-- Usage: mvn compile test -P agent-dx                              -->
@@ -2356,6 +2437,16 @@
                 <pmd.skip>true</pmd.skip>
                 <enforcer.skip>true</enforcer.skip>
                 <surefire.threadCount>2C</surefire.threadCount>
+=======
+        <!-- Integration-test profile: runs unit + integration tests          -->
+        <!-- Excludes only Docker/container/chaos tests (no daemon required). -->
+        <!-- Usage: mvn clean test -P integration-test                        -->
+        <!-- Included groups: unit, integration (excludes docker/slow/chaos)  -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>integration-test</id>
+            <properties>
+>>>>>>> origin/master
                 <test.docker.enabled>false</test.docker.enabled>
             </properties>
             <build>
@@ -2364,7 +2455,80 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+<<<<<<< HEAD
                             <excludedGroups>integration,docker,containers,slow</excludedGroups>
+=======
+                            <groups>unit,integration</groups>
+                            <excludedGroups>docker,containers,slow,chaos</excludedGroups>
+                            <systemPropertyVariables>
+                                <test.docker.enabled>false</test.docker.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- quick-test profile: unit tests only, maximum local dev speed    -->
+        <!--                                                                  -->
+        <!-- Differences from the default "fast" profile:                    -->
+        <!--   1. Only tests tagged @Tag("unit") are included. All 131 test  -->
+        <!--      classes in the codebase carry an explicit @Tag annotation.  -->
+        <!--   2. JaCoCo is unconditionally disabled (no bytecode weaving).  -->
+        <!--   3. forkCount=1 to avoid JVM startup overhead; local machines  -->
+        <!--      typically run one module at a time anyway.                  -->
+        <!--   4. reuseForks=true maximally amortises the single forked JVM  -->
+        <!--      across the entire unit test suite.                          -->
+        <!--   5. skipAfterFailureCount=1: fail fast on first broken test so  -->
+        <!--      developers get immediate feedback without running the rest.  -->
+        <!--                                                                  -->
+        <!-- Tag taxonomy (all 204+ test classes explicitly tagged):          -->
+        <!--   unit        : pure in-memory tests, no I/O, no DB (~131)       -->
+        <!--   integration : real engine/DB via H2, no Docker required (~53)  -->
+        <!--   slow        : perf benchmarks, ArchUnit scans, chaos (~19)     -->
+        <!--   docker      : testcontainers (requires Docker daemon) (~3)     -->
+        <!--   chaos       : network/failure injection tests (~2)             -->
+        <!--                                                                  -->
+        <!-- Usage:                                                           -->
+        <!--   mvn clean test -P quick-test                (unit only, ~10s)  -->
+        <!--   mvn clean test -P fast                      (unit, default)    -->
+        <!--   mvn clean test -P integration-test          (unit+integration) -->
+        <!--   mvn clean test -P docker                    (docker tests)     -->
+        <!--   mvn clean test -P quick-test -pl yawl-engine                  -->
+        <!--   ./scripts/test-fast.sh                                         -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>quick-test</id>
+            <properties>
+                <!-- Unconditionally disable JaCoCo bytecode instrumentation.
+                     This single change saves 15-25% of total test execution time
+                     by eliminating the prepare-agent and class-file weaving overhead. -->
+                <jacoco.skip>true</jacoco.skip>
+                <test.docker.enabled>false</test.docker.enabled>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Include only tests explicitly tagged @Tag("unit").
+                                 Tests with no @Tag annotation do not match and are
+                                 excluded; add @Tag("unit") to include them here. -->
+                            <groups>unit</groups>
+                            <!-- Exclude all non-unit categories without exception. -->
+                            <excludedGroups>integration,docker,containers,slow,chaos</excludedGroups>
+                            <!-- Single forked JVM: avoids the 300-500ms startup cost per
+                                 fork. On a 4-core laptop this is faster than 4 forks for
+                                 small suites because JVM startup dominates test runtime. -->
+                            <forkCount>1</forkCount>
+                            <!-- Keep the single JVM alive for all test classes in the
+                                 module. Prevents repeated classloader and H2 initialisation. -->
+                            <reuseForks>true</reuseForks>
+                            <!-- Fail on the first test failure. Gets the developer to the
+                                 red bar immediately without running the rest of the suite. -->
+>>>>>>> origin/master
                             <skipAfterFailureCount>1</skipAfterFailureCount>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
@@ -2490,6 +2654,7 @@
             </build>
         </profile>
 
+<<<<<<< HEAD
         <!-- ================================================================ -->
         <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
         <!-- ================================================================ -->
@@ -2578,6 +2743,8 @@
             </build>
         </profile>
 
+=======
+>>>>>>> origin/master
     </profiles>
 
 </project>

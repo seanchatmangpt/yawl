@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.engine;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - State transitions
  * - Performance (identifier creation throughput)
  */
+@Tag("integration")
 class EngineIntegrationTest {
 
     private YEngine engine;

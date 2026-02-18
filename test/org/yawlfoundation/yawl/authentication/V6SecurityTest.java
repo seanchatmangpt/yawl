@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.authentication;
 
+import org.junit.jupiter.api.Tag;
+
 import io.jsonwebtoken.Claims;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -49,6 +51,7 @@ import junit.textui.TestRunner;
  *
  * @author YAWL Engine Team - V6 security validation 2026-02-17
  */
+@Tag("unit")
 public class V6SecurityTest extends TestCase {
 
     private static final String JWT_SECRET_PROPERTY = "yawl.jwt.secret";

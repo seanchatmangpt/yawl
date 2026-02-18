@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.patternmatching;
 
+import org.junit.jupiter.api.Tag;
+
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YSchemaVersion;
 
@@ -20,6 +22,7 @@ import junit.framework.TestCase;
  * Author: YAWL Foundation
  * Date: 2026-02-16
  */
+@Tag("unit")
 public class PatternMatchingEdgeCaseTest extends TestCase {
 
     // Test null inputs to switch expressions

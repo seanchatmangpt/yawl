@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.integration;
 
+import org.junit.jupiter.api.Tag;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -53,6 +55,7 @@ import org.yawlfoundation.yawl.integration.mcp.YawlMcpServer;
  *
  * @author YAWL Engine Team - V6 integration 2026-02-17
  */
+@Tag("integration")
 public class V6EndToEndIntegrationTest extends TestCase {
 
     private static final String ENGINE_URL = "http://localhost:8080/yawl";

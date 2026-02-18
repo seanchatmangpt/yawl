@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YAtomicTask;
@@ -28,6 +29,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Time: 12:28:34
  *
  */
+@Tag("integration")
 class TestEngineSystem1 {
     private YNetRunner _netRunner;
     private YIdentifier _idForTopNet;
