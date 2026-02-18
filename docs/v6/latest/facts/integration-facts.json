@@ -20,9 +20,12 @@
     "default_port": 8081,
     "transport": "HTTP REST",
     "protocol": "A2A v0.2.0",
-    "skills_count": 0,
+    "skills_count": 4,
     "skills": [
-
+      "launch_workflow"",
+      "query_workflows"",
+      "manage_workitems"",
+      "cancel_workflow""
     ],
     "auth_providers": [
       "A2AAuthenticationProvider",

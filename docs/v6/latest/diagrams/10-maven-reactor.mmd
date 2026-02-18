@@ -4,23 +4,22 @@ graph TD
     classDef fullshared fill:#e53e3e,stroke:#c53030,color:#fff
     classDef pkgscoped fill:#3182ce,stroke:#2b6cb0,color:#fff
     classDef infra fill:#38a169,stroke:#2f855a,color:#fff
-    classDef dep fill:#805ad5,stroke:#6b46c1,color:#fff,stroke-dasharray: 5 5
 
     PARENT[yawl-parent<br/>6.0.0-Alpha]:::parent
 
-    yawl_utilities[yawl-utilities]:::pkgscoped
-    yawl_elements[yawl-elements]:::pkgscoped
-    yawl_authentication[yawl-authentication]:::pkgscoped
-    yawl_engine[yawl-engine]:::pkgscoped
-    yawl_stateless[yawl-stateless]:::pkgscoped
-    yawl_resourcing[yawl-resourcing]:::pkgscoped
-    yawl_worklet[yawl-worklet]:::pkgscoped
-    yawl_scheduling[yawl-scheduling]:::pkgscoped
-    yawl_security[yawl-security]:::pkgscoped
+    yawl_utilities[yawl-utilities]:::fullshared
+    yawl_elements[yawl-elements]:::fullshared
+    yawl_authentication[yawl-authentication]:::fullshared
+    yawl_engine[yawl-engine]:::fullshared
+    yawl_stateless[yawl-stateless]:::fullshared
+    yawl_resourcing[yawl-resourcing]:::fullshared
+    yawl_worklet[yawl-worklet]:::fullshared
+    yawl_scheduling[yawl-scheduling]:::fullshared
+    yawl_security[yawl-security]:::fullshared
     yawl_integration[yawl-integration]:::pkgscoped
-    yawl_monitoring[yawl-monitoring]:::pkgscoped
+    yawl_monitoring[yawl-monitoring]:::fullshared
     yawl_webapps[yawl-webapps]:::pkgscoped
-    yawl_control_panel[yawl-control-panel]:::pkgscoped
+    yawl_control_panel[yawl-control-panel]:::fullshared
 
     %% Reactor ordering (parent -> all modules)
     PARENT --> yawl_utilities
@@ -37,47 +36,27 @@ graph TD
     PARENT --> yawl_webapps
     PARENT --> yawl_control_panel
 
-    %% Inter-module dependencies (arrows point FROM dependency TO dependent module)
-    %% Layer 1: Base utilities (no YAWL deps)
-    %% yawl-utilities is standalone
-
-    %% Layer 2: Elements depends on utilities
-    yawl_utilities -.-> yawl_elements
-
-    %% Layer 3: Engine depends on elements (which transitively brings utilities)
-    yawl_elements -.-> yawl_engine
-
-    %% Layer 4: Modules depending on engine
-    yawl_engine -.-> yawl_authentication
-    yawl_engine -.-> yawl_stateless
-    yawl_engine -.-> yawl_resourcing
-    yawl_engine -.-> yawl_scheduling
-
-    %% Layer 5: Worklet depends on engine + resourcing
-    yawl_engine -.-> yawl_worklet
-    yawl_resourcing -.-> yawl_worklet
-
-    %% Layer 6: Integration and Monitoring depend on engine + stateless
-    yawl_engine -.-> yawl_integration
-    yawl_stateless -.-> yawl_integration
-    yawl_engine -.-> yawl_monitoring
-    yawl_stateless -.-> yawl_monitoring
-
-    %% Layer 7: Webapps (yawl-engine-webapp) depends on engine, auth, resourcing
-    yawl_engine -.-> yawl_webapps
-    yawl_authentication -.-> yawl_webapps
-    yawl_resourcing -.-> yawl_webapps
-
-    %% Layer 8: Control Panel depends on engine, stateless, resourcing
-    yawl_engine -.-> yawl_control_panel
-    yawl_stateless -.-> yawl_control_panel
-    yawl_resourcing -.-> yawl_control_panel
-
-    %% Security is standalone (no YAWL deps)
+    %% Inter-module dependencies
+    yawl_elements --> yawl_utilities
+    yawl_authentication --> yawl_engine
+    yawl_engine --> yawl_elements
+    yawl_stateless --> yawl_elements
+    yawl_stateless --> yawl_engine
+    yawl_stateless --> yawl_utilities
+    yawl_resourcing --> yawl_engine
+    yawl_worklet --> yawl_engine
+    yawl_worklet --> yawl_resourcing
+    yawl_scheduling --> yawl_engine
+    yawl_integration --> yawl_engine
+    yawl_integration --> yawl_stateless
+    yawl_monitoring --> yawl_engine
+    yawl_monitoring --> yawl_stateless
+    yawl_control_panel --> yawl_engine
+    yawl_control_panel --> yawl_resourcing
+    yawl_control_panel --> yawl_stateless
 
     %% Legend
     subgraph Legend
         L1[Full Shared ../src]:::fullshared
         L2[Package Scoped]:::pkgscoped
-        L3[Module Dependency]:::dep
     end

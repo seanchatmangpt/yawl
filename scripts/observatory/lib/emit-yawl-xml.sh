@@ -6,6 +6,17 @@
 # workflow specification.
 # ==========================================================================
 
+# ── XML Escaping for Safe Interpolation ───────────────────────────────────
+xml_escape() {
+    local s="$1"
+    s="${s//&/&amp;}"
+    s="${s//</&lt;}"
+    s="${s//>/&gt;}"
+    s="${s//\"/&quot;}"
+    s="${s//\'/&apos;}"
+    printf '%s' "$s"
+}
+
 # ── Build and Test Workflow YAWL XML ─────────────────────────────────────
 emit_build_test_yawl() {
     local out="$YAWL_DIR/build-and-test.yawl.xml"
@@ -17,14 +28,18 @@ emit_build_test_yawl() {
 
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    local git_commit_escaped
+    local git_branch_escaped
+    git_commit_escaped=$(xml_escape "$(git_commit)")
+    git_branch_escaped=$(xml_escape "$(git_branch)")
 
     cat > "$out" << YAWLXML
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   YAWL Specification: Build and Test Workflow
   Generated: ${timestamp}
-  Commit: $(git_commit)
-  Branch: $(git_branch)
+  Commit: ${git_commit_escaped}
+  Branch: ${git_branch_escaped}
 
   This YAWL net models the Maven build lifecycle as a workflow with:
   - Sequential tasks (Validate -> Compile -> UnitTests)

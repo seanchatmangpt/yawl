@@ -40,7 +40,7 @@ timer_elapsed_ms() { echo $(( $(epoch_ms) - _TIMER_START )); }
 get_memory_kb() {
     local mem_kb=0
     if [[ -f "/proc/$$/status" ]]; then
-        mem_kb=$(grep -oP '(?<=VmRSS:\s)\d+' /proc/$$/status 2>/dev/null || echo 0)
+        mem_kb=$(awk '/VmRSS:/ {print $2}' /proc/$$/status 2>/dev/null || echo 0)
     elif command -v ps >/dev/null 2>&1; then
         mem_kb=$(ps -o rss= -p $$ 2>/dev/null || echo 0)
     fi
@@ -339,10 +339,10 @@ git_dirty() {
 
 # ── Toolchain ─────────────────────────────────────────────────────────────
 detect_java_version() {
-    java -version 2>&1 | head -1 | grep -oP '(?<=")\d+' | head -1 || echo "unknown"
+    java -version 2>&1 | head -1 | sed -n 's/.*"\([0-9]*\).*/\1/p' | head -1 || echo "unknown"
 }
 detect_maven_version() {
-    mvn --version 2>/dev/null | head -1 | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "unknown"
+    mvn --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
 }
 
 # ── Directory setup ───────────────────────────────────────────────────────
@@ -380,5 +380,5 @@ discover_modules() {
 # ── POM value extraction (lightweight XML parsing) ────────────────────────
 pom_value() {
     local file="$1" xpath_like="$2"
-    grep -oP "(?<=<${xpath_like}>)[^<]+" "$file" 2>/dev/null | head -1
+    sed -n "s|.*<${xpath_like}>\([^<]*\)</${xpath_like}>.*|\1|p" "$file" 2>/dev/null | head -1
 }

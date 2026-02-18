@@ -752,6 +752,61 @@ set_metrics_namespace() {
     METRICS_NAMESPACE="${namespace}"
 }
 
+# ── Portable System Metrics ─────────────────────────────────────────────────
+#
+# Get total system memory in bytes
+# Portable across Linux and macOS
+#
+# Returns: Total memory in bytes
+#
+get_total_memory_bytes() {
+    if [[ -f /proc/meminfo ]]; then
+        # Linux: read from /proc/meminfo
+        awk '/MemTotal:/ {print $2 * 1024}' /proc/meminfo 2>/dev/null || echo "0"
+    elif command -v sysctl &>/dev/null; then
+        # macOS/BSD: use sysctl
+        sysctl -n hw.memsize 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+#
+# Get number of CPU cores
+# Portable across Linux and macOS
+#
+# Returns: Number of CPU cores
+#
+get_cpu_cores() {
+    if command -v nproc &>/dev/null; then
+        # Linux: nproc
+        nproc 2>/dev/null || echo "1"
+    elif command -v sysctl &>/dev/null; then
+        # macOS/BSD: sysctl hw.ncpu
+        sysctl -n hw.ncpu 2>/dev/null || echo "1"
+    else
+        echo "1"
+    fi
+}
+
+#
+# Get current process memory in KB
+# Portable across Linux and macOS
+#
+# Returns: Process memory in KB
+#
+get_process_memory_kb() {
+    if [[ -f "/proc/$$/status" ]]; then
+        # Linux: read VmRSS from /proc
+        awk '/VmRSS:/ {print $2}' /proc/$$/status 2>/dev/null || echo "0"
+    elif command -v ps &>/dev/null; then
+        # macOS/BSD: use ps -o rss (returns KB)
+        ps -o rss= -p $$ 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
 # Export functions for use in subshells
 export -f start_timer end_timer emit_counter emit_gauge emit_histogram
 export -f flush_metrics get_counter get_gauge set_default_labels

@@ -270,25 +270,16 @@ test_pom_value_extracts_content() {
 </project>
 EOF
     local result
-    # The pom_value function uses grep -oP which requires Perl regex
-    # On macOS, -P may not be available, so test with a fallback
-    if echo "test" | grep -oP 'test' >/dev/null 2>&1; then
-        result=$(pom_value "$TEST_TMP_DIR/test-pom.xml" "artifactId")
-        if [[ "$result" == "test-artifact" ]]; then
-            echo "PASS: pom_value extracts artifactId"
-            tearDown
-            return 0
-        else
-            echo "FAIL: pom_value got: $result"
-            tearDown
-            return 1
-        fi
-    else
-        # grep -P not available on this system (e.g., macOS BSD grep)
-        # Skip test with pass (feature is conditionally available)
-        echo "PASS: pom_value skipped (grep -P unavailable on this platform)"
+    # The pom_value function now uses sed (portable across macOS/Linux/BSD)
+    result=$(pom_value "$TEST_TMP_DIR/test-pom.xml" "artifactId")
+    if [[ "$result" == "test-artifact" ]]; then
+        echo "PASS: pom_value extracts artifactId"
         tearDown
         return 0
+    else
+        echo "FAIL: pom_value got: '$result' (expected: test-artifact)"
+        tearDown
+        return 1
     fi
 }
 

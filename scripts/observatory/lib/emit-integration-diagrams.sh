@@ -513,7 +513,7 @@ emit_integration_facts() {
     if [[ -d "$MCP_ROOT/spec" ]]; then
         while IFS= read -r tool; do
             [[ -n "$tool" ]] && mcp_tools+=("$tool")
-        done < <(grep -h "name.*=" "$MCP_ROOT/spec"/*.java 2>/dev/null | grep -oP '(?<=")[a-z_]+' | head -20)
+        done < <(grep -h "name.*=" "$MCP_ROOT/spec"/*.java 2>/dev/null | grep -oE '"[a-z_]+"' | tr -d '"' | head -20)
     fi
 
     # Detect A2A skills
@@ -521,7 +521,7 @@ emit_integration_facts() {
     if [[ -f "$A2A_ROOT/YawlA2AServer.java" ]]; then
         while IFS= read -r skill; do
             [[ -n "$skill" ]] && a2a_skills+=("$skill")
-        done < <(grep -oP 'id\("\K[^"]+' "$A2A_ROOT/YawlA2AServer.java" 2>/dev/null)
+        done < <(grep -oE 'id\("[^"]+"' "$A2A_ROOT/YawlA2AServer.java" 2>/dev/null | sed 's/id("//; s/")//')
     fi
 
     # Detect auth providers

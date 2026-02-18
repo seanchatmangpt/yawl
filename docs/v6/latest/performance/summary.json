@@ -1,21 +1,21 @@
 {
-  "run_id": "20250101T120000Z",
+  "run_id": "20260218T022530Z",
   "timing": {
-    "total_ms": 1000,
-    "total_sec": 1.000,
-    "facts_ms": 832,
-    "diagrams_ms": 832,
-    "yawl_xml_ms": 832,
-    "receipt_ms": 832
+    "total_ms": 2975,
+    "total_sec": 2.975,
+    "facts_ms": 422,
+    "diagrams_ms": 238,
+    "yawl_xml_ms": 49,
+    "receipt_ms": 0
   },
   "memory": {
-    "peak_kb":   7904,
+    "peak_kb":   8016,
     "peak_mb": 7
   },
   "throughput": {
-    "outputs_per_sec": 9.00,
-    "facts_count": 3,
-    "diagrams_count": 5
+    "outputs_per_sec": 5.37,
+    "facts_count": 8,
+    "diagrams_count": 7
   },
   "status": "completed"
 }

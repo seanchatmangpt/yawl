@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   YAWL Specification: Build and Test Workflow
-  Generated: 2026-02-18T00:43:18Z
-  Commit: 4a298c6
+  Generated: 2026-02-18T02:25:32Z
+  Commit: 103e94b
   Branch: claude/v6-quality-improvements-1771309877
 
   This YAWL net models the Maven build lifecycle as a workflow with:
@@ -10,18 +10,18 @@
   - Parallel AND-split for quality gates
   - AND-join synchronization before integration tests
 -->
-<specification xmlns="http://www.yawlfoundation.org/yawlschema"
+<specification version="4.0"
+               xmlns="http://www.yawlfoundation.org/yawlschema"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema
                                    http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd"
-               uri="http://yawlfoundation.org/yawl/v6/build-and-test"
-               version="6.0.0-Alpha">
+               uri="http://yawlfoundation.org/yawl/v6/build-and-test">
 
   <metaData>
     <title>YAWL V6 Build and Test Workflow</title>
     <description>Maven lifecycle modeled as YAWL workflow net</description>
     <creator>YAWL V6 Observatory</creator>
-    <created>2026-02-18T00:43:18Z</created>
+    <created>2026-02-18T02:25:32Z</created>
   </metaData>
 
   <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
