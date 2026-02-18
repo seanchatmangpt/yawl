@@ -1,0 +1,335 @@
+# YAWL v6.0.0-Alpha - Diagram Generation Workflow
+#
+# Generates architecture diagrams, YAWL specifications, and observatory analysis
+# on every push. Commits generated artifacts back to the repository.
+#
+# Runs:
+# - tools/gen_v6_diagrams.sh - Mermaid diagrams and YAWL XML specs
+# - scripts/observatory/observatory.sh - Full code analysis observatory
+#
+# Outputs:
+# - docs/v6/diagrams/ - Mermaid diagrams and facts
+# - docs/v6/latest/ - Observatory analysis results
+# - Artifacts uploaded for review
+
+name: Diagram Generation
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - 'claude/**'
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      skip_commit:
+        description: 'Skip committing diagrams back to repo'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  DIAGRAMS_OUTPUT: docs/v6/diagrams
+  OBSERVATORY_OUTPUT: docs/v6/latest
+
+jobs:
+  # ============================================================================
+  # Generate Diagrams - Run gen_v6_diagrams.sh
+  # ============================================================================
+  generate-diagrams:
+    name: Generate Architecture Diagrams
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Make Scripts Executable
+        run: |
+          chmod +x tools/gen_v6_diagrams.sh
+          chmod +x scripts/observatory/observatory.sh
+          chmod +x scripts/observatory/lib/*.sh 2>/dev/null || true
+
+      - name: Run gen_v6_diagrams.sh
+        id: diagrams
+        run: |
+          echo "::group::Running gen_v6_diagrams.sh"
+          ./tools/gen_v6_diagrams.sh --no-maven 2>&1 | tee diagrams-output.log
+          exit_code=${PIPESTATUS[0]}
+          echo "::endgroup::"
+
+          if [[ $exit_code -ne 0 ]]; then
+            echo "::error::gen_v6_diagrams.sh failed with exit code $exit_code"
+            exit $exit_code
+          fi
+
+          echo "diagrams_generated=true" >> $GITHUB_OUTPUT
+
+      - name: Verify Diagram Outputs
+        run: |
+          echo "Verifying diagram generation outputs..."
+
+          # Check for required files
+          required_files=(
+            "${{ env.DIAGRAMS_OUTPUT }}/reactor-map.mmd"
+            "${{ env.DIAGRAMS_OUTPUT }}/build-lifecycle.mmd"
+            "${{ env.DIAGRAMS_OUTPUT }}/test-topology.mmd"
+            "${{ env.DIAGRAMS_OUTPUT }}/ci-gates.mmd"
+            "${{ env.DIAGRAMS_OUTPUT }}/module-dependencies.mmd"
+            "${{ env.DIAGRAMS_OUTPUT }}/yawl/build-and-test.yawl.xml"
+            "${{ env.DIAGRAMS_OUTPUT }}/INDEX.md"
+          )
+
+          missing_files=0
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Missing required output: $file"
+              missing_files=$((missing_files + 1))
+            else
+              echo "Found: $file"
+            fi
+          done
+
+          if [[ $missing_files -gt 0 ]]; then
+            echo "::error::$missing_files required diagram files are missing"
+            exit 1
+          fi
+
+          echo "All diagram outputs verified successfully"
+
+      - name: Upload Diagrams Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-diagrams
+          path: |
+            ${{ env.DIAGRAMS_OUTPUT }}/
+          retention-days: 30
+          if-no-files-found: error
+
+  # ============================================================================
+  # Run Observatory - Full code analysis
+  # ============================================================================
+  run-observatory:
+    name: Run Code Observatory
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make Scripts Executable
+        run: |
+          chmod +x scripts/observatory/observatory.sh
+          chmod +x scripts/observatory/lib/*.sh 2>/dev/null || true
+
+      - name: Run observatory.sh
+        id: observatory
+        run: |
+          echo "::group::Running observatory.sh"
+          ./scripts/observatory/observatory.sh 2>&1 | tee observatory-output.log
+          exit_code=${PIPESTATUS[0]}
+          echo "::endgroup::"
+
+          # Extract status from final output line
+          final_status=$(grep "^STATUS=" observatory-output.log | tail -1 || echo "STATUS=UNKNOWN")
+
+          echo "observatory_status=${final_status}" >> $GITHUB_OUTPUT
+          echo "Final status: $final_status"
+
+          # Check for REFUSALS (RED status) - fail the job
+          if echo "$final_status" | grep -q "STATUS=RED"; then
+            echo "::error::Observatory completed with REFUSALS (RED status)"
+            exit 1
+          fi
+
+          # Non-zero exit code from script itself is also a failure
+          if [[ $exit_code -ne 0 ]]; then
+            echo "::error::observatory.sh failed with exit code $exit_code"
+            exit $exit_code
+          fi
+
+          echo "observatory_completed=true" >> $GITHUB_OUTPUT
+
+      - name: Verify Observatory Outputs
+        run: |
+          echo "Verifying observatory generation outputs..."
+
+          # Check for required directories and files
+          if [[ ! -d "${{ env.OBSERVATORY_OUTPUT }}" ]]; then
+            echo "::error::Missing observatory output directory: ${{ env.OBSERVATORY_OUTPUT }}"
+            exit 1
+          fi
+
+          # Check for INDEX.md
+          if [[ ! -f "${{ env.OBSERVATORY_OUTPUT }}/INDEX.md" ]]; then
+            echo "::error::Missing observatory INDEX.md"
+            exit 1
+          fi
+
+          # Check for receipts directory
+          if [[ ! -d "${{ env.OBSERVATORY_OUTPUT }}/receipts" ]]; then
+            echo "::error::Missing receipts directory"
+            exit 1
+          fi
+
+          # Count generated files
+          facts_count=$(find "${{ env.OBSERVATORY_OUTPUT }}/facts" -name "*.json" 2>/dev/null | wc -l || echo "0")
+          diagrams_count=$(find "${{ env.OBSERVATORY_OUTPUT }}/diagrams" -name "*.mmd" 2>/dev/null | wc -l || echo "0")
+          yawl_count=$(find "${{ env.OBSERVATORY_OUTPUT }}/yawl" -name "*.xml" 2>/dev/null | wc -l || echo "0")
+
+          echo "Facts files: $facts_count"
+          echo "Diagram files: $diagrams_count"
+          echo "YAWL XML files: $yawl_count"
+
+          echo "All observatory outputs verified successfully"
+
+      - name: Upload Observatory Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: observatory-analysis
+          path: |
+            ${{ env.OBSERVATORY_OUTPUT }}/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Observatory Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: observatory-logs
+          path: |
+            observatory-output.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # Commit Changes - Push generated diagrams back to repo
+  # ============================================================================
+  commit-changes:
+    name: Commit Generated Diagrams
+    needs: [generate-diagrams, run-observatory]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      github.event_name == 'push' &&
+      github.event.inputs.skip_commit != 'true'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Diagrams Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: architecture-diagrams
+          path: ${{ env.DIAGRAMS_OUTPUT }}
+
+      - name: Download Observatory Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: observatory-analysis
+          path: ${{ env.OBSERVATORY_OUTPUT }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          git add -A "${{ env.DIAGRAMS_OUTPUT }}" "${{ env.OBSERVATORY_OUTPUT }}"
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git diff --staged --stat
+          fi
+
+      - name: Commit and Push Changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          commit_msg="chore: update generated diagrams and observatory analysis
+
+- Architecture diagrams (Mermaid)
+- YAWL XML specifications
+- Code analysis observatory results
+- Facts snapshots
+
+Generated by GitHub Actions workflow: diagrams.yml
+Run: ${{ github.run_id }}
+Commit: ${{ github.sha }}"
+
+          git commit -m "$commit_msg"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Summary
+        run: |
+          if [[ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]]; then
+            echo "Changes committed and pushed to ${{ github.ref_name }}"
+          else
+            echo "No changes were necessary"
+          fi
+
+  # ============================================================================
+  # Summary Job - Report overall status
+  # ============================================================================
+  summary:
+    name: Workflow Summary
+    needs: [generate-diagrams, run-observatory]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Determine Overall Status
+        id: status
+        run: |
+          diagrams_result="${{ needs.generate-diagrams.result }}"
+          observatory_result="${{ needs.run-observatory.result }}"
+
+          echo "## Diagram Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture Diagrams | $diagrams_result |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Observatory | $observatory_result |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$diagrams_result" == "success" && "$observatory_result" == "success" ]]; then
+            echo "overall_status=success" >> $GITHUB_OUTPUT
+            echo "All diagram generation jobs completed successfully." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "overall_status=failure" >> $GITHUB_OUTPUT
+            echo "One or more jobs failed. Check the logs for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Download All Artifacts
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List Artifacts
+        if: always()
+        run: |
+          echo "### Generated Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find artifacts -type f | head -50 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

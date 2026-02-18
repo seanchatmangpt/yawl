@@ -28,6 +28,14 @@ TEST_DIR := $(PROJECT_DIR)/test/shell
 SCRIPTS_DIR := $(PROJECT_DIR)/scripts/shell-test
 REPORT_DIR := $(PROJECT_DIR)/reports
 
+# V6 Documentation directories
+V6_LATEST := $(PROJECT_DIR)/docs/v6/latest
+V6_RECEIPTS := $(V6_LATEST)/receipts
+OBSERVATORY_SCRIPT := $(PROJECT_DIR)/scripts/observatory/observatory.sh
+DIAGRAMS_SCRIPT := $(PROJECT_DIR)/tools/gen_v6_diagrams.sh
+DEPS_CHECK_SCRIPT := $(PROJECT_DIR)/.claude/check-dependencies.sh
+DOCS_V6_DIR := $(PROJECT_DIR)/docs/v6
+
 # Tools
 ANT ?= ant
 JAVA ?= java
@@ -60,6 +68,7 @@ export MCP_PORT
 .PHONY: help test test-quick test-phase clean
 .PHONY: test-schema test-stub test-build test-engine test-a2a test-mcp test-patterns test-report
 .PHONY: list-phases check-deps
+.PHONY: diagrams observatory analyze-deps docs-all validate-diagrams clean-diagrams verify closure
 
 # Default target
 help:
@@ -87,6 +96,18 @@ help:
 	@echo "  list-phases   List all test phases"
 	@echo "  check-deps    Check required dependencies"
 	@echo "  clean         Clean test artifacts"
+	@echo ""
+	@echo "Documentation Generation:"
+	@echo "  diagrams          Generate Mermaid diagrams and facts (tools/gen_v6_diagrams.sh)"
+	@echo "  observatory       Generate observatory facts/diagrams/receipt"
+	@echo "  docs-all          Generate all documentation (diagrams + observatory)"
+	@echo "  validate-diagrams Validate generated diagram files"
+	@echo "  clean-diagrams    Clean generated diagram files"
+	@echo "  analyze-deps      Run dependency security and health analysis"
+	@echo ""
+	@echo "V6 Control Plane:"
+	@echo "  verify            Run Maven verify gates; emit receipt"
+	@echo "  closure           verify + observatory (full pipeline)"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  ENGINE_PORT   YAWL engine port (default: 8080)"
