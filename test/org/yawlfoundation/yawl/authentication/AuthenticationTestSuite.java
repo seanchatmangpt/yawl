@@ -18,6 +18,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SelectClasses({
     TestConnections.class,
     TestJwtManager.class,
+    TestCsrfTokenManager.class,
+    TestCsrfProtectionFilter.class,
     V6SecurityTest.class
 })
 public class AuthenticationTestSuite {

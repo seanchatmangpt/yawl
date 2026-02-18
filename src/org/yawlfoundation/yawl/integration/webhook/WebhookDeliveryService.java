@@ -115,14 +115,8 @@ public final class WebhookDeliveryService {
                                           .connectTimeout(REQUEST_TIMEOUT)
                                           .build();
         this.deliveryExecutor = Executors.newVirtualThreadPerTaskExecutor();
-        this.retryScheduler   = Executors.newScheduledThreadPool(
-                2,
-                r -> {
-                    Thread t = new Thread(r, "yawl-webhook-retry");
-                    t.setDaemon(true);
-                    return t;
-                }
-        );
+        this.retryScheduler   = Executors.newScheduledThreadPool(2, r ->
+                Thread.ofVirtual().name("yawl-webhook-retry").unstarted(r));
     }
 
     /**

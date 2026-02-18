@@ -28,6 +28,7 @@ package org.yawlfoundation.yawl.procletService.util;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +46,10 @@ public class TimeService extends InterfaceBWebsideController {
     private static final Logger logger = LogManager.getLogger(TimeService.class);
 
     private String _sessionHandle = null;
+
+    // P-4: ReentrantLock replaces synchronized on finish() to avoid carrier-thread pinning
+    // when virtual threads perform blocking HTTP I/O inside checkInWorkItem().
+    private final ReentrantLock _finishLock = new ReentrantLock();
 
     public void handleEnabledWorkItemEvent(WorkItemRecord workItemRecord) {
         try {
@@ -80,22 +85,29 @@ public class TimeService extends InterfaceBWebsideController {
         				String notifytime = "100";
                         if (notifytime != null && !notifytime.equals("")) {
 
-                            try { 
+                            try {
                                 int notify = Integer.parseInt(notifytime);
-                                new InternalRunner(notify, workItemRecord, this, _sessionHandle).start();
+                                // T-9: Use virtual thread instead of platform thread to avoid
+                                // blocking carrier threads during Thread.sleep(time).
+                                Thread.ofVirtual()
+                                    .name("proclet-timer-" + workItemRecord.getID())
+                                    .start(new InternalRunner(notify, workItemRecord, this, _sessionHandle));
 
                             } catch (Exception e) {
                                 InternalRunner r = new InternalRunner(notifytime, workItemRecord, this, _sessionHandle);
-                                r.start();
+                                // T-9: Use virtual thread instead of platform thread.
+                                Thread.ofVirtual()
+                                    .name("proclet-timer-" + workItemRecord.getID())
+                                    .start(r);
                             }
                         }
-                    
+
             //	return report;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
     public YParameter[] describeRequiredParams() {
         YParameter[] params = new YParameter[1];
         YParameter param;
@@ -123,7 +135,10 @@ public class TimeService extends InterfaceBWebsideController {
         auth.setProxyAuthentication(userName, password, httpProxyHost, proxyPort);
     }
 
-    public synchronized void finish(WorkItemRecord itemRecord, String _sessionHandle) {
+    // P-4: Replaced synchronized keyword with ReentrantLock to prevent virtual thread
+    // carrier-thread pinning when checkInWorkItem() performs blocking HTTP I/O.
+    public void finish(WorkItemRecord itemRecord, String _sessionHandle) {
+        _finishLock.lock();
         try {
             //System.out.println("Checking in work Item: " + itemRecord.getID());
             YSpecificationID specID = new YSpecificationID(itemRecord);
@@ -138,10 +153,11 @@ public class TimeService extends InterfaceBWebsideController {
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            _finishLock.unlock();
         }
-
     }
-    
+
     public static void main(String [] args) {
     	TimeService ts = new TimeService();
     	WorkItemRecord wir = new WorkItemRecord("1","t","s1", "");
@@ -154,7 +170,9 @@ public class TimeService extends InterfaceBWebsideController {
   specified workItem in when it is done.
 */
 
-class InternalRunner extends Thread {
+// T-9: Changed from extends Thread to implements Runnable so this can be
+// submitted to a virtual thread via Thread.ofVirtual().start(...).
+class InternalRunner implements Runnable {
 
     long time = 0;
     TimeService t = null;
@@ -236,7 +254,7 @@ class InternalRunner extends Thread {
     public void stopThread() {
         stopping = true;
     }
-    
+
     public InternalRunner(long time, WorkItemRecord itemRecord, TimeService t, String _sessionHandle) {
         this.time = time;
         this.t = t;
