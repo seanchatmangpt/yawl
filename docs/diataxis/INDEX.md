@@ -25,22 +25,29 @@ The key distinction: tutorials teach skills through guided practice; how-to guid
 
 ### Existing docs that qualify
 
-> There are no proper Diataxis tutorials in this project yet. The closest candidate is `docs/user-guide/getting-started.md`, which has tutorial intent but mixes in conceptual explanation and reference tables. It needs restructuring before it qualifies.
+| File | Description | Audience / when to use |
+|---|---|---|
+| `docs/user-guide/getting-started.md` | Introduces YAWL concepts and initial setup steps — partial tutorial intent, mixes in conceptual explanation and reference tables; needs restructuring. | New users exploring YAWL for the first time |
+| `docs/resilience/QUICK_START.md` | Scoped to resilience configuration; could become a tutorial with a clearer learning goal. | Operators enabling resilience features |
+| `docs/QUICK-START.md` | Lists setup steps but skips explanations for why and mixes setup options; needs restructuring. | Anyone needing a quick first-run path |
 
-| File | Notes |
-|---|---|
-| `docs/user-guide/getting-started.md` | Partial — introduces concepts but does not guide a learner through completing a working workflow from scratch. Needs a concrete learning outcome (e.g., "run your first YAWL case in 10 minutes"). |
-| `docs/resilience/QUICK_START.md` | Partial — scoped to resilience configuration; could become a tutorial with a clearer learning goal. |
-| `docs/QUICK-START.md` | Partial — lists steps but skips explanations for why, mixes setup options; needs restructuring. |
+### New tutorials added 2026-02-18
+
+| File | Description | Audience / when to use |
+|---|---|---|
+| [`docs/tutorials/03-run-your-first-workflow.md`](../tutorials/03-run-your-first-workflow.md) | Load a specification, launch a case, claim and complete a work item, confirm the case finished — full end-to-end run via HTTP. | Developers who have built the engine and want to see it execute a real workflow |
+| [`docs/tutorials/04-write-a-yawl-specification.md`](../tutorials/04-write-a-yawl-specification.md) | Author a minimal YAWL workflow specification from scratch in XML, validate it against the schema, and load it into the engine. | Developers writing workflow definitions for the first time |
+| [`docs/tutorials/05-call-yawl-rest-api.md`](../tutorials/05-call-yawl-rest-api.md) | Write Java code using `java.net.http.HttpClient` to connect to the engine, load a spec, launch a case, poll for work items, check one out, and complete it. | Java developers integrating YAWL programmatically |
+| [`docs/tutorials/06-write-a-custom-work-item-handler.md`](../tutorials/06-write-a-custom-work-item-handler.md) | Implement `YawlMcpTool`, register it with `YawlMcpToolRegistry`, and understand how an AI agent calls it via the Model Context Protocol. | Developers extending YAWL with custom automation or AI tools |
+| [`docs/tutorials/07-docker-dev-environment.md`](../tutorials/07-docker-dev-environment.md) | Stand up a complete YAWL engine stack locally using Docker Compose, make a source change, rebuild the image, and run integration tests against the live stack. | Developers who want a containerised local development loop |
+| [`docs/tutorials/08-mcp-agent-integration.md`](../tutorials/08-mcp-agent-integration.md) | Run the YAWL MCP server, connect a Claude agent via the Model Context Protocol, and launch a workflow case through a natural-language request. | AI engineers integrating language model agents with YAWL |
 
 ### Gap assessment
 
-**Critical gap.** No tutorial exists that walks a new user through the full beginner journey: install YAWL, load a sample specification, start a case, complete a work item, and observe the result. This is the single most important documentation gap for user adoption. The `docs/tutorials/` directory has been created as the target location.
+**Substantially improved.** Six concrete tutorials now cover the core beginner journey (run a workflow, write a spec, call the API, extend the engine, Docker dev setup, and MCP agent integration). Remaining gaps:
 
-**Recommended tutorials to write:**
-1. `docs/tutorials/01-run-your-first-workflow.md` — Install, start engine, run the built-in demo spec
-2. `docs/tutorials/02-write-a-simple-specification.md` — Create a two-task sequential workflow in XML
-3. `docs/tutorials/03-deploy-to-docker.md` — Container-based first deployment end-to-end
+- Tutorial 01 (build from source) and Tutorial 02 (write a simple specification from zero) are referenced by the new tutorials but not yet in the index as complete entries — verify they exist at `docs/tutorials/01-build-yawl.md` and `docs/tutorials/02-write-a-simple-specification.md`.
+- No tutorial for deploying to a production servlet container with a real database.
 
 ---
 
@@ -86,14 +93,20 @@ The key distinction: tutorials teach skills through guided practice; how-to guid
 | `docs/BUILD_SYSTEM_MIGRATION_GUIDE.md` | Migrate from Ant to Maven build system |
 | `docs/ORM_MIGRATION_GUIDE.md` | Migrate the ORM layer |
 
+### New how-to guides added 2026-02-18
+
+| File | Task accomplished | Audience / when to use |
+|---|---|---|
+| [`docs/how-to/configure-resource-service.md`](../how-to/configure-resource-service.md) | Understand what the v4 Resource Service was and how to achieve equivalent resource allocation in YAWL v6 (which has no standalone resource service). | Operators and developers migrating from YAWL v4 who expect a resource service |
+| [`docs/how-to/configure-spiffe.md`](../how-to/configure-spiffe.md) | Configure SPIFFE/SPIRE zero-trust identity for YAWL engine and services on Kubernetes or bare-metal. | Security engineers enabling workload identity for YAWL deployments |
+| [`docs/how-to/configure-multi-tenancy.md`](../how-to/configure-multi-tenancy.md) | Configure schema-per-tenant or instance-per-tenant isolation in YAWL v6 with PostgreSQL and Flyway. | Platform engineers deploying YAWL as a shared multi-tenant service |
+| [`docs/how-to/enable-stateless-persistence.md`](../how-to/enable-stateless-persistence.md) | Enable persistence for the stateless engine by exporting case state to an external store and restoring it via `unloadCase()` / `restoreCase()`. | Developers using `YStatelessEngine` who need durable case state |
+| [`docs/how-to/implement-worklet-service.md`](../how-to/implement-worklet-service.md) | Implement dynamic task routing in YAWL v6 (the v4 Worklet Service equivalent) using a custom MCP tool on `YawlMcpServer`. | Developers who need conditional workflow routing equivalent to the v4 Worklet Service |
+| [`docs/how-to/setup-org-model.md`](../how-to/setup-org-model.md) | Understand what the v4 organisational model provided and how to manage participant access in YAWL v6 (which has no org model implementation). | Operators and developers migrating v4 resource assignments to v6 |
+
 ### Gap assessment
 
-**Well covered.** Deployment and migration tasks are thoroughly documented. The main gaps are:
-
-- No how-to for loading and running a workflow specification via the REST API (programmatic case management)
-- No how-to for configuring resource allocation rules and organisational models
-- No how-to for integrating a custom work item handler
-- No how-to for configuring SPIFFE/SPIRE zero-trust networking (the doc `docs/SPIFFE_INTEGRATION_GUIDE.md` exists but reads as explanation, not steps)
+**Well covered.** Deployment and migration tasks are thoroughly documented. The new guides address the previously identified gaps around resource configuration, SPIFFE integration, multi-tenancy, and worklet routing. Remaining gap: no how-to for monitoring YAWL with Prometheus/Grafana in production.
 
 ---
 
@@ -154,14 +167,20 @@ The key distinction: tutorials teach skills through guided practice; how-to guid
 | `docs/v6/latest/facts/coverage.json` | Observatory: test coverage data |
 | `docs/v6/latest/facts/maven-hazards.json` | Observatory: broken or hazardous Maven artifacts |
 
+### New reference docs added 2026-02-18
+
+| File | What it describes | Audience / when to use |
+|---|---|---|
+| [`docs/reference/yawl-schema.md`](../reference/yawl-schema.md) | Human-readable reference for every element and attribute in the YAWL XML specification format (`YAWL_Schema4.0.xsd`). | Agents and developers authoring or inspecting `.yawl` specification files |
+| [`docs/reference/error-codes.md`](../reference/error-codes.md) | Catalogue of every exception class thrown by the YAWL engine, XML failure responses from the REST and servlet APIs, and resolution steps for common error conditions. | Developers debugging engine logs or handling exceptions in custom services |
+| [`docs/reference/configuration.md`](../reference/configuration.md) | Complete lookup table for all YAWL configuration properties across `application.yml`, `yawl.properties`, and related configuration sources, with types, defaults, and valid ranges. | Developers and operators configuring or deploying the engine |
+| [`docs/reference/environment-variables.md`](../reference/environment-variables.md) | Complete lookup table for all environment variables used by YAWL Docker and Kubernetes deployments, sourced from `.env.example` and `docker-compose.yml`. | Engineers writing Kubernetes manifests, Docker Compose files, or debugging container deployments |
+| [`docs/reference/workflow-patterns.md`](../reference/workflow-patterns.md) | Quick-reference table for all workflow patterns (from the WF Patterns library) and their YAWL implementation status, XML constructs, and relevant source classes. | Developers designing specifications or implementing pattern support |
+| [`docs/reference/implementation-status.md`](../reference/implementation-status.md) | Records the precise delta between what YAWL documentation describes and what is verifiably implemented in Java source code and covered by tests as of 2026-02-18. | Anyone reading any YAWL doc who needs to know whether the described feature actually works |
+
 ### Gap assessment
 
-**Good coverage of APIs and architecture decisions. Key gaps:**
-
-- No schema reference for the YAWL XML specification format (XSD documentation exists at `schema/YAWL_Schema4.0.xsd` but no human-readable reference page)
-- No error code catalogue (error messages returned by the engine are undocumented in reference form)
-- No configuration property reference (all available `yawl.properties` keys, their types, defaults, and valid ranges)
-- No environment variable reference for Docker/Kubernetes deployments
+**All previously identified gaps now addressed.** YAWL schema, error codes, configuration properties, environment variables, and workflow patterns are all documented in reference form. The new `implementation-status.md` provides a ground-truth cross-reference for the entire doc set.
 
 ---
 
@@ -195,15 +214,21 @@ The key distinction: tutorials teach skills through guided practice; how-to guid
 | `docs/ggen-use-cases-summary.md` | Explanation of ggen automation use cases and design approach |
 | `docs/operations/scaling-guide.md` | Scaling design rationale; when and how to scale each component |
 
+### New explanation docs added 2026-02-18
+
+| File | Concept explained | Audience / when to use |
+|---|---|---|
+| [`docs/explanation/petri-net-foundations.md`](../explanation/petri-net-foundations.md) | Why YAWL chose Petri nets as its semantic basis, how places/transitions/tokens map to Java classes, and why YAWLnets extend plain Petri nets to support all 43 workflow patterns. | Developers and architects who need to reason about workflow correctness, soundness, or deadlock |
+| [`docs/explanation/case-lifecycle.md`](../explanation/case-lifecycle.md) | The two interlocked state machines (case lifecycle and work item lifecycle) managed by `YNetRunner` and `YWorkItem`, and which method causes each state transition. | Developers modifying engine behaviour, debugging stuck cases, or implementing new services |
+| [`docs/explanation/interface-architecture.md`](../explanation/interface-architecture.md) | What each of YAWL's four named interfaces (A, B, E, X) does, the direction of communication, and why the split exists — the mandatory first step before writing any integration code. | Every developer writing external integrations, custom services, or administrative tools |
+| [`docs/explanation/worklet-service.md`](../explanation/worklet-service.md) | What the YAWL v4 Worklet Service was (RDR-based dynamic task substitution), why it is not available in v6, and what the v6 replacement pattern is. | Developers migrating v4 workflows that relied on the Worklet Service |
+| [`docs/explanation/execution-profiles.md`](../explanation/execution-profiles.md) | How the decomposition type, `externalInteraction` mode, service reference, and codelet together form a task's execution profile and determine whether work items go to a human worklist, a named YAWL service, or an inline automated function. | Developers configuring task routing or implementing custom decomposition types |
+| [`docs/explanation/multi-instance-tasks.md`](../explanation/multi-instance-tasks.md) | How multi-instance tasks create N parallel work item copies from a single token, the four cardinality parameters, and when to use MI tasks vs explicit AND-split/join patterns. | Developers designing specifications that process collections in parallel |
+| [`docs/explanation/or-join-semantics.md`](../explanation/or-join-semantics.md) | Why YAWL's OR-join requires exhaustive reachability analysis (not a simple token counter), how the engine computes it, and the performance implications that distinguish YAWL from most other workflow formalisms. | Developers designing nets with OR-joins or debugging cases that appear stuck at a join |
+
 ### Gap assessment
 
-**Moderately covered for architecture, weak for core workflow concepts. Key gaps:**
-
-- No explanation of YAWL's Petri net foundations and why Petri nets were chosen as the semantic basis
-- No explanation of the 36 workflow patterns — what they are, why they matter, how YAWL implements each
-- No explanation of the case lifecycle — how a workflow case progresses through states and why
-- No explanation of the worklet service — what it is, why it enables dynamic adaptation
-- No explanation of the Interface A / B / E / X architecture — what each interface does and why the split exists
+**All previously identified core conceptual gaps are now addressed.** Petri net foundations, case lifecycle, Interface A/B/E/X, worklet service history, and advanced constructs (MI tasks, OR-join) are all explained. Remaining area: no explanation of the YAWL security model evolution from v4 (Security Service) to v6 (Spring Security / RBAC).
 
 ---
 
@@ -213,14 +238,21 @@ The key distinction: tutorials teach skills through guided practice; how-to guid
 
 | Topic | Tutorials | How-to | Reference | Explanation |
 |---|---|---|---|---|
-| Deployment | *(missing)* | `DEPLOY-*.md`, `DEPLOYMENT-CHECKLIST.md` | `docs/deployment/java25-quick-reference.md` | `docs/deployment/architecture-comparison.md` |
-| Build | *(missing)* | `docs/BUILD.md` | `docs/MAVEN_MODULE_STRUCTURE.md` | `docs/architecture/decisions/ADR-003-*.md` |
-| REST API | *(missing)* | *(missing)* | `docs/API-REFERENCE.md`, `docs/REST-API-JAX-RS.md` | `docs/INTEGRATION_GUIDE_CONSOLIDATED.md` |
+| Deployment | `docs/tutorials/07-docker-dev-environment.md` | `DEPLOY-*.md`, `DEPLOYMENT-CHECKLIST.md` | `docs/deployment/java25-quick-reference.md` | `docs/deployment/architecture-comparison.md` |
+| Build | *(see Tutorial 01)* | `docs/BUILD.md` | `docs/MAVEN_MODULE_STRUCTURE.md` | `docs/architecture/decisions/ADR-003-*.md` |
+| REST API | `docs/tutorials/05-call-yawl-rest-api.md` | *(see Tutorial 05)* | `docs/API-REFERENCE.md`, `docs/REST-API-JAX-RS.md` | `docs/INTEGRATION_GUIDE_CONSOLIDATED.md` |
 | Migration | *(missing)* | `docs/MIGRATION-v6.md`, `docs/migration/MIGRATION_EXECUTION_PLAN.md` | `docs/api/MIGRATION-5x-to-6.md` | `docs/architecture/decisions/ADR-004-*.md` |
 | Engine architecture | *(missing)* | *(missing)* | `docs/v6/latest/facts/dual-family.json` | `docs/architecture/decisions/ADR-001-*.md`, `ADR-021-*.md` |
 | Performance | *(missing)* | `docs/performance/PERFORMANCE_TESTING_GUIDE.md` | `docs/performance/PERFORMANCE_BASELINES.md`, `docs/BENCHMARK-METRICS.md` | `docs/performance/README.md`, `docs/SCALING_AND_OBSERVABILITY_GUIDE.md` |
 | Security | *(missing)* | `docs/deployment/runbooks/SECURITY_RUNBOOK.md` | `docs/security/compliance-matrix.md` | `docs/security/security-overview.md`, `docs/SPIFFE_INTEGRATION.md` |
-| Autonomous agents | *(missing)* | `docs/autonomous-agents/docker-deployment-guide.md` | `docs/autonomous-agents/api-documentation.md` | `docs/autonomous-agents/README.md` |
+| Autonomous agents | `docs/tutorials/08-mcp-agent-integration.md` | `docs/autonomous-agents/docker-deployment-guide.md` | `docs/autonomous-agents/api-documentation.md` | `docs/autonomous-agents/README.md` |
+| Workflow patterns | `docs/tutorials/04-write-a-yawl-specification.md` | *(missing)* | `docs/reference/workflow-patterns.md` | `docs/explanation/petri-net-foundations.md`, `docs/patterns/README.md` |
+| Resource / org model | *(missing)* | `docs/how-to/configure-resource-service.md`, `docs/how-to/setup-org-model.md` | *(missing)* | *(missing)* |
+| Multi-tenancy | *(missing)* | `docs/how-to/configure-multi-tenancy.md` | `docs/reference/configuration.md` | *(missing)* |
+| Zero-trust / SPIFFE | *(missing)* | `docs/how-to/configure-spiffe.md` | `docs/reference/environment-variables.md` | `docs/SPIFFE_INTEGRATION.md` |
+| Case / work item lifecycle | *(missing)* | *(missing)* | `docs/reference/error-codes.md` | `docs/explanation/case-lifecycle.md` |
+| OR-join / MI tasks | *(missing)* | *(missing)* | `docs/reference/yawl-schema.md` | `docs/explanation/or-join-semantics.md`, `docs/explanation/multi-instance-tasks.md` |
+| Configuration | *(missing)* | *(missing)* | `docs/reference/configuration.md`, `docs/reference/environment-variables.md` | *(missing)* |
 
 ---
 
@@ -245,11 +277,25 @@ The following directories contain internal working documents, validation reports
 
 | Quadrant | Status | Priority gap |
 |---|---|---|
-| Tutorials | **Critical gap** — no proper tutorials exist | Write a "run your first workflow" tutorial immediately |
-| How-to | Well covered for deployment; gaps in API usage and custom integration | Add REST API how-tos and custom handler integration guide |
-| Reference | Good API and ADR coverage; gaps in config properties and error codes | Add configuration property reference and error code catalogue |
-| Explanation | Good for architecture decisions; gaps in core Petri net and workflow concepts | Add Petri net foundations and Interface A/B/E/X explanation |
+| Tutorials | **Good coverage** — six new tutorials added covering the core beginner journey | Add Tutorial 01 (build from source) and Tutorial 02 (write a simple spec) to this index once verified as complete |
+| How-to | **Well covered** — deployment, migration, resource config, SPIFFE, multi-tenancy, and worklet routing all documented | Add monitoring/observability how-to (Prometheus, Grafana, OpenTelemetry) |
+| Reference | **All gaps addressed** — schema, error codes, configuration, environment variables, workflow patterns, and implementation status now documented | Keep `implementation-status.md` updated with each new feature implementation |
+| Explanation | **Core concepts now covered** — Petri nets, case lifecycle, interfaces, worklet service, execution profiles, MI tasks, OR-join all explained | Add explanation of the YAWL security model evolution (v4 Security Service to v6 Spring Security/RBAC) |
 
 ---
 
-*Last updated: 2026-02-18. Reflects 236 markdown files across docs/ and .claude/.*
+## Implementation Status
+
+> **Before trusting any doc in this repository, check [`docs/reference/implementation-status.md`](../reference/implementation-status.md).**
+
+This file records the precise delta between what YAWL documentation describes (including ADRs, Diataxis explanation pages, and tutorial content) and what is verifiably implemented in Java source code and covered by tests as of 2026-02-18. YAWL documentation may describe aspirational features that are not yet implemented. The implementation-status file is the authoritative ground truth for what actually works.
+
+Key findings (see the file for full detail):
+- The stateless engine (`YStatelessEngine`) is implemented and tested.
+- The MCP server (`YawlMcpServer`) is implemented.
+- The Resource Service, Worklet Service, and organisational model are NOT implemented in v6 (they existed in v4).
+- Multi-tenancy configuration requires PostgreSQL and is partially implemented.
+
+---
+
+*Last updated: 2026-02-18. Reflects all Diataxis-quadrant documentation added in the 2026-02-18 session, plus the 236 pre-existing markdown files across docs/ and .claude/.*
