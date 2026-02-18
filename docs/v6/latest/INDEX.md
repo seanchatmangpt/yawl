@@ -5,6 +5,10 @@ Run: 20260217T230032Z  Status: GREEN
 ## Receipt
 - [receipts/observatory.json](receipts/observatory.json)
 
+## Key Documents
+
+- [Developer Quickstart](../../../.claude/DEVELOPER-QUICKSTART.md) — 2-page YAWL-specific setup guide: shared-src layout, module map, quality gates, Observatory workflow, git hooks, coverage dashboard, build profiling, and common failure modes
+
 ## Facts
 - [facts/modules.json](facts/modules.json) — Module inventory (names, paths, source strategy)
 - [facts/reactor.json](facts/reactor.json) — Maven reactor order and inter-module dependencies
