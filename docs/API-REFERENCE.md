@@ -1,15 +1,24 @@
-# YAWL REST API Reference
+# YAWL v6.0.0 REST API Reference
 
 ## Overview
 
-The YAWL REST API provides comprehensive workflow management capabilities for the YAWL (Yet Another Workflow Language) v5.2 Workflow Engine. This API enables client applications to interact with the engine for:
+The YAWL REST API provides comprehensive workflow management capabilities for the YAWL (Yet Another Workflow Language) Workflow Engine. This API enables client applications to interact with the engine for:
 
 - Session management and authentication
-- Work item lifecycle operations
-- Case management and control
-- Workflow specification management
-- Event subscriptions and notifications
-- Extended operations (exception handling, task suspension)
+- Work item lifecycle operations (checkout, checkin, complete, suspend)
+- Case management and control (launch, cancel, state queries)
+- Workflow specification management (load, unload, query)
+- Event subscriptions and notifications (Interface E)
+- Extended operations - exception handling, task suspension (Interface X)
+
+## Version Information
+
+| Component | Version |
+|-----------|---------|
+| YAWL Engine | 6.0.0 |
+| Java Runtime | Java 25 LTS |
+| API Protocol | REST over HTTP/1.1 |
+| Data Formats | JSON, XML |
 
 ## Base URL
 
@@ -17,45 +26,59 @@ The YAWL REST API provides comprehensive workflow management capabilities for th
 http://localhost:8080/yawl/api
 ```
 
+## Java 25 Performance Features
+
+YAWL v6.0.0 leverages Java 25 features for optimal performance:
+
+| Feature | Benefit | JVM Flag |
+|---------|---------|----------|
+| Compact Object Headers | 5-10% throughput gain, -4-8 bytes/object | `-XX:+UseCompactObjectHeaders` |
+| Virtual Threads | Thousands of concurrent cases without thread pool exhaustion | Automatic (StructuredTaskScope) |
+| Generational ZGC | Ultra-low pause times for large heaps | `-XX:+UseZGC -XX:ZGenerational=true` |
+| Scoped Values | Context propagation replaces ThreadLocal | Internal use |
+| Pattern Matching | Exhaustive switch on sealed event types | Language feature |
+
 ## Authentication
 
 All API endpoints require a valid session handle obtained through the `/ib/connect` endpoint. The session handle must be passed as a query parameter in all subsequent requests.
 
-### Example Authentication Flow
+### Authentication Flow
 
 1. **Connect to engine** (POST `/ib/connect`)
-   ```json
-   {
-     "userid": "admin",
-     "password": "admin"
-   }
-   ```
-
-2. **Receive session handle**
-   ```json
-   {
-     "sessionHandle": "H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHdRYXVKZnFGZl5aZl1iUmlyRGlyRklySkllZkBOVoFGQWZxZklmcWlxSV5RZmlyTmZJZnFqUUVRZXFBSV1+SWlxSWZRSWVJUlFiSWlSaHF+SUpKZX1NZUlrUWlyCUVFWSmpxSWZxcWlySkxySk1mRSllSWrNJUVEqSX5+YUlySllQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlxSXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA"
-   }
-   ```
-
-3. **Use session handle in subsequent requests**
-   ```
-   GET /ib/workitems?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlySV5RZmlyTmZJZnFqUUVRZXFASV1+SWlyRWZRSWVJUlRiSWlSaHl+SUpKZX1NZUlrUWlyClVFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlyRWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA
-   ```
-
+2. **Receive session handle** - Base64-encoded session token
+3. **Use session handle** in subsequent requests via `sessionHandle` query parameter
 4. **Disconnect when done** (POST `/ib/disconnect`)
+
+### Example Authentication
+
+```bash
+# Connect
+curl -X POST http://localhost:8080/yawl/api/ib/connect \
+  -H "Content-Type: application/json" \
+  -d '{"userid": "admin", "password": "admin"}'
+
+# Response: {"sessionHandle": "H4sIAAAAAAAAA..."}
+```
+
+---
 
 ## Interface B: Client Operations
 
-Interface B provides standard operations for work item and case management by client applications.
+Interface B provides standard operations for work item and case management by client applications. Implements WfMC interfaces 2+3 (Workflow client applications and invoked applications).
+
+**Reference**: See `/docs/reference/interface-b.md` for complete protocol documentation.
 
 ### Session Management
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ib/connect` | POST | Authenticate and establish session |
+| `/ib/disconnect` | POST | Terminate session |
+| `/ib/checkConnection` | GET | Validate session handle |
 
 #### Connect to Engine
 
 **Endpoint:** `POST /ib/connect`
-
-Authenticates a user and establishes a session with the engine.
 
 **Request Body:**
 ```json
@@ -77,52 +100,24 @@ Authenticates a user and establishes a session with the engine.
 - `401 Unauthorized`: Invalid credentials
 - `500 Internal Server Error`: Connection failed
 
-**Example:**
-```bash
-curl -X POST http://localhost:8080/yawl/api/ib/connect \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userid": "admin",
-    "password": "admin"
-  }'
-```
-
----
-
-#### Disconnect from Engine
-
-**Endpoint:** `POST /ib/disconnect`
-
-Terminates the session with the engine.
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
-
-**Response (200 OK):**
-```json
-{
-  "status": "disconnected"
-}
-```
-
-**Error Responses:**
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Disconnect failed
-
-**Example:**
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/disconnect?sessionHandle=SESSION_HANDLE"
-```
-
 ---
 
 ### Work Item Operations
 
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ib/workitems` | GET | Get all live work items |
+| `/ib/workitems/{itemId}` | GET | Get specific work item |
+| `/ib/workitems/{itemId}/checkout` | POST | Start work item execution |
+| `/ib/workitems/{itemId}/checkin` | POST | Update work item data |
+| `/ib/workitems/{itemId}/complete` | POST | Complete work item |
+| `/ib/workitems/{itemId}/suspend` | POST | Suspend work item |
+| `/ib/workitems/{itemId}/unsuspend` | POST | Resume suspended work item |
+| `/ib/workitems/{itemId}/rollback` | POST | Roll back to fired state |
+
 #### Get All Live Work Items
 
 **Endpoint:** `GET /ib/workitems`
-
-Retrieves all active work items in the engine.
 
 **Query Parameters:**
 - `sessionHandle` (required): Valid session handle
@@ -139,176 +134,24 @@ Retrieves all active work items in the engine.
     "taskName": "Approve Purchase Request",
     "status": "Executing",
     "resourceStatus": "Started",
-    "enablementTimeMs": "2026-02-16 14:30:00",
-    "startTimeMs": "2026-02-16 14:35:00"
+    "enablementTimeMs": "2026-02-16T14:30:00Z",
+    "startTimeMs": "2026-02-16T14:35:00Z",
+    "timerStatus": "Active",
+    "timerExpiry": 1739726100000
   }
 ]
 ```
-
-**Error Responses:**
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Failed to get work items
-
-**Example:**
-```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/workitems?sessionHandle=SESSION_HANDLE" \
-  -H "Accept: application/json"
-```
-
----
-
-#### Get Specific Work Item
-
-**Endpoint:** `GET /ib/workitems/{itemId}`
-
-Retrieves detailed information about a specific work item.
-
-**Path Parameters:**
-- `itemId` (required): Work item ID
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
-
-**Response (200 OK):**
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<workitem id="ITEM001">
-  <taskid>ApproveRequest</taskid>
-  <taskname>Approve Purchase Request</taskname>
-  <caseid>CASE001</caseid>
-  <status>Executing</status>
-  <data>
-    <amount>5000.00</amount>
-    <vendor>Acme Corp</vendor>
-    <description>Office Supplies</description>
-  </data>
-</workitem>
-```
-
-**Error Responses:**
-- `401 Unauthorized`: Invalid or missing session handle
-- `404 Not Found`: Work item not found
-- `500 Internal Server Error`: Failed to get work item
-
-**Example:**
-```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/workitems/ITEM001?sessionHandle=SESSION_HANDLE" \
-  -H "Accept: application/xml"
-```
-
----
-
-#### Check Out Work Item
-
-**Endpoint:** `POST /ib/workitems/{itemId}/checkout`
-
-Starts execution of a work item. Changes the work item status to "Started".
-
-**Path Parameters:**
-- `itemId` (required): Work item ID
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
-
-**Response (200 OK):**
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<workitem id="ITEM001">
-  <taskid>ApproveRequest</taskid>
-  <taskname>Approve Purchase Request</taskname>
-  <caseid>CASE001</caseid>
-  <status>Executing</status>
-  <data>
-    <amount>5000.00</amount>
-    <vendor>Acme Corp</vendor>
-    <description>Office Supplies</description>
-  </data>
-</workitem>
-```
-
-**Error Responses:**
-- `400 Bad Request`: Failed to checkout work item
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Checkout failed
-
-**Example:**
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/checkout?sessionHandle=SESSION_HANDLE"
-```
-
----
-
-#### Check In Work Item
-
-**Endpoint:** `POST /ib/workitems/{itemId}/checkin`
-
-Updates work item data without completing it. Useful for saving intermediate progress.
-
-**Path Parameters:**
-- `itemId` (required): Work item ID
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
-
-**Request Body:**
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<data>
-  <amount>5000.00</amount>
-  <vendor>Acme Corp</vendor>
-  <description>Office Supplies - Approved</description>
-  <approver>John Smith</approver>
-</data>
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": "checked-in"
-}
-```
-
-**Error Responses:**
-- `400 Bad Request`: Failed to checkin work item
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Checkin failed
-
-**Example:**
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/checkin?sessionHandle=SESSION_HANDLE" \
-  -H "Content-Type: application/xml" \
-  -d '<?xml version="1.0" encoding="UTF-8"?>
-<data>
-  <amount>5000.00</amount>
-  <vendor>Acme Corp</vendor>
-  <description>Office Supplies - Approved</description>
-  <approver>John Smith</approver>
-</data>'
-```
-
----
 
 #### Complete Work Item
 
 **Endpoint:** `POST /ib/workitems/{itemId}/complete`
 
-Completes a work item with final output data. Changes the work item status to "Complete".
-
-**Path Parameters:**
-- `itemId` (required): Work item ID
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
-
-**Request Body:**
+**Request Body (XML):**
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <data>
   <amount>5000.00</amount>
   <vendor>Acme Corp</vendor>
-  <description>Office Supplies - Approved</description>
-  <approver>John Smith</approver>
-  <approvalDate>2026-02-16</approvalDate>
   <status>APPROVED</status>
 </data>
 ```
@@ -320,224 +163,186 @@ Completes a work item with final output data. Changes the work item status to "C
 }
 ```
 
-**Error Responses:**
-- `400 Bad Request`: Failed to complete work item
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Completion failed
-
-**Example:**
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/complete?sessionHandle=SESSION_HANDLE" \
-  -H "Content-Type: application/xml" \
-  -d '<?xml version="1.0" encoding="UTF-8"?>
-<data>
-  <amount>5000.00</amount>
-  <vendor>Acme Corp</vendor>
-  <description>Office Supplies - Approved</description>
-  <approver>John Smith</approver>
-  <approvalDate>2026-02-16</approvalDate>
-  <status>APPROVED</status>
-</data>'
-```
-
 ---
 
 ### Case Operations
 
-#### Get Work Items for Case
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ib/cases` | GET | Get all running cases |
+| `/ib/cases/{caseId}` | GET | Get case data |
+| `/ib/cases/{caseId}/cancel` | POST | Cancel case |
+| `/ib/cases/{caseId}/state` | GET | Get case state |
+| `/ib/cases/{caseId}/workitems` | GET | Get work items for case |
+| `/ib/specifications/{specId}/cases` | POST | Launch new case |
 
-**Endpoint:** `GET /ib/cases/{caseId}/workitems`
+#### Launch Case
 
-Retrieves all work items associated with a particular case instance.
+**Endpoint:** `POST /ib/specifications/{specIdentifier}/versions/{specVersion}/cases`
 
 **Path Parameters:**
-- `caseId` (required): Case ID
+- `specIdentifier`: Specification identifier
+- `specVersion`: Specification version
 
 **Query Parameters:**
+- `specuri` (required): Specification URI
 - `sessionHandle` (required): Valid session handle
+- `caseid` (optional): Custom case ID
+- `completionObserverURI` (optional): Callback URL for case completion
+
+**Request Body (XML):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<caseParams>
+  <requestAmount>10000.00</requestAmount>
+  <requestor>John Smith</requestor>
+</caseParams>
+```
 
 **Response (200 OK):**
 ```json
-[
-  {
-    "id": 12345,
-    "specIdentifier": "ProcurementProcess",
-    "caseID": "CASE001",
-    "taskID": "ApproveRequest",
-    "taskName": "Approve Purchase Request",
-    "status": "Executing",
-    "resourceStatus": "Started"
-  },
-  {
-    "id": 12346,
-    "specIdentifier": "ProcurementProcess",
-    "caseID": "CASE001",
-    "taskID": "OrderItems",
-    "taskName": "Order Items",
-    "status": "Enabled",
-    "resourceStatus": "Unresourced"
-  }
-]
-```
-
-**Error Responses:**
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Failed to get work items
-
-**Example:**
-```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/cases/CASE001/workitems?sessionHandle=SESSION_HANDLE" \
-  -H "Accept: application/json"
+{
+  "caseID": "CASE001"
+}
 ```
 
 ---
 
-#### Get Case Data
+### Specification Operations
 
-**Endpoint:** `GET /ib/cases/{caseId}`
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ib/specifications` | GET | List loaded specifications |
+| `/ib/specifications/{specId}` | GET | Get specification definition |
+| `/ib/specifications/{specId}/data` | GET | Get specification data schema |
+| `/ib/specifications/{specId}/tasks/{taskId}` | GET | Get task information |
 
-Retrieves detailed data for a specific case instance, including case variables and current state.
+---
 
-**Path Parameters:**
-- `caseId` (required): Case ID
+## Interface E: Event Operations
+
+Interface E provides event subscription and process log queries for workflow monitoring and auditing.
+
+**Reference**: See `/docs/reference/interface-e.md` for complete protocol documentation.
+
+### Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ie/specifications` | GET | Get all logged specifications |
+| `/ie/specifications/{specKey}/cases` | GET | Get cases for specification |
+| `/ie/listeners` | GET | Get registered event listeners |
+
+#### Get Logged Specifications
+
+**Endpoint:** `GET /ie/specifications`
 
 **Query Parameters:**
 - `sessionHandle` (required): Valid session handle
 
 **Response (200 OK):**
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<case id="CASE001">
-  <specid>ProcurementProcess</specid>
-  <status>Executing</status>
-  <createtime>2026-02-15 10:00:00</createtime>
-  <data>
-    <requestAmount>10000.00</requestAmount>
-    <vendor>Acme Corp</vendor>
-    <approver>John Smith</approver>
-    <status>PENDING_APPROVAL</status>
-  </data>
-  <workitems>
-    <workitem id="ITEM001" status="Executing"/>
-    <workitem id="ITEM002" status="Enabled"/>
-  </workitems>
-</case>
+<specifications>
+  <specification>
+    <specid>ProcurementProcess</specid>
+    <version>1.0</version>
+    <uri>http://example.com/specs/procurement</uri>
+    <casecount>42</casecount>
+  </specification>
+</specifications>
 ```
 
-**Error Responses:**
-- `401 Unauthorized`: Invalid or missing session handle
-- `404 Not Found`: Case not found
-- `500 Internal Server Error`: Failed to get case data
+#### Get Cases for Specification
 
-**Example:**
-```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/cases/CASE001?sessionHandle=SESSION_HANDLE" \
-  -H "Accept: application/xml"
-```
-
----
-
-#### Cancel Case
-
-**Endpoint:** `POST /ib/cases/{caseId}/cancel`
-
-Cancels an active case instance. All work items in the case will be terminated.
+**Endpoint:** `GET /ie/specifications/{specKey}/cases`
 
 **Path Parameters:**
-- `caseId` (required): Case ID
-
-**Query Parameters:**
-- `sessionHandle` (required): Valid session handle
+- `specKey`: Numeric specification log key
 
 **Response (200 OK):**
-```json
-{
-  "status": "cancelled"
-}
+```xml
+<cases>
+  <case>
+    <caseid>CASE001</caseid>
+    <starttime>2026-02-16T10:00:00Z</starttime>
+    <status>Completed</status>
+  </case>
+</cases>
 ```
-
-**Error Responses:**
-- `400 Bad Request`: Failed to cancel case
-- `401 Unauthorized`: Invalid or missing session handle
-- `500 Internal Server Error`: Cancel failed
-
-**Example:**
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/cases/CASE001/cancel?sessionHandle=SESSION_HANDLE"
-```
-
----
-
-## Interface A: Design Operations
-
-Interface A provides workflow specification management capabilities.
-
-**Note:** Interface A endpoints are currently not implemented as REST endpoints. Use the `InterfaceA_EngineBasedServer` servlet instead.
-
-### Planned Operations
-
-- Upload specifications (`POST /ia/specifications`)
-- Get loaded specifications (`GET /ia/specifications`)
-- Unload specification (`DELETE /ia/specifications/{specId}`)
 
 ---
 
 ## Interface X: Extended Operations
 
-Interface X provides advanced engine operations.
+Interface X provides advanced engine operations including exception handling, work item suspension, and data updates.
 
-**Note:** Interface X endpoints are currently not implemented as REST endpoints. Use the `InterfaceX_EngineSideServer` servlet instead.
+**Reference**: See `/docs/reference/interface-x.md` for complete protocol documentation.
 
-### Planned Operations
+### Endpoints
 
-- Handle work item exceptions (`POST /ix/workitems/{itemId}/exceptions`)
-- Suspend work item (`POST /ix/workitems/{itemId}/suspend`)
-- Resume suspended work item (`POST /ix/workitems/{itemId}/resume`)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ix/workitems/{itemId}/cancel` | POST | Cancel work item with exception |
+| `/ix/workitems/{itemId}/suspend` | POST | Suspend work item |
+| `/ix/workitems/{itemId}/resume` | POST | Resume suspended work item |
+| `/ix/workitems/{itemId}/data` | PUT | Update work item data |
+| `/ix/listeners` | POST | Register Interface X listener |
+| `/ix/listeners` | DELETE | Remove Interface X listener |
 
----
+#### Cancel Work Item
 
-## Interface E: Event Operations
+**Endpoint:** `POST /ix/workitems/{itemId}/cancel`
 
-Interface E provides event subscription and notification capabilities.
+**Query Parameters:**
+- `sessionHandle` (required): Valid session handle
+- `fail` (optional): Mark as failure ("true"/"false", default: "false")
 
-**Note:** Interface E endpoints are currently not implemented as REST endpoints. Use the `YLogGateway` servlet instead.
-
-### Planned Operations
-
-- Subscribe to events (`POST /ie/subscriptions`)
-- Get active subscriptions (`GET /ie/subscriptions`)
-- Unsubscribe from events (`DELETE /ie/subscriptions/{subscriptionId}`)
-
----
-
-## Error Handling
-
-All error responses follow a consistent format:
-
-```json
-{
-  "error": "Error description"
-}
+**Request Body (XML, optional):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<exceptionData>
+  <reason>Business rule violation</reason>
+  <code>BIZ001</code>
+</exceptionData>
 ```
 
-### Common HTTP Status Codes
+**Response (200 OK):**
+```xml
+<success>Work item cancelled successfully</success>
+```
 
-| Status | Meaning | Typical Cause |
-|--------|---------|---------------|
-| 200 | OK | Successful operation |
-| 400 | Bad Request | Invalid request parameters or data |
-| 401 | Unauthorized | Invalid or missing session handle |
-| 404 | Not Found | Resource (work item, case) does not exist |
-| 500 | Internal Server Error | Server error or operation failure |
-| 501 | Not Implemented | Feature not yet implemented |
+#### Suspend Work Item
+
+**Endpoint:** `POST /ix/workitems/{itemId}/suspend`
+
+**Response (200 OK):**
+```xml
+<success>Work item suspended</success>
+```
+
+#### Update Work Item Data
+
+**Endpoint:** `PUT /ix/workitems/{itemId}/data`
+
+**Request Body (XML):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+  <lastModified>2026-02-18T10:00:00Z</lastModified>
+  <modifiedBy>admin</modifiedBy>
+</data>
+```
+
+**Response (200 OK):**
+```xml
+<success>Data updated successfully</success>
+```
 
 ---
 
 ## Data Types
 
 ### WorkItemRecord
-
-Represents a task instance in a workflow case.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -550,17 +355,180 @@ Represents a task instance in a workflow case.
 | uniqueID | string | Unique work item identifier |
 | taskName | string | Human-readable task name |
 | documentation | string | Task documentation |
-| allowsDynamicCreation | string | Whether task allows dynamic work item creation |
-| requiresManualResourcing | string | Whether task requires manual resource allocation |
-| codelet | string | Codelet implementation (if applicable) |
 | status | string | Execution status (Enabled, Fired, Executing, Complete, etc.) |
 | resourceStatus | string | Resourcing status (Offered, Allocated, Started, Suspended, etc.) |
-| enablementTimeMs | string | Timestamp when work item was enabled |
-| firingTimeMs | string | Timestamp when work item was fired |
-| startTimeMs | string | Timestamp when work item execution started |
-| completionTimeMs | string | Timestamp when work item completed |
-| timerTrigger | string | Timer trigger value (if enabled) |
-| timerExpiry | string | Timer expiry timestamp (if enabled) |
+| enablementTimeMs | string | ISO-8601 timestamp when work item was enabled |
+| firingTimeMs | string | ISO-8601 timestamp when work item was fired |
+| startTimeMs | string | ISO-8601 timestamp when work item execution started |
+| completionTimeMs | string | ISO-8601 timestamp when work item completed |
+| timerTrigger | string | Timer trigger type (OnEnabled, OnExecuting) |
+| timerExpiry | long | Timer expiry epoch milliseconds |
+| timerStatus | string | Timer status (Dormant, Active, Expired, Nil) |
+| codelet | string | Codelet implementation class (if applicable) |
+| customFormURL | string | Custom form URL (if applicable) |
+| allowsDynamicCreation | boolean | Multi-instance dynamic creation allowed |
+| requiresManualResourcing | boolean | Task requires manual resource allocation |
+
+### Work Item Status Values
+
+| Status | Description |
+|--------|-------------|
+| Enabled | Task is ready to be started |
+| Fired | Task has been claimed but not yet started |
+| Executing | Task is currently being performed |
+| Complete | Task has finished normally |
+| Failed | Task has finished with failure |
+| ForcedComplete | Task was forcibly completed |
+| Suspended | Task execution is paused |
+| Deadlocked | Task cannot proceed due to net state |
+| IsParent | Multi-instance parent work item |
+| Deleted | Work item has been deleted |
+| Discarded | Work item left in net when case completed |
+| Withdrawn | Enabled work item was withdrawn |
+
+### Case State Values
+
+| State | Description |
+|-------|-------------|
+| Running | Case is actively executing |
+| Completed | Case has finished normally |
+| Cancelled | Case was cancelled |
+| Suspended | Case execution is paused |
+| Deadlocked | Case cannot proceed |
+
+---
+
+## Error Handling
+
+All error responses follow a consistent format:
+
+```json
+{
+  "error": "Error description",
+  "code": "ERROR_CODE"
+}
+```
+
+### HTTP Status Codes
+
+| Status | Meaning | Typical Cause |
+|--------|---------|---------------|
+| 200 | OK | Successful operation |
+| 400 | Bad Request | Invalid request parameters or data |
+| 401 | Unauthorized | Invalid or missing session handle |
+| 404 | Not Found | Resource (work item, case, specification) does not exist |
+| 409 | Conflict | State conflict (e.g., invalid status transition) |
+| 500 | Internal Server Error | Server error or operation failure |
+| 501 | Not Implemented | Feature not yet implemented |
+| 503 | Service Unavailable | Engine in redundant mode or initializing |
+
+### Exception Types
+
+| Exception | HTTP Status | Description |
+|-----------|-------------|-------------|
+| YStateException | 400 | Invalid workflow state for operation |
+| YDataStateException | 400 | Data validation or mapping error |
+| YQueryException | 400 | XQuery evaluation error |
+| YPersistenceException | 500 | Database persistence failure |
+| YEngineStateException | 503 | Engine not in running state |
+| YLogException | 500 | Logging system error |
+
+---
+
+## Java 25 Code Examples
+
+### Virtual Thread Batch Processing
+
+Process multiple work items concurrently using Java 25 virtual threads:
+
+```java
+import java.util.List;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.Future;
+
+public class BatchWorkItemProcessor {
+
+    private final YawlClient client;
+
+    public List<WorkItemResult> processBatch(List<String> workItemIds, String sessionHandle)
+            throws Exception {
+
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+
+            // Spawn virtual thread for each work item
+            List<StructuredTaskScope.Subtask<WorkItemResult>> tasks = workItemIds.stream()
+                .map(itemId -> scope.fork(() -> processItem(itemId, sessionHandle)))
+                .toList();
+
+            // Wait for all tasks and propagate first failure
+            scope.join().throwIfFailed();
+
+            // Collect results
+            return tasks.stream()
+                .map(StructuredTaskScope.Subtask::get)
+                .toList();
+        }
+    }
+
+    private WorkItemResult processItem(String itemId, String sessionHandle) {
+        // Each runs on its own virtual thread
+        WorkItem item = client.getWorkItem(itemId, sessionHandle);
+        client.checkout(itemId, sessionHandle);
+        // ... process work item ...
+        client.complete(itemId, outputData, sessionHandle);
+        return new WorkItemResult(itemId, "completed");
+    }
+}
+```
+
+### Scoped Values for Context Propagation
+
+Use Scoped Values instead of ThreadLocal for workflow context:
+
+```java
+import java.util.concurrent.ScopedValue;
+
+public class WorkflowContext {
+
+    // Define scoped values for context propagation
+    public static final ScopedValue<String> WORKFLOW_ID = ScopedValue.newInstance();
+    public static final ScopedValue<String> CASE_ID = ScopedValue.newInstance();
+    public static final ScopedValue<String> SECURITY_CONTEXT = ScopedValue.newInstance();
+
+    public void executeInContext(String workflowId, String caseId, Runnable task) {
+        // Bind values for the scope of this execution
+        ScopedValue.where(WORKFLOW_ID, workflowId)
+                   .where(CASE_ID, caseId)
+                   .run(task);
+    }
+}
+```
+
+### Pattern Matching on Sealed Events
+
+Exhaustive pattern matching on YAWL event types:
+
+```java
+sealed interface YEvent permits CaseStarted, CaseCompleted, WorkItemEnabled, WorkItemCompleted {
+    String getCaseId();
+    Instant getTimestamp();
+}
+
+record CaseStarted(String caseId, String specId, Instant timestamp) implements YEvent {}
+record CaseCompleted(String caseId, String outputData, Instant timestamp) implements YEvent {}
+record WorkItemEnabled(String caseId, String taskId, Instant timestamp) implements YEvent {}
+record WorkItemCompleted(String caseId, String taskId, Instant timestamp) implements YEvent {}
+
+public void handleEvent(YEvent event) {
+    String logMessage = switch (event) {
+        case CaseStarted cs -> "Case %s started for spec %s".formatted(cs.caseId(), cs.specId());
+        case CaseCompleted cc -> "Case %s completed".formatted(cc.caseId());
+        case WorkItemEnabled we -> "Task %s enabled in case %s".formatted(we.taskId(), we.caseId());
+        case WorkItemCompleted wc -> "Task %s completed in case %s".formatted(wc.taskId(), wc.caseId());
+    };
+    logger.info(logMessage);
+}
+```
 
 ---
 
@@ -573,76 +541,219 @@ This example demonstrates a typical workflow execution through the REST API.
 ```bash
 curl -X POST http://localhost:8080/yawl/api/ib/connect \
   -H "Content-Type: application/json" \
-  -d '{
-    "userid": "approver",
-    "password": "password123"
-  }'
+  -d '{"userid": "approver", "password": "password123"}'
 ```
 
-Response:
-```json
-{
-  "sessionHandle": "H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlFiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA"
-}
-```
-
-### 2. Get All Available Work Items
+### 2. Launch a New Case
 
 ```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/workitems?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlRiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA" \
+curl -X POST "http://localhost:8080/yawl/api/ib/specifications/ProcurementProcess/versions/1.0/cases?specuri=http://example.com/procurement&sessionHandle=SESSION_HANDLE" \
+  -H "Content-Type: application/xml" \
+  -d '<?xml version="1.0" encoding="UTF-8"?>
+<caseParams>
+  <requestAmount>10000.00</requestAmount>
+  <requestor>John Smith</requestor>
+  <department>Finance</department>
+</caseParams>'
+```
+
+### 3. Get Available Work Items
+
+```bash
+curl -X GET "http://localhost:8080/yawl/api/ib/workitems?sessionHandle=SESSION_HANDLE" \
   -H "Accept: application/json"
 ```
 
-Response:
-```json
-[
-  {
-    "id": 12345,
-    "specIdentifier": "ProcurementProcess",
-    "specVersion": "1.0",
-    "caseID": "CASE001",
-    "taskID": "ApproveRequest",
-    "taskName": "Approve Purchase Request",
-    "status": "Executing",
-    "resourceStatus": "Offered",
-    "enablementTimeMs": "2026-02-16 14:30:00"
-  }
-]
-```
-
-### 3. Check Out the Work Item
+### 4. Check Out Work Item
 
 ```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/checkout?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlRiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA"
+curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/checkout?sessionHandle=SESSION_HANDLE"
 ```
 
-### 4. Get Work Item Details
+### 5. Complete Work Item
 
 ```bash
-curl -X GET "http://localhost:8080/yawl/api/ib/workitems/ITEM001?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlRiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA" \
-  -H "Accept: application/xml"
-```
-
-### 5. Complete the Work Item
-
-```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/complete?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlRiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA" \
+curl -X POST "http://localhost:8080/yawl/api/ib/workitems/ITEM001/complete?sessionHandle=SESSION_HANDLE" \
   -H "Content-Type: application/xml" \
   -d '<?xml version="1.0" encoding="UTF-8"?>
 <data>
   <amount>5000.00</amount>
   <vendor>Acme Corp</vendor>
-  <description>Office Supplies - Approved</description>
-  <approver>John Smith</approver>
-  <approvalDate>2026-02-16</approvalDate>
   <status>APPROVED</status>
+  <approver>Jane Doe</approver>
+  <approvalDate>2026-02-18</approvalDate>
 </data>'
 ```
 
-### 6. Disconnect from the Engine
+### 6. Get Case State
 
 ```bash
-curl -X POST "http://localhost:8080/yawl/api/ib/disconnect?sessionHandle=H4sIAAAAAAAAAKtWSkksSVSyUkopLUsB0oosSixJVLJSSiiNL8nPzy_JBKkpqMxLySwBsVNSUkpRSWIVoFNKUUlqUWpxZklJZkZqUWpxSWZxcWZRSklOTklKZm5ySmZiVmZOSlFiUmlyRnFxSklRUWpRSmZxSWZRSWVBeXlBUXVCUHwRYXVKZnFGZl5aZl1iUmiyRGiyRklySkllZkBOVoFGQWZxZklmcWlyRV5RZmiyTmZJZnFqUUVRZXFASV1+SWlxRWZRSWVIUlRiSWlSaHl+SUpKZX1NZUlrUWlyClUFWSmpxSWZxcWlySkzySk1mRSllSWrNJUVEqSX5+YUlySWlQWZ1QmZxZmpJZn5BaklmSXFBZmiyYkJKZnFxZkliSWlyYljpYkliSWpNJUVEqSX5+YUliSWpReUViSWlyRXlJS--9OLS0KDgxJBKsAgNg89CyAAAAA"
+curl -X GET "http://localhost:8080/yawl/api/ib/cases/CASE001/state?sessionHandle=SESSION_HANDLE"
+```
+
+### 7. Disconnect
+
+```bash
+curl -X POST "http://localhost:8080/yawl/api/ib/disconnect?sessionHandle=SESSION_HANDLE"
+```
+
+---
+
+## Client SDK Examples
+
+### Java Client (JAX-RS)
+
+```java
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.Response;
+import java.util.List;
+
+public class YawlClient implements AutoCloseable {
+
+    private static final String BASE_URL = "http://localhost:8080/yawl/api";
+    private final Client client = ClientBuilder.newClient();
+    private String sessionHandle;
+
+    public void connect(String userid, String password) {
+        WebTarget target = client.target(BASE_URL).path("ib/connect");
+        String credentials = "{\"userid\":\"%s\",\"password\":\"%s\"}".formatted(userid, password);
+        Response response = target.request()
+            .post(Entity.json(credentials));
+
+        if (response.getStatus() == 200) {
+            JsonObject result = response.readEntity(JsonObject.class);
+            this.sessionHandle = result.getString("sessionHandle");
+        } else {
+            throw new RuntimeException("Connection failed: " + response.getStatus());
+        }
+    }
+
+    public List<WorkItemRecord> getWorkItems() {
+        WebTarget target = client.target(BASE_URL)
+            .path("ib/workitems")
+            .queryParam("sessionHandle", sessionHandle);
+        return target.request()
+            .accept(MediaType.APPLICATION_JSON)
+            .get(new GenericType<>() {});
+    }
+
+    public void checkout(String itemId) {
+        WebTarget target = client.target(BASE_URL)
+            .path("ib/workitems/{id}/checkout")
+            .resolveTemplate("id", itemId)
+            .queryParam("sessionHandle", sessionHandle);
+        Response response = target.request().post(null);
+        validateResponse(response);
+    }
+
+    public void complete(String itemId, String dataXml) {
+        WebTarget target = client.target(BASE_URL)
+            .path("ib/workitems/{id}/complete")
+            .resolveTemplate("id", itemId)
+            .queryParam("sessionHandle", sessionHandle);
+        Response response = target.request()
+            .post(Entity.entity(dataXml, MediaType.APPLICATION_XML));
+        validateResponse(response);
+    }
+
+    public void disconnect() {
+        if (sessionHandle != null) {
+            WebTarget target = client.target(BASE_URL)
+                .path("ib/disconnect")
+                .queryParam("sessionHandle", sessionHandle);
+            target.request().post(null);
+            sessionHandle = null;
+        }
+    }
+
+    @Override
+    public void close() {
+        disconnect();
+        client.close();
+    }
+
+    private void validateResponse(Response response) {
+        if (response.getStatus() >= 400) {
+            throw new RuntimeException("Request failed: " + response.getStatus());
+        }
+    }
+}
+```
+
+### Python Client
+
+```python
+import requests
+from typing import Optional, List
+from dataclasses import dataclass
+
+@dataclass
+class WorkItem:
+    id: int
+    case_id: str
+    task_id: str
+    task_name: str
+    status: str
+
+class YawlClient:
+    BASE_URL = "http://localhost:8080/yawl/api"
+
+    def __init__(self):
+        self.session_handle: Optional[str] = None
+        self.session = requests.Session()
+
+    def connect(self, userid: str, password: str) -> bool:
+        response = self.session.post(
+            f"{self.BASE_URL}/ib/connect",
+            json={"userid": userid, "password": password}
+        )
+        if response.status_code == 200:
+            self.session_handle = response.json().get("sessionHandle")
+            return True
+        return False
+
+    def get_work_items(self) -> List[WorkItem]:
+        response = self.session.get(
+            f"{self.BASE_URL}/ib/workitems",
+            params={"sessionHandle": self.session_handle}
+        )
+        response.raise_for_status()
+        return [WorkItem(**item) for item in response.json()]
+
+    def checkout(self, item_id: str) -> None:
+        response = self.session.post(
+            f"{self.BASE_URL}/ib/workitems/{item_id}/checkout",
+            params={"sessionHandle": self.session_handle}
+        )
+        response.raise_for_status()
+
+    def complete(self, item_id: str, data: dict) -> None:
+        import xml.etree.ElementTree as ET
+        root = ET.Element("data")
+        for key, value in data.items():
+            child = ET.SubElement(root, key)
+            child.text = str(value)
+        data_xml = ET.tostring(root, encoding="unicode")
+
+        response = self.session.post(
+            f"{self.BASE_URL}/ib/workitems/{item_id}/complete",
+            params={"sessionHandle": self.session_handle},
+            data=data_xml,
+            headers={"Content-Type": "application/xml"}
+        )
+        response.raise_for_status()
+
+    def disconnect(self) -> None:
+        if self.session_handle:
+            self.session.post(
+                f"{self.BASE_URL}/ib/disconnect",
+                params={"sessionHandle": self.session_handle}
+            )
+            self.session_handle = None
 ```
 
 ---
@@ -651,66 +762,24 @@ curl -X POST "http://localhost:8080/yawl/api/ib/disconnect?sessionHandle=H4sIAAA
 
 The OpenAPI specification can be viewed and tested interactively using Swagger UI:
 
-1. Copy the `openapi.yaml` file to your web server
-2. Access Swagger UI at: `http://localhost:8080/yawl/swagger-ui/`
-3. Paste the OpenAPI spec URL when prompted
-4. Use the interactive interface to test endpoints
+1. Access Swagger UI at: `http://localhost:8080/yawl/swagger-ui/`
+2. Use the interactive interface to test endpoints
+3. Authorize using the session handle
 
 ---
 
-## SDK/Client Library Examples
+## References
 
-### Java Client Example
-
-```java
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
-
-public class YAWLClient {
-    private static final String BASE_URL = "http://localhost:8080/yawl/api";
-    private final Client client;
-    private String sessionHandle;
-
-    public YAWLClient() {
-        this.client = ClientBuilder.newClient();
-    }
-
-    public void connect(String userid, String password) {
-        WebTarget target = client.target(BASE_URL).path("ib/connect");
-        String credentials = "{\"userid\":\"" + userid + "\",\"password\":\"" + password + "\"}";
-        Response response = target.request().post(Entity.json(credentials));
-        // Parse response to get sessionHandle
-    }
-
-    public List<WorkItemRecord> getWorkItems() {
-        WebTarget target = client.target(BASE_URL)
-            .path("ib/workitems")
-            .queryParam("sessionHandle", sessionHandle);
-        return target.request().get(new GenericType<List<WorkItemRecord>>() {});
-    }
-
-    public void disconnect() {
-        WebTarget target = client.target(BASE_URL)
-            .path("ib/disconnect")
-            .queryParam("sessionHandle", sessionHandle);
-        target.request().post(null);
-    }
-}
-```
-
----
-
-## Support and Further Information
-
-For more information about YAWL and its capabilities, visit:
+- **Interface B Protocol**: `/docs/reference/interface-b.md`
+- **Interface E Protocol**: `/docs/reference/interface-e.md`
+- **Interface X Protocol**: `/docs/reference/interface-x.md`
 - **YAWL Foundation**: https://www.yawlfoundation.org/
 - **Documentation**: https://www.yawlfoundation.org/documentation
-- **Community**: https://www.yawlfoundation.org/community
+- **Java 25 Features**: `/docs/JAVA-25-FEATURES.md`
+- **Architecture Patterns**: `/.claude/ARCHITECTURE-PATTERNS-JAVA25.md`
 
 ---
 
-**Document Version**: 1.0
-**YAWL Version**: 5.2.0
-**Last Updated**: 2026-02-16
+**Document Version**: 2.0
+**YAWL Version**: 6.0.0
+**Last Updated**: 2026-02-18

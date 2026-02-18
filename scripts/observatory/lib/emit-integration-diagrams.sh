@@ -508,12 +508,14 @@ emit_integration_facts() {
     [[ -d "$ZAI_ROOT" ]] && zai_classes=$(find "$ZAI_ROOT" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
     [[ -d "$AUTONOMOUS_ROOT" ]] && autonomous_classes=$(find "$AUTONOMOUS_ROOT" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
 
-    # Detect MCP tools
+    # Detect MCP tools from YawlToolSpecifications.java
+    # Tools are defined with .name("yawl_xxx") pattern in McpSchema.Tool.builder()
     local -a mcp_tools=()
-    if [[ -d "$MCP_ROOT/spec" ]]; then
+    if [[ -f "$MCP_ROOT/spec/YawlToolSpecifications.java" ]]; then
         while IFS= read -r tool; do
             [[ -n "$tool" ]] && mcp_tools+=("$tool")
-        done < <(grep -h "name.*=" "$MCP_ROOT/spec"/*.java 2>/dev/null | grep -oE '"[a-z_]+"' | tr -d '"' | head -20)
+        done < <(grep -oE '\.name\("yawl_[a-z_]+"\)' "$MCP_ROOT/spec/YawlToolSpecifications.java" 2>/dev/null | \
+                 sed 's/.*name("//; s/").*//' | sort -u)
     fi
 
     # Detect A2A skills
@@ -530,6 +532,22 @@ emit_integration_facts() {
         while IFS= read -r provider; do
             [[ -n "$provider" ]] && auth_providers+=("$provider")
         done < <(find "$A2A_ROOT/auth" -name "*Provider.java" -exec basename {} .java \; 2>/dev/null)
+    fi
+
+    # Detect autonomous agents (classes implementing AutonomousAgent interface or ending in Agent.java)
+    local -a autonomous_agents=()
+    if [[ -d "$AUTONOMOUS_ROOT" ]]; then
+        while IFS= read -r agent; do
+            [[ -n "$agent" ]] && autonomous_agents+=("$agent")
+        done < <(find "$AUTONOMOUS_ROOT" -maxdepth 1 -name "*Agent*.java" -type f 2>/dev/null | \
+                 xargs -I {} basename {} .java | sort -u)
+    fi
+    # Also scan for agents in integration/orderfulfillment
+    if [[ -d "$INTEGRATION_ROOT/orderfulfillment" ]]; then
+        while IFS= read -r agent; do
+            [[ -n "$agent" ]] && autonomous_agents+=("$agent")
+        done < <(find "$INTEGRATION_ROOT/orderfulfillment" -name "*Agent*.java" -type f 2>/dev/null | \
+                 xargs -I {} basename {} .java | sort -u)
     fi
 
     {
@@ -587,7 +605,15 @@ emit_integration_facts() {
         printf '  },\n'
         printf '  "autonomous": {\n'
         printf '    "classes": %d,\n' "${autonomous_classes:-0}"
-        printf '    "agents": []\n'
+        printf '    "agents_count": %d,\n' "${#autonomous_agents[@]}"
+        printf '    "agents": [\n'
+        first=true
+        for agent in "${autonomous_agents[@]}"; do
+            $first || printf ',\n'
+            first=false
+            printf '      "%s"' "$agent"
+        done
+        printf '\n    ]\n'
         printf '  }\n'
         printf '}\n'
     } > "$out"

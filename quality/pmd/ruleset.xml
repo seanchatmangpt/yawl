@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="YAWL Custom Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+         http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD ruleset for YAWL workflow engine projects
+    </description>
+
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="TooManyFields"/>
+        <exclude name="TooManyMethods"/>
+        <exclude name="ClassNamingConventions"/>
+        <exclude name="MethodNamingConventions"/>
+    </rule>
+
+    <rule ref="category/java/design.xml">
+        <exclude name="TooManyClasses"/>
+        <exclude name="ExcessiveClassLength"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="EmptyCatchBlock"/>
+        <exclude name="AssignmentInOperand"/>
+    </rule>
+
+    <rule ref="category/java/performance.xml">
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>
+    </rule>
+
+    <!-- YAWL-specific rules -->
+    <rule name="YAWLPackageStructure"
+          language="java"
+          message="YAWL packages must follow org.yawlfoundation.yawl.* structure"
+          class="net.sourceforge.pmd.lang.rule.XPathRule"
+          externalInfoUrl="">
+        <description>
+            YAWL packages must follow the standard YAWL package structure:
+            org.yawlfoundation.yawl.*
+            org.yawlfoundation.yawl.module.*
+            org.yawlfoundation.yawl.element.*
+            etc.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <![CDATA[
+                //ClassOrInterfaceDeclaration[@PackageDeclaration and not(starts-with(@PackageDeclaration, 'org.yawlfoundation.yawl'))]
+                ]]>
+            </property>
+        </properties>
+    </rule>
+
+    <rule name="YAWLMethodLength"
+          language="java"
+          message="YAWL workflow methods should not exceed 100 lines"
+          class="net.sourceforge.pmd.lang.rule.XPathRule"
+          externalInfoUrl="">
+        <description>
+            Methods in YAWL workflow classes should be kept under 100 lines
+            to maintain readability and maintainability.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <![CDATA[
+                //MethodDeclaration[count(*/text()) > 100]
+                ]]>
+            </property>
+        </properties>
+    </rule>
+
+</ruleset>

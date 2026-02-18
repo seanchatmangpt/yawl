@@ -1,0 +1,85 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Validation Image
+# =============================================================================
+# Complete validation environment with:
+# - Java 25 JDK (for compilation and runtime)
+# - Maven 3.9.9 (build tool)
+# - Python 3 (for observatory scripts)
+# - Git (for change detection)
+# - xmllint (for schema validation)
+# - jq (for JSON processing)
+# - All static analysis tools (SpotBugs, PMD, Checkstyle via Maven)
+#
+# Usage:
+#   docker build -f Dockerfile.validation -t yawl-validation:latest .
+#   docker run --rm -v $(pwd):/workspace yawl-validation:latest ./scripts/validate-all.sh
+# =============================================================================
+
+FROM eclipse-temurin:25-jdk-alpine
+
+LABEL maintainer="YAWL Foundation"
+LABEL version="6.0.0-Alpha"
+LABEL description="YAWL v6 Complete Validation Environment"
+LABEL org.opencontainers.image.title="YAWL Validation"
+LABEL org.opencontainers.image.description="Complete validation environment for YAWL workflow engine with build, test, analysis, and observatory tools"
+
+# Build arguments for versioning
+ARG MAVEN_VERSION=3.9.9
+ARG BUILD_DATE
+ARG VCS_REF
+
+# Install all required tools in a single layer
+RUN apk add --no-cache \
+    bash \
+    curl \
+    tar \
+    git \
+    python3 \
+    py3-pip \
+    libxml2-utils \
+    jq \
+    bc \
+    coreutils \
+    procps \
+    grep \
+    sed \
+    gawk \
+    findutils \
+    diffutils \
+    && rm -rf /var/cache/apk/* /tmp/*
+
+# Install Maven
+RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    | tar -xzf - -C /opt \
+    && ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/local/bin/mvn \
+    && rm -rf /tmp/*
+
+# Install Python packages for observatory scripts
+RUN pip3 install --no-cache-dir --break-system-packages \
+    pyyaml \
+    || pip3 install --no-cache-dir pyyaml
+
+# Create non-root user for security
+RUN addgroup -S yawl --gid 1000 && \
+    adduser -S yawl --uid 1000 --ingroup yawl --home /home/yawl --shell /bin/bash
+
+# Set working directory
+WORKDIR /workspace
+
+# Create Maven cache directory with proper permissions
+RUN mkdir -p /home/yawl/.m2 && chown -R yawl:yawl /home/yawl
+
+# Create output directories
+RUN mkdir -p /workspace/docs/v6/latest/{facts,diagrams,yawl,receipts,performance} && \
+    chown -R yawl:yawl /workspace 2>/dev/null || true
+
+# Switch to non-root user
+USER yawl
+
+# Environment variables
+ENV MAVEN_OPTS="-Xmx2g -XX:+UseG1GC"
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Default command - show help
+CMD ["bash", "-c", "echo 'YAWL Validation Container'; echo ''; echo 'Available commands:'; echo '  ./scripts/validate-all.sh           # Run all validations'; echo '  ./scripts/dx.sh compile            # Fast compile'; echo '  ./scripts/dx.sh test               # Fast test'; echo '  ./scripts/dx.sh all                # Compile + test all'; echo '  ./scripts/observatory/observatory.sh # Generate observatory'; echo '  mvn clean test                     # Full test suite'; echo '  mvn verify -P analysis             # Static analysis'; echo ''"]

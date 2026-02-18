@@ -2337,6 +2337,94 @@
             </build>
         </profile>
 
+        <!-- ================================================================ -->
+        <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>observatory-analysis</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- SpotBugs: Find potential bugs -->
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>4.8.6.4</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <failOnError>false</failOnError>
+                            <xmlOutput>true</xmlOutput>
+                            <outputDirectory>target</outputDirectory>
+                            <includeFilterFile>quality/spotbugs/include.xml</includeFilterFile>
+                            <excludeFilterFile>quality/spotbugs/exclude.xml</excludeFilterFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>spotbugs</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>spotbugs</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- PMD: Source code analysis -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>3.26.0</version>
+                        <configuration>
+                            <failOnError>false</failOnError>
+                            <includeTests>false</includeTests>
+                            <rulesets>
+                                <ruleset>quality/pmd/ruleset.xml</ruleset>
+                            </rulesets>
+                            <excludeFromFailureFile>pmd-exclude.xml</excludeFromFailureFile>
+                            <outputDirectory>target</outputDirectory>
+                            <xmlOutput>true</xmlOutput>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pmd</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>pmd</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Checkstyle: Code style checking -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <configuration>
+                            <configLocation>quality/checkstyle/checkstyle.xml</configLocation>
+                            <suppressionsLocation>quality/checkstyle/suppressions.xml</suppressionsLocation>
+                            <failOnError>false</failOnError>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <outputFile>target/checkstyle-result.xml</outputFile>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>checkstyle</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

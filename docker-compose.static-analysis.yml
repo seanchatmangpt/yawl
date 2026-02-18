@@ -1,0 +1,106 @@
+# =============================================================================
+# YAWL v6 - Static Analysis Service
+# =============================================================================
+# Run static analysis tools (SpotBugs, PMD, Checkstyle) in Docker containers
+# to generate reports for the observatory
+#
+# Usage:
+#   docker compose -f docker-compose.static-analysis.yml up
+#   docker compose -f docker-compose.static-analysis.yml up -d
+#
+# Generated reports are available in:
+#   - target/spotbugsXml.xml (SpotBugs)
+#   - target/pmd.xml (PMD)
+#   - target/checkstyle-result.xml (Checkstyle)
+# =============================================================================
+
+services:
+  # =============================================================================
+  # Static Analysis Service
+  # =============================================================================
+  static-analysis:
+    build:
+      context: .
+      dockerfile: Dockerfile.static-analysis.simple
+    image: yawl/static-analysis:latest
+    container_name: yawl-static-analysis
+    hostname: static-analysis
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:rw
+      - ./target:/workspace/target:rw
+      - ./quality:/workspace/quality:ro
+    environment:
+      - MAVEN_OPTS=-Xmx2g
+      - JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
+    command: >
+      bash -c "
+        echo '=== Running YAWL Static Analysis ===' &&
+        echo 'Building project with analysis profile...' &&
+        mvn clean compile -P analysis -B -fae &&
+        echo 'Running SpotBugs analysis...' &&
+        mvn spotbugs:spotbugs -P analysis -B -fae &&
+        echo 'Running PMD analysis...' &&
+        mvn pmd:pmd -P analysis -B -fae &&
+        echo 'Running Checkstyle analysis...' &&
+        mvn checkstyle:check -P analysis -B -fae &&
+        echo '=== Static Analysis Complete ===' &&
+        echo 'Reports generated in target/' &&
+        ls -la target/ | grep -E '(spotbugs|pmd|checkstyle)'
+      "
+    networks:
+      - yawl-network
+    labels:
+      app: yawl
+      component: analysis
+      purpose: static-analysis
+
+  # =============================================================================
+  # H2 Database (required for some tests)
+  # =============================================================================
+  h2-database:
+    image: eclipse-temurin:25-jre-alpine
+    container_name: yawl-h2-analysis
+    hostname: h2-analysis
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:ro
+    command: >
+      bash -c "
+        echo 'Starting H2 database for static analysis...' &&
+        java -cp /workspace/target/h2-*.jar org.h2.tools.Server &
+        sleep 5 &&
+        echo 'H2 database running on port 9092'
+      "
+    ports:
+      - "9092:9092"
+    networks:
+      - yawl-network
+    labels:
+      app: yawl
+      component: database
+      purpose: analysis-support
+
+volumes:
+  spotbugs_data:
+    name: yawl_spotbugs_data
+    labels:
+      app: yawl
+      description: "SpotBugs analysis results"
+
+  pmd_data:
+    name: yawl_pmd_data
+    labels:
+      app: yawl
+      description: "PMD analysis results"
+
+  checkstyle_data:
+    name: yawl_checkstyle_data
+    labels:
+      app: yawl
+      description: "Checkstyle analysis results"
+
+networks:
+  yawl-network:
+    driver: bridge
+    name: yawl-analysis-network

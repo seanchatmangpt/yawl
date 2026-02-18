@@ -3,24 +3,24 @@
     "name": "YAWL (Yet Another Workflow Language)",
     "version": "5.2",
     "description": "BPM/Workflow system with powerful modelling language",
-    "buildSystem": "Ant",
+    "buildSystem": "Maven",
     "mainLanguage": "Java",
     "javaVersion": "25",
     "environment": "Docker/DevContainer Only"
   },
   "ide": {
-    "type": "Ant",
-    "buildFile": "build/build.xml"
+    "type": "Maven",
+    "buildFile": "pom.xml"
   },
   "testing": {
     "framework": "JUnit",
-    "command": "ant unitTest",
+    "command": "mvn test",
     "coverage": false
   },
   "development": {
     "sourceDir": "src",
     "testDir": "test",
-    "buildDir": "classes",
+    "buildDir": "target",
     "outputDir": "output"
   },
   "notes": {

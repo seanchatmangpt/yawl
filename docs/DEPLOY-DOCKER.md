@@ -1,7 +1,7 @@
 # Deploying YAWL v5.2 with Docker
 
 **Target Platforms**: Docker 20.10+, Docker Compose 2.x, Kubernetes 1.24+
-**Base Images**: openjdk:21-slim (for WAR services), postgres:15-alpine (database)
+**Base Images**: eclipse-temurin:25-jdk (for WAR services), postgres:15-alpine (database)
 **Estimated Time**: 30-45 minutes
 
 ## Overview
@@ -227,11 +227,11 @@ docker ps
 
 ## Building Custom Docker Images
 
-### Base Dockerfile (Tomcat + Java 21)
+### Base Dockerfile (Tomcat + Java 25)
 
 ```dockerfile
 # Dockerfile.engine
-FROM eclipse-temurin:21-jre-slim
+FROM eclipse-temurin:25-jre-slim
 
 # Install utilities
 RUN apt-get update && apt-get install -y \
@@ -269,14 +269,14 @@ CMD ["catalina.sh", "run"]
 
 ```dockerfile
 # Build stage
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM maven:3.9-eclipse-temurin-25 AS builder
 
 WORKDIR /build
 COPY . .
 RUN mvn clean package -DskipTests -q
 
 # Runtime stage
-FROM eclipse-temurin:21-jre-slim
+FROM eclipse-temurin:25-jre-slim
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 

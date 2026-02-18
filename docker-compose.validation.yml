@@ -1,0 +1,213 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Docker Compose Validation Stack
+# =============================================================================
+# Complete validation environment for YAWL workflow engine.
+#
+# Usage:
+#   # Build the validation image
+#   docker compose -f docker-compose.validation.yml build
+#
+#   # Run all validations
+#   docker compose -f docker-compose.validation.yml run --rm validation
+#
+#   # Run specific validation
+#   docker compose -f docker-compose.validation.yml run --rm validation ./scripts/dx.sh all
+#   docker compose -f docker-compose.validation.yml run --rm validation ./scripts/observatory/observatory.sh
+#   docker compose -f docker-compose.validation.yml run --rm validation mvn clean test
+#
+#   # Interactive shell
+#   docker compose -f docker-compose.validation.yml run --rm validation bash
+#
+#   # Clean up
+#   docker compose -f docker-compose.validation.yml down -v
+#
+# Generated outputs (mounted to host):
+#   - target/                    - Build artifacts
+#   - docs/v6/latest/            - Observatory outputs
+#   - reports/                   - Analysis reports
+# =============================================================================
+
+services:
+  # =============================================================================
+  # Main Validation Service
+  # =============================================================================
+  validation:
+    build:
+      context: .
+      dockerfile: Dockerfile.validation
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2026-02-18}
+        VCS_REF: ${VCS_REF:-}
+    image: yawl-validation:latest
+    container_name: yawl-validation
+    hostname: yawl-validation
+    working_dir: /workspace
+    volumes:
+      # Source code (read-write for build artifacts)
+      - .:/workspace:rw
+      # Maven cache (persist between runs for speed)
+      - maven_cache:/home/yawl/.m2
+      # Output directories (explicit for clarity)
+      - ./docs:/workspace/docs:rw
+      - ./target:/workspace/target:rw
+      - ./reports:/workspace/reports:rw
+    environment:
+      # Maven configuration
+      - MAVEN_OPTS=-Xmx2g -XX:+UseG1GC -XX:+UseStringDeduplication
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+
+      # Build configuration
+      - DX_OFFLINE=0
+      - DX_VERBOSE=${DX_VERBOSE:-0}
+      - DX_FAIL_AT=fast
+
+      # Git configuration (for observatory)
+      - GIT_CONFIG_GLOBAL=/home/yawl/.gitconfig
+
+      # Observatory configuration
+      - RUN_ID=${RUN_ID:-}
+      - OBSERVATORY_OFFLINE=${OBSERVATORY_OFFLINE:-0}
+    command: ./scripts/validate-all.sh
+    networks:
+      - yawl-validation-network
+    labels:
+      app: yawl
+      component: validation
+      purpose: ci-validation
+
+  # =============================================================================
+  # Fast Compile Service (DX Loop)
+  # =============================================================================
+  compile:
+    extends:
+      service: validation
+    container_name: yawl-compile
+    command: ./scripts/dx.sh compile
+    profiles:
+      - dx
+
+  # =============================================================================
+  # Fast Test Service (DX Loop)
+  # =============================================================================
+  test:
+    extends:
+      service: validation
+    container_name: yawl-test
+    command: ./scripts/dx.sh test
+    profiles:
+      - dx
+
+  # =============================================================================
+  # Observatory Service (Generate Facts/Diagrams)
+  # =============================================================================
+  observatory:
+    extends:
+      service: validation
+    container_name: yawl-observatory
+    command: ./scripts/observatory/observatory.sh
+    profiles:
+      - observatory
+
+  # =============================================================================
+  # Static Analysis Service (SpotBugs, PMD, Checkstyle)
+  # =============================================================================
+  analysis:
+    extends:
+      service: validation
+    container_name: yawl-analysis
+    environment:
+      - MAVEN_OPTS=-Xmx4g -XX:+UseG1GC
+    command: >
+      bash -c "
+        echo '=== Running Static Analysis ===' &&
+        mvn clean verify -P analysis -B -fae --no-transfer-progress &&
+        echo '=== Analysis Complete ===' &&
+        find . -name 'spotbugs*.xml' -o -name 'pmd.xml' -o -name 'checkstyle*.xml' | head -20
+      "
+    profiles:
+      - analysis
+
+  # =============================================================================
+  # Schema Validation Service (XML/XSD)
+  # =============================================================================
+  schema:
+    extends:
+      service: validation
+    container_name: yawl-schema
+    command: >
+      bash -c "
+        echo '=== Schema Validation ===' &&
+        if [ -f schema/YAWL_Schema4.0.xsd ]; then
+          find . -name '*.xml' -path '*/specifications/*' -exec xmllint --schema schema/YAWL_Schema4.0.xsd {} \; 2>&1 | head -50
+        else
+          echo 'No XSD schema found, skipping XML validation'
+        fi
+      "
+    profiles:
+      - schema
+
+  # =============================================================================
+  # Full CI Pipeline Service
+  # =============================================================================
+  ci:
+    extends:
+      service: validation
+    container_name: yawl-ci
+    environment:
+      - MAVEN_OPTS=-Xmx4g -XX:+UseG1GC -XX:+UseStringDeduplication
+    command: >
+      bash -c "
+        echo '=== YAWL CI Pipeline ===' &&
+        echo '' &&
+        echo 'Phase 1: Compile' &&
+        mvn clean compile -B -q &&
+        echo 'Phase 1: OK' &&
+        echo '' &&
+        echo 'Phase 2: Test' &&
+        mvn test -B -q &&
+        echo 'Phase 2: OK' &&
+        echo '' &&
+        echo 'Phase 3: Static Analysis' &&
+        mvn verify -P analysis -B -q || echo 'Phase 3: WARN (analysis optional)' &&
+        echo '' &&
+        echo 'Phase 4: Observatory' &&
+        ./scripts/observatory/observatory.sh || echo 'Phase 4: WARN (observatory optional)' &&
+        echo '' &&
+        echo '=== CI Pipeline Complete ==='
+      "
+    profiles:
+      - ci
+
+  # =============================================================================
+  # Shell Service (Interactive Development)
+  # =============================================================================
+  shell:
+    extends:
+      service: validation
+    container_name: yawl-shell
+    stdin_open: true
+    tty: true
+    command: bash
+    profiles:
+      - shell
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  yawl-validation-network:
+    driver: bridge
+    name: yawl-validation-network
+    labels:
+      app: yawl
+      purpose: validation
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  maven_cache:
+    name: yawl_maven_cache
+    labels:
+      app: yawl
+      description: "Maven local repository cache"

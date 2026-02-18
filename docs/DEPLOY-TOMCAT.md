@@ -1,13 +1,13 @@
 # Deploying YAWL v5.2 on Apache Tomcat 10.1+
 
 **Target Runtime**: Apache Tomcat 10.1.x, 11.x
-**Java Version**: Java 21+ (required for Jakarta EE 10 support)
+**Java Version**: Java 25 (required for Jakarta EE 10 support and virtual threads)
 **Estimated Time**: 30-45 minutes
 
 ## Prerequisites
 
 ### System Requirements
-- Java 21 JDK (or higher)
+- Java 25 JDK (or higher)
 - Apache Tomcat 10.1.x or 11.x
 - PostgreSQL 13+ OR MySQL 8+ OR H2 2.2+
 - 4GB+ RAM recommended
@@ -16,7 +16,7 @@
 ### Verify Prerequisites
 ```bash
 # Check Java version
-java -version  # Must be Java 21 or higher
+java -version  # Must be Java 25 or higher
 
 # Check Tomcat version (if already installed)
 $CATALINA_HOME/bin/version.sh
@@ -40,7 +40,7 @@ export CATALINA_HOME=/opt/tomcat
 echo 'export CATALINA_HOME=/opt/tomcat' >> ~/.bashrc
 ```
 
-### Step 2: Configure JVM Parameters
+### Step 2: Configure JVM Parameters (Java 25 Optimized)
 
 **Edit `$CATALINA_HOME/bin/catalina.sh` (Unix/Linux/macOS)**:
 
@@ -50,12 +50,27 @@ export CATALINA_OPTS="
   -server
   -Xmx2048m
   -Xms1024m
+
+  # Java 25 Features
+  -XX:+UseCompactObjectHeaders
+
+  # Virtual Threads Support (Java 25)
+  -XX:+UseVirtualThreads
+
+  # G1GC Configuration
   -XX:+UseG1GC
   -XX:MaxGCPauseMillis=200
   -XX:InitiatingHeapOccupancyPercent=35
+
+  # Container startup optimization
+  -XX:+UseAOTCache
+
+  # Headless mode
   -Djava.awt.headless=true
   -Dfile.encoding=UTF-8
   -Duser.timezone=UTC
+
+  # YAWL Configuration
   -Dyawl.jwt.secret=$(openssl rand -base64 32)
   -Dyawl.db.driver=org.postgresql.Driver
   -Dyawl.db.url=jdbc:postgresql://localhost:5432/yawl
@@ -68,19 +83,45 @@ export CATALINA_OPTS="
 
 ```batch
 REM Add before the "goto :gotTitle" line:
-set CATALINA_OPTS=-server -Xmx2048m -Xms1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Dyawl.jwt.secret=YOUR_SECRET_HERE -Dyawl.db.driver=org.postgresql.Driver -Dyawl.db.url=jdbc:postgresql://localhost:5432/yawl -Dyawl.db.username=yawluser -Dyawl.db.password=yawlpass
+set CATALINA_OPTS=-server -Xmx2048m -Xms1024m -XX:+UseCompactObjectHeaders -XX:+UseVirtualThreads -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Dyawl.jwt.secret=YOUR_SECRET_HERE -Dyawl.db.driver=org.postgresql.Driver -Dyawl.db.url=jdbc:postgresql://localhost:5432/yawl -Dyawl.db.username=yawluser -Dyawl.db.password=yawlpass
 ```
 
-### Step 3: Build YAWL WAR Files
+### Step 3: Enable Virtual Threads in Tomcat
+
+**Edit `$CATALINA_HOME/conf/server.xml`** to use virtual threads:
+
+```xml
+<!-- Virtual Thread Executor (Java 25) -->
+<Executor
+  name="tomcatVirtualThreadExecutor"
+  namePrefix="catalina-vt-"
+  maxThreads="200"
+  minSpareThreads="10"
+  maxIdleTime="60000"
+  virtualThreads="true"
+/>
+
+<Connector
+  executor="tomcatVirtualThreadExecutor"
+  port="8080"
+  protocol="HTTP/1.1"
+  connectionTimeout="20000"
+  redirectPort="8443"
+/>
+```
+
+### Step 4: Build YAWL WAR Files
 
 From the YAWL source directory:
 
 ```bash
 cd /home/user/yawl
 
-# Full build (generates all WAR files)
-ant clean
-ant buildAll
+# Fast build using agent DX loop
+bash scripts/dx.sh all
+
+# Or full Maven build with parallelization
+mvn -T 1.5C clean package
 
 # Output directory: output/
 ls output/*.war
@@ -96,7 +137,7 @@ Expected WAR files:
 - `mailService.war` - Mail Service
 - And others...
 
-### Step 4: Configure Database
+### Step 5: Configure Database
 
 #### PostgreSQL Setup
 
@@ -153,7 +194,7 @@ H2 is configured automatically if using the H2 JDBC driver. No separate setup ne
 # $CATALINA_HOME/webapps/yawl/WEB-INF/data/yawldb
 ```
 
-### Step 5: Deploy WAR Files to Tomcat
+### Step 6: Deploy WAR Files to Tomcat
 
 ```bash
 # Copy all WAR files to webapps directory
@@ -163,7 +204,7 @@ cp /home/user/yawl/output/*.war $CATALINA_HOME/webapps/
 ls $CATALINA_HOME/webapps/*.war
 ```
 
-### Step 6: Configure Tomcat Context (Optional but Recommended)
+### Step 7: Configure Tomcat Context (Optional but Recommended)
 
 Create `$CATALINA_HOME/conf/Catalina/localhost/yawl.xml`:
 
@@ -211,7 +252,7 @@ Create `$CATALINA_HOME/conf/Catalina/localhost/yawl.xml`:
 </Context>
 ```
 
-### Step 7: Start Tomcat
+### Step 8: Start Tomcat
 
 ```bash
 # Start in foreground (for testing)
@@ -224,7 +265,7 @@ $CATALINA_HOME/bin/startup.sh
 tail -f $CATALINA_HOME/logs/catalina.out
 ```
 
-### Step 8: Verify Deployment
+### Step 9: Verify Deployment
 
 Wait 30-60 seconds for Tomcat to fully start, then:
 
@@ -233,6 +274,42 @@ Wait 30-60 seconds for Tomcat to fully start, then:
 curl -v http://localhost:8080/yawl/api/ib/workitems
 
 # Expected response: 200 OK with JSON array
+```
+
+## Virtual Threads Configuration (Java 25)
+
+### Benefits of Virtual Threads
+
+| Metric | Platform Threads | Virtual Threads |
+|--------|-----------------|-----------------|
+| Memory per thread | ~2MB | ~1KB |
+| 1000 concurrent requests | ~2GB | ~1MB |
+| Thread creation | ~1ms | ~1us |
+| Context switch | ~10us (OS) | ~100ns (JVM) |
+
+### Configure Virtual Thread Executor
+
+Tomcat 10.1+ supports virtual threads via the `virtualThreads` attribute:
+
+```xml
+<!-- In server.xml -->
+<Executor
+  name="virtualThreadExecutor"
+  namePrefix="yawl-vt-"
+  maxThreads="200"
+  minSpareThreads="10"
+  virtualThreads="true"
+/>
+```
+
+### Monitor Virtual Threads
+
+```bash
+# JFR recording for virtual thread events
+jcmd <pid> JFR.start settings=virtual-threads
+
+# Thread dump includes virtual thread carriers
+jcmd <pid> Thread.dump_to_file -format=json threads.json
 ```
 
 ## Database Initialization
@@ -282,7 +359,7 @@ logging.level.org.hibernate=WARN
 
 ## SSL/TLS Configuration (Production)
 
-### Using Tomcat's Built-in SSL
+### Using Tomcat's Built-in SSL (TLS 1.3 Required)
 
 ```xml
 <!-- Edit $CATALINA_HOME/conf/server.xml -->
@@ -296,8 +373,9 @@ logging.level.org.hibernate=WARN
   keystorePass="keystorepassword"
   keyAlias="tomcat"
   SSLEnabled="true"
-  sslProtocol="TLSv1.2"
-  ciphers="HIGH:!aNULL:!MD5"
+  sslProtocol="TLSv1.3"
+  sslEnabledProtocols="TLSv1.3"
+  ciphers="TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256"
 />
 ```
 
@@ -360,6 +438,7 @@ Edit `$CATALINA_HOME/conf/server.xml`:
   maxThreads="200"
   minSpareThreads="10"
   maxIdleTime="60000"
+  virtualThreads="true"
 />
 
 <Connector
@@ -405,7 +484,7 @@ tail -f $CATALINA_HOME/logs/localhost_access_log.*.txt
 
 1. Check Java version:
    ```bash
-   java -version  # Must be Java 21+
+   java -version  # Must be Java 25+
    ```
 
 2. Check Tomcat logs:
@@ -431,6 +510,15 @@ export CATALINA_OPTS="-Xmx4096m -Xms2048m $CATALINA_OPTS"
 Change Tomcat port in `$CATALINA_HOME/conf/server.xml`:
 ```xml
 <Connector port="8081" protocol="HTTP/1.1" />
+```
+
+### Virtual Thread Pinning Warnings
+
+If you see pinning warnings:
+
+```bash
+# Enable pinning diagnostics
+-Djdk.tracePinnedThreads=full
 ```
 
 ### Database Connection Failures
@@ -482,12 +570,13 @@ mysql -u yawluser -p -h localhost yawl -e "SELECT 1;"
 
 ## Production Checklist
 
-- [ ] Java 21+ JDK installed
+- [ ] Java 25+ JDK installed
 - [ ] Tomcat 10.1+ installed
 - [ ] Database created and user configured
 - [ ] WAR files built and deployed
-- [ ] SSL/TLS certificate installed
-- [ ] JVM memory tuned for environment
+- [ ] SSL/TLS 1.3 certificate installed
+- [ ] JVM memory tuned with compact object headers
+- [ ] Virtual threads enabled
 - [ ] Database backups configured
 - [ ] Health check endpoint verified
 - [ ] Application logs verified
@@ -499,6 +588,7 @@ mysql -u yawluser -p -h localhost yawl -e "SELECT 1;"
 ## Additional Resources
 
 - [Apache Tomcat 11 Documentation](https://tomcat.apache.org/tomcat-11.0-doc/)
+- [Java 25 Virtual Threads Guide](https://openjdk.org/jeps/444)
 - [YAWL Engine Configuration](../README.md)
 - [Database Setup Guide](./DEPLOY-DATABASE.md)
 - [Monitoring and Logging](../observability/MONITORING.md)
