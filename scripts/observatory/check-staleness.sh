@@ -40,7 +40,7 @@ log_info "Checking observatory staleness..."
 
 # Get hashes from receipt
 INDEX_SHA256=$(jq -r '.outputs.index_sha256' "$RECEIPT_FILE")
-ROOT_POM_SHA256=$(jq -r '.outputs.root_pom_sha256' "$RECEIPT_FILE")
+ROOT_POM_SHA256=$(jq -r '.inputs.root_pom_sha256' "$RECEIPT_FILE")
 
 # Calculate current hashes
 CURRENT_INDEX_SHA256=$(sha256sum "$INDEX_FILE" | cut -d' ' -f1)
@@ -49,27 +49,37 @@ CURRENT_ROOT_POM_SHA256=$(sha256sum pom.xml | cut -d' ' -f1)
 # Check freshness
 FRESH=true
 
-if [[ "$INDEX_SHA256" != "$CURRENT_INDEX_SHA256" ]]; then
+# Strip sha256: prefix for INDEX comparison
+RECEIPT_INDEX_HASH="${INDEX_SHA256#sha256:}"
+if [[ "$RECEIPT_INDEX_HASH" != "$CURRENT_INDEX_SHA256" ]]; then
     log_warn "INDEX.md is stale (receipt: $INDEX_SHA256, current: $CURRENT_INDEX_SHA256)"
     FRESH=false
 fi
 
-if [[ "$ROOT_POM_SHA256" != "$CURRENT_ROOT_POM_SHA256" ]]; then
-    log_warn "pom.xml is stale (receipt: $ROOT_POM_SHA256, current: $CURRENT_ROOT_POM_SHA256)"
-    FRESH=false
+if [[ "$ROOT_POM_SHA256" != "null" && "$ROOT_POM_SHA256" != "$CURRENT_ROOT_POM_SHA256" ]]; then
+    # Strip sha256: prefix for comparison
+    RECEIPT_POM_HASH="${ROOT_POM_SHA256#sha256:}"
+    if [[ "$RECEIPT_POM_HASH" != "$CURRENT_ROOT_POM_SHA256" ]]; then
+        log_warn "pom.xml is stale (receipt: $ROOT_POM_SHA256, current: $CURRENT_ROOT_POM_SHA256)"
+        FRESH=false
+    fi
 fi
 
-# Check other key files
+# Check fact files
 FACTS_DIR="docs/v6/latest/facts"
 for fact_file in "$FACTS_DIR"/*.json; do
     if [[ -f "$fact_file" ]]; then
         filename=$(basename "$fact_file")
-        expected_sha=$(jq -r --arg filename "$filename" '.outputs[$filename]' "$RECEIPT_FILE")
+        expected_sha=$(jq -r --arg filename "$filename" '.outputs.facts_sha256[$filename]' "$RECEIPT_FILE")
         current_sha=$(sha256sum "$fact_file" | cut -d' ' -f1)
 
-        if [[ "$expected_sha" != "null" && "$expected_sha" != "$current_sha" ]]; then
-            log_warn "$filename is stale (receipt: $expected_sha, current: $current_sha)"
-            FRESH=false
+        if [[ "$expected_sha" != "null" && "$expected_sha" != "null" ]]; then
+            # Strip sha256: prefix for comparison
+            receipt_hash="${expected_sha#sha256:}"
+            if [[ "$receipt_hash" != "$current_sha" ]]; then
+                log_warn "$filename is stale (receipt: $expected_sha, current: $current_sha)"
+                FRESH=false
+            fi
         fi
     fi
 done
@@ -79,12 +89,16 @@ DIAGRAMS_DIR="docs/v6/latest/diagrams"
 for diagram_file in "$DIAGRAMS_DIR"/*.mmd; do
     if [[ -f "$diagram_file" ]]; then
         filename=$(basename "$diagram_file")
-        expected_sha=$(jq -r --arg filename "$filename" '.outputs[$filename]' "$RECEIPT_FILE")
+        expected_sha=$(jq -r --arg filename "$filename" '.outputs.diagrams_sha256[$filename]' "$RECEIPT_FILE")
         current_sha=$(sha256sum "$diagram_file" | cut -d' ' -f1)
 
-        if [[ "$expected_sha" != "null" && "$expected_sha" != "$current_sha" ]]; then
-            log_warn "$filename is stale (receipt: $expected_sha, current: $current_sha)"
-            FRESH=false
+        if [[ "$expected_sha" != "null" && "$expected_sha" != "null" ]]; then
+            # Strip sha256: prefix for comparison
+            receipt_hash="${expected_sha#sha256:}"
+            if [[ "$receipt_hash" != "$current_sha" ]]; then
+                log_warn "$filename is stale (receipt: $expected_sha, current: $current_sha)"
+                FRESH=false
+            fi
         fi
     fi
 done

@@ -339,6 +339,24 @@ git_dirty() {
 
 # ── Toolchain ─────────────────────────────────────────────────────────────
 
+# Get Java info as compact JSON (for receipt embedding)
+# Always outputs valid JSON, never fails
+get_java_info_json() {
+    local result
+    result=$(detect_java_version 2>/dev/null)
+    local exit_code=$?
+
+    if [[ "$exit_code" -ne 0 ]]; then
+        # detect_java_version already outputs JSON error object on failure
+        # Just ensure it's valid and compact
+        echo "$result" | jq -c '.' 2>/dev/null || echo '{"error":"detection_failed"}'
+        return
+    fi
+
+    # Success - wrap version in JSON object
+    echo "{\"version\": \"${result}\"}"
+}
+
 # Detect Java version with robust error handling
 # Returns: major version number (e.g., "17", "21") on success
 #          JSON error object on failure (machine-parseable)
