@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.security.pki.PkiException;
 import org.yawlfoundation.yawl.security.pki.SignatureBlock;
 import org.yawlfoundation.yawl.security.pki.SignatureException;
@@ -67,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since YAWL 5.3
  */
 @Tag("unit")
+@Execution(ExecutionMode.SAME_THREAD)  // CredentialManagerFactory singleton state
 class SecurityFixesTest {
 
     /**

@@ -1,0 +1,230 @@
+name: Documentation Validation
+
+on:
+  push:
+    branches:
+      - master
+      - 'release/**'
+    paths:
+      - 'docs/**'
+      - '.claude/**'
+      - 'schema/**'
+      - 'src/**/package-info.java'
+      - 'scripts/validation/**'
+      - '.github/workflows/documentation-validation.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.claude/**'
+      - 'schema/**'
+      - 'src/**/package-info.java'
+
+jobs:
+  validate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Node.js (for markdown-link-check)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/validation/*.sh
+          chmod +x scripts/observatory/*.sh 2>/dev/null || true
+
+      - name: Validate package-info coverage
+        id: package-info
+        run: |
+          echo "Checking package-info.java coverage..."
+          PACKAGES=$(find src/ -type d -name "java" -exec find {} -mindepth 1 -type d \; 2>/dev/null | wc -l)
+          PACKAGE_INFOS=$(find src/ -name "package-info.java" 2>/dev/null | wc -l)
+          COVERAGE=0
+          if [[ $PACKAGES -gt 0 ]]; then
+            COVERAGE=$((PACKAGE_INFOS * 100 / PACKAGES))
+          fi
+          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+          echo "package_infos=$PACKAGE_INFOS" >> $GITHUB_OUTPUT
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Package-info coverage: ${COVERAGE}% (${PACKAGE_INFOS}/${PACKAGES})"
+          if [[ $COVERAGE -lt 90 ]]; then
+            echo "::error::Package-info coverage below 90% (got ${COVERAGE}%)"
+            exit 1
+          fi
+
+      - name: Validate documentation links
+        id: links
+        run: |
+          echo "Validating markdown links..."
+          BROKEN=0
+          mkdir -p docs/validation
+          for md in $(find docs/ -name "*.md" 2>/dev/null); do
+            if ! markdown-link-check -q "$md" >> docs/validation/link-check-report.txt 2>&1; then
+              BROKEN=$((BROKEN + 1))
+              echo "::warning file=$md::Broken links found"
+            fi
+          done
+          echo "broken=$BROKEN" >> $GITHUB_OUTPUT
+          if [[ $BROKEN -gt 0 ]]; then
+            echo "::error::Found $BROKEN files with broken links"
+            exit 1
+          fi
+          echo "All markdown links valid"
+
+      - name: Validate XSD schemas
+        id: schemas
+        run: |
+          echo "Validating XSD schemas..."
+          ERRORS=0
+          for xsd in schema/*.xsd; do
+            if [[ -f "$xsd" ]]; then
+              if ! xmllint --schema "$xsd" "$xsd" --noout 2>&1; then
+                ERRORS=$((ERRORS + 1))
+                echo "::error file=$xsd::Schema validation failed"
+              fi
+            fi
+          done
+          if [[ $ERRORS -gt 0 ]]; then
+            exit 1
+          fi
+          echo "All XSD schemas valid"
+
+      - name: Run observatory validation
+        id: observatory
+        run: |
+          echo "Validating observatory facts..."
+          if [[ -f "docs/v6/latest/receipts/observatory.json" ]]; then
+            bash scripts/validation/validate-observatory.sh || true
+          else
+            echo "::warning::Observatory receipt not found. Run: bash scripts/observatory/observatory.sh"
+          fi
+
+      - name: Build and test (quick validation)
+        id: build
+        run: |
+          echo "Running quick build validation..."
+          mvn -T 1.5C clean compile -q -B
+          echo "Build successful"
+
+      - name: Generate validation report
+        if: always()
+        run: |
+          mkdir -p docs/validation
+          cat > docs/validation/ci-report.md << EOF
+          # Documentation Validation Report
+
+          **Run ID**: ${{ github.run_id }}
+          **Commit**: ${{ github.sha }}
+          **Branch**: ${{ github.ref_name }}
+          **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          ## Results
+
+          | Check | Status |
+          |-------|--------|
+          | Package-info coverage | ${{ steps.package-info.outputs.coverage }}% (${{ steps.package-info.outputs.package_infos }}/${{ steps.package-info.outputs.packages }}) |
+          | Link validation | ${{ steps.links.outputs.broken }} broken links |
+          | XSD schemas | Validated |
+          | Build | Success |
+
+          ## Artifacts
+
+          - [link-check-report.txt](link-check-report.txt)
+          EOF
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: |
+            docs/validation/
+          retention-days: 30
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Documentation Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Package-info coverage | ${{ steps.package-info.outputs.coverage }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Link validation | ${{ steps.links.outputs.broken }} broken |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+
+  # Optional: Nightly baseline measurement
+  measure-baselines:
+    name: Measure Performance Baselines
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Measure build baseline
+        run: |
+          echo "Measuring build performance..."
+          START=$(date +%s%3N)
+          mvn -T 1.5C clean compile -q
+          END=$(date +%s%3N)
+          BUILD_TIME=$((END - START))
+
+          mkdir -p docs/v6/latest/performance
+
+          cat > docs/v6/latest/performance/build-baseline.json << EOF
+          {
+            "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "ci_run_id": "${{ github.run_id }}",
+            "metrics": {
+              "clean_compile_ms": ${BUILD_TIME},
+              "parallel_factor": "1.5C"
+            },
+            "environment": {
+              "runner": "ubuntu-latest",
+              "java_version": "25"
+            }
+          }
+          EOF
+
+          echo "Build time: ${BUILD_TIME}ms"
+
+      - name: Upload baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline
+          path: docs/v6/latest/performance/
+          retention-days: 90

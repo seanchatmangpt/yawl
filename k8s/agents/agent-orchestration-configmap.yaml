@@ -1,0 +1,139 @@
+# Agent Orchestration ConfigMap
+# Defines agent definitions for the AgentOrchestrationService and
+# GenericPartyAgent discovery loop.
+#
+# The orchestration controller reads these definitions to route work items
+# to registered agents via the AgentRegistry.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-agent-orchestration-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-orchestration
+    app.kubernetes.io/component: orchestration
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+data:
+  # YAWL engine connection
+  YAWL_ENGINE_URL: "http://yawl-engine:8080/yawl"
+  YAWL_USERNAME: "admin"
+
+  # Agent registry endpoint for discovery
+  AGENT_REGISTRY_URL: "http://yawl-agent-registry:9090"
+
+  # A2A server for inter-agent communication
+  A2A_SERVER_URL: "http://yawl-a2a-server:8081"
+
+  # MCP server for tool invocation
+  MCP_SERVER_URL: "http://yawl-mcp-server:8082"
+
+  # Discovery loop configuration
+  DISCOVERY_POLL_INTERVAL_SECONDS: "30"
+  DISCOVERY_MAX_RETRIES: "5"
+  DISCOVERY_RETRY_BACKOFF_SECONDS: "10"
+
+  # Orchestration timeouts
+  ORCHESTRATION_TASK_TIMEOUT_SECONDS: "120"
+  AGENT_HANDOFF_TIMEOUT_SECONDS: "30"
+
+  # Agent definitions for capability-based routing
+  # JSON array consumed by AgentOrchestrationService
+  agent-definitions.json: |
+    [
+      {
+        "id": "yawl-a2a-server",
+        "name": "YAWL Workflow A2A Agent",
+        "endpoint": "http://yawl-a2a-server:8081",
+        "protocol": "a2a",
+        "capabilities": [
+          "launch_workflow",
+          "query_workflows",
+          "manage_workitems",
+          "cancel_workflow"
+        ],
+        "domains": ["workflow-a2a"],
+        "healthPath": "/.well-known/agent.json",
+        "priority": 10
+      },
+      {
+        "id": "yawl-mcp-server",
+        "name": "YAWL MCP Server",
+        "endpoint": "http://yawl-mcp-server:8082",
+        "protocol": "mcp",
+        "capabilities": [
+          "launch_case",
+          "cancel_case",
+          "get_case_status",
+          "list_specifications",
+          "get_workitems",
+          "complete_workitem",
+          "checkout_workitem",
+          "checkin_workitem",
+          "get_specification_data",
+          "get_specification_xml",
+          "get_specification_schema",
+          "get_running_cases",
+          "upload_specification",
+          "unload_specification",
+          "zai_query"
+        ],
+        "domains": ["workflow-mcp"],
+        "healthPath": "/health",
+        "priority": 10
+      },
+      {
+        "id": "pm4py-a2a-agent",
+        "name": "PM4Py Process Mining Agent",
+        "endpoint": "http://yawl-pm4py-a2a:9092",
+        "protocol": "a2a",
+        "capabilities": [
+          "process_discovery",
+          "conformance_check",
+          "performance_analysis"
+        ],
+        "domains": ["process-mining"],
+        "healthPath": "/.well-known/agent-card.json",
+        "priority": 5
+      },
+      {
+        "id": "ordering-agent",
+        "name": "Ordering Party Agent",
+        "endpoint": "http://ordering-agent:8091",
+        "protocol": "party",
+        "capabilities": ["procurement", "purchase_orders", "approvals"],
+        "domains": ["orderfulfillment", "ordering"],
+        "healthPath": "/health",
+        "priority": 8
+      },
+      {
+        "id": "carrier-agent",
+        "name": "Carrier Party Agent",
+        "endpoint": "http://carrier-agent:8092",
+        "protocol": "party",
+        "capabilities": ["shipping", "tracking", "logistics"],
+        "domains": ["orderfulfillment", "carrier"],
+        "healthPath": "/health",
+        "priority": 8
+      },
+      {
+        "id": "payment-agent",
+        "name": "Payment Party Agent",
+        "endpoint": "http://payment-agent:8094",
+        "protocol": "party",
+        "capabilities": ["payment_processing", "invoicing", "reconciliation"],
+        "domains": ["orderfulfillment", "payment"],
+        "healthPath": "/health",
+        "priority": 8
+      }
+    ]
+
+  # Memory/context retention policy for agent conversations
+  agent-memory-config.json: |
+    {
+      "contextWindowSize": 50,
+      "retentionPolicy": "sliding-window",
+      "persistenceEnabled": false,
+      "maxContextAgeSeconds": 3600,
+      "contextKeyStrategy": "case-id"
+    }

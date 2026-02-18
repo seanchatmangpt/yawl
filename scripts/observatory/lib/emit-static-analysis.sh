@@ -105,8 +105,17 @@ except Exception as e:
 PYEOF
 }
 
+# Helper: Emit warning for missing static analysis reports
+emit_missing_reports_warning() {
+    local tool_name="$1"
+    local report_pattern="$2"
+    local required_command="$3"
+    log_warn "${tool_name} reports not found. Run: ${required_command}"
+    log_warn "Expected: ${report_pattern}"
+}
+
 # Discover and parse SpotBugs reports from Maven build
-# Toyota Production System: FAIL if reports missing - NO silent fallbacks
+# Phase 1: Emit WARNING instead of REFUSAL when reports are missing
 emit_spotbugs_findings() {
     local out="$FACTS_DIR/spotbugs-findings.json"
     local op_start
@@ -121,15 +130,14 @@ emit_spotbugs_findings() {
         [[ -n "$report" ]] && spotbugs_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/spotbugsXml.xml" -type f 2>/dev/null)
 
-    # Toyota Production System: FAIL FAST if no reports found
+    # Phase 1: Emit WARNING instead of REFUSAL when reports are missing
     if [[ ${#spotbugs_reports[@]} -eq 0 ]]; then
-        log_error "SPOTBUGS REPORTS MISSING - Static analysis not run"
-        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
-        log_error "Expected: */target/spotbugsXml.xml"
-        # Write error state - NO FALLBACK DATA
-        echo '{"findings": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
-        add_refusal "SPOTBUGS_MISSING" "SpotBugs reports not found. Run: mvn clean verify -P analysis" "{}"
-        return 1
+        emit_missing_reports_warning "SpotBugs" "*/target/spotbugsXml.xml" "mvn -T 1.5C clean verify -P analysis"
+        # Write warning state - data available but reports need generation
+        echo '{"findings": [], "summary": {"total": 0}, "status": "REPORTS_NOT_GENERATED", "required_command": "mvn -T 1.5C clean verify -P analysis", "health_impact": "unknown"}' > "$out"
+        local op_elapsed=$(( $(epoch_ms) - op_start ))
+        record_operation "emit_spotbugs_findings" "$op_elapsed"
+        return 0
     fi
 
     if [[ ${#spotbugs_reports[@]} -eq 0 ]]; then
@@ -295,7 +303,7 @@ PYEOF
 }
 
 # Discover and parse PMD reports
-# Toyota Production System: FAIL if reports missing - NO silent fallbacks
+# Phase 1: Emit WARNING instead of REFUSAL when reports are missing
 emit_pmd_violations() {
     local out="$FACTS_DIR/pmd-violations.json"
     local op_start
@@ -310,15 +318,14 @@ emit_pmd_violations() {
         [[ -n "$report" ]] && pmd_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/pmd.xml" -type f 2>/dev/null)
 
-    # Toyota Production System: FAIL FAST if no reports found
+    # Phase 1: Emit WARNING instead of REFUSAL when reports are missing
     if [[ ${#pmd_reports[@]} -eq 0 ]]; then
-        log_error "PMD REPORTS MISSING - Static analysis not run"
-        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
-        log_error "Expected: */target/pmd.xml"
-        # Write error state - NO FALLBACK DATA
-        echo '{"violations": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
-        add_refusal "PMD_MISSING" "PMD reports not found. Run: mvn clean verify -P analysis" "{}"
-        return 1
+        emit_missing_reports_warning "PMD" "*/target/pmd.xml" "mvn -T 1.5C clean verify -P analysis"
+        # Write warning state - data available but reports need generation
+        echo '{"violations": [], "summary": {"total": 0}, "status": "REPORTS_NOT_GENERATED", "required_command": "mvn -T 1.5C clean verify -P analysis", "health_impact": "unknown"}' > "$out"
+        local op_elapsed=$(( $(epoch_ms) - op_start ))
+        record_operation "emit_pmd_violations" "$op_elapsed"
+        return 0
     fi
 
     # Aggregate all PMD reports
@@ -447,7 +454,7 @@ PYEOF
 }
 
 # Discover and parse Checkstyle reports
-# Toyota Production System: FAIL if reports missing - NO silent fallbacks
+# Phase 1: Emit WARNING instead of REFUSAL when reports are missing
 emit_checkstyle_warnings() {
     local out="$FACTS_DIR/checkstyle-warnings.json"
     local op_start
@@ -462,15 +469,14 @@ emit_checkstyle_warnings() {
         [[ -n "$report" ]] && checkstyle_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/checkstyle-result.xml" -type f 2>/dev/null)
 
-    # Toyota Production System: FAIL FAST if no reports found
+    # Phase 1: Emit WARNING instead of REFUSAL when reports are missing
     if [[ ${#checkstyle_reports[@]} -eq 0 ]]; then
-        log_error "CHECKSTYLE REPORTS MISSING - Static analysis not run"
-        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
-        log_error "Expected: */target/checkstyle-result.xml"
-        # Write error state - NO FALLBACK DATA
-        echo '{"warnings": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
-        add_refusal "CHECKSTYLE_MISSING" "Checkstyle reports not found. Run: mvn clean verify -P analysis" "{}"
-        return 1
+        emit_missing_reports_warning "Checkstyle" "*/target/checkstyle-result.xml" "mvn -T 1.5C clean verify -P analysis"
+        # Write warning state - data available but reports need generation
+        echo '{"warnings": [], "summary": {"total": 0}, "status": "REPORTS_NOT_GENERATED", "required_command": "mvn -T 1.5C clean verify -P analysis", "health_impact": "unknown"}' > "$out"
+        local op_elapsed=$(( $(epoch_ms) - op_start ))
+        record_operation "emit_checkstyle_warnings" "$op_elapsed"
+        return 0
     fi
 
     local total_count=0

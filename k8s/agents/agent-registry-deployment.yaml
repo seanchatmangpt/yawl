@@ -1,0 +1,107 @@
+# Agent Registry Deployment
+# Runs the YAWL AgentRegistry HTTP server (port 9090).
+# Must be deployed before MCP/A2A servers and party agents so they can
+# register themselves on startup.
+#
+# Image placeholder __AGENT_REGISTRY_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-agent-registry
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-registry
+    app.kubernetes.io/component: agent-registry
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  # Single replica: registry state is in-memory, HA via restart policy
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-agent-registry
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-agent-registry
+        app.kubernetes.io/component: agent-registry
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/agents"
+    spec:
+      serviceAccountName: yawl-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent-registry
+          image: __AGENT_REGISTRY_IMAGE__
+          imagePullPolicy: Always
+          args: [ "org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistry" ]
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: REGISTRY_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-registry-config
+                  key: REGISTRY_PORT
+            - name: AGENT_HEARTBEAT_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-registry-config
+                  key: AGENT_HEARTBEAT_TIMEOUT_SECONDS
+            - name: HEALTH_MONITOR_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-agent-registry-config
+                  key: HEALTH_MONITOR_INTERVAL_SECONDS
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /agents
+              port: 9090
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /agents
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-agent-registry
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-agent-registry
+    app.kubernetes.io/component: agent-registry
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-agent-registry
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      protocol: TCP

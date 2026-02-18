@@ -253,6 +253,21 @@
         <!-- threadCount is kept for legacy Surefire parallel mode fallback.
              JUnit 5 parallel execution is controlled by junit-platform.properties. -->
         <surefire.threadCount>4</surefire.threadCount>
+
+        <!-- ================================================================ -->
+        <!-- Cryptography (BouncyCastle)                                       -->
+        <!-- ================================================================ -->
+        <bouncycastle.version>1.77</bouncycastle.version>
+
+        <!-- ================================================================ -->
+        <!-- Static Analysis - Error Prone                                     -->
+        <!-- ================================================================ -->
+        <error.prone.version>2.38.0</error.prone.version>
+
+        <!-- ================================================================ -->
+        <!-- Static Analysis - NullAway with JSpecify                          -->
+        <!-- ================================================================ -->
+        <nullaway.version>0.12.3</nullaway.version>
     </properties>
 
     <repositories>
@@ -796,6 +811,23 @@
                 <version>${azure.identity.version}</version>
             </dependency>
 
+            <!-- BouncyCastle cryptography (PKI, digital signatures) -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
             <!-- ============================================================== -->
             <!-- 12. REST                                                       -->
             <!-- ============================================================== -->
@@ -1046,6 +1078,10 @@
                 <scope>test</scope>
             </dependency>
 
+<<<<<<< HEAD
+            <!-- Testcontainers explicit versions (BOM import moved to docker profile
+                 to avoid offline resolution failures; these pins are sufficient) -->
+=======
             <!-- Testcontainers BOM for container-based integration tests -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1056,6 +1092,7 @@
             </dependency>
 
             <!-- Testcontainers explicit versions (BOM import order issue workaround) -->
+>>>>>>> origin/master
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
@@ -1150,8 +1187,13 @@
                         <release>${maven.compiler.release}</release>
                         <useIncrementalCompilation>true</useIncrementalCompilation>
                         <fork>true</fork>
+<<<<<<< HEAD
+                        <meminitial>512m</meminitial>
+                        <maxmem>2048m</maxmem>
+=======
                         <meminitial>256m</meminitial>
                         <maxmem>1024m</maxmem>
+>>>>>>> origin/master
                         <compilerArgs>
                             <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
@@ -1202,6 +1244,28 @@
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
+<<<<<<< HEAD
+                        <parallel>classesAndMethods</parallel>
+                        <threadCount>${surefire.threadCount}</threadCount>
+                        <perCoreThreadCount>true</perCoreThreadCount>
+                        <forkCount>1</forkCount>
+                        <reuseForks>true</reuseForks>
+                        <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                        <skipAfterFailureCount>5</skipAfterFailureCount>
+                        <classpathDependencyExcludes>
+                            <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl across all modules -->
+                            <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                        </classpathDependencyExcludes>
+                        <properties>
+                            <configurationParameters>
+                                junit.jupiter.execution.parallel.enabled=true
+                                junit.jupiter.execution.parallel.mode.default=concurrent
+                                junit.jupiter.execution.parallel.mode.classes.default=concurrent
+                                junit.jupiter.execution.parallel.config.strategy=dynamic
+                                junit.jupiter.execution.parallel.config.dynamic.factor=1.5
+                            </configurationParameters>
+                        </properties>
+=======
                         <!-- Legacy parallel mode for JUnit 4 tests still in the suite.
                              JUnit 5 tests use junit-platform.properties instead. -->
                         <parallel>classesAndMethods</parallel>
@@ -1214,6 +1278,7 @@
                         <!-- Full stack traces are needed to diagnose engine-level
                              failures in YNetRunner and YWorkItem state machines. -->
                         <trimStackTrace>false</trimStackTrace>
+>>>>>>> origin/master
                     </configuration>
                 </plugin>
 
@@ -1710,7 +1775,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
@@ -1722,7 +1788,8 @@
         <profile>
             <id>java24</id>
             <properties>
-                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <jacoco.skip>true</jacoco.skip>
             </properties>
             <build>
@@ -1763,9 +1830,19 @@
             </activation>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
             </properties>
             <build>
                 <plugins>
+                    <!-- Enable Surefire for test execution in CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
                     <!-- Enforcer: stricter convergence checks in CI -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -1894,7 +1971,7 @@
 
         <!-- ================================================================ -->
         <!-- Analysis profile: full static analysis suite                       -->
-        <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo in a single command     -->
+        <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo + Error Prone           -->
         <!-- Usage: mvn clean package -P analysis                               -->
         <!--                                                                    -->
         <!-- Reports generated under:                                           -->
@@ -1902,14 +1979,69 @@
         <!--   target/checkstyle-result.xml                                     -->
         <!--   target/pmd.xml                                                   -->
         <!--   target/site/jacoco/                                              -->
+        <!--   Error Prone warnings in compile output                           -->
         <!-- ================================================================ -->
         <profile>
             <id>analysis</id>
             <properties>
                 <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
             </properties>
             <build>
                 <plugins>
+
+                    <!-- Enable Surefire for test execution in analysis profile -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Error Prone: compile-time static analysis for Java 25 features -->
+                    <!-- Catches bugs specific to virtual threads, structured concurrency, -->
+                    <!-- scoped values, pattern matching, and modern switch expressions.   -->
+                    <!-- Usage: mvn compile -P analysis                                    -->
+                    <!--                                                                    -->
+                    <!-- Java 25 Checks (available in Error Prone 2.38.0):                 -->
+                    <!--   ThreadJoinTimeout - join() without timeout (ERROR)              -->
+                    <!--   ThreadLocalCleanup - ThreadLocal not removed (WARN)             -->
+                    <!--   SwitchDefaultOnlyCase - suspicious switch default (WARN)        -->
+                    <!--                                                                    -->
+                    <!-- Future Java 25 checks (when available in Error Prone):            -->
+                    <!--   VirtualThreadCapture - capturing platform thread locals         -->
+                    <!--   StructuredConcurrencyShutdown - improper StructuredTaskScope    -->
+                    <!--   ScopedValueLeak - scoped value escaping context                 -->
+                    <!--   ModernSwitchExpression - non-exhaustive pattern matching        -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>21</source>
+                            <target>21</target>
+                            <release>21</release>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                                <arg>-Xlint:all</arg>
+                                <arg>-XDcompilePolicy=simple</arg>
+                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -Xep:ExcludedPath:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
+                            </compilerArgs>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>com.google.errorprone</groupId>
+                                    <artifactId>error_prone_core</artifactId>
+                                    <version>${error.prone.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>com.uber.nullaway</groupId>
+                                    <artifactId>nullaway</artifactId>
+                                    <version>${nullaway.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </plugin>
 
                     <!-- JaCoCo: instrument tests and generate coverage report -->
                     <plugin>
@@ -2005,6 +2137,81 @@
                         </executions>
                     </plugin>
 
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Coverage profile: dedicated JaCoCo coverage with threshold check  -->
+        <!-- Usage: mvn -T 1.5C clean verify -P coverage                       -->
+        <!--                                                                    -->
+        <!-- This profile focuses purely on coverage without other analysis    -->
+        <!-- tools, making it faster for coverage-only requirements.           -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <jacoco.skip>false</jacoco.skip>
+                <maven.test.skip>false</maven.test.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Enable Surefire for test execution -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
+                    <!-- JaCoCo: instrument tests and generate coverage report -->
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jacoco-prepare</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.65</minimum>
+                                                </limit>
+                                                <limit>
+                                                    <counter>BRANCH</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.55</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                    <haltOnFailure>false</haltOnFailure>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -2170,11 +2377,19 @@
         </profile>
 
         <!-- ================================================================ -->
+<<<<<<< HEAD
+        <!-- Fast profile: excludes slow integration tests for CI             -->
+        <!-- This profile is active by default for quick feedback loops.      -->
+        <!-- Usage: mvn clean test                   (fast - default)         -->
+        <!--        mvn clean test -P docker         (full integration)       -->
+        <!-- Excluded groups: integration, docker, containers                 -->
+=======
         <!-- Fast profile: excludes slow/integration/docker tests by default  -->
         <!-- This profile is active by default for quick feedback loops.      -->
         <!-- Usage: mvn clean test                   (fast - default)         -->
         <!--        mvn clean test -P docker         (full integration)       -->
         <!-- Excluded groups: integration, slow, docker, containers, chaos    -->
+>>>>>>> origin/master
         <!-- ================================================================ -->
         <profile>
             <id>fast</id>
@@ -2190,7 +2405,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+<<<<<<< HEAD
+                            <excludedGroups>integration,docker,containers</excludedGroups>
+=======
                             <excludedGroups>integration,slow,docker,containers,chaos</excludedGroups>
+>>>>>>> origin/master
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
                             </systemPropertyVariables>
@@ -2201,6 +2420,24 @@
         </profile>
 
         <!-- ================================================================ -->
+<<<<<<< HEAD
+        <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
+        <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
+        <!-- Usage: mvn compile test -P agent-dx                              -->
+        <!--        mvn compile test -P agent-dx -pl module -amd              -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>agent-dx</id>
+            <properties>
+                <jacoco.skip>true</jacoco.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.source.skip>true</maven.source.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <pmd.skip>true</pmd.skip>
+                <enforcer.skip>true</enforcer.skip>
+                <surefire.threadCount>2C</surefire.threadCount>
+=======
         <!-- Integration-test profile: runs unit + integration tests          -->
         <!-- Excludes only Docker/container/chaos tests (no daemon required). -->
         <!-- Usage: mvn clean test -P integration-test                        -->
@@ -2209,6 +2446,7 @@
         <profile>
             <id>integration-test</id>
             <properties>
+>>>>>>> origin/master
                 <test.docker.enabled>false</test.docker.enabled>
             </properties>
             <build>
@@ -2217,6 +2455,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+<<<<<<< HEAD
+                            <excludedGroups>integration,docker,containers,slow</excludedGroups>
+=======
                             <groups>unit,integration</groups>
                             <excludedGroups>docker,containers,slow,chaos</excludedGroups>
                             <systemPropertyVariables>
@@ -2287,6 +2528,7 @@
                             <reuseForks>true</reuseForks>
                             <!-- Fail on the first test failure. Gets the developer to the
                                  red bar immediately without running the rest of the suite. -->
+>>>>>>> origin/master
                             <skipAfterFailureCount>1</skipAfterFailureCount>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
@@ -2412,6 +2654,97 @@
             </build>
         </profile>
 
+<<<<<<< HEAD
+        <!-- ================================================================ -->
+        <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>observatory-analysis</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- SpotBugs: Find potential bugs -->
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>4.8.6.4</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <failOnError>false</failOnError>
+                            <xmlOutput>true</xmlOutput>
+                            <outputDirectory>target</outputDirectory>
+                            <includeFilterFile>quality/spotbugs/include.xml</includeFilterFile>
+                            <excludeFilterFile>quality/spotbugs/exclude.xml</excludeFilterFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>spotbugs</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>spotbugs</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- PMD: Source code analysis -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>3.26.0</version>
+                        <configuration>
+                            <failOnError>false</failOnError>
+                            <includeTests>false</includeTests>
+                            <rulesets>
+                                <ruleset>quality/pmd/ruleset.xml</ruleset>
+                            </rulesets>
+                            <excludeFromFailureFile>pmd-exclude.xml</excludeFromFailureFile>
+                            <outputDirectory>target</outputDirectory>
+                            <xmlOutput>true</xmlOutput>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pmd</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>pmd</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Checkstyle: Code style checking -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <configuration>
+                            <configLocation>quality/checkstyle/checkstyle.xml</configLocation>
+                            <suppressionsLocation>quality/checkstyle/suppressions.xml</suppressionsLocation>
+                            <failOnError>false</failOnError>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <outputFile>target/checkstyle-result.xml</outputFile>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>checkstyle</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+=======
+>>>>>>> origin/master
     </profiles>
 
 </project>

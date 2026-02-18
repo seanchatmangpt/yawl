@@ -1,3 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extensions>
+    <!-- Build cache disabled for Java 21 compatibility -->
 </extensions>

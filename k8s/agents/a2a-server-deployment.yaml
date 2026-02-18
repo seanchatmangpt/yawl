@@ -1,0 +1,192 @@
+# YAWL A2A Server Deployment
+# Runs YawlA2AServer exposing YAWL workflow operations via A2A protocol REST API.
+# Supports agent card discovery (unauthenticated) and workflow operations
+# (JWT, API key, or SPIFFE mTLS authentication).
+#
+# Image placeholder __A2A_SERVER_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-a2a-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-a2a-server
+    app.kubernetes.io/component: a2a-server
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-a2a-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-a2a-server
+        app.kubernetes.io/component: a2a-server
+        app.kubernetes.io/part-of: yawl
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: yawl-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      initContainers:
+        # Wait for YAWL engine before starting A2A server
+        - name: wait-for-engine
+          image: curlimages/curl:8.5.0
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for YAWL engine at $YAWL_ENGINE_URL..."
+              until curl -sf "$YAWL_ENGINE_URL/ib" > /dev/null 2>&1; do
+                echo "Engine not ready, retrying in 10s..."
+                sleep 10
+              done
+              echo "YAWL engine is ready."
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: YAWL_ENGINE_URL
+      containers:
+        - name: a2a-server
+          image: __A2A_SERVER_IMAGE__
+          imagePullPolicy: Always
+          args: [ "org.yawlfoundation.yawl.integration.a2a.YawlA2AServer" ]
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: YAWL_ENGINE_URL
+            - name: YAWL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: YAWL_USERNAME
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-credentials
+                  key: password
+            - name: A2A_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: A2A_PORT
+            # Authentication secrets - at least one must be configured
+            - name: A2A_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_JWT_SECRET
+            - name: A2A_JWT_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: A2A_JWT_ISSUER
+            - name: A2A_API_KEY_MASTER
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_API_KEY_MASTER
+                  optional: true
+            - name: A2A_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_API_KEY
+                  optional: true
+            - name: A2A_SPIFFE_TRUST_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: A2A_SPIFFE_TRUST_DOMAIN
+            # Z.AI integration for ZaiFunctionService-backed message processing
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZAI_API_KEY
+                  optional: true
+            - name: ZHIPU_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZHIPU_API_KEY
+                  optional: true
+            - name: AGENT_REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-a2a-server-config
+                  key: AGENT_REGISTRY_URL
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /.well-known/agent.json
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /.well-known/agent.json
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: yawl-a2a-server
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-a2a-server
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-a2a-server
+    app.kubernetes.io/component: a2a-server
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-a2a-server
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+      protocol: TCP

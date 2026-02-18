@@ -29,7 +29,58 @@
 
 **Target State**: ~90s clean build, ~30-45s tests (parallel)
 
+**Agent DX Target**: ~5-15s per edit-compile-test cycle (module-targeted, incremental)
+
 **Improvement**: -50% build time with zero code changes (Maven parallel + JUnit concurrent execution)
+
+---
+
+## Phase 0: Agent DX Fast Loop (scripts/dx.sh)
+
+The fastest feedback path for code agents and iterative development. Instead of
+rebuilding everything from clean on every cycle, `dx.sh` exploits three key
+insights:
+
+1. **Module targeting**: Only compile/test modules with uncommitted changes
+2. **Incremental compilation**: Skip `clean` — only recompile changed files
+3. **Zero overhead**: `agent-dx` profile disables JaCoCo, javadoc, analysis, enforcer
+
+```bash
+# Auto-detect changed modules, compile + test them
+bash scripts/dx.sh
+
+# Compile only (fastest possible feedback)
+bash scripts/dx.sh compile
+
+# Test only (assumes already compiled)
+bash scripts/dx.sh test
+
+# All modules (pre-commit verification)
+bash scripts/dx.sh all
+
+# Target specific module
+bash scripts/dx.sh -pl yawl-engine
+
+# Environment overrides
+DX_VERBOSE=1 bash scripts/dx.sh     # Show Maven output
+DX_CLEAN=1 bash scripts/dx.sh       # Force clean build
+DX_OFFLINE=0 bash scripts/dx.sh     # Force online mode
+```
+
+**Performance comparison** (16-core machine, ~3000 tests):
+
+| Command | Scope | Approx. Time |
+|---------|-------|-------------|
+| `bash scripts/dx.sh compile` | 1 changed module | ~3-5s |
+| `bash scripts/dx.sh` | 1 changed module | ~5-15s |
+| `bash scripts/dx.sh all` | all 13 modules | ~30-60s |
+| `mvn -T 1.5C clean compile && mvn -T 1.5C clean test` | all 13 modules | ~90-120s |
+
+**Maven profile**: The `agent-dx` profile in `pom.xml` provides:
+- `surefire.threadCount=2C` (double the default parallelism)
+- `skipAfterFailureCount=1` (fail on first test failure)
+- All overhead plugins disabled (JaCoCo, javadoc, source, analysis, enforcer)
+- Integration/docker/container tests excluded
 
 ---
 
@@ -499,6 +550,8 @@ mvn dependency:tree
 
 | Target | Current | Goal | Method |
 |--------|---------|------|--------|
+| Agent DX (1 module) | N/A | 5-15s | `dx.sh` module targeting + incremental |
+| Agent DX (all) | N/A | 30-60s | `dx.sh all` agent-dx profile |
 | Full clean build | 180s | 90s | `-T 1.5C` parallel |
 | Unit tests | 60s | 30s | JUnit parallel execution |
 | With analysis | N/A | <250s | Profile-based execution |

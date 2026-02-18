@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD Suppressions 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress checkstyle violations in test files -->
+    <suppress checks=".*" files="[\\/]test[\\/].*"/>
+
+    <!-- Suppress checkstyle violations in generated files -->
+    <suppress checks=".*" files="[\\/]generated[\\/].*"/>
+
+    <!-- Suppress checkstyle violations in build files -->
+    <suppress checks=".*" files="[\\/]build[\\/].*"/>
+
+    <!-- Allow long lines for XML configurations -->
+    <suppress checks="LineLength" files="[\\/]schema[\\/].*\.xml"/>
+
+    <!-- Allow longer methods in complex workflow logic -->
+    <suppress checks="MethodLength" files="[\\/]src[\\/]org[\\/]yawlfoundation[\\/]yawl[\\/]engine[\\/]YNetRunner\.java"/>
+    <suppress checks="MethodLength" files="[\\/]src[\\/]org[\\/]yawlfoundation[\\/]yawl[\\/]elements[\\/]YSpecification\.java"/>
+
+    <!-- Suppress parameter count for complex constructors -->
+    <suppress checks="ParameterNumber" files="[\\/]src[\\/]org[\\/]yawlfoundation[\\/]yawl[\\/]integration[\\/].*"/>
+</suppressions>

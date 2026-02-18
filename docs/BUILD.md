@@ -1,11 +1,54 @@
 # YAWL v6.0.0 Maven Build System Guide
 
+## Quick Start - Agent DX Loop (RECOMMENDED)
+
+For iterative development and code agent workflows, use the fast build-test loop:
+
+```bash
+# Auto-detect changed modules, compile + test them (~5-15s)
+bash scripts/dx.sh
+
+# Compile only (fastest possible feedback, ~3-5s per module)
+bash scripts/dx.sh compile
+
+# Test only (assumes already compiled)
+bash scripts/dx.sh test
+
+# All modules (pre-commit verification, ~30-60s)
+bash scripts/dx.sh all
+
+# Target specific module
+bash scripts/dx.sh -pl yawl-engine
+
+# Environment overrides
+DX_VERBOSE=1 bash scripts/dx.sh     # Show Maven output
+DX_CLEAN=1 bash scripts/dx.sh       # Force clean build
+```
+
+**Why dx.sh is faster:**
+- Module targeting: Only builds modules with uncommitted changes
+- Incremental compilation: No `clean` phase by default
+- Zero overhead: `agent-dx` profile disables JaCoCo, javadoc, analysis
+
+**Performance comparison** (16-core machine):
+
+| Command | Scope | Time |
+|---------|-------|------|
+| `bash scripts/dx.sh compile` | 1 changed module | ~3-5s |
+| `bash scripts/dx.sh` | 1 changed module | ~5-15s |
+| `bash scripts/dx.sh all` | all 13 modules | ~30-60s |
+| `mvn -T 1.5C clean compile && mvn -T 1.5C test` | all modules | ~90-120s |
+
+See [Phase 0: Agent DX Fast Loop](#phase-0-agent-dx-fast-loop-scriptsdxsh) for details.
+
+---
+
 ## Architecture Overview
 
-YAWL uses **Maven 3.9.11** with a multi-module structure designed for parallel compilation, modular testing, and flexible deployment.
+YAWL uses **Maven 3.9.11** with **Java 25** and a multi-module structure designed for parallel compilation, modular testing, and flexible deployment.
 
 ```
-YAWL Parent (6.0.0-Alpha)
+YAWL Parent (6.0.0)
 ├── yawl-utilities (foundation)
 ├── yawl-elements (core elements)
 ├── yawl-authentication
@@ -33,13 +76,13 @@ clean → validate → compile → test → package → verify → install → d
 1. clean
    ↓ (removes target/)
 2. compile
-   ↓ (runs Java compilation with Java 21 preview features)
+   ↓ (runs Java compilation with Java 25 features)
 3. test
-   ↓ (runs JUnit 5 in parallel, 4 threads)
+   ↓ (runs JUnit 5.14.0 LTS in parallel, method-level concurrency)
 4. package
    ↓ (creates JAR/WAR artifacts)
 5. verify
-   ↓ (SpotBugs static analysis - optional)
+   ↓ (SpotBugs static analysis - optional, via -P analysis)
 6. install
    ↓ (copies to local ~/.m2 repository)
 ```
@@ -202,28 +245,54 @@ The following plugins are disabled in offline mode:
 
 ## Build Profiles
 
-### Profile 1: `java25` (DEFAULT)
+### Profile 1: `agent-dx` (DEFAULT for dx.sh)
 ```
-Activation: Default
-Java version: 21 with preview features
-Use case: Standard development and production builds
+Activation: Auto-activated by scripts/dx.sh
+Java version: 25
+Features:
+  - 2C test parallelism (doubled)
+  - Fail-fast on first test failure
+  - JaCoCo disabled
+  - Javadoc disabled
+  - Static analysis disabled
+  - Integration tests excluded
+Use case: Fast inner-loop development, code agent workflows
 ```
 
-### Profile 2: `java24`
+### Profile 2: `fast`
 ```
-Activation: Manual (-Pjava24)
-Java version: 24 (future compatibility testing)
-Use case: Testing against Java 24 preview features
+Activation: Manual (-Pfast)
+Java version: 25
+Features:
+  - Standard test parallelism
+  - JaCoCo disabled
+  - Javadoc disabled
+Use case: Quick verification builds
 ```
 
-### Profile 3: `prod`
+### Profile 3: `analysis`
 ```
-Activation: Manual (-Pprod)
-Features: OWASP Dependency Check (CVSS >= 7)
+Activation: Manual (-P analysis)
+Java version: 25
+Features:
+  - SpotBugs static analysis
+  - PMD code smells
+  - JaCoCo code coverage (75% threshold)
+  - Error Prone compile-time checks
+Use case: CI/CD quality gates, pre-release validation
+```
+
+### Profile 4: `security`
+```
+Activation: Manual (-Psecurity)
+Features:
+  - OWASP Dependency Check (CVSS >= 7)
+  - SBOM generation (CycloneDX)
+  - Container image scanning
 Use case: Production release security scanning
 ```
 
-### Profile 4: `security-audit`
+### Profile 5: `security-audit`
 ```
 Activation: Manual (-Psecurity-audit)
 Features: Comprehensive OWASP Dependency Check (all CVSS)
@@ -232,32 +301,76 @@ Use case: Full security audit before release
 
 ## Build Commands
 
-### Fast Development Cycle (~45 seconds)
-```bash
-# Compile only (no tests)
-mvn clean compile
+### Phase 0: Agent DX Fast Loop (scripts/dx.sh)
 
-# Why fast: Skips test execution, packaging, artifact download
+The fastest feedback path for code agents and iterative development:
+
+```bash
+# Auto-detect changed modules, compile + test them
+bash scripts/dx.sh
+
+# Compile only (fastest possible feedback)
+bash scripts/dx.sh compile
+
+# Test only (assumes already compiled)
+bash scripts/dx.sh test
+
+# All modules (pre-commit verification)
+bash scripts/dx.sh all
+
+# Target specific module(s)
+bash scripts/dx.sh -pl yawl-engine,yawl-stateless
+
+# Environment overrides
+DX_VERBOSE=1 bash scripts/dx.sh     # Show Maven output
+DX_CLEAN=1 bash scripts/dx.sh       # Force clean build
+DX_OFFLINE=0 bash scripts/dx.sh     # Force online mode
+DX_FAIL_AT=end bash scripts/dx.sh   # Don't stop on first failure
 ```
 
-### Full Testing (~2-3 minutes)
-```bash
-# Compile and run all tests
-mvn clean test
+**Key optimizations:**
+- **Module targeting**: Only compile/test modules with uncommitted changes
+- **Incremental compilation**: Skip `clean` - only recompile changed files
+- **Zero overhead**: `agent-dx` profile disables JaCoCo, javadoc, analysis, enforcer
 
-# Key: Parallel test execution (4 threads)
+**Maven profile `agent-dx`:**
+- `surefire.threadCount=2C` (double default parallelism)
+- `skipAfterFailureCount=1` (fail on first test failure)
+- All overhead plugins disabled
+
+### Phase 1: Fast Development Cycle (~45 seconds)
+```bash
+# Parallel compile (no tests)
+mvn -T 1.5C clean compile
+
+# Why fast: Parallel execution at 1.5x CPU cores
 ```
 
-### Production Build (~5-10 minutes)
+### Phase 2: Full Testing (~60-90 seconds)
+```bash
+# Compile and run all tests in parallel
+mvn -T 1.5C clean test
+
+# Key: Parallel test execution (method-level with JUnit 5)
+```
+
+### Phase 3: Production Build (~90-120 seconds)
 ```bash
 # Full build with tests and packaging
-mvn clean install
+mvn -T 1.5C clean package
 
 # Includes:
 # - Compilation
-# - Test execution
+# - Test execution (parallel)
 # - JAR/WAR packaging
-# - Installation to ~/.m2
+```
+
+### Phase 4: Analysis Build (~2-3 minutes)
+```bash
+# Full build with static analysis
+mvn -T 1.5C clean verify -P analysis
+
+# Includes SpotBugs, PMD, JaCoCo coverage
 ```
 
 ### Offline Build
@@ -305,15 +418,39 @@ mvn -Psecurity-audit clean install
 
 ## Build Performance
 
+### Performance Metrics (Java 25 + Parallel Maven)
+
+| Command | Before Optimization | After Optimization | Improvement |
+|---------|---------------------|-------------------|-------------|
+| `bash scripts/dx.sh compile` | N/A | ~3-5s | New feature |
+| `bash scripts/dx.sh` (1 module) | N/A | ~5-15s | New feature |
+| `bash scripts/dx.sh all` | N/A | ~30-60s | New feature |
+| `mvn -T 1.5C clean compile` | ~90s | ~45s | **-50%** |
+| `mvn -T 1.5C clean test` | ~180s | ~60-90s | **-50%** |
+| `mvn -T 1.5C clean package` | ~240s | ~90-120s | **-50%** |
+
 ### Estimated Times (Network-enabled environment)
 
 | Command | Time | Notes |
 |---------|------|-------|
-| `mvn clean compile` | 45-60 sec | Compile only |
-| `mvn clean test` | 2-3 min | Includes parallel tests (4 threads) |
-| `mvn clean install` | 5-10 min | Full build with packaging |
-| `mvn clean install -DskipTests` | 3-5 min | Skips test execution |
-| `mvn -Psecurity-audit clean install` | 10-15 min | Includes security scan |
+| `bash scripts/dx.sh compile` | 3-5s | 1 changed module |
+| `bash scripts/dx.sh` | 5-15s | 1 changed module |
+| `bash scripts/dx.sh all` | 30-60s | All 13 modules |
+| `mvn -T 1.5C clean compile` | 45s | Parallel compile |
+| `mvn -T 1.5C clean test` | 60-90s | Parallel tests |
+| `mvn -T 1.5C clean package` | 90-120s | Full build with packaging |
+| `mvn clean verify -P analysis` | 2-3 min | With SpotBugs, PMD, JaCoCo |
+| `mvn -Psecurity-audit clean verify` | 3-5 min | Includes security scan |
+
+### Java 25 Performance Features
+
+| Feature | JVM Flag | Benefit |
+|---------|----------|---------|
+| **Compact Object Headers** | `-XX:+UseCompactObjectHeaders` | 5-10% throughput, 10-20% memory reduction |
+| **Virtual Threads** | Automatic (Project Loom) | 99.95% memory reduction for concurrent tasks |
+| **Generational ZGC** | `-XX:+UseZGC -XX:ZGenerational=true` | 0.1-0.5ms GC pauses (large heaps) |
+| **Shenandoah GC** | `-XX:+UseShenandoahGC` | 1-10ms GC pauses (medium heaps) |
+| **AOT Cache** | `-XX:+UseAOTCache` | 25% faster container startup |
 
 ### First-Time Build (Offline Environment)
 
@@ -322,10 +459,10 @@ mvn -Psecurity-audit clean install
 
 ```bash
 # First build: Downloads ~200MB of dependencies
-mvn clean install  # 10-15 minutes on broadband
+mvn clean install  # 5-10 minutes on broadband
 
 # Subsequent builds: Use cached dependencies
-mvn clean install  # 5-10 minutes offline
+mvn -o clean install  # 2-3 minutes offline
 ```
 
 ### Optimization Tips
@@ -348,6 +485,49 @@ mvn clean install  # 5-10 minutes offline
 4. **Parallel Test Execution**
    - Default: 4 threads
    - Configure: `-DthreadCount=8` in Surefire plugin
+
+## Observatory Integration
+
+The YAWL Observatory provides pre-computed facts about the codebase, reducing context consumption by 100x compared to ad-hoc exploration.
+
+### Quick Reference
+
+```bash
+# Refresh all facts and diagrams
+bash scripts/observatory/observatory.sh          # Full run (~17s)
+
+# Facts only (faster)
+bash scripts/observatory/observatory.sh --facts  # Facts only (~13s)
+```
+
+### Question → Fact File Mapping
+
+| Question | Read This | NOT This |
+|----------|-----------|----------|
+| What modules exist? | `docs/v6/latest/facts/modules.json` | `grep '<module>' pom.xml` |
+| Build order? Dependencies? | `docs/v6/latest/facts/reactor.json` | `mvn dependency:tree` |
+| Who owns which source files? | `docs/v6/latest/facts/shared-src.json` | `find src/ -name '*.java'` |
+| Stateful ↔ stateless mapping? | `docs/v6/latest/facts/dual-family.json` | `grep -r 'class Y' src/` |
+| Duplicate classes? | `docs/v6/latest/facts/duplicates.json` | `find . -name '*.java' \| sort` |
+| Tests per module? | `docs/v6/latest/facts/tests.json` | `find test/ -name '*Test.java'` |
+| Quality gates active? | `docs/v6/latest/facts/gates.json` | reading 1700-line pom.xml |
+
+### Usage Pattern
+
+```bash
+# 1. Read the index
+cat docs/v6/latest/INDEX.md
+
+# 2. Read specific fact
+cat docs/v6/latest/facts/modules.json
+
+# 3. If facts are stale, refresh
+bash scripts/observatory/observatory.sh
+```
+
+**Token savings**: 1 fact file (~50 tokens) vs grepping (~5000 tokens) = **100x compression**
+
+See `.claude/OBSERVATORY.md` for full documentation.
 
 ## Repository Configuration
 

@@ -7,13 +7,14 @@ O = {engine, elements, stateless, integration, schema, test}
 ## Quick Commands
 
 ```bash
-# Developer Scripts (Recommended — show estimated time before running)
-./scripts/build-fast.sh                  # Compile only, no tests (~45s)
-./scripts/test-quick.sh                  # Unit tests only, fast feedback (~60s)
-./scripts/test-full.sh                   # All tests with coverage (~90s)
-./scripts/watch-build.sh                 # Auto-rebuild on .java file change
+# Agent DX — Fast Build-Test Loop (PREFERRED)
+bash scripts/dx.sh                       # Compile + test CHANGED modules only
+bash scripts/dx.sh compile               # Compile changed modules (fastest feedback)
+bash scripts/dx.sh test                  # Test changed modules (assumes compiled)
+bash scripts/dx.sh all                   # Compile + test ALL modules
+bash scripts/dx.sh -pl yawl-engine       # Target specific module(s)
 
-# Build (Optimized for Java 25)
+# Standard Build (Optimized for Java 25)
 mvn -T 1.5C clean compile               # Parallel compile (~45 seconds)
 mvn -T 1.5C clean package               # Parallel build (~90 seconds, was ~180s)
 mvn clean                                # Clean build artifacts
@@ -23,36 +24,13 @@ mvn -T 1.5C clean test                  # Parallel tests (JUnit 5.14.0 LTS)
 xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml  # Validate specifications
 
 # Before Committing
-mvn -T 1.5C clean compile && mvn -T 1.5C clean test  # Parallel build + test
+bash scripts/dx.sh all                   # Fast: agent-dx profile, all modules
+mvn -T 1.5C clean compile && mvn -T 1.5C clean test  # Full: standard profiles
 
 # Security & Analysis
 mvn clean verify -P analysis             # Run static analysis (SpotBugs, PMD, SonarQube)
 jdeprscan --for-removal build/libs/yawl.jar  # Detect deprecated APIs
 ```
-
-## Build Best Practices
-
-**Inner Loop** (active editing):
-1. `./scripts/watch-build.sh` in a side terminal — auto-compiles on save
-2. `./scripts/test-quick.sh -pl <module>` — targeted unit tests after editing
-
-**Pre-Commit**:
-1. `./scripts/build-fast.sh` — verify compilation is clean
-2. `./scripts/test-full.sh` — verify all tests pass
-3. `git add <specific files>` — never `git add .`
-
-**Module-Targeted Builds** (faster than full build):
-```bash
-mvn -T 1.5C clean test -pl yawl-engine -am   # Test engine + its dependencies
-mvn -T 1.5C clean test -pl yawl-elements      # Test elements module only
-```
-
-**Profile Selection**:
-- Development: default (no `-P`) — fastest, no analysis overhead
-- Pull requests: `-P ci` — JaCoCo + SpotBugs gates
-- Release: `-P prod` — OWASP CVE gate, fails if CVSS >= 7 dependency found
-
-See **[DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md)** for full documentation.
 
 ## Java 25 Features & Best Practices
 
@@ -165,21 +143,26 @@ If ANY guard is detected, the operation is **blocked** (exit 2) with violation d
 
 ## Δ (Build System) - Java 25 Optimized
 
+**Δ_dx** = `bash scripts/dx.sh` (agent inner loop: changed-module-only, incremental, 2C parallel, no overhead)
 **Δ_build** = mvn -T 1.5C {clean compile | clean package | clean | clean test}
 **Δ_test** = mvn -T 1.5C clean test (with JUnit 5.14.0 LTS, parallel execution at method level)
 **Δ_validate** = xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml
 **Δ_analyze** = mvn clean verify -P analysis (SpotBugs, PMD, SonarQube)
 
 **Build sequence**: clean → compile → test → validate → deploy
+**Agent DX loop**: `bash scripts/dx.sh` (auto-detects changed modules, ~5-15s per cycle)
 **Fast verification**: `mvn -T 1.5C clean compile` (~45 seconds, parallel)
 **Full verification**: `mvn -T 1.5C clean package` (~90 seconds, was ~180s without parallelization)
 **With CI caching**: ~50% additional improvement
 
 **Key optimizations**:
+- **Module targeting**: `dx.sh` auto-detects git changes, builds only affected modules + dependents
+- **Incremental compilation**: No `clean` by default — only recompiles changed files
+- **agent-dx profile**: 2C test parallelism, fail-fast, no JaCoCo/javadoc/analysis overhead
 - `-T 1.5C` enables parallel execution (1.5 × CPU cores)
 - JUnit 5 method-level parallelization via `@Execution(ExecutionMode.CONCURRENT)`
 - Maven BOM (Bill of Materials) for dependency alignment
-- Profiles: `fast` (no analysis), `analysis` (static checks), `security` (SBOM + scanning)
+- Profiles: `fast` (no analysis), `agent-dx` (max speed), `analysis` (static checks), `security` (SBOM + scanning)
 
 ## Ψ (Observatory) — Observe ≺ Act
 
@@ -241,14 +224,30 @@ topology = hierarchical(μ) | mesh(integration)
 
 **CRITICAL**: Before every commit, you MUST:
 
-1. **Compile**: `mvn clean compile` (must succeed)
-2. **Test**: `mvn clean test` (must pass 100%)
-3. **Stage Specific Files**: `git add <files>` (no `git add .`)
-4. **Commit with Message**: Include session URL
-5. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`
+1. **Compile + Test**: `bash scripts/dx.sh all` (fast) or `mvn -T 1.5C clean compile && mvn -T 1.5C clean test` (full)
+2. **Stage Specific Files**: `git add <files>` (no `git add .`)
+3. **Commit with Message**: Include session URL
+4. **Push to Feature Branch**: `git push -u origin claude/<desc>-<sessionId>`
 
 **Stop Hook**: Runs `.claude/hooks/validate-no-mocks.sh` after response completion.
 **Git Check**: Verifies no uncommitted changes remain.
+
+## Γ (Git Protocol) — Toyota Production System Inspired
+
+**ABSOLUTE ZERO FORCE POLICY**:
+- **NEVER use `--force` or `--force-with-lease`** unless explicitly instructed
+- **NEVER amend commits** that have been pushed - create a new commit instead
+- **ALWAYS preserve history** - think Toyota: build quality in, don't hide defects
+- **Respect the remote** - if rejected, understand why and adapt
+
+**Git Rules (Like Andon Cord)**:
+1. **Stage properly**: `git add <specific-files>` - be precise
+2. **Commit atomicity**: One logical change per commit
+3. **Push clean**: No working directory changes before push
+4. **Respect merges**: If rejected, `git pull` and integrate properly
+5. **No history rewriting**: What's done is done - document mistakes as learning
+
+**Why**: Toyota Production System respects every step as valuable. Force pushing hides problems and prevents learning from mistakes.
 
 ## Channels
 

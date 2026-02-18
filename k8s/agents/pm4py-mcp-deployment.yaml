@@ -1,0 +1,97 @@
+# PM4Py MCP Server Deployment
+# Runs the Python PM4Py process mining MCP server (STDIO transport).
+# Exposes 3 tools: pm4py_discover, pm4py_conformance, pm4py_performance.
+#
+# Image placeholder __PM4PY_MCP_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-pm4py-mcp
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-pm4py-mcp
+    app.kubernetes.io/component: pm4py-mcp
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-pm4py-mcp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-pm4py-mcp
+        app.kubernetes.io/component: pm4py-mcp
+        app.kubernetes.io/part-of: yawl
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: pm4py-mcp
+          image: __PM4PY_MCP_IMAGE__
+          imagePullPolicy: Always
+          command: [ "python", "mcp_server.py" ]
+          ports:
+            - name: health
+              containerPort: 9091
+              protocol: TCP
+          env:
+            - name: PM4PY_MCP_HEALTH_PORT
+              value: "9091"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "800m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9091
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9091
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-xes
+              mountPath: /tmp
+      volumes:
+        - name: tmp-xes
+          emptyDir:
+            sizeLimit: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-pm4py-mcp
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-pm4py-mcp
+    app.kubernetes.io/component: pm4py-mcp
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-pm4py-mcp
+  ports:
+    - name: health
+      port: 9091
+      targetPort: 9091
+      protocol: TCP

@@ -368,11 +368,87 @@ emit_protocol_sequences_diagram() {
     record_operation "emit_protocol_sequences_diagram" "$op_elapsed"
 }
 
+# ── 50-risk-surfaces.mmd (FMEA Risk Analysis) ─────────────────────────────
+emit_fmea_risk_diagram() {
+    local out="$DIAGRAMS_DIR/50-risk-surfaces.mmd"
+    log_info "Emitting diagrams/50-risk-surfaces.mmd ..."
+
+    {
+        echo "%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#e53e3e' } } }%%"
+        echo "graph TD"
+        echo "    classDef risk fill:#e53e3e,stroke:#c53030,color:#fff"
+        echo "    classDef warning fill:#d69e2e,stroke:#b7791f,color:#fff"
+        echo "    classDef safe fill:#38a169,stroke:#2f855a,color:#fff"
+        echo ""
+
+        # Risk Categories
+        echo "    subgraph RiskCategories[\"Risk Surface Analysis\"]"
+        echo "        R1[Build System<br/>Maven Dependencies]:::risk"
+        echo "        R2[Code Quality<br/>Static Analysis]:::risk"
+        echo "        R3[Test Coverage<br/>JaCoCo Metrics]:::risk"
+        echo "        R4[Integration<br/>MCP/A2A Protocols]:::risk"
+        echo "        R5[Performance<br/>Memory/Time]:::warning"
+        echo "    end"
+        echo ""
+
+        # Assessment Factors
+        echo "    subgraph AssessmentFactors[\"Assessment Factors\"]"
+        echo "        F1[Maven Version Conflicts]:::risk"
+        echo "        F2[Deprecated API Usage]:::risk"
+        echo "        F3[Uncovered Code Paths]:::risk"
+        echo "        F4[Protocol Compatibility]:::warning"
+        echo "        F5[Memory Leaks]:::risk"
+        echo "        F6[Response Time]:::warning"
+        echo "    end"
+        echo ""
+
+        # Risk Levels
+        echo "    subgraph RiskLevels[\"Risk Levels (FMEA Scale)\"]"
+        echo "        C1[Critical (9-10)<br/>System Failure]:::risk"
+        echo "        C2[High (7-8)<br/>Feature Breakage]:::risk"
+        echo "        C3[Medium (5-6)<br/>Degradation]:::warning"
+        echo "        C4[Low (1-4)<br/>Minor Issues]:::safe"
+        echo "    end"
+        echo ""
+
+        # Connections based on current state
+        echo "    %% Current risk assessment"
+        echo "    R1 --> F1"
+        echo "    R2 --> F2"
+        echo "    R3 --> F3"
+        echo "    R4 --> F4"
+        echo "    R5 --> F5"
+        echo "    R5 --> F6"
+        echo ""
+
+        echo "    %% Risk level assignments"
+        echo "    F1 --> C1"
+        echo "    F2 --> C2"
+        echo "    F3 --> C2"
+        echo "    F4 --> C3"
+        echo "    F5 --> C1"
+        echo "    F6 --> C3"
+        echo ""
+
+        # Annotations
+        echo "    %% FMEA Scale: Severity × Occurrence × Detection"
+        echo "    %% Critical: 9-10 (Prevents system operation)"
+        echo "    %% High: 7-8 (Major functionality impaired)"
+        echo "    %% Medium: 5-6 (Partial functionality degraded)"
+        echo "    %% Low: 1-4 (Minor cosmetic issues)"
+        echo ""
+        echo "    %% Last Updated: $(date '+%Y-%m-%d')"
+        echo "    %% Data Source: Observatory v6 Analysis"
+
+    } > "$out"
+}
+
 # ── Main dispatcher ──────────────────────────────────────────────────────
 emit_all_diagrams() {
     timer_start
     record_memory "diagrams_start"
     emit_reactor_diagram
+    emit_fmea_risk_diagram
     emit_mcp_architecture_diagram
     emit_a2a_topology_diagram
     emit_agent_capabilities_diagram

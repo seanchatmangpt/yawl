@@ -39,8 +39,8 @@ You are a YAWL validation specialist. You verify specifications against schemas 
    - Check for integration test coverage
 
 4. **Build Verification:**
-   - Ensure `mvn clean compile` succeeds
-   - Ensure `mvn clean test` passes
+   - Fast: `bash scripts/dx.sh all` (agent-dx profile, all modules)
+   - Full: `mvn clean compile` then `mvn clean test`
    - Verify no compilation errors
 
 **Validation Tools:**
@@ -51,7 +51,10 @@ xmllint --schema schema/YAWL_Schema4.0.xsd spec.xml
 # HYPER_STANDARDS scan
 grep -r "TODO\|FIXME\|XXX\|HACK" src/
 
-# Test execution
+# Fast build-test loop (preferred for agent workflows)
+bash scripts/dx.sh all
+
+# Full test execution
 mvn clean test
 ```
 

@@ -1,13 +1,13 @@
 # Deploying YAWL v5.2 on WildFly 27+
 
 **Target Runtime**: WildFly 27.x, 28.x
-**Java Version**: Java 21+ (required for Jakarta EE 10 support)
+**Java Version**: Java 25 (required for Jakarta EE 10 support and virtual threads)
 **Estimated Time**: 45-60 minutes
 
 ## Prerequisites
 
 ### System Requirements
-- Java 21 JDK (or higher)
+- Java 25 JDK (or higher)
 - WildFly 27.x or 28.x
 - PostgreSQL 13+ OR MySQL 8+ OR H2 2.2+
 - 6GB+ RAM recommended
@@ -16,7 +16,7 @@
 ### Verify Prerequisites
 ```bash
 # Check Java version
-java -version  # Must be Java 21+
+java -version  # Must be Java 25+
 
 # Check WildFly version (if installed)
 $WILDFLY_HOME/bin/standalone.sh --version
@@ -53,20 +53,33 @@ cp $WILDFLY_HOME/standalone/configuration/standalone-full.xml \
    /opt/wildfly-instances/yawl/standalone.xml
 ```
 
-### Step 3: Configure JVM Parameters
+### Step 3: Configure JVM Parameters (Java 25 Optimized)
 
 **Edit `/opt/wildfly-instances/yawl/standalone.conf` (Unix/Linux/macOS)**:
 
 ```bash
 # Create the file
 cat > /opt/wildfly-instances/yawl/standalone.conf << 'EOF'
-# JVM Settings
+# JVM Settings - Java 25 Optimized
 JAVA_OPTS="-server"
 JAVA_OPTS="$JAVA_OPTS -Xmx2048m"
 JAVA_OPTS="$JAVA_OPTS -Xms1024m"
+
+# Java 25 Features
+JAVA_OPTS="$JAVA_OPTS -XX:+UseCompactObjectHeaders"
+
+# Virtual Threads Support (Java 25)
+JAVA_OPTS="$JAVA_OPTS -XX:+UseVirtualThreads"
+
+# G1GC Configuration
 JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 JAVA_OPTS="$JAVA_OPTS -XX:MaxGCPauseMillis=200"
 JAVA_OPTS="$JAVA_OPTS -XX:InitiatingHeapOccupancyPercent=35"
+
+# Container startup optimization
+JAVA_OPTS="$JAVA_OPTS -XX:+UseAOTCache"
+
+# Headless mode
 JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true"
 JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
 JAVA_OPTS="$JAVA_OPTS -Duser.timezone=UTC"
@@ -96,6 +109,8 @@ setlocal enabledelayedexpansion
 set JAVA_OPTS=-server
 set JAVA_OPTS=!JAVA_OPTS! -Xmx2048m
 set JAVA_OPTS=!JAVA_OPTS! -Xms1024m
+set JAVA_OPTS=!JAVA_OPTS! -XX:+UseCompactObjectHeaders
+set JAVA_OPTS=!JAVA_OPTS! -XX:+UseVirtualThreads
 set JAVA_OPTS=!JAVA_OPTS! -XX:+UseG1GC
 set JAVA_OPTS=!JAVA_OPTS! -XX:MaxGCPauseMillis=200
 set JAVA_OPTS=!JAVA_OPTS! -Djava.awt.headless=true
@@ -105,20 +120,45 @@ set JAVA_OPTS=!JAVA_OPTS! -Dyawl.jwt.secret=YOUR_SECRET_HERE
 REM Rest of config...
 ```
 
-### Step 4: Build YAWL WAR Files
+### Step 4: Enable Virtual Threads in WildFly
+
+Edit `standalone.xml` to enable virtual threads for the thread pool subsystem:
+
+```xml
+<!-- In <subsystem xmlns="urn:jboss:domain:threads:3.0"> -->
+<subsystem xmlns="urn:jboss:domain:threads:3.0">
+    <virtual-thread-executor name="yawl-virtual-threads"/>
+
+    <thread-factory name="yawl-thread-factory"
+                    group-name="yawl-threads"
+                    thread-name-pattern="yawl-%t"
+                    priority="5"/>
+
+    <bounded-queue-thread-pool name="yawl-thread-pool"
+                               thread-factory="yawl-thread-factory"
+                               max-threads="200"
+                               core-threads="10"
+                               queue-length="100"
+                               virtual-threads="true"/>
+</subsystem>
+```
+
+### Step 5: Build YAWL WAR Files
 
 ```bash
 cd /home/user/yawl
 
-# Build with WildFly compatibility
-ant clean
-ant buildAll
+# Fast build using agent DX loop
+bash scripts/dx.sh all
+
+# Or full Maven build
+mvn -T 1.5C clean package
 
 # Verify
 ls -la output/*.war
 ```
 
-### Step 5: Configure Database
+### Step 6: Configure Database
 
 #### PostgreSQL Setup
 
@@ -156,7 +196,7 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-### Step 6: Configure WildFly Datasource
+### Step 7: Configure WildFly Datasource
 
 Use WildFly CLI to configure datasource:
 
@@ -195,7 +235,7 @@ data-source add \
 EOF
 ```
 
-### Step 7: Deploy WAR Files
+### Step 8: Deploy WAR Files
 
 ```bash
 # Copy WAR files to WildFly deployments directory
@@ -207,7 +247,7 @@ for war in $WILDFLY_HOME/standalone/deployments/*.war; do
 done
 ```
 
-### Step 8: Configure WildFly XML (Advanced)
+### Step 9: Configure WildFly XML (Advanced)
 
 **Edit the datasource directly in `standalone-full.xml`**:
 
@@ -249,7 +289,7 @@ done
 </datasources>
 ```
 
-### Step 9: Start WildFly
+### Step 10: Start WildFly
 
 ```bash
 # Start standalone server
@@ -269,7 +309,7 @@ nohup $WILDFLY_HOME/bin/standalone.sh \
 tail -f $WILDFLY_HOME/standalone/log/server.log
 ```
 
-### Step 10: Verify Deployment
+### Step 11: Verify Deployment
 
 Wait 60-90 seconds for full startup:
 
@@ -281,6 +321,61 @@ Wait 60-90 seconds for full startup:
 curl -v http://localhost:8080/yawl/api/ib/workitems
 
 # Expected: 200 OK with JSON array
+```
+
+## Virtual Threads Configuration (Java 25)
+
+### Enable Virtual Threads for Request Handling
+
+WildFly 27+ supports virtual threads via configuration. Add to `standalone.xml`:
+
+```xml
+<!-- Enable virtual threads for undertow subsystem -->
+<subsystem xmlns="urn:jboss:domain:undertow:14.0">
+    <server name="default-server">
+        <http-listener name="default"
+                       socket-binding="http"
+                       enable-http2="true"
+                       virtual-threads="true"/>
+    </server>
+</subsystem>
+
+<!-- Or via CLI -->
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=virtual-threads,value=true)
+```
+
+### Virtual Thread Pool for EJB
+
+```xml
+<!-- For EJB async execution -->
+<subsystem xmlns="urn:jboss:domain:ejb3:10.0">
+    <async thread-pool-name="yawl-async"/>
+    <thread-pools>
+        <thread-pool name="yawl-async"
+                     max-threads="200"
+                     core-threads="10"
+                     virtual-threads="true"/>
+    </thread-pools>
+</subsystem>
+```
+
+### Benefits of Virtual Threads
+
+| Metric | Platform Threads | Virtual Threads |
+|--------|-----------------|-----------------|
+| Memory per thread | ~2MB | ~1KB |
+| 1000 concurrent requests | ~2GB | ~1MB |
+| Thread creation | ~1ms | ~1us |
+| Max concurrent threads | ~10,000 | ~1,000,000+ |
+
+### Monitoring Virtual Threads
+
+```bash
+# JFR recording for virtual thread events
+jcmd <pid> JFR.start settings=virtual-threads
+
+# Thread dump includes virtual thread carriers
+jcmd <pid> Thread.dump_to_file -format=json threads.json
 ```
 
 ## Database Initialization
@@ -345,12 +440,13 @@ keytool -genkey -alias wildfly \
 ### Configure HTTPS in standalone-full.xml
 
 ```xml
-<!-- In <subsystem xmlns="urn:jboss:domain:web:15.0"> -->
+<!-- In <subsystem xmlns="urn:jboss:domain:undertow:14.0"> -->
 <https-listener
   name="https"
   socket-binding="https"
   security-realm="ApplicationRealm"
-  enabled-cipher-suites="HIGH:!aNULL:!MD5"/>
+  enabled-cipher-suites="TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256"
+  enabled-protocols="TLSv1.3"/>
 
 <!-- In <security-realms> -->
 <security-realm name="ApplicationRealm">
@@ -364,6 +460,18 @@ keytool -genkey -alias wildfly \
     </ssl>
   </server-identities>
 </security-realm>
+```
+
+### TLS 1.3 Configuration (Required for Production)
+
+```xml
+<!-- Disable TLS 1.2 and below -->
+<socket-binding name="https" port="${jboss.https.port:8443}"/>
+
+<https-listener name="https"
+               socket-binding="https"
+               security-realm="ApplicationRealm"
+               enabled-protocols="TLSv1.3"/>
 ```
 
 ### Using Let's Encrypt
@@ -424,11 +532,11 @@ In datasource XML:
 In `standalone-full.xml`:
 
 ```xml
-<subsystem xmlns="urn:jboss:domain:web:15.0">
+<subsystem xmlns="urn:jboss:domain:undertow:14.0">
   <buffer-cache name="default"/>
   <server name="default-server">
-    <http-listener name="default" socket-binding="http" enable-http2="true"/>
-    <https-listener name="https" socket-binding="https" security-realm="ApplicationRealm"/>
+    <http-listener name="default" socket-binding="http" enable-http2="true" virtual-threads="true"/>
+    <https-listener name="https" socket-binding="https" security-realm="ApplicationRealm" enabled-protocols="TLSv1.3"/>
     <host name="default-host" alias="localhost">
       <location name="/" handler="welcome-content"/>
     </host>
@@ -443,7 +551,7 @@ In `standalone-full.xml`:
 In `standalone-full.xml`:
 
 ```xml
-<subsystem xmlns="urn:jboss:domain:web:15.0">
+<subsystem xmlns="urn:jboss:domain:undertow:14.0">
   <server name="default-server">
     <host name="default-host" alias="localhost">
       <access-log directory="${jboss.server.log.dir}" pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
@@ -524,6 +632,17 @@ JAVA_OPTS="$JAVA_OPTS -Xmx4096m"
 JAVA_OPTS="$JAVA_OPTS -Xms2048m"
 ```
 
+### Virtual Thread Pinning Warnings
+
+If you see pinning warnings:
+
+```bash
+# Enable pinning diagnostics
+JAVA_OPTS="$JAVA_OPTS -Djdk.tracePinnedThreads=full"
+```
+
+Replace synchronized blocks with ReentrantLock in custom code.
+
 ### Slow Deployment
 
 Check for:
@@ -565,13 +684,14 @@ tail -f $WILDFLY_HOME/standalone/log/server.log | grep -i "deployment"
 
 ## Production Checklist
 
-- [ ] Java 21+ JDK installed
+- [ ] Java 25+ JDK installed
 - [ ] WildFly 27+ installed and configured
 - [ ] Standalone datasource configured
 - [ ] WAR files built and deployed
 - [ ] Admin console secured with strong password
-- [ ] SSL/TLS certificate installed
-- [ ] JVM memory tuned for environment
+- [ ] SSL/TLS 1.3 certificate installed
+- [ ] JVM memory tuned with compact object headers
+- [ ] Virtual threads enabled
 - [ ] Connection pool configured
 - [ ] Database backups enabled
 - [ ] Access logging enabled
@@ -583,6 +703,7 @@ tail -f $WILDFLY_HOME/standalone/log/server.log | grep -i "deployment"
 
 - [WildFly Documentation](https://docs.wildfly.org/)
 - [WildFly Configuration Guide](https://docs.wildfly.org/28.0/Getting_Started_Guide.html)
+- [Java 25 Virtual Threads Guide](https://openjdk.org/jeps/444)
 - [YAWL Engine Configuration](../README.md)
 - [Database Setup Guide](./DEPLOY-DATABASE.md)
 

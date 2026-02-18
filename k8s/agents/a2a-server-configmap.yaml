@@ -1,0 +1,40 @@
+# A2A Server ConfigMap
+# Configuration for the YAWL A2A Server (Agent-to-Agent protocol).
+# The A2A server exposes 4 workflow skills over HTTP REST with multi-scheme
+# authentication (JWT, API key, SPIFFE mTLS).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-a2a-server-config
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: yawl-a2a-server
+    app.kubernetes.io/component: a2a-server
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "5.2"
+data:
+  # YAWL engine connection
+  YAWL_ENGINE_URL: "http://yawl-engine:8080/yawl"
+  YAWL_USERNAME: "admin"
+
+  # A2A server HTTP port
+  A2A_PORT: "8081"
+
+  # Agent registry for A2A server self-registration on startup
+  AGENT_REGISTRY_URL: "http://yawl-agent-registry:9090"
+
+  # SPIFFE trust domain for mTLS authentication
+  A2A_SPIFFE_TRUST_DOMAIN: "yawl.cluster.local"
+
+  # JWT issuer claim (optional, validated if present in tokens)
+  A2A_JWT_ISSUER: "yawl-orchestration"
+
+  # Session reconnect interval if YAWL engine connection drops
+  SESSION_RECONNECT_INTERVAL_SECONDS: "30"
+
+  # A2A server identity
+  A2A_SERVER_NAME: "YAWL Workflow Engine"
+  A2A_SERVER_VERSION: "5.2.0"
+
+  # Log level
+  A2A_LOG_LEVEL: "INFO"

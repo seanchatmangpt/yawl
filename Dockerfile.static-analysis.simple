@@ -1,0 +1,28 @@
+# YAWL v6 - Static Analysis Image (Simplified)
+# Single-stage Dockerfile for running SpotBugs, PMD, and Checkstyle analysis
+
+FROM eclipse-temurin:25-jdk-alpine
+
+LABEL maintainer="YAWL Foundation"
+LABEL version="6.0"
+LABEL description="Static analysis tools for YAWL workflow engine"
+
+# Install Maven and build dependencies
+RUN apk add --no-cache \
+    maven \
+    git \
+    bash \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /workspace
+
+# Copy everything
+COPY . .
+
+# Create Maven settings for analysis profile
+RUN mkdir -p ~/.m2 && \
+    echo '<settings><profiles><profile><id>analysis</id><activation><activeByDefault>true</activeByDefault></activation><properties><skipTests>false</skipTests><maven.test.skip>false</maven.test.skip><spotbugs.failOnError>false</spotbugs.failOnError><pmd.failOnViolation>false</pmd.failOnViolation><checkstyle.failOnViolation>false</checkstyle.failOnViolation></properties></profile></profiles></settings>' > ~/.m2/settings.xml
+
+# Default command - will be overridden by docker-compose
+CMD ["echo", "Static analysis image ready. Run with:", "docker compose -f docker-compose.static-analysis.yml up"]

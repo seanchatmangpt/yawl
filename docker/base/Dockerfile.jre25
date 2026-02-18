@@ -1,0 +1,51 @@
+# =============================================================================
+# Dockerfile.jre25 — Base JRE 25 Runtime Image
+# =============================================================================
+# Minimal runtime for YAWL services with Java 25 optimizations:
+# - Compact Object Headers (5-10% throughput improvement)
+# - Generational ZGC for low pause times
+# - Virtual Thread scheduler (200 parallelism)
+#
+# Build:
+#   docker build -t yawl-base:jre25 -f docker/base/Dockerfile.jre25 docker/base/
+# =============================================================================
+
+FROM eclipse-temurin:25-jre-alpine
+
+LABEL maintainer="YAWL Foundation"
+LABEL description="YAWL Base JRE 25 Runtime"
+LABEL version="1.0.0"
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# JVM optimizations for Java 25
+ENV JAVA_OPTS="\
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:InitialRAMPercentage=50.0 \
+    -XX:+UseZGC \
+    -XX:+ZGenerational \
+    -XX:+UseCompactObjectHeaders \
+    -XX:+UseStringDeduplication \
+    -XX:+ExitOnOutOfMemoryError \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dfile.encoding=UTF-8 \
+    -Djdk.virtualThreadScheduler.parallelism=200 \
+    -Djdk.virtualThreadScheduler.maxPoolSize=256 \
+    -Djdk.tracePinnedThreads=short"
+
+# Application directories
+RUN mkdir -p /app/logs /app/data /app/temp /app/config
+
+WORKDIR /app
+
+# Health check script
+COPY healthcheck.sh /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh
+
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["java $JAVA_OPTS -jar /app/yawl-engine.jar"]

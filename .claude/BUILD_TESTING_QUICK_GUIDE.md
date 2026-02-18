@@ -65,10 +65,24 @@ Then run: `mvn clean test` (generates `target/site/jacoco/index.html`)
 ## Build Command Cheat Sheet
 
 ```bash
+# === Agent DX Fast Loop (PREFERRED) ===
+# Auto-detect changed modules, compile + test (~5-15s)
+bash scripts/dx.sh
+
+# Compile changed modules only (~3-5s)
+bash scripts/dx.sh compile
+
+# All modules, compile + test (~30-60s)
+bash scripts/dx.sh all
+
+# Target specific module
+bash scripts/dx.sh -pl yawl-engine
+
+# === Standard Maven Commands ===
 # Fast compile check (~30s)
 mvn -T 1.5C clean compile
 
-# Full build with tests (~90s) ← USE THIS
+# Full build with tests (~90s)
 mvn -T 1.5C clean package
 
 # With code coverage report (~120s)
@@ -76,9 +90,6 @@ mvn -T 1.5C clean package jacoco:check
 
 # With static analysis (~180s)
 mvn -T 1.5C clean verify spotbugs:check pmd:check
-
-# Incremental (no clean) (~30s)
-mvn -T 1.5C compile test
 
 # Skip tests (fast) (~60s)
 mvn -T 1.5C clean package -DskipTests

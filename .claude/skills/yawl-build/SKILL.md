@@ -50,17 +50,28 @@
 - `--verbose` - Enable verbose output with `-X` flag
 - `--quiet` - Suppress Maven output (default when not verbose)
 
-## Equivalent Commands
+## Agent DX Fast Path
 
-Instead of using the skill, you can run Maven directly:
+For `compile` and `test` targets, the skill delegates to `scripts/dx.sh` by
+default. This provides module-targeted, incremental builds with the `agent-dx`
+profile (2C parallelism, no overhead). Use `--no-dx` to bypass this.
 
 ```bash
-# Instead of /yawl-build compile
+# Fast: auto-detects changed modules (~5-15s)
+/yawl-build compile           # delegates to: bash scripts/dx.sh compile
+/yawl-build test              # delegates to: bash scripts/dx.sh
+
+# Direct dx.sh usage (equivalent)
+bash scripts/dx.sh compile
+bash scripts/dx.sh
+bash scripts/dx.sh all
+```
+
+## Equivalent Maven Commands
+
+```bash
+# Full Maven (bypasses dx.sh fast path)
 mvn clean compile
-
-# Instead of /yawl-build test
 mvn clean test
-
-# Instead of /yawl-build --module=yawl-engine test
 mvn -pl yawl-engine clean test
 ```
