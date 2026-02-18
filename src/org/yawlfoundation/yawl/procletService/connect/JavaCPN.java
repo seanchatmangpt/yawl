@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.procletService.connect;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /** <p>
  * <h2>JavaCPN</h2> (otherwise known as Comms/Java) - The java
@@ -80,6 +81,11 @@ public class JavaCPN implements JavaCPNInterface
  */
     private OutputStream output;
     
+/** P-6: ReentrantLock replaces synchronized on send() to prevent carrier-thread pinning
+ * when virtual threads perform blocking socket OutputStream writes.
+ */
+    private final ReentrantLock _socketLock = new ReentrantLock();
+
 /** Constructor to create a new JavaCPN object. Simply initialises the internal
  * references. In order to establish a connection either the <CODE>connect
  * </CODE> or the <CODE>accept</CODE> methods need to be called.
@@ -142,24 +148,49 @@ public class JavaCPN implements JavaCPNInterface
  * @param sendBytes The byte stream to be sent to the receiving end of the connection
  * @throws SocketException Thrown if there is a problem sending the byte stream
  */
-    public synchronized void send(ByteArrayInputStream sendBytes) throws SocketException
+    // P-6: Removed synchronized keyword; replaced with ReentrantLock so that virtual
+    // threads writing to the socket OutputStream do not pin their carrier thread.
+    public void send(ByteArrayInputStream sendBytes) throws SocketException
     {
-        // A byte array representing a data packet
-        byte[] packet;
-        
-        // While there are more than 127 bytes still to send ...
-        while (sendBytes.available() > 127)
-        {
-            // ... create a 128 byte packet, ...
-            packet = new byte[128];
-            
-            // ... set the header to 255, ...
-            packet[0] = (byte)255;
-            
-            // ... read 127 bytes from the sequence of bytes to send, ...
-            sendBytes.read(packet, 1, 127);
-            
-            // ... and send the packet to the external process.
+        _socketLock.lock();
+        try {
+            // A byte array representing a data packet
+            byte[] packet;
+
+            // While there are more than 127 bytes still to send ...
+            while (sendBytes.available() > 127)
+            {
+                // ... create a 128 byte packet, ...
+                packet = new byte[128];
+
+                // ... set the header to 255, ...
+                packet[0] = (byte)255;
+
+                // ... read 127 bytes from the sequence of bytes to send, ...
+                sendBytes.read(packet, 1, 127);
+
+                // ... and send the packet to the external process.
+                try
+                {
+                    output.write(packet);
+                    output.flush();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+
+            // Create a packet for any remaining data
+            packet = new byte[sendBytes.available() + 1];
+
+            // Set the header appropriately
+            packet[0] = (byte)(sendBytes.available());
+
+            // Read the remaining bytes into the packet
+            sendBytes.read(packet, 1, sendBytes.available());
+
+            // Send the packet to the external process
             try
             {
                 output.write(packet);
@@ -169,26 +200,8 @@ public class JavaCPN implements JavaCPNInterface
             {
                 e.printStackTrace();
             }
-        }
-        
-        // Create a packet for any remaining data
-        packet = new byte[sendBytes.available() + 1];
-        
-        // Set the header appropriately
-        packet[0] = (byte)(sendBytes.available());
-        
-        // Read the remaining bytes into the packet
-        sendBytes.read(packet, 1, sendBytes.available());
-        
-        // Send the packet to the external process
-        try
-        {
-            output.write(packet);
-            output.flush();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
+        } finally {
+            _socketLock.unlock();
         }
     }
     

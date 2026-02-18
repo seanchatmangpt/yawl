@@ -18,45 +18,89 @@
 
 package org.yawlfoundation.yawl.procletService.util;
 
-public class ThreadNotify extends Thread{
-	protected boolean threadSuspended = true;
-	protected boolean timeOut = false;
-	
-	public synchronized void press() {
-        threadSuspended = !threadSuspended;
-        if (!threadSuspended) {
-        	System.out.println("press!");
-            notifyAll();
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * Rendezvous utility for the proclet service. Previously extended Thread with
+ * synchronized+wait/notify, which pins virtual thread carriers. Converted to
+ * implement Runnable with ReentrantLock+Condition so virtual threads are not pinned.
+ *
+ * Callers use start() and join() as before; the underlying carrier is a virtual thread
+ * launched via Thread.ofVirtual().
+ */
+public class ThreadNotify implements Runnable {
+
+    protected volatile boolean threadSuspended = true;
+    protected volatile boolean timeOut = false;
+
+    protected final ReentrantLock _suspendLock = new ReentrantLock();
+    protected final Condition _resumeCondition = _suspendLock.newCondition();
+
+    /** Tracks the virtual thread so callers can join() and isAlive(). */
+    private volatile Thread _thread;
+
+    public void start() {
+        _thread = Thread.ofVirtual().name("proclet-notify").start(this);
+    }
+
+    public void join() throws InterruptedException {
+        Thread t = _thread;
+        if (t != null) {
+            t.join();
         }
     }
-	
-	public synchronized void notification(boolean b) {
-	     threadSuspended = !threadSuspended;
-	     this.timeOut = true;
-	     if (!threadSuspended)
-	    	 System.out.println("notify! " + this);
-	          notifyAll();
-	}
-	
-    public synchronized void run() {
-    	//synchronized(this) {
-    		System.out.println();
-    		try {
-              while (threadSuspended) {
-                  	System.out.println("before " + this);
-                    wait();
-                    System.out.println("after " + this);
-             }
-           }
-           catch (InterruptedException e){
-               // InterruptedException is intentionally ignored: thread termination signal
-               // during wait() does not require special handling in this base utility class
-               Thread.currentThread().interrupt();
-           }
-    	//}
+
+    public boolean isAlive() {
+        Thread t = _thread;
+        return t != null && t.isAlive();
     }
-	
-	protected boolean isTimeOut() {
-		return this.timeOut;
-	}
+
+    public void press() {
+        _suspendLock.lock();
+        try {
+            threadSuspended = !threadSuspended;
+            if (!threadSuspended) {
+                System.out.println("press!");
+                _resumeCondition.signalAll();
+            }
+        } finally {
+            _suspendLock.unlock();
+        }
+    }
+
+    public void notification(boolean b) {
+        _suspendLock.lock();
+        try {
+            threadSuspended = !threadSuspended;
+            this.timeOut = true;
+            if (!threadSuspended) {
+                System.out.println("notify! " + this);
+            }
+            _resumeCondition.signalAll();
+        } finally {
+            _suspendLock.unlock();
+        }
+    }
+
+    @Override
+    public void run() {
+        _suspendLock.lock();
+        try {
+            System.out.println();
+            while (threadSuspended) {
+                System.out.println("before " + this);
+                _resumeCondition.await();
+                System.out.println("after " + this);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            _suspendLock.unlock();
+        }
+    }
+
+    protected boolean isTimeOut() {
+        return this.timeOut;
+    }
 }
