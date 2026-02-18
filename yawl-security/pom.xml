@@ -9,7 +9,6 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
         <version>6.0.0-Alpha</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-security</artifactId>
@@ -19,16 +18,41 @@
     <description>Public Key Infrastructure (PKI) and digital signature module for YAWL</description>
 
     <dependencies>
+        <!-- Bouncycastle for cryptographic operations -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.77</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcmail-jdk18on</artifactId>
+            <version>1.77</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.77</version>
+        </dependency>
+
         <!-- Apache Commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
 
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -58,14 +82,6 @@
         <testSourceDirectory>../test</testSourceDirectory>
 
         <plugins>
-            <!-- Clean plugin with failOnError=false to handle 9p overlay filesystem -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <failOnError>false</failOnError>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -78,6 +94,8 @@
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
                     </excludes>
+                    <!-- Restrict test compilation to security package only;
+                         ../test has 70 visible tests from other modules that lack security deps -->
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/security/**</testInclude>
                     </testIncludes>
@@ -86,33 +104,17 @@
                         <testExclude>**/*.xml</testExclude>
                         <testExclude>**/*.properties</testExclude>
                     </testExcludes>
-                    <!-- Disable annotation processing to prevent JMH from generating stale files -->
-                    <compilerArgs>
-                        <arg>-proc:none</arg>
-                    </compilerArgs>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>-proc:none</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/security/**/*Test.java</include>
-                        <include>**/org/yawlfoundation/yawl/security/**/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/security/**</include>
                     </includes>
-                    <failIfNoTests>false</failIfNoTests>
-                    <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>
+                        <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                 </configuration>
@@ -120,14 +122,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
             </plugin>
         </plugins>
     </build>
