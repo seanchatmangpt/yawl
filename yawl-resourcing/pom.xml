@@ -167,23 +167,32 @@
                             <excludes>
                                 <!-- Exclude tests from other modules -->
                                 <exclude>org/yawlfoundation/yawl/authentication/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/chaos/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/containers/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/elements/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/integration/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/logging/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/observability/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/parametrized/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/quality/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/reporting/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/resilience/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/schema/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/scheduling/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/stateless/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/swingWorklist/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/unmarshal/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/util/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/database/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/deployment/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/performance/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/engine/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/swingWorklist/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/patternmatching/**</exclude>
-                                <exclude>org/yawlfoundation/yawl/build/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/worklet/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/workflow/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/wsif/**</exclude>
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.xsd</exclude>
                                 <exclude>**/*.properties</exclude>
@@ -199,6 +208,11 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/resourcing/**</include>
                     </includes>
+                    <excludes>
+                        <!-- Exclude tests from other modules (belt and suspenders) -->
+                        <exclude>**/org/yawlfoundation/yawl/worklet/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/scheduling/**</exclude>
+                    </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>

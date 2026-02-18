@@ -214,71 +214,48 @@
                              which is excluded above. The mcp/spring/ integration does not use this.
                              ===================================================================== -->
                         <exclude>**/mcp/zai/**</exclude>
+
+                        <!-- =====================================================================
+                             MCP Spring classes that reference ZaiFunctionService from excluded mcp/zai/
+                             ===================================================================== -->
+                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
+
+                        <!-- =====================================================================
+                             YawlMcpServer references ZaiFunctionService - exclude until ZAI is available
+                             ===================================================================== -->
+                        <exclude>**/mcp/YawlMcpServer.java</exclude>
+
+                        <!-- =====================================================================
+                             MCP spec classes that reference ZaiFunctionService
+                             ===================================================================== -->
+                        <exclude>**/mcp/spec/YawlToolSpecifications.java</exclude>
                     </excludes>
-                    <testIncludes>
-                        <include>**/observability/**</include>
-                        <include>**/mcp/**</include>
-                        <include>**/spiffe/**</include>
-                        <include>**/dedup/**</include>
-                        <include>**/webhook/**</include>
-                        <include>**/eventsourcing/**</include>
-                        <include>**/oauth2/**</include>
-                        <include>**/gateway/**</include>
-                        <include>**/messagequeue/**</include>
-                        <include>**/orchestration/**</include>
-                    </testIncludes>
-                    <testExcludes>
-                        <!-- Test files for packages with excluded sources -->
-                        <testExclude>**/a2a/**</testExclude>
-                        <testExclude>**/orderfulfillment/**</testExclude>
-                        <testExclude>**/autonomous/**</testExclude>
-                        <testExclude>**/zai/**</testExclude>
-                        <testExclude>**/processmining/**</testExclude>
-                        <testExclude>**/test/SelfPlayTest.java</testExclude>
-
-                        <!-- IntegrationTestSuite references excluded classes -->
-                        <testExclude>**/IntegrationTestSuite.java</testExclude>
-                        <testExclude>**/multimodule/**</testExclude>
-
-                        <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
-                        <testExclude>**/spiffe/SpiffeWorkloadIdentityTest.java</testExclude>
-
-                        <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL 1.52.0 -->
-                        <testExclude>**/observability/OpenTelemetryConfigTest.java</testExclude>
-
-                        <!-- MCP ZAI tests depend on excluded mcp/zai/ sources -->
-                        <testExclude>**/mcp/zai/**</testExclude>
-                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/observability/**</include>
-                        <include>**/mcp/**</include>
-                        <include>**/spiffe/**</include>
-                        <include>**/dedup/**</include>
-                        <include>**/webhook/**</include>
-                        <include>**/eventsourcing/**</include>
-                        <include>**/oauth2/**</include>
-                        <include>**/gateway/**</include>
-                        <include>**/messagequeue/**</include>
-                        <include>**/orchestration/**</include>
-                    </includes>
+                    <!-- Exclude packages with missing source dependencies (A2A SDK) -->
                     <excludes>
-                        <!-- Test files for packages with excluded sources -->
                         <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
                         <exclude>**/zai/**</exclude>
                         <exclude>**/processmining/**</exclude>
-                        <exclude>**/SelfPlayTest.java</exclude>
+                        <exclude>**/test/SelfPlayTest.java</exclude>
 
                         <!-- IntegrationTestSuite references excluded classes -->
                         <exclude>**/IntegrationTestSuite.java</exclude>
                         <exclude>**/multimodule/**</exclude>
+
+                        <!-- V6EndToEndIntegrationTest references excluded classes -->
+                        <exclude>**/V6EndToEndIntegrationTest.java</exclude>
+
+                        <!-- EnterpriseIntegrationPatternsTest references excluded classes -->
+                        <exclude>**/EnterpriseIntegrationPatternsTest.java</exclude>
 
                         <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
                         <exclude>**/spiffe/SpiffeWorkloadIdentityTest.java</exclude>

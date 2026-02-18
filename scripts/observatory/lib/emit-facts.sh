@@ -38,15 +38,41 @@ emit_modules() {
             if [[ -d "$resolved_test" ]]; then
                 test_count=$(find "$resolved_test" -name "*.java" -type f 2>/dev/null | wc -l)
             fi
+            # Count test resources
+            local test_resource_count=0
+            local test_resources_dir="${REPO_ROOT}/${mod}/src/test/resources"
+            if [[ -d "$test_resources_dir" ]]; then
+                test_resource_count=$(find "$test_resources_dir" -type f 2>/dev/null | wc -l | tr -d ' ')
+            fi
+            # Count config files (.properties, .yml, .yaml, .xml in config/resources directories)
+            local config_count=0
+            local spring_config="false"
+            local hibernate_config="false"
+            local mod_base="${REPO_ROOT}/${mod}"
+            while IFS= read -r cfg; do
+                [[ -n "$cfg" ]] && ((config_count++))
+            done < <(find "$mod_base" \( -name "*.properties" -o -name "*.yml" -o -name "*.yaml" \) -type f 2>/dev/null | grep -v target | head -50)
+            # Also count XML config files in resources directories
+            while IFS= read -r cfg; do
+                [[ -n "$cfg" ]] && ((config_count++))
+            done < <(find "$mod_base" -path "*/resources/*.xml" -type f 2>/dev/null | grep -v target | head -30)
+            # Detect Spring config files
+            if find "$mod_base" \( -name "applicationContext*.xml" -o -name "spring*.xml" -o -name "application*.yml" -o -name "application*.properties" \) -type f 2>/dev/null | grep -qv target | head -1 | grep -q .; then
+                spring_config="true"
+            fi
+            # Detect Hibernate config files
+            if find "$mod_base" \( -name "hibernate*.xml" -o -name "hibernate*.cfg.xml" -o -name "persistence.xml" \) -type f 2>/dev/null | grep -qv target | head -1 | grep -q .; then
+                hibernate_config="true"
+            fi
             local strategy="standard"
             if [[ "$src_dir" == "../src" ]]; then
                 strategy="full_shared"
             elif [[ "$src_dir" == ../src/* ]]; then
                 strategy="package_scoped"
             fi
-            printf '    {"name": "%s", "path": "%s", "has_pom": %s, "src_files": %d, "test_files": %d, "source_dir": "%s", "strategy": "%s"}' \
-                "$mod" "$mod" "$has_pom" "$src_count" "$test_count" \
-                "$(json_escape "$src_dir")" "$strategy"
+            printf '    {"name": "%s", "path": "%s", "has_pom": %s, "src_files": %d, "test_files": %d, "test_resources": %d, "config_files": %d, "spring_config": %s, "hibernate_config": %s, "source_dir": "%s", "strategy": "%s"}' \
+                "$mod" "$mod" "$has_pom" "$src_count" "$test_count" "$test_resource_count" "$config_count" \
+                "$spring_config" "$hibernate_config" "$(json_escape "$src_dir")" "$strategy"
         done <<< "$modules"
         printf '\n  ]\n}\n'
     } > "$out"
@@ -121,6 +147,12 @@ emit_integration() {
     [[ -d "$integration_root/a2a" ]] && a2a_classes=$(find "$integration_root/a2a" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
     [[ -d "$integration_root/zai" ]] && zai_classes=$(find "$integration_root/zai" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
 
+    # Scan for config files
+    local -a config_files=()
+    while IFS= read -r cfg; do
+        [[ -n "$cfg" ]] && config_files+=("$(basename "$cfg")")
+    done < <(find "$REPO_ROOT" -maxdepth 3 \( -name "*.yml" -o -name "*.yaml" -o -name "*.properties" \) -type f 2>/dev/null | grep -v target | grep -v node_modules)
+
     {
         printf '{\n'
         printf '  "mcp": {\n'
@@ -141,7 +173,15 @@ emit_integration() {
         printf '    "classes": %d,\n' "${zai_classes:-0}"
         printf '    "service": "ZaiFunctionService",\n'
         printf '    "model": "GLM-4"\n'
-        printf '  }\n'
+        printf '  },\n'
+        printf '  "config_files": ['
+        local first=true
+        for cfg in "${config_files[@]}"; do
+            $first || printf ', '
+            first=false
+            printf '"%s"' "$cfg"
+        done
+        printf ']\n'
         printf '}\n'
     } > "$out"
 

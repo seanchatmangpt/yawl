@@ -106,6 +106,7 @@ PYEOF
 }
 
 # Discover and parse SpotBugs reports from Maven build
+# Toyota Production System: FAIL if reports missing - NO silent fallbacks
 emit_spotbugs_findings() {
     local out="$FACTS_DIR/spotbugs-findings.json"
     local op_start
@@ -114,16 +115,22 @@ emit_spotbugs_findings() {
 
     ensure_static_analysis_dirs
 
-    # Find SpotBugs XML reports in target directories
+    # Find SpotBugs XML reports in target directories - EXACT locations only
     local -a spotbugs_reports=()
     while IFS= read -r report; do
         [[ -n "$report" ]] && spotbugs_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/spotbugsXml.xml" -type f 2>/dev/null)
 
-    # Also check for spotbugs.xml (alternative name)
-    while IFS= read -r report; do
-        [[ -n "$report" ]] && spotbugs_reports+=("$report")
-    done < <(find "$REPO_ROOT" -path "*/target/spotbugs.xml" -type f 2>/dev/null)
+    # Toyota Production System: FAIL FAST if no reports found
+    if [[ ${#spotbugs_reports[@]} -eq 0 ]]; then
+        log_error "SPOTBUGS REPORTS MISSING - Static analysis not run"
+        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
+        log_error "Expected: */target/spotbugsXml.xml"
+        # Write error state - NO FALLBACK DATA
+        echo '{"findings": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
+        add_refusal "SPOTBUGS_MISSING" "SpotBugs reports not found. Run: mvn clean verify -P analysis" "{}"
+        return 1
+    fi
 
     if [[ ${#spotbugs_reports[@]} -eq 0 ]]; then
         # No reports found, check if we should run SpotBugs
@@ -288,6 +295,7 @@ PYEOF
 }
 
 # Discover and parse PMD reports
+# Toyota Production System: FAIL if reports missing - NO silent fallbacks
 emit_pmd_violations() {
     local out="$FACTS_DIR/pmd-violations.json"
     local op_start
@@ -296,36 +304,43 @@ emit_pmd_violations() {
 
     ensure_static_analysis_dirs
 
-    # Find PMD XML reports
+    # Find PMD XML reports - EXACT locations only
     local -a pmd_reports=()
     while IFS= read -r report; do
         [[ -n "$report" ]] && pmd_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/pmd.xml" -type f 2>/dev/null)
 
+    # Toyota Production System: FAIL FAST if no reports found
     if [[ ${#pmd_reports[@]} -eq 0 ]]; then
-        log_warn "No PMD reports found. Run: mvn -P ci pmd:pmd"
-        echo '{"violations": [], "summary": {"total": 0, "by_priority": {}, "by_rule": {}}, "status": "no_reports"}' > "$out"
-    else
-        # Aggregate all PMD reports
-        local total_count=0
-        local all_violations=""
+        log_error "PMD REPORTS MISSING - Static analysis not run"
+        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
+        log_error "Expected: */target/pmd.xml"
+        # Write error state - NO FALLBACK DATA
+        echo '{"violations": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
+        add_refusal "PMD_MISSING" "PMD reports not found. Run: mvn clean verify -P analysis" "{}"
+        return 1
+    fi
 
-        {
-            printf '{\n'
-            printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            printf '  "reports_analyzed": %d,\n' "${#pmd_reports[@]}"
-            printf '  "violations": [\n'
+    # Aggregate all PMD reports
+    local total_count=0
+    local all_violations=""
 
-            local first=true
-            for report in "${pmd_reports[@]}"; do
-                local module_name
-                module_name=$(echo "$report" | sed 's|.*/\([^/]*\)/target/.*|\1|')
-                local temp_out="/tmp/pmd-$$-${module_name}.json"
-                parse_pmd_report "$report" "$temp_out"
+    {
+        printf '{\n'
+        printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        printf '  "reports_analyzed": %d,\n' "${#pmd_reports[@]}"
+        printf '  "violations": [\n'
 
-                if [[ -f "$temp_out" ]]; then
-                    # Add module and output
-                    python3 << PMD_EOF "$temp_out" "$module_name" "$first"
+        local first=true
+        for report in "${pmd_reports[@]}"; do
+            local module_name
+            module_name=$(echo "$report" | sed 's|.*/\([^/]*\)/target/.*|\1|')
+            local temp_out="/tmp/pmd-$$-${module_name}.json"
+            parse_pmd_report "$report" "$temp_out"
+
+            if [[ -f "$temp_out" ]]; then
+                # Add module and output
+                python3 << PMD_EOF "$temp_out" "$module_name" "$first"
 import json
 import sys
 
@@ -340,21 +355,20 @@ for v in data.get('violations', []):
     v['module'] = sys.argv[3]
     print('    ' + json.dumps(v), end='')
 PMD_EOF
-                    first=false
-                    local count
-                    count=$(python3 -c "import json; print(len(json.load(open('$temp_out')).get('violations', [])))" 2>/dev/null || echo "0")
-                    total_count=$((total_count + count))
-                fi
-                rm -f "$temp_out"
-            done
+                first=false
+                local count
+                count=$(python3 -c "import json; print(len(json.load(open('$temp_out')).get('violations', [])))" 2>/dev/null || echo "0")
+                total_count=$((total_count + count))
+            fi
+            rm -f "$temp_out"
+        done
 
-            printf '\n  ],\n'
-            printf '  "summary": {\n'
-            printf '    "total": %d\n' "$total_count"
-            printf '  }\n'
-            printf '}\n'
-        } > "$out"
-    fi
+        printf '\n  ],\n'
+        printf '  "summary": {\n'
+        printf '    "total": %d\n' "$total_count"
+        printf '  }\n'
+        printf '}\n'
+    } > "$out"
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_pmd_violations" "$op_elapsed"
@@ -433,6 +447,7 @@ PYEOF
 }
 
 # Discover and parse Checkstyle reports
+# Toyota Production System: FAIL if reports missing - NO silent fallbacks
 emit_checkstyle_warnings() {
     local out="$FACTS_DIR/checkstyle-warnings.json"
     local op_start
@@ -441,33 +456,40 @@ emit_checkstyle_warnings() {
 
     ensure_static_analysis_dirs
 
-    # Find Checkstyle XML reports
+    # Find Checkstyle XML reports - EXACT locations only
     local -a checkstyle_reports=()
     while IFS= read -r report; do
         [[ -n "$report" ]] && checkstyle_reports+=("$report")
     done < <(find "$REPO_ROOT" -path "*/target/checkstyle-result.xml" -type f 2>/dev/null)
 
+    # Toyota Production System: FAIL FAST if no reports found
     if [[ ${#checkstyle_reports[@]} -eq 0 ]]; then
-        log_warn "No Checkstyle reports found. Run: mvn -P ci checkstyle:checkstyle"
-        echo '{"warnings": [], "summary": {"total": 0, "by_severity": {}, "by_check": {}}, "status": "no_reports"}' > "$out"
-    else
-        local total_count=0
+        log_error "CHECKSTYLE REPORTS MISSING - Static analysis not run"
+        log_error "REQUIRED: Run 'mvn clean verify -P analysis' first"
+        log_error "Expected: */target/checkstyle-result.xml"
+        # Write error state - NO FALLBACK DATA
+        echo '{"warnings": [], "summary": {"total": 0}, "status": "ERROR_MISSING_REPORTS", "required_command": "mvn clean verify -P analysis"}' > "$out"
+        add_refusal "CHECKSTYLE_MISSING" "Checkstyle reports not found. Run: mvn clean verify -P analysis" "{}"
+        return 1
+    fi
 
-        {
-            printf '{\n'
-            printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            printf '  "reports_analyzed": %d,\n' "${#checkstyle_reports[@]}"
-            printf '  "warnings": [\n'
+    local total_count=0
 
-            local first=true
-            for report in "${checkstyle_reports[@]}"; do
-                local module_name
-                module_name=$(echo "$report" | sed 's|.*/\([^/]*\)/target/.*|\1|')
-                local temp_out="/tmp/checkstyle-$$-${module_name}.json"
-                parse_checkstyle_report "$report" "$temp_out"
+    {
+        printf '{\n'
+        printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        printf '  "reports_analyzed": %d,\n' "${#checkstyle_reports[@]}"
+        printf '  "warnings": [\n'
 
-                if [[ -f "$temp_out" ]]; then
-                    python3 << CS_EOF "$temp_out" "$module_name" "$first"
+        local first=true
+        for report in "${checkstyle_reports[@]}"; do
+            local module_name
+            module_name=$(echo "$report" | sed 's|.*/\([^/]*\)/target/.*|\1|')
+            local temp_out="/tmp/checkstyle-$$-${module_name}.json"
+            parse_checkstyle_report "$report" "$temp_out"
+
+            if [[ -f "$temp_out" ]]; then
+                python3 << CS_EOF "$temp_out" "$module_name" "$first"
 import json
 import sys
 
@@ -482,21 +504,20 @@ for w in data.get('warnings', []):
     w['module'] = sys.argv[3]
     print('    ' + json.dumps(w), end='')
 CS_EOF
-                    first=false
-                    local count
-                    count=$(python3 -c "import json; print(len(json.load(open('$temp_out')).get('warnings', [])))" 2>/dev/null || echo "0")
-                    total_count=$((total_count + count))
-                fi
-                rm -f "$temp_out"
-            done
+                first=false
+                local count
+                count=$(python3 -c "import json; print(len(json.load(open('$temp_out')).get('warnings', [])))" 2>/dev/null || echo "0")
+                total_count=$((total_count + count))
+            fi
+            rm -f "$temp_out"
+        done
 
-            printf '\n  ],\n'
-            printf '  "summary": {\n'
-            printf '    "total": %d\n' "$total_count"
-            printf '  }\n'
-            printf '}\n'
-        } > "$out"
-    fi
+        printf '\n  ],\n'
+        printf '  "summary": {\n'
+        printf '    "total": %d\n' "$total_count"
+        printf '  }\n'
+        printf '}\n'
+    } > "$out"
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_checkstyle_warnings" "$op_elapsed"

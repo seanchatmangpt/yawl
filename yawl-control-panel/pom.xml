@@ -175,7 +175,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/controlpanel/**</include>
+                        <include>**/org/yawlfoundation/yawl/controlpanel/**/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/controlpanel/**/Test*.java</include>
                     </includes>
                     <!-- Skip tests if no test classes exist yet -->
                     <failIfNoTests>false</failIfNoTests>

@@ -990,6 +990,18 @@
             <!-- JUnit Platform -->
             <dependency>
                 <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-api</artifactId>
                 <version>${junit.platform.version}</version>
                 <scope>test</scope>
@@ -1097,7 +1109,7 @@
                     </configuration>
                 </plugin>
 
-                <!-- Surefire - unit test runner -->
+                <!-- Surefire - unit test runner (JUnit 5 Platform primary, Vintage for legacy JUnit 4) -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -1108,23 +1120,91 @@
                             <include>**/*Tests.java</include>
                             <include>**/*TestSuite.java</include>
                         </includes>
+                        <!-- Exclude integration tests from unit test runs -->
+                        <excludes>
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*Integration*.java</exclude>
+                            <exclude>**/*IntegrationTest.java</exclude>
+                        </excludes>
                         <systemPropertyVariables>
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
                         <parallel>classes</parallel>
                         <threadCount>4</threadCount>
+                        <!-- Fail fast on test hangs - Toyota Production System -->
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
+                        <forkedProcessExitTimeoutInSeconds>30</forkedProcessExitTimeoutInSeconds>
                     </configuration>
+                    <dependencies>
+                        <!-- JUnit 5 Platform Engine discovery and execution -->
+                        <dependency>
+                            <groupId>org.junit.platform</groupId>
+                            <artifactId>junit-platform-engine</artifactId>
+                            <version>${junit.platform.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.platform</groupId>
+                            <artifactId>junit-platform-launcher</artifactId>
+                            <version>${junit.platform.version}</version>
+                        </dependency>
+                        <!-- JUnit 5 Jupiter Engine for JUnit 5 tests -->
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${junit.jupiter.version}</version>
+                        </dependency>
+                        <!-- JUnit Vintage Engine for running legacy JUnit 4 tests on JUnit 5 platform -->
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${junit.jupiter.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
-                <!-- Failsafe - integration test runner -->
+                <!-- Failsafe - integration test runner (JUnit 5 Platform primary, Vintage for legacy JUnit 4) -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven.failsafe.plugin.version}</version>
                     <configuration>
                         <argLine>--enable-preview</argLine>
+                        <!-- Explicitly include integration test patterns -->
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*Integration*.java</include>
+                            <include>**/*IntegrationTest.java</include>
+                        </includes>
+                        <!-- Fail fast on test hangs - Toyota Production System -->
+                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                     </configuration>
+                    <dependencies>
+                        <!-- JUnit 5 Platform Engine discovery and execution -->
+                        <dependency>
+                            <groupId>org.junit.platform</groupId>
+                            <artifactId>junit-platform-engine</artifactId>
+                            <version>${junit.platform.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.platform</groupId>
+                            <artifactId>junit-platform-launcher</artifactId>
+                            <version>${junit.platform.version}</version>
+                        </dependency>
+                        <!-- JUnit 5 Jupiter Engine for JUnit 5 tests -->
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${junit.jupiter.version}</version>
+                        </dependency>
+                        <!-- JUnit Vintage Engine for running legacy JUnit 4 tests on JUnit 5 platform -->
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${junit.jupiter.version}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <goals>
@@ -1468,10 +1548,12 @@
             </properties>
             <build>
                 <plugins>
+                    <!-- JaCoCo: code coverage -->
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                     </plugin>
+                    <!-- SpotBugs: bytecode analysis -->
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
@@ -1484,6 +1566,45 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <!-- Checkstyle: code style enforcement -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>checkstyle-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- PMD: code quality analysis -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pmd-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Parallel test execution for faster CI -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <threadCount>4</threadCount>
+                            <useUnlimitedThreads>false</useUnlimitedThreads>
+                            <perCoreThreadCount>true</perCoreThreadCount>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -1563,6 +1684,58 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Integration Test profile: dedicated IT test execution              -->
+        <!-- Usage: mvn verify -P integration-test                               -->
+        <!-- Runs only *IT.java and *Integration*.java tests via Failsafe       -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>integration-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <argLine>--enable-preview</argLine>
+                            <includes>
+                                <include>**/*IT.java</include>
+                                <include>**/*Integration*.java</include>
+                                <include>**/*IntegrationTest.java</include>
+                            </includes>
+                            <!-- Skip unit tests in this profile -->
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                            </excludes>
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>integration-test</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>verify</id>
+                                <goals>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Skip Surefire in integration-test profile -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

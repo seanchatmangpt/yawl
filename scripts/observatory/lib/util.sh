@@ -338,11 +338,172 @@ git_dirty() {
 }
 
 # ── Toolchain ─────────────────────────────────────────────────────────────
+
+# Detect Java version with robust error handling
+# Returns: major version number (e.g., "17", "21") on success
+#          JSON error object on failure (machine-parseable)
+# Exit code: 0 on success, 1 on failure
 detect_java_version() {
-    java -version 2>&1 | head -1 | sed -n 's/.*"\([0-9]*\).*/\1/p' | head -1 || echo "unknown"
+    local version_output
+    local exit_code=0
+
+    # Check if java command exists
+    if ! command -v java >/dev/null 2>&1; then
+        log_error "FAILED: 'java' command not found in PATH"
+        echo '{"error": "java_not_found", "raw_output": "", "message": "java command not in PATH"}'
+        return 1
+    fi
+
+    # Capture both stdout and stderr, handle command failure
+    version_output=$(java -version 2>&1) || exit_code=$?
+
+    if [[ "$exit_code" -ne 0 ]]; then
+        log_error "FAILED: 'java -version' exited with code $exit_code"
+        log_error "Output: $version_output"
+        echo "{\"error\": \"java_version_failed\", \"raw_output\": $(json_str "$version_output"), \"exit_code\": $exit_code}"
+        return 1
+    fi
+
+    # Get first line for parsing
+    local first_line
+    first_line=$(echo "$version_output" | head -1)
+
+    # Handle multiple formats:
+    # - "java version "17.0.1"" (Oracle)
+    # - "openjdk version "17.0.1"" (OpenJDK)
+    # - "java version "1.8.0_301"" (Java 8 format)
+    # - "openjdk 17.0.1 2021-10-19" (some distributions)
+
+    local version
+    # First try: extract from quoted version string (most common)
+    version=$(echo "$first_line" | sed -n 's/.*version *"\([0-9]*\).*".*/\1/p' | head -1)
+
+    # If version is 1, it's the old 1.x.x format, get the major version
+    if [[ "$version" == "1" ]]; then
+        version=$(echo "$first_line" | sed -n 's/.*version *"1\.\([0-9]*\).*/\1/p' | head -1)
+    fi
+
+    # Second try: unquoted format like "openjdk 17.0.1"
+    if [[ -z "$version" ]]; then
+        version=$(echo "$first_line" | sed -n 's/[a-zA-Z]* *\([0-9]*\).*/\1/p' | head -1)
+    fi
+
+    # Fail fast if version not detected - Toyota Production System
+    if [[ -z "$version" ]]; then
+        log_error "FAILED: Cannot detect Java version from: $first_line"
+        log_error "Ensure 'java -version' outputs a recognizable format"
+        echo "{\"error\": \"detection_failed\", \"raw_output\": $(json_str "$first_line"), \"message\": \"Unrecognized java -version output format\"}"
+        return 1
+    fi
+
+    echo "$version"
 }
+
+# Detect Maven version
+# Returns: version string (e.g., "3.9.6") on success, "unknown" on failure
 detect_maven_version() {
-    mvn --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+    local version_output
+    local exit_code=0
+
+    if ! command -v mvn >/dev/null 2>&1; then
+        echo "unknown"
+        return 1
+    fi
+
+    version_output=$(mvn --version 2>&1) || exit_code=$?
+
+    if [[ "$exit_code" -ne 0 ]]; then
+        log_warn "mvn --version failed with exit code $exit_code"
+        echo "unknown"
+        return 1
+    fi
+
+    echo "$version_output" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+}
+
+# Check toolchain availability and versions
+# Returns: JSON object with status for each tool (java, mvn, python3)
+# Exit code: 0 if all tools available, 1 if any critical tool missing
+check_toolchain() {
+    local java_status="unknown"
+    local java_version="unknown"
+    local mvn_status="unknown"
+    local mvn_version="unknown"
+    local python_status="unknown"
+    local python_version="unknown"
+    local all_ok=true
+
+    # Check Java
+    if command -v java >/dev/null 2>&1; then
+        java_status="installed"
+        java_version=$(detect_java_version 2>/dev/null) || {
+            java_status="error"
+            java_version="detection_failed"
+            all_ok=false
+        }
+        # Validate java_version is numeric
+        if [[ ! "$java_version" =~ ^[0-9]+$ ]]; then
+            java_status="error"
+            all_ok=false
+        fi
+    else
+        java_status="not_found"
+        all_ok=false
+    fi
+
+    # Check Maven
+    if command -v mvn >/dev/null 2>&1; then
+        mvn_status="installed"
+        mvn_version=$(detect_maven_version 2>/dev/null) || mvn_version="unknown"
+        if [[ "$mvn_version" == "unknown" ]]; then
+            mvn_status="error"
+            all_ok=false
+        fi
+    else
+        mvn_status="not_found"
+        all_ok=false
+    fi
+
+    # Check Python3
+    if command -v python3 >/dev/null 2>&1; then
+        python_status="installed"
+        local py_output
+        py_output=$(python3 --version 2>&1) || {
+            python_status="error"
+            python_version="detection_failed"
+            all_ok=false
+        }
+        if [[ "$python_status" == "installed" ]]; then
+            python_version=$(echo "$py_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            if [[ -z "$python_version" ]]; then
+                python_version=$(echo "$py_output" | grep -oE '[0-9]+\.[0-9]+' | head -1)
+            fi
+            if [[ -z "$python_version" ]]; then
+                python_version="unknown"
+                python_status="error"
+                all_ok=false
+            fi
+        fi
+    else
+        python_status="not_found"
+        all_ok=false
+    fi
+
+    # Output JSON
+    cat << TOOLCHAIN_EOF
+{
+  "java": {"status": "$java_status", "version": "$java_version"},
+  "mvn": {"status": "$mvn_status", "version": "$mvn_version"},
+  "python3": {"status": "$python_status", "version": "$python_version"},
+  "all_available": $all_ok
+}
+TOOLCHAIN_EOF
+
+    if [[ "$all_ok" == "true" ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # ── Directory setup ───────────────────────────────────────────────────────

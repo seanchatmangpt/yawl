@@ -25,6 +25,13 @@
             <artifactId>yawl-engine</artifactId>
         </dependency>
 
+        <!-- Jakarta Servlet API (required by CsrfProtectionFilter, CsrfTokenManager) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- JWT Security -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -133,7 +140,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/authentication/**</include>
+                        <include>**/org/yawlfoundation/yawl/authentication/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/authentication/Test*.java</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

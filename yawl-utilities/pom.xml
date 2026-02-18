@@ -270,15 +270,15 @@
                         <exclude>**/*.hbm.xml</exclude>
                     </excludes>
                     <!-- Only compile tests that depend solely on utilities module classes -->
+                    <!-- Patterns match both Test*.java and *Test.java naming conventions -->
                     <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/util/TestNullCheckModernizer.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/util/TestSafeNumberParser.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/schema/TestSchemaHandler.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/schema/TestSchemaHandlerValidation.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/TestInfrastructureSmokeTest.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/exceptions/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/util/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/Test*.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/schema/*Test.java</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.class</testExclude>
@@ -304,15 +304,15 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- Only run tests that depend solely on utilities module classes -->
+                    <!-- Patterns match both Test*.java and *Test.java naming conventions -->
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYConnectivityException.java</include>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYSyntaxException.java</include>
-                        <include>**/org/yawlfoundation/yawl/exceptions/TestYAWLExceptionEnhancements.java</include>
-                        <include>**/org/yawlfoundation/yawl/util/TestDynamicValueLogging.java</include>
-                        <include>**/org/yawlfoundation/yawl/util/TestNullCheckModernizer.java</include>
-                        <include>**/org/yawlfoundation/yawl/util/TestSafeNumberParser.java</include>
-                        <include>**/org/yawlfoundation/yawl/schema/TestSchemaHandler.java</include>
-                        <include>**/org/yawlfoundation/yawl/schema/TestSchemaHandlerValidation.java</include>
+                        <include>**/org/yawlfoundation/yawl/TestInfrastructureSmokeTest.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/exceptions/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/util/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/util/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/schema/Test*.java</include>
+                        <include>**/org/yawlfoundation/yawl/schema/*Test.java</include>
                     </includes>
                     <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>

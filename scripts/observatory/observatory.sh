@@ -128,21 +128,20 @@ FINAL_STATUS="GREEN"
 [[ ${#WARNINGS[@]} -gt 0 && "$FINAL_STATUS" == "GREEN" ]] && FINAL_STATUS="YELLOW"
 
 # Calculate totals for performance summary
-local facts_count diagrams_count yawl_count
 facts_count=$(ls "$FACTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
 diagrams_count=$(ls "$DIAGRAMS_DIR"/*.mmd 2>/dev/null | wc -l | tr -d ' ')
 yawl_count=$(ls "$YAWL_DIR"/*.xml 2>/dev/null | wc -l | tr -d ' ')
 
 # Get peak memory
-local peak_mem=0
-for mem in "${PHASE_MEMORY[@]}"; do
-    [[ "$mem" -gt "$peak_mem" ]] && peak_mem="$mem"
+peak_mem=0
+for mem in "${PHASE_MEMORY[@]:-}"; do
+    [[ "${mem:-0}" -gt "$peak_mem" ]] && peak_mem="$mem"
 done
-local peak_mem_mb=$(( peak_mem / 1024 ))
+peak_mem_mb=$(( peak_mem / 1024 ))
 
 # Calculate throughput
-local total_outputs=$(( facts_count + diagrams_count + yawl_count ))
-local total_sec=0
+total_outputs=$(( facts_count + diagrams_count + yawl_count ))
+total_sec=0
 if [[ "${TOTAL_ELAPSED:-0}" -gt 0 ]]; then
     total_sec=$(echo "scale=3; ${TOTAL_ELAPSED} / 1000" | bc 2>/dev/null || echo "0")
 fi
