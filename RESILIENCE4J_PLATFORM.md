@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 now includes **platform-level resilience** powered by Resilience4j. Teams get production-grade fault tolerance **by default** without writing boilerplate code.
+YAWL v6.0.0 now includes **platform-level resilience** powered by Resilience4j. Teams get production-grade fault tolerance **by default** without writing boilerplate code.
 
 **Status**: ✅ Production Ready
 **Version**: 5.2

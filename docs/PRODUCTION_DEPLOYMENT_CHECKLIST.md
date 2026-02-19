@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Deployment Checklist
+# YAWL v6.0.0 Production Deployment Checklist
 **Enterprise Cloud Deployment Validation**  
 **Date**: 2026-02-15  
 **Status**: Pre-Production Validation
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This checklist validates YAWL v5.2 for production deployment across GKE/GCP, EKS/AWS, and AKS/Azure environments. All validation gates must PASS before production sign-off.
+This checklist validates YAWL v6.0.0 for production deployment across GKE/GCP, EKS/AWS, and AKS/Azure environments. All validation gates must PASS before production sign-off.
 
 **Deployment Readiness**: ⚠️ CONDITIONAL PASS (see Critical Findings)
 

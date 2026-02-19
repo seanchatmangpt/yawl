@@ -280,4 +280,4 @@ echo -e "\nAll tests complete!"
 - Implementation Details: `/docs/actuator/IMPLEMENTATION_SUMMARY.md`
 
 ---
-**YAWL v5.2** | Cloud-Native Workflow Engine
+**YAWL v6.0.0** | Cloud-Native Workflow Engine

@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This guide documents the migration from Ant+Ivy to Maven-first build system for YAWL v5.2. The modernization removes obsolete dependencies, consolidates duplicates, and introduces BOM-based dependency management for better security and maintainability.
+This guide documents the migration from Ant+Ivy to Maven-first build system for YAWL v6.0.0. The modernization removes obsolete dependencies, consolidates duplicates, and introduces BOM-based dependency management for better security and maintainability.
 
 ## Key Changes
 

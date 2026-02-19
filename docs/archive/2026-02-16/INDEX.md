@@ -1,6 +1,6 @@
 # YAWL Documentation Archive - 2026-02-16
 
-This archive contains historical documentation from the YAWL v5.2 to v6.0.0
+This archive contains historical documentation from the YAWL v6.0.0 to v6.0.0
 modernization project. Files are preserved for reference and audit purposes.
 
 ## Archive Statistics

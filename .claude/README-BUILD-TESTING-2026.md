@@ -1,8 +1,8 @@
 # Build System & Testing Research 2025-2026
 
-**For YAWL v5.2** | **Java 25** | **89 packages** | **Maven-based**
+**For YAWL v6.0.0** | **Java 25** | **89 packages** | **Maven-based**
 
-This research directory contains comprehensive information on optimizing build systems and testing for modern Java 25 projects, specifically tailored to YAWL v5.2.
+This research directory contains comprehensive information on optimizing build systems and testing for modern Java 25 projects, specifically tailored to YAWL v6.0.0.
 
 ---
 
@@ -69,7 +69,7 @@ This research directory contains comprehensive information on optimizing build s
 - **Impact**: 30-50% faster parallel builds
 
 ### Testing
-- **JUnit 5**: 5.14.0 LTS (stable, mature) ← Use for YAWL v5.2
+- **JUnit 5**: 5.14.0 LTS (stable, mature) ← Use for YAWL v6.0.0
 - **JUnit 6**: Released Sep 2025 (latest) ← Plan for YAWL v6+
 - **Parallelization**: Methods-level with 1.5C threads
 - **Impact**: 25-50% faster test execution
@@ -278,7 +278,7 @@ All documents include links to official documentation:
 ## 📊 Research Metadata
 
 - **Date**: 2026-02-17
-- **Project**: YAWL v5.2
+- **Project**: YAWL v6.0.0
 - **Scope**: Java 25, Maven, 89 packages
 - **Tools Verified**: 13 tools (all Java 25 compatible)
 - **Documents Created**: 5 comprehensive files
@@ -297,4 +297,4 @@ All documents include links to official documentation:
 
 ---
 
-**All documents are ready for YAWL v5.2 implementation!**
+**All documents are ready for YAWL v6.0.0 implementation!**

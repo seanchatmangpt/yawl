@@ -1,6 +1,6 @@
 # YAWL Java 25 Implementation Checklist
 
-**Project:** YAWL v5.2 Java 25 Upgrade
+**Project:** YAWL v6.0.0 Java 25 Upgrade
 **Date:** 2026-02-15
 **Status:** READY FOR IMPLEMENTATION
 

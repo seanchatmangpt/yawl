@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawl.foundation/schemas/a2a/a2a-message.schema.json",
+  "title": "A2A Message Envelope",
+  "description": "JSON-RPC 2.0 message envelope for Agent-to-Agent communication per A2A specification",
+  "type": "object",
+  "required": ["jsonrpc", "method", "id"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "const": "2.0",
+      "description": "JSON-RPC protocol version, must be '2.0'"
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "The A2A method name (e.g., 'skills/launch_workflow')"
+    },
+    "id": {
+      "oneOf": [
+        {"type": "string", "minLength": 1, "maxLength": 128},
+        {"type": "integer", "minimum": 0}
+      ],
+      "description": "Unique request identifier for correlating requests and responses"
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Method-specific parameters"
+    },
+    "result": {
+      "description": "Result payload on success (responses only)",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "number"},
+        {"type": "string"},
+        {"type": "array"},
+        {"type": "object"}
+      ]
+    },
+    "error": {
+      "$ref": "#/$defs/a2aError",
+      "description": "Error object on failure (responses only)"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of message creation"
+        },
+        "sourceAgent": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI of the sending agent"
+        },
+        "targetAgent": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI of the receiving agent"
+        },
+        "correlationId": {
+          "type": "string",
+          "description": "Correlation ID for distributed tracing"
+        },
+        "traceContext": {
+          "type": "object",
+          "description": "OpenTelemetry trace context for observability",
+          "properties": {
+            "traceparent": {"type": "string"},
+            "tracestate": {"type": "string"}
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "a2aError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "description": "A2A error code",
+          "oneOf": [
+            {"const": -32700, "description": "Parse error"},
+            {"const": -32600, "description": "Invalid request"},
+            {"const": -32601, "description": "Method not found"},
+            {"const": -32602, "description": "Invalid params"},
+            {"const": -32603, "description": "Internal error"},
+            {"const": -32001, "description": "Agent not found"},
+            {"const": -32002, "description": "Skill not found"},
+            {"const": -32003, "description": "Authentication failed"},
+            {"const": -32004, "description": "Authorization failed"},
+            {"const": -32005, "description": "Rate limit exceeded"},
+            {"const": -32006, "description": "Handoff rejected"},
+            {"const": -32007, "description": "Workflow error"}
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "Human-readable error message"
+        },
+        "data": {
+          "description": "Additional error details",
+          "oneOf": [
+            {"type": "null"},
+            {"type": "boolean"},
+            {"type": "number"},
+            {"type": "string"},
+            {"type": "array"},
+            {"type": "object"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"required": ["error"]},
+      "then": {"not": {"required": ["result"]}}
+    },
+    {
+      "if": {"required": ["result"]},
+      "then": {"not": {"required": ["error"]}}
+    }
+  ]
+}

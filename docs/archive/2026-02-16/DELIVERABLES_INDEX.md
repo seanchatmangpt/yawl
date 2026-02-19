@@ -1,6 +1,6 @@
-# YAWL v5.2 Dependency Consolidation & Integration Test Suite - Deliverables Index
+# YAWL v6.0.0 Dependency Consolidation & Integration Test Suite - Deliverables Index
 
-**Project:** YAWL v5.2 Cloud Modernization  
+**Project:** YAWL v6.0.0 Cloud Modernization  
 **Delivered:** 2026-02-16  
 **Status:** PRODUCTION-READY  
 **Total Deliverables:** 11 files / 3,269 lines of code and documentation

@@ -127,7 +127,7 @@ public class ConflictEventLogger {
             EventType.CONFLICT_DETECTED,
             conflict.getCaseId(),
             null,
-            (Map<String, String>) conflict.toMap()
+            conflict.toMap()
         );
 
         String traceId = generateTraceId();
@@ -162,7 +162,7 @@ public class ConflictEventLogger {
             EventType.CONFLICT_RESOLVED,
             resolution.getConflictId(), // Use conflict ID as case ID for resolution events
             null,
-            (Map<String, String>) resolution.toMap()
+            resolution.toMap()
         );
 
         // Find the trace for this conflict
@@ -203,7 +203,7 @@ public class ConflictEventLogger {
             EventType.HANDOFF_INITIATED,
             handoff.getCaseId(),
             handoff.getWorkItemId(),
-            (Map<String, String>) handoff.toMap()
+            handoff.toMap()
         );
 
         String traceId = generateTraceId();
@@ -238,7 +238,7 @@ public class ConflictEventLogger {
             EventType.HANDOFF_COMPLETED,
             handoff.getCaseId(),
             handoff.getWorkItemId(),
-            (Map<String, String>) handoff.toMap()
+            handoff.toMap()
         );
 
         // Find the trace for this handoff
@@ -279,7 +279,7 @@ public class ConflictEventLogger {
             EventType.AGENT_DECISION_MADE,
             decision.getCaseId(),
             decision.getWorkItemId(),
-            (Map<String, String>) decision.toMap()
+            decision.toMap()
         );
 
         try {

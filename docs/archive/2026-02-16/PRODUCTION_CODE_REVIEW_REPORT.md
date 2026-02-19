@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Code Review Report
+# YAWL v6.0.0 Production Code Review Report
 **Review Date:** 2026-02-16  
 **Review Type:** HYPER_STANDARDS Enforcement & Production Readiness  
 **Reviewer:** YAWL Code Review Agent  

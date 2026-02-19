@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/mcp/tool-call.json",
+  "title": "MCP Tool Call Request",
+  "description": "Request to call an MCP tool",
+  "type": "object",
+  "required": ["method", "params"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "enum": ["2.0"],
+      "default": "2.0"
+    },
+    "id": {
+      "$ref": "https://schema.yawlfoundation.org/common/identifier.json"
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Tool method name to call"
+    },
+    "params": {
+      "type": "object",
+      "description": "Tool parameters",
+      "properties": {
+        "caseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "YAWL case ID"
+        },
+        "workItemId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "YAWL work item ID"
+        },
+        "specificationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "YAWL specification ID"
+        },
+        "data": {
+          "type": "object",
+          "description": "Input data for the tool"
+        },
+        "options": {
+          "type": "object",
+          "description": "Optional parameters",
+          "properties": {
+            "timeout": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 300000,
+              "description": "Timeout in milliseconds"
+            },
+            "priority": {
+              "type": "string",
+              "enum": ["low", "normal", "high"],
+              "default": "normal"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the request",
+      "properties": {
+        "clientName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "clientVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "timestamp": {
+          "$ref": "https://schema.yawlfoundation.org/common/timestamp.json"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

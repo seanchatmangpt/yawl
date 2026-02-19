@@ -5,7 +5,7 @@
 
 ## Context
 
-YAWL v5.2 requires secure service-to-service authentication in cloud-native deployments across multiple platforms (GKE, EKS, AKS). Traditional authentication methods (API keys, shared secrets) have limitations:
+YAWL v6.0.0 requires secure service-to-service authentication in cloud-native deployments across multiple platforms (GKE, EKS, AKS). Traditional authentication methods (API keys, shared secrets) have limitations:
 
 ### Problems with Traditional Auth
 
@@ -68,7 +68,7 @@ YAWL v5.2 requires secure service-to-service authentication in cloud-native depl
 
 ## Decision
 
-**YAWL v5.2 will use SPIFFE/SPIRE for all service-to-service authentication in cloud deployments.**
+**YAWL v6.0.0 will use SPIFFE/SPIRE for all service-to-service authentication in cloud deployments.**
 
 ### Architecture
 

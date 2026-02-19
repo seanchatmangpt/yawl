@@ -452,7 +452,7 @@ Embedding autonomous agents (LLMs, reinforcement learning agents) in workflows w
 
 3. **Outcome Validation Scope**: Current validation covers schema checks and business rules (deterministic). Probabilistic validation (e.g., confidence thresholds with multi-agent consensus) is left for future work.
 
-4. **No Comparative Analysis**: Benchmarks compare YAWL v5.2 vs. v6, not against competing systems (Camunda, Bonita, etc.). A cross-system comparison would strengthen claims about "best-in-class" performance.
+4. **No Comparative Analysis**: Benchmarks compare YAWL v6.0.0 vs. v6, not against competing systems (Camunda, Bonita, etc.). A cross-system comparison would strengthen claims about "best-in-class" performance.
 
 5. **Scalability Ceiling Unknown**: Testing validated 10,000 concurrent cases; true maximum (if any) in production Kubernetes cluster is untested.
 

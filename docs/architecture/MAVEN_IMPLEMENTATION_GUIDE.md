@@ -1,6 +1,6 @@
 # Maven-First Implementation Guide
 
-**Quick Reference for YAWL v5.2 Maven Transition**
+**Quick Reference for YAWL v6.0.0 Maven Transition**
 
 ---
 

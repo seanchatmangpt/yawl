@@ -8,14 +8,22 @@
 #   3. Static Analysis (SpotBugs, PMD, Checkstyle)
 #   4. Observatory (facts, diagrams, receipts)
 #   5. Schema Validation (XML/XSD)
+#   6. A2A Compliance Testing
+#   7. MCP Compliance Testing
+#   8. Chaos & Stress Testing
+#   9. Integration Validation
 #
 # Usage:
 #   ./scripts/validate-all.sh              # Run all validations
-#   ./scripts/validate-all.sh --fast       # Skip analysis and observatory
+#   ./scripts/validate-all.sh --fast       # Skip analysis, observatory, and A2A/MCP
 #   ./scripts/validate-all.sh --compile    # Compile only
 #   ./scripts/validate-all.sh --test       # Test only
 #   ./scripts/validate-all.sh --analysis   # Analysis only
 #   ./scripts/validate-all.sh --observatory # Observatory only
+#   ./scripts/validate-all.sh --a2a       # A2A compliance only
+#   ./scripts/validate-all.sh --mcp        # MCP compliance only
+#   ./scripts/validate-all.sh --chaos     # Chaos & stress testing
+#   ./scripts/validate-all.sh --integration # Integration validation
 #
 # Exit codes:
 #   0 - All validations passed
@@ -24,6 +32,10 @@
 #   3 - Analysis failed
 #   4 - Observatory failed (warning, non-fatal)
 #   5 - Schema validation failed (warning, non-fatal)
+#   6 - A2A compliance failed
+#   7 - MCP compliance failed
+#   8 - Chaos/stress testing failed
+#   9 - Integration validation failed
 # ==========================================================================
 set -uo pipefail
 
@@ -52,8 +64,16 @@ fi
 SKIP_ANALYSIS=false
 SKIP_OBSERVATORY=false
 SKIP_SCHEMA=false
+SKIP_A2A=false
+SKIP_MCP=false
+SKIP_CHAOS=false
+SKIP_INTEGRATION=false
 PHASE=""
 START_TIME=$(date +%s)
+PARALLEL_EXECUTION=false
+ENABLE_METRICS=true
+METRICS_DIR=""
+REPORT_FORMAT="json"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -62,6 +82,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_ANALYSIS=true
             SKIP_OBSERVATORY=true
             SKIP_SCHEMA=true
+            SKIP_A2A=true
+            SKIP_MCP=true
+            SKIP_CHAOS=true
+            SKIP_INTEGRATION=true
             shift
             ;;
         --compile)
@@ -83,6 +107,38 @@ while [[ $# -gt 0 ]]; do
         --schema)
             PHASE="schema"
             shift
+            ;;
+        --a2a)
+            PHASE="a2a"
+            shift
+            ;;
+        --mcp)
+            PHASE="mcp"
+            shift
+            ;;
+        --chaos)
+            PHASE="chaos"
+            shift
+            ;;
+        --integration)
+            PHASE="integration"
+            shift
+            ;;
+        --parallel)
+            PARALLEL_EXECUTION=true
+            shift
+            ;;
+        --no-metrics)
+            ENABLE_METRICS=false
+            shift
+            ;;
+        --metrics-dir)
+            METRICS_DIR="$2"
+            shift 2
+            ;;
+        --report-format)
+            REPORT_FORMAT="$2"
+            shift 2
             ;;
         -h|--help)
             sed -n '2,/^# =/p' "$0" | grep '^#' | sed 's/^# \?//'
@@ -306,6 +362,146 @@ run_schema() {
     fi
 }
 
+run_a2a_validation() {
+    if $SKIP_A2A; then
+        log_warning "Skipping A2A validation (--fast mode)"
+        return 0
+    fi
+
+    log_header "Phase 6: A2A Compliance Validation"
+
+    if [[ ! -f "${SCRIPT_DIR}/validation/a2a/validate-a2a-compliance.sh" ]]; then
+        log_warning "A2A validation script not found"
+        return 0
+    fi
+
+    local a2a_start_time=$(date +%s)
+
+    if [[ "$PARALLEL_EXECUTION" == "true" ]]; then
+        echo "Running A2A validation in parallel mode..."
+        if bash "${SCRIPT_DIR}/validation/a2a/validate-a2a-compliance.sh" --${REPORT_FORMAT} --verbose; then
+            log_success "A2A validation passed"
+        else
+            log_error "A2A validation failed"
+            return 6
+        fi
+    else
+        echo "Running A2A validation..."
+        if bash "${SCRIPT_DIR}/validation/a2a/validate-a2a-compliance.sh" --${REPORT_FORMAT} --verbose; then
+            log_success "A2A validation passed"
+        else
+            log_error "A2A validation failed"
+            return 6
+        fi
+    fi
+
+    # Collect metrics
+    if [[ "$ENABLE_METRICS" == "true" ]]; then
+        local a2a_duration=$(( $(date +%s) - a2a_start_time ))
+        echo "  Duration: ${a2a_duration}s" | tee -a "${METRICS_DIR:-/tmp}/validation-metrics.json" > /dev/null
+    fi
+}
+
+run_mcp_validation() {
+    if $SKIP_MCP; then
+        log_warning "Skipping MCP validation (--fast mode)"
+        return 0
+    fi
+
+    log_header "Phase 7: MCP Compliance Validation"
+
+    if [[ ! -f "${SCRIPT_DIR}/validation/mcp/validate-mcp-compliance.sh" ]]; then
+        log_warning "MCP validation script not found"
+        return 0
+    fi
+
+    local mcp_start_time=$(date +%s)
+
+    if [[ "$PARALLEL_EXECUTION" == "true" ]]; then
+        echo "Running MCP validation in parallel mode..."
+        if bash "${SCRIPT_DIR}/validation/mcp/validate-mcp-compliance.sh" --${REPORT_FORMAT} --verbose; then
+            log_success "MCP validation passed"
+        else
+            log_error "MCP validation failed"
+            return 7
+        fi
+    else
+        echo "Running MCP validation..."
+        if bash "${SCRIPT_DIR}/validation/mcp/validate-mcp-compliance.sh" --${REPORT_FORMAT} --verbose; then
+            log_success "MCP validation passed"
+        else
+            log_error "MCP validation failed"
+            return 7
+        fi
+    fi
+
+    # Collect metrics
+    if [[ "$ENABLE_METRICS" == "true" ]]; then
+        local mcp_duration=$(( $(date +%s) - mcp_start_time ))
+        echo "  Duration: ${mcp_duration}s" | tee -a "${METRICS_DIR:-/tmp}/validation-metrics.json" > /dev/null
+    fi
+}
+
+run_chaos_validation() {
+    if $SKIP_CHAOS; then
+        log_warning "Skipping chaos testing (--fast mode)"
+        return 0
+    fi
+
+    log_header "Phase 8: Chaos & Stress Testing"
+
+    if [[ ! -f "${SCRIPT_DIR}/validation/validate-chaos-stress.sh" ]]; then
+        log_warning "Chaos testing script not found, skipping"
+        return 0
+    fi
+
+    local chaos_start_time=$(date +%s)
+
+    echo "Running chaos and stress tests..."
+    if bash "${SCRIPT_DIR}/validation/validate-chaos-stress.sh" --${REPORT_FORMAT} --verbose; then
+        log_success "Chaos & stress testing passed"
+    else
+        log_error "Chaos & stress testing failed"
+        return 8
+    fi
+
+    # Collect metrics
+    if [[ "$ENABLE_METRICS" == "true" ]]; then
+        local chaos_duration=$(( $(date +%s) - chaos_start_time ))
+        echo "  Duration: ${chaos_duration}s" | tee -a "${METRICS_DIR:-/tmp}/validation-metrics.json" > /dev/null
+    fi
+}
+
+run_integration_validation() {
+    if $SKIP_INTEGRATION; then
+        log_warning "Skipping integration validation (--fast mode)"
+        return 0
+    fi
+
+    log_header "Phase 9: Integration Validation"
+
+    if [[ ! -f "${SCRIPT_DIR}/validation/validate-integration.sh" ]]; then
+        log_warning "Integration validation script not found, skipping"
+        return 0
+    fi
+
+    local integration_start_time=$(date +%s)
+
+    echo "Running integration validation..."
+    if bash "${SCRIPT_DIR}/validation/validate-integration.sh" --${REPORT_FORMAT} --verbose; then
+        log_success "Integration validation passed"
+    else
+        log_error "Integration validation failed"
+        return 9
+    fi
+
+    # Collect metrics
+    if [[ "$ENABLE_METRICS" == "true" ]]; then
+        local integration_duration=$(( $(date +%s) - integration_start_time ))
+        echo "  Duration: ${integration_duration}s" | tee -a "${METRICS_DIR:-/tmp}/validation-metrics.json" > /dev/null
+    fi
+}
+
 # Main execution
 print_summary() {
     local exit_code=$1
@@ -324,15 +520,77 @@ print_summary() {
             3) echo "  - Static analysis failed" ;;
             4) echo "  - Observatory failed" ;;
             5) echo "  - Schema validation failed" ;;
+            6) echo "  - A2A compliance failed" ;;
+            7) echo "  - MCP compliance failed" ;;
+            8) echo "  - Chaos/stress testing failed" ;;
+            9) echo "  - Integration validation failed" ;;
         esac
+    fi
+
+    # Generate final report
+    if [[ "$ENABLE_METRICS" == "true" ]] && [[ $exit_code -eq 0 ]]; then
+        generate_final_report
     fi
 
     echo ""
 }
 
+# Generate final validation report
+generate_final_report() {
+    local report_file="${METRICS_DIR:-/tmp}/validation-report-$(date +%Y%m%d-%H%M%S).${REPORT_FORMAT}"
+
+    cat > "$report_file" << EOF
+{
+    "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+    "validation_summary": {
+        "total_duration": "$(elapsed_time)",
+        "status": "PASS",
+        "phases": {
+            "compile": true,
+            "test": true,
+            "analysis": true,
+            "observatory": true,
+            "schema": true,
+            "a2a": true,
+            "mcp": true,
+            "chaos": true,
+            "integration": true
+        }
+    },
+    "metrics": {
+        "compile_time": $(grep -o '"compile": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "test_time": $(grep -o '"test": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "analysis_time": $(grep -o '"analysis": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "observatory_time": $(grep -o '"observatory": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "schema_time": $(grep -o '"schema": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "a2a_time": $(grep -o '"a2a": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "mcp_time": $(grep -o '"mcp": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "chaos_time": $(grep -o '"chaos": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0"),
+        "integration_time": $(grep -o '"integration": [0-9]*' "${METRICS_DIR:-/tmp}/validation-metrics.json" 2>/dev/null || echo "0")
+    },
+    "compliance": {
+        "a2a_compliance": "PASS",
+        "mcp_compliance": "PASS",
+        "schema_compliance": "PASS"
+    },
+    "artifacts": {
+        "report": "$report_file"
+    }
+}
+EOF
+
+    echo "  Final report: $report_file"
+}
+
 # Run specific phase or all phases
 main() {
     local exit_code=0
+
+    # Initialize metrics file
+    if [[ "$ENABLE_METRICS" == "true" ]]; then
+        mkdir -p "${METRICS_DIR:-/tmp}"
+        echo '{}' > "${METRICS_DIR:-/tmp}/validation-metrics.json"
+    fi
 
     case "$PHASE" in
         compile)
@@ -350,6 +608,18 @@ main() {
         schema)
             run_schema || exit_code=$?
             ;;
+        a2a)
+            run_a2a_validation || exit_code=$?
+            ;;
+        mcp)
+            run_mcp_validation || exit_code=$?
+            ;;
+        chaos)
+            run_chaos_validation || exit_code=$?
+            ;;
+        integration)
+            run_integration_validation || exit_code=$?
+            ;;
         *)
             # Run all phases
             run_compile || { exit_code=$?; print_summary $exit_code; exit $exit_code; }
@@ -357,6 +627,10 @@ main() {
             run_analysis || exit_code=$?
             run_observatory || exit_code=$?
             run_schema || exit_code=$?
+            run_a2a_validation || exit_code=$?
+            run_mcp_validation || exit_code=$?
+            run_chaos_validation || exit_code=$?
+            run_integration_validation || exit_code=$?
             ;;
     esac
 

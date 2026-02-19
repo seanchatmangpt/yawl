@@ -1,4 +1,4 @@
-# YAWL v5.2 - Quick Dependency Reference Card
+# YAWL v6.0.0 - Quick Dependency Reference Card
 ## Priority 2 Completion - 2026-02-16
 
 ---

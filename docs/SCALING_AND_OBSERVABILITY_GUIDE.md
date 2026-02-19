@@ -1,4 +1,4 @@
-# YAWL v5.2 Scaling and Observability Guide
+# YAWL v6.0.0 Scaling and Observability Guide
 **Enterprise Performance Optimization**  
 **Version**: 5.2  
 **Date**: 2026-02-15

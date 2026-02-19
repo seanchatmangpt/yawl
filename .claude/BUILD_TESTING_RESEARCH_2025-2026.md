@@ -312,7 +312,7 @@ mvn clean test
 
 #### JUnit 5 (LTS via 5.14.x)
 
-**Advantages for YAWL v5.2**:
+**Advantages for YAWL v6.0.0**:
 - Stable, well-tested platform
 - Extensive ecosystem support
 - Modular architecture (Platform, Jupiter, Vintage)
@@ -325,7 +325,7 @@ mvn clean test
 - Dynamic test generation via `@TestFactory`
 - Full parallel execution support
 
-**Recommendation**: Continue with JUnit 5.14.x for YAWL v5.2, plan JUnit 6 migration for v6+
+**Recommendation**: Continue with JUnit 5.14.x for YAWL v6.0.0, plan JUnit 6 migration for v6+
 
 ### 2.2 JUnit 5 Configuration for YAWL
 
@@ -1203,7 +1203,7 @@ variables:
 
 ---
 
-## Part 6: Recommended Configuration for YAWL v5.2
+## Part 6: Recommended Configuration for YAWL v6.0.0
 
 ### 6.1 Complete POM Plugin Section
 

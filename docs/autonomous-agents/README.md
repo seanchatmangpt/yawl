@@ -2,7 +2,7 @@
 
 ## Overview
 
-YAWL v5.2 introduces a **generic autonomous agent framework** that enables dynamic, self-organizing workflow execution through AI-powered reasoning and service discovery.
+YAWL v6.0.0 introduces a **generic autonomous agent framework** that enables dynamic, self-organizing workflow execution through AI-powered reasoning and service discovery.
 
 ## Architecture
 

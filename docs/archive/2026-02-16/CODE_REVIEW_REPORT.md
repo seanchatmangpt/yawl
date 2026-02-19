@@ -1,11 +1,11 @@
-# YAWL v5.2 Code Review Report
+# YAWL v6.0.0 Code Review Report
 **Branch:** claude/maven-first-build-kizBd  
 **Date:** 2026-02-16  
 **Reviewer:** YAWL Code Reviewer (HYPER_STANDARDS Compliance)
 
 ## Executive Summary
 
-Comprehensive code review completed for YAWL v5.2 Maven migration. The codebase shows **generally good compliance** with HYPER_STANDARDS, but contains **critical violations** that must be addressed before production deployment.
+Comprehensive code review completed for YAWL v6.0.0 Maven migration. The codebase shows **generally good compliance** with HYPER_STANDARDS, but contains **critical violations** that must be addressed before production deployment.
 
 ### Overall Assessment
 - **PASS**: No TODO/FIXME/XXX/HACK markers in production code ✓
@@ -457,7 +457,7 @@ catch (SQLException sqle) {
 
 ## 9. Conclusion
 
-The YAWL v5.2 Maven migration is **architecturally sound** with excellent dependency management and build configuration. However, **exception handling patterns require immediate attention** before production deployment.
+The YAWL v6.0.0 Maven migration is **architecturally sound** with excellent dependency management and build configuration. However, **exception handling patterns require immediate attention** before production deployment.
 
 ### Strengths
 - Clean Maven BOM structure

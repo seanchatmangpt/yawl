@@ -1,8 +1,8 @@
-# Rollback Procedures for YAWL v5.2
+# Rollback Procedures for YAWL v6.0.0
 
 ## Executive Summary
 
-This document outlines critical procedures for rolling back a YAWL v5.2 deployment. All procedures prioritize minimal downtime and data integrity. Target recovery time objective (RTO) is 5-10 minutes for standard rollbacks.
+This document outlines critical procedures for rolling back a YAWL v6.0.0 deployment. All procedures prioritize minimal downtime and data integrity. Target recovery time objective (RTO) is 5-10 minutes for standard rollbacks.
 
 ## Pre-Deployment Checklist
 
@@ -414,7 +414,7 @@ bash scripts/rollback.sh --version v5.1
 ### Scenario 6: Security Vulnerability Discovered
 
 **Symptom**
-- CVE published affecting YAWL v5.2 dependencies
+- CVE published affecting YAWL v6.0.0 dependencies
 - Unauthorized API access due to authentication bypass
 
 **Resolution - EMERGENCY ROLLBACK**
@@ -498,7 +498,7 @@ done
 ### Example RCA Template
 
 ```
-INCIDENT REPORT: YAWL v5.2 Deployment Rollback
+INCIDENT REPORT: YAWL v6.0.0 Deployment Rollback
 ================================================
 
 Incident: [Title]

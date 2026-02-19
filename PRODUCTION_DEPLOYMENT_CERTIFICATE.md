@@ -1,4 +1,4 @@
-# YAWL v5.2 - PRODUCTION DEPLOYMENT CERTIFICATE
+# YAWL v6.0.0 - PRODUCTION DEPLOYMENT CERTIFICATE
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## CERTIFICATION STATEMENT
 
-This certifies that **YAWL v5.2** has undergone comprehensive production readiness validation and has been assessed against enterprise deployment standards.
+This certifies that **YAWL v6.0.0** has undergone comprehensive production readiness validation and has been assessed against enterprise deployment standards.
 
 **Overall Rating:** ⭐⭐⭐⭐☆ (8.5/10)  
 **Deployment Status:** **✅ CONDITIONALLY APPROVED**

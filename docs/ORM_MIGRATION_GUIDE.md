@@ -634,7 +634,7 @@ hibernate.hikari.minimumIdle=10
 - [Hibernate 6.5 Migration Guide](https://docs.jboss.org/hibernate/orm/6.5/migration-guide/migration-guide.html)
 - [Jakarta Persistence 3.0 Specification](https://jakarta.ee/specifications/persistence/3.0/)
 - [HikariCP Documentation](https://github.com/brettwooldridge/HikariCP)
-- [YAWL v5.2 Documentation](../README.md)
+- [YAWL v6.0.0 Documentation](../README.md)
 
 ---
 

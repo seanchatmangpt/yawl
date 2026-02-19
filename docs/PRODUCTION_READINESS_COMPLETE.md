@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Readiness - COMPLETE
+# YAWL v6.0.0 Production Readiness - COMPLETE
 
 **Final Status Report**
 **Date:** 2026-02-16
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 is **READY FOR PRODUCTION DEPLOYMENT** on March 2, 2026.
+YAWL v6.0.0 is **READY FOR PRODUCTION DEPLOYMENT** on March 2, 2026.
 
 All critical documentation, architecture decisions, deployment runbooks, and operational procedures have been completed and reviewed.
 

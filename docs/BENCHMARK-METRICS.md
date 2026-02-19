@@ -1,4 +1,4 @@
-# YAWL v5.2 Benchmark Metrics - Tracking Performance
+# YAWL v6.0.0 Benchmark Metrics - Tracking Performance
 
 This document establishes baseline metrics and tracks performance improvements from v5.1 to v5.2.
 

@@ -25,6 +25,8 @@ import org.yawlfoundation.yawl.integration.mcp.YawlMcpServer;
  * Chicago TDD: tests real MCP server capabilities, logging handler behaviour,
  * and protocol-level validations without requiring a live YAWL engine.
  *
+ * Tests SDK v1 (0.18.0+) compatibility implementing MCP 2025-11-25 specification.
+ *
  * Coverage targets:
  * - Tool registration and capability declarations
  * - Resource availability validation (static and template URIs)
@@ -34,7 +36,7 @@ import org.yawlfoundation.yawl.integration.mcp.YawlMcpServer;
  * - Prompt and completion capability declarations
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class McpProtocolTest extends TestCase {
 

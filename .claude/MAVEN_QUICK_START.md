@@ -1,4 +1,4 @@
-# Maven Quick Start Guide for YAWL v5.2
+# Maven Quick Start Guide for YAWL v6.0.0
 
 ## Essential Commands
 

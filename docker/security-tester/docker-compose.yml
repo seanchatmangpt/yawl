@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  security-tester:
+    build: .
+    container_name: yawl-security-tester
+    network_mode: host
+    volumes:
+      - ../:/app/yawl:ro
+    environment:
+      - TARGET_HOST=localhost
+      - TARGET_PORT=8080
+      - MCP_PORT=8081
+      - A2A_PORT=8082
+    command: >
+      sh -c "
+        echo 'YAWL MCP-A2A Security Testing Environment'
+        echo '========================================='
+        echo 'Available tools:'
+        echo '  - OWASP ZAP: /opt/ZAP/zap.sh'
+        echo '  - Burp Suite: /opt/burpsuite_community/burpsuite_community.sh'
+        echo '  - sqlmap: sqlmap'
+        echo '  - Custom test script: /app/scripts/security-test-runner.sh'
+        echo ''
+        echo 'To run security tests:'
+        echo '  /app/scripts/security-test-runner.sh'
+        echo ''
+        /bin/bash
+      "

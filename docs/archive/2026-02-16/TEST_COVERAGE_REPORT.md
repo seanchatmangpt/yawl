@@ -1,4 +1,4 @@
-# YAWL v5.2 Test Coverage Report
+# YAWL v6.0.0 Test Coverage Report
 ## Priority 2: Integration Tests & Coverage Achievement
 
 **Date:** 2026-02-16

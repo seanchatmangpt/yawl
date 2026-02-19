@@ -1,4 +1,4 @@
-# YAWL v5.2 - Production Readiness Report
+# YAWL v6.0.0 - Production Readiness Report
 **Java 25 Migration Complete**
 
 **Date:** 2026-02-16  
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 has been successfully modernized with comprehensive Java 25 feature adoption. The system compiles without errors, implements modern Java patterns throughout the codebase, and is ready for production deployment.
+YAWL v6.0.0 has been successfully modernized with comprehensive Java 25 feature adoption. The system compiles without errors, implements modern Java patterns throughout the codebase, and is ready for production deployment.
 
 ---
 
@@ -518,7 +518,7 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
 ## Conclusion
 
-YAWL v5.2 is **production-ready** with comprehensive Java 25 modernization. The system demonstrates:
+YAWL v6.0.0 is **production-ready** with comprehensive Java 25 modernization. The system demonstrates:
 
 - ✅ **Clean builds** with zero compilation errors
 - ✅ **Modern Java patterns** throughout the codebase

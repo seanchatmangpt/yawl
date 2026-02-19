@@ -1,4 +1,4 @@
-# YAWL v5.2 - Enterprise CI/CD Pipeline Delivery Summary
+# YAWL v6.0.0 - Enterprise CI/CD Pipeline Delivery Summary
 
 **Date:** 2026-02-16
 **Status:** ✅ COMPLETE - All deliverables met
@@ -735,7 +735,7 @@ All acceptance criteria have been met:
 
 ## Sign-Off
 
-**Project:** YAWL v5.2 Enterprise CI/CD Pipeline
+**Project:** YAWL v6.0.0 Enterprise CI/CD Pipeline
 **Delivery Date:** 2026-02-16
 **Status:** ✅ COMPLETE
 
@@ -802,4 +802,4 @@ curl -f https://staging.yawl.example.com/actuator/health
 
 **END OF DELIVERY SUMMARY**
 
-*This document represents the complete delivery of the YAWL v5.2 Enterprise CI/CD Pipeline implementation. All deliverables have been completed, tested, and documented.*
+*This document represents the complete delivery of the YAWL v6.0.0 Enterprise CI/CD Pipeline implementation. All deliverables have been completed, tested, and documented.*

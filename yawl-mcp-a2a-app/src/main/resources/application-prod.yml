@@ -1,0 +1,42 @@
+# Production profile configuration
+# Activates with: --spring.profiles.active=prod
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+# Production logging - WARN level, structured output
+logging:
+  level:
+    root: WARN
+    org.yawlfoundation.yawl: INFO
+    org.yawlfoundation.yawl.mcp.a2a: INFO
+    org.springframework: WARN
+    io.modelcontextprotocol: INFO
+    io.anthropic.a2a: INFO
+
+# Minimal actuator endpoints in production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+# Production OpenTelemetry settings
+otel:
+  sdk:
+    disabled: false
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: otlp
+
+# Production server settings
+server:
+  error:
+    include-message: never
+    include-binding-errors: never

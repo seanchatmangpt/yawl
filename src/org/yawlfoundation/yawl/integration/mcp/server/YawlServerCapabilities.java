@@ -8,7 +8,7 @@ import io.modelcontextprotocol.spec.McpSchema;
  * Provides factory methods for creating server capabilities configurations
  * that declare what features the YAWL MCP server supports to connected clients.
  *
- * MCP capabilities in SDK 0.17.2:
+ * MCP capabilities in SDK 0.18.0 (MCP 2025-11-25 specification):
  * - Tools: Executable functions exposed to AI models (with listChanged notifications)
  * - Resources: Read-only data accessible via URIs (with subscribe and listChanged)
  * - Prompts: Pre-defined prompt templates (with listChanged notifications)
@@ -16,7 +16,7 @@ import io.modelcontextprotocol.spec.McpSchema;
  * - Completions: Autocomplete support for prompt and resource references
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public final class YawlServerCapabilities {
 

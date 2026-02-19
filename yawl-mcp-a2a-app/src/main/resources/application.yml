@@ -1,0 +1,164 @@
+# YAWL MCP-A2A Application Configuration
+# ========================================
+# This configuration file provides sensible defaults for development.
+# Override with environment variables or application-{profile}.yml for other environments.
+
+spring:
+  application:
+    name: yawl-mcp-a2a-app
+
+  # Banner configuration
+  main:
+    banner-mode: console
+    log-startup-info: true
+
+  # Jackson JSON configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+
+  # Lifecycle timeout for graceful shutdown
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+# YAWL Engine Configuration
+yawl:
+  engine:
+    url: ${YAWL_ENGINE_URL:http://localhost:8080/yawl}
+    username: ${YAWL_USERNAME:admin}
+    password: ${YAWL_PASSWORD:YAWL}
+    connection:
+      timeout-ms: 5000
+      retry-attempts: 3
+      retry-delay-ms: 1000
+
+  # MCP Server Configuration
+  mcp:
+    enabled: ${MCP_ENABLED:true}
+    transport: ${MCP_TRANSPORT:stdio}
+    server-name: "yawl-mcp-server"
+    server-version: "6.0.0-Alpha"
+
+    # HTTP transport settings (when transport=http)
+    http:
+      enabled: ${MCP_HTTP_ENABLED:false}
+      port: ${MCP_HTTP_PORT:8081}
+      path: ${MCP_HTTP_PATH:/mcp}
+
+  # A2A Agent Configuration
+  a2a:
+    enabled: ${A2A_ENABLED:true}
+    agent-name: ${A2A_AGENT_NAME:yawl-workflow-agent}
+    agent-version: "6.0.0-Alpha"
+    agent-description: "YAWL workflow management agent with MCP tool support"
+
+    # Agent capabilities
+    capabilities:
+      workflow-management: true
+      task-handling: true
+      data-transformation: true
+      process-introspection: true
+
+    # Transport settings
+    transport:
+      rest:
+        enabled: ${A2A_REST_ENABLED:true}
+        port: ${A2A_REST_PORT:8082}
+      jsonrpc:
+        enabled: ${A2A_JSONRPC_ENABLED:false}
+        port: ${A2A_JSONRPC_PORT:8083}
+
+# Actuator endpoints for health and metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      version: "6.0.0-Alpha"
+    distribution:
+      percentiles-histogram:
+        yawl_mcp_tool_duration_seconds: true
+        yawl_a2a_message_duration_seconds: true
+        yawl_workitem_duration_seconds: true
+        yawl_pool_wait_duration_seconds: true
+      percentiles:
+        yawl_mcp_tool_duration_seconds: 0.5,0.9,0.95,0.99
+        yawl_a2a_message_duration_seconds: 0.5,0.9,0.95,0.99
+    enable:
+      jvm: true
+      process: true
+      system: true
+      tomcat: false
+      http: true
+      logback: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# YAWL Metrics Configuration
+yawl:
+  metrics:
+    enabled: ${YAWL_METRICS_ENABLED:true}
+    environment: ${YAWL_ENVIRONMENT:development}
+    instance-id: ${YAWL_INSTANCE_ID:}
+
+# OpenTelemetry configuration
+otel:
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:false}
+  service:
+    name: ${spring.application.name}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:logging}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:prometheus}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:logging}
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    org.yawlfoundation.yawl: INFO
+    org.yawlfoundation.yawl.mcp.a2a: DEBUG
+    org.springframework: WARN
+    io.modelcontextprotocol: DEBUG
+    io.anthropic.a2a: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:/var/log/yawl/mcp-a2a.log}
+  log4j2:
+    config:
+      override: classpath:log4j2.xml
+
+# Server configuration (for REST endpoints)
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: always
+    include-binding-errors: always

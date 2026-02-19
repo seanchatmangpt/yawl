@@ -15,11 +15,13 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
- * YAWL Resource Provider for MCP SDK 0.17.2.
+ * YAWL Resource Provider for MCP SDK v1 (0.18.0+).
  *
  * Static factory class that creates MCP resource and resource template specifications
  * backed by real YAWL engine calls via InterfaceB. Resources expose read-only access
  * to workflow specifications, running cases, and work items.
+ *
+ * Implements MCP 2025-11-25 specification with exchange-based handlers.
  *
  * Static Resources (fixed URIs):
  * - yawl://specifications - List all loaded workflow specifications
@@ -32,14 +34,15 @@ import io.modelcontextprotocol.spec.McpSchema;
  * - yawl://workitems/{workItemId} - Individual work item details
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class YawlResourceProvider {
 
     private static final Logger LOGGER = Logger.getLogger(YawlResourceProvider.class.getName());
 
     private YawlResourceProvider() {
-        // Static factory class - prevent instantiation
+        throw new UnsupportedOperationException(
+            "YawlResourceProvider is a static factory class and cannot be instantiated");
     }
 
     /**

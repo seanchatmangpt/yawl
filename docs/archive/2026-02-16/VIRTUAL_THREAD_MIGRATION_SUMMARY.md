@@ -496,7 +496,7 @@ ExecutorService executor = Executors.newFixedThreadPool(12);
 
 ## Conclusion
 
-Virtual thread migration successfully completed for YAWL v5.2. **All 15 thread pools** migrated to virtual threads (5 directly, 1 scheduler delegates to virtual threads).
+Virtual thread migration successfully completed for YAWL v6.0.0. **All 15 thread pools** migrated to virtual threads (5 directly, 1 scheduler delegates to virtual threads).
 
 **Key Achievements:**
 - **Performance:** 10-100x improvement for I/O-bound operations

@@ -1,4 +1,4 @@
-# YAWL v5.2 Security Audit Summary
+# YAWL v6.0.0 Security Audit Summary
 **Date:** 2026-02-16
 **Auditor:** prod-val agent
 **Scope:** Code security scan for production readiness

@@ -1,6 +1,6 @@
 # Jakarta EE Migration - Execution Plan
 
-**YAWL v5.2**
+**YAWL v6.0.0**
 **Date:** 2026-02-15
 **Status:** READY FOR EXECUTION
 

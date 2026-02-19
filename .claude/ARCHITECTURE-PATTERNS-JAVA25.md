@@ -1,4 +1,4 @@
-# Java 25 Architectural Patterns for YAWL v5.2
+# Java 25 Architectural Patterns for YAWL v6.0.0
 
 **Date**: Feb 2026 | **Status**: Research + Implementation Guide
 

@@ -14,10 +14,12 @@
 package org.yawlfoundation.yawl.integration.conflict;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +46,7 @@ public class ConflictResolutionService {
 
     private final Map<String, ConflictResolver> resolvers = new ConcurrentHashMap<>();
     private final Map<String, ResolutionResult> resolutionHistory = new ConcurrentHashMap<>();
-    private final ExecutorService executorService;
+    private final AtomicReference<ExecutorService> executorServiceRef;
     private final ConflictSelectionStrategy selectionStrategy;
     private final ResolutionObserver observer;
     private final Map<String, Object> globalConfiguration;
@@ -231,9 +233,9 @@ public class ConflictResolutionService {
         this.globalConfiguration = new HashMap<>(DEFAULT_CONFIGURATION);
         this.selectionStrategy = new DefaultSelectionStrategy();
         this.observer = new DefaultObserver();
-        this.executorService = Executors.newFixedThreadPool(
+        this.executorServiceRef = new AtomicReference<>(Executors.newFixedThreadPool(
             ((Number) globalConfiguration.get("executorThreads")).intValue()
-        );
+        ));
     }
 
     /**
@@ -353,7 +355,7 @@ public class ConflictResolutionService {
             } catch (Exception e) {
                 throw new RuntimeException("Asynchronous resolution failed", e);
             }
-        }, executorService);
+        }, executorServiceRef.get());
     }
 
     /**
@@ -428,8 +430,8 @@ public class ConflictResolutionService {
         if (configuration.containsKey("executorThreads")) {
             int newThreads = ((Number) configuration.get("executorThreads")).intValue();
             if (newThreads > 0) {
-                ExecutorService oldExecutor = executorService;
-                executorService = Executors.newFixedThreadPool(newThreads);
+                ExecutorService oldExecutor = executorServiceRef.get();
+                executorServiceRef.set(Executors.newFixedThreadPool(newThreads));
                 oldExecutor.shutdown();
             }
         }
@@ -441,8 +443,9 @@ public class ConflictResolutionService {
      * @return true if service is healthy
      */
     public boolean isHealthy() {
-        return !resolvers.isEmpty() && executorService != null &&
-               !executorService.isShutdown() &&
+        ExecutorService executor = executorServiceRef.get();
+        return !resolvers.isEmpty() && executor != null &&
+               !executor.isShutdown() &&
                resolvers.values().stream().allMatch(ConflictResolver::isHealthy);
     }
 
@@ -450,13 +453,14 @@ public class ConflictResolutionService {
      * Shutdown the service and clean up resources.
      */
     public void shutdown() {
-        executorService.shutdown();
+        ExecutorService executor = executorServiceRef.get();
+        executor.shutdown();
         try {
-            if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
             }
         } catch (InterruptedException e) {
-            executorService.shutdownNow();
+            executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
 

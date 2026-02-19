@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/common/identifier.json",
+  "title": "Identifier Format",
+  "description": "Unique identifier format used across YAWL protocols",
+  "type": "string",
+  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$",
+  "minLength": 1,
+  "maxLength": 64,
+  "examples": [
+    "WI-12345",
+    "case-abc-def",
+    "agent-xyz",
+    "task-12345-67890"
+  ],
+  "description": "Identifiers must be alphanumeric with optional hyphens and underscores"
+}

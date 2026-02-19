@@ -1,4 +1,4 @@
-# YAWL v5.2 Deployment Checklist
+# YAWL v6.0.0 Deployment Checklist
 
 ## Pre-Deployment Validation (1-2 hours before deployment)
 
@@ -191,7 +191,7 @@
 
 - [ ] **Status Page Update**: Mark deployment complete
   - Status: "Operational"
-  - Message: "Deployment of YAWL v5.2 complete"
+  - Message: "Deployment of YAWL v6.0.0 complete"
 
 - [ ] **Notify Stakeholders**: Engineering and management
   - Channel: Slack #announcements

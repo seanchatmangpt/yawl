@@ -1,0 +1,48 @@
+# Development profile configuration
+# Activates with: --spring.profiles.active=dev
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+# Enable debug logging in development
+logging:
+  level:
+    root: DEBUG
+    org.yawlfoundation.yawl: DEBUG
+    org.yawlfoundation.yawl.mcp.a2a: TRACE
+    org.springframework: DEBUG
+    org.hibernate.SQL: DEBUG
+    io.modelcontextprotocol: TRACE
+    io.anthropic.a2a: TRACE
+
+# Disable file logging in development
+logging:
+  file:
+    name:
+
+# Enable all actuator endpoints in development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+# Development-specific YAWL settings
+yawl:
+  engine:
+    url: http://localhost:8080/yawl
+
+  mcp:
+    transport: stdio
+    http:
+      enabled: false
+
+  a2a:
+    transport:
+      rest:
+        enabled: true
+        port: 8082
+      jsonrpc:
+        enabled: false

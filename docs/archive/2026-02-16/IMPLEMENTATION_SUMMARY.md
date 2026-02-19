@@ -1,4 +1,4 @@
-# YAWL v5.2 Build System Modernization - Implementation Summary
+# YAWL v6.0.0 Build System Modernization - Implementation Summary
 
 **Date:** 2026-02-15
 **Status:** ✅ Complete - Production Ready

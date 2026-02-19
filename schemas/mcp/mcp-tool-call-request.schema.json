@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Tool Call Request",
+  "description": "Request to call a YAWL tool",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the tool to call",
+      "examples": [
+        "yawl_list_specifications",
+        "yawl_launch_case",
+        "yawl_get_work_items"
+      ]
+    },
+    "arguments": {
+      "type": "object",
+      "description": "Tool arguments based on specific tool requirements",
+      "additionalProperties": true,
+      "properties": {
+        "specIdentifier": {
+          "type": "string",
+          "description": "Workflow specification identifier"
+        },
+        "specVersion": {
+          "type": "string",
+          "description": "Specification version (default: 0.1)"
+        },
+        "specUri": {
+          "type": "string",
+          "description": "Specification URI (default: same as identifier)"
+        },
+        "caseId": {
+          "type": "string",
+          "description": "Case ID for case-specific operations"
+        },
+        "workItemId": {
+          "type": "string",
+          "description": "Work item ID (format: caseID:taskID)"
+        },
+        "caseData": {
+          "type": "string",
+          "description": "XML case input data for launching cases"
+        },
+        "outputData": {
+          "type": "string",
+          "description": "XML output data for completing work items"
+        },
+        "specXml": {
+          "type": "string",
+          "description": "YAWL specification XML content for uploading"
+        },
+        "query": {
+          "type": "string",
+          "description": "Natural language query for Z.AI integration"
+        }
+      }
+    }
+  },
+  "required": ["name"],
+  "examples": [
+    {
+      "description": "List all specifications",
+      "value": {
+        "name": "yawl_list_specifications",
+        "arguments": {}
+      }
+    },
+    {
+      "description": "Launch a new case",
+      "value": {
+        "name": "yawl_launch_case",
+        "arguments": {
+          "specIdentifier": "OrderProcessing",
+          "specVersion": "1.0",
+          "caseData": "<data><customer>John Doe</customer><amount>100</amount></data>"
+        }
+      }
+    },
+    {
+      "description": "Get work items for a specific case",
+      "value": {
+        "name": "yawl_get_work_items_for_case",
+        "arguments": {
+          "caseId": "case123"
+        }
+      }
+    },
+    {
+      "description": "Check out a work item",
+      "value": {
+        "name": "yawl_checkout_work_item",
+        "arguments": {
+          "workItemId": "case123:task1"
+        }
+      }
+    },
+    {
+      "description": "Complete a work item with output",
+      "value": {
+        "name": "yawl_checkin_work_item",
+        "arguments": {
+          "workItemId": "case123:task1",
+          "outputData": "<data><result>Processed successfully</result></data>"
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Baselines
+# YAWL v6.0.0 Performance Baselines
 
 ## Executive Summary
 

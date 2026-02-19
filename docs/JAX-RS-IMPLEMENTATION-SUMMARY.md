@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented Jakarta JAX-RS 3.1 (Jakarta EE 10) REST APIs for YAWL v5.2, providing modern annotation-based resource definitions alongside legacy servlet-based interfaces.
+Successfully implemented Jakarta JAX-RS 3.1 (Jakarta EE 10) REST APIs for YAWL v6.0.0, providing modern annotation-based resource definitions alongside legacy servlet-based interfaces.
 
 **Implementation Date:** February 16, 2026
 **YAWL Version:** 5.2

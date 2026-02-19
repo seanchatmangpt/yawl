@@ -1,0 +1,65 @@
+# Production overlay for YAWL MCP-A2A Application
+# Use: kubectl apply -k overlays/prod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl-mcp-a2a
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: production
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: yawl-mcp-a2a-config
+    patch: |-
+      - op: replace
+        path: /data/SPRING_PROFILES_ACTIVE
+        value: "prod"
+      - op: replace
+        path: /data/LOG_LEVEL_ROOT
+        value: "WARN"
+      - op: replace
+        path: /data/LOG_LEVEL_YAWL
+        value: "INFO"
+      - op: replace
+        path: /data/MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
+        value: "never"
+  - target:
+      kind: Deployment
+      name: yawl-mcp-a2a-app
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "2Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "4000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "4Gi"
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: yawl-mcp-a2a-app-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 20
+      - op: replace
+        path: /spec/metrics/0/resource/target/averageUtilization
+        value: 60
+      - op: replace
+        path: /spec/metrics/1/resource/target/averageUtilization
+        value: 70

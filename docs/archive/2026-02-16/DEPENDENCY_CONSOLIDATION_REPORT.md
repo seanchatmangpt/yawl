@@ -1,4 +1,4 @@
-# YAWL v5.2 Dependency Consolidation & Migration Report
+# YAWL v6.0.0 Dependency Consolidation & Migration Report
 
 **Generated:** 2026-02-15  
 **Status:** APPROVED FOR PRODUCTION  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-This report documents comprehensive dependency consolidation, BOM management, and integration test coverage for YAWL v5.2. All dependency conflicts have been resolved, and a production-ready test suite validates all upgrade tracks.
+This report documents comprehensive dependency consolidation, BOM management, and integration test coverage for YAWL v6.0.0. All dependency conflicts have been resolved, and a production-ready test suite validates all upgrade tracks.
 
 **Key Metrics:**
 - **Total Dependencies:** 45+
@@ -644,7 +644,7 @@ target/site/jacoco/index.html
 
 ## 13. Conclusion
 
-The YAWL v5.2 dependency consolidation is complete with:
+The YAWL v6.0.0 dependency consolidation is complete with:
 - All conflicts resolved
 - All BOMs properly configured
 - Comprehensive integration test suite (80%+ coverage)

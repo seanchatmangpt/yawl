@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawl.foundation/schemas/a2a/skill-request.schema.json",
+  "title": "A2A Skill Request",
+  "description": "Request format for invoking A2A skills on remote agents",
+  "type": "object",
+  "required": ["jsonrpc", "method", "id", "params"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "const": "2.0",
+      "description": "JSON-RPC protocol version"
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "skills/launch_workflow",
+        "skills/query_workflows",
+        "skills/manage_workitems",
+        "skills/cancel_workflow",
+        "skills/handoff_workitem",
+        "skills/get_status",
+        "skills/execute_task",
+        "skills/request_approval"
+      ],
+      "description": "A2A skill method name"
+    },
+    "id": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "integer", "minimum": 0}
+      ],
+      "description": "Unique request identifier"
+    },
+    "params": {
+      "type": "object",
+      "oneOf": [
+        {"$ref": "#/$defs/launchWorkflowParams"},
+        {"$ref": "#/$defs/queryWorkflowsParams"},
+        {"$ref": "#/$defs/manageWorkitemsParams"},
+        {"$ref": "#/$defs/cancelWorkflowParams"},
+        {"$ref": "#/$defs/handoffWorkitemParams"}
+      ],
+      "description": "Skill-specific parameters"
+    },
+    "auth": {
+      "type": "object",
+      "description": "Authentication credentials",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["bearer", "api_key", "spiffe", "oauth2"],
+          "description": "Authentication type"
+        },
+        "token": {
+          "type": "string",
+          "description": "Bearer token or API key"
+        },
+        "spiffe_id": {
+          "type": "string",
+          "format": "uri",
+          "description": "SPIFFE ID for workload identity"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "launchWorkflowParams": {
+      "type": "object",
+      "required": ["spec_identifier"],
+      "properties": {
+        "spec_identifier": {
+          "type": "string",
+          "description": "YAWL specification identifier"
+        },
+        "spec_version": {
+          "type": "string",
+          "default": "0.1",
+          "description": "Specification version"
+        },
+        "case_data": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Initial case data"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 50
+        },
+        "callback_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for completion callback"
+        }
+      },
+      "additionalProperties": false
+    },
+    "queryWorkflowsParams": {
+      "type": "object",
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "description": "Filter by case ID"
+        },
+        "spec_identifier": {
+          "type": "string",
+          "description": "Filter by specification"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["running", "completed", "failed", "suspended", "cancelled"],
+          "description": "Filter by status"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "manageWorkitemsParams": {
+      "type": "object",
+      "required": ["action", "work_item_id"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["checkout", "checkin", "suspend", "resume", "skip", "delegate"],
+          "description": "Work item action"
+        },
+        "work_item_id": {
+          "type": "string",
+          "description": "Work item ID (format: caseID:taskID)"
+        },
+        "output_data": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Output data for checkin action"
+        },
+        "delegate_to": {
+          "type": "string",
+          "format": "uri",
+          "description": "Target agent URI for delegation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "cancelWorkflowParams": {
+      "type": "object",
+      "required": ["case_id"],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "description": "Case ID to cancel"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Cancellation reason"
+        },
+        "force": {
+          "type": "boolean",
+          "default": false,
+          "description": "Force cancellation even if work items are active"
+        }
+      },
+      "additionalProperties": false
+    },
+    "handoffWorkitemParams": {
+      "type": "object",
+      "required": ["work_item_id", "target_agent"],
+      "properties": {
+        "work_item_id": {
+          "type": "string",
+          "description": "Work item ID to hand off"
+        },
+        "target_agent": {
+          "type": "string",
+          "format": "uri",
+          "description": "Target agent URI"
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["capacity", "specialization", "load_balance", "failover", "user_request"],
+          "description": "Reason for handoff"
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional context to transfer"
+        },
+        "handoff_token": {
+          "type": "string",
+          "description": "Pre-signed handoff JWT token"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

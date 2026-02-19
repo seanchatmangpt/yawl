@@ -1,10 +1,10 @@
-# YAWL v5.2 Production Test Suite
+# YAWL v6.0.0 Production Test Suite
 
 **Chicago TDD (Detroit School) - Real Integrations Only**
 
 ## Overview
 
-This comprehensive production test suite validates YAWL v5.2 readiness for production deployment using Chicago TDD principles:
+This comprehensive production test suite validates YAWL v6.0.0 readiness for production deployment using Chicago TDD principles:
 - **Real integrations** (no mocks or stubs)
 - **Actual YAWL Engine instances**
 - **Real database connections**

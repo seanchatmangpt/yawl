@@ -1,0 +1,367 @@
+# YAWL MCP-A2A Application Deployment
+# Spring Boot application providing unified MCP server and A2A agent capabilities.
+# Supports Java 25 virtual threads, structured concurrency, and service mesh integration.
+#
+# Image placeholder __MCP_A2A_IMAGE__ is replaced by the CI pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-mcp-a2a-app
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: mcp-a2a-server
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "6.0.0-Alpha"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-a2a-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yawl-mcp-a2a-app
+        app.kubernetes.io/component: mcp-a2a-server
+        app.kubernetes.io/part-of: yawl
+        app.kubernetes.io/version: "6.0.0-Alpha"
+      annotations:
+        # Prometheus scraping configuration
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+        # Istio sidecar configuration
+        traffic.sidecar.istio.io/includeInboundPorts: "8080,8081,8082"
+        traffic.sidecar.istio.io/includeOutboundPorts: "8080,4317,9090"
+        # Proxy protocol for accurate client IP
+        proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": true}'
+    spec:
+      serviceAccountName: yawl-mcp-a2a-service-account
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Wait for YAWL engine to be ready before starting
+        - name: wait-for-engine
+          image: curlimages/curl:8.11.1
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for YAWL engine at $YAWL_ENGINE_URL..."
+              max_attempts=60
+              attempt=0
+              until curl -sf "$YAWL_ENGINE_URL/ib" > /dev/null 2>&1; do
+                attempt=$((attempt + 1))
+                if [ $attempt -ge $max_attempts ]; then
+                  echo "Engine not ready after $max_attempts attempts, exiting"
+                  exit 1
+                fi
+                echo "Engine not ready (attempt $attempt/$max_attempts), retrying in 5s..."
+                sleep 5
+              done
+              echo "YAWL engine is ready."
+          env:
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: YAWL_ENGINE_URL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+      containers:
+        - name: mcp-a2a-app
+          image: __MCP_A2A_IMAGE__
+          imagePullPolicy: Always
+          ports:
+            # Main HTTP server (Actuator, REST endpoints)
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            # MCP HTTP transport
+            - name: mcp-http
+              containerPort: 8081
+              protocol: TCP
+            # A2A REST transport
+            - name: a2a-rest
+              containerPort: 8082
+              protocol: TCP
+          env:
+            # Spring configuration
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: SERVER_PORT
+            - name: SERVER_SHUTDOWN
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: SERVER_SHUTDOWN
+            # YAWL Engine connection
+            - name: YAWL_ENGINE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: YAWL_ENGINE_URL
+            - name: YAWL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: YAWL_USERNAME
+            - name: YAWL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-mcp-a2a-secrets
+                  key: YAWL_PASSWORD
+            # MCP configuration
+            - name: MCP_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: MCP_ENABLED
+            - name: MCP_HTTP_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: MCP_HTTP_ENABLED
+            - name: MCP_HTTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: MCP_HTTP_PORT
+            - name: MCP_SERVER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: MCP_SERVER_NAME
+            # A2A configuration
+            - name: A2A_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: A2A_ENABLED
+            - name: A2A_AGENT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: A2A_AGENT_NAME
+            - name: A2A_REST_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: A2A_REST_ENABLED
+            - name: A2A_REST_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: A2A_REST_PORT
+            - name: A2A_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_JWT_SECRET
+            - name: A2A_JWT_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: A2A_JWT_ISSUER
+            - name: A2A_API_KEY_MASTER
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_API_KEY_MASTER
+                  optional: true
+            - name: A2A_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: a2a-auth-secrets
+                  key: A2A_API_KEY
+                  optional: true
+            # Z.AI integration (optional)
+            - name: ZAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZAI_API_KEY
+                  optional: true
+            - name: ZHIPU_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zai-api-credentials
+                  key: ZHIPU_API_KEY
+                  optional: true
+            # Agent registry
+            - name: AGENT_REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: AGENT_REGISTRY_URL
+            # OpenTelemetry
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_SDK_DISABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: OTEL_SDK_DISABLED
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: OTEL_METRICS_EXPORTER
+            # JVM options
+            - name: JAVA_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: JAVA_OPTS
+            # Logging
+            - name: LOG_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: yawl-mcp-a2a-config
+                  key: LOG_FILE
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          # Liveness probe - restart container if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+          # Readiness probe - remove from service if not ready
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          # Startup probe - allow time for JVM warmup
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
+            successThreshold: 1
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/yawl
+            - name: app-tmp
+              mountPath: /tmp
+            - name: app-config
+              mountPath: /app/config
+              readOnly: true
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - "sleep 10 && kill -SIGTERM 1"
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: app-logs
+          emptyDir: {}
+        - name: app-tmp
+          emptyDir: {}
+        - name: app-config
+          configMap:
+            name: yawl-mcp-a2a-config
+            optional: true
+      affinity:
+        # Prefer spreading across nodes for high availability
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: yawl-mcp-a2a-app
+                topologyKey: kubernetes.io/hostname
+        # Co-locate with YAWL engine for low-latency InterfaceB calls
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 80
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: yawl-engine
+                namespaces:
+                  - yawl
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-mcp-a2a-app
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300

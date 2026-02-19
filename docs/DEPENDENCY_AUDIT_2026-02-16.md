@@ -1,6 +1,6 @@
 # YAWL Dependency Audit Report
 **Date**: 2026-02-16
-**Version**: YAWL v5.2
+**Version**: YAWL v6.0.0
 **Java Version**: Java 25
 **Build System**: Apache Ant (Legacy) + Maven (Primary)
 **Audit Scope**: Java 25 compatibility, Jakarta EE 10 migration, security updates

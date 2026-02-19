@@ -1,6 +1,6 @@
 # YAWL Synchronization Audit Report
 **Date:** 2026-02-17  
-**Codebase:** YAWL v5.2  
+**Codebase:** YAWL v6.0.0  
 **Scope:** 41 files, 133 synchronized blocks/methods  
 **Agent:** perf-bench
 

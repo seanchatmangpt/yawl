@@ -1,4 +1,4 @@
-# YAWL v5.2 Library Migration Guide
+# YAWL v6.0.0 Library Migration Guide
 
 This guide documents the library changes from v5.1 to v5.2 and their performance implications.
 

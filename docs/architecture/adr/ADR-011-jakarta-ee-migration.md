@@ -7,7 +7,7 @@
 
 ## Context
 
-YAWL v5.2 currently uses Java EE 8 APIs with the `javax.*` namespace. Jakarta EE 9 introduced a backward-incompatible namespace change from `javax.*` to `jakarta.*`. This migration is necessary for:
+YAWL v6.0.0 currently uses Java EE 8 APIs with the `javax.*` namespace. Jakarta EE 9 introduced a backward-incompatible namespace change from `javax.*` to `jakarta.*`. This migration is necessary for:
 
 ### Business Drivers
 

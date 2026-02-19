@@ -1,6 +1,6 @@
 # Build & Testing Quick Implementation Guide
 
-**For**: YAWL v5.2 Maven-based Java 25 project | **Date**: 2026-02-17
+**For**: YAWL v6.0.0 Maven-based Java 25 project | **Date**: 2026-02-17
 
 ---
 
@@ -267,7 +267,7 @@ mvn clean package spotbugs:check pmd:check -DfailOnViolation=false
 ## Decision: JUnit 5 vs JUnit 6
 
 ### Choose JUnit 5 if:
-- ✅ YAWL v5.2 (current version)
+- ✅ YAWL v6.0.0 (current version)
 - ✅ Need established ecosystem
 - ✅ Mature test infrastructure
 - ✅ Staff familiar with JUnit 5
@@ -296,7 +296,7 @@ mvn clean package spotbugs:check pmd:check -DfailOnViolation=false
 - ✅ Complex test dependencies
 - ✅ Fine-grained thread pool control
 - ✅ Data provider caching needed
-- ❌ Not needed for YAWL v5.2
+- ❌ Not needed for YAWL v6.0.0
 
 **Action for YAWL**: Keep JUnit 5 + Surefire
 

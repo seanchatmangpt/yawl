@@ -9,7 +9,7 @@
 
 ## Mission Accomplished
 
-Successfully created comprehensive staging deployment validation suite for YAWL v5.2.
+Successfully created comprehensive staging deployment validation suite for YAWL v6.0.0.
 
 ### Deliverables Created (100%)
 

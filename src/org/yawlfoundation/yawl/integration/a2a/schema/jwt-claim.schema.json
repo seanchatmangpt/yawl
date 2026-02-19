@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.github.io/yawl/schema/jwt-claim.schema.json",
+  "title": "JWT Claims Validation",
+  "description": "Schema for validating JWT claims in A2A authentication",
+  "type": "object",
+  "properties": {
+    "sub": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9_\\-@.]+$",
+      "description": "Subject identifier (unique user/agent ID)"
+    },
+    "iss": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Issuer of the JWT"
+    },
+    "aud": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Audience (single)"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Audiences (multiple)"
+        }
+      ],
+      "description": "Audience(s) the JWT is intended for"
+    },
+    "exp": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Expiration time (Unix timestamp)"
+    },
+    "iat": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Issued at time (Unix timestamp)"
+    },
+    "nbf": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Not before time (Unix timestamp)"
+    },
+    "jti": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "JWT ID (unique identifier)"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50,
+        "pattern": "^[a-zA-Z0-9_\\-:]+$"
+      },
+      "maxItems": 20,
+      "description": "Array of permissions granted"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50,
+        "pattern": "^[a-zA-Z0-9_\\-]+$"
+      },
+      "maxItems": 10,
+      "description": "Array of roles assigned"
+    },
+    "tenantId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Tenant identifier"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional metadata claims"
+    }
+  },
+  "required": ["sub", "exp", "iat"],
+  "additionalProperties": false,
+  "errorMessage": {
+    "required": {
+      "missingProperty": "JWT claim is missing required property: {{missingProperty}}",
+      "required": "JWT requires claims: {{required}}"
+    },
+    "type": "JWT claims must be an object",
+    "properties": {
+      "sub": "Subject must be a string with 1-100 characters",
+      "exp": "Expiration must be a valid Unix timestamp",
+      "iat": "Issued at must be a valid Unix timestamp",
+      "aud": "Audience must be a string or array of strings",
+      "permissions": "Permissions must be an array of strings",
+      "roles": "Roles must be an array of strings"
+    }
+  }
+}

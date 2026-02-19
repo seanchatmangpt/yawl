@@ -1,4 +1,4 @@
-# YAWL v5.2 Documentation Portal
+# YAWL v6.0.0 Documentation Portal
 
 **Last Updated:** 2026-02-16
 **Build Status:** ACTIVE

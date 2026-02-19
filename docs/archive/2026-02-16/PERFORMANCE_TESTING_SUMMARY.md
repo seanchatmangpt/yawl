@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Testing - Executive Summary
+# YAWL v6.0.0 Performance Testing - Executive Summary
 
 **Date**: 2026-02-16  
 **Status**: ✅ COMPLETE  

@@ -293,7 +293,7 @@ These files are preserved in the archive but do not have git history.
 
 ## Summary
 
-This archive consolidates 72 completed deliverables, outdated reports, and superseded documentation from the YAWL v5.2 root directory. The remaining 40 files represent active, current documentation that developers and operators need for daily work.
+This archive consolidates 72 completed deliverables, outdated reports, and superseded documentation from the YAWL v6.0.0 root directory. The remaining 40 files represent active, current documentation that developers and operators need for daily work.
 
 **Archive Purpose**: Maintain clean root directory while preserving historical documentation and completed work artifacts.
 

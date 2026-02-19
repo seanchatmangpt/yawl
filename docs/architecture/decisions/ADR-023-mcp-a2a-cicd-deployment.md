@@ -5,7 +5,7 @@
 
 ## Context
 
-YAWL v5.2 ships `YawlMcpServer` (STDIO-transport MCP server) and `YawlA2AServer`
+YAWL v6.0.0 ships `YawlMcpServer` (STDIO-transport MCP server) and `YawlA2AServer`
 (HTTP REST A2A server), but neither has an automated CI/CD deployment path. The
 current state:
 

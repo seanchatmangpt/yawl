@@ -14,11 +14,17 @@
 package org.yawlfoundation.yawl.integration.conflict;
 
 import java.util.*;
-//import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-// Import only core YAWL interfaces
+// Import core YAWL interfaces
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+// Import A2A integration
+import org.yawlfoundation.yawl.integration.a2a.A2AException;
+// Import autonomous agent interface
+import org.yawlfoundation.yawl.integration.autonomous.AutonomousAgent;
+import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
 
 /**
  * Integration service that connects conflict resolution with existing YAWL framework.
@@ -46,7 +52,7 @@ public class ConflictResolutionIntegrationService {
 
     private final ConflictResolutionService conflictService;
     private final AgentRegistry agentRegistry;
-    private final ConflictDetector conflictDetector;
+    private final AtomicReference<ConflictDetector> conflictDetectorRef;
     private final IntegrationMetrics metrics;
     private final Map<String, CompletableFuture<ConflictResolutionService.ResolutionResult>> pendingResolutions;
 
@@ -199,7 +205,7 @@ public class ConflictResolutionIntegrationService {
             Map<String, Object> contextData = new HashMap<>();
             contextData.put("workItemId", workItem.getID());
             contextData.put("caseId", workItem.getCaseID());
-            contextData.put("decompositionId", workItem.getDecompositionID());
+            contextData.put("taskId", workItem.getTaskID());
 
             return new ConflictContext(conflictId, workflowId, taskId, severity, decisions, contextData);
         }
@@ -287,7 +293,9 @@ public class ConflictResolutionIntegrationService {
         this.configuration = new HashMap<>(DEFAULT_CONFIGURATION);
         this.conflictService = ConflictResolutionService.getInstance();
         this.agentRegistry = new AgentRegistry();
-        this.conflictDetector = new ConflictDetector((int) configuration.get("conflictThreshold"));
+        this.conflictDetectorRef = new AtomicReference<>(
+            new ConflictDetector((int) configuration.get("conflictThreshold"))
+        );
         this.metrics = new IntegrationMetrics();
         this.pendingResolutions = new HashMap<>();
 
@@ -316,9 +324,9 @@ public class ConflictResolutionIntegrationService {
      *
      * @param workItem The work item to complete
      * @param agents List of agents to coordinate (simplified)
-     * @return Resolution result
+     * @return CompletableFuture containing the resolution result
      */
-    public ConflictResolutionService.ResolutionResult completeWorkItemWithConflictResolution(
+    public CompletableFuture<ConflictResolutionService.ResolutionResult> completeWorkItemWithConflictResolution(
         WorkItemRecord workItem, List<Object> agents) {
 
         metrics.increment("workItemCompletionAttempts");
@@ -328,7 +336,7 @@ public class ConflictResolutionIntegrationService {
             List<AgentDecision> decisions = collectAgentDecisions(workItem, agents);
 
             // Check for conflict
-            if (conflictDetector.detectConflict(decisions)) {
+            if (conflictDetectorRef.get().detectConflict(decisions)) {
                 metrics.increment("conflictsDetected");
                 return resolveConflict(workItem, decisions);
             } else {
@@ -424,7 +432,8 @@ public class ConflictResolutionIntegrationService {
 
         } catch (Exception e) {
             metrics.increment("a2aResolutionFailures");
-            throw new A2AException("A2A conflict resolution failed: " + e.getMessage());
+            throw new A2AException(A2AException.ErrorCode.TASK_EXECUTION_FAILED,
+                "A2A conflict resolution failed: " + e.getMessage(), e);
         }
     }
 
@@ -438,8 +447,8 @@ public class ConflictResolutionIntegrationService {
         List<String> recommendations = new ArrayList<>();
 
         // Check work item characteristics
-        String decompositionId = workItem.getDecompositionID();
-        String workItemData = workItem.getData();
+        String taskId = workItem.getTaskID();
+        String workItemData = workItem.getDataListString();
 
         // Simple recommendation logic
         if (isCriticalWorkItem(workItem)) {
@@ -461,8 +470,8 @@ public class ConflictResolutionIntegrationService {
      * @param agentId The agent ID
      * @param status The new status
      */
-    public void updateAgentStatus(String agentId, AgentRegistry.AgentStatus.Status status) {
-        AgentRegistry.AgentStatus agentStatus = agentRegistry.getAgentStatus().get(agentId);
+    public void updateAgentStatus(String agentId, AgentStatus.Status status) {
+        AgentStatus agentStatus = agentRegistry.getAgentStatus().get(agentId);
         if (agentStatus != null) {
             agentRegistry.agentStatus.put(agentId, agentStatus.withStatus(status));
         }
@@ -511,28 +520,52 @@ public class ConflictResolutionIntegrationService {
             // Update conflict threshold if changed
             if (configuration.containsKey("conflictThreshold")) {
                 int threshold = (int) configuration.get("conflictThreshold");
-                this.conflictDetector = new ConflictDetector(threshold);
+                this.conflictDetectorRef.set(new ConflictDetector(threshold));
             }
         }
     }
 
     // Helper methods
 
-    private List<AgentDecision> collectAgentDecisions(WorkItemRecord workItem, List<AutonomousAgent> agents) {
+    private List<AgentDecision> collectAgentDecisions(WorkItemRecord workItem, List<Object> agents) {
         return agents.stream()
             .map(agent -> {
                 try {
-                    // Get decision from agent
-                    String decision = agent.completeWorkItem(workItem);
+                    // Get decision from agent - handle AutonomousAgent interface
+                    String agentId;
+                    String decision;
+                    double confidence;
+                    String rationale;
+
+                    if (agent instanceof AutonomousAgent autonomousAgent) {
+                        // Use AutonomousAgent's capability for decision
+                        agentId = autonomousAgent.toString();
+                        AgentCapability capability = autonomousAgent.getCapability();
+                        if (capability != null) {
+                            decision = capability.domainName();
+                            rationale = capability.description();
+                        } else {
+                            decision = "APPROVE";
+                            rationale = "Agent without capability defaults to approval";
+                        }
+                        confidence = 0.8;
+                    } else {
+                        // Handle generic agent objects
+                        agentId = agent.toString();
+                        decision = agent.toString();
+                        rationale = "Generic agent decision";
+                        confidence = 0.5;
+                    }
+
                     Map<String, Object> metadata = new HashMap<>();
                     metadata.put("agentType", agent.getClass().getSimpleName());
-                    metadata.put("agentId", agent.toString());
+                    metadata.put("agentId", agentId);
                     return new AgentDecision(
-                        agent.toString(),
+                        agentId,
                         decision,
                         metadata,
-                        0.8, // Default confidence
-                        "Standard work item completion"
+                        confidence,
+                        rationale
                     );
                 } catch (Exception e) {
                     // Return error decision
@@ -557,7 +590,7 @@ public class ConflictResolutionIntegrationService {
         pendingResolutions.put(resolutionId, future);
 
         try {
-            ConflictContext context = conflictDetector.createConflictContext(workItem, decisions);
+            ConflictContext context = conflictDetectorRef.get().createConflictContext(workItem, decisions);
 
             conflictService.resolveConflictAsync(context)
                 .thenAccept(result -> {
@@ -585,7 +618,7 @@ public class ConflictResolutionIntegrationService {
         Map<String, Object> metadata = new HashMap<>();
             metadata.put("resolutionMethod", resolutionMethod);
             metadata.put("workItemId", workItem.getID());
-            metadata.put("decompositionId", workItem.getDecompositionID());
+            metadata.put("taskId", workItem.getTaskID());
 
         return new ConflictResolutionService.ResolutionResult(
             resolutionId,
@@ -608,28 +641,29 @@ public class ConflictResolutionIntegrationService {
 
     private boolean isCriticalWorkItem(WorkItemRecord workItem) {
         // Implement logic to determine if work item is critical
-        return workItem.getDecompositionID().contains("critical") ||
-               workItem.getDecompositionID().contains("approve");
+        String taskId = workItem.getTaskID();
+        return taskId != null && (taskId.contains("critical") || taskId.contains("approve"));
     }
 
     private boolean isComplexWorkItem(WorkItemRecord workItem) {
         // Implement logic to determine if work item is complex
-        return workItem.getData() != null && workItem.getData().length() > 1000;
+        String data = workItem.getDataListString();
+        return data != null && data.length() > 1000;
     }
 
     private Map<String, Object> getAgentMetrics() {
         Map<String, Object> agentMetrics = new HashMap<>();
-        Map<String, AgentRegistry.AgentStatus> statusMap = agentRegistry.getAgentStatus();
+        Map<String, AgentStatus> statusMap = agentRegistry.getAgentStatus();
 
-        Map<AgentRegistry.AgentStatus.Status, Long> statusCounts = statusMap.values().stream()
+        Map<AgentStatus.Status, Long> statusCounts = statusMap.values().stream()
             .collect(Collectors.groupingBy(
-                AgentRegistry.AgentStatus::getStatus,
+                AgentStatus::getStatus,
                 Collectors.counting()
             ));
 
         agentMetrics.put("totalAgents", statusMap.size());
         agentMetrics.put("statusCounts", statusCounts);
-        agentMetrics.put("activeAgents", statusCounts.getOrDefault(AgentRegistry.AgentStatus.Status.ACTIVE, 0L));
+        agentMetrics.put("activeAgents", statusCounts.getOrDefault(AgentStatus.Status.ACTIVE, 0L));
 
         return agentMetrics;
     }

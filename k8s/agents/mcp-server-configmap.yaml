@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/name: yawl-mcp-server
     app.kubernetes.io/component: mcp-server
     app.kubernetes.io/part-of: yawl
-    app.kubernetes.io/version: "5.2"
+    app.kubernetes.io/version: "6.0.0"
 data:
   # YAWL engine connection
   YAWL_ENGINE_URL: "http://yawl-engine:8080/yawl"

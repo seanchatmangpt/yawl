@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Resource Read Schema",
+  "description": "Schema for MCP resource read requests and responses",
+  "type": "object",
+  "properties": {
+    "uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI of the resource to read",
+      "examples": [
+        "file:///workflows/OrderProcessing.yawl",
+        "http://localhost:8080/specifications/OrderProcessing"
+      ]
+    }
+  },
+  "required": ["uri"],
+  "examples": [
+    {
+      "description": "Resource Read Request",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "res-123",
+        "method": "resources/read",
+        "params": {
+          "uri": "file:///workflows/OrderProcessing.yawl"
+        }
+      }
+    },
+    {
+      "description": "Resource Read Response (Success)",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "res-123",
+        "result": {
+          "contents": [
+            {
+              "uri": "file:///workflows/OrderProcessing.yawl",
+              "mimeType": "application/xml",
+              "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<yawl:specification xmlns:yawl=\"http://www.yawlfoundation.org/yawl\">\n  <header>\n    <identification uri=\"OrderProcessing\" version=\"1.0\"/>\n    <name>Order Processing</name>\n    <author>YAWL Team</author>\n  </header>\n  <nets>\n    <net id=\"OrderProcessing\">\n      <flowElements>\n        <inputCondition id=\"start\"/>\n        <task id=\"ProcessOrder\"/>\n        <outputCondition id=\"end\"/>\n      </flowElements>\n      <arrows>\n        <arrow id=\"a1\" source=\"start\" target=\"ProcessOrder\"/>\n        <arrow id=\"a2\" source=\"ProcessOrder\" target=\"end\"/>\n      </arrows>\n    </net>\n  </nets>\n</yawl:specification>"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "Resource Read Response (Error)",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "res-123",
+        "error": {
+          "code": -32603,
+          "message": "Resource not found",
+          "data": {
+            "uri": "file:///workflows/Unknown.yawl",
+            "code": "not_found"
+          }
+        }
+      }
+    }
+  ]
+}

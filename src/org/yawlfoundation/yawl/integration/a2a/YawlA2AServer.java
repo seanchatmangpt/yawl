@@ -29,7 +29,7 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ import java.util.concurrent.Executors;
 public class YawlA2AServer {
 
     private static final Logger _logger = LogManager.getLogger(YawlA2AServer.class);
-    private static final String SERVER_VERSION = "5.2.0";
+    private static final String SERVER_VERSION = "6.0.0";
 
     private final String yawlEngineUrl;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;

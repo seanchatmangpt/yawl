@@ -1049,7 +1049,7 @@ echo "✅ Rollback complete - v5.2 is active"
 
 ## Conclusion
 
-This migration guide provides actionable steps for each team to successfully upgrade from YAWL v5.2 to v6.0.0-Alpha. Each team follows their specific phase while coordinating overall progress.
+This migration guide provides actionable steps for each team to successfully upgrade from YAWL v6.0.0 to v6.0.0-Alpha. Each team follows their specific phase while coordinating overall progress.
 
 **Key Success Factors:**
 1. **Parallel work:** Dev, QA, DevOps teams work simultaneously

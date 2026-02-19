@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implemented platform-level resilience for YAWL v5.2 using Resilience4j. Teams now get production-grade fault tolerance **by default** without writing boilerplate code.
+Implemented platform-level resilience for YAWL v6.0.0 using Resilience4j. Teams now get production-grade fault tolerance **by default** without writing boilerplate code.
 
 **Implementation Date**: 2026-02-15
 **Version**: 5.2
@@ -466,7 +466,7 @@ test/org/yawlfoundation/yawl/resilience/
 
 ## Conclusion
 
-Successfully implemented a **platform-level resilience layer** for YAWL v5.2 that:
+Successfully implemented a **platform-level resilience layer** for YAWL v6.0.0 that:
 
 1. **Eliminates cascade failures** with circuit breakers
 2. **Handles transient errors** with intelligent retries

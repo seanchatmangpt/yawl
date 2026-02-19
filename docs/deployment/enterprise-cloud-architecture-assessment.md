@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 demonstrates a **mature, production-ready architecture** with significant cloud-native infrastructure already in place. The codebase exhibits strong foundational elements for enterprise cloud deployment, with existing implementations of resilience patterns, observability components, and integration frameworks. This assessment identifies current capabilities, compatibility with modern cloud technologies, and a roadmap for incremental modernization.
+YAWL v6.0.0 demonstrates a **mature, production-ready architecture** with significant cloud-native infrastructure already in place. The codebase exhibits strong foundational elements for enterprise cloud deployment, with existing implementations of resilience patterns, observability components, and integration frameworks. This assessment identifies current capabilities, compatibility with modern cloud technologies, and a roadmap for incremental modernization.
 
 **Modernization Readiness Score: 75/100**
 
@@ -586,7 +586,7 @@ ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 ## 11. Conclusion
 
-YAWL v5.2 demonstrates **exceptional cloud readiness** for a workflow engine of its maturity. The architecture exhibits:
+YAWL v6.0.0 demonstrates **exceptional cloud readiness** for a workflow engine of its maturity. The architecture exhibits:
 
 ### Strengths
 - ✅ Clean, well-structured codebase

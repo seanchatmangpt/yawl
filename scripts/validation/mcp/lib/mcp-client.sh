@@ -15,7 +15,8 @@ MCP_TIMEOUT="${MCP_TIMEOUT:-30}"
 
 # ── Logging Functions ──────────────────────────────────────────────────────
 log_verbose() {
-    [[ "${VERBOSE:-0}" -eq 1 ]] && echo "[VERBOSE] $*" >&2
+    [[ "${VERBOSE:-0}" -eq 1 ]] && echo "[VERBOSE] $*" >&2 || true
+    return 0
 }
 
 log_error() {

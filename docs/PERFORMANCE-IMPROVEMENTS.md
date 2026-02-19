@@ -1,4 +1,4 @@
-# Performance Improvements in YAWL v5.2
+# Performance Improvements in YAWL v6.0.0
 
 Enterprise BPM engines require careful attention to performance across build time, test execution, and runtime behavior. This document details the performance improvements achieved through Java 25 modernization and dependency updates.
 
@@ -15,7 +15,7 @@ Enterprise BPM engines require careful attention to performance across build tim
 
 ## 1. Connection Pooling - HikariCP Migration
 
-YAWL v5.2 replaces C3P0 with HikariCP for database connection management.
+YAWL v6.0.0 replaces C3P0 with HikariCP for database connection management.
 
 ### Performance Metrics
 
@@ -57,7 +57,7 @@ hibernate.hikari.leakDetectionThreshold=60000
 
 ## 2. HTTP Client - java.net.http (Project HttpClient)
 
-YAWL v5.2 replaces HttpURLConnection with java.net.http for outbound HTTP requests.
+YAWL v6.0.0 replaces HttpURLConnection with java.net.http for outbound HTTP requests.
 
 ### Performance Metrics
 
@@ -103,7 +103,7 @@ HttpRequest request = HttpRequest.newBuilder(uri)
 
 ## 3. Hibernate 5 → 6 Upgrade
 
-YAWL v5.2 upgrades Hibernate ORM to version 6.x for improved query performance.
+YAWL v6.0.0 upgrades Hibernate ORM to version 6.x for improved query performance.
 
 ### Performance Metrics
 
@@ -258,7 +258,7 @@ jstat -gcutil <pid> 1000  # Sample every 1 second
 
 ## 7. Capacity Planning
 
-With YAWL v5.2 optimizations:
+With YAWL v6.0.0 optimizations:
 
 | Resource | Capacity | Notes |
 |----------|----------|-------|
@@ -308,7 +308,7 @@ CaseLaunchBenchmark     avgt    5  320.156 ±  8.234  ms/op
 
 ## 9. Migration Checklist
 
-When deploying YAWL v5.2:
+When deploying YAWL v6.0.0:
 
 - [ ] Update HikariCP configuration
 - [ ] Enable HTTP/2 in network config

@@ -1,13 +1,13 @@
 # Ant to Maven Migration - Archive Notes
 
-**Status**: ✅ **COMPLETE** - YAWL v5.2 has been fully migrated from Apache Ant to Maven
+**Status**: ✅ **COMPLETE** - YAWL v6.0.0 has been fully migrated from Apache Ant to Maven
 
 **Migration Date**: 2026-02-16
 **Completion**: Maven is now the exclusive build system
 
 ## What Was Archived
 
-This directory (`legacy/ant-build/`) contains the archived Ant build infrastructure from YAWL v5.2.
+This directory (`legacy/ant-build/`) contains the archived Ant build infrastructure from YAWL v6.0.0.
 
 ### Archived Files
 

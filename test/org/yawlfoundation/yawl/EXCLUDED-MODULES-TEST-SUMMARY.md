@@ -2,7 +2,7 @@
 
 ## Summary
 
-I have created comprehensive unit tests for 5 previously excluded YAWL v5.2 modules, focusing on core logic without requiring full infrastructure setup. These tests follow Chicago TDD methodology with real objects and minimal mocking.
+I have created comprehensive unit tests for 5 previously excluded YAWL v6.0.0 modules, focusing on core logic without requiring full infrastructure setup. These tests follow Chicago TDD methodology with real objects and minimal mocking.
 
 ## Test Files Created
 

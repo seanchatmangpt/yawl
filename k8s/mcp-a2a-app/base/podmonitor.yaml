@@ -1,0 +1,103 @@
+# PodMonitor for YAWL MCP-A2A Application
+# Prometheus Operator PodMonitor for scraping metrics from the application.
+# Requires the Prometheus Operator to be installed in the cluster.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: yawl-mcp-a2a-app
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: pod-monitor
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-a2a-app
+  podMetricsEndpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_version]
+          targetLabel: version
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+      metricRelabelings:
+        # Keep only relevant metrics to reduce cardinality
+        - sourceLabels: [__name__]
+          regex: '^(jvm_|http_|process_|system_|yawl_|mcp_|a2a_|otel_).*'
+          action: keep
+---
+# PrometheusRule for YAWL MCP-A2A Application
+# Alerting rules for the application
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: yawl-mcp-a2a-app-rules
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: prometheus-rules
+    app.kubernetes.io/part-of: yawl
+    release: prometheus
+spec:
+  groups:
+    - name: yawl-mcp-a2a-app.rules
+      rules:
+        # High error rate alert
+        - alert: YawlMcpA2aHighErrorRate
+          expr: |
+            sum(rate(http_server_requests_seconds_count{namespace="yawl-mcp-a2a",status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{namespace="yawl-mcp-a2a"}[5m]))
+            > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            app: yawl-mcp-a2a-app
+          annotations:
+            summary: "High error rate on YAWL MCP-A2A application"
+            description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+        # Pod not ready alert
+        - alert: YawlMcpA2aPodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="yawl-mcp-a2a",condition="true"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            app: yawl-mcp-a2a-app
+          annotations:
+            summary: "YAWL MCP-A2A pod not ready"
+            description: "Pod {{ $labels.pod }} has been not ready for more than 10 minutes"
+        # High memory usage alert
+        - alert: YawlMcpA2aHighMemory
+          expr: |
+            jvm_memory_used_bytes{namespace="yawl-mcp-a2a",area="heap"}
+            /
+            jvm_memory_max_bytes{namespace="yawl-mcp-a2a",area="heap"}
+            > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            app: yawl-mcp-a2a-app
+          annotations:
+            summary: "High JVM heap memory usage"
+            description: "JVM heap usage is {{ $value | humanizePercentage }} on pod {{ $labels.pod }}"
+        # High CPU usage alert
+        - alert: YawlMcpA2aHighCpu
+          expr: |
+            rate(process_cpu_seconds_total{namespace="yawl-mcp-a2a"}[5m])
+            > 1.5
+          for: 10m
+          labels:
+            severity: warning
+            app: yawl-mcp-a2a-app
+          annotations:
+            summary: "High CPU usage on YAWL MCP-A2A"
+            description: "CPU usage is {{ $value | humanize }} cores on pod {{ $labels.pod }}"

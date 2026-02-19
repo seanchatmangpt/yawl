@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Benchmarks - README
+# YAWL v6.0.0 Performance Benchmarks - README
 
 **Status**: ✅ **COMPLETE - PRODUCTION READY**  
 **Date**: 2026-02-16  
@@ -8,7 +8,7 @@
 
 ## Quick Summary
 
-The YAWL v5.2 migration to Hibernate 6.5.1 and HikariCP 5.1.0 delivers:
+The YAWL v6.0.0 migration to Hibernate 6.5.1 and HikariCP 5.1.0 delivers:
 
 ✅ **+56% overall throughput improvement** (exceeded +25-35% target)  
 ✅ **10x faster connection pooling** (4ms vs 45ms p95 latency)  

@@ -25,19 +25,35 @@ import java.util.Set;
  *   <li>{@code workflow:query} - allowed to call the query_workflows skill</li>
  *   <li>{@code workflow:cancel} - allowed to call the cancel_workflow skill</li>
  *   <li>{@code workitem:manage} - allowed to call the manage_workitems skill</li>
+ *   <li>{@code code:read} - allowed to read source files via codebase tools</li>
+ *   <li>{@code code:write} - allowed to modify source files via codebase tools</li>
+ *   <li>{@code build:execute} - allowed to execute build commands</li>
+ *   <li>{@code test:execute} - allowed to execute test commands</li>
+ *   <li>{@code git:commit} - allowed to commit changes to the repository</li>
+ *   <li>{@code upgrade:execute} - allowed to perform system upgrades</li>
  * </ul>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0
  */
 public final class AuthenticatedPrincipal implements User {
 
     /** Wildcard permission that grants access to all skills. */
     public static final String PERM_ALL = "*";
+
+    // Workflow permissions
     public static final String PERM_WORKFLOW_LAUNCH  = "workflow:launch";
     public static final String PERM_WORKFLOW_QUERY   = "workflow:query";
     public static final String PERM_WORKFLOW_CANCEL  = "workflow:cancel";
     public static final String PERM_WORKITEM_MANAGE  = "workitem:manage";
+
+    // Code access permissions (A2A skills)
+    public static final String PERM_CODE_READ    = "code:read";
+    public static final String PERM_CODE_WRITE   = "code:write";
+    public static final String PERM_BUILD_EXECUTE = "build:execute";
+    public static final String PERM_TEST_EXECUTE  = "test:execute";
+    public static final String PERM_GIT_COMMIT    = "git:commit";
+    public static final String PERM_UPGRADE_EXECUTE = "upgrade:execute";
 
     private final String username;
     private final Set<String> permissions;

@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Card",
+  "description": "YAWL Agent discovery document for Agent-to-Agent protocol",
+  "type": "object",
+  "required": [
+    "@context",
+    "@id",
+    "name",
+    "version",
+    "capabilities",
+    "endpoints"
+  ],
+  "properties": {
+    "@context": {
+      "type": "string",
+      "enum": ["https://agent-to-agent.org/contexts/1.0.0/agent-card.json"],
+      "description": "Context URL for Agent-to-Agent protocol"
+    },
+    "@id": {
+      "type": "string",
+      "format": "uri",
+      "description": "Unique identifier for this agent"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable name of the agent"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9]+)?$",
+      "description": "Semantic version of the agent"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Brief description of the agent's purpose"
+    },
+    "author": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Author or organization name"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the agent's homepage"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/capability"
+      },
+      "minItems": 1,
+      "description": "List of agent capabilities"
+    },
+    "endpoints": {
+      "type": "object",
+      "required": ["a2a", "mcp"],
+      "properties": {
+        "a2a": {
+          "$ref": "#/definitions/endpoint"
+        },
+        "mcp": {
+          "$ref": "#/definitions/endpoint"
+        },
+        "management": {
+          "$ref": "#/definitions/endpoint"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Network endpoints for agent protocols"
+    },
+    "supportedProtocols": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["grpc", "http", "websocket", "stdio"]
+      },
+      "minItems": 1,
+      "description": "Supported transport protocols"
+    },
+    "authentication": {
+      "type": "object",
+      "properties": {
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["spiffe", "oauth2", "api-key", "jwt", "none"]
+          }
+        },
+        "spiffeDomain": {
+          "type": "string",
+          "description": "SPIFFE trust domain for X.509-SVID authentication"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Authentication configuration"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "capability": {
+      "type": "object",
+      "required": ["type", "name", "version"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["skill", "resource", "prompt"],
+          "description": "Capability type"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Capability name"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Capability version"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Capability description"
+        },
+        "input": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "description": "JSON Schema for input validation"
+            }
+          },
+          "additionalProperties": true
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "description": "JSON Schema for output validation"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Endpoint URL"
+        },
+        "protocols": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["grpc", "http", "websocket", "stdio"]
+          },
+          "description": "Supported protocols for this endpoint"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["streaming", "batch", "cancellation", "progress"]
+          },
+          "description": "Supported features"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

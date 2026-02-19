@@ -1,0 +1,49 @@
+# Development overlay for YAWL MCP-A2A Application
+# Use: kubectl apply -k overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: yawl-mcp-a2a
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: development
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: yawl-mcp-a2a-config
+    patch: |-
+      - op: replace
+        path: /data/SPRING_PROFILES_ACTIVE
+        value: "dev"
+      - op: replace
+        path: /data/LOG_LEVEL_ROOT
+        value: "INFO"
+      - op: replace
+        path: /data/LOG_LEVEL_YAWL
+        value: "DEBUG"
+      - op: replace
+        path: /data/OTEL_SDK_DISABLED
+        value: "true"
+  - target:
+      kind: Deployment
+      name: yawl-mcp-a2a-app
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "250m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"

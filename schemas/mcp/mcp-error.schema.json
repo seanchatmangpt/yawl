@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Error Responses",
+  "description": "Standard MCP error responses with JSON-RPC error codes",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "integer",
+      "description": "JSON-RPC error code",
+      "enum": [-32700, -32600, -32601, -32602, -32603, -32604, -32605, -32606, -32607, -32608, -32609]
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error message"
+    },
+    "data": {
+      "description": "Additional error information",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "YAWL-specific error code"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Error timestamp"
+        }
+      }
+    }
+  },
+  "required": ["code", "message"],
+  "examples": [
+    {
+      "description": "Parse Error - Invalid JSON",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32700,
+          "message": "Parse error: Invalid JSON",
+          "data": {
+            "code": "parse_error",
+            "details": {
+              "line": 1,
+              "column": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Method Not Found - Unknown tool",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32601,
+          "message": "Method not found: unknown_tool",
+          "data": {
+            "code": "method_not_found",
+            "details": {
+              "requested_method": "unknown_tool",
+              "available_methods": ["yawl_list_specifications", "yawl_launch_case"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Invalid Parameters - Missing required argument",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32602,
+          "message": "Invalid params: Missing required argument 'caseId'",
+          "data": {
+            "code": "invalid_params",
+            "details": {
+              "missing_arguments": ["caseId"],
+              "provided_arguments": ["workItemId"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Internal Error - YAWL Engine Exception",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32603,
+          "message": "Internal error: YAWL engine exception",
+          "data": {
+            "code": "engine_error",
+            "details": {
+              "exception": "InterfaceBException",
+              "message": "Connection refused to YAWL engine",
+              "timestamp": "2024-01-01T12:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Resource Not Found - Specification does not exist",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32606,
+          "message": "Resource not found: Specification 'OrderProcessing' not found",
+          "data": {
+            "code": "spec_not_found",
+            "details": {
+              "spec_identifier": "OrderProcessing",
+              "available_specs": ["InvoiceGeneration"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Permission Denied - Insufficient privileges",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32607,
+          "message": "Permission denied: User cannot upload specifications",
+          "data": {
+            "code": "permission_denied",
+            "details": {
+              "user_role": "viewer",
+              "required_permission": "upload",
+              "allowed_permissions": ["read", "execute"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Resource Conflict - Case already running",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32608,
+          "message": "Resource conflict: Case 'case123' is already running",
+          "data": {
+            "code": "case_conflict",
+            "details": {
+              "case_id": "case123",
+              "current_status": "running"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Invalid Method Parameters - Invalid XML format",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32609,
+          "message": "Invalid method parameters: Invalid XML in case data",
+          "data": {
+            "code": "invalid_xml",
+            "details": {
+              "error_position": 25,
+              "error_message": "Element 'customer' not allowed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

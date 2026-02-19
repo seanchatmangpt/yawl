@@ -13,11 +13,13 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
- * YAWL Completion Specifications for MCP SDK 0.17.2.
+ * YAWL Completion Specifications for MCP SDK v1 (0.18.0+).
  *
  * Static factory class that creates MCP completion specifications for autocompletion
  * of prompt arguments and resource URIs. Each completion handler queries the real
  * YAWL engine to provide dynamic suggestions based on current engine state.
+ *
+ * Implements MCP 2025-11-25 specification with exchange-based handlers.
  *
  * Completions:
  * - workflow_analysis prompt: Suggests specification identifiers from loaded specs
@@ -25,7 +27,7 @@ import io.modelcontextprotocol.spec.McpSchema;
  * - yawl://cases/{caseId} resource: Suggests case IDs from running cases
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class YawlCompletionSpecifications {
 

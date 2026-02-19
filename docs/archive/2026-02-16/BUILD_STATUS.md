@@ -1,4 +1,4 @@
-# YAWL v5.2 Build Status Report
+# YAWL v6.0.0 Build Status Report
 
 **Date**: 2026-02-16  
 **Branch**: claude/maven-first-build-kizBd  

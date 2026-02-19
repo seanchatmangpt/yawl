@@ -356,7 +356,7 @@ Layer 7: Distribution (packaging)
 
 ## Conclusion
 
-Phase 1 (Design) is complete with comprehensive documentation of the Maven multi-module architecture for YAWL v5.2. The design provides:
+Phase 1 (Design) is complete with comprehensive documentation of the Maven multi-module architecture for YAWL v6.0.0. The design provides:
 
 - Clear module boundaries aligned with logical architecture
 - Proper dependency management through BOM pattern

@@ -362,4 +362,4 @@ For issues or questions:
 
 ## License
 
-Part of YAWL v5.2 - see main LICENSE for details.
+Part of YAWL v6.0.0 - see main LICENSE for details.

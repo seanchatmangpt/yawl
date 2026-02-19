@@ -1,13 +1,13 @@
 # YAWL MCP Server Integration Guide
 
-Model Context Protocol (MCP) server for YAWL v6.0.0, enabling AI assistants to interact with YAWL workflow operations through the official MCP Java SDK 0.17.2.
+Model Context Protocol (MCP) server for YAWL v6.0.0, enabling AI assistants to interact with YAWL workflow operations through the official MCP Java SDK 0.18.0.
 
 ## Overview
 
 The YAWL MCP Server exposes 15 workflow tools, 3 static resources, 3 resource templates, 4 prompts, and 3 completions. All operations are backed by real YAWL engine calls via InterfaceB (runtime) and InterfaceA (design-time).
 
 **Transport**: STDIO (Standard I/O)
-**SDK**: Official MCP Java SDK 0.17.2
+**SDK**: Official MCP Java SDK 0.18.0
 **Server Version**: 5.2.0
 
 ## Quick Start
@@ -31,7 +31,7 @@ Expected output:
 ```
 Starting YAWL MCP Server v5.2.0
 Engine URL: http://localhost:8080/yawl
-Transport: STDIO (official MCP SDK 0.17.2)
+Transport: STDIO (official MCP SDK 0.18.0)
 Connected to YAWL engine (session established)
 YAWL MCP Server v5.2.0 started on STDIO transport
 Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts, 3 completions, logging
@@ -521,7 +521,7 @@ public class CustomToolConfig {
 | YAWL MCP Server | MCP SDK | YAWL Engine | Java |
 |-----------------|---------|-------------|------|
 | 5.2.0 | 0.17.2 | 5.2+ | 21+ |
-| 6.0.0 | 0.17.2 | 6.0+ | 25+ |
+| 6.0.0 | 0.18.0 (v1) | 6.0+ | 25+ |
 
 ---
 

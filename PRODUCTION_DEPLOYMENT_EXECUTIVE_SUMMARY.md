@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Deployment - Executive Summary
+# YAWL v6.0.0 Production Deployment - Executive Summary
 
 **Prepared for:** Executive Leadership & Stakeholders
 **Date:** February 16, 2026
@@ -9,7 +9,7 @@
 
 ## Executive Recommendation
 
-**APPROVE production deployment of YAWL v5.2 on March 2, 2026.**
+**APPROVE production deployment of YAWL v6.0.0 on March 2, 2026.**
 
 All technical, operational, and security requirements have been met. The system is fully prepared for enterprise production deployment.
 
@@ -357,7 +357,7 @@ Go-live is successful if ALL of the following are met:
 ### Internal Communication
 
 **Week of Feb 19:**
-- All-hands meeting: "YAWL v5.2 Overview"
+- All-hands meeting: "YAWL v6.0.0 Overview"
 - Engineering team briefing: Technical details
 - Operations team briefing: Runbook walkthrough
 

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This session focused on executing a comprehensive Maven test suite for YAWL v5.2. Due to environment constraints (offline sandbox), direct Maven execution was not possible. However, a thorough analysis of the existing test infrastructure was completed, revealing an excellent test suite with projected 70%+ coverage.
+This session focused on executing a comprehensive Maven test suite for YAWL v6.0.0. Due to environment constraints (offline sandbox), direct Maven execution was not possible. However, a thorough analysis of the existing test infrastructure was completed, revealing an excellent test suite with projected 70%+ coverage.
 
 ### Key Achievements
 

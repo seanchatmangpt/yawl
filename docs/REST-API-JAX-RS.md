@@ -2,7 +2,7 @@
 
 ## Overview
 
-YAWL v5.2 now includes modern REST APIs using Jakarta JAX-RS 3.1 (Jakarta EE 10). These provide cleaner, annotation-based resource definitions alongside the legacy servlet-based interfaces.
+YAWL v6.0.0 now includes modern REST APIs using Jakarta JAX-RS 3.1 (Jakarta EE 10). These provide cleaner, annotation-based resource definitions alongside the legacy servlet-based interfaces.
 
 **Status:** Fully configured and deployment-ready. All JAX-RS resources, web.xml mappings, and CORS support are implemented.
 

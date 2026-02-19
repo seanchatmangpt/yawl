@@ -1,0 +1,113 @@
+# NetworkPolicy for YAWL MCP-A2A Application
+# Restricts network traffic to and from the application pods.
+# Requires a CNI plugin that supports NetworkPolicy (Calico, Cilium, etc.).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-mcp-a2a-app-netpol
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-a2a-app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from within the same namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: yawl-mcp-a2a
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8082
+          protocol: TCP
+    # Allow traffic from YAWL namespace (engine callbacks)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: yawl
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8082
+          protocol: TCP
+    # Allow traffic from observability namespace (Prometheus scraping)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 8080
+          protocol: TCP
+    # Allow Istio sidecar traffic
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8082
+          protocol: TCP
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow traffic to YAWL engine in yawl namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: yawl
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-engine
+      ports:
+        - port: 8080
+          protocol: TCP
+    # Allow traffic to agent registry
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: yawl
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-agent-registry
+      ports:
+        - port: 9090
+          protocol: TCP
+    # Allow traffic to OpenTelemetry collector
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP
+    # Allow Istio sidecar egress (for external API calls)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system

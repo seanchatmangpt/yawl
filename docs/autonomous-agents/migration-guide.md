@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide walks you through migrating from the **deprecated** `orderfulfillment` package to the new **generic** `autonomous` framework in YAWL v5.2.
+This guide walks you through migrating from the **deprecated** `orderfulfillment` package to the new **generic** `autonomous` framework in YAWL v6.0.0.
 
 ## Deprecated Classes
 

@@ -7,7 +7,7 @@
 
 ## OBJECTIVE
 
-Resolve all dependency conflicts, upgrade legacy libraries, and enable modern Maven builds for YAWL v5.2.
+Resolve all dependency conflicts, upgrade legacy libraries, and enable modern Maven builds for YAWL v6.0.0.
 
 ---
 

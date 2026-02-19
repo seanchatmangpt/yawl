@@ -1,4 +1,4 @@
-# YAWL v5.2 - Architecture & Operations Documentation Index
+# YAWL v6.0.0 - Architecture & Operations Documentation Index
 
 **Complete Documentation Suite for Production Deployment**
 **Version:** 5.2.0

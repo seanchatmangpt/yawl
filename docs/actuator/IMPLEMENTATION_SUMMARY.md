@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the complete implementation of Spring Boot Actuator integration for YAWL v5.2, providing production-ready health checks, readiness probes, liveness probes, and metrics collection for cloud-native deployments.
+This document summarizes the complete implementation of Spring Boot Actuator integration for YAWL v6.0.0, providing production-ready health checks, readiness probes, liveness probes, and metrics collection for cloud-native deployments.
 
 ## Implementation Date
 
@@ -455,4 +455,4 @@ public void completeWorkflow(long startTime) {
 
 ## Conclusion
 
-The Spring Boot Actuator integration is complete and production-ready. YAWL v5.2 now has table-stakes cloud hosting capabilities with comprehensive health checks, readiness probes, and metrics collection compatible with Kubernetes, Cloud Run, and all major cloud platforms.
+The Spring Boot Actuator integration is complete and production-ready. YAWL v6.0.0 now has table-stakes cloud hosting capabilities with comprehensive health checks, readiness probes, and metrics collection compatible with Kubernetes, Cloud Run, and all major cloud platforms.

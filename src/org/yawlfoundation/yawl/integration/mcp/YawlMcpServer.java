@@ -3,12 +3,11 @@ package org.yawlfoundation.yawl.integration.mcp;
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
-import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
@@ -19,12 +18,13 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
 /**
- * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK 0.17.2.
+ * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
  *
- * Exposes all MCP capabilities backed by real YAWL engine operations over STDIO transport:
+ * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
  * Tools (15): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
- *   work items, get specification data/XML/schema, get running cases, upload/unload specifications.
+ *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
+ *   suspend/resume cases, skip work items.
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -50,12 +50,12 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
  * Logging: Structured MCP log notifications for tool execution, errors, and server events.
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class YawlMcpServer {
 
     private static final String SERVER_NAME = "yawl-mcp-server";
-    private static final String SERVER_VERSION = "5.2.0";
+    private static final String SERVER_VERSION = "6.0.0";
 
     private final String yawlEngineUrl;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
@@ -96,7 +96,7 @@ public class YawlMcpServer {
     }
 
     /**
-     * Build and start the MCP server using the official SDK with STDIO transport.
+     * Build and start the MCP server using the official SDK v1 with STDIO transport.
      *
      * Connects to the YAWL engine, registers all MCP capabilities (tools, resources,
      * resource templates, prompts, completions, logging), and starts the server.
@@ -107,17 +107,6 @@ public class YawlMcpServer {
     public void start() throws IOException {
         connectToEngine();
 
-        ZaiFunctionService zaiFunctionService = null;
-        String zaiApiKey = System.getenv("ZAI_API_KEY");
-        if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
-            try {
-                zaiFunctionService = new ZaiFunctionService(
-                    zaiApiKey, yawlEngineUrl, yawlUsername, yawlPassword);
-            } catch (Exception e) {
-                System.err.println("Z.AI not available: " + e.getMessage());
-            }
-        }
-
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
         JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(mapper);
@@ -127,14 +116,19 @@ public class YawlMcpServer {
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
-            .instructions(
-                "YAWL Workflow Engine MCP Server v" + SERVER_VERSION + ". " +
-                "Use the provided tools to launch and manage workflow cases, " +
-                "query and upload specifications, checkout and complete work items. " +
-                "Resources provide read-only access to specifications, cases, and work items. " +
-                "Prompts guide workflow analysis, task completion, troubleshooting, and design review.")
+            .instructions("""
+                YAWL Workflow Engine MCP Server v6.0.0.
+
+                Use tools to launch and manage workflow cases, query and upload specifications,
+                checkout and complete work items. Resources provide read-only access to
+                specifications, cases, and work items. Prompts guide workflow analysis,
+                task completion, troubleshooting, and design review.
+
+                Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts,
+                3 completions, logging (MCP 2025-11-25 compliant).
+                """)
             .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle, zaiFunctionService))
+                interfaceBClient, interfaceAClient, sessionHandle))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -146,9 +140,8 @@ public class YawlMcpServer {
             .build();
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
-        int toolCount = zaiFunctionService != null ? 16 : 15;
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: " + toolCount + " tools, 3 resources, 3 resource templates, " +
+        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
             "4 prompts, 3 completions, logging");
     }
 
@@ -252,7 +245,7 @@ public class YawlMcpServer {
 
         System.err.println("Starting YAWL MCP Server v" + SERVER_VERSION);
         System.err.println("Engine URL: " + engineUrl);
-        System.err.println("Transport: STDIO (official MCP SDK 0.17.2)");
+        System.err.println("Transport: STDIO (official MCP SDK v1)");
 
         YawlMcpServer server = new YawlMcpServer(engineUrl, username, password);
 

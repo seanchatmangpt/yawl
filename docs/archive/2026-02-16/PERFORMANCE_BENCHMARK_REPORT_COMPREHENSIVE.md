@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Benchmark Report
+# YAWL v6.0.0 Performance Benchmark Report
 **Enterprise Java Modernization: Hibernate 6.5 + HikariCP 5.1.0 + Jakarta EE 10**
 
 **Date**: 2026-02-16  
@@ -12,7 +12,7 @@
 
 ### Migration Overview
 
-YAWL v5.2 includes a major infrastructure upgrade:
+YAWL v6.0.0 includes a major infrastructure upgrade:
 
 | Component | From | To | Expected Improvement |
 |-----------|------|-----|---------------------|
@@ -549,4 +549,4 @@ All performance benchmarks passed. The migration to Hibernate 6.5.1 and HikariCP
 
 ---
 
-*This report validates the enterprise Java modernization effort and confirms production readiness for YAWL v5.2.*
+*This report validates the enterprise Java modernization effort and confirms production readiness for YAWL v6.0.0.*

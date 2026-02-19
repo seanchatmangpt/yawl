@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Readiness Checklist
+# YAWL v6.0.0 Production Readiness Checklist
 ## Status: BLOCKED - Critical Dependency Issues
 
 **Date**: 2026-02-16  
@@ -12,7 +12,7 @@
 
 **PRODUCTION DEPLOYMENT: BLOCKED**
 
-YAWL v5.2 Maven-first transition has **critical blockers** that prevent production deployment:
+YAWL v6.0.0 Maven-first transition has **critical blockers** that prevent production deployment:
 1. Maven POM has unresolvable BOM dependencies (offline environment)
 2. Jakarta EE namespace migration incomplete (javax → jakarta)
 3. Build system cannot compile due to mismatched library versions

@@ -1,4 +1,4 @@
-# YAWL v5.2 Integration Test Suite - Delivery Summary
+# YAWL v6.0.0 Integration Test Suite - Delivery Summary
 
 **Date:** 2026-02-16  
 **Status:** COMPLETE & PRODUCTION-READY  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The YAWL v5.2 dependency consolidation and integration test suite is complete and ready for production deployment. All dependency conflicts have been resolved through comprehensive BOM management, and 7 production-ready integration test classes provide 80%+ coverage across all upgrade tracks.
+The YAWL v6.0.0 dependency consolidation and integration test suite is complete and ready for production deployment. All dependency conflicts have been resolved through comprehensive BOM management, and 7 production-ready integration test classes provide 80%+ coverage across all upgrade tracks.
 
 **Deliverables Completed:**
 1. ✅ Updated pom.xml with consolidated BOMs and explicit versions
@@ -513,7 +513,7 @@ mvn test jacoco:report
 
 ## Conclusion
 
-The YAWL v5.2 dependency consolidation and integration test suite is production-ready. All dependencies are properly managed through comprehensive BOM consolidation, all conflicts have been resolved, and comprehensive integration tests provide 80%+ coverage across all upgrade tracks with real implementations following the Chicago TDD style.
+The YAWL v6.0.0 dependency consolidation and integration test suite is production-ready. All dependencies are properly managed through comprehensive BOM consolidation, all conflicts have been resolved, and comprehensive integration tests provide 80%+ coverage across all upgrade tracks with real implementations following the Chicago TDD style.
 
 **Status:** ✅ APPROVED FOR PRODUCTION DEPLOYMENT
 

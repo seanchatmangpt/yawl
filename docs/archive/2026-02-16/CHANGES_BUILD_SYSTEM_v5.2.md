@@ -1,4 +1,4 @@
-# YAWL v5.2 Build System Changes
+# YAWL v6.0.0 Build System Changes
 
 **Release Date:** 2026-02-15
 **Summary:** Maven-first build system with BOM-based dependency management

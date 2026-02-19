@@ -2,7 +2,7 @@
 
 ## Overview
 
-YAWL v5.2 is transitioning from Ant-based builds to Maven multi-module builds. This document provides guidance for developers familiar with the Ant build system.
+YAWL v6.0.0 is transitioning from Ant-based builds to Maven multi-module builds. This document provides guidance for developers familiar with the Ant build system.
 
 ## Build System Comparison
 

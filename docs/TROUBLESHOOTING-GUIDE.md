@@ -1,4 +1,4 @@
-# YAWL v5.2 Troubleshooting Guide
+# YAWL v6.0.0 Troubleshooting Guide
 
 ## Quick Diagnostics
 
@@ -164,7 +164,7 @@ Exception in thread "main" java.lang.NoClassDefFoundError: jakarta/servlet/http/
 
 **Root Cause**
 - Tomcat version < 10.0 (uses javax.servlet)
-- YAWL v5.2 requires Tomcat 10.1+ (uses jakarta.servlet)
+- YAWL v6.0.0 requires Tomcat 10.1+ (uses jakarta.servlet)
 
 **Diagnosis**
 ```bash

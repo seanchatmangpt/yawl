@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation Summary
+# YAWL v6.0.0 Production Validation Summary
 ## Executive Report for Stakeholders
 
 **Date**: 2026-02-16  
@@ -165,7 +165,7 @@ database.user=sa
 
 **Timeline**:
 1. YAWL v5.1 used Java EE 8 (`javax.*` namespace)
-2. YAWL v5.2 migrated to Jakarta EE 9+ (`jakarta.*` namespace)
+2. YAWL v6.0.0 migrated to Jakarta EE 9+ (`jakarta.*` namespace)
 3. Source code updated: `javax.mail.*` → `jakarta.mail.*` ✅
 4. Libraries NOT updated: Still using Jakarta Mail 1.6.7 (contains `javax.mail.*`) ❌
 5. Result: Namespace mismatch, compilation fails
@@ -320,7 +320,7 @@ mvn compile                      # Should succeed
 
 ## Conclusion
 
-The YAWL v5.2 Maven-first build transition has **4 critical blockers** that prevent production deployment. All blockers are **fixable** with estimated **5-7 hours** of work.
+The YAWL v6.0.0 Maven-first build transition has **4 critical blockers** that prevent production deployment. All blockers are **fixable** with estimated **5-7 hours** of work.
 
 **Root cause**: Incomplete Jakarta EE namespace migration (javax → jakarta)
 

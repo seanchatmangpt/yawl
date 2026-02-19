@@ -2,7 +2,7 @@
 
 ## Overview
 
-YAWL v5.2 includes production-ready Spring Boot Actuator integration for cloud-native health checks, readiness probes, and metrics collection. This makes YAWL deployment-ready for Kubernetes (GKE, EKS, AKS), Google Cloud Run, and other cloud platforms.
+YAWL v6.0.0 includes production-ready Spring Boot Actuator integration for cloud-native health checks, readiness probes, and metrics collection. This makes YAWL deployment-ready for Kubernetes (GKE, EKS, AKS), Google Cloud Run, and other cloud platforms.
 
 ## Features
 

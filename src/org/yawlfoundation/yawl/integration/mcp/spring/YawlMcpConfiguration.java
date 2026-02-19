@@ -52,7 +52,7 @@ import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
  * }</pre>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  * @see EnableYawlMcp
  * @see YawlMcpProperties
  */
@@ -61,7 +61,7 @@ public class YawlMcpConfiguration {
     private static final Logger LOGGER = Logger.getLogger(YawlMcpConfiguration.class.getName());
 
     private static final String SERVER_NAME = "yawl-mcp-server-spring";
-    private static final String SERVER_VERSION = "5.2.0";
+    private static final String SERVER_VERSION = "6.0.0";
 
     private final YawlMcpProperties properties;
 

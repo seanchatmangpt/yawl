@@ -1,7 +1,7 @@
 # YAWL Security Dependency Migration Guide - Phase 1
 **Date:** 2026-02-15
 **Status:** BLOCKING PRIORITY - Production Critical
-**Target:** YAWL v5.2
+**Target:** YAWL v6.0.0
 
 ## Executive Summary
 

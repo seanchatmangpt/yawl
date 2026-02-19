@@ -10,24 +10,24 @@ jobs:
   validation:
     name: YAWL Validation
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         java-version: [17, 21]
         os: [ubuntu-latest, macos-latest]
-        
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Full history for accurate change detection
-        
+
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.java-version }}
         distribution: temurin
-        
+
     - name: Cache Maven packages and dependencies
       uses: actions/cache@v4
       with:
@@ -35,16 +35,16 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
-          
+
     - name: Validate Java compilation
       run: |
         ./scripts/dx.sh compile
-        
-    - name: Run validation scripts
+
+    - name: Run comprehensive validation
       run: |
-        ./scripts/validation/validate-80-20.sh --mode ci --json --junit
+        ./scripts/validate-all.sh --json --metrics-dir /tmp/validation-metrics --concurrent 50 --duration 120
       continue-on-error: false
-      
+
     - name: Upload validation results
       uses: actions/upload-artifact@v4
       if: always()
@@ -52,24 +52,26 @@ jobs:
         name: validation-results-${{ matrix.java-version }}-${{ matrix.os }}
         path: |
           validation-results.json
-          validation-results.xml
+          /tmp/validation-metrics/*.json
+          validation-report-*.json
+          validation-report-*.xml
           
   parallel-validation:
     name: Parallel Validation
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: 21
         distribution: temurin
-        
+
     - name: Cache Maven packages and dependencies
       uses: actions/cache@v4
       with:
@@ -77,12 +79,12 @@ jobs:
         key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ubuntu-latest-maven-
-          
+
     - name: Run parallel validation
       run: |
-        ./scripts/validation/validate-80-20.sh --mode ci --parallel --json --junit
+        ./scripts/validate-all.sh --parallel --json --metrics-dir /tmp/parallel-metrics --concurrent 100 --duration 180
       continue-on-error: false
-      
+
     - name: Upload parallel validation results
       uses: actions/upload-artifact@v4
       if: always()
@@ -90,25 +92,27 @@ jobs:
         name: parallel-validation-results
         path: |
           validation-results.json
-          validation-results.xml
+          /tmp/parallel-metrics/*.json
+          parallel-validation-report-*.json
+          parallel-validation-report-*.xml
           
-  comprehensive-validation:
-    name: Comprehensive Validation
+  a2a-compliance:
+    name: A2A Compliance Validation
     runs-on: ubuntu-latest
     needs: validation
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: 21
         distribution: temurin
-        
+
     - name: Cache Maven packages and dependencies
       uses: actions/cache@v4
       with:
@@ -116,11 +120,204 @@ jobs:
         key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ubuntu-latest-maven-
-          
-    - name: Run full validation with Maven
+
+    - name: Start A2A server
       run: |
-        ./scripts/validation/validate-80-20.sh --mode full --json --junit
-        
+        ./scripts/start-a2a-server.sh &
+        sleep 30
+
+    - name: Run A2A compliance validation
+      run: |
+        ./scripts/validate-all.sh --a2a --json --verbose
+      continue-on-error: false
+
+    - name: Upload A2A validation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: a2a-compliance-results
+        path: |
+          validation-results.json
+          a2a-compliance-report.json
+
+mcp-compliance:
+    name: MCP Compliance Validation
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Start MCP server
+      run: |
+        ./scripts/start-mcp-server.sh &
+        sleep 30
+
+    - name: Run MCP compliance validation
+      run: |
+        ./scripts/validate-all.sh --mcp --json --verbose
+      continue-on-error: false
+
+    - name: Upload MCP validation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mcp-compliance-results
+        path: |
+          validation-results.json
+          mcp-compliance-report.json
+
+chaos-stress-testing:
+    name: Chaos & Stress Testing
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Start YAWL services
+      run: |
+        ./scripts/start-yawl.sh &
+        sleep 60
+
+    - name: Run chaos & stress testing
+      run: |
+        ./scripts/validate-all.sh --chaos --json --verbose --concurrent 100 --duration 300 --metrics-dir /tmp/chaos-metrics
+      continue-on-error: false
+
+    - name: Upload chaos testing results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: chaos-stress-results
+        path: |
+          validation-results.json
+          /tmp/chaos-metrics/*.json
+          chaos-stress-report-*.json
+
+integration-validation:
+    name: Integration Validation
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Start YAWL services
+      run: |
+        ./scripts/start-yawl.sh &
+        sleep 60
+
+    - name: Run integration validation
+      run: |
+        ./scripts/validate-all.sh --integration --json --verbose --workflow all
+      continue-on-error: false
+
+    - name: Upload integration results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-results
+        path: |
+          validation-results.json
+          integration-report-*.json
+          integration-report-*.xml
+
+comprehensive-validation:
+    name: Comprehensive Validation
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Run full validation orchestration
+      run: |
+        ./scripts/validate-all.sh --json --metrics-dir /tmp/comprehensive-metrics --parallel --concurrent 50 --duration 600
+      continue-on-error: false
+
+    - name: Generate comprehensive report
+      run: |
+        # Aggregate all validation results
+        echo "{
+          \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\",
+          \"validations\": {
+            \"basic\": $(cat validation-results-basic.json 2>/dev/null || echo '{}'),
+            \"a2a\": $(cat validation-results-a2a.json 2>/dev/null || echo '{}'),
+            \"mcp\": $(cat validation-results-mcp.json 2>/dev/null || echo '{}'),
+            \"chaos\": $(cat validation-results-chaos.json 2>/dev/null || echo '{}'),
+            \"integration\": $(cat validation-results-integration.json 2>/dev/null || echo '{}')
+          }
+        }" > comprehensive-validation-report.json
+
     - name: Upload comprehensive results
       uses: actions/upload-artifact@v4
       if: always()
@@ -129,17 +326,169 @@ jobs:
         path: |
           validation-results.json
           validation-results.xml
-          
+          comprehensive-validation-report.json
+          /tmp/comprehensive-metrics/*.json
+
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
         files: validation-results.xml
         check_name: Validation Results
-        
+
     - name: Upload JSON results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: validation-json-results
         path: validation-results.json
+
+  a2a-schema-validation:
+    name: A2A Schema Validation
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Run A2A schema validation
+      run: |
+        ./scripts/validation/validate-a2a-schemas.sh --json --verbose
+      continue-on-error: false
+
+    - name: Upload A2A schema validation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: a2a-schema-validation-results
+        path: |
+          validation-results.json
+          a2a-schema-report.json
+          a2a-schema-report.xml
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: a2a-schema-report.xml
+        check_name: A2A Schema Validation Results
+
+  mcp-schema-validation:
+    name: MCP Schema Validation
+    runs-on: ubuntu-latest
+    needs: validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Run MCP schema validation
+      run: |
+        ./scripts/validation/validate-mcp-schemas.sh --json --verbose
+      continue-on-error: false
+
+    - name: Upload MCP schema validation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mcp-schema-validation-results
+        path: |
+          validation-results.json
+          mcp-schema-report.json
+          mcp-schema-report.xml
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: mcp-schema-report.xml
+        check_name: MCP Schema Validation Results
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: validation
+
+    strategy:
+      matrix:
+        test-suite: [mcp, a2a]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: temurin
+
+    - name: Cache Maven packages and dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ubuntu-latest-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ubuntu-latest-maven-
+
+    - name: Compile Java integration tests
+      run: |
+        mvn -T 1.5C compile -DskipTests
+      continue-on-error: false
+
+    - name: Run integration tests for ${{ matrix.test-suite }}
+      run: |
+        ./scripts/validation/validate-integration.sh --${{ matrix.test-suite }} --json --verbose
+      continue-on-error: false
+
+    - name: Upload ${{ matrix.test-suite }} integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ matrix.test-suite }}-integration-test-results
+        path: |
+          validation-results.json
+          ${{ matrix.test-suite }}-integration-report.json
+          ${{ matrix.test-suite }}-integration-report.xml
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: ${{ matrix.test-suite }}-integration-report.xml
+        check_name: ${{ matrix.test-suite }} Integration Test Results

@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 has **FAILED** comprehensive integration testing and is **NOT PRODUCTION-READY**. 
+YAWL v6.0.0 has **FAILED** comprehensive integration testing and is **NOT PRODUCTION-READY**. 
 
 ### Critical Findings
 
@@ -928,7 +928,7 @@ grep "cp.persist" /home/user/yawl/build/build.xml -A 20
 
 ## 16. Conclusion
 
-**YAWL v5.2 is NOT PRODUCTION-READY.**
+**YAWL v6.0.0 is NOT PRODUCTION-READY.**
 
 ### Critical Findings
 

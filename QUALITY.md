@@ -1,8 +1,8 @@
-# YAWL v5.2 Code Quality Standards
+# YAWL v6.0.0 Code Quality Standards
 
 ## Overview
 
-This document defines the code quality infrastructure for YAWL v5.2. All production
+This document defines the code quality infrastructure for YAWL v6.0.0. All production
 code must pass every gate described here before it can be merged.
 
 **Standards level:** Fortune 5 / HYPER_STANDARDS
@@ -264,7 +264,7 @@ public WorkItem fetchItem(String id) {
 // Good: explicit not-implemented with clear message
 public void legacyMethod() {
     throw new UnsupportedOperationException(
-        "legacyMethod() is not supported in YAWL v5.2. Use fetchItem() instead.");
+        "legacyMethod() is not supported in YAWL v6.0.0. Use fetchItem() instead.");
 }
 ```
 

@@ -1,4 +1,4 @@
-# YAWL v5.2 - Production Validation Report
+# YAWL v6.0.0 - Production Validation Report
 **Enterprise Cloud Deployment Readiness Assessment**  
 **Validation Date**: 2026-02-15  
 **Validator**: YAWL Production Validator Agent  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 has been comprehensively validated for production deployment across multi-cloud environments (GKE/GCP, EKS/AWS, AKS/Azure). The system demonstrates **enterprise-grade architecture** with advanced security (SPIFFE/SPIRE), observability (OpenTelemetry), and cloud-native design.
+YAWL v6.0.0 has been comprehensively validated for production deployment across multi-cloud environments (GKE/GCP, EKS/AWS, AKS/Azure). The system demonstrates **enterprise-grade architecture** with advanced security (SPIFFE/SPIRE), observability (OpenTelemetry), and cloud-native design.
 
 **Overall Assessment**: **CONDITIONAL PASS** - System is production-ready pending completion of critical action items (primarily secret rotation and test fixes).
 
@@ -358,7 +358,7 @@ flyway repair -url=jdbc:postgresql://prod-db:5432/yawl
 
 ## Conclusion
 
-YAWL v5.2 is **architecturally ready for production** with enterprise-grade security, observability, and cloud-native design. The system demonstrates:
+YAWL v6.0.0 is **architecturally ready for production** with enterprise-grade security, observability, and cloud-native design. The system demonstrates:
 
 **Technical Excellence**:
 - ✅ SPIFFE/SPIRE workload identity (zero-trust security)

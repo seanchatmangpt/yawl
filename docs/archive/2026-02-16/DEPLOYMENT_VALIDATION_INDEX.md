@@ -1,4 +1,4 @@
-# YAWL v5.2 Deployment Validation Index
+# YAWL v6.0.0 Deployment Validation Index
 
 **Date:** 2026-02-16  
 **Status:** Validation Complete, Deployment Blocked  

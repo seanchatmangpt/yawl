@@ -1,6 +1,6 @@
 # A2A Server Authentication Guide
 
-**Version**: YAWL v5.2 | **Date**: 2026-02-18 | **ADR**: [ADR-012](../architecture/decisions/ADR-012-a2a-authentication-architecture.md)
+**Version**: YAWL v6.0.0 | **Date**: 2026-02-18 | **ADR**: [ADR-012](../architecture/decisions/ADR-012-a2a-authentication-architecture.md)
 
 ---
 

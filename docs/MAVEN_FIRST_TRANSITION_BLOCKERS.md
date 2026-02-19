@@ -1,5 +1,5 @@
 # Maven-First Build Transition: Critical Blocker Analysis
-## YAWL v5.2 - Build System Validation Report
+## YAWL v6.0.0 - Build System Validation Report
 
 **Date**: 2026-02-16  
 **Status**: BLOCKED - Production deployment not possible  
@@ -10,7 +10,7 @@
 
 ## Problem Statement
 
-The YAWL v5.2 Maven-first build transition is **BLOCKED** by critical dependency issues. Neither the new Maven build nor the legacy Ant build can successfully compile the codebase.
+The YAWL v6.0.0 Maven-first build transition is **BLOCKED** by critical dependency issues. Neither the new Maven build nor the legacy Ant build can successfully compile the codebase.
 
 **Root Cause**: Incomplete Jakarta EE namespace migration (javax.* → jakarta.*)
 
@@ -482,7 +482,7 @@ mvn test           # Should pass
 
 ## Conclusion
 
-The YAWL v5.2 Maven-first build transition is **currently blocked** by 4 critical issues:
+The YAWL v6.0.0 Maven-first build transition is **currently blocked** by 4 critical issues:
 
 1. Jakarta Mail version mismatch (javax vs jakarta namespace)
 2. Maven POM BOM dependencies (offline environment incompatible)

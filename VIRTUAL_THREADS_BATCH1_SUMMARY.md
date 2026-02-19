@@ -235,5 +235,5 @@ https://claude.ai/code/session_01Jy5VPT7aRfKskDEcYVSXDq
 
 - Java 25 Virtual Threads Documentation
 - JEP 444: Virtual Threads (Second Preview)
-- YAWL v5.2 Architecture Documentation
+- YAWL v6.0.0 Architecture Documentation
 - `.claude/HYPER_STANDARDS.md` - Code quality standards

@@ -1,5 +1,5 @@
 # YAWL Workflow Engine - GCP Marketplace Solution Definition
-# Version: 5.2.0
+# Version: 6.0.0
 # Publisher: YAWL Foundation
 
 x-google-marketplace:
@@ -7,7 +7,7 @@ x-google-marketplace:
 
   applicationApiVersion: v1
 
-  publishedVersion: "5.2.0"
+  publishedVersion: "6.0.0"
 
   images:
     "":
@@ -109,6 +109,25 @@ application:
           port: 8080
         initialDelaySeconds: 30
         periodSeconds: 10
+
+    - name: yawl-mcp-a2a-app
+      description: Unified MCP server and A2A agent for AI integration
+      deployment:
+        helm:
+          chart: yawl-mcp-a2a-app
+          version: "6.0.0"
+      readinessProbe:
+        httpGet:
+          path: /actuator/health/readiness
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /actuator/health/liveness
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 30
 
   # Instance configuration
   instances:

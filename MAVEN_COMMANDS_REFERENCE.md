@@ -1,4 +1,4 @@
-# YAWL v5.2 Maven Commands Reference
+# YAWL v6.0.0 Maven Commands Reference
 
 ## Quick Start (When Network Access Available)
 

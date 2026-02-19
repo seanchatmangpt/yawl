@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Benchmark - Deliverables Index
+# YAWL v6.0.0 Performance Benchmark - Deliverables Index
 
 **Date**: 2026-02-16  
 **Status**: ✅ **COMPLETE - ALL DELIVERABLES READY**  
@@ -323,4 +323,4 @@ java -cp "build/3rdParty/lib/*:build/classes:test:src" \
 
 ---
 
-*This index provides a comprehensive overview of all performance benchmark deliverables for YAWL v5.2.*
+*This index provides a comprehensive overview of all performance benchmark deliverables for YAWL v6.0.0.*

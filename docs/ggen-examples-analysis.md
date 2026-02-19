@@ -2,7 +2,7 @@
 
 **Generated**: 2026-02-16
 **Total Directories Analyzed**: 74
-**Project**: YAWL v5.2 Workflow Engine
+**Project**: YAWL v6.0.0 Workflow Engine
 
 ---
 

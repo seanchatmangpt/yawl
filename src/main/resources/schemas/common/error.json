@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/common/error.json",
+  "title": "Standard Error Response",
+  "description": "Standard error response format used across all YAWL protocols",
+  "type": "object",
+  "required": ["error", "message"],
+  "properties": {
+    "error": {
+      "type": "string",
+      "description": "Error type identifier",
+      "enum": ["validation_error", "authentication_error", "authorization_error", "not_found", "internal_error", "timeout", "rate_limit"]
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error message"
+    },
+    "code": {
+      "type": "integer",
+      "description": "Error code for programmatic handling"
+    },
+    "details": {
+      "type": "object",
+      "description": "Additional error details",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Field name that caused the error (JSON pointer)"
+        },
+        "value": {
+          "description": "Invalid value that caused the error"
+        },
+        "expected": {
+          "type": "string",
+          "description": "Expected value or format"
+        },
+        "constraint": {
+          "type": "string",
+          "description": "Validation constraint that failed"
+        }
+      }
+    },
+    "timestamp": {
+      "$ref": "timestamp.json"
+    },
+    "request_id": {
+      "$ref": "identifier.json"
+    },
+    "stack_trace": {
+      "type": "string",
+      "description": "Full stack trace for debugging"
+    }
+  },
+  "additionalProperties": false
+}

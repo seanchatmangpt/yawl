@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Validation - Complete Report
+# YAWL v6.0.0 Performance Validation - Complete Report
 
 **Benchmark Date**: 2026-02-16  
 **Migration**: Hibernate 6.5.1 + HikariCP 5.1.0 + Jakarta EE 10  

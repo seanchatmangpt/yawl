@@ -1,4 +1,4 @@
-# Deploying YAWL v5.2 on Eclipse Jetty 11+
+# Deploying YAWL v6.0.0 on Eclipse Jetty 11+
 
 **Target Runtime**: Eclipse Jetty 11.x, 12.x
 **Java Version**: Java 25 (required for Jakarta EE 10 support and virtual threads)

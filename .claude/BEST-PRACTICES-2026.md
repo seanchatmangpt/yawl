@@ -1,12 +1,12 @@
 # Claude Code Best Practices 2026: YAWL Edition
 
-**Synthesized from**: Official Claude Code docs + production YAWL v5.2 patterns + 67-package documentation session
+**Synthesized from**: Official Claude Code docs + production YAWL v6.0.0 patterns + 67-package documentation session
 
 ---
 
 ## Executive Summary
 
-This document captures bleeding-edge Claude Code practices as applied to real-world production code (YAWL v5.2). It combines:
+This document captures bleeding-edge Claude Code practices as applied to real-world production code (YAWL v6.0.0). It combines:
 - **Research**: Official 2026 best practices from Anthropic
 - **Implementation**: Actual patterns from YAWL's CLAUDE.md and hooks
 - **Experience**: Lessons from documenting 67 Java packages in a single session
@@ -59,7 +59,7 @@ package org.yawlfoundation.yawl.stateless;
 
 **YAWL's approach**:
 ```markdown
-# YAWL v5.2 | A = μ(O)
+# YAWL v6.0.0 | A = μ(O)
 
 O = {engine, elements, stateless, integration, schema, test}
 Σ = Java25 + Maven + JUnit5 + XML/XSD
@@ -793,7 +793,7 @@ Claude searches for relevant tools instead of loading all descriptions.
 
 **Pattern**: Large-scale breaking changes (Java 25, Jakarta EE 10, records) can be **managed by Claude** with proper documentation and atomic transformations.
 
-**From YAWL v5.2 → v6.0.0-Alpha Migration:**
+**From YAWL v6.0.0 → v6.0.0-Alpha Migration:**
 
 **Breaking Change 1: Namespace Migration**
 - Scope: 589 Java files

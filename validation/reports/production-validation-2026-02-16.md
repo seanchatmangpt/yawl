@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation Report
+# YAWL v6.0.0 Production Validation Report
 **Date:** 2026-02-16
 **Session:** claude/update-libraries-fix-tests-Vw4Si
 **Validator:** prod-val agent

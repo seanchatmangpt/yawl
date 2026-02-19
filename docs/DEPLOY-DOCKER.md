@@ -1,4 +1,4 @@
-# Deploying YAWL v5.2 with Docker
+# Deploying YAWL v6.0.0 with Docker
 
 **Target Platforms**: Docker 20.10+, Docker Compose 2.x, Kubernetes 1.24+
 **Base Images**: eclipse-temurin:25-jdk (for WAR services), postgres:15-alpine (database)
@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide covers deploying YAWL v5.2 using Docker containers for isolated, portable, and scalable deployments.
+This guide covers deploying YAWL v6.0.0 using Docker containers for isolated, portable, and scalable deployments.
 
 ## Prerequisites
 
