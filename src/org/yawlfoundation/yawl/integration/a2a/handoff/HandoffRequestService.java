@@ -18,16 +18,17 @@
 
 package org.yawlfoundation.yawl.integration.a2a.handoff;
 
-import org.yawlfoundation.yawl.integration.a2a.AgentInfo;
-import org.yawlfoundation.yawl.elements.YAWLServiceGateway;
-import org.yawlfoundation.yawl.elements.YAWLTask;
-import org.yawlfoundation.yawl.elements.YAWLNet;
-import org.yawlfoundation.yawl.engine.YAWLEngine;
-import org.yawlfoundation.yawl.engine.YAWLServiceGatewayException;
-import org.yawlfoundation.yawl.engine.interfce.InterfaceBWebServiceGateway;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
+import org.yawlfoundation.yawl.elements.YTask;
+import org.yawlfoundation.yawl.elements.YNet;
+import org.yawlfoundation.yawl.elements.YExternalNetElement;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.integration.autonomous.AgentContext;
 import org.yawlfoundation.yawl.integration.autonomous.AgentInfoStore;
+import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 
 import java.io.IOException;
 import java.net.URI;
@@ -35,11 +36,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
@@ -62,11 +62,12 @@ import java.util.concurrent.TimeoutException;
 public class HandoffRequestService {
 
     private final HandoffProtocol handoffProtocol;
-    private final YAWLEngine yawlEngine;
+    private final YEngine yawlEngine;
     private final AgentContext agentContext;
     private final AgentInfoStore agentInfoStore;
     private final HttpClient httpClient;
     private final ExecutorService executorService;
+    private final String sessionHandle;
 
     /**
      * Creates a new handoff request service.
@@ -74,14 +75,19 @@ public class HandoffRequestService {
      * @param agentContext the context of the current agent
      * @param yawlEngine the YAWL engine instance
      * @param agentInfoStore the store for agent information
+     * @param jwtProvider the JWT authentication provider for token generation
+     * @param sessionHandle the session handle for engine operations
      */
     public HandoffRequestService(AgentContext agentContext,
-                                YAWLEngine yawlEngine,
-                                AgentInfoStore agentInfoStore) {
+                                YEngine yawlEngine,
+                                AgentInfoStore agentInfoStore,
+                                JwtAuthenticationProvider jwtProvider,
+                                String sessionHandle) {
         this.agentContext = agentContext;
         this.yawlEngine = yawlEngine;
         this.agentInfoStore = agentInfoStore;
-        this.handoffProtocol = new HandoffProtocol();
+        this.handoffProtocol = new HandoffProtocol(jwtProvider);
+        this.sessionHandle = sessionHandle;
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .executor(Executors.newVirtualThreadPerTaskExecutor())
@@ -90,20 +96,34 @@ public class HandoffRequestService {
     }
 
     /**
+     * Creates a new handoff request service using environment configuration.
+     *
+     * @param agentContext the context of the current agent
+     * @param yawlEngine the YAWL engine instance
+     * @param agentInfoStore the store for agent information
+     * @param sessionHandle the session handle for engine operations
+     */
+    public HandoffRequestService(AgentContext agentContext,
+                                YEngine yawlEngine,
+                                AgentInfoStore agentInfoStore,
+                                String sessionHandle) {
+        this(agentContext, yawlEngine, agentInfoStore,
+             JwtAuthenticationProvider.fromEnvironment(), sessionHandle);
+    }
+
+    /**
      * Initiates a handoff of the specified work item to another capable agent.
      *
      * @param workItemId the ID of the work item to hand off
-     * @param agentContext the context of the current agent
      * @param sourceAgentId the ID of the source agent initiating the handoff
      * @return a future containing the handoff result
      * @throws HandoffException if the handoff cannot be initiated
      */
     public CompletableFuture<HandoffResult> initiateHandoff(String workItemId,
-                                                           AgentContext agentContext,
                                                            String sourceAgentId) throws HandoffException {
 
         // First, verify the work item exists and is checked out by the current agent
-        WorkItemRecord workItem = validateWorkItem(workItemId, sourceAgentId);
+        YWorkItem workItem = validateWorkItem(workItemId, sourceAgentId);
 
         // Locate capable substitute agents
         List<AgentInfo> substituteAgents = findSubstituteAgents(workItem);
@@ -115,38 +135,46 @@ public class HandoffRequestService {
         // Select the first capable agent (simple strategy - could be enhanced with scoring)
         AgentInfo targetAgent = substituteAgents.get(0);
 
-        // Generate handoff token
+        // Generate handoff token using session handle
         HandoffToken handoffToken = handoffProtocol.generateHandoffToken(
             workItemId,
             sourceAgentId,
             targetAgent.getId(),
-            workItem.getSessionID()
+            sessionHandle
         );
 
         // Create handoff message
-        String handoffMessage = handoffProtocol.createHandoffMessage(handoffToken);
+        HandoffMessage handoffMessage = handoffProtocol.createHandoffMessage(
+            workItemId,
+            sourceAgentId,
+            targetAgent.getId(),
+            sessionHandle
+        );
 
         // Send handoff request to target agent
-        return sendHandoffRequest(targetAgent, handoffMessage, handoffToken);
+        return sendHandoffRequest(targetAgent, handoffMessage.toJson(), handoffToken);
     }
 
     /**
-     * Validates that the work item exists and is checked out by the specified agent.
+     * Validates that the work item exists and is in executing state.
      */
-    private WorkItemRecord validateWorkItem(String workItemId, String agentId) throws HandoffException {
+    private YWorkItem validateWorkItem(String workItemId, String agentId) throws HandoffException {
         try {
-            WorkItemRecord workItem = yawlEngine.getWorkItem(workItemId);
+            YWorkItem workItem = yawlEngine.getWorkItem(workItemId);
             if (workItem == null) {
                 throw new HandoffException("Work item not found: " + workItemId);
             }
 
-            // Verify the work item is checked out by the specified agent
-            if (!agentId.equals(workItem.getSpecifiedAgent())) {
-                throw new HandoffException("Work item not checked out by agent: " + agentId);
+            // Verify the work item is in executing state
+            if (!workItem.getStatus().equals(org.yawlfoundation.yawl.engine.YWorkItemStatus.statusExecuting)) {
+                throw new HandoffException("Work item is not in executing state: " + workItemId);
             }
 
             return workItem;
         } catch (Exception e) {
+            if (e instanceof HandoffException) {
+                throw (HandoffException) e;
+            }
             throw new HandoffException("Failed to validate work item: " + workItemId, e);
         }
     }
@@ -154,26 +182,39 @@ public class HandoffRequestService {
     /**
      * Finds substitute agents capable of handling the work item.
      */
-    private List<AgentInfo> findSubstituteAgents(WorkItemRecord workItem) {
+    private List<AgentInfo> findSubstituteAgents(YWorkItem workItem) {
         // Get the task associated with this work item
-        YAWLTask task = findTaskForWorkItem(workItem);
+        YTask task = findTaskForWorkItem(workItem);
         if (task == null) {
             return List.of();
         }
 
         // Find agents capable of handling this task type
-        return agentInfoStore.findAgentsForCapability(task.getName());
+        return agentInfoStore.getAgentsByCapability(task.getName());
     }
 
     /**
      * Finds the YAWL task associated with a work item.
      */
-    private YAWLTask findTaskForWorkItem(WorkItemRecord workItem) {
+    private YTask findTaskForWorkItem(YWorkItem workItem) {
         try {
-            YAWLNet net = yawlEngine.getSpecification(workItem.getSpecificationID()).getNet();
-            for (YAWLTask task : net.getTasks()) {
-                if (task.getName().equals(workItem.getElementName())) {
-                    return task;
+            YSpecificationID specId = workItem.getSpecificationID();
+            YSpecification spec = yawlEngine.getSpecification(specId);
+            if (spec == null) {
+                return null;
+            }
+            YNet net = spec.getRootNet();
+            if (net == null) {
+                return null;
+            }
+
+            // Iterate through net elements to find matching task
+            String taskName = workItem.getTaskID();
+            for (YExternalNetElement element : net.getNetElements().values()) {
+                if (element instanceof YTask task) {
+                    if (task.getName().equals(taskName) || task.getID().equals(taskName)) {
+                        return task;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -192,7 +233,7 @@ public class HandoffRequestService {
 
         // Build the handoff request
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(targetAgent.getUrl() + "/handoff"))
+            .uri(URI.create("http://" + targetAgent.getHost() + ":" + targetAgent.getPort() + "/handoff"))
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + handoffToken.getJwt())
             .POST(HttpRequest.BodyPublishers.ofString(handoffMessage))
@@ -237,19 +278,6 @@ public class HandoffRequestService {
 
         public String getMessage() {
             return message;
-        }
-    }
-
-    /**
-     * Exception thrown when a handoff operation fails.
-     */
-    public static class HandoffException extends Exception {
-        public HandoffException(String message) {
-            super(message);
-        }
-
-        public HandoffException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 }

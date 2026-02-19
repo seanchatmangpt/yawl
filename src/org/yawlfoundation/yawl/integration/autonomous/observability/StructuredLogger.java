@@ -19,8 +19,6 @@ import org.slf4j.MDC;
  */
 public class StructuredLogger {
 
-
-    private static final Logger logger = LogManager.getLogger(StructuredLogger.class);
     private final Logger logger;
 
     public static final String CORRELATION_ID_KEY = "correlationId";

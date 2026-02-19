@@ -14,6 +14,7 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
 
 import org.yawlfoundation.yawl.integration.CredentialManager;
 import org.yawlfoundation.yawl.integration.autonomous.PartitionConfig;
@@ -21,6 +22,12 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasone
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
+import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistryClient;
+import org.yawlfoundation.yawl.integration.autonomous.conflict.ConflictResolver;
 
 /**
  * Factory for creating autonomous agents with various configurations.
@@ -31,6 +38,16 @@ import org.yawlfoundation.yawl.integration.zai.ZaiService;
  *   <li>Environment-based configuration (12-factor app pattern)</li>
  *   <li>Consistent initialization and validation</li>
  *   <li>Support for different agent types via strategy injection</li>
+ * </ul>
+ * </p>
+ *
+ * <p>Default components created by fromEnvironment():
+ * <ul>
+ *   <li>HandoffProtocol - From environment with JWT</li>
+ *   <li>HandoffRequestService - With YAWL engine and context</li>
+ *   <li>ConflictResolver - Default implementation</li>
+ *   <li>YawlA2AClient - A2A communication client</li>
+ *   <li>AgentRegistryClient - For agent discovery</li>
  * </ul>
  * </p>
  *
@@ -155,6 +172,7 @@ public final class AgentFactory {
 
         PartitionConfig partitionConfig = createPartitionConfig(partitionIndex, partitionTotal);
 
+        // AgentConfiguration will handle default initialization for optional dependencies
         AgentConfiguration config = AgentConfiguration.builder()
             .capability(capability)
             .engineUrl(engineUrl)

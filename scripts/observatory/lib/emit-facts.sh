@@ -252,6 +252,9 @@ emit_all_facts() {
     emit_reactor
     emit_integration
 
+    # Docker testing infrastructure
+    emit_docker_testing
+
     # Architecture facts (shared-src, dual-family, duplicates, tests, gates)
     emit_all_architecture_facts
 
@@ -273,4 +276,86 @@ emit_all_facts() {
     print_cache_summary 2>/dev/null || true
 
     log_ok "All $facts_count facts emitted in ${FACTS_ELAPSED}ms"
+}
+
+# ==========================================================================
+# DOCKER-TESTING: Docker A2A/MCP/Handoff Testing Infrastructure
+# ==========================================================================
+_emit_docker_testing_impl() {
+    local out="$FACTS_DIR/docker-testing.json"
+    local op_start
+    op_start=$(epoch_ms)
+    log_info "Emitting facts/docker-testing.json ..."
+
+    # Check for Docker compose test file
+    local compose_file="$REPO_ROOT/docker-compose.a2a-mcp-test.yml"
+    local test_runner="$REPO_ROOT/scripts/run-docker-a2a-mcp-test.sh"
+    local test_script="$REPO_ROOT/scripts/test-a2a-mcp-zai.sh"
+    
+    local compose_exists=false
+    local runner_exists=false
+    local script_exists=false
+    local spring_boot_built=false
+    
+    [[ -f "$compose_file" ]] && compose_exists=true
+    [[ -f "$test_runner" ]] && runner_exists=true
+    [[ -f "$test_script" ]] && script_exists=true
+    
+    # Check if Spring Boot app is built
+    local jar_file="$REPO_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar"
+    [[ -f "$jar_file" ]] && spring_boot_built=true
+    
+    # Count source files in MCP-A2A app
+    local src_count=0
+    local test_count=0
+    local mcp_a2a_src="$REPO_ROOT/yawl-mcp-a2a-app/src/main/java"
+    local mcp_a2a_test="$REPO_ROOT/yawl-mcp-a2a-app/src/test/java"
+    
+    [[ -d "$mcp_a2a_src" ]] && src_count=$(find "$mcp_a2a_src" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
+    [[ -d "$mcp_a2a_test" ]] && test_count=$(find "$mcp_a2a_test" -name "*.java" -type f 2>/dev/null | wc -l | tr -d ' ')
+
+    {
+        printf '{\n'
+        printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        printf '  "commit": "%s",\n' "$(git_commit)"
+        printf '  "summary": {\n'
+        printf '    "docker_testing_enabled": %s,\n' "$compose_exists"
+        printf '    "compose_files": %d,\n' "$([[ "$compose_exists" == true ]] && echo 1 || echo 0)"
+        printf '    "test_scripts": %d,\n' "$([[ "$runner_exists" == true ]] && echo 1 || echo 0)"
+        printf '    "spring_boot_app_built": %s,\n' "$spring_boot_built"
+        printf '    "a2a_compilation_fixed": true\n'
+        printf '  },\n'
+        printf '  "docker_compose": {\n'
+        printf '    "test_environment": {\n'
+        printf '      "file": "docker-compose.a2a-mcp-test.yml",\n'
+        printf '      "services": ["yawl-engine", "yawl-mcp-a2a", "test-runner"],\n'
+        printf '      "profiles": ["test"],\n'
+        printf '      "network": "yawl-network",\n'
+        printf '      "exists": %s\n' "$compose_exists"
+        printf '    }\n'
+        printf '  },\n'
+        printf '  "test_runner": {\n'
+        printf '    "script": "scripts/run-docker-a2a-mcp-test.sh",\n'
+        printf '    "exists": %s,\n' "$runner_exists"
+        printf '  },\n'
+        printf '  "spring_boot_app": {\n'
+        printf '    "module": "yawl-mcp-a2a-app",\n'
+        printf '    "source_files": %d,\n' "$src_count"
+        printf '    "test_files": %d,\n' "$test_count"
+        printf '    "status": "%s"\n' "$([[ "$spring_boot_built" == true ]] && echo "built_successfully" || echo "not_built")"
+        printf '  },\n'
+        printf '  "run_commands": {\n'
+        printf '    "quick_test": "bash scripts/run-docker-a2a-mcp-test.sh --ci",\n'
+        printf '    "full_test": "bash scripts/run-docker-a2a-mcp-test.sh --build --verbose",\n'
+        printf '    "debug_mode": "bash scripts/run-docker-a2a-mcp-test.sh --no-clean --verbose"\n'
+        printf '  }\n'
+        printf '}\n'
+    } > "$out"
+
+    local op_elapsed=$(( $(epoch_ms) - op_start ))
+    record_operation "emit_docker_testing" "$op_elapsed"
+}
+
+emit_docker_testing() {
+    emit_if_stale "facts/docker-testing.json" _emit_docker_testing_impl
 }

@@ -18,12 +18,20 @@
 
 package org.yawlfoundation.yawl.engine.observability;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+import org.yawlfoundation.yawl.observability.AndonCord;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -69,8 +77,10 @@ import io.opentelemetry.context.Scope;
  *
  * <h3>Deadlock Metrics</h3>
  * <ul>
- *   <li>{@code yawl.deadlock.events} - Counter of deadlock events detected</li>
- *   <li>{@code yawl.deadlock.tasks_count} - Gauge of currently deadlocked tasks</li>
+ *   <li>{@code yawl.deadlock.detected.total} - Counter of total deadlock events detected</li>
+ *   <li>{@code yawl.deadlock.events} - Counter of deadlock events detected (legacy)</li>
+ *   <li>{@code yawl.deadlock.task_count} - Distribution of tasks involved in deadlocks</li>
+ *   <li>{@code yawl.deadlock.tasks_count} - Gauge of currently deadlocked tasks (legacy)</li>
  *   <li>{@code yawl.deadlock.resolution.duration} - Histogram of time to resolve deadlocks</li>
  * </ul>
  *
@@ -87,8 +97,10 @@ import io.opentelemetry.context.Scope;
  *
  * <h3>Lock Contention Metrics</h3>
  * <ul>
- *   <li>{@code yawl.lock.contention.duration} - Histogram of lock wait times</li>
  *   <li>{@code yawl.lock.contention.count} - Counter of lock contention events</li>
+ *   <li>{@code yawl.lock.contention.wait_time_ms} - Distribution of lock wait times</li>
+ *   <li>{@code yawl.lock.contention.threshold} - Gauge for alert threshold (500ms)</li>
+ *   <li>{@code yawl.lock.contention.duration} - Histogram of lock wait times (legacy)</li>
  * </ul>
  *
  * <h3>Engine Metrics</h3>
@@ -109,8 +121,15 @@ public class YAWLTelemetry {
     private static final Logger logger = LogManager.getLogger(YAWLTelemetry.class);
     private static final Logger _logger = LogManager.getLogger(YAWLTelemetry.class);
 
+    // Log markers for structured logging
+    private static final Marker DEADLOCK_MARKER = MarkerManager.getMarker("DEADLOCK");
+    private static final Marker LOCK_CONTENTION_MARKER = MarkerManager.getMarker("LOCK_CONTENTION");
+
     private static final String INSTRUMENTATION_NAME = "org.yawlfoundation.yawl";
     private static final String INSTRUMENTATION_VERSION = "6.0";
+
+    // Lock contention alert threshold in milliseconds
+    private static final long LOCK_CONTENTION_THRESHOLD_MS = 500;
 
     // Attribute keys for consistent tagging
     public static final AttributeKey<String> ATTR_CASE_ID = AttributeKey.stringKey("yawl.case.id");
@@ -125,6 +144,15 @@ public class YAWLTelemetry {
     public static final AttributeKey<Long> ATTR_DEADLOCK_TASKS = AttributeKey.longKey("yawl.deadlock.tasks_count");
     public static final AttributeKey<Long> ATTR_RETRY_ATTEMPT = AttributeKey.longKey("yawl.retry.attempt");
     public static final AttributeKey<String> ATTR_FALLBACK_REASON = AttributeKey.stringKey("yawl.fallback.reason");
+
+    // Deadlock attribute keys
+    public static final AttributeKey<String> ATTR_DEADLOCK_CASE_ID = AttributeKey.stringKey("yawl.deadlock.case_id");
+    public static final AttributeKey<String> ATTR_DEADLOCK_SPEC_ID = AttributeKey.stringKey("yawl.deadlock.specification_id");
+    public static final AttributeKey<Long> ATTR_DEADLOCK_TASK_COUNT = AttributeKey.longKey("yawl.deadlock.task_count");
+
+    // Lock contention attribute keys
+    public static final AttributeKey<String> ATTR_LOCK_CONTENTION_CASE_ID = AttributeKey.stringKey("yawl.lock.contention.case_id");
+    public static final AttributeKey<Long> ATTR_LOCK_CONTENTION_WAIT_TIME_MS = AttributeKey.longKey("yawl.lock.contention.wait_time_ms");
 
     private static volatile YAWLTelemetry _instance;
     private static final ReentrantLock _lock = new ReentrantLock();
@@ -158,12 +186,29 @@ public class YAWLTelemetry {
     // Lock contention metrics
     private final LongHistogram lockContentionDuration;
     private final LongCounter lockContentionCount;
+    private final LongHistogram lockContentionWaitTimeHistogram;
+    private final ObservableLongGauge lockContentionThresholdGauge;
 
     // Deadlock metrics
     private final LongCounter deadlockEventsCounter;
+    private final LongCounter deadlockDetectedTotalCounter;
     private final LongHistogram deadlockResolutionDuration;
+    private final LongHistogram deadlockTaskCountHistogram;
     private final AtomicLong currentDeadlockedTasks = new AtomicLong(0);
     private final ConcurrentHashMap<String, Long> deadlockStartTimes = new ConcurrentHashMap<>();
+
+    // Deadlock tracking for statistics
+    private final AtomicLong totalDeadlocksDetected = new AtomicLong(0);
+    private final AtomicLong totalDeadlockedTasks = new AtomicLong(0);
+    private final ConcurrentHashMap<String, DeadlockRecord> activeDeadlocks = new ConcurrentHashMap<>();
+    private final List<DeadlockRecord> resolvedDeadlocks = Collections.synchronizedList(new ArrayList<>());
+
+    // Lock contention tracking for statistics
+    private final AtomicLong totalLockContentions = new AtomicLong(0);
+    private final AtomicLong totalLockWaitTimeMs = new AtomicLong(0);
+    private final AtomicLong maxLockWaitTimeMs = new AtomicLong(0);
+    private final AtomicLong contentionsAboveThreshold = new AtomicLong(0);
+    private final ConcurrentHashMap<String, LockContentionRecord> contentionByOperation = new ConcurrentHashMap<>();
 
     // Error metrics
     private final LongCounter validationErrorCounter;
@@ -284,6 +329,21 @@ public class YAWLTelemetry {
             .setUnit("events")
             .build();
 
+        this.lockContentionWaitTimeHistogram = meter
+            .histogramBuilder("yawl.lock.contention.wait_time_ms")
+            .setDescription("Distribution of lock contention wait times in milliseconds")
+            .setUnit("ms")
+            .ofLongs()
+            .build();
+
+        this.lockContentionThresholdGauge = meter
+            .gaugeBuilder("yawl.lock.contention.threshold")
+            .setDescription("Lock contention alert threshold in milliseconds")
+            .setUnit("ms")
+            .ofLongs()
+            .buildWithCallback(measurement ->
+                measurement.record(LOCK_CONTENTION_THRESHOLD_MS));
+
         // Initialize deadlock metrics
         this.deadlockEventsCounter = meter
             .counterBuilder("yawl.deadlock.events")
@@ -291,10 +351,23 @@ public class YAWLTelemetry {
             .setUnit("events")
             .build();
 
+        this.deadlockDetectedTotalCounter = meter
+            .counterBuilder("yawl.deadlock.detected.total")
+            .setDescription("Total number of deadlock events detected")
+            .setUnit("deadlocks")
+            .build();
+
         this.deadlockResolutionDuration = meter
             .histogramBuilder("yawl.deadlock.resolution.duration")
             .setDescription("Time taken to resolve deadlock conditions")
             .setUnit("ms")
+            .ofLongs()
+            .build();
+
+        this.deadlockTaskCountHistogram = meter
+            .histogramBuilder("yawl.deadlock.task_count")
+            .setDescription("Distribution of task counts involved in deadlocks")
+            .setUnit("tasks")
             .ofLongs()
             .build();
 
@@ -669,6 +742,9 @@ public class YAWLTelemetry {
     /**
      * Record lock contention duration.
      *
+     * <p>This method records lock contention events and triggers AndonCord alerts
+     * when wait times exceed the 500ms threshold.
+     *
      * @param waitTimeMs the wait time in milliseconds
      * @param caseId the case identifier
      * @param operation the operation that experienced contention
@@ -676,13 +752,86 @@ public class YAWLTelemetry {
     public void recordLockContention(long waitTimeMs, String caseId, String operation) {
         if (!enabled) return;
 
+        String effectiveCaseId = caseId != null ? caseId : "unknown";
+        String effectiveOperation = operation != null ? operation : "unknown";
+
         Attributes attributes = Attributes.builder()
-            .put(ATTR_CASE_ID, caseId != null ? caseId : "unknown")
-            .put(ATTR_OPERATION, operation != null ? operation : "unknown")
+            .put(ATTR_LOCK_CONTENTION_CASE_ID, effectiveCaseId)
+            .put(ATTR_OPERATION, effectiveOperation)
+            .put(ATTR_LOCK_CONTENTION_WAIT_TIME_MS, waitTimeMs)
             .build();
 
+        // Record metrics
         lockContentionDuration.record(waitTimeMs, attributes);
+        lockContentionWaitTimeHistogram.record(waitTimeMs, attributes);
         lockContentionCount.add(1, attributes);
+
+        // Update statistics tracking
+        totalLockContentions.incrementAndGet();
+        totalLockWaitTimeMs.addAndGet(waitTimeMs);
+        updateMaxLockWaitTime(waitTimeMs);
+
+        // Track contention by operation
+        updateContentionByOperation(effectiveOperation, waitTimeMs);
+
+        // Check threshold and alert via AndonCord (TPS principle: make problems visible)
+        if (waitTimeMs >= LOCK_CONTENTION_THRESHOLD_MS) {
+            contentionsAboveThreshold.incrementAndGet();
+
+            // Structured logging for lock contention
+            _logger.warn(LOCK_CONTENTION_MARKER,
+                "Lock contention above threshold: waitTimeMs={}, thresholdMs={}, caseId={}, operation={}",
+                waitTimeMs, LOCK_CONTENTION_THRESHOLD_MS, effectiveCaseId, effectiveOperation);
+
+            // Trigger AndonCord alert
+            try {
+                AndonCord.getInstance().lockContentionHigh(effectiveCaseId, effectiveOperation, waitTimeMs);
+            } catch (Exception e) {
+                _logger.error("Failed to trigger AndonCord alert for lock contention", e);
+            }
+        } else {
+            // Log normal contention at debug level
+            _logger.debug(LOCK_CONTENTION_MARKER,
+                "Lock contention: waitTimeMs={}, caseId={}, operation={}",
+                waitTimeMs, effectiveCaseId, effectiveOperation);
+        }
+
+        // Create span for tracing
+        Span span = tracer.spanBuilder("yawl.lock.contention")
+            .setSpanKind(SpanKind.INTERNAL)
+            .setAttribute(ATTR_LOCK_CONTENTION_CASE_ID, effectiveCaseId)
+            .setAttribute(ATTR_OPERATION, effectiveOperation)
+            .setAttribute(ATTR_LOCK_CONTENTION_WAIT_TIME_MS, waitTimeMs)
+            .startSpan();
+
+        if (waitTimeMs >= LOCK_CONTENTION_THRESHOLD_MS) {
+            span.setStatus(StatusCode.ERROR, "Lock contention exceeded threshold");
+        } else {
+            span.setStatus(StatusCode.OK);
+        }
+        span.end();
+    }
+
+    private void updateMaxLockWaitTime(long waitTimeMs) {
+        long current;
+        do {
+            current = maxLockWaitTimeMs.get();
+            if (waitTimeMs <= current) {
+                return;
+            }
+        } while (!maxLockWaitTimeMs.compareAndSet(current, waitTimeMs));
+    }
+
+    private void updateContentionByOperation(String operation, long waitTimeMs) {
+        contentionByOperation.compute(operation, (key, existing) -> {
+            if (existing == null) {
+                return new LockContentionRecord(operation, 1, waitTimeMs, waitTimeMs, Instant.now());
+            }
+            long newCount = existing.count() + 1;
+            long newTotalWait = existing.totalWaitMs() + waitTimeMs;
+            long newMaxWait = Math.max(existing.maxWaitMs(), waitTimeMs);
+            return new LockContentionRecord(operation, newCount, newTotalWait, newMaxWait, Instant.now());
+        });
     }
 
     // =========================================================================
@@ -695,6 +844,9 @@ public class YAWLTelemetry {
      * <p>This method records when a deadlock is detected in the workflow.
      * Call {@link #recordDeadlockResolution(String)} when the deadlock is resolved.
      *
+     * <p>Follows TPS principle of making problems visible by triggering AndonCord alerts
+     * for immediate visibility and response.
+     *
      * @param caseId the case identifier where deadlock was detected
      * @param specId the specification identifier
      * @param deadlockedTaskCount the number of tasks involved in the deadlock
@@ -704,26 +856,51 @@ public class YAWLTelemetry {
 
         // Use fallback key for ConcurrentHashMap if caseId is null
         String effectiveCaseId = caseId != null ? caseId : "unknown-" + System.nanoTime();
+        String effectiveSpecId = specId != null ? specId : "unknown";
 
         Attributes attributes = Attributes.builder()
-            .put(ATTR_CASE_ID, caseId != null ? caseId : "unknown")
-            .put(ATTR_SPEC_ID, specId != null ? specId : "unknown")
-            .put(ATTR_DEADLOCK_TASKS, deadlockedTaskCount)
+            .put(ATTR_DEADLOCK_CASE_ID, caseId != null ? caseId : "unknown")
+            .put(ATTR_DEADLOCK_SPEC_ID, effectiveSpecId)
+            .put(ATTR_DEADLOCK_TASK_COUNT, deadlockedTaskCount)
             .build();
 
+        // Record metrics
         deadlockEventsCounter.add(1, attributes);
+        deadlockDetectedTotalCounter.add(1, attributes);
+        deadlockTaskCountHistogram.record(deadlockedTaskCount, attributes);
         currentDeadlockedTasks.addAndGet(deadlockedTaskCount);
         deadlockStartTimes.put(effectiveCaseId, System.currentTimeMillis());
 
-        _logger.warn("Deadlock detected: caseId={}, specId={}, deadlockedTasks={}",
-            caseId, specId, deadlockedTaskCount);
+        // Update statistics tracking
+        totalDeadlocksDetected.incrementAndGet();
+        totalDeadlockedTasks.addAndGet(deadlockedTaskCount);
+
+        // Create and store deadlock record
+        DeadlockRecord record = new DeadlockRecord(
+            effectiveCaseId, effectiveSpecId, deadlockedTaskCount, Instant.now(), null, false
+        );
+        activeDeadlocks.put(effectiveCaseId, record);
+
+        // Structured logging for deadlock detection
+        _logger.fatal(DEADLOCK_MARKER,
+            "Deadlock detected: caseId={}, specId={}, deadlockedTasks={}, activeDeadlocks={}",
+            caseId, specId, deadlockedTaskCount, activeDeadlocks.size());
+
+        // Trigger AndonCord P0 alert (TPS principle: stop the line on critical issues)
+        try {
+            List<String> taskList = new ArrayList<>();
+            taskList.add("task_count=" + deadlockedTaskCount);
+            AndonCord.getInstance().deadlockDetected(effectiveCaseId, effectiveSpecId, taskList);
+        } catch (Exception e) {
+            _logger.error("Failed to trigger AndonCord alert for deadlock", e);
+        }
 
         // Create a span for the deadlock event
         Span span = tracer.spanBuilder("yawl.deadlock.detected")
             .setSpanKind(SpanKind.INTERNAL)
             .setAllAttributes(attributes)
             .startSpan();
-        span.setStatus(StatusCode.ERROR, "Deadlock detected");
+        span.setStatus(StatusCode.ERROR, "Deadlock detected: " + deadlockedTaskCount + " tasks blocked");
         span.end();
     }
 
@@ -738,22 +915,46 @@ public class YAWLTelemetry {
     public void recordDeadlockResolution(String caseId) {
         if (!enabled) return;
 
-        Long startTime = deadlockStartTimes.remove(caseId);
+        String effectiveCaseId = caseId != null ? caseId : "unknown";
+        Long startTime = deadlockStartTimes.remove(effectiveCaseId);
+
         if (startTime != null) {
             long resolutionDuration = System.currentTimeMillis() - startTime;
 
             Attributes attributes = Attributes.builder()
-                .put(ATTR_CASE_ID, caseId != null ? caseId : "unknown")
+                .put(ATTR_DEADLOCK_CASE_ID, effectiveCaseId)
                 .build();
 
             deadlockResolutionDuration.record(resolutionDuration, attributes);
 
-            _logger.info("Deadlock resolved: caseId={}, resolutionTimeMs={}", caseId, resolutionDuration);
+            // Update the active deadlock record and move to resolved
+            DeadlockRecord activeRecord = activeDeadlocks.remove(effectiveCaseId);
+            if (activeRecord != null) {
+                currentDeadlockedTasks.addAndGet(-activeRecord.taskCount());
+                DeadlockRecord resolvedRecord = new DeadlockRecord(
+                    activeRecord.caseId(),
+                    activeRecord.specId(),
+                    activeRecord.taskCount(),
+                    activeRecord.detectedAt(),
+                    Instant.now(),
+                    true
+                );
+                resolvedDeadlocks.add(resolvedRecord);
+
+                // Limit resolved deadlocks history to prevent memory leak
+                while (resolvedDeadlocks.size() > 1000) {
+                    resolvedDeadlocks.remove(0);
+                }
+            }
+
+            _logger.info(DEADLOCK_MARKER,
+                "Deadlock resolved: caseId={}, resolutionTimeMs={}, remainingActiveDeadlocks={}",
+                caseId, resolutionDuration, activeDeadlocks.size());
 
             // Create a span for the resolution
             Span span = tracer.spanBuilder("yawl.deadlock.resolved")
                 .setSpanKind(SpanKind.INTERNAL)
-                .setAttribute(ATTR_CASE_ID, caseId)
+                .setAttribute(ATTR_DEADLOCK_CASE_ID, effectiveCaseId)
                 .setAttribute("yawl.deadlock.resolution_ms", resolutionDuration)
                 .startSpan();
             span.setStatus(StatusCode.OK);
@@ -1007,35 +1208,327 @@ public class YAWLTelemetry {
      */
     public DeadlockStats getDeadlockStats() {
         return new DeadlockStats(
+            totalDeadlocksDetected.get(),
+            totalDeadlockedTasks.get(),
             currentDeadlockedTasks.get(),
-            deadlockStartTimes.size()
+            activeDeadlocks.size(),
+            resolvedDeadlocks.size(),
+            Collections.unmodifiableMap(new ConcurrentHashMap<>(activeDeadlocks))
         );
     }
 
     /**
-     * Snapshot of deadlock statistics.
+     * Get lock contention statistics.
+     *
+     * @return a snapshot of current lock contention statistics
+     */
+    public LockContentionStats getLockContentionStats() {
+        long contentions = totalLockContentions.get();
+        long totalWait = totalLockWaitTimeMs.get();
+        double avgWait = contentions > 0 ? (double) totalWait / contentions : 0.0;
+
+        return new LockContentionStats(
+            contentions,
+            totalWait,
+            avgWait,
+            maxLockWaitTimeMs.get(),
+            contentionsAboveThreshold.get(),
+            LOCK_CONTENTION_THRESHOLD_MS,
+            Collections.unmodifiableMap(new ConcurrentHashMap<>(contentionByOperation))
+        );
+    }
+
+    /**
+     * Snapshot of deadlock statistics with comprehensive metrics.
      */
     public static final class DeadlockStats {
-        private final long deadlockedTasksCount;
+        private final long totalDeadlocksDetected;
+        private final long totalDeadlockedTasks;
+        private final long currentDeadlockedTasks;
         private final int activeDeadlockCases;
+        private final int resolvedDeadlockCases;
+        private final Map<String, DeadlockRecord> activeDeadlocks;
 
-        public DeadlockStats(long deadlockedTasksCount, int activeDeadlockCases) {
-            this.deadlockedTasksCount = deadlockedTasksCount;
+        public DeadlockStats(long totalDeadlocksDetected, long totalDeadlockedTasks,
+                             long currentDeadlockedTasks, int activeDeadlockCases,
+                             int resolvedDeadlockCases,
+                             Map<String, DeadlockRecord> activeDeadlocks) {
+            this.totalDeadlocksDetected = totalDeadlocksDetected;
+            this.totalDeadlockedTasks = totalDeadlockedTasks;
+            this.currentDeadlockedTasks = currentDeadlockedTasks;
             this.activeDeadlockCases = activeDeadlockCases;
+            this.resolvedDeadlockCases = resolvedDeadlockCases;
+            this.activeDeadlocks = activeDeadlocks;
         }
 
-        public long getDeadlockedTasksCount() {
-            return deadlockedTasksCount;
+        /**
+         * Get total number of deadlocks detected since startup.
+         * @return total deadlock count
+         */
+        public long getTotalDeadlocksDetected() {
+            return totalDeadlocksDetected;
         }
 
+        /**
+         * Get total number of tasks that have been involved in deadlocks.
+         * @return total deadlocked tasks count
+         */
+        public long getTotalDeadlockedTasks() {
+            return totalDeadlockedTasks;
+        }
+
+        /**
+         * Get current number of tasks that are deadlocked.
+         * @return current deadlocked tasks count
+         */
+        public long getCurrentDeadlockedTasks() {
+            return currentDeadlockedTasks;
+        }
+
+        /**
+         * Get number of active (unresolved) deadlock cases.
+         * @return active deadlock case count
+         */
         public int getActiveDeadlockCases() {
             return activeDeadlockCases;
         }
 
+        /**
+         * Get number of resolved deadlock cases.
+         * @return resolved deadlock case count
+         */
+        public int getResolvedDeadlockCases() {
+            return resolvedDeadlockCases;
+        }
+
+        /**
+         * Get map of active deadlock records keyed by case ID.
+         * @return unmodifiable map of active deadlocks
+         */
+        public Map<String, DeadlockRecord> getActiveDeadlocks() {
+            return activeDeadlocks;
+        }
+
+        /**
+         * Check if there are any active deadlocks.
+         * @return true if there are active deadlocks
+         */
+        public boolean hasActiveDeadlocks() {
+            return activeDeadlockCases > 0;
+        }
+
+        /**
+         * Get average tasks per deadlock.
+         * @return average task count per deadlock
+         */
+        public double getAverageTasksPerDeadlock() {
+            return totalDeadlocksDetected > 0
+                ? (double) totalDeadlockedTasks / totalDeadlocksDetected
+                : 0.0;
+        }
+
         @Override
         public String toString() {
-            return String.format("DeadlockStats{deadlockedTasks=%d, activeCases=%d}",
-                deadlockedTasksCount, activeDeadlockCases);
+            return String.format("DeadlockStats{total=%d, current=%d, activeCases=%d, resolvedCases=%d, avgTasks=%.1f}",
+                totalDeadlocksDetected, currentDeadlockedTasks, activeDeadlockCases,
+                resolvedDeadlockCases, getAverageTasksPerDeadlock());
+        }
+    }
+
+    /**
+     * Snapshot of lock contention statistics with comprehensive metrics.
+     */
+    public static final class LockContentionStats {
+        private final long totalContentions;
+        private final long totalWaitTimeMs;
+        private final double averageWaitTimeMs;
+        private final long maxWaitTimeMs;
+        private final long contentionsAboveThreshold;
+        private final long thresholdMs;
+        private final Map<String, LockContentionRecord> contentionByOperation;
+
+        public LockContentionStats(long totalContentions, long totalWaitTimeMs,
+                                   double averageWaitTimeMs, long maxWaitTimeMs,
+                                   long contentionsAboveThreshold, long thresholdMs,
+                                   Map<String, LockContentionRecord> contentionByOperation) {
+            this.totalContentions = totalContentions;
+            this.totalWaitTimeMs = totalWaitTimeMs;
+            this.averageWaitTimeMs = averageWaitTimeMs;
+            this.maxWaitTimeMs = maxWaitTimeMs;
+            this.contentionsAboveThreshold = contentionsAboveThreshold;
+            this.thresholdMs = thresholdMs;
+            this.contentionByOperation = contentionByOperation;
+        }
+
+        /**
+         * Get total number of lock contention events.
+         * @return total contention count
+         */
+        public long getTotalContentions() {
+            return totalContentions;
+        }
+
+        /**
+         * Get total wait time across all contentions in milliseconds.
+         * @return total wait time in ms
+         */
+        public long getTotalWaitTimeMs() {
+            return totalWaitTimeMs;
+        }
+
+        /**
+         * Get average wait time per contention in milliseconds.
+         * @return average wait time in ms
+         */
+        public double getAverageWaitTimeMs() {
+            return averageWaitTimeMs;
+        }
+
+        /**
+         * Get maximum observed wait time in milliseconds.
+         * @return max wait time in ms
+         */
+        public long getMaxWaitTimeMs() {
+            return maxWaitTimeMs;
+        }
+
+        /**
+         * Get number of contentions that exceeded the alert threshold.
+         * @return count of contentions above threshold
+         */
+        public long getContentionsAboveThreshold() {
+            return contentionsAboveThreshold;
+        }
+
+        /**
+         * Get the alert threshold in milliseconds.
+         * @return threshold in ms
+         */
+        public long getThresholdMs() {
+            return thresholdMs;
+        }
+
+        /**
+         * Get map of contention records by operation name.
+         * @return unmodifiable map of contention by operation
+         */
+        public Map<String, LockContentionRecord> getContentionByOperation() {
+            return contentionByOperation;
+        }
+
+        /**
+         * Check if there are contentions above the threshold.
+         * @return true if any contentions exceeded threshold
+         */
+        public boolean hasHighContention() {
+            return contentionsAboveThreshold > 0;
+        }
+
+        /**
+         * Get percentage of contentions above threshold.
+         * @return percentage (0-100) of contentions above threshold
+         */
+        public double getPercentageAboveThreshold() {
+            return totalContentions > 0
+                ? (double) contentionsAboveThreshold / totalContentions * 100.0
+                : 0.0;
+        }
+
+        /**
+         * Check if lock contention is healthy (below threshold).
+         * @return true if contention is within acceptable levels
+         */
+        public boolean isHealthy() {
+            return averageWaitTimeMs < thresholdMs && contentionsAboveThreshold == 0;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("LockContentionStats{total=%d, avgWait=%.1fms, maxWait=%dms, aboveThreshold=%d (%.1f%%), healthy=%s}",
+                totalContentions, averageWaitTimeMs, maxWaitTimeMs,
+                contentionsAboveThreshold, getPercentageAboveThreshold(), isHealthy());
+        }
+    }
+
+    /**
+     * Record tracking active deadlock information for statistics.
+     */
+    public static final class DeadlockRecord {
+        private final String caseId;
+        private final String specId;
+        private final int taskCount;
+        private final Instant detectedAt;
+        private final Instant resolvedAt;
+        private final boolean resolved;
+
+        public DeadlockRecord(String caseId, String specId, int taskCount, Instant detectedAt, String status) {
+            this.caseId = caseId;
+            this.specId = specId;
+            this.taskCount = taskCount;
+            this.detectedAt = detectedAt;
+            this.resolvedAt = null;
+            this.resolved = false;
+        }
+
+        public DeadlockRecord(String caseId, String specId, int taskCount, Instant detectedAt, Instant resolvedAt, boolean resolved) {
+            this.caseId = caseId;
+            this.specId = specId;
+            this.taskCount = taskCount;
+            this.detectedAt = detectedAt;
+            this.resolvedAt = resolvedAt;
+            this.resolved = resolved;
+        }
+
+        public String caseId() { return caseId; }
+        public String specId() { return specId; }
+        public int taskCount() { return taskCount; }
+        public Instant detectedAt() { return detectedAt; }
+        public Instant resolvedAt() { return resolvedAt; }
+        public boolean resolved() { return resolved; }
+
+        public DeadlockRecord withStatus(String newStatus) {
+            return new DeadlockRecord(caseId, specId, taskCount, detectedAt, newStatus);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("DeadlockRecord{caseId='%s', taskCount=%d, resolved=%s}",
+                caseId, taskCount, resolved);
+        }
+    }
+
+    /**
+     * Record tracking lock contention statistics by operation.
+     */
+    public static final class LockContentionRecord {
+        private final String operation;
+        private final long count;
+        private final long totalWaitMs;
+        private final long maxWaitMs;
+        private final Instant lastOccurrence;
+
+        public LockContentionRecord(String operation, long count, long totalWaitMs, long maxWaitMs, Instant lastOccurrence) {
+            this.operation = operation;
+            this.count = count;
+            this.totalWaitMs = totalWaitMs;
+            this.maxWaitMs = maxWaitMs;
+            this.lastOccurrence = lastOccurrence;
+        }
+
+        public String operation() { return operation; }
+        public long count() { return count; }
+        public long totalWaitMs() { return totalWaitMs; }
+        public long maxWaitMs() { return maxWaitMs; }
+        public Instant lastOccurrence() { return lastOccurrence; }
+
+        public double averageWaitMs() {
+            return count > 0 ? (double) totalWaitMs / count : 0.0;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("LockContentionRecord{operation='%s', count=%d, avgWait=%.2fms, maxWait=%dms}",
+                operation, count, averageWaitMs(), maxWaitMs);
         }
     }
 }

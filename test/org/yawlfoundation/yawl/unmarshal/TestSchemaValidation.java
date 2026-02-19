@@ -51,19 +51,25 @@ import org.yawlfoundation.yawl.schema.YSchemaVersion;
 class TestSchemaValidation {
 
     // Valid minimal specification template
+    // Uses xs:schema (not schema) and flowsInto for conditions (required by XSD)
     private static final String VALID_SPEC_TEMPLATE = """
         <?xml version="1.0" encoding="UTF-8"?>
         <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <specification uri="test-spec">
             <metaData>
               <title>Test Specification</title>
               <creator>Test</creator>
             </metaData>
-            <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+            <xs:schema/>
             <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
               <processControlElements>
-                <inputCondition id="input"/>
+                <inputCondition id="input">
+                  <flowsInto>
+                    <nextElementRef id="output"/>
+                  </flowsInto>
+                </inputCondition>
                 <outputCondition id="output"/>
               </processControlElements>
             </decomposition>
@@ -102,13 +108,16 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -127,10 +136,11 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
                         <inputCondition/>
@@ -152,13 +162,16 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition/>
                       </processControlElements>
                     </decomposition>
@@ -177,13 +190,16 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -210,10 +226,12 @@ class TestSchemaValidation {
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -241,10 +259,11 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
                         <inputCondition id="input">
@@ -308,10 +327,11 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                     </decomposition>
                   </specification>
@@ -329,16 +349,20 @@ class TestSchemaValidation {
             String validXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData>
                       <title>Test</title>
                     </metaData>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="task1"/></flowsInto>
+                        </inputCondition>
                         <task id="task1">
+                          <join code="xor"/>
                           <flowsInto>
                             <nextElementRef id="output"/>
                           </flowsInto>
@@ -370,19 +394,24 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="duplicate" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
                     <decomposition id="duplicate" xsi:type="NetFactsType">
                       <processControlElements>
-                        <inputCondition id="input2"/>
+                        <inputCondition id="input2">
+                          <flowsInto><nextElementRef id="output2"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output2"/>
                       </processControlElements>
                     </decomposition>
@@ -401,13 +430,16 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <task id="duplicate"/>
                         <task id="duplicate"/>
                         <outputCondition id="output"/>
@@ -428,13 +460,16 @@ class TestSchemaValidation {
             String invalidXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="duplicate"/>
+                        <inputCondition id="duplicate">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="duplicate"/>
                       </processControlElements>
                     </decomposition>
@@ -453,23 +488,28 @@ class TestSchemaValidation {
             String validXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="spec1">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
                   </specification>
                   <specification uri="spec2">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -496,13 +536,16 @@ class TestSchemaValidation {
             String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -521,13 +564,16 @@ class TestSchemaValidation {
             String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="3.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -545,13 +591,16 @@ class TestSchemaValidation {
             String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="2.2" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -628,13 +677,16 @@ class TestSchemaValidation {
             String validXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -694,13 +746,16 @@ class TestSchemaValidation {
             String validXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -775,16 +830,19 @@ class TestSchemaValidation {
             String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData>
                       <title>Test Specification</title>
                       <creator>Test Author</creator>
                     </metaData>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>
@@ -811,13 +869,16 @@ class TestSchemaValidation {
             String xmlWithInvalidSchema = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                   <specification uri="test-spec">
                     <metaData/>
-                    <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                    <xs:schema/>
                     <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                       <processControlElements>
-                        <inputCondition id="input"/>
+                        <inputCondition id="input">
+                          <flowsInto><nextElementRef id="output"/></flowsInto>
+                        </inputCondition>
                         <outputCondition id="output"/>
                       </processControlElements>
                     </decomposition>

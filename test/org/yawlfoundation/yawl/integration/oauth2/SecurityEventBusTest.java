@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -229,5 +231,63 @@ class SecurityEventBusTest {
         assertEquals(SecurityEventBus.Severity.P1, severities[1]);
         assertEquals(SecurityEventBus.Severity.P2, severities[2]);
         assertEquals(SecurityEventBus.Severity.P3, severities[3]);
+    }
+
+    // =========================================================================
+    // Gauge Metrics Tests
+    // =========================================================================
+
+    @Test
+    @DisplayName("updateCacheAge sets the internal cache age value")
+    void updateCacheAgeSetsInternalValue() {
+        eventBus.updateCacheAge(300L);
+        assertEquals(300L, eventBus.getCurrentCacheAge());
+
+        eventBus.updateCacheAge(-1L);
+        assertEquals(-1L, eventBus.getCurrentCacheAge());
+    }
+
+    @Test
+    @DisplayName("updateCacheStale sets the internal stale flag")
+    void updateCacheStaleSetsInternalFlag() {
+        eventBus.updateCacheStale(true);
+        assertTrue(eventBus.isCurrentlyStale());
+
+        eventBus.updateCacheStale(false);
+        assertFalse(eventBus.isCurrentlyStale());
+    }
+
+    @Test
+    @DisplayName("setCacheAgeSupplier accepts supplier function")
+    void setCacheAgeSupplierAcceptsFunction() {
+        AtomicLong age = new AtomicLong(100L);
+        eventBus.setCacheAgeSupplier(age::get);
+
+        // The supplier is set; we can't directly verify the gauge callback
+        // but we can verify the method doesn't throw
+        assertNotNull(eventBus);
+    }
+
+    @Test
+    @DisplayName("setCacheStaleSupplier accepts supplier function")
+    void setCacheStaleSupplierAcceptsFunction() {
+        AtomicBoolean stale = new AtomicBoolean(false);
+        eventBus.setCacheStaleSupplier(stale::get);
+
+        // The supplier is set; we can't directly verify the gauge callback
+        // but we can verify the method doesn't throw
+        assertNotNull(eventBus);
+    }
+
+    @Test
+    @DisplayName("Null supplier throws NullPointerException for cache age")
+    void nullSupplierThrowsExceptionForCacheAge() {
+        assertThrows(NullPointerException.class, () -> eventBus.setCacheAgeSupplier(null));
+    }
+
+    @Test
+    @DisplayName("Null supplier throws NullPointerException for cache stale")
+    void nullSupplierThrowsExceptionForCacheStale() {
+        assertThrows(NullPointerException.class, () -> eventBus.setCacheStaleSupplier(null));
     }
 }

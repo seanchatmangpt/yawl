@@ -18,8 +18,7 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import org.yawlfoundation.yawl.security.AgentSecurityContext;
-import org.yawlfoundation.yawl.integration.a2a.AgentInfo;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
 
 import java.time.Instant;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class AgentContext {
     private final String agentId;
     private final String agentName;
     private final AgentCapability capability;
-    private final AgentSecurityContext securityContext;
+    private final String principalName;
     private final Instant registrationTime;
     private final Map<String, Object> properties;
     private final String endpointUrl;
@@ -50,15 +49,15 @@ public class AgentContext {
      * @param agentId the unique identifier for this agent
      * @param agentName the display name of this agent
      * @param capability the capability describing what this agent can handle
-     * @param securityContext the security context for authentication
+     * @param principalName the principal name for authentication (can be null)
      * @param endpointUrl the URL where this agent can be reached
      */
     public AgentContext(String agentId, String agentName, AgentCapability capability,
-                       AgentSecurityContext securityContext, String endpointUrl) {
+                       String principalName, String endpointUrl) {
         this.agentId = agentId;
         this.agentName = agentName;
         this.capability = capability;
-        this.securityContext = securityContext;
+        this.principalName = principalName;
         this.endpointUrl = endpointUrl;
         this.registrationTime = Instant.now();
         this.properties = new ConcurrentHashMap<>();
@@ -92,12 +91,12 @@ public class AgentContext {
     }
 
     /**
-     * Gets the security context for authentication.
+     * Gets the principal name for authentication.
      *
-     * @return the security context
+     * @return the principal name
      */
-    public AgentSecurityContext getSecurityContext() {
-        return securityContext;
+    public String getPrincipalName() {
+        return principalName;
     }
 
     /**

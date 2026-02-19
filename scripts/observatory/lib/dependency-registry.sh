@@ -59,6 +59,7 @@ declare -A DEPENDENCY_REGISTRY=(
 
     # Integration Facts - derived from integration source code
     ["facts/integration-facts.json"]="src/**/integration/**/*.java src/**/mcp/**/*.java src/**/a2a/**/*.java src/**/zai/**/*.java"
+    ["facts/docker-testing.json"]="docker-compose.a2a-mcp-test.yml scripts/run-docker-a2a-mcp-test.sh scripts/test-a2a-mcp-zai.sh yawl-mcp-a2a-app/pom.xml yawl-mcp-a2a-app/target/*.jar"
 
     # Additional diagrams that depend on analysis outputs
     ["diagrams/62-dependency-health.mmd"]="facts/deps-conflicts.json facts/dependencies.json"

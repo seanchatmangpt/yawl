@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import org.yawlfoundation.yawl.integration.a2a.AgentInfo;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
 
 import java.time.Instant;
 import java.util.*;
@@ -54,11 +54,10 @@ public class AgentInfoStore {
         // Store or update agent info
         agentById.put(agentId, agentInfo);
 
-        // Update capability index
-        for (String capability : agentInfo.getCapabilities()) {
-            agentsByCapability.computeIfAbsent(capability, k -> ConcurrentHashMap.newKeySet())
-                            .add(agentId);
-        }
+        // Update capability index - use the single capability from AgentInfo
+        String capabilityName = agentInfo.getCapability().domainName();
+        agentsByCapability.computeIfAbsent(capabilityName, k -> ConcurrentHashMap.newKeySet())
+                        .add(agentId);
 
         // Update heartbeat
         lastHeartbeat.put(agentId, Instant.now());
@@ -75,14 +74,13 @@ public class AgentInfoStore {
     public boolean unregisterAgent(String agentId) {
         AgentInfo agent = agentById.remove(agentId);
         if (agent != null) {
-            // Remove from capability indexes
-            for (String capability : agent.getCapabilities()) {
-                Set<String> agents = agentsByCapability.get(capability);
-                if (agents != null) {
-                    agents.remove(agentId);
-                    if (agents.isEmpty()) {
-                        agentsByCapability.remove(capability);
-                    }
+            // Remove from capability indexes - use single capability
+            String capabilityName = agent.getCapability().domainName();
+            Set<String> agents = agentsByCapability.get(capabilityName);
+            if (agents != null) {
+                agents.remove(agentId);
+                if (agents.isEmpty()) {
+                    agentsByCapability.remove(capabilityName);
                 }
             }
 

@@ -278,14 +278,17 @@
                              Note: JSON schema files in a2a/schema/ cause compiler errors when included.
                              TODO: Move schema files to resources or add .json exclusion pattern.
                              ===================================================================== -->
-                        <!-- A2A sources excluded for now - testing Spring Boot version instead -->
+                        <!-- A2A sources excluded due to missing dependencies -->
                         <exclude>**/a2a/**</exclude>
 
                         <!-- =====================================================================
-                             Packages with A2A dependencies - transitively depend on excluded a2a/**
+                             Packages with A2A dependencies - transitively depend on excluded a2a/*
+                             Note: autonomous package needed for handoff functionality
                              ===================================================================== -->
                         <exclude>**/orderfulfillment/**</exclude>
-                        <exclude>**/autonomous/**</exclude>
+                        <exclude>**/conflict/**</exclude>
+                        <!-- Keep autonomous for handoff functionality -->
+                        <!-- exclude>**/autonomous/**</exclude -->
 
                         <!-- These packages have dependencies on missing classes -->
 
@@ -305,6 +308,9 @@
                         <exclude>**/processmining/**</exclude>
 
                         <!-- ZAI MCP Bridge - API mismatch with MCP SDK 1.0.0-RC1 -->
+                        <exclude>**/mcp/zai/**</exclude>
+                        <!-- MCP Transport - Java HTTP API issues -->
+                        <exclude>**/mcp/transport/**</exclude>
                         <exclude>**/mcp/zai/**</exclude>
 
                         <!-- Exclude classes that depend on ZaiFunctionService -->
@@ -447,6 +453,7 @@
                     <!-- Exclude packages with missing source dependencies -->
                     <excludes>
                         <exclude>**/orderfulfillment/**</exclude>
+                        <exclude>**/conflict/**</exclude>
                         <exclude>**/autonomous/**</exclude>
                         <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
                         <exclude>**/zai/ZaiFunctionServiceTest.java</exclude>

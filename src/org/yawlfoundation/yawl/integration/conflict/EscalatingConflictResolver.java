@@ -88,63 +88,92 @@ public class EscalatingConflictResolver implements ConflictResolver {
      */
     public static class DefaultArbiterService implements ArbiterService {
 
+        private volatile boolean arbiterAvailable = true;
+        private final Map<String, EscalationRecord> activeEscalations = new ConcurrentHashMap<>();
+
+        /**
+         * Creates a new DefaultArbiterService with default availability.
+         */
+        public DefaultArbiterService() {
+            this(true);
+        }
+
+        /**
+         * Creates a new DefaultArbiterService with specified availability.
+         *
+         * @param available initial arbiter availability status
+         */
+        public DefaultArbiterService(boolean available) {
+            this.arbiterAvailable = available;
+        }
+
+        /**
+         * Sets the arbiter availability status.
+         *
+         * @param available true if arbiter is available
+         */
+        public void setArbiterAvailable(boolean available) {
+            this.arbiterAvailable = available;
+        }
+
         @Override
         public Decision escalateToArbiter(ConflictContext conflictContext) throws ArbiterException {
             if (!isArbiterAvailable()) {
                 throw new ArbiterException("Arbiter is not available");
             }
 
-            // In a real implementation, this would:
-            // 1. Notify the human arbiter
-            // 2. Present the conflict details
-            // 3. Wait for human decision
-            // 4. Return the decision
+            String conflictId = conflictContext.getConflictId();
+            EscalationRecord record = new EscalationRecord(conflictId);
+            activeEscalations.put(conflictId, record);
 
-            // For this implementation, we'll simulate by selecting the decision
-            // with the highest average confidence
-            List<AgentDecision> decisions = conflictContext.getConflictingDecisions();
+            try {
+                // Simulate human arbiter decision by selecting the decision
+                // with the highest average confidence
+                List<AgentDecision> decisions = conflictContext.getConflictingDecisions();
 
-            if (decisions.isEmpty()) {
-                throw new ArbiterException("No decisions available for arbitration");
+                if (decisions.isEmpty()) {
+                    throw new ArbiterException("No decisions available for arbitration");
+                }
+
+                // Calculate average confidence for each unique decision
+                Map<String, Double> decisionConfidence = decisions.stream()
+                    .collect(Collectors.groupingBy(
+                        AgentDecision::getDecision,
+                        Collectors.averagingDouble(AgentDecision::getConfidence)
+                    ));
+
+                // Select decision with highest confidence
+                String winningDecision = decisionConfidence.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse(decisions.get(0).getDecision());
+
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("arbiterDecision", winningDecision);
+                metadata.put("confidenceScores", decisionConfidence);
+                metadata.put("escalationReason", "Automated arbiter resolution (highest confidence)");
+
+                record.setStatus(EscalationStatus.COMPLETED);
+                return new Decision(
+                    winningDecision,
+                    conflictContext.getSeverity(),
+                    decisions.stream().map(AgentDecision::getAgentId).collect(Collectors.toList()),
+                    "ARBITER_" + STRATEGY_NAME,
+                    metadata
+                );
+            } finally {
+                activeEscalations.remove(conflictId);
             }
-
-            // Calculate average confidence for each unique decision
-            Map<String, Double> decisionConfidence = decisions.stream()
-                .collect(Collectors.groupingBy(
-                    AgentDecision::getDecision,
-                    Collectors.averagingDouble(AgentDecision::getConfidence)
-                ));
-
-            // Select decision with highest confidence
-            String winningDecision = decisionConfidence.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(decisions.get(0).getDecision());
-
-            Map<String, Object> metadata = new HashMap<>();
-            metadata.put("arbiterDecision", winningDecision);
-            metadata.put("confidenceScores", decisionConfidence);
-            metadata.put("escalationReason", "Human arbiter resolution");
-
-            return new Decision(
-                winningDecision,
-                conflictContext.getSeverity(),
-                decisions.stream().map(AgentDecision::getAgentId).collect(Collectors.toList()),
-                "ARBITER_" + STRATEGY_NAME,
-                metadata
-            );
         }
 
         @Override
         public boolean isArbiterAvailable() {
-            // In a real implementation, check if arbiter is online and available
-            return true; // Default implementation assumes always available
+            return arbiterAvailable && activeEscalations.size() < 10;
         }
 
         @Override
         public int getArbiterWorkload() {
-            // In a real implementation, check pending escalations
-            return 0; // Default implementation assumes no workload
+            return activeEscalations.size();
         }
     }
 

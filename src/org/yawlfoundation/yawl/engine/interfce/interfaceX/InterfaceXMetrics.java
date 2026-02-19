@@ -68,19 +68,27 @@ public final class InterfaceXMetrics {
      * @return the initialized instance
      */
     public static InterfaceXMetrics initialize(Object meterRegistry) {
-        return getInstance();
+        if (instance == null) {
+            synchronized (INSTANCE_LOCK) {
+                if (instance == null) {
+                    instance = new InterfaceXMetrics();
+                }
+            }
+        }
+        return instance;
     }
 
     /**
      * Gets the singleton metrics instance.
      *
      * @return the metrics instance
+     * @throws IllegalStateException if not initialized
      */
     public static InterfaceXMetrics getInstance() {
         if (instance == null) {
             synchronized (INSTANCE_LOCK) {
                 if (instance == null) {
-                    instance = new InterfaceXMetrics();
+                    throw new IllegalStateException("InterfaceXMetrics not initialized. Call initialize() first.");
                 }
             }
         }
@@ -220,6 +228,36 @@ public final class InterfaceXMetrics {
         failuresTotal.set(0);
         deadLettersTotal.set(0);
         totalDurationNanos.set(0);
+    }
+
+    /**
+     * Starts a timer for measuring operation duration.
+     * Returns null since we use simple atomic counters instead of Micrometer.
+     *
+     * @return null (timer tracking is done via recordDuration)
+     */
+    public Object startTimer() {
+        return null;
+    }
+
+    /**
+     * Stops a timer and records the duration.
+     * Since startTimer returns null, this method accepts null input.
+     *
+     * @param timer the timer object (ignored, can be null)
+     */
+    public void stopTimer(Object timer) {
+        // Duration is tracked via recordDuration method
+    }
+
+    /**
+     * Gets the meter registry.
+     * Returns null since we use simple atomic counters instead of Micrometer.
+     *
+     * @return null (no Micrometer meter registry)
+     */
+    public Object getMeterRegistry() {
+        return null;
     }
 
     /**

@@ -5,6 +5,19 @@ spring:
       on-profile: test
   main:
     allow-bean-definition-overriding: true
+  # Use H2 in-memory database for tests
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
 
 # Disable MCP/A2A servers during tests to avoid port conflicts
 yawl:
@@ -19,21 +32,6 @@ yawl:
         enabled: false
       jsonrpc:
         enabled: false
-
-# Use H2 in-memory database for tests
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-  h2:
-    console:
-      enabled: false
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: false
 
 # Disable OpenTelemetry in tests
 otel:

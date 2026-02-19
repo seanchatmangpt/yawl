@@ -224,6 +224,9 @@ class FallbackObservabilityTest {
         assertEquals(1, stats.getTotalStaleDataServed());  // Only the second one was stale
         assertEquals(1, stats.getTotalAndonAlertsFired());  // One P1 alert for stale data
         assertEquals(0.5, stats.getStaleDataRatio(), 0.01);  // 50% stale
+        assertEquals(2, stats.getTotalSuccesses());  // Both succeeded
+        assertEquals(0, stats.getTotalErrors());  // No errors
+        assertEquals(0.0, stats.getErrorRate(), 0.01);  // 0% error rate
     }
 
     @Test
@@ -272,6 +275,33 @@ class FallbackObservabilityTest {
         );
 
         assertEquals(expectedException, thrown.getCause());
+    }
+
+    @Test
+    @DisplayName("Should track error rate correctly")
+    void shouldTrackErrorRate() {
+        // Record successful fallbacks
+        fallbackObs.recordDefaultFallback("comp1", "op1",
+            FallbackObservability.FallbackReason.SERVICE_ERROR, "value1");
+        fallbackObs.recordDefaultFallback("comp2", "op2",
+            FallbackObservability.FallbackReason.SERVICE_ERROR, "value2");
+
+        // Record a failed fallback
+        try {
+            fallbackObs.recordFallback("comp3", "op3",
+                FallbackObservability.FallbackReason.SERVICE_ERROR,
+                FallbackObservability.FallbackSource.DEFAULT_VALUE,
+                () -> { throw new RuntimeException("intentional test failure"); },
+                Instant.now(), null);
+        } catch (RuntimeException expected) {
+            // Expected
+        }
+
+        FallbackObservability.FallbackStats stats = fallbackObs.getStats();
+
+        assertEquals(2, stats.getTotalSuccesses());
+        assertEquals(1, stats.getTotalErrors());
+        assertEquals(1.0 / 3.0, stats.getErrorRate(), 0.01);  // 33.3% error rate
     }
 
     @Test

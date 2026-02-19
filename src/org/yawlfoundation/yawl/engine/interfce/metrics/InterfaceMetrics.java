@@ -53,11 +53,14 @@ import io.opentelemetry.api.metrics.Meter;
  *   <tr><td>B</td><td>yawl.interface.b.requests.total</td><td>Counter</td><td>Total requests to Interface B</td></tr>
  *   <tr><td>B</td><td>yawl.interface.b.latency</td><td>Histogram</td><td>Request latency in seconds</td></tr>
  *   <tr><td>B</td><td>yawl.interface.b.workitems.processed</td><td>Counter</td><td>Work items processed</td></tr>
+ *   <tr><td>B</td><td>yawl.interface.b.connection_pool.wait_time</td><td>Histogram</td><td>Connection pool wait time in ms</td></tr>
  *   <tr><td>E</td><td>yawl.interface.e.queries.total</td><td>Counter</td><td>Total queries to Interface E</td></tr>
  *   <tr><td>E</td><td>yawl.interface.e.query.latency</td><td>Histogram</td><td>Query latency in seconds</td></tr>
+ *   <tr><td>E</td><td>yawl.interface.e.result_size</td><td>Histogram</td><td>Query result size in bytes</td></tr>
  *   <tr><td>X</td><td>yawl.interface.x.notifications.total</td><td>Counter</td><td>Event notifications sent</td></tr>
  *   <tr><td>X</td><td>yawl.interface.x.retries.total</td><td>Counter</td><td>Notification retry attempts</td></tr>
  *   <tr><td>X</td><td>yawl.interface.x.failures.total</td><td>Counter</td><td>Notification failures</td></tr>
+ *   <tr><td>X</td><td>yawl.interface.x.dead_letters.total</td><td>Counter</td><td>Dead letter queue entries</td></tr>
  * </table>
  *
  * @author YAWL Foundation
@@ -83,20 +86,26 @@ public final class InterfaceMetrics {
     private final LongCounter interfaceBRequestsCounter;
     private final LongHistogram interfaceBLatencyHistogram;
     private final LongCounter interfaceBWorkItemsCounter;
+    private final LongHistogram interfaceBConnectionPoolWaitTimeHistogram;
     private final LongCounter interfaceEQueriesCounter;
     private final LongHistogram interfaceELatencyHistogram;
+    private final LongHistogram interfaceEResultSizeHistogram;
     private final LongCounter interfaceXNotificationsCounter;
     private final LongCounter interfaceXRetriesCounter;
     private final LongCounter interfaceXFailuresCounter;
+    private final LongCounter interfaceXDeadLettersCounter;
 
     private final ConcurrentHashMap<String, AtomicLong> operationStartTimes = new ConcurrentHashMap<>();
     private final LongAdder interfaceATotalRequests = new LongAdder();
     private final LongAdder interfaceBTotalRequests = new LongAdder();
     private final LongAdder interfaceBTotalWorkItems = new LongAdder();
+    private final LongAdder interfaceBTotalConnectionPoolWaitTime = new LongAdder();
     private final LongAdder interfaceETotalQueries = new LongAdder();
+    private final LongAdder interfaceETotalResultSize = new LongAdder();
     private final LongAdder interfaceXTotalNotifications = new LongAdder();
     private final LongAdder interfaceXTotalRetries = new LongAdder();
     private final LongAdder interfaceXTotalFailures = new LongAdder();
+    private final LongAdder interfaceXTotalDeadLetters = new LongAdder();
 
     private volatile boolean enabled = true;
 
@@ -136,6 +145,13 @@ public final class InterfaceMetrics {
                 .setUnit("items")
                 .build();
 
+        this.interfaceBConnectionPoolWaitTimeHistogram = meter
+                .histogramBuilder("yawl.interface.b.connection_pool.wait_time")
+                .setDescription("Connection pool wait time for Interface B in milliseconds")
+                .setUnit("ms")
+                .ofLongs()
+                .build();
+
         this.interfaceEQueriesCounter = meter
                 .counterBuilder("yawl.interface.e.queries.total")
                 .setDescription("Total number of queries to Interface E (log gateway)")
@@ -146,6 +162,13 @@ public final class InterfaceMetrics {
                 .histogramBuilder("yawl.interface.e.query.latency")
                 .setDescription("Latency of Interface E queries in seconds")
                 .setUnit("s")
+                .ofLongs()
+                .build();
+
+        this.interfaceEResultSizeHistogram = meter
+                .histogramBuilder("yawl.interface.e.result_size")
+                .setDescription("Result size of Interface E queries in bytes")
+                .setUnit("By")
                 .ofLongs()
                 .build();
 
@@ -165,6 +188,12 @@ public final class InterfaceMetrics {
                 .counterBuilder("yawl.interface.x.failures.total")
                 .setDescription("Total number of notification failures in Interface X")
                 .setUnit("failures")
+                .build();
+
+        this.interfaceXDeadLettersCounter = meter
+                .counterBuilder("yawl.interface.x.dead_letters.total")
+                .setDescription("Total number of dead letter queue entries in Interface X")
+                .setUnit("entries")
                 .build();
 
         _logger.info("InterfaceMetrics initialized with OpenTelemetry instrumentation");
@@ -256,6 +285,22 @@ public final class InterfaceMetrics {
         interfaceBWorkItemsCounter.add(1, attributes);
     }
 
+    public void recordInterfaceBConnectionPoolWaitTime(long waitTimeMs, String operation) {
+        if (!enabled) {
+            return;
+        }
+        interfaceBTotalConnectionPoolWaitTime.add(waitTimeMs);
+        Attributes attributes = Attributes.builder()
+                .put("yawl.interface", "B")
+                .put("yawl.operation", operation)
+                .build();
+        interfaceBConnectionPoolWaitTimeHistogram.record(waitTimeMs, attributes);
+        if (_logger.isDebugEnabled()) {
+            _logger.debug("Interface B connection pool wait: operation={} waitTime={}ms",
+                    operation, waitTimeMs);
+        }
+    }
+
     public long recordInterfaceEQueryStart(String queryType) {
         if (!enabled) {
             return 0;
@@ -282,6 +327,27 @@ public final class InterfaceMetrics {
         if (_logger.isDebugEnabled()) {
             _logger.debug("Interface E query complete: queryType={} latency={}ms success={}",
                     queryType, latencyMillis, success);
+        }
+    }
+
+    public void recordInterfaceEQueryComplete(String queryType, long startNanos, boolean success, long resultSizeBytes) {
+        if (!enabled || startNanos == 0) {
+            return;
+        }
+        long latencyMillis = (System.nanoTime() - startNanos) / 1_000_000;
+        interfaceETotalResultSize.add(resultSizeBytes);
+        Attributes attributes = Attributes.builder()
+                .put("yawl.interface", "E")
+                .put("yawl.query.type", queryType)
+                .put("yawl.success", success)
+                .build();
+        interfaceEQueriesCounter.add(1, attributes);
+        interfaceELatencyHistogram.record(latencyMillis, attributes);
+        interfaceEResultSizeHistogram.record(resultSizeBytes, attributes);
+        operationStartTimes.remove("E:" + queryType);
+        if (_logger.isDebugEnabled()) {
+            _logger.debug("Interface E query complete: queryType={} latency={}ms success={} resultSize={}bytes",
+                    queryType, latencyMillis, success, resultSizeBytes);
         }
     }
 
@@ -331,6 +397,20 @@ public final class InterfaceMetrics {
         _logger.warn("Interface X failure recorded: eventType={} error={}", eventType, errorMessage);
     }
 
+    public void recordInterfaceXDeadLetter(String eventType, String errorMessage) {
+        if (!enabled) {
+            return;
+        }
+        interfaceXTotalDeadLetters.increment();
+        Attributes attributes = Attributes.builder()
+                .put("yawl.interface", "X")
+                .put("yawl.event.type", eventType)
+                .put("error.message", errorMessage != null ? errorMessage : "unknown")
+                .build();
+        interfaceXDeadLettersCounter.add(1, attributes);
+        _logger.warn("Interface X dead letter recorded: eventType={} error={}", eventType, errorMessage);
+    }
+
     public long getInterfaceATotalRequests() {
         return interfaceATotalRequests.longValue();
     }
@@ -343,8 +423,32 @@ public final class InterfaceMetrics {
         return interfaceBTotalWorkItems.longValue();
     }
 
+    public long getInterfaceBTotalConnectionPoolWaitTime() {
+        return interfaceBTotalConnectionPoolWaitTime.longValue();
+    }
+
+    public double getInterfaceBAvgConnectionPoolWaitTime() {
+        long requests = interfaceBTotalRequests.longValue();
+        if (requests == 0) {
+            return 0.0;
+        }
+        return (double) interfaceBTotalConnectionPoolWaitTime.longValue() / requests;
+    }
+
     public long getInterfaceETotalQueries() {
         return interfaceETotalQueries.longValue();
+    }
+
+    public long getInterfaceETotalResultSize() {
+        return interfaceETotalResultSize.longValue();
+    }
+
+    public double getInterfaceEAvgResultSize() {
+        long queries = interfaceETotalQueries.longValue();
+        if (queries == 0) {
+            return 0.0;
+        }
+        return (double) interfaceETotalResultSize.longValue() / queries;
     }
 
     public long getInterfaceXTotalNotifications() {
@@ -357,6 +461,18 @@ public final class InterfaceMetrics {
 
     public long getInterfaceXTotalFailures() {
         return interfaceXTotalFailures.longValue();
+    }
+
+    public long getInterfaceXTotalDeadLetters() {
+        return interfaceXTotalDeadLetters.longValue();
+    }
+
+    public double getInterfaceXDeadLetterRate() {
+        long notifications = interfaceXTotalNotifications.longValue();
+        if (notifications == 0) {
+            return 0.0;
+        }
+        return (interfaceXTotalDeadLetters.longValue() * 100.0) / notifications;
     }
 
     public double getInterfaceXRetryRate() {
@@ -377,16 +493,22 @@ public final class InterfaceMetrics {
 
     public String summary() {
         return String.format(
-                "InterfaceMetrics{A=%d, B=%d (workItems=%d), E=%d, X=(notifications=%d, retries=%d, failures=%d, retryRate=%.2f%%, failureRate=%.2f%%)}",
+                "InterfaceMetrics{A=%d, B=%d (workItems=%d, avgPoolWait=%.2fms), " +
+                "E=%d (avgResultSize=%.2fbytes), X=(notifications=%d, retries=%d, failures=%d, " +
+                "deadLetters=%d, retryRate=%.2f%%, failureRate=%.2f%%, deadLetterRate=%.2f%%)}",
                 getInterfaceATotalRequests(),
                 getInterfaceBTotalRequests(),
                 getInterfaceBTotalWorkItems(),
+                getInterfaceBAvgConnectionPoolWaitTime(),
                 getInterfaceETotalQueries(),
+                getInterfaceEAvgResultSize(),
                 getInterfaceXTotalNotifications(),
                 getInterfaceXTotalRetries(),
                 getInterfaceXTotalFailures(),
+                getInterfaceXTotalDeadLetters(),
                 getInterfaceXRetryRate(),
-                getInterfaceXFailureRate()
+                getInterfaceXFailureRate(),
+                getInterfaceXDeadLetterRate()
         );
     }
 

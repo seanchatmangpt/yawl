@@ -1,5 +1,5 @@
 # =============================================================================
-# Dockerfile.engine — YAWL Engine Production Image
+# Dockerfile.engine - YAWL Engine Production Image
 # =============================================================================
 # Production-ready YAWL workflow engine with:
 # - Java 25 virtual threads for concurrent case execution
@@ -7,66 +7,45 @@
 # - Health checks and observability
 # - Non-root user for security
 # - TLS 1.3+ enforcement (CNSA compliant)
-# - Security hardening (no secrets, minimal attack surface)
 #
 # Build:
-#   docker build -t yawl-engine:6.0.0 -f docker/production/Dockerfile.engine .
+#   docker build -t yawl-engine:6.0.0-alpha -f docker/production/Dockerfile.engine .
 #
 # Run:
-#   docker run -p 8080:8080 yawl-engine:6.0.0
+#   docker run -p 8080:8080 -p 9090:9090 yawl-engine:6.0.0-alpha
 # =============================================================================
 
-# Stage 1: Build
+# Stage 1: Builder (Maven build)
+# -----------------------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-alpine AS builder
 
+# Install Maven
+RUN apk add --no-cache maven
+
+# Create working directory
 WORKDIR /build
 
-# Copy Maven files first for dependency caching
-COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
+# Copy entire project (excludes handled by .dockerignore)
+COPY . .
 
-# Copy module POMs
-COPY yawl-utilities/pom.xml yawl-utilities/
-COPY yawl-elements/pom.xml yawl-elements/
-COPY yawl-authentication/pom.xml yawl-authentication/
-COPY yawl-engine/pom.xml yawl-engine/
-COPY yawl-stateless/pom.xml yawl-stateless/
-COPY yawl-resourcing/pom.xml yawl-resourcing/
-COPY yawl-scheduling/pom.xml yawl-scheduling/
-COPY yawl-security/pom.xml yawl-security/
-COPY yawl-integration/pom.xml yawl-integration/
-COPY yawl-monitoring/pom.xml yawl-monitoring/
-COPY yawl-webapps/pom.xml yawl-webapps/
-COPY yawl-control-panel/pom.xml yawl-control-panel/
+# Build the engine with dependencies
+# -T 1.5C enables parallel builds (1.5 x CPU cores)
+# -pl yawl-engine builds only the specified module
+# -am builds required dependencies
+# -DskipTests skips tests for faster builds
+RUN mvn -T 1.5C clean package \
+  -pl yawl-engine \
+  -am \
+  -DskipTests \
+  -Dmaven.javadoc.skip
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline -B -q || true
-
-# Copy source code
-COPY src ./src
-COPY yawl-utilities/src ./yawl-utilities/src
-COPY yawl-elements/src ./yawl-elements/src
-COPY yawl-authentication/src ./yawl-authentication/src
-COPY yawl-engine/src ./yawl-engine/src
-COPY yawl-stateless/src ./yawl-stateless/src
-COPY yawl-resourcing/src ./yawl-resourcing/src
-COPY yawl-scheduling/src ./yawl-scheduling/src
-COPY yawl-security/src ./yawl-security/src
-COPY yawl-integration/src ./yawl-integration/src
-COPY yawl-monitoring/src ./yawl-monitoring/src
-COPY yawl-webapps/src ./yawl-webapps/src
-COPY yawl-control-panel/src ./yawl-control-panel/src
-
-# Build
-RUN ./mvnw package -DskipTests -B -q
-
-# Stage 2: Runtime
+# Stage 2: Runtime (Minimal Java 25 JRE)
+# -----------------------------------------------------------------------------
 FROM eclipse-temurin:25-jre-alpine
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=6.0.0
+ARG VERSION=6.0.0-alpha
 
 # OCI Image Labels
 LABEL maintainer="YAWL Foundation"
@@ -99,10 +78,8 @@ ENV JAVA_OPTS="\
     -XX:MaxRAMPercentage=75.0 \
     -XX:InitialRAMPercentage=50.0 \
     -XX:+UseZGC \
-    -XX:+ZGenerational \
     -XX:+UseCompactObjectHeaders \
     -XX:+UseStringDeduplication \
-    -XX:+UseAOTCache \
     -XX:+ExitOnOutOfMemoryError \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/app/logs/heap-dump.hprof \
@@ -121,12 +98,8 @@ ENV SPRING_PROFILES_ACTIVE=production
 ENV DB_TYPE=h2
 ENV TZ=UTC
 
-# Copy JAR from builder
+# Copy JAR from builder stage
 COPY --from=builder --chown=dev:yawl /build/yawl-engine/target/yawl-engine-*.jar /app/yawl-engine.jar
-
-# Copy healthcheck
-COPY docker/scripts/healthcheck.sh /app/healthcheck.sh
-RUN chmod +x /app/healthcheck.sh && chown dev:yawl /app/healthcheck.sh
 
 WORKDIR /app
 
@@ -136,9 +109,9 @@ USER dev
 # Expose ports
 EXPOSE 8080 9090
 
-# Health check
+# Health check (inline - checks actuator health endpoint)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-    CMD ["/app/healthcheck.sh"]
+    CMD curl -sf http://localhost:8080/actuator/health/liveness || exit 1
 
 # Entry point
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/yawl-engine.jar"]

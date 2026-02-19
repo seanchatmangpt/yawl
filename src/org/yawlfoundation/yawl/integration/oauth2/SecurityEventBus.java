@@ -22,6 +22,8 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.ObservableLongGauge;
+import io.opentelemetry.api.metrics.ObservableDoubleGauge;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
@@ -38,6 +40,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * Publish-subscribe event bus for OAuth2 security events with OTEL spans,
@@ -100,6 +104,15 @@ public final class SecurityEventBus {
     private final LongCounter jwksRefreshFailureCounter;
     private final LongCounter jwksStaleCacheCounter;
 
+    // Observable gauge callbacks for JWKS metrics
+    private final AtomicLong jwksCacheAgeSeconds = new AtomicLong(-1);
+    private final AtomicLong jwksCacheStaleFlag = new AtomicLong(0); // 0 = not stale, 1 = stale
+    private volatile Supplier<Long> cacheAgeSupplier = () -> jwksCacheAgeSeconds.get();
+    private volatile Supplier<Boolean> cacheStaleSupplier = () -> jwksCacheStaleFlag.get() == 1;
+
+    private final ObservableLongGauge jwksCacheAgeGauge;
+    private final ObservableDoubleGauge jwksCacheStaleGauge;
+
     private SecurityEventBus() {
         this.tracer = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_NAME, "6.0.0");
         this.meter = GlobalOpenTelemetry.getMeter(INSTRUMENTATION_NAME);
@@ -123,6 +136,23 @@ public final class SecurityEventBus {
             .setDescription("Number of times stale JWKS cache was detected")
             .setUnit("warnings")
             .build();
+
+        // Initialize JWKS cache age gauge (observable gauge with callback)
+        this.jwksCacheAgeGauge = meter
+            .gaugeBuilder("yawl_oauth2_jwks_cache_age_seconds")
+            .setDescription("Current age of the JWKS cache in seconds (-1 if never refreshed)")
+            .setUnit("seconds")
+            .ofLongs()
+            .buildWithCallback(measurement ->
+                measurement.record(cacheAgeSupplier.get()));
+
+        // Initialize JWKS cache stale gauge (0 = fresh, 1 = stale)
+        this.jwksCacheStaleGauge = meter
+            .gaugeBuilder("yawl_oauth2_jwks_stale")
+            .setDescription("Whether the JWKS cache is stale (0 = fresh, 1 = stale)")
+            .setUnit("boolean")
+            .buildWithCallback(measurement ->
+                measurement.record(cacheStaleSupplier.get() ? 1.0 : 0.0));
 
         log.info("SecurityEventBus initialized with OTEL instrumentation");
     }
@@ -568,6 +598,88 @@ public final class SecurityEventBus {
      */
     public List<Subscriber> getSubscribers() {
         return Collections.unmodifiableList(subscribers);
+    }
+
+    // =========================================================================
+    // JWKS Metrics Gauge Callbacks
+    // =========================================================================
+
+    /**
+     * Set the supplier for JWKS cache age in seconds.
+     *
+     * <p>This allows OAuth2TokenValidator to provide real-time cache age
+     * data that will be exported via the OTEL gauge metric.
+     *
+     * @param supplier a supplier that returns the current cache age in seconds,
+     *                 or -1 if the cache has never been refreshed
+     */
+    public void setCacheAgeSupplier(Supplier<Long> supplier) {
+        this.cacheAgeSupplier = Objects.requireNonNull(supplier, "supplier must not be null");
+    }
+
+    /**
+     * Set the supplier for JWKS cache stale flag.
+     *
+     * <p>This allows OAuth2TokenValidator to provide real-time staleness
+     * data that will be exported via the OTEL gauge metric.
+     *
+     * @param supplier a supplier that returns true if the cache is stale,
+     *                 false otherwise
+     */
+    public void setCacheStaleSupplier(Supplier<Boolean> supplier) {
+        this.cacheStaleSupplier = Objects.requireNonNull(supplier, "supplier must not be null");
+    }
+
+    /**
+     * Update the JWKS cache age gauge directly.
+     *
+     * <p>Use this for simple cases where you just need to update the value
+     * without setting up a supplier. For dynamic values, prefer
+     * {@link #setCacheAgeSupplier(Supplier)}.
+     *
+     * @param ageSeconds the current cache age in seconds, or -1 if never refreshed
+     */
+    public void updateCacheAge(long ageSeconds) {
+        jwksCacheAgeSeconds.set(ageSeconds);
+    }
+
+    /**
+     * Update the JWKS cache stale flag directly.
+     *
+     * <p>Use this for simple cases where you just need to update the value
+     * without setting up a supplier. For dynamic values, prefer
+     * {@link #setCacheStaleSupplier(Supplier)}.
+     *
+     * @param isStale true if the cache is stale, false otherwise
+     */
+    public void updateCacheStale(boolean isStale) {
+        jwksCacheStaleFlag.set(isStale ? 1 : 0);
+    }
+
+    /**
+     * Get the current JWKS cache age from the internal atomic value.
+     *
+     * <p>Note: This returns the value set via {@link #updateCacheAge(long)},
+     * not the value from a supplier. For supplier-based values, call the
+     * supplier directly.
+     *
+     * @return the current cache age in seconds, or -1 if never set
+     */
+    public long getCurrentCacheAge() {
+        return jwksCacheAgeSeconds.get();
+    }
+
+    /**
+     * Check if the cache is currently marked as stale.
+     *
+     * <p>Note: This returns the value set via {@link #updateCacheStale(boolean)},
+     * not the value from a supplier. For supplier-based values, call the
+     * supplier directly.
+     *
+     * @return true if marked as stale, false otherwise
+     */
+    public boolean isCurrentlyStale() {
+        return jwksCacheStaleFlag.get() == 1;
     }
 
     /**

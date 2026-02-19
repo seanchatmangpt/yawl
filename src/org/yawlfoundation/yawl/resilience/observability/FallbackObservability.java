@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -125,6 +126,9 @@ public class FallbackObservability {
     private final Counter staleDataServedCounter;
     private final AtomicLong currentDataFreshnessMs;
     private final Timer fallbackOperationTimer;
+    private final DistributionSummary responseTimeDistribution;
+    private final AtomicLong totalErrors = new AtomicLong(0);
+    private final AtomicLong totalSuccesses = new AtomicLong(0);
 
     // Tracking for active fallbacks
     private final ConcurrentHashMap<String, FallbackRecord> activeFallbacks = new ConcurrentHashMap<>();
@@ -335,6 +339,21 @@ public class FallbackObservability {
             .publishPercentiles(0.5, 0.95, 0.99)
             .register(meterRegistry);
 
+        // Response time distribution for fallback operations
+        this.responseTimeDistribution = DistributionSummary.builder("yawl_fallback_response_time_seconds")
+            .description("Distribution of fallback operation response times in seconds")
+            .baseUnit("seconds")
+            .publishPercentiles(0.5, 0.95, 0.99)
+            .register(meterRegistry);
+
+        // Error rate gauge - calculated from total errors vs total operations
+        Gauge.builder("yawl_fallback_error_rate", this, fo -> {
+            long total = fo.totalErrors.get() + fo.totalSuccesses.get();
+            return total > 0 ? (double) fo.totalErrors.get() / total : 0.0;
+        })
+            .description("Current fallback error rate (errors / total operations)")
+            .register(meterRegistry);
+
         LOGGER.info("FallbackObservability initialized with stalenessThreshold={}s", this.stalenessThreshold.getSeconds());
     }
 
@@ -448,8 +467,10 @@ public class FallbackObservability {
             long timerStart = System.nanoTime();
             try {
                 value = fallbackSupplier.get();
+                totalSuccesses.incrementAndGet();
             } catch (Exception e) {
                 fallbackError = e;
+                totalErrors.incrementAndGet();
                 if (span != null) {
                     span.recordException(e);
                     span.setStatus(StatusCode.ERROR, "Fallback failed: " + e.getMessage());
@@ -457,6 +478,10 @@ public class FallbackObservability {
             }
             long durationNanos = System.nanoTime() - timerStart;
             fallbackOperationTimer.record(durationNanos, java.util.concurrent.TimeUnit.NANOSECONDS);
+
+            // Record response time distribution in seconds
+            double durationSeconds = durationNanos / 1_000_000_000.0;
+            responseTimeDistribution.record(durationSeconds);
 
             // Update metrics
             recordFallbackMetrics(component, operation, reason, source, dataAgeMs, isStale);
@@ -466,7 +491,7 @@ public class FallbackObservability {
                 andonAlertId = fireStaleDataAndonAlert(component, operation, reason, source, dataAgeMs);
             }
 
-            if (span != null) {
+            if (span != null && fallbackError == null) {
                 span.setStatus(StatusCode.OK);
             }
 
@@ -592,7 +617,9 @@ public class FallbackObservability {
             totalStaleDataServed.get(),
             totalAndonAlertsFired.get(),
             activeFallbacks.size(),
-            stalenessThreshold
+            stalenessThreshold,
+            totalSuccesses.get(),
+            totalErrors.get()
         );
     }
 
@@ -707,15 +734,20 @@ public class FallbackObservability {
         private final long totalAndonAlertsFired;
         private final int activeFallbacks;
         private final Duration stalenessThreshold;
+        private final long totalSuccesses;
+        private final long totalErrors;
 
         public FallbackStats(long totalFallbacks, long totalStaleDataServed,
                             long totalAndonAlertsFired, int activeFallbacks,
-                            Duration stalenessThreshold) {
+                            Duration stalenessThreshold, long totalSuccesses,
+                            long totalErrors) {
             this.totalFallbacks = totalFallbacks;
             this.totalStaleDataServed = totalStaleDataServed;
             this.totalAndonAlertsFired = totalAndonAlertsFired;
             this.activeFallbacks = activeFallbacks;
             this.stalenessThreshold = stalenessThreshold;
+            this.totalSuccesses = totalSuccesses;
+            this.totalErrors = totalErrors;
         }
 
         public long getTotalFallbacks() { return totalFallbacks; }
@@ -723,18 +755,32 @@ public class FallbackObservability {
         public long getTotalAndonAlertsFired() { return totalAndonAlertsFired; }
         public int getActiveFallbacks() { return activeFallbacks; }
         public Duration getStalenessThreshold() { return stalenessThreshold; }
+        public long getTotalSuccesses() { return totalSuccesses; }
+        public long getTotalErrors() { return totalErrors; }
 
         public double getStaleDataRatio() {
             return totalFallbacks > 0 ? (double) totalStaleDataServed / totalFallbacks : 0.0;
+        }
+
+        /**
+         * Get the error rate (errors / total operations).
+         *
+         * @return error rate as a value between 0.0 and 1.0
+         */
+        public double getErrorRate() {
+            long total = totalSuccesses + totalErrors;
+            return total > 0 ? (double) totalErrors / total : 0.0;
         }
 
         @Override
         public String toString() {
             return String.format(
                 "FallbackStats{totalFallbacks=%d, staleDataServed=%d (%.1f%%), " +
-                "andonAlertsFired=%d, activeFallbacks=%d, stalenessThreshold=%ds}",
+                "andonAlertsFired=%d, activeFallbacks=%d, stalenessThreshold=%ds, " +
+                "successes=%d, errors=%d, errorRate=%.2f%%}",
                 totalFallbacks, totalStaleDataServed, getStaleDataRatio() * 100,
-                totalAndonAlertsFired, activeFallbacks, stalenessThreshold.getSeconds()
+                totalAndonAlertsFired, activeFallbacks, stalenessThreshold.getSeconds(),
+                totalSuccesses, totalErrors, getErrorRate() * 100
             );
         }
     }

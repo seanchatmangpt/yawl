@@ -59,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+
 public class StringUtil {
     private static final Logger _log = LogManager.getLogger(StringUtil.class);
     private static final String TIMESTAMP_DELIMITER = " ";
@@ -123,120 +124,309 @@ public class StringUtil {
     }
 
     /**
-     * Utility method to take a string and return the string in revserse sequence.
+     * Utility method to take a string and return the string in reverse sequence.
+     * <p>
+     * For backward compatibility, this method throws NullPointerException on null input.
+     * </p>
      *
      * @param inputString String to be reversed
      * @return Reversed string
+     * @throws NullPointerException if inputString is null
+     * @deprecated Use {@link #reverseStringOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String reverseString(String inputString) {
+        return reverseStringOptional(inputString).orElseThrow(() ->
+                new NullPointerException("Input string must not be null"));
+    }
+
+    /**
+     * Utility method to take a string and return the string in reverse sequence
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than throwing NullPointerException.
+     * </p>
+     *
+     * @param inputString String to be reversed (may be null)
+     * @return Optional containing the reversed string, or Optional.empty() if input is null
+     */
+    public static Optional<String> reverseStringOptional(String inputString) {
+        if (inputString == null) {
+            _log.debug("Null string passed to reverseStringOptional");
+            return Optional.empty();
+        }
         char[] inputChars = new char[inputString.length()];
         char[] outputChars = new char[inputString.length()];
 
         inputString.getChars(0, inputString.length(), inputChars, 0);
         int pointer = inputChars.length - 1;
 
-
         for (int i = 0; i <= inputChars.length - 1; i++) {
             outputChars[pointer] = inputChars[i];
             pointer--;
         }
 
-        return new String(outputChars);
+        return Optional.of(new String(outputChars));
     }
 
     /**
      * Removes all white space from a string.
+     * <p>
+     * For backward compatibility, this method throws NullPointerException on null input.
+     * </p>
      *
      * @param string String to remove white space from
      * @return Resulting whitespaceless string.
+     * @throws NullPointerException if string is null
+     * @deprecated Use {@link #removeAllWhiteSpaceOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String removeAllWhiteSpace(String string) {
+        return removeAllWhiteSpaceOptional(string).orElseThrow(() ->
+                new NullPointerException("String must not be null"));
+    }
+
+    /**
+     * Removes all white space from a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than throwing NullPointerException.
+     * </p>
+     *
+     * @param string String to remove white space from (may be null)
+     * @return Optional containing the whitespaceless string, or Optional.empty() if input is null
+     */
+    public static Optional<String> removeAllWhiteSpaceOptional(String string) {
+        if (string == null) {
+            _log.debug("Null string passed to removeAllWhiteSpaceOptional");
+            return Optional.empty();
+        }
         Pattern p = Pattern.compile("[\\s]");
         Matcher m;
+        String result = string;
         do {
-            m = p.matcher(string);
+            m = p.matcher(result);
             if (m.find()) {
-                string = m.replaceAll("");
+                result = m.replaceAll("");
             }
         } while (m.find());
 
-        return string;
+        return Optional.of(result);
     }
 
     /**
-     * Formats a postcode into standard Royal Mail format
+     * Formats a postcode into standard Royal Mail format.
+     * <p>
+     * This method returns the input unchanged if it is null or empty.
+     * For backward compatibility, null input returns null.
+     * </p>
      *
-     * @param postcode
-     * @return Postcode correctly formatted
+     * @param postcode the postcode to format (may be null)
+     * @return Postcode correctly formatted, or null if input was null
+     * @deprecated Use {@link #formatPostCodeOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String formatPostCode(String postcode) {
-        if (postcode == null) return null;
-        postcode = removeAllWhiteSpace(postcode).toUpperCase();
-        if (postcode.length() < 3) return postcode;
-        else
-            return postcode.substring(0, postcode.length() - 3) + " " + postcode.substring(postcode.length() - 3, postcode.length());
+        return formatPostCodeOptional(postcode).orElse(null);
     }
 
     /**
-     * Formats a sortcode into the common form nn-nn-nn
+     * Formats a postcode into standard Royal Mail format with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
      *
-     * @param sortcode
-     * @return Sortcode correctly formatted
+     * @param postcode the postcode to format (may be null)
+     * @return Optional containing the formatted postcode, or Optional.empty() if input is null or empty
      */
+    public static Optional<String> formatPostCodeOptional(String postcode) {
+        if (postcode == null) {
+            _log.debug("Null postcode passed to formatPostCodeOptional");
+            return Optional.empty();
+        }
+        if (postcode.isEmpty()) {
+            _log.debug("Empty postcode passed to formatPostCodeOptional");
+            return Optional.empty();
+        }
+        String formatted = removeAllWhiteSpaceOptional(postcode)
+                .orElseThrow(() -> new IllegalStateException("Unexpected null from removeAllWhiteSpaceOptional"))
+                .toUpperCase();
+        if (formatted.length() < 3) {
+            return Optional.of(formatted);
+        }
+        return Optional.of(formatted.substring(0, formatted.length() - 3) + " " +
+                formatted.substring(formatted.length() - 3));
+    }
+
+    /**
+     * Formats a sortcode into the common form nn-nn-nn.
+     * <p>
+     * For backward compatibility, this method throws NullPointerException on null input.
+     * </p>
+     *
+     * @param sortcode the sortcode to format (must not be null, must be at least 6 characters)
+     * @return Sortcode correctly formatted
+     * @throws NullPointerException if sortcode is null
+     * @throws StringIndexOutOfBoundsException if sortcode is less than 6 characters
+     * @deprecated Use {@link #formatSortCodeOptional(String)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String formatSortCode(String sortcode) {
-        return sortcode.substring(0, 2) + "-" + sortcode.substring(2, 4) + "-" + sortcode.substring(4, 6);
+        return formatSortCodeOptional(sortcode).orElseThrow(() ->
+                new NullPointerException("Sortcode must not be null"));
+    }
+
+    /**
+     * Formats a sortcode into the common form nn-nn-nn with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making invalid inputs visible through
+     * Optional.empty() rather than throwing exceptions or returning null.
+     * </p>
+     *
+     * @param sortcode the sortcode to format (may be null)
+     * @return Optional containing the formatted sortcode, or Optional.empty() if input is null or too short
+     */
+    public static Optional<String> formatSortCodeOptional(String sortcode) {
+        if (sortcode == null) {
+            _log.debug("Null sortcode passed to formatSortCodeOptional");
+            return Optional.empty();
+        }
+        if (sortcode.length() < 6) {
+            _log.warn("Sortcode '{}' is too short (minimum 6 characters required)", sortcode);
+            return Optional.empty();
+        }
+        return Optional.of(sortcode.substring(0, 2) + "-" +
+                sortcode.substring(2, 4) + "-" + sortcode.substring(4, 6));
+    }
+
+    /**
+     * Converts a string to all lower case, and capitalises the first letter of the string.
+     * <p>
+     * For backward compatibility, this method returns null for null input and empty string for empty input.
+     * </p>
+     *
+     * @param s unformatted string.
+     * @return The formatted string, or null if input is null.
+     * @deprecated Use {@link #capitaliseOptional(String)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
+    public static String capitalise(String s) {
+        return capitaliseOptional(s).orElse(null);
     }
 
     /**
      * Converts a string to all lower case, and capitalises the first letter of the string
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
      *
-     * @param s unformated string.
-     * @return The formated string.
+     * @param s unformatted string (may be null)
+     * @return Optional containing the formatted string, Optional.empty() for null input,
+     *         or Optional.of("") for empty input
      */
-    public static String capitalise(String s) {
-        if ((s == null) || (s.length() == 0)) return s;
+    public static Optional<String> capitaliseOptional(String s) {
+        if (s == null) {
+            _log.debug("Null string passed to capitaliseOptional");
+            return Optional.empty();
+        }
+        if (s.isEmpty()) {
+            return Optional.of("");
+        }
         char[] chars = s.toLowerCase().toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
-        return String.valueOf(chars);
+        return Optional.of(String.valueOf(chars));
     }
 
     /**
-     * Utility routine that takes in a Calendar referece and returns a date/time stamp suitable for use
+     * Utility routine that takes in a Calendar reference and returns a date/time stamp suitable for use
      * in a Portlets environment.
+     * <p>
+     * For backward compatibility, this method throws NullPointerException on null input.
+     * </p>
      *
-     * @param calendar
+     * @param calendar the calendar to format
      * @return Date/timestamp suitable for display.
-     * @deprecated Use TimeUtil.formatUIDate
+     * @throws NullPointerException if calendar is null
+     * @deprecated Use {@link #formatUIDateOptional(Calendar)} for proper null handling,
+     *             or use TimeUtil.formatUIDate for newer code
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String formatUIDate(Calendar calendar) {
-        SimpleDateFormat fmt = null;
+        return formatUIDateOptional(calendar).orElseThrow(() ->
+                new NullPointerException("Calendar must not be null"));
+    }
 
-        /**
-         * Set format depending upon whether we have a timestamp component to the calendar.
-         * Ok, this is slightly flawed as an assumption as we could be bang on midnight.......
-         */
+    /**
+     * Utility routine that takes in a Calendar reference and returns a date/time stamp suitable for use
+     * in a Portlets environment with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than throwing NullPointerException.
+     * </p>
+     *
+     * @param calendar the calendar to format (may be null)
+     * @return Optional containing the formatted date/timestamp, or Optional.empty() if calendar is null
+     */
+    public static Optional<String> formatUIDateOptional(Calendar calendar) {
+        if (calendar == null) {
+            _log.debug("Null calendar passed to formatUIDateOptional");
+            return Optional.empty();
+        }
+        SimpleDateFormat fmt;
+        // Set format depending upon whether we have a timestamp component to the calendar.
+        // Note: this is slightly flawed as an assumption as we could be bang on midnight.
         if ((calendar.get(Calendar.HOUR) == 0) && (calendar.get(Calendar.MINUTE) == 0)
                 && (calendar.get(Calendar.SECOND) == 0)) {
             fmt = new SimpleDateFormat("dd-MMM-yy");
         } else {
             fmt = new SimpleDateFormat("dd-MMM-yy hh:mm a");
         }
-
-        return fmt.format(calendar.getTime());
+        return Optional.of(fmt.format(calendar.getTime()));
     }
 
     /**
      * Utility routine which takes a decimal value as a string (e.g. 0.25 equating to 25p) and returns the
      * value in UI currency format (e.g. L0.25).
+     * <p>
+     * For backward compatibility, this method throws NullPointerException on null input.
+     * </p>
      *
-     * @return A formatted currency
+     * @param value the decimal value to format
+     * @return A formatted currency string
+     * @throws NullPointerException if value is null
+     * @deprecated Use {@link #formatDecimalCostOptional(BigDecimal)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String formatDecimalCost(BigDecimal value) {
+        return formatDecimalCostOptional(value).orElseThrow(() ->
+                new NullPointerException("Value must not be null"));
+    }
+
+    /**
+     * Utility routine which takes a decimal value and returns the value in UI currency format
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than throwing NullPointerException.
+     * </p>
+     *
+     * @param value the decimal value to format (may be null)
+     * @return Optional containing the formatted currency string, or Optional.empty() if value is null
+     */
+    public static Optional<String> formatDecimalCostOptional(BigDecimal value) {
+        if (value == null) {
+            _log.debug("Null BigDecimal passed to formatDecimalCostOptional");
+            return Optional.empty();
+        }
         Currency currency = Currency.getInstance(Locale.getDefault());
         NumberFormat fmt = DecimalFormat.getInstance();
         fmt.setMinimumFractionDigits(2);
         fmt.setMaximumFractionDigits(2);
-        return currency.getSymbol() + fmt.format(value);
+        return Optional.of(currency.getSymbol() + fmt.format(value));
     }
 
 
@@ -264,31 +454,81 @@ public class StringUtil {
 
     /**
      * Converts the throwable object into the standard Java stack trace format.
+     * <p>
+     * For backward compatibility, this method returns null for null input.
+     * </p>
      *
      * @param t Throwable to convert to a String
-     * @return String representation of Throwable t
+     * @return String representation of Throwable t, or null if t is null
+     * @deprecated Use {@link #convertThrowableToStringOptional(Throwable)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String convertThrowableToString(Throwable t) {
+        return convertThrowableToStringOptional(t).orElse(null);
+    }
+
+    /**
+     * Converts the throwable object into the standard Java stack trace format
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param t Throwable to convert to a String (may be null)
+     * @return Optional containing the string representation of the throwable,
+     *         or Optional.empty() if t is null
+     */
+    public static Optional<String> convertThrowableToStringOptional(Throwable t) {
+        if (t == null) {
+            _log.debug("Null throwable passed to convertThrowableToStringOptional");
+            return Optional.empty();
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(baos);
         t.printStackTrace(writer);
         writer.flush();
-        return baos.toString();
+        return Optional.of(baos.toString());
     }
 
     /**
-     * Esacpes all HTML entities and "funky accents" into the HTML 4.0 encodings, replacing
+     * Escapes all HTML entities and "funky accents" into the HTML 4.0 encodings, replacing
      * new lines with "&lt;br&gt;", tabs with four "&amp;nbsp;" and single spaces with "&amp;nbsp;".
+     * <p>
+     * For backward compatibility, this method returns null for null input.
+     * </p>
      *
      * @param string to escape
-     * @return escaped string
+     * @return escaped string, or null if input is null
+     * @deprecated Use {@link #formatForHTMLOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String formatForHTML(String string) {
-        string = StringEscapeUtils.escapeHtml4(string);
-        string = string.replaceAll("\n", "<br>");
-        string = string.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
-        string = string.replaceAll(" ", "&nbsp;");
-        return string;
+        return formatForHTMLOptional(string).orElse(null);
+    }
+
+    /**
+     * Escapes all HTML entities and "funky accents" into the HTML 4.0 encodings, replacing
+     * new lines with "&lt;br&gt;", tabs with four "&amp;nbsp;" and single spaces with "&amp;nbsp;"
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param string the string to escape (may be null)
+     * @return Optional containing the escaped string, or Optional.empty() if input is null
+     */
+    public static Optional<String> formatForHTMLOptional(String string) {
+        if (string == null) {
+            _log.debug("Null string passed to formatForHTMLOptional");
+            return Optional.empty();
+        }
+        String result = StringEscapeUtils.escapeHtml4(string);
+        result = result.replaceAll("\n", "<br>");
+        result = result.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
+        result = result.replaceAll(" ", "&nbsp;");
+        return Optional.of(result);
     }
 
     /**
@@ -315,23 +555,55 @@ public class StringUtil {
 
 
     /**
-     * Removes an outer set of xml tags from an xml string, if possible
+     * Removes an outer set of xml tags from an xml string, if possible.
+     * <p>
+     * For backward compatibility, null input returns null.
+     * </p>
      *
      * @param xml the xml string to strip
      * @return the stripped xml string, or empty string for self-closing tags
+     * @deprecated Use {@link #unwrapOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String unwrap(String xml) {
-        if (xml != null) {
-            if (xml.matches("^<\\w+/>$")) {                      // shortened tag pair - no content
-                return new String();  // Self-closing tags have empty content by definition
-            }
-            int start = xml.indexOf('>') + 1;
-            int end = xml.lastIndexOf('<');
-            if (end >= start) {
-                return xml.substring(start, end);
-            }
+        return unwrapOptional(xml).orElse(null);
+    }
+
+    /**
+     * Removes an outer set of xml tags from an xml string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making invalid inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param xml the xml string to strip (may be null)
+     * @return Optional containing the stripped xml string (empty string for self-closing tags),
+     *         or Optional.empty() if input is null or malformed
+     */
+    public static Optional<String> unwrapOptional(String xml) {
+        if (xml == null) {
+            _log.debug("Null XML passed to unwrapOptional");
+            return Optional.empty();
         }
-        return xml;
+        if (xml.isEmpty()) {
+            _log.debug("Empty XML passed to unwrapOptional");
+            return Optional.empty();
+        }
+        // Self-closing tags have empty content by definition
+        if (xml.matches("^<\\w+/>$")) {
+            return Optional.of("");
+        }
+        int start = xml.indexOf('>') + 1;
+        int end = xml.lastIndexOf('<');
+        if (start < 1) {
+            _log.warn("Malformed XML passed to unwrapOptional: no opening tag found in '{}'", xml);
+            return Optional.empty();
+        }
+        if (end < start) {
+            _log.warn("Malformed XML passed to unwrapOptional: no closing tag found in '{}'", xml);
+            return Optional.empty();
+        }
+        return Optional.of(xml.substring(start, end));
     }
 
 
@@ -355,38 +627,106 @@ public class StringUtil {
 
 
     /**
-     * Wraps a string in the specified quote marks
+     * Wraps a string in the specified quote marks.
+     * <p>
+     * For backward compatibility, null input returns null.
+     * </p>
+     *
      * @param s the string to wrap
      * @param quoteMark the quote character to use
-     * @return the wrapped sgtring
+     * @return the wrapped string, or null if input is null
+     * @deprecated Use {@link #enQuoteOptional(String, char)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String enQuote(String s, char quoteMark) {
-        return s == null ? s :
-                new StringBuilder(s.length() + 2)
-                        .append(quoteMark).append(s).append(quoteMark).toString();
+        return enQuoteOptional(s, quoteMark).orElse(null);
+    }
+
+    /**
+     * Wraps a string in the specified quote marks with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param s the string to wrap (may be null)
+     * @param quoteMark the quote character to use
+     * @return Optional containing the wrapped string, or Optional.empty() if input is null
+     */
+    public static Optional<String> enQuoteOptional(String s, char quoteMark) {
+        if (s == null) {
+            _log.debug("Null string passed to enQuoteOptional");
+            return Optional.empty();
+        }
+        return Optional.of(new StringBuilder(s.length() + 2)
+                .append(quoteMark).append(s).append(quoteMark).toString());
     }
 
 
     /**
-     * Encodes reserved characters in an xml string
+     * Encodes reserved characters in an xml string.
+     * <p>
+     * For backward compatibility, null input returns null.
+     * </p>
      *
      * @param s the string to encode
-     * @return the newly encoded string
+     * @return the newly encoded string, or null if input is null
+     * @deprecated Use {@link #xmlEncodeOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String xmlEncode(String s) {
-        if (s == null) return s;
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
+        return xmlEncodeOptional(s).orElse(null);
     }
 
     /**
-     * Decodes reserved characters in an xml string
+     * Encodes reserved characters in an xml string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param s the string to encode (may be null)
+     * @return Optional containing the encoded string, or Optional.empty() if input is null
+     */
+    public static Optional<String> xmlEncodeOptional(String s) {
+        if (s == null) {
+            _log.debug("Null string passed to xmlEncodeOptional");
+            return Optional.empty();
+        }
+        return Optional.of(URLEncoder.encode(s, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Decodes reserved characters in an xml string.
+     * <p>
+     * For backward compatibility, null input returns null.
+     * </p>
      *
      * @param s the string to decode
-     * @return the newly decoded string
+     * @return the newly decoded string, or null if input is null
+     * @deprecated Use {@link #xmlDecodeOptional(String)} for proper null handling
      */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String xmlDecode(String s) {
-        if (s == null) return s;
-        return URLDecoder.decode(s, StandardCharsets.UTF_8);
+        return xmlDecodeOptional(s).orElse(null);
+    }
+
+    /**
+     * Decodes reserved characters in an xml string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param s the string to decode (may be null)
+     * @return Optional containing the decoded string, or Optional.empty() if input is null
+     */
+    public static Optional<String> xmlDecodeOptional(String s) {
+        if (s == null) {
+            _log.debug("Null string passed to xmlDecodeOptional");
+            return Optional.empty();
+        }
+        return Optional.of(URLDecoder.decode(s, StandardCharsets.UTF_8));
     }
 
     public static boolean isIntegerString(String s) {
@@ -399,58 +739,173 @@ public class StringUtil {
     }
 
 
+    /**
+     * Writes string contents to a file specified by path.
+     * <p>
+     * This method throws IllegalArgumentException for null arguments, providing
+     * explicit error visibility rather than silent failures.
+     * </p>
+     *
+     * @param path the path to the file to write to (must not be null or empty)
+     * @param contents the contents to write (must not be null)
+     * @return the file if successful
+     * @throws IllegalArgumentException if path is null/empty or contents is null
+     * @throws RuntimeException if file writing fails (wrapped IOException)
+     */
     public static File stringToFile(String path, String contents) {
-        if (isNullOrEmpty(path) || contents == null) {
-            throw new IllegalArgumentException("Arguments must not be null");
+        if (isNullOrEmpty(path)) {
+            throw new IllegalArgumentException("Path must not be null or empty");
+        }
+        if (contents == null) {
+            throw new IllegalArgumentException("Contents must not be null");
         }
         int sepPos = path.lastIndexOf(File.separator);
         File toFile;
         if (sepPos > -1) {
             File dir = new File(path.substring(0, sepPos));
-            dir.mkdirs();
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
             toFile = new File(dir, path.substring(sepPos + 1));
         }
-        else toFile = new File(path);
+        else {
+            toFile = new File(path);
+        }
 
-        return stringToFile(toFile, contents);
+        return stringToFileOptional(toFile, contents)
+                .orElseThrow(() -> new RuntimeException(
+                        "Failed to write to file: " + path));
     }
 
 
+    /**
+     * Creates a temporary file with the given contents.
+     * <p>
+     * For backward compatibility, this method returns null on failure.
+     * </p>
+     *
+     * @param contents the contents to write to the temporary file
+     * @return the created temporary file, or null if creation fails
+     * @deprecated Use {@link #stringToTempFileOptional(String)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static File stringToTempFile(String contents) {
+        return stringToTempFileOptional(contents).orElse(null);
+    }
+
+    /**
+     * Creates a temporary file with the given contents with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param contents the contents to write to the temporary file (must not be null)
+     * @return Optional containing the created temporary file, or Optional.empty() if creation fails
+     */
+    public static Optional<File> stringToTempFileOptional(String contents) {
+        if (contents == null) {
+            _log.error("Null contents passed to stringToTempFileOptional");
+            return Optional.empty();
+        }
         try {
-            return stringToFile(
-                    File.createTempFile(
-                            RandomStringUtils.randomAlphanumeric(12), null), contents);
+            File tempFile = File.createTempFile(
+                    RandomStringUtils.randomAlphanumeric(12), null);
+            return stringToFileOptional(tempFile, contents);
         } catch (IOException e) {
             _log.error("Failed to create temporary file", e);
-            return null;
+            return Optional.empty();
         }
     }
 
 
+    /**
+     * Writes string contents to a file.
+     * <p>
+     * For backward compatibility, this method returns null on failure.
+     * </p>
+     *
+     * @param f the file to write to
+     * @param contents the contents to write
+     * @return the file if successful, or null if writing fails
+     * @deprecated Use {@link #stringToFileOptional(File, String)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static File stringToFile(File f, String contents) {
-        try {
-            BufferedWriter buf = new BufferedWriter(new FileWriter(f));
-            buf.write(contents, 0, contents.length());
-            buf.close();
-        } catch (IOException ioe) {
-            f = null;
+        return stringToFileOptional(f, contents).orElse(null);
+    }
+
+    /**
+     * Writes string contents to a file with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param f the file to write to (must not be null)
+     * @param contents the contents to write (must not be null)
+     * @return Optional containing the file if successful, or Optional.empty() if writing fails
+     */
+    public static Optional<File> stringToFileOptional(File f, String contents) {
+        if (f == null) {
+            _log.error("Null file passed to stringToFileOptional");
+            return Optional.empty();
         }
-        return f;
+        if (contents == null) {
+            _log.error("Null contents passed to stringToFileOptional for file: {}", f.getAbsolutePath());
+            return Optional.empty();
+        }
+        try (BufferedWriter buf = new BufferedWriter(new FileWriter(f))) {
+            buf.write(contents, 0, contents.length());
+            return Optional.of(f);
+        } catch (IOException ioe) {
+            _log.error("Failed to write to file: {}", f.getAbsolutePath(), ioe);
+            return Optional.empty();
+        }
     }
 
 
+    /**
+     * Reads a file's contents into a string.
+     * <p>
+     * For backward compatibility, this method returns null on failure or if file does not exist.
+     * </p>
+     *
+     * @param f the file to read
+     * @return the file contents as a string, or null if reading fails or file does not exist
+     * @deprecated Use {@link #fileToStringOptional(File)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String fileToString(File f) {
-        if (f.exists()) {
-            try {
-                int bufsize = (int) f.length();
-                InputStream fis = new FileInputStream(f);
-                return streamToString(fis, bufsize).orElse(null);
-            } catch (Exception e) {
-                _log.error("Failed to read file to string", e);
-                return null;
-            }
-        } else return null;
+        return fileToStringOptional(f).orElse(null);
+    }
+
+    /**
+     * Reads a file's contents into a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param f the file to read (must not be null)
+     * @return Optional containing the file contents, or Optional.empty() if reading fails
+     */
+    public static Optional<String> fileToStringOptional(File f) {
+        if (f == null) {
+            _log.error("Null file passed to fileToStringOptional");
+            return Optional.empty();
+        }
+        if (!f.exists()) {
+            _log.warn("File does not exist: {}", f.getAbsolutePath());
+            return Optional.empty();
+        }
+        try (InputStream fis = new FileInputStream(f)) {
+            int bufsize = (int) f.length();
+            return streamToString(fis, bufsize);
+        } catch (Exception e) {
+            _log.error("Failed to read file to string: {}", f.getAbsolutePath(), e);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -502,40 +957,147 @@ public class StringUtil {
     }
 
 
+    /**
+     * Reads a file's contents into a string by filename.
+     * <p>
+     * For backward compatibility, this method returns null on failure.
+     * </p>
+     *
+     * @param filename the name of the file to read
+     * @return the file contents as a string, or null if reading fails
+     * @deprecated Use {@link #fileToStringOptional(String)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String fileToString(String filename) {
-        return fileToString(new File(filename));
+        return fileToStringOptional(filename).orElse(null);
     }
 
-
-    public static boolean replaceInFile(File f, CharSequence oldChars, CharSequence newChars) {
-        String s = fileToString(f);
-        if (s != null) {
-            s = s.replace(oldChars, newChars);
-            stringToFile(f, s);
+    /**
+     * Reads a file's contents into a string by filename with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param filename the name of the file to read (must not be null or empty)
+     * @return Optional containing the file contents, or Optional.empty() if reading fails
+     */
+    public static Optional<String> fileToStringOptional(String filename) {
+        if (isNullOrEmpty(filename)) {
+            _log.error("Null or empty filename passed to fileToStringOptional");
+            return Optional.empty();
         }
-        return s != null;
+        return fileToStringOptional(new File(filename));
     }
 
 
+    /**
+     * Replaces all occurrences of a character sequence in a file.
+     * <p>
+     * This method follows TPS principles by returning a boolean success indicator
+     * and logging errors rather than failing silently.
+     * </p>
+     *
+     * @param f the file to modify
+     * @param oldChars the character sequence to replace
+     * @param newChars the replacement character sequence
+     * @return true if the replacement was successful, false otherwise
+     */
+    public static boolean replaceInFile(File f, CharSequence oldChars, CharSequence newChars) {
+        if (f == null) {
+            _log.error("Null file passed to replaceInFile");
+            return false;
+        }
+        Optional<String> contentOpt = fileToStringOptional(f);
+        if (contentOpt.isPresent()) {
+            String modified = contentOpt.get().replace(oldChars, newChars);
+            return stringToFileOptional(f, modified).isPresent();
+        }
+        return false;
+    }
+
+
+    /**
+     * Replaces all occurrences of a character sequence in a file by filename.
+     * <p>
+     * This method follows TPS principles by returning a boolean success indicator
+     * and logging errors rather than failing silently.
+     * </p>
+     *
+     * @param fileName the name of the file to modify
+     * @param oldChars the character sequence to replace
+     * @param newChars the replacement character sequence
+     * @return true if the replacement was successful, false otherwise
+     */
     public static boolean replaceInFile(String fileName, CharSequence oldChars,
                                         CharSequence newChars) {
-        String s = fileToString(fileName);
-        if (s != null) {
-            s = s.replace(oldChars, newChars);
-            stringToFile(fileName, s);
+        if (isNullOrEmpty(fileName)) {
+            _log.error("Null or empty filename passed to replaceInFile");
+            return false;
         }
-        return s != null;
+        Optional<String> contentOpt = fileToStringOptional(fileName);
+        if (contentOpt.isPresent()) {
+            String modified = contentOpt.get().replace(oldChars, newChars);
+            try {
+                stringToFile(fileName, modified);
+                return true;
+            } catch (RuntimeException e) {
+                _log.error("Failed to write modified content to file: {}", fileName, e);
+                return false;
+            }
+        }
+        return false;
     }
 
 
+    /**
+     * Extracts a substring matching a regex pattern.
+     * <p>
+     * For backward compatibility, this method returns null if no match is found.
+     * </p>
+     *
+     * @param source the string to search in
+     * @param pattern the regex pattern to match
+     * @return the first matching substring, or null if no match
+     * @deprecated Use {@link #extractOptional(String, String)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String extract(String source, String pattern) {
-        String extracted = null;
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(source);
-        if (m.find()) {
-            extracted = m.group();
+        return extractOptional(source, pattern).orElse(null);
+    }
+
+    /**
+     * Extracts a substring matching a regex pattern with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs and no-match cases
+     * visible through Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param source the string to search in (may be null)
+     * @param pattern the regex pattern to match (may be null)
+     * @return Optional containing the first matching substring, or Optional.empty() if no match or invalid input
+     */
+    public static Optional<String> extractOptional(String source, String pattern) {
+        if (source == null) {
+            _log.debug("Null source passed to extractOptional");
+            return Optional.empty();
         }
-        return extracted;
+        if (pattern == null) {
+            _log.debug("Null pattern passed to extractOptional");
+            return Optional.empty();
+        }
+        try {
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(source);
+            if (m.find()) {
+                return Optional.ofNullable(m.group());
+            }
+            _log.debug("No match found for pattern '{}' in source", pattern);
+            return Optional.empty();
+        } catch (Exception e) {
+            _log.warn("Invalid pattern '{}' in extractOptional: {}", pattern, e.getMessage());
+            return Optional.empty();
+        }
     }
 
 
@@ -657,31 +1219,102 @@ public class StringUtil {
                 .orElse(0L);
     }
 
+    /**
+     * Converts an XML date string to a long timestamp.
+     * <p>
+     * For backward compatibility, this method returns -1 on failure.
+     * </p>
+     *
+     * @param s the XML date string to convert
+     * @return the timestamp in milliseconds, or -1 if conversion fails
+     * @deprecated Use {@link #xmlDateToLongOptional(String)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static long xmlDateToLong(String s) {
-        if (s == null) return -1;
+        return xmlDateToLongOptional(s).orElse(-1L);
+    }
+
+    /**
+     * Converts an XML date string to a long timestamp with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent -1 returns.
+     * </p>
+     *
+     * @param s the XML date string to convert (may be null)
+     * @return Optional containing the timestamp in milliseconds, or Optional.empty() if conversion fails
+     */
+    public static Optional<Long> xmlDateToLongOptional(String s) {
+        if (s == null) {
+            _log.debug("Null XML date string passed to xmlDateToLongOptional");
+            return Optional.empty();
+        }
         try {
             XMLGregorianCalendar cal =
                     DatatypeFactory.newInstance().newXMLGregorianCalendar(s);
-            return cal.toGregorianCalendar().getTimeInMillis();
+            return Optional.of(cal.toGregorianCalendar().getTimeInMillis());
         } catch (DatatypeConfigurationException dce) {
-            return -1;
+            _log.warn("Failed to create XML calendar from string '{}': {}", s, dce.getMessage());
+            return Optional.empty();
+        } catch (IllegalArgumentException iae) {
+            _log.warn("Invalid XML date format '{}': {}", s, iae.getMessage());
+            return Optional.empty();
         }
     }
 
+    /**
+     * Converts a long timestamp to an XML datetime string.
+     * <p>
+     * For backward compatibility, this method returns null on failure.
+     * </p>
+     *
+     * @param time the timestamp in milliseconds
+     * @return the XML datetime string, or null if conversion fails
+     * @deprecated Use {@link #longToDateTimeOptional(long)} for proper error handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String longToDateTime(long time) {
+        return longToDateTimeOptional(time).orElse(null);
+    }
+
+    /**
+     * Converts a long timestamp to an XML datetime string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making errors visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param time the timestamp in milliseconds
+     * @return Optional containing the XML datetime string, or Optional.empty() if conversion fails
+     */
+    public static Optional<String> longToDateTimeOptional(long time) {
         GregorianCalendar gregCal = new GregorianCalendar();
         gregCal.setTimeInMillis(time);
         try {
             XMLGregorianCalendar cal =
                     DatatypeFactory.newInstance().newXMLGregorianCalendar(gregCal);
-            return cal.toXMLFormat();
+            return Optional.of(cal.toXMLFormat());
         } catch (DatatypeConfigurationException dce) {
-            _log.error("Failed to convert long to DateTime", dce);
-            return null;
+            _log.error("Failed to convert long {} to DateTime", time, dce);
+            return Optional.empty();
         }
     }
 
 
+    /**
+     * Finds the first occurrence of a substring within a string, starting at the specified position.
+     * <p>
+     * This method returns -1 for null inputs, consistent with {@link String#indexOf(String, int)} behavior.
+     * </p>
+     *
+     * @param toSearch the string to search in
+     * @param toFind the string to find
+     * @param start the starting position for the search
+     * @param ignoreCase whether to ignore case when searching
+     * @return the index of the first occurrence, or -1 if not found or inputs are null
+     * @deprecated Use {@link #findOptional(String, String, int, boolean)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static int find(String toSearch, String toFind, int start, boolean ignoreCase) {
         if ((toSearch == null) || (toFind == null)) return -1;
         if (ignoreCase) {
@@ -691,7 +1324,49 @@ public class StringUtil {
         return find(toSearch, toFind, start);
     }
 
+    /**
+     * Finds the first occurrence of a substring within a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent -1 returns.
+     * </p>
+     *
+     * @param toSearch the string to search in (may be null)
+     * @param toFind the string to find (may be null)
+     * @param start the starting position for the search
+     * @param ignoreCase whether to ignore case when searching
+     * @return Optional containing the index of the first occurrence, or Optional.empty() if not found or inputs are null
+     */
+    public static Optional<Integer> findOptional(String toSearch, String toFind, int start, boolean ignoreCase) {
+        if (toSearch == null) {
+            _log.debug("Null toSearch passed to findOptional");
+            return Optional.empty();
+        }
+        if (toFind == null) {
+            _log.debug("Null toFind passed to findOptional");
+            return Optional.empty();
+        }
+        int result = find(toSearch, toFind, start, ignoreCase);
+        return result >= 0 ? Optional.of(result) : Optional.empty();
+    }
 
+
+    /**
+     * Finds the first occurrence of a substring within a string, starting at the specified position.
+     * <p>
+     * This method returns -1 for null inputs, consistent with {@link String#indexOf(String, int)} behavior.
+     * For strings shorter than 2048 characters or search patterns shorter than 4 characters,
+     * it delegates to the standard String.indexOf method. Otherwise, it uses a Boyer-Moore-like
+     * algorithm for better performance on large strings.
+     * </p>
+     *
+     * @param toSearch the string to search in
+     * @param toFind the string to find
+     * @param start the starting position for the search
+     * @return the index of the first occurrence, or -1 if not found or inputs are null
+     * @deprecated Use {@link #findOptional(String, String, int)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static int find(String toSearch, String toFind, int start) {
         if ((toSearch == null) || (toFind == null)) return -1;
         if ((toSearch.length() < 2048) || (toFind.length() < 4)) {
@@ -728,11 +1403,76 @@ public class StringUtil {
         return -1;
     }
 
+    /**
+     * Finds the first occurrence of a substring within a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent -1 returns.
+     * </p>
+     *
+     * @param toSearch the string to search in (may be null)
+     * @param toFind the string to find (may be null)
+     * @param start the starting position for the search
+     * @return Optional containing the index of the first occurrence, or Optional.empty() if not found or inputs are null
+     */
+    public static Optional<Integer> findOptional(String toSearch, String toFind, int start) {
+        if (toSearch == null) {
+            _log.debug("Null toSearch passed to findOptional");
+            return Optional.empty();
+        }
+        if (toFind == null) {
+            _log.debug("Null toFind passed to findOptional");
+            return Optional.empty();
+        }
+        int result = find(toSearch, toFind, start);
+        return result >= 0 ? Optional.of(result) : Optional.empty();
+    }
+
+    /**
+     * Finds the first occurrence of a substring within a string.
+     * <p>
+     * This method returns -1 for null inputs, consistent with {@link String#indexOf(String)} behavior.
+     * </p>
+     *
+     * @param toSearch the string to search in
+     * @param toFind the string to find
+     * @return the index of the first occurrence, or -1 if not found or inputs are null
+     * @deprecated Use {@link #findOptional(String, String)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static int find(String toSearch, String toFind) {
         return find(toSearch, toFind, 0);
     }
 
+    /**
+     * Finds the first occurrence of a substring within a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent -1 returns.
+     * </p>
+     *
+     * @param toSearch the string to search in (may be null)
+     * @param toFind the string to find (may be null)
+     * @return Optional containing the index of the first occurrence, or Optional.empty() if not found or inputs are null
+     */
+    public static Optional<Integer> findOptional(String toSearch, String toFind) {
+        return findOptional(toSearch, toFind, 0);
+    }
 
+
+    /**
+     * Finds all occurrences of a substring within a string.
+     * <p>
+     * For backward compatibility, this method returns an empty list for null inputs.
+     * </p>
+     *
+     * @param toSearch the string to search in
+     * @param toFind the string to find
+     * @param ignoreCase whether to ignore case when searching
+     * @return a list of all occurrence indices, or empty list if inputs are null
+     * @deprecated Use {@link #findAllOptional(String, String, boolean)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static List<Integer> findAll(String toSearch, String toFind, boolean ignoreCase) {
         if (ignoreCase) {
             if (!((toSearch == null) || (toFind == null))) {
@@ -743,7 +1483,43 @@ public class StringUtil {
         return findAll(toSearch, toFind);
     }
 
+    /**
+     * Finds all occurrences of a substring within a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent empty list returns.
+     * </p>
+     *
+     * @param toSearch the string to search in (may be null)
+     * @param toFind the string to find (may be null)
+     * @param ignoreCase whether to ignore case when searching
+     * @return Optional containing a list of all occurrence indices, or Optional.empty() if inputs are null
+     */
+    public static Optional<List<Integer>> findAllOptional(String toSearch, String toFind, boolean ignoreCase) {
+        if (toSearch == null) {
+            _log.debug("Null toSearch passed to findAllOptional");
+            return Optional.empty();
+        }
+        if (toFind == null) {
+            _log.debug("Null toFind passed to findAllOptional");
+            return Optional.empty();
+        }
+        return Optional.of(findAll(toSearch, toFind, ignoreCase));
+    }
 
+
+    /**
+     * Finds all occurrences of a substring within a string.
+     * <p>
+     * For backward compatibility, this method returns an empty list for null inputs.
+     * </p>
+     *
+     * @param toSearch the string to search in
+     * @param toFind the string to find
+     * @return a list of all occurrence indices, or empty list if inputs are null
+     * @deprecated Use {@link #findAllOptional(String, String)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static List<Integer> findAll(String toSearch, String toFind) {
         List<Integer> foundList = new ArrayList<Integer>();
         int start = 0;
@@ -754,6 +1530,29 @@ public class StringUtil {
         return foundList;
     }
 
+    /**
+     * Finds all occurrences of a substring within a string with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent empty list returns.
+     * </p>
+     *
+     * @param toSearch the string to search in (may be null)
+     * @param toFind the string to find (may be null)
+     * @return Optional containing a list of all occurrence indices, or Optional.empty() if inputs are null
+     */
+    public static Optional<List<Integer>> findAllOptional(String toSearch, String toFind) {
+        if (toSearch == null) {
+            _log.debug("Null toSearch passed to findAllOptional");
+            return Optional.empty();
+        }
+        if (toFind == null) {
+            _log.debug("Null toFind passed to findAllOptional");
+            return Optional.empty();
+        }
+        return Optional.of(findAll(toSearch, toFind));
+    }
+
 
     public static String repeat(char c, int count) {
         char[] chars = new char[count];
@@ -762,6 +1561,18 @@ public class StringUtil {
     }
 
 
+    /**
+     * Joins a list of objects into a single string with the specified separator.
+     * <p>
+     * For backward compatibility, this method returns an empty string for null or empty lists.
+     * </p>
+     *
+     * @param list the list of objects to join
+     * @param separator the character to use as separator
+     * @return the joined string, or empty string if list is null or empty
+     * @deprecated Use {@link #joinOptional(List, char)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String join(List<?> list, char separator) {
         if (list == null || list.isEmpty()) return new String();  // Empty list join produces empty string
         if (list.size() == 1) return list.get(0).toString();
@@ -771,6 +1582,38 @@ public class StringUtil {
             sb.append(s);
         }
         return sb.toString();
+    }
+
+    /**
+     * Joins a list of objects into a single string with the specified separator
+     * with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent empty string returns.
+     * </p>
+     *
+     * @param list the list of objects to join (may be null)
+     * @param separator the character to use as separator
+     * @return Optional containing the joined string, or Optional.empty() if list is null,
+     *         or Optional.of("") if list is empty
+     */
+    public static Optional<String> joinOptional(List<?> list, char separator) {
+        if (list == null) {
+            _log.debug("Null list passed to joinOptional");
+            return Optional.empty();
+        }
+        if (list.isEmpty()) {
+            return Optional.of("");
+        }
+        if (list.size() == 1) {
+            return Optional.of(list.get(0).toString());
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Object s : list) {
+            if (sb.length() > 0) sb.append(separator);
+            sb.append(s);
+        }
+        return Optional.of(sb.toString());
     }
 
 
@@ -814,12 +1657,42 @@ public class StringUtil {
     }
 
 
+    /**
+     * Converts a Set of strings to an XML representation.
+     * <p>
+     * For backward compatibility, this method returns null if the set is null.
+     * </p>
+     *
+     * @param set the set of strings to convert
+     * @return the XML representation, or null if the set is null
+     * @deprecated Use {@link #setToXMLOptional(Set)} for proper null handling
+     */
+    @Deprecated(since = "6.0.0", forRemoval = false)
     public static String setToXML(Set<String> set) {
-        if (set == null) return null;
+        return setToXMLOptional(set).orElse(null);
+    }
+
+    /**
+     * Converts a Set of strings to an XML representation with proper Optional handling.
+     * <p>
+     * This method follows TPS principles by making null inputs visible through
+     * Optional.empty() rather than silent null returns.
+     * </p>
+     *
+     * @param set the set of strings to convert (may be null)
+     * @return Optional containing the XML representation, or Optional.empty() if the set is null
+     */
+    public static Optional<String> setToXMLOptional(Set<String> set) {
+        if (set == null) {
+            _log.debug("Null set passed to setToXMLOptional");
+            return Optional.empty();
+        }
         StringBuilder sb = new StringBuilder("<set>");
-        for (String s : set) sb.append(wrap(s, "item"));
+        for (String s : set) {
+            sb.append(wrap(s, "item"));
+        }
         sb.append("</set>");
-        return sb.toString();
+        return Optional.of(sb.toString());
     }
 
     public static Set<String> xmlToSet(String xml) {

@@ -37,6 +37,13 @@ public class YawlA2AClient implements AutoCloseable {
     private boolean connected;
 
     /**
+     * Default constructor for dependency injection.
+     */
+    public YawlA2AClient() {
+        this.agentUrl = "http://localhost:8090"; // Default agent URL
+    }
+
+    /**
      * Construct a YAWL A2A Client for a remote agent.
      *
      * @param agentUrl base URL of the A2A agent (e.g. http://localhost:8081)

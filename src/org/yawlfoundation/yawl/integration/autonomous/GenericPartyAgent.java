@@ -278,6 +278,9 @@ public final class GenericPartyAgent implements AutonomousAgent {
      * @throws HandoffException if handoff protocol fails
      */
     private boolean classifyHandoffIfNeeded(WorkItemRecord workItem) throws HandoffException {
+        if (handoffService == null) {
+            throw new HandoffException("Handoff service is not configured for this agent");
+        }
         if (workItem == null) {
             throw new IllegalArgumentException("workItem is required");
         }

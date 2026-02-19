@@ -19,16 +19,26 @@
 /**
  * Observability utilities for YAWL resilience patterns.
  *
- * <p>This package provides comprehensive observability for fallback operations,
+ * <p>This package provides comprehensive observability for retry and fallback operations,
  * including distributed tracing, metrics collection, and alerting.</p>
  *
  * <h2>Key Components</h2>
  * <ul>
+ *   <li>{@link org.yawlfoundation.yawl.resilience.observability.RetryObservability} -
+ *       OpenTelemetry-based observability for retry operations with counters, histograms, and spans</li>
  *   <li>{@link org.yawlfoundation.yawl.resilience.observability.FallbackObservability} -
  *       Central class for tracking fallback invocations with OTEL spans and P1 Andon alerts</li>
  * </ul>
  *
- * <h2>Metrics Exposed</h2>
+ * <h2>Retry Metrics Exposed</h2>
+ * <ul>
+ *   <li>{@code yawl_retry_attempts_total} - Counter of retry attempts by operation, component, result</li>
+ *   <li>{@code yawl_retry_success_total} - Counter of successful retry outcomes</li>
+ *   <li>{@code yawl_retry_failure_total} - Counter of failed retry outcomes with error type</li>
+ *   <li>{@code yawl_retry_backoff_duration_seconds} - Histogram of backoff duration between retries</li>
+ * </ul>
+ *
+ * <h2>Fallback Metrics Exposed</h2>
  * <ul>
  *   <li>{@code yawl_fallback_invocations_total} - Counter by operation, component, reason</li>
  *   <li>{@code yawl_fallback_stale_data_served_total} - Counter of stale data served</li>
@@ -38,14 +48,17 @@
  *
  * <h2>Integration Points</h2>
  * <ul>
- *   <li>{@code org.yawlfoundation.yawl.integration.pool.YawlConnectionPool} - Connection fallback tracking</li>
- *   <li>{@code org.yawlfoundation.yawl.integration.autonomous.resilience.FallbackHandler} - Generic fallback handling</li>
+ *   <li>{@code org.yawlfoundation.yawl.integration.webhook.WebhookDeliveryService} - Webhook retry tracking</li>
+ *   <li>{@code org.yawlfoundation.yawl.integration.pool.YawlConnectionPool} - Connection retry and fallback tracking</li>
+ *   <li>{@code org.yawlfoundation.yawl.integration.mcp_a2a.McpRetryWithJitter} - MCP retry with jitter</li>
+ *   <li>{@code org.yawlfoundation.yawl.autonomous.resilience.RetryPolicy} - Generic retry policy</li>
  *   <li>{@code org.yawlfoundation.yawl.integration.autonomous.resilience.CircuitBreaker} - Circuit breaker fallbacks</li>
  *   <li>{@code org.yawlfoundation.yawl.resilience.provider.YawlResilienceProvider} - Resilience4j integration</li>
  * </ul>
  *
  * @author YAWL Foundation
  * @version 6.0
+ * @see org.yawlfoundation.yawl.resilience.observability.RetryObservability
  * @see org.yawlfoundation.yawl.resilience.observability.FallbackObservability
  */
 package org.yawlfoundation.yawl.resilience.observability;

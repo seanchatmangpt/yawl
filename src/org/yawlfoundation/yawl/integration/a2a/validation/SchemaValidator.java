@@ -1,32 +1,22 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  *
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation.
  *
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
- * License for more details.
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
  */
 
 package org.yawlfoundation.yawl.integration.a2a.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.victools.jsonschema.generator.ConfigBuilder;
-import com.github.victools.jsonschema.generator.Module;
-import com.github.victools.jsonschema.generator.SchemaGenerator;
-import com.github.victools.jsonschema.generator.SchemaGeneratorConfig;
-import com.networknt.jsonoverlay.JsonOverlay;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecificationVersion;
-import com.networknt.schema.ValidationError;
-import com.networknt.schema.ValidationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +24,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -42,27 +33,22 @@ import java.util.stream.Collectors;
  *
  * <p>This validator provides comprehensive JSON schema validation for all A2A protocol
  * messages including agent cards, messages, tasks, and error responses. It uses
- * the Networknt JSON Schema validator for robust validation with custom error
- * reporting and business rule validation.
+ * Jackson for JSON parsing with custom validation logic.
  *
  * <p>Features:
- * - JSON Schema validation against A2A standards
+ * - JSON validation against A2A standards
  * - Custom business rule validation
  * - Detailed error reporting with path information
- * - Validation caching for performance
  * - Schema version support
- * - Custom validator registration
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0
  */
 public class SchemaValidator {
 
-    private static final Logger _logger = LoggerFactory.getLogger(SchemaValidator.class);
+    private static final Logger _logger = LogManager.getLogger(SchemaValidator.class);
 
-    private final JsonSchemaFactory schemaFactory;
     private final ObjectMapper objectMapper;
-    private final SchemaGenerator schemaGenerator;
     private final String schemaBasePath;
 
     /**
@@ -79,14 +65,7 @@ public class SchemaValidator {
      */
     public SchemaValidator(String schemaBasePath) {
         this.schemaBasePath = schemaBasePath;
-        this.schemaFactory = JsonSchemaFactory.getInstance(SpecificationVersion.V7);
         this.objectMapper = new ObjectMapper();
-
-        // Configure JSON Schema generator for auto-generation
-        ConfigBuilder configBuilder = new ConfigBuilder();
-        configBuilder.forFields().withRequiredCheck(field -> !field.getName().startsWith("unused"));
-        SchemaGeneratorConfig config = configBuilder.build();
-        this.schemaGenerator = new SchemaGenerator(config);
     }
 
     /**
@@ -97,17 +76,20 @@ public class SchemaValidator {
      * @return ValidationResult containing validation results
      */
     public ValidationResult validate(String json, String schemaName) {
+        long startTime = System.currentTimeMillis();
         try {
-            JsonNode schemaNode = loadSchema(schemaName);
-            JsonSchema schema = schemaFactory.getSchema(schemaNode);
-
             JsonNode jsonNode = objectMapper.readTree(json);
-            Set<ValidationError> errors = schema.validate(jsonNode);
+            List<ValidationErrorDetail> errors = validateAgainstSchema(jsonNode, schemaName);
+            long validationTime = System.currentTimeMillis() - startTime;
 
-            return createValidationResult(errors, schemaName, jsonNode);
+            if (errors.isEmpty()) {
+                return ValidationResult.success(schemaName, validationTime);
+            } else {
+                return ValidationResult.failure(schemaName, errors, validationTime);
+            }
         } catch (IOException e) {
             _logger.error("Error validating against schema {}: {}", schemaName, e.getMessage());
-            return ValidationResult.failure(schemaName, "Schema validation error: " + e.getMessage());
+            return ValidationResult.failure(schemaName, "JSON parsing error: " + e.getMessage());
         }
     }
 
@@ -179,83 +161,262 @@ public class SchemaValidator {
     }
 
     /**
+     * Validates a JSON node against a schema using custom validation logic.
+     *
+     * @param jsonNode The JSON node to validate
+     * @param schemaName The schema name to validate against
+     * @return List of validation errors, empty if valid
+     */
+    private List<ValidationErrorDetail> validateAgainstSchema(JsonNode jsonNode, String schemaName) {
+        List<ValidationErrorDetail> errors = new ArrayList<>();
+
+        // Load schema for reference
+        JsonNode schemaNode = loadSchemaNode(schemaName);
+        if (schemaNode == null) {
+            // If schema not found, perform basic JSON structure validation
+            return validateBasicStructure(jsonNode, schemaName);
+        }
+
+        // Perform schema-based validation
+        return validateWithSchema(jsonNode, schemaNode, "");
+    }
+
+    /**
      * Loads a schema from the classpath.
      *
      * @param schemaName Name of the schema file
-     * @return JsonNode representing the schema
-     * @throws IOException if schema cannot be loaded
+     * @return JsonNode representing the schema, or null if not found
      */
-    private JsonNode loadSchema(String schemaName) throws IOException {
-        URL schemaUrl = getClass().getClassLoader().getResource(schemaName);
+    private JsonNode loadSchemaNode(String schemaName) {
+        try {
+            String fullPath = schemaBasePath.isEmpty() ? schemaName : schemaBasePath + "/" + schemaName;
+            URL schemaUrl = getClass().getClassLoader().getResource(fullPath);
 
-        if (schemaUrl == null) {
-            throw new IOException("Schema not found: " + schemaName);
-        }
+            if (schemaUrl == null) {
+                _logger.debug("Schema not found: {}", fullPath);
+                return null;
+            }
 
-        try (InputStream inputStream = schemaUrl.openStream()) {
-            return objectMapper.readTree(inputStream);
+            try (InputStream inputStream = schemaUrl.openStream()) {
+                return objectMapper.readTree(inputStream);
+            }
+        } catch (IOException e) {
+            _logger.debug("Error loading schema {}: {}", schemaName, e.getMessage());
+            return null;
         }
     }
 
     /**
-     * Creates a ValidationResult from validation errors.
+     * Performs basic JSON structure validation when schema is not available.
      *
-     * @param errors Set of validation errors
-     * @param schemaName Name of the schema validated against
-     * @param jsonNode JSON node that was validated
-     * @return ValidationResult instance
+     * @param jsonNode The JSON node to validate
+     * @param schemaName The schema name for context
+     * @return List of validation errors
      */
-    private ValidationResult createValidationResult(Set<ValidationError> errors, String schemaName, JsonNode jsonNode) {
-        if (errors.isEmpty()) {
-            return ValidationResult.success(schemaName);
+    private List<ValidationErrorDetail> validateBasicStructure(JsonNode jsonNode, String schemaName) {
+        List<ValidationErrorDetail> errors = new ArrayList<>();
+
+        // Basic validation: ensure it's a valid JSON object or array
+        if (!jsonNode.isObject() && !jsonNode.isArray()) {
+            errors.add(new ValidationErrorDetail(
+                "Expected JSON object or array",
+                "",
+                "$",
+                "type",
+                "INVALID_TYPE"
+            ));
         }
 
-        List<ValidationErrorDetail> details = new ArrayList<>();
-
-        for (ValidationError error : errors) {
-            ValidationErrorDetail detail = new ValidationErrorDetail(
-                error.getMessage(),
-                error.getSchemaPath(),
-                error.getInstancePath(),
-                error.getKeyword(),
-                getErrorCode(error)
-            );
-            details.add(detail);
-        }
-
-        // Sort by instance path for better readability
-        details.sort((a, b) -> a.getInstancePath().compareTo(b.getInstancePath()));
-
-        return ValidationResult.failure(schemaName, details);
+        return errors;
     }
 
     /**
-     * Extracts error code from validation error.
+     * Validates a JSON node against a schema node.
      *
-     * @param error Validation error
-     * @return Error code string
+     * @param jsonNode The JSON node to validate
+     * @param schemaNode The schema node to validate against
+     * @param path Current path in the JSON document
+     * @return List of validation errors
      */
-    private String getErrorCode(ValidationError error) {
-        // Try to extract meaningful error code from message or keyword
-        String message = error.getMessage().toLowerCase();
+    private List<ValidationErrorDetail> validateWithSchema(JsonNode jsonNode, JsonNode schemaNode, String path) {
+        List<ValidationErrorDetail> errors = new ArrayList<>();
 
-        if (message.contains("required")) {
-            return "REQUIRED_FIELD_MISSING";
-        } else if (message.contains("type") || message.contains("invalid")) {
-            return "INVALID_TYPE";
-        } else if (message.contains("format")) {
-            return "INVALID_FORMAT";
-        } else if (message.contains("minimum") || message.contains("maximum")) {
-            return "OUT_OF_RANGE";
-        } else if (message.contains("pattern")) {
-            return "INVALID_PATTERN";
-        } else if (message.contains("enum")) {
-            return "INVALID_ENUM_VALUE";
-        } else if (message.contains("additionalproperties")) {
-            return "ADDITIONAL_PROPERTIES_NOT_ALLOWED";
-        } else {
-            return "VALIDATION_ERROR";
+        if (schemaNode == null || !schemaNode.isObject()) {
+            return errors;
         }
+
+        // Check type
+        JsonNode typeNode = schemaNode.get("type");
+        if (typeNode != null) {
+            String expectedType = typeNode.asText();
+            if (!isValidType(jsonNode, expectedType)) {
+                errors.add(new ValidationErrorDetail(
+                    "Expected type '" + expectedType + "' but found '" + getNodeType(jsonNode) + "'",
+                    path,
+                    path,
+                    "type",
+                    "INVALID_TYPE"
+                ));
+                return errors; // Type mismatch, no point continuing
+            }
+        }
+
+        // Check required properties for objects
+        JsonNode requiredNode = schemaNode.get("required");
+        if (requiredNode != null && requiredNode.isArray() && jsonNode.isObject()) {
+            for (JsonNode reqField : requiredNode) {
+                String fieldName = reqField.asText();
+                if (!jsonNode.has(fieldName)) {
+                    errors.add(new ValidationErrorDetail(
+                        "Required field '" + fieldName + "' is missing",
+                        path + "/" + fieldName,
+                        path,
+                        "required",
+                        "REQUIRED_FIELD_MISSING"
+                    ));
+                }
+            }
+        }
+
+        // Check properties
+        JsonNode propertiesNode = schemaNode.get("properties");
+        if (propertiesNode != null && propertiesNode.isObject() && jsonNode.isObject()) {
+            for (Map.Entry<String, JsonNode> prop : propertiesNode.properties()) {
+                String propName = prop.getKey();
+                JsonNode propSchema = prop.getValue();
+                String propPath = path + "/" + propName;
+
+                if (jsonNode.has(propName)) {
+                    errors.addAll(validateWithSchema(jsonNode.get(propName), propSchema, propPath));
+                }
+            }
+        }
+
+        // Check items for arrays
+        JsonNode itemsNode = schemaNode.get("items");
+        if (itemsNode != null && jsonNode.isArray()) {
+            int index = 0;
+            for (JsonNode item : jsonNode) {
+                String itemPath = path + "[" + index + "]";
+                errors.addAll(validateWithSchema(item, itemsNode, itemPath));
+                index++;
+            }
+        }
+
+        // Check enum values
+        JsonNode enumNode = schemaNode.get("enum");
+        if (enumNode != null && enumNode.isArray()) {
+            boolean found = false;
+            String value = jsonNode.isTextual() ? jsonNode.asText() : jsonNode.toString();
+            for (JsonNode enumValue : enumNode) {
+                if (enumValue.asText().equals(value)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                errors.add(new ValidationErrorDetail(
+                    "Value '" + value + "' is not one of the allowed enum values",
+                    path,
+                    path,
+                    "enum",
+                    "INVALID_ENUM_VALUE"
+                ));
+            }
+        }
+
+        // Check minimum for numbers
+        JsonNode minimumNode = schemaNode.get("minimum");
+        if (minimumNode != null && jsonNode.isNumber()) {
+            double minimum = minimumNode.asDouble();
+            if (jsonNode.asDouble() < minimum) {
+                errors.add(new ValidationErrorDetail(
+                    "Value " + jsonNode.asDouble() + " is less than minimum " + minimum,
+                    path,
+                    path,
+                    "minimum",
+                    "OUT_OF_RANGE"
+                ));
+            }
+        }
+
+        // Check maximum for numbers
+        JsonNode maximumNode = schemaNode.get("maximum");
+        if (maximumNode != null && jsonNode.isNumber()) {
+            double maximum = maximumNode.asDouble();
+            if (jsonNode.asDouble() > maximum) {
+                errors.add(new ValidationErrorDetail(
+                    "Value " + jsonNode.asDouble() + " is greater than maximum " + maximum,
+                    path,
+                    path,
+                    "maximum",
+                    "OUT_OF_RANGE"
+                ));
+            }
+        }
+
+        // Check pattern for strings
+        JsonNode patternNode = schemaNode.get("pattern");
+        if (patternNode != null && jsonNode.isTextual()) {
+            String pattern = patternNode.asText();
+            String value = jsonNode.asText();
+            if (!value.matches(pattern)) {
+                errors.add(new ValidationErrorDetail(
+                    "Value '" + value + "' does not match pattern '" + pattern + "'",
+                    path,
+                    path,
+                    "pattern",
+                    "INVALID_PATTERN"
+                ));
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Checks if a JSON node matches the expected type.
+     *
+     * @param jsonNode The JSON node to check
+     * @param expectedType The expected JSON schema type
+     * @return true if the type matches
+     */
+    private boolean isValidType(JsonNode jsonNode, String expectedType) {
+        switch (expectedType) {
+            case "object":
+                return jsonNode.isObject();
+            case "array":
+                return jsonNode.isArray();
+            case "string":
+                return jsonNode.isTextual();
+            case "number":
+                return jsonNode.isNumber();
+            case "integer":
+                return jsonNode.isIntegralNumber();
+            case "boolean":
+                return jsonNode.isBoolean();
+            case "null":
+                return jsonNode.isNull();
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Gets the JSON schema type for a JSON node.
+     *
+     * @param jsonNode The JSON node
+     * @return The JSON schema type name
+     */
+    private String getNodeType(JsonNode jsonNode) {
+        if (jsonNode.isObject()) return "object";
+        if (jsonNode.isArray()) return "array";
+        if (jsonNode.isTextual()) return "string";
+        if (jsonNode.isIntegralNumber()) return "integer";
+        if (jsonNode.isNumber()) return "number";
+        if (jsonNode.isBoolean()) return "boolean";
+        if (jsonNode.isNull()) return "null";
+        return "unknown";
     }
 
     /**
@@ -265,12 +426,7 @@ public class SchemaValidator {
      * @return true if schema exists, false otherwise
      */
     public boolean schemaExists(String schemaName) {
-        try {
-            loadSchema(schemaName);
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
+        return loadSchemaNode(schemaName) != null;
     }
 
     /**
@@ -279,14 +435,27 @@ public class SchemaValidator {
      * @return List of schema names
      */
     public List<String> getAvailableSchemas() {
-        // In a real implementation, this would scan the schema directory
-        return List.of(
+        List<String> schemas = new ArrayList<>();
+
+        // Try common schema names
+        String[] commonSchemas = {
             "agent-card.schema.json",
             "message.schema.json",
             "task.schema.json",
             "error-response.schema.json",
-            "jwt-claim.schema.json"
-        );
+            "jwt-claim.schema.json",
+            "handoff.schema.json",
+            "a2a-message.schema.json"
+        };
+
+        for (String schemaName : commonSchemas) {
+            if (schemaExists(schemaName)) {
+                schemas.add(schemaName);
+            }
+        }
+
+        Collections.sort(schemas);
+        return schemas;
     }
 
     /**
@@ -295,16 +464,12 @@ public class SchemaValidator {
      * @param validations Map of schema names to JSON strings
      * @return Map of schema names to ValidationResult
      */
-    public java.util.Map<String, ValidationResult> validateMultiple(
-        java.util.Map<String, String> validations) {
-
-        java.util.Map<String, ValidationResult> results = new java.util.HashMap<>();
-
-        for (Map.Entry<String, String> entry : validations.entrySet()) {
-            results.put(entry.getKey(), validate(entry.getValue(), entry.getKey()));
-        }
-
-        return results;
+    public Map<String, ValidationResult> validateMultiple(Map<String, String> validations) {
+        return validations.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> validate(entry.getValue(), entry.getKey())
+            ));
     }
 
     /**
@@ -331,8 +496,8 @@ public class SchemaValidator {
         /**
          * Creates a successful validation result.
          */
-        public static ValidationResult success(String schemaName) {
-            return new ValidationResult(true, schemaName, "Validation passed", Collections.emptyList(), 0);
+        public static ValidationResult success(String schemaName, long validationTime) {
+            return new ValidationResult(true, schemaName, "Validation passed", Collections.emptyList(), validationTime);
         }
 
         /**
@@ -345,9 +510,9 @@ public class SchemaValidator {
         /**
          * Creates a failed validation result with detailed errors.
          */
-        public static ValidationResult failure(String schemaName, List<ValidationErrorDetail> errors) {
-            String summary = errors.size() + " validation errors found";
-            return new ValidationResult(false, schemaName, summary, errors, 0);
+        public static ValidationResult failure(String schemaName, List<ValidationErrorDetail> errors, long validationTime) {
+            String summary = errors.size() + " validation error(s) found";
+            return new ValidationResult(false, schemaName, summary, errors, validationTime);
         }
 
         // Getters
@@ -366,8 +531,8 @@ public class SchemaValidator {
         /**
          * Returns the first error if any.
          */
-        public java.util.Optional<ValidationErrorDetail> getFirstError() {
-            return errors.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(errors.get(0));
+        public Optional<ValidationErrorDetail> getFirstError() {
+            return errors.isEmpty() ? Optional.empty() : Optional.of(errors.get(0));
         }
 
         /**
@@ -384,7 +549,7 @@ public class SchemaValidator {
          */
         public String toJson() {
             try {
-                return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(this);
+                return new ObjectMapper().writeValueAsString(this);
             } catch (Exception e) {
                 return "{\"error\": \"Could not serialize validation result\"}";
             }

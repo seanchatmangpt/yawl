@@ -101,6 +101,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Hibernate ORM (required by HibernateEngine, HikariCPConnectionProvider) -->
@@ -126,81 +127,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Jakarta Servlet API - required for authentication filter classes -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- JWT API - required for JwtManager in authentication package -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-        </dependency>
-
-        <!-- Jakarta Persistence - required by HibernateEngine and YPersistenceManager -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
-
-        <!-- Hibernate ORM - required by HibernateEngine.java in util/ -->
-        <dependency>
-            <groupId>org.hibernate.orm</groupId>
-            <artifactId>hibernate-core</artifactId>
-        </dependency>
-
-        <!-- Saxon HE - required by YTask and YWorkItem (XPath/XSLT evaluation) -->
-        <dependency>
-            <groupId>net.sf.saxon</groupId>
-            <artifactId>Saxon-HE</artifactId>
-        </dependency>
-
-        <!-- HikariCP - required by HikariCPConnectionProvider.java in util/ -->
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-        </dependency>
-
-        <!-- Apache Ant - required by AbstractCheckSumTask.java in util/ -->
+        <!-- Apache Ant (required by CheckSummer tasks) -->
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-        </dependency>
-
-        <!-- Commons BeanUtils - required by DOMUtil.java in util/ -->
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-        </dependency>
-
-        <!-- Commons Text - required by StringUtil.java in util/ -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-        </dependency>
-
-        <!-- Simple Java Mail - required by MailSettings.java in util/ -->
-        <dependency>
-            <groupId>org.simplejavamail</groupId>
-            <artifactId>simple-java-mail</artifactId>
-        </dependency>
-
-        <!-- SOAP API - required by SoapClient.java and HolidayLoader.java -->
-        <dependency>
-            <groupId>javax.xml.soap</groupId>
-            <artifactId>javax.xml.soap-api</artifactId>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Email (required by MailSettings) -->
@@ -215,11 +146,22 @@
             </exclusions>
         </dependency>
 
-        <!-- Apache Ant (required by CheckSummer tasks) -->
+        <!-- Logging -->
         <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <scope>provided</scope>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+
+        <!-- Argon2 password encryption -->
+        <dependency>
+            <groupId>de.mkammerer</groupId>
+            <artifactId>argon2-jvm</artifactId>
+            <version>2.11</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Testing - JUnit 5 Jupiter (used by exception and util tests) -->
@@ -352,6 +294,9 @@
                         <!-- Exclude engine interface classes that depend on Micrometer - they compile in yawl-engine -->
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/interfaceX/InterfaceXMetrics.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/interfaceX/InterfaceXDeadLetterQueue.java</exclude>
+                        <!-- Exclude Spring Boot health indicators - they compile in yawl-integration/yawl-mcp-a2a-app -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/InterfaceXHealthIndicator.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/ResilienceHealthIndicator.java</exclude>
                         <!-- Exclude non-Java files -->
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
@@ -375,6 +320,9 @@
                     <testExcludes>
                         <testExclude>**/*.class</testExclude>
                         <testExclude>**/org/yawlfoundation/yawl/util/TestErrorSpanHelper.java</testExclude>
+                        <!-- Exclude Spring Boot health indicator tests - they compile in yawl-integration -->
+                        <testExclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/InterfaceXHealthIndicatorTest.java</testExclude>
+                        <testExclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/ResilienceHealthIndicatorTest.java</testExclude>
                     </testExcludes>
                     <!-- Disable annotation processing to prevent JMH from generating stale files -->
                     <compilerArgs>

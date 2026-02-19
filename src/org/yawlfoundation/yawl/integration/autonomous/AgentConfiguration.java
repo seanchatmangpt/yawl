@@ -18,10 +18,14 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasone
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistryClient;
-import org.yawlfoundation.yawl.integration.autonomous.conflict.ConflictResolver;
+import org.yawlfoundation.yawl.integration.conflict.ConflictResolver;
+import org.yawlfoundation.yawl.integration.conflict.MajorityVoteConflictResolver;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
 import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
+import org.yawlfoundation.yawl.integration.autonomous.AgentContext;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.integration.autonomous.AgentInfoStore;
 
 /**
  * Configuration for generic autonomous agents.
@@ -277,6 +281,42 @@ public final class AgentConfiguration {
             if (pollIntervalMs <= 0) {
                 throw new IllegalStateException("pollIntervalMs must be positive");
             }
+
+            // Set defaults for optional coordination components if not provided
+            if (registryClient == null) {
+                this.registryClient = new AgentRegistryClient("localhost", 8080);
+            }
+            if (handoffProtocol == null) {
+                try {
+                    this.handoffProtocol = HandoffProtocol.fromEnvironment();
+                } catch (IllegalStateException e) {
+                    // Fallback to simple protocol without JWT
+                    this.handoffProtocol = new HandoffProtocol(
+                        new org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider(
+                            "default-secret-32-char-placeholder-key-123456789012", null)
+                    );
+                }
+            }
+            if (handoffService == null) {
+                // Create a default agent info store
+                AgentInfoStore agentInfoStore = new AgentInfoStore();
+                this.handoffService = new HandoffRequestService(
+                    new AgentContext("default", "Default Agent", capability, null, null),
+                    YEngine.getInstance(),
+                    agentInfoStore,
+                    "default-session-handle"
+                );
+            }
+            if (conflictResolver == null) {
+                this.conflictResolver = new MajorityVoteConflictResolver();
+            }
+            if (a2aClient == null) {
+                this.a2aClient = new YawlA2AClient();
+            }
+            if (id == null) {
+                this.id = "generic-agent-" + System.currentTimeMillis();
+            }
+
             return new AgentConfiguration(this);
         }
     }

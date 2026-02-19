@@ -142,11 +142,107 @@ public class YAWLTelemetryTest {
 
         YAWLTelemetry.DeadlockStats stats = telemetry.getDeadlockStats();
 
-        assertEquals(5, stats.getDeadlockedTasksCount(),
-            "Deadlocked tasks count should match");
+        assertEquals(5, stats.getCurrentDeadlockedTasks(),
+            "Current deadlocked tasks count should match");
         assertNotNull(stats.toString(), "toString should return non-null string");
         assertTrue(stats.toString().contains("5"),
             "toString should contain the count");
+    }
+
+    @Test
+    public void testEnhancedDeadlockStats() {
+        // Record a few deadlocks
+        telemetry.recordDeadlock("case-stats-1", "spec-stats", 3);
+        telemetry.recordDeadlock("case-stats-2", "spec-stats", 2);
+
+        YAWLTelemetry.DeadlockStats stats = telemetry.getDeadlockStats();
+
+        // Verify enhanced statistics
+        assertTrue(stats.getTotalDeadlocksDetected() >= 2,
+            "Total deadlocks should be at least 2");
+        assertTrue(stats.getTotalDeadlockedTasks() >= 5,
+            "Total deadlocked tasks should be at least 5");
+        assertTrue(stats.getActiveDeadlockCases() >= 2,
+            "Active deadlock cases should be at least 2");
+        assertNotNull(stats.getActiveDeadlocks(),
+            "Active deadlocks map should not be null");
+        assertTrue(stats.hasActiveDeadlocks(),
+            "Should have active deadlocks");
+        assertTrue(stats.getAverageTasksPerDeadlock() > 0,
+            "Average tasks per deadlock should be positive");
+    }
+
+    @Test
+    public void testDeadlockStatsResolvedCases() {
+        String caseId = "case-resolved-stats";
+        telemetry.recordDeadlock(caseId, "spec-resolved", 1);
+        telemetry.recordDeadlockResolution(caseId);
+
+        YAWLTelemetry.DeadlockStats stats = telemetry.getDeadlockStats();
+
+        assertTrue(stats.getResolvedDeadlockCases() >= 1,
+            "Resolved deadlock cases should be at least 1");
+    }
+
+    @Test
+    public void testGetLockContentionStats() {
+        // Record some lock contentions
+        telemetry.recordLockContention(100, "case-contention-1", "operationA");
+        telemetry.recordLockContention(200, "case-contention-2", "operationB");
+        telemetry.recordLockContention(600, "case-contention-3", "operationA"); // Above threshold
+
+        YAWLTelemetry.LockContentionStats stats = telemetry.getLockContentionStats();
+
+        // Verify statistics
+        assertTrue(stats.getTotalContentions() >= 3,
+            "Total contentions should be at least 3");
+        assertTrue(stats.getTotalWaitTimeMs() >= 900,
+            "Total wait time should be at least 900ms");
+        assertTrue(stats.getAverageWaitTimeMs() > 0,
+            "Average wait time should be positive");
+        assertEquals(600, stats.getMaxWaitTimeMs(),
+            "Max wait time should be 600ms");
+        assertTrue(stats.getContentionsAboveThreshold() >= 1,
+            "At least 1 contention should be above threshold");
+        assertEquals(500, stats.getThresholdMs(),
+            "Threshold should be 500ms");
+        assertNotNull(stats.getContentionByOperation(),
+            "Contention by operation map should not be null");
+        assertTrue(stats.hasHighContention(),
+            "Should have high contention");
+        assertFalse(stats.isHealthy(),
+            "Should not be healthy due to contention above threshold");
+        assertTrue(stats.getPercentageAboveThreshold() > 0,
+            "Percentage above threshold should be positive");
+    }
+
+    @Test
+    public void testLockContentionStatsHealthy() {
+        // Create fresh telemetry stats for healthy test
+        telemetry.recordLockContention(100, "case-healthy", "op1");
+        telemetry.recordLockContention(200, "case-healthy", "op2");
+
+        YAWLTelemetry.LockContentionStats stats = telemetry.getLockContentionStats();
+
+        assertNotNull(stats.toString(),
+            "toString should return non-null string");
+    }
+
+    @Test
+    public void testLockContentionStatsByOperation() {
+        telemetry.recordLockContention(100, "case-op", "uniqueOperationTest");
+        telemetry.recordLockContention(150, "case-op", "uniqueOperationTest");
+
+        YAWLTelemetry.LockContentionStats stats = telemetry.getLockContentionStats();
+
+        assertTrue(stats.getContentionByOperation().containsKey("uniqueOperationTest"),
+            "Should contain contention record for uniqueOperationTest");
+
+        YAWLTelemetry.LockContentionRecord record =
+            stats.getContentionByOperation().get("uniqueOperationTest");
+        assertNotNull(record, "LockContentionRecord should not be null");
+        assertTrue(record.count() >= 2, "Count should be at least 2");
+        assertTrue(record.averageWaitMs() > 0, "Average wait should be positive");
     }
 
     @Test

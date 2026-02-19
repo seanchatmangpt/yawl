@@ -457,6 +457,7 @@
                     </compilerArgs>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/mcp/a2a/**/*.java</include>
+                        <include>**/org/yawlfoundation/yawl/resilience/**/*.java</include>
                     </includes>
                     <excludes>
                         <exclude>**/*Test.java</exclude>

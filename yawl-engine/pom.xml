@@ -279,6 +279,8 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/engine/**</include>
                         <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
+                        <!-- OAuth2 integration classes for token validation -->
+                        <include>**/org/yawlfoundation/yawl/integration/oauth2/**</include>
                         <!-- Logging classes that depend on engine - moved from yawl-utilities -->
                         <include>**/org/yawlfoundation/yawl/logging/YEventLogger.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YEventKeyCache.java</include>
@@ -366,6 +368,8 @@
                         <include>**/org/yawlfoundation/yawl/engine/**</include>
                         <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
                         <include>**/org/yawlfoundation/yawl/patternmatching/**</include>
+                        <!-- OAuth2 integration tests -->
+                        <include>**/org/yawlfoundation/yawl/integration/oauth2/**</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

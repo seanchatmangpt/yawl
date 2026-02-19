@@ -92,13 +92,6 @@ public class YWorklistTableModel extends AbstractTableModel {
     }
 
 
-/*
-    public void setValueAt(Object value, int rowIndex, int columnIndex){
-        ((Object[])_rows.get(rowIndex))[columnIndex]= value;
-    }
-*/
-
-
     public synchronized void addRow(String key, Object[] rowValues) {
         _rows.put(key, rowValues);
         final int position = new ArrayList<>(_rows.keySet()).indexOf(key);
@@ -142,80 +135,14 @@ public class YWorklistTableModel extends AbstractTableModel {
         return _rows;
     }
 
-/*    public String getOutputData(String caseIDStr, String taskID) {
-        Object[] row = (Object[]) _rows.get(caseIDStr + taskID);
-        if (row != null && row.length > 8) {
-            String outputParamsData = (String) row[8];
-            String inputParamsData = (String) row[7];
-            SAXBuilder builder = new SAXBuilder();
-            Document finalDoc = null;
-            Document outputDataDoc = null;
-            try {
-                finalDoc = builder.build(new StringReader(inputParamsData));
-                outputDataDoc = builder.build(new StringReader(outputParamsData));
-                java.util.List children = outputDataDoc.getRootElement().getContent();
-                for (int i = 0; i < children.size(); i++) {
-                    Object o = children.get(i);
-                    if (o instanceof Element) {
-                        Element child = (Element) o;
-                        child.detach();
-                        finalDoc.getRootElement().removeChild(child.getName());
-                        finalDoc.getRootElement().addContent(child);
-                    }
-                }
-            } catch (JDOMException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return new XMLOutputter().outputString(finalDoc.getRootElement()).trim();
-        }
-        return null;
-    }*/
-
-
     public String getOutputData(String caseIDStr, String taskID) throws JDOMException, IOException {
-        String inputParamsData = null;
         String outputParamsData = null;
 
         Object[] row = (Object[]) _rows.get(caseIDStr + taskID);
-        if (row != null && row.length > 9)
-        {
+        if (row != null && row.length > 9) {
             outputParamsData = (String) row[9];
-            inputParamsData = (String) row[8];
-
-            /**
-             * AJH: I don't think we need to do this anymore given support for optional params. If its an OUTPUT var then you *MUST* pass it back in.
-            SAXBuilder builder = new SAXBuilder();
-            Document outputData = builder.build(new StringReader(outputParamsData));
-            Document inputData = builder.build(new StringReader(inputParamsData));
-
-            String mergedOutputData = Marshaller.getMergedOutputData(
-                    inputData.getRootElement(),
-                    outputData.getRootElement());
-
-            YEngine eng = YEngine.getInstance();
-            YWorkItem item = eng.getWorkItem(caseIDStr + ":" + taskID);
-            YTask task = eng.getTaskDefinition(
-                    item.getSpecificationID(),
-                    item.getTaskID());
-            Map outputParamsMP = task.getDecompositionPrototype().getOutputParameters();
-            List outputParamsLst = new ArrayList(outputParamsMP.values());
-            String filteredOutputData;
-            if (task._net.getSpecification().usesSimpleRootData()) {
-                filteredOutputData = mergedOutputData;
-            } else {
-                filteredOutputData = Marshaller.filterDataAgainstOutputParams(
-                        mergedOutputData, outputParamsLst);
-            }
-            return filteredOutputData;
-        }
-        return null;
-    }
-        */
         }
 
         return outputParamsData;
-
     }
 }

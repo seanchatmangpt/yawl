@@ -89,7 +89,7 @@ public final class OAuth2TokenValidator {
     private static final long     JWKS_REFRESH_INTERVAL     = 5; // minutes
     private static final int      JWKS_CACHE_MAX_SIZE       = 64;
     private static final int      CLOCK_SKEW_SECONDS        = 30;
-    private static final long     STALE_CACHE_THRESHOLD_SECONDS = 600; // 10 minutes
+    private static final long     STALE_CACHE_THRESHOLD_SECONDS = 300; // 5 minutes (P0 Andon threshold)
 
     private final String issuerUri;
     private final String expectedAudience;
@@ -146,6 +146,10 @@ public final class OAuth2TokenValidator {
         this.jwksCacheLock = new ReentrantReadWriteLock();
         this.lastSuccessfulRefreshEpochMs = new AtomicLong(0);
         this.securityEventBus = SecurityEventBus.getInstance();
+
+        // Register gauge suppliers for real-time OTEL metrics
+        this.securityEventBus.setCacheAgeSupplier(this::getCacheAgeSeconds);
+        this.securityEventBus.setCacheStaleSupplier(this::isCacheStale);
 
         // Initial load
         refreshJwksCache();

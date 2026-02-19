@@ -43,6 +43,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>This class provides comprehensive metrics and tracing for retry logic including:
  * <ul>
  *   <li>Counter: yawl_retry_attempts_total - Total retry attempts by operation and component</li>
+ *   <li>Counter: yawl_retry_success_total - Total successful retry outcomes</li>
+ *   <li>Counter: yawl_retry_failure_total - Total failed retry outcomes</li>
  *   <li>Histogram: yawl_retry_backoff_duration_seconds - Time spent in backoff between retries</li>
  *   <li>Tracing: Creates spans for each retry attempt with detailed attributes</li>
  * </ul>
@@ -50,7 +52,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * <h2>Metrics</h2>
  * <pre>
  * # Counter - total retry attempts
- * yawl_retry_attempts_total{component="webhook", operation="deliver", result="success|failure"}
+ * yawl_retry_attempts_total{component="webhook", operation="deliver", result="success|failure|exhausted"}
+ *
+ * # Counter - successful retry outcomes
+ * yawl_retry_success_total{component="webhook", operation="deliver"}
+ *
+ * # Counter - failed retry outcomes
+ * yawl_retry_failure_total{component="webhook", operation="deliver", error_type="ConnectionException"}
  *
  * # Histogram - backoff duration
  * yawl_retry_backoff_duration_seconds{component="connection-pool", operation="connect"}
@@ -66,6 +74,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>retry.result - "success", "failure", or "exhausted"</li>
  *   <li>retry.error.type - Exception class name on failure</li>
  *   <li>retry.error.message - Exception message on failure</li>
+ * </ul>
+ *
+ * <h2>Integration Points</h2>
+ * <ul>
+ *   <li>WebhookDeliveryService - HTTP webhook delivery with exponential backoff</li>
+ *   <li>YawlConnectionPool - Connection acquisition retry logic</li>
+ *   <li>McpRetryWithJitter - MCP server communication with jitter</li>
+ *   <li>RetryPolicy - Generic retry policy execution</li>
  * </ul>
  *
  * <h2>Usage Example</h2>
@@ -101,6 +117,8 @@ public final class RetryObservability {
 
     // Metric names
     private static final String METRIC_RETRY_ATTEMPTS = "yawl_retry_attempts_total";
+    private static final String METRIC_RETRY_SUCCESS = "yawl_retry_success_total";
+    private static final String METRIC_RETRY_FAILURE = "yawl_retry_failure_total";
     private static final String METRIC_BACKOFF_DURATION = "yawl_retry_backoff_duration_seconds";
 
     // Attribute keys
@@ -119,6 +137,8 @@ public final class RetryObservability {
     public static final String RESULT_EXHAUSTED = "exhausted";
 
     private final LongCounter retryAttemptsCounter;
+    private final LongCounter retrySuccessCounter;
+    private final LongCounter retryFailureCounter;
     private final DoubleHistogram backoffDurationHistogram;
     private final Tracer tracer;
 
@@ -136,6 +156,20 @@ public final class RetryObservability {
                 .counterBuilder(METRIC_RETRY_ATTEMPTS)
                 .setDescription("Total number of retry attempts")
                 .setUnit("attempts")
+                .build();
+
+        // Initialize counter for successful retry outcomes
+        this.retrySuccessCounter = meter
+                .counterBuilder(METRIC_RETRY_SUCCESS)
+                .setDescription("Total number of successful retry outcomes")
+                .setUnit("outcomes")
+                .build();
+
+        // Initialize counter for failed retry outcomes
+        this.retryFailureCounter = meter
+                .counterBuilder(METRIC_RETRY_FAILURE)
+                .setDescription("Total number of failed retry outcomes")
+                .setUnit("outcomes")
                 .build();
 
         // Initialize histogram for backoff duration
@@ -263,6 +297,99 @@ public final class RetryObservability {
     }
 
     /**
+     * Record a successful retry outcome directly.
+     *
+     * <p>Use this for simple metric recording when you don't need span tracking.
+     *
+     * @param component the component performing the retry
+     * @param operation the operation that succeeded
+     */
+    public void recordSuccess(String component, String operation) {
+        Attributes attributes = Attributes.builder()
+                .put(ATTR_COMPONENT, component)
+                .put(ATTR_OPERATION, operation)
+                .put(ATTR_RESULT, RESULT_SUCCESS)
+                .build();
+
+        retryAttemptsCounter.add(1, attributes);
+        retrySuccessCounter.add(1, Attributes.of(ATTR_COMPONENT, component, ATTR_OPERATION, operation));
+
+        LOGGER.debug("Recorded retry success: component={}, operation={}", component, operation);
+    }
+
+    /**
+     * Record a failed retry outcome directly.
+     *
+     * <p>Use this for simple metric recording when you don't need span tracking.
+     *
+     * @param component the component performing the retry
+     * @param operation the operation that failed
+     * @param error the exception that caused the failure
+     */
+    public void recordFailure(String component, String operation, Throwable error) {
+        String errorType = error.getClass().getSimpleName();
+
+        Attributes attributes = Attributes.builder()
+                .put(ATTR_COMPONENT, component)
+                .put(ATTR_OPERATION, operation)
+                .put(ATTR_RESULT, RESULT_FAILURE)
+                .build();
+
+        retryAttemptsCounter.add(1, attributes);
+        retryFailureCounter.add(1, Attributes.builder()
+                .put(ATTR_COMPONENT, component)
+                .put(ATTR_OPERATION, operation)
+                .put(ATTR_ERROR_TYPE, errorType)
+                .build());
+
+        LOGGER.debug("Recorded retry failure: component={}, operation={}, errorType={}",
+                component, operation, errorType);
+    }
+
+    /**
+     * Record an exhausted retry sequence directly.
+     *
+     * <p>Use this when all retry attempts have been exhausted without success.
+     *
+     * @param component the component performing the retry
+     * @param operation the operation that exhausted retries
+     * @param totalAttempts the total number of attempts made
+     * @param lastError the last error encountered
+     */
+    public void recordExhausted(String component, String operation, int totalAttempts, Throwable lastError) {
+        String errorType = lastError.getClass().getSimpleName();
+
+        Attributes attributes = Attributes.builder()
+                .put(ATTR_COMPONENT, component)
+                .put(ATTR_OPERATION, operation)
+                .put(ATTR_RESULT, RESULT_EXHAUSTED)
+                .put(ATTR_ATTEMPT_TOTAL, (long) totalAttempts)
+                .build();
+
+        retryAttemptsCounter.add(1, attributes);
+        retryFailureCounter.add(1, Attributes.builder()
+                .put(ATTR_COMPONENT, component)
+                .put(ATTR_OPERATION, operation)
+                .put(ATTR_ERROR_TYPE, errorType)
+                .build());
+
+        LOGGER.warn("Retry exhausted: component={}, operation={}, attempts={}, errorType={}",
+                component, operation, totalAttempts, errorType);
+    }
+
+    /**
+     * Get current retry statistics.
+     *
+     * @return RetryStats snapshot
+     */
+    public RetryStats getStats() {
+        return new RetryStats(
+                activeSequences.size(),
+                sequenceCounter.get()
+        );
+    }
+
+    /**
      * Get or create a retry sequence for tracking multi-attempt operations.
      *
      * @param component the component name
@@ -336,6 +463,7 @@ public final class RetryObservability {
                     .build();
 
             retryAttemptsCounter.add(1, attributes);
+            retrySuccessCounter.add(1, Attributes.of(ATTR_COMPONENT, component, ATTR_OPERATION, operation));
 
             span.setStatus(StatusCode.OK);
             span.setAttribute(ATTR_RESULT, RESULT_SUCCESS);
@@ -359,6 +487,7 @@ public final class RetryObservability {
             }
 
             String result = (attemptNumber >= totalAttempts) ? RESULT_EXHAUSTED : RESULT_FAILURE;
+            String errorType = error.getClass().getSimpleName();
 
             Attributes attributes = Attributes.builder()
                     .put(ATTR_COMPONENT, component)
@@ -367,10 +496,15 @@ public final class RetryObservability {
                     .build();
 
             retryAttemptsCounter.add(1, attributes);
+            retryFailureCounter.add(1, Attributes.builder()
+                    .put(ATTR_COMPONENT, component)
+                    .put(ATTR_OPERATION, operation)
+                    .put(ATTR_ERROR_TYPE, errorType)
+                    .build());
 
             span.setStatus(StatusCode.ERROR, error.getMessage());
             span.setAttribute(ATTR_RESULT, result);
-            span.setAttribute(ATTR_ERROR_TYPE, error.getClass().getSimpleName());
+            span.setAttribute(ATTR_ERROR_TYPE, errorType);
             span.setAttribute(ATTR_ERROR_MESSAGE,
                     error.getMessage() != null ? error.getMessage() : "unknown");
             span.recordException(error);
@@ -437,6 +571,43 @@ public final class RetryObservability {
 
         private String getSequenceId() {
             return component + "-" + operation + "-" + id;
+        }
+    }
+
+    /**
+     * Snapshot of retry statistics.
+     */
+    public static final class RetryStats {
+        private final int activeSequences;
+        private final long totalSequencesCreated;
+
+        public RetryStats(int activeSequences, long totalSequencesCreated) {
+            this.activeSequences = activeSequences;
+            this.totalSequencesCreated = totalSequencesCreated;
+        }
+
+        /**
+         * Get the number of currently active retry sequences.
+         *
+         * @return active retry sequence count
+         */
+        public int getActiveSequences() {
+            return activeSequences;
+        }
+
+        /**
+         * Get the total number of retry sequences ever created.
+         *
+         * @return total sequences created
+         */
+        public long getTotalSequencesCreated() {
+            return totalSequencesCreated;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("RetryStats{activeSequences=%d, totalSequencesCreated=%d}",
+                    activeSequences, totalSequencesCreated);
         }
     }
 }

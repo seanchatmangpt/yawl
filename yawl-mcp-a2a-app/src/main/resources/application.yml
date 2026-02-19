@@ -73,6 +73,12 @@ yawl:
         enabled: ${A2A_JSONRPC_ENABLED:false}
         port: ${A2A_JSONRPC_PORT:8083}
 
+  # YAWL Metrics Configuration
+  metrics:
+    enabled: ${YAWL_METRICS_ENABLED:true}
+    environment: ${YAWL_ENVIRONMENT:development}
+    instance-id: ${YAWL_INSTANCE_ID:}
+
 # Actuator endpoints for health and metrics
 management:
   endpoints:
@@ -114,13 +120,6 @@ management:
     metrics:
       export:
         enabled: true
-
-# YAWL Metrics Configuration
-yawl:
-  metrics:
-    enabled: ${YAWL_METRICS_ENABLED:true}
-    environment: ${YAWL_ENVIRONMENT:development}
-    instance-id: ${YAWL_INSTANCE_ID:}
 
 # OpenTelemetry configuration
 otel:
