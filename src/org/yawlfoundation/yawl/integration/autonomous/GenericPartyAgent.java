@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.orderfulfillment.AgentCapability;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
@@ -38,6 +39,8 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
 import org.yawlfoundation.yawl.security.AgentSecurityContext;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
+import org.yawlfoundation.yawl.integration.autonomous.AgentContext;
+import org.yawlfoundation.yawl.engine.YAWLEngine;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -106,10 +109,12 @@ public final class GenericPartyAgent implements AutonomousAgent {
         this.handoffService = config.getHandoffService();
         this.conflictResolver = config.getConflictResolver();
         this.a2aClient = config.getA2AClient();
-        this.agentContext = new AgentSecurityContext(
+        this.agentContext = new AgentContext(
             config.getId(),
-            sessionHandle,
-            "ApiKey" // Assuming API key authentication for coordination
+            "Generic Agent - " + config.getCapability().domainName(),
+            config.getCapability(),
+            new AgentSecurityContext(config.getId(), sessionHandle, "ApiKey"),
+            "http://localhost:" + config.getPort()
         );
     }
 

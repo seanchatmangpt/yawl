@@ -329,6 +329,7 @@
                         <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
                         <include>**/org/yawlfoundation/yawl/util/**</include>
                         <include>**/org/yawlfoundation/yawl/exceptions/**</include>
+                        <include>**/org/yawlfoundation/yawl/engine/interfce/metrics/**</include>
                     </includes>
                     <excludes>
                         <!-- Exclude authentication classes that depend on engine/elements - they compile in yawl-engine -->
@@ -347,6 +348,10 @@
                         <exclude>**/org/yawlfoundation/yawl/util/AbstractEngineClient.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/util/Sessions.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/util/YIdentifierBag.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/util/ErrorSpanHelper.java</exclude>
+                        <!-- Exclude engine interface classes that depend on Micrometer - they compile in yawl-engine -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/interfaceX/InterfaceXMetrics.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/interfaceX/InterfaceXDeadLetterQueue.java</exclude>
                         <!-- Exclude non-Java files -->
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
@@ -365,9 +370,11 @@
                         <testInclude>**/org/yawlfoundation/yawl/schema/*Test.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/unmarshal/Test*.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/unmarshal/*Test.java</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/*Test.java</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.class</testExclude>
+                        <testExclude>**/org/yawlfoundation/yawl/util/TestErrorSpanHelper.java</testExclude>
                     </testExcludes>
                     <!-- Disable annotation processing to prevent JMH from generating stale files -->
                     <compilerArgs>
@@ -401,6 +408,7 @@
                         <include>**/org/yawlfoundation/yawl/schema/*Test.java</include>
                         <include>**/org/yawlfoundation/yawl/unmarshal/Test*.java</include>
                         <include>**/org/yawlfoundation/yawl/unmarshal/*Test.java</include>
+                        <include>**/org/yawlfoundation/yawl/engine/interfce/metrics/*Test.java</include>
                     </includes>
                     <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>

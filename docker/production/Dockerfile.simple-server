@@ -1,0 +1,29 @@
+# Simple Dockerfile for YAWL A2A Server
+FROM eclipse-temurin:25-jre-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Create directories
+RUN mkdir -p /app/classes /app/libs /app/logs
+
+# Copy compiled classes
+COPY --from=builder /yawl-engine/classes /app/classes
+COPY --from=builder /yawl-integration/classes /app/classes
+
+# Copy necessary JARs (if available)
+COPY yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar /app/libs/
+
+# Set environment variables
+ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/./urandom"
+
+# Expose ports
+EXPOSE 8080 8081 8082
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8081/health || exit 1
+
+# Default command
+CMD ["sh", "-c", "java $JAVA_OPTS -cp '/app/classes:/app/libs/*' org.yawlfoundation.yawl.integration.a2a.YawlA2AServer"]

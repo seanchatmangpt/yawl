@@ -1,0 +1,89 @@
+# Docker Compose for A2A/MCP/Handoff Testing
+# Usage: docker compose -f docker-compose.a2a-mcp-test.yml up --abort-on-container-exit
+
+services:
+  # YAWL Engine (from existing docker-compose.yml)
+  yawl-engine:
+    extends:
+      file: docker-compose.yml
+      service: yawl-engine
+    profiles:
+      - test
+
+  # MCP-A2A Application (Spring Boot)
+  yawl-mcp-a2a:
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile.mcp-a2a-app
+    image: yawl-mcp-a2a:6.0.0-alpha
+    container_name: yawl-mcp-a2a
+    hostname: yawl-mcp-a2a
+    profiles:
+      - test
+    depends_on:
+      yawl-engine:
+        condition: service_healthy
+    ports:
+      - "18080:8080"  # Spring Boot management
+      - "18081:8081"  # MCP HTTP endpoint
+      - "18082:8082"  # A2A REST endpoint
+    environment:
+      # Engine connection
+      YAWL_ENGINE_URL: http://yawl-engine:8080/yawl
+      YAWL_USERNAME: admin
+      YAWL_PASSWORD: YAWL
+
+      # A2A Authentication (REQUIRED)
+      A2A_JWT_SECRET: "test-secret-minimum-32-characters-long-for-testing
+      A2A_API_KEY_MASTER: "master-key-16ch"
+      A2A_API_KEY: "test-api-key-12345"
+
+      # MCP Configuration
+      MCP_HTTP_ENABLED: "true"
+      MCP_HTTP_PORT: 8081
+
+      # Spring profiles
+      SPRING_PROFILES_ACTIVE: test
+    networks:
+      - yawl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  # Test Runner
+  test-runner:
+    image: alpine:3.19
+    container_name: yawl-test-runner
+    profiles:
+      - test
+    depends_on:
+      yawl-mcp-a2a:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./test-results:/results
+    environment:
+      YAWL_ENGINE_URL: http://yawl-engine:8080
+      YAWL_MCP_URL: http://yawl-mcp-a2a:8081/mcp
+      YAWL_A2A_URL: http://yawl-mcp-a2a:8082/a2a
+      A2A_API_KEY: test-api-key-12345
+    command: >
+      sh -c "
+        apk add --no-cache curl jq bc &&
+        echo 'Running A2A/MCP/Handoff tests...' &&
+        sh /scripts/test-a2a-mcp-zai.sh --ci --report --output=/results
+      "
+    networks:
+      - yawl-network
+
+networks:
+  yawl-network:
+    external: true
+    name: yawl-network
+
+volumes:
+  test-results:
+    name: yawl-test-results

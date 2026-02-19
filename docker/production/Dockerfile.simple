@@ -1,0 +1,8 @@
+# Simple Dockerfile for testing
+FROM eclipse-temurin:25-jre-alpine
+
+# Install curl for testing
+RUN apk add --no-cache curl
+
+# Test Java version
+CMD ["java", "-version"]

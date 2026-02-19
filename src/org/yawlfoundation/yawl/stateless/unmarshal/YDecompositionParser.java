@@ -418,10 +418,8 @@ public class YDecompositionParser {
                     // duration type - specified as a Duration?
                     String durationStr = timerElem.getChildText("duration", _yawlNS);
                     if (durationStr != null) {
-                        Duration duration = StringUtil.strToDuration(durationStr);
-                        if (duration != null) {
-                            timerParameters.set(trigger, duration);
-                        }
+                        StringUtil.strToDuration(durationStr)
+                                .ifPresent(duration -> timerParameters.set(trigger, duration));
                     }
                     else {
                         // ticks / interval durationparams type

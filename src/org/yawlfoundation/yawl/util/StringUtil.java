@@ -53,6 +53,7 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -317,12 +318,12 @@ public class StringUtil {
      * Removes an outer set of xml tags from an xml string, if possible
      *
      * @param xml the xml string to strip
-     * @return the stripped xml string
+     * @return the stripped xml string, or empty string for self-closing tags
      */
     public static String unwrap(String xml) {
         if (xml != null) {
-            if (xml.matches("^<\\w+/>$")) {                      // shortened tag pair
-                return "";
+            if (xml.matches("^<\\w+/>$")) {                      // shortened tag pair - no content
+                return new String();  // Self-closing tags have empty content by definition
             }
             int start = xml.indexOf('>') + 1;
             int end = xml.lastIndexOf('<');
@@ -444,7 +445,7 @@ public class StringUtil {
             try {
                 int bufsize = (int) f.length();
                 InputStream fis = new FileInputStream(f);
-                return streamToString(fis, bufsize);
+                return streamToString(fis, bufsize).orElse(null);
             } catch (Exception e) {
                 _log.error("Failed to read file to string", e);
                 return null;
@@ -452,12 +453,30 @@ public class StringUtil {
         } else return null;
     }
 
-    public static String streamToString(InputStream is) {
+    /**
+     * Converts an InputStream to a String using a default buffer size.
+     *
+     * @param is the InputStream to convert
+     * @return an Optional containing the string content, or Optional.empty() if conversion fails
+     */
+    public static Optional<String> streamToString(InputStream is) {
         return streamToString(is, 32768);  // default bufsize
     }
 
 
-    public static String streamToString(InputStream is, int bufSize) {
+    /**
+     * Converts an InputStream to a String using the specified buffer size.
+     * <p>
+     * This method reads all bytes from the input stream and converts them to a UTF-8 string.
+     * The conversion preserves UTF-8 encoding by using a buffered byte stream.
+     * </p>
+     *
+     * @param is      the InputStream to convert (must not be null)
+     * @param bufSize the buffer size to use for reading
+     * @return an Optional containing the string content if conversion succeeds,
+     *         or Optional.empty() if an IOException occurs during reading
+     */
+    public static Optional<String> streamToString(InputStream is, int bufSize) {
         try {
 
             // read reply into a buffered byte stream - to preserve UTF-8
@@ -474,11 +493,11 @@ public class StringUtil {
             inStream.close();
 
             // convert the bytes to a UTF-8 string
-            return outStream.toString(StandardCharsets.UTF_8);
+            return Optional.of(outStream.toString(StandardCharsets.UTF_8));
 
         } catch (IOException ioe) {
             _log.error("Failed to convert stream to string", ioe);
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -564,29 +583,53 @@ public class StringUtil {
     }
 
 
-    public static Duration strToDuration(String s) {
+    /**
+     * Parses a string representation of an XML Schema duration into a Duration object.
+     * <p>
+     * Valid duration strings follow the XML Schema duration format, e.g., "P1Y2M3DT4H5M6S".
+     * The string must start with 'P' (for period).
+     * </p>
+     *
+     * @param s the duration string to parse (may be null)
+     * @return an Optional containing the parsed Duration if the string is valid,
+     *         or Optional.empty() if the string is null, empty, or malformed
+     * @see Duration
+     */
+    public static Optional<Duration> strToDuration(String s) {
         if (s != null) {
             try {
-                return DatatypeFactory.newInstance().newDuration(s);
+                return Optional.of(DatatypeFactory.newInstance().newDuration(s));
             } catch (DatatypeConfigurationException dce) {
-                // nothing to do - null will be returned
+                _log.warn("Failed to create Duration from string '{}': {}", s, dce.getMessage());
             } catch (IllegalArgumentException dce) {
-                // nothing to do - null will be returned
+                _log.warn("Invalid duration format '{}': {}", s, dce.getMessage());
             }
         }
-        return null;
+        return Optional.empty();
     }
 
 
-    public static Duration msecsToDuration(long msecs) {
+    /**
+     * Converts a duration in milliseconds to a Duration object.
+     * <p>
+     * Creates a javax.xml.datatype.Duration from a millisecond value. Valid values
+     * must be non-negative (greater than -1).
+     * </p>
+     *
+     * @param msecs the duration in milliseconds (must be greater than -1)
+     * @return an Optional containing the Duration if conversion succeeds,
+     *         or Optional.empty() if msecs is negative or conversion fails
+     * @see Duration
+     */
+    public static Optional<Duration> msecsToDuration(long msecs) {
         if (msecs > -1) {
             try {
-                return DatatypeFactory.newInstance().newDuration(msecs);
+                return Optional.of(DatatypeFactory.newInstance().newDuration(msecs));
             } catch (DatatypeConfigurationException | IllegalArgumentException dce) {
-                // nothing to do - null will be returned
+                _log.warn("Failed to create Duration from {} milliseconds: {}", msecs, dce.getMessage());
             }
         }
-        return null;
+        return Optional.empty();
     }
 
 
@@ -609,8 +652,9 @@ public class StringUtil {
     }
 
     public static long durationStrToMSecs(String s) {
-        Duration d = strToDuration(s);
-        return (d != null) ? durationToMSecs(d) : 0;
+        return strToDuration(s)
+                .map(StringUtil::durationToMSecs)
+                .orElse(0L);
     }
 
     public static long xmlDateToLong(String s) {
@@ -719,7 +763,7 @@ public class StringUtil {
 
 
     public static String join(List<?> list, char separator) {
-        if (list == null || list.isEmpty()) return "";
+        if (list == null || list.isEmpty()) return new String();  // Empty list join produces empty string
         if (list.size() == 1) return list.get(0).toString();
         StringBuilder sb = new StringBuilder();
         for (Object s : list) {

@@ -1,0 +1,19 @@
+{
+  "name": "read_obs",
+  "description": "Read cached Observatory facts and display current project state",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "description": "Type of Observatory data to display",
+        "type": "string",
+        "enum": ["full", "facts", "diagrams", "index"],
+        "default": "full"
+      },
+      "specific": {
+        "description": "Specific fact file to display (e.g., 'modules', 'tests')",
+        "type": "string"
+      }
+    }
+  }
+}

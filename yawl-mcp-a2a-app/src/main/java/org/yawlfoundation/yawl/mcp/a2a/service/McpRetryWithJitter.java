@@ -11,6 +11,7 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
+import org.yawlfoundation.yawl.resilience.observability.RetryObservability;
 
 /**
  * Retry mechanism with jitter for MCP client operations.
@@ -39,9 +40,11 @@ import io.github.resilience4j.retry.RetryRegistry;
 public class McpRetryWithJitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(McpRetryWithJitter.class);
+    private static final String COMPONENT_NAME = "mcp-client";
 
     private final Retry retry;
     private final CircuitBreakerProperties.RetryConfig properties;
+    private final RetryObservability retryObservability;
 
     /**
      * Creates a new retry mechanism with the given configuration.
@@ -51,6 +54,7 @@ public class McpRetryWithJitter {
     public McpRetryWithJitter(CircuitBreakerProperties.RetryConfig properties) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
         this.retry = createRetry();
+        this.retryObservability = RetryObservability.getInstance();
     }
 
     /**
@@ -62,6 +66,7 @@ public class McpRetryWithJitter {
     public McpRetryWithJitter(String serverName, CircuitBreakerProperties.RetryConfig properties) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
         this.retry = createRetryForServer(serverName);
+        this.retryObservability = RetryObservability.getInstance();
     }
 
     /**
@@ -81,33 +86,45 @@ public class McpRetryWithJitter {
 
         int attempts = 0;
         Exception lastException = null;
+        long backoffMs = 0;
 
         while (attempts < properties.maxAttempts()) {
             attempts++;
+
+            RetryObservability.RetryContext retryCtx = retryObservability.startRetry(
+                    COMPONENT_NAME, operation, attempts, properties.maxAttempts(), backoffMs);
+
             try {
                 T result = supplier.get();
                 if (attempts > 1) {
                     LOGGER.info("MCP operation succeeded on attempt {}/{}: server={}, operation={}",
                                attempts, properties.maxAttempts(), serverId, operation);
                 }
+                retryCtx.recordSuccess();
+                retryObservability.completeSequence(COMPONENT_NAME, operation, true, attempts);
                 return result;
             } catch (Exception e) {
                 lastException = e;
+                retryCtx.recordFailure(e);
 
                 if (attempts >= properties.maxAttempts()) {
                     LOGGER.error("MCP operation failed after {} attempts: server={}, operation={}, error={}",
                                 attempts, serverId, operation, e.getMessage());
+                    retryObservability.completeSequence(COMPONENT_NAME, operation, false, attempts);
                     break;
                 }
 
-                long waitMillis = calculateWaitDuration(attempts);
+                backoffMs = calculateWaitDuration(attempts);
                 LOGGER.warn("MCP operation failed (attempt {}/{}), retrying in {}ms: server={}, operation={}, error={}",
-                           attempts, properties.maxAttempts(), waitMillis, serverId, operation, e.getMessage());
+                           attempts, properties.maxAttempts(), backoffMs, serverId, operation, e.getMessage());
+
+                retryObservability.recordBackoff(COMPONENT_NAME, operation, backoffMs);
 
                 try {
-                    Thread.sleep(waitMillis);
+                    Thread.sleep(backoffMs);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
+                    retryObservability.completeSequence(COMPONENT_NAME, operation, false, attempts);
                     throw new McpClientException(
                         "Retry interrupted", serverId, operation, attempts, ie);
                 }

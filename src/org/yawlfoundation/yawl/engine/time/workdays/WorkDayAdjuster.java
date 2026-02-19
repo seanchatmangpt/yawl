@@ -137,7 +137,7 @@ public class WorkDayAdjuster {
 
     private Duration spanAsDuration(Calendar start, Calendar end) {
         long diff = end.getTimeInMillis() - start.getTimeInMillis();
-        return StringUtil.msecsToDuration(diff);
+        return StringUtil.msecsToDuration(diff).orElse(null);
     }
 
 
@@ -161,7 +161,7 @@ public class WorkDayAdjuster {
 
 
     public static void main(String[] a) {
-        Duration d = StringUtil.strToDuration("P1M3DT5H30M");
+        Duration d = StringUtil.strToDuration("P1M3DT5H30M").orElse(null);
         Duration e = new WorkDayAdjuster().adjust(d);
         org.apache.logging.log4j.LogManager.getLogger(WorkDayAdjuster.class).info(
                 "Adjusted duration: {}", e.toString());

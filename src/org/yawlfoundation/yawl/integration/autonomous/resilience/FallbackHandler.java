@@ -1,9 +1,11 @@
 package org.yawlfoundation.yawl.integration.autonomous.resilience;
 
+import java.time.Instant;
 import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.resilience.observability.FallbackObservability;
 
 /**
  * Graceful degradation handler with primary and fallback operations.
@@ -56,21 +58,33 @@ public class FallbackHandler {
                     primaryException);
             }
 
-            try {
-                T result = fallback.call();
-                logger.info("Fallback operation [{}] succeeded", opName);
-                return result;
+            // Record fallback with observability
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+            FallbackObservability.FallbackResult result = fallbackObs.recordFallback(
+                "fallback-handler",
+                opName,
+                FallbackObservability.FallbackReason.SERVICE_ERROR,
+                FallbackObservability.FallbackSource.SECONDARY_SERVICE,
+                () -> {
+                    try {
+                        return fallback.call();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                Instant.now(),
+                primaryException
+            );
 
-            } catch (Exception fallbackException) {
-                logger.error("Fallback operation [{}] also failed: {}",
-                            opName, fallbackException.getMessage());
-
-                Exception combined = new Exception(
-                    "Both primary and fallback operations failed for [" + opName + "]",
-                    primaryException);
-                combined.addSuppressed(fallbackException);
-                throw combined;
+            if (result.isStale()) {
+                logger.warn("Fallback operation [{}] served stale data (age={}ms)",
+                           opName, result.getDataAgeMs());
             }
+
+            logger.info("Fallback operation [{}] succeeded", opName);
+            @SuppressWarnings("unchecked")
+            T typedResult = (T) result.getValue();
+            return typedResult;
         }
     }
 
@@ -121,7 +135,23 @@ public class FallbackHandler {
         } catch (Exception e) {
             logger.warn("Primary operation [{}] failed: {}, using fallback value",
                        opName, e.getMessage());
-            return fallbackValue;
+
+            // Record fallback with observability
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+            FallbackObservability.FallbackResult result = fallbackObs.recordDefaultFallback(
+                "fallback-handler",
+                opName,
+                FallbackObservability.FallbackReason.SERVICE_ERROR,
+                fallbackValue
+            );
+
+            if (result.isStale()) {
+                logger.warn("Fallback value [{}] may be stale", opName);
+            }
+
+            @SuppressWarnings("unchecked")
+            T typedResult = (T) result.getValue();
+            return typedResult;
         }
     }
 
@@ -163,21 +193,27 @@ public class FallbackHandler {
                     primaryException);
             }
 
-            try {
-                T result = fallback.get();
-                logger.info("Fallback operation [{}] succeeded", opName);
-                return result;
+            // Record fallback with observability
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+            FallbackObservability.FallbackResult result = fallbackObs.recordFallback(
+                "fallback-handler",
+                opName,
+                FallbackObservability.FallbackReason.SERVICE_ERROR,
+                FallbackObservability.FallbackSource.SECONDARY_SERVICE,
+                fallback::get,
+                Instant.now(),
+                primaryException
+            );
 
-            } catch (Exception fallbackException) {
-                logger.error("Fallback operation [{}] also failed: {}",
-                            opName, fallbackException.getMessage());
-
-                RuntimeException combined = new RuntimeException(
-                    "Both primary and fallback operations failed for [" + opName + "]",
-                    primaryException);
-                combined.addSuppressed(fallbackException);
-                throw combined;
+            if (result.isStale()) {
+                logger.warn("Fallback operation [{}] served stale data (age={}ms)",
+                           opName, result.getDataAgeMs());
             }
+
+            logger.info("Fallback operation [{}] succeeded", opName);
+            @SuppressWarnings("unchecked")
+            T typedResult = (T) result.getValue();
+            return typedResult;
         }
     }
 

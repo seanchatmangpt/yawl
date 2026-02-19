@@ -100,7 +100,9 @@ YAWL v6.0 introduces a sophisticated agent coordination framework that enables m
 - ⚖️ **Conflict Resolution** - Multiple strategies including majority vote, escalation, and human fallback
 - 🔍 **Agent Discovery** - Dynamic agent registration and capability matching
 - 🌐 **MCP Integration** - Native Claude Desktop/CLI integration for workflow orchestration
+  - **MCP SDK v1.0.0-RC1** - Production-ready Model Context Protocol integration
 - 📊 **A2A Communication** - Agent-to-agent messaging and coordination
+- 🧵 **Virtual Thread A2A Server** - High-performance virtual thread-based communication with metrics
 
 ### Quick Start
 
@@ -129,6 +131,20 @@ curl http://localhost:8081/metrics/handoff
 | Handoff Initiation | < 100ms | ✓ PASS |
 | Conflict Resolution | < 5s | ✓ PASS |
 | Agent Discovery | < 1s | ✓ PASS |
+
+### Virtual Thread A2A Server
+
+The `VirtualThreadYawlA2AServer` provides high-performance A2A communication using Java 21+ virtual threads:
+
+- **Concurrency**: Thousands of simultaneous agent connections without thread pool exhaustion
+- **Metrics**: Built-in VirtualThreadMetrics for monitoring
+- **Backward Compatible**: Drop-in replacement for YawlA2AServer
+
+```bash
+# Start virtual thread A2A server
+mvn -pl yawl-integration exec:java \
+  -Dexec.mainClass="org.yawlfoundation.yawl.integration.a2a.VirtualThreadYawlA2AServer"
+```
 
 ### Documentation
 - **[ADR-025 Implementation Guide](docs/adr/ADR-025-IMPLEMENTATION.md)** - Complete implementation details
@@ -180,6 +196,19 @@ handoff:
   }
 }
 ```
+
+### A2A Skills (NEW - v6.0)
+
+YAWL v6.0 includes 6 built-in A2A skills for autonomous agent operations:
+
+| Skill | Purpose | Usage |
+|-------|---------|-------|
+| `IntrospectCodebaseSkill` | Analyze codebase structure | Code search, file analysis |
+| `GenerateCodeSkill` | Generate source code | Create new files, implementations |
+| `ExecuteBuildSkill` | Run build commands | mvn, gradle, make |
+| `RunTestsSkill` | Execute test suites | Unit, integration tests |
+| `CommitChangesSkill` | Git commit operations | Stage, commit changes |
+| `SelfUpgradeSkill` | Self-modification | Update agent capabilities |
 
 ---
 

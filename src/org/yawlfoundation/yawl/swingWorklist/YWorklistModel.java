@@ -46,6 +46,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceAManagement;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClient;
 import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.swingWorklist.util.ParamsDefinitions;
+import org.yawlfoundation.yawl.util.ErrorSpanHelper;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 /**
@@ -202,16 +203,22 @@ public class YWorklistModel {
                     _engineClient.startWorkItem(item, null);
 
                 } catch (YStateException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to start work item for case={}, task={}: {}",
+                        caseID, taskID, e.getMessage(), e);
+                    ErrorSpanHelper.recordTaskError(taskID, caseID, "start", e);
                     reportGeneralProblem(e);
                 } catch (YDataStateException e) {
-                    e.printStackTrace();
+                    logger.error("Data validation error starting work item for case={}, task={}: {}",
+                        caseID, taskID, e.getMessage(), e);
+                    ErrorSpanHelper.recordTaskError(taskID, caseID, "start", e);
                     new SpecificationQueryProcessingValidationErrorBox(
                             _frame,
                             item,
                             e);
                 } catch (YAWLException e) {
-                    e.printStackTrace();
+                    logger.error("YAWL exception starting work item for case={}, task={}: {}",
+                        caseID, taskID, e.getMessage(), e);
+                    ErrorSpanHelper.recordTaskError(taskID, caseID, "start", e);
                     reportGeneralProblem(e);
                 }
             }
@@ -228,7 +235,9 @@ public class YWorklistModel {
                 try {
                     _engineClient.createNewInstance(item, newInstanceData);
                 } catch (YStateException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to create new instance for case={}, task={}: {}",
+                        caseID, taskID, e.getMessage(), e);
+                    ErrorSpanHelper.recordTaskError(taskID, caseID, "create_instance", e);
                 }
             }
         }
@@ -353,7 +362,9 @@ public class YWorklistModel {
                 try {
                     _engineClient.rollbackWorkItem(item.getIDString());
                 } catch (YStateException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to rollback work item for case={}, task={}: {}",
+                        caseID, taskID, e.getMessage(), e);
+                    ErrorSpanHelper.recordTaskError(taskID, caseID, "rollback", e);
                 }
             }
         }

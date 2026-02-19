@@ -47,6 +47,14 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.NullCheckModernizer;
+import org.yawlfoundation.yawl.engine.observability.YAWLTracing;
+import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
+import org.yawlfoundation.yawl.engine.observability.AndonAlert;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.api.common.Attributes;
 
 /**
  * Executes a YAWL workflow net instance (case) following Petri net semantics.
@@ -387,48 +395,80 @@ public class YNetRunner {
     public void kick(YPersistenceManager pmgr)
             throws YPersistenceException, YDataStateException,
                    YQueryException, YStateException {
-        long lockWaitStart = System.nanoTime();
-        _writeLock.lock();
-        if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - lockWaitStart);
-        try {
-        _logger.debug("--> YNetRunner.kick");
+        Span span = YAWLTracing.createNetRunnerSpan("yawl.net.kick", _caseID,
+            _net != null ? _net.getID() : "unknown");
+        try (Scope scope = span.makeCurrent()) {
+            long lockWaitStart = System.nanoTime();
+            _writeLock.lock();
+            long lockWaitNanos = System.nanoTime() - lockWaitStart;
+            long lockWaitMs = lockWaitNanos / 1_000_000;
 
-        if (! continueIfPossible(pmgr)) {
-            _logger.debug("YNetRunner not able to continue");
+            // Record lock wait time on span
+            span.setAttribute("yawl.lock.wait.ms", lockWaitMs);
 
-            // if root net can't continue it means a case completion
-            if ((_engine != null) && isRootNet()) {
-                announceCaseCompletion();
-                if (endOfNetReached() && warnIfNetNotEmpty()) {
-                    _cancelling = true;                       // flag its not a deadlock
-                }
-
-                // call the external data source, if its set for this specification
-                _net.postCaseDataToExternal(getCaseID().toString());
-
-                _logger.debug("Asking engine to finish case");
-                _engine.removeCaseFromCaches(_caseIDForNet);
-
-                // log it
-                YLogPredicate logPredicate = getNet().getLogPredicate();
-                YLogDataItemList logData = null;
-                if (logPredicate != null) {
-                    String predicate = logPredicate.getParsedCompletionPredicate(getNet());
-                    if (predicate != null) {
-                        logData = new YLogDataItemList(new YLogDataItem("Predicate",
-                                     "OnCompletion", predicate, "string"));
-                    }
-                }
-                YEventLogger.getInstance().logNetCompleted(_caseIDForNet, logData);
+            // Record lock metrics
+            if (_lockMetrics != null) {
+                _lockMetrics.recordWriteLockWait(lockWaitNanos);
             }
-            if (! _cancelling && deadLocked()) notifyDeadLock(pmgr);
-            cancel(pmgr);
-            if ((_engine != null) && isRootNet()) _engine.clearCaseFromPersistence(_caseIDForNet);
-        }
 
-        _logger.debug("<-- YNetRunner.kick");
+            // Record telemetry metrics
+            YAWLTelemetry.getInstance().recordLockContention(lockWaitMs, _caseID, "kick");
+
+            // P1 Andon alert for excessive lock contention (>500ms)
+            if (lockWaitNanos > AndonAlert.P1_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.lockContention(_caseID, lockWaitNanos, "kick").fire(span);
+            } else if (lockWaitNanos > AndonAlert.P2_LOCK_CONTENTION_THRESHOLD_NS) {
+                // P2 warning for moderate contention (>100ms)
+                AndonAlert.elevatedContention(_caseID, lockWaitNanos, "kick").fire(span);
+            }
+
+            try {
+                _logger.debug("--> YNetRunner.kick");
+
+                if (! continueIfPossible(pmgr)) {
+                    _logger.debug("YNetRunner not able to continue");
+
+                    // if root net can't continue it means a case completion
+                    if ((_engine != null) && isRootNet()) {
+                        announceCaseCompletion();
+                        if (endOfNetReached() && warnIfNetNotEmpty()) {
+                            _cancelling = true;                       // flag its not a deadlock
+                        }
+
+                        // call the external data source, if its set for this specification
+                        _net.postCaseDataToExternal(getCaseID().toString());
+
+                        _logger.debug("Asking engine to finish case");
+                        _engine.removeCaseFromCaches(_caseIDForNet);
+
+                        // log it
+                        YLogPredicate logPredicate = getNet().getLogPredicate();
+                        YLogDataItemList logData = null;
+                        if (logPredicate != null) {
+                            String predicate = logPredicate.getParsedCompletionPredicate(getNet());
+                            if (predicate != null) {
+                                logData = new YLogDataItemList(new YLogDataItem("Predicate",
+                                             "OnCompletion", predicate, "string"));
+                            }
+                        }
+                        YEventLogger.getInstance().logNetCompleted(_caseIDForNet, logData);
+                    }
+                    if (! _cancelling && deadLocked()) notifyDeadLock(pmgr);
+                    cancel(pmgr);
+                    if ((_engine != null) && isRootNet()) _engine.clearCaseFromPersistence(_caseIDForNet);
+                }
+
+                _logger.debug("<-- YNetRunner.kick");
+                span.setStatus(StatusCode.OK);
+            } finally {
+                _writeLock.unlock();
+            }
+        } catch (YPersistenceException | YDataStateException | YQueryException | YStateException e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
         } finally {
-            _writeLock.unlock();
+            span.end();
         }
     }
 
@@ -452,6 +492,40 @@ public class YNetRunner {
 
     private void notifyDeadLock(YPersistenceManager pmgr)
             throws YPersistenceException {
+        Span span = YAWLTracing.getCurrentSpan();
+        if (span == null || !span.isRecording()) {
+            span = YAWLTracing.createCaseSpan("yawl.net.deadlock", _caseID,
+                _specID != null ? _specID.toString() : "unknown");
+        }
+
+        // Build deadlocked tasks description
+        StringBuilder taskList = new StringBuilder();
+        for (YTask task : _deadlockedTasks) {
+            if (taskList.length() > 0) taskList.append(", ");
+            taskList.append(task.getID());
+        }
+
+        // P0 Andon alert - immediate attention required for deadlock
+        AndonAlert deadlockAlert = AndonAlert.deadlock(
+            _caseID,
+            _specID != null ? _specID.toString() : "unknown",
+            taskList.toString()
+        );
+        deadlockAlert.fire(span);
+
+        // Record deadlock metric
+        YAWLTelemetry.getInstance().recordDeadlock(_caseID,
+            _specID != null ? _specID.toString() : "unknown",
+            _deadlockedTasks.size());
+
+        // Add deadlock details to span
+        span.setAttribute("yawl.deadlock.task_count", _deadlockedTasks.size());
+        span.setAttribute("yawl.deadlock.tasks", taskList.toString());
+        span.addEvent("yawl.deadlock.detected", Attributes.builder()
+            .put("yawl.case.id", _caseID)
+            .put("yawl.deadlock.tasks", taskList.toString())
+            .build());
+
         Set<YExternalNetElement> notified = new HashSet<>();
         for (Object o : _caseIDForNet.getLocations()) {
             if (o instanceof YExternalNetElement element) {
@@ -663,58 +737,96 @@ public class YNetRunner {
     public boolean continueIfPossible(YPersistenceManager pmgr)
            throws YDataStateException, YStateException, YQueryException,
                   YPersistenceException {
-        long lockWaitStart = System.nanoTime();
-        _writeLock.lock();
-        if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - lockWaitStart);
-        try {
-        _logger.debug("--> continueIfPossible");
+        Span span = YAWLTracing.createNetRunnerSpan("yawl.net.continue", _caseID,
+            _net != null ? _net.getID() : "unknown");
+        try (Scope scope = span.makeCurrent()) {
+            long lockWaitStart = System.nanoTime();
+            _writeLock.lock();
+            long lockWaitNanos = System.nanoTime() - lockWaitStart;
+            long lockWaitMs = lockWaitNanos / 1_000_000;
 
-        // Check if we are suspending (or suspended?) and if so exit out as we
-        // shouldn't post new workitems
-        if (isInSuspense()) {
-            _logger.debug("Aborting runner continuation as case is currently suspending/suspended");
-            return true;
-        }
+            span.setAttribute("yawl.lock.wait.ms", lockWaitMs);
 
-        // don't continue if the net has already finished
-        if (isCompleted()) return false;
-
-        // storage for the running set of enabled tasks
-        YEnabledTransitionSet enabledTransitions = new YEnabledTransitionSet();
-
-        // iterate through the full set of tasks for the net
-        for (YTask task : _netTasks) {
-
-            // if this task is an enabled 'transition'
-            if (task.t_enabled(_caseIDForNet)) {
-                if (! (_enabledTasks.contains(task) || _busyTasks.contains(task)))
-                    enabledTransitions.add(task) ;
+            if (_lockMetrics != null) {
+                _lockMetrics.recordWriteLockWait(lockWaitNanos);
             }
-            else {
 
-                // if the task is not (or no longer) an enabled transition, and it
-                // has been previously enabled by the engine, then it must be withdrawn
-                if (_enabledTasks.contains(task)) {
-                    withdrawEnabledTask(task, pmgr);
+            // Record telemetry metrics
+            YAWLTelemetry.getInstance().recordLockContention(lockWaitMs, _caseID, "continueIfPossible");
+
+            // P1/P2 Andon alerts for lock contention
+            if (lockWaitNanos > AndonAlert.P1_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.lockContention(_caseID, lockWaitNanos, "continueIfPossible").fire(span);
+            } else if (lockWaitNanos > AndonAlert.P2_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.elevatedContention(_caseID, lockWaitNanos, "continueIfPossible").fire(span);
+            }
+
+            try {
+                _logger.debug("--> continueIfPossible");
+
+                // Check if we are suspending (or suspended?) and if so exit out as we
+                // shouldn't post new workitems
+                if (isInSuspense()) {
+                    _logger.debug("Aborting runner continuation as case is currently suspending/suspended");
+                    span.addEvent("yawl.net.suspended");
+                    return true;
                 }
+
+                // don't continue if the net has already finished
+                if (isCompleted()) {
+                    span.addEvent("yawl.net.completed");
+                    return false;
+                }
+
+                // storage for the running set of enabled tasks
+                YEnabledTransitionSet enabledTransitions = new YEnabledTransitionSet();
+
+                // iterate through the full set of tasks for the net
+                for (YTask task : _netTasks) {
+
+                    // if this task is an enabled 'transition'
+                    if (task.t_enabled(_caseIDForNet)) {
+                        if (! (_enabledTasks.contains(task) || _busyTasks.contains(task)))
+                            enabledTransitions.add(task) ;
+                    }
+                    else {
+
+                        // if the task is not (or no longer) an enabled transition, and it
+                        // has been previously enabled by the engine, then it must be withdrawn
+                        if (_enabledTasks.contains(task)) {
+                            withdrawEnabledTask(task, pmgr);
+                        }
+                    }
+
+                    if (task.t_isBusy() && !_busyTasks.contains(task)) {
+                        _logger.error("Throwing RTE for lists out of sync");
+                        throw new RuntimeException("Busy task list out of synch with a busy task: "
+                                + task.getID() + " busy tasks: " + _busyTasks);
+                    }
+                }
+
+                // fire the set of enabled 'transitions' (if any)
+                if (! enabledTransitions.isEmpty()) fireTasks(enabledTransitions, pmgr);
+
+                _busyTasks = _net.getBusyTasks();
+
+                // Add task counts to span
+                span.setAttribute("yawl.tasks.enabled", _enabledTasks.size());
+                span.setAttribute("yawl.tasks.busy", _busyTasks.size());
+                span.setStatus(StatusCode.OK);
+
+                _logger.debug("<-- continueIfPossible");
+
+                return hasActiveTasks();
+            } finally {
+                _writeLock.unlock();
             }
-
-            if (task.t_isBusy() && !_busyTasks.contains(task)) {
-                _logger.error("Throwing RTE for lists out of sync");
-                throw new RuntimeException("Busy task list out of synch with a busy task: "
-                        + task.getID() + " busy tasks: " + _busyTasks);
-            }
-        }
-
-        // fire the set of enabled 'transitions' (if any)
-        if (! enabledTransitions.isEmpty()) fireTasks(enabledTransitions, pmgr);
-
-        _busyTasks = _net.getBusyTasks();
-        _logger.debug("<-- continueIfPossible");
-
-        return hasActiveTasks();
+        } catch (YPersistenceException | YDataStateException | YQueryException | YStateException e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
         } finally {
-            _writeLock.unlock();
+            span.end();
         }
     }
 
@@ -942,78 +1054,100 @@ public class YNetRunner {
             throws YDataStateException, YStateException, YQueryException,
                    YPersistenceException {
 
-        _logger.debug("--> completeTask: {}", atomicTask.getID());
+        String taskId = atomicTask.getID();
+        String workItemId = workItem != null ? workItem.getIDString() : identifier.toString();
 
-        boolean taskExited = atomicTask.t_complete(pmgr, identifier, outputData);
+        Span span = YAWLTracing.createWorkItemSpan("yawl.task.complete",
+            workItemId, _caseID, taskId);
+        try (Scope scope = span.makeCurrent()) {
+            _logger.debug("--> completeTask: {}", taskId);
 
-        if (taskExited) {
-            if (workItem != null) {
-                for (YWorkItem removed : _workItemRepository.removeWorkItemFamily(workItem)) {
-                    if (! (removed.hasCompletedStatus() || removed.isParent())) {      // MI fired or incomplete
-                        _announcer.announceCancelledWorkItem(removed);
+            long startTime = System.nanoTime();
+            boolean taskExited = atomicTask.t_complete(pmgr, identifier, outputData);
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+
+            span.setAttribute("yawl.task.exited", taskExited);
+            span.setAttribute("yawl.task.duration_ms", durationMs);
+
+            if (taskExited) {
+                if (workItem != null) {
+                    for (YWorkItem removed : _workItemRepository.removeWorkItemFamily(workItem)) {
+                        if (! (removed.hasCompletedStatus() || removed.isParent())) {      // MI fired or incomplete
+                            _announcer.announceCancelledWorkItem(removed);
+                        }
                     }
+
+                    updateTimerState(workItem.getTask(), YWorkItemTimer.State.closed);
                 }
 
-                updateTimerState(workItem.getTask(), YWorkItemTimer.State.closed);
-            }
+                // check if completing this task resulted in completing the net.
+                if (endOfNetReached()) {
+                    span.addEvent("yawl.net.end_reached");
 
-            // check if completing this task resulted in completing the net.
-            if (endOfNetReached()) {
+                    // check if the completed net is a subnet.
+                    if (_containingCompositeTask != null) {
+                        YNetRunner parentRunner = _engine.getNetRunner(_caseIDForNet.getParent());
+                        if (parentRunner != null) {
+                            parentRunner._runnerLock.lock();
+                            try {
+                                /* DEADLOCK FIX: Use explicit ReentrantLock instead of nested synchronized.
+                                 * Previously: completeTask (child lock) -> synchronized(parentRunner)
+                                 * caused ABBA deadlock when parent held its lock and called into child.
+                                 * ReentrantLock provides virtual thread safe mutual exclusion without pinning.
+                                 * Lock ordering is now consistent: always parent runner first, then child. */
+                                if (_containingCompositeTask.t_isBusy()) {
 
-                // check if the completed net is a subnet.
-                if (_containingCompositeTask != null) {
-                    YNetRunner parentRunner = _engine.getNetRunner(_caseIDForNet.getParent());
-                    if (parentRunner != null) {
-                        parentRunner._runnerLock.lock();
-                        try {
-                            /* DEADLOCK FIX: Use explicit ReentrantLock instead of nested synchronized.
-                             * Previously: completeTask (child lock) -> synchronized(parentRunner)
-                             * caused ABBA deadlock when parent held its lock and called into child.
-                             * ReentrantLock provides virtual thread safe mutual exclusion without pinning.
-                             * Lock ordering is now consistent: always parent runner first, then child. */
-                            if (_containingCompositeTask.t_isBusy()) {
+                                warnIfNetNotEmpty();
 
-                            warnIfNetNotEmpty();
+                                Document dataDoc = _net.usesSimpleRootData() ?
+                                                   _net.getInternalDataDocument() :
+                                                   _net.getOutputData() ;
 
-                            Document dataDoc = _net.usesSimpleRootData() ?
-                                               _net.getInternalDataDocument() :
-                                               _net.getOutputData() ;
+                                parentRunner.processCompletedSubnet(pmgr,
+                                            _caseIDForNet,
+                                            _containingCompositeTask,
+                                            dataDoc);
 
-                            parentRunner.processCompletedSubnet(pmgr,
-                                        _caseIDForNet,
-                                        _containingCompositeTask,
-                                        dataDoc);
-
-                            _logger.debug("YNetRunner::completeTask() finished local task: {}," +
-                                    " composite task: {}, caseid for decomposed net: {}",
-                                    atomicTask, _containingCompositeTask, _caseIDForNet);
+                                _logger.debug("YNetRunner::completeTask() finished local task: {}," +
+                                        " composite task: {}, caseid for decomposed net: {}",
+                                        atomicTask, _containingCompositeTask, _caseIDForNet);
+                                }
+                            } finally {
+                                parentRunner._runnerLock.unlock();
                             }
-                        } finally {
-                            parentRunner._runnerLock.unlock();
                         }
                     }
                 }
+
+                continueIfPossible(pmgr);
+                _busyTasks.remove(atomicTask);
+                _busyTaskNames.remove(atomicTask.getID());
+
+                if ((pmgr != null) && _engine.getRunningCaseIDs().contains(_caseIDForNet)) {
+                        pmgr.updateObject(this);
+                    }
+                _logger.debug("NOTIFYING RUNNER");
+                kick(pmgr);
             }
-
-            continueIfPossible(pmgr);
-            _busyTasks.remove(atomicTask);
-            _busyTaskNames.remove(atomicTask.getID());
-
-            if ((pmgr != null) && _engine.getRunningCaseIDs().contains(_caseIDForNet)) {
-                    pmgr.updateObject(this);
+            else {   // mi workitem complete but task has remaining incomplete items
+                span.addEvent("yawl.task.mi_remaining");
+                if (workItem != null) {
+                    atomicTask.getMIOutputData().addCompletedWorkItem(workItem);
                 }
-            _logger.debug("NOTIFYING RUNNER");
-            kick(pmgr);
-        }
-        else {   // mi workitem complete but task has remaining incomplete items
-            if (workItem != null) {
-                atomicTask.getMIOutputData().addCompletedWorkItem(workItem);
+                if (pmgr != null) pmgr.updateObject(atomicTask.getMIOutputData());
             }
-            if (pmgr != null) pmgr.updateObject(atomicTask.getMIOutputData());
-        }
-        _logger.debug("<-- completeTask: {}, Exited={}", atomicTask.getID(), taskExited);
 
-        return taskExited;
+            span.setStatus(StatusCode.OK);
+            _logger.debug("<-- completeTask: {}, Exited={}", taskId, taskExited);
+
+            return taskExited;
+        } catch (YPersistenceException | YDataStateException | YQueryException | YStateException e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
+        }
     }
 
 

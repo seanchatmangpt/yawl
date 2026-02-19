@@ -315,7 +315,7 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
                     else if (waitStr != null) {
                         msg.append(_engine.launchCase(specID, caseParams,
                                    completionObserver, logDataStr,
-                                   StringUtil.strToDuration(waitStr), sessionHandle));
+                                   StringUtil.strToDuration(waitStr).orElse(null), sessionHandle));
                     }
                     else if (caseID != null) {
                         msg.append(_engine.launchCase(specID, caseParams,

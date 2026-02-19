@@ -61,8 +61,8 @@ class TestStatelessEngine implements YCaseEventListener, YWorkItemEventListener 
     private String loadMinimalSpecXml() {
         InputStream is = getClass().getResourceAsStream(MINIMAL_SPEC_RESOURCE);
         assertNotNull(is, "Missing resource: " + MINIMAL_SPEC_RESOURCE);
-        String xml = StringUtil.streamToString(is);
-        assertNotNull(xml, "Empty spec XML");
+        String xml = StringUtil.streamToString(is)
+                .orElseThrow(() -> new AssertionError("Empty spec XML"));
         return xml;
     }
 

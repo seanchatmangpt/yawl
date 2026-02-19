@@ -20,11 +20,13 @@ package org.yawlfoundation.yawl.integration.pool;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import org.apache.commons.pool2.PooledObject;
@@ -33,6 +35,8 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.resilience.observability.FallbackObservability;
+import org.yawlfoundation.yawl.resilience.observability.RetryObservability;
 
 /**
  * Thread-safe connection pool for YAWL engine connections.
@@ -86,6 +90,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 public class YawlConnectionPool {
 
     private static final Logger LOGGER = Logger.getLogger(YawlConnectionPool.class.getName());
+    private static final String COMPONENT_NAME = "connection-pool";
 
     private final YawlConnectionPoolConfig config;
     private final YawlConnectionPoolMetrics metrics;
@@ -96,6 +101,7 @@ public class YawlConnectionPool {
 
     private volatile GenericObjectPool<YawlSession> pool;
     private volatile Thread healthCheckThread;
+    private volatile RetryObservability retryObservability;
 
     /**
      * Create a new connection pool with the given configuration.
@@ -153,6 +159,9 @@ public class YawlConnectionPool {
         }
 
         LOGGER.info("Initializing YAWL connection pool: " + config.getEngineUrl());
+
+        // Initialize retry observability
+        retryObservability = RetryObservability.getInstance();
 
         GenericObjectPoolConfig<YawlSession> poolConfig = createPoolConfig();
         PooledObjectFactory<YawlSession> factory = createSessionFactory();
@@ -255,8 +264,14 @@ public class YawlConnectionPool {
         int attempts = config.getConnectionRetryAttempts();
         long delayMs = config.getConnectionRetryDelayMs();
         IOException lastException = null;
+        long backoffMs = 0;
 
         for (int i = 0; i < attempts; i++) {
+            int attemptNumber = i + 1;
+
+            RetryObservability.RetryContext retryCtx = retryObservability.startRetry(
+                    COMPONENT_NAME, "connect", attemptNumber, attempts, backoffMs);
+
             try {
                 String handle = client.connect(config.getUsername(), config.getPassword());
 
@@ -264,20 +279,28 @@ public class YawlConnectionPool {
                     throw new IOException("Connection failed: " + handle);
                 }
 
+                retryCtx.recordSuccess();
+                retryObservability.completeSequence(COMPONENT_NAME, "connect", true, attemptNumber);
                 return handle;
             } catch (IOException e) {
                 lastException = e;
-                final int attemptNumber = i + 1;
+                retryCtx.recordFailure(e);
+
+                final int currentAttemptNumber = attemptNumber;
                 final int totalAttempts = attempts;
                 final String errorMessage = e.getMessage();
-                LOGGER.warning(() -> "Connection attempt " + attemptNumber + "/" + totalAttempts +
+                LOGGER.warning(() -> "Connection attempt " + currentAttemptNumber + "/" + totalAttempts +
                         " failed for " + sessionId + ": " + errorMessage);
 
                 if (i < attempts - 1) {
+                    backoffMs = delayMs * (i + 1);
+                    retryObservability.recordBackoff(COMPONENT_NAME, "connect", backoffMs);
+
                     try {
-                        Thread.sleep(delayMs * (i + 1));
+                        Thread.sleep(backoffMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
+                        retryObservability.completeSequence(COMPONENT_NAME, "connect", false, attemptNumber);
                         throw new IOException("Connection interrupted", ie);
                     }
                 }
@@ -285,6 +308,7 @@ public class YawlConnectionPool {
         }
 
         metrics.recordConnectionError("connection_failed");
+        retryObservability.completeSequence(COMPONENT_NAME, "connect", false, attempts);
         throw new IOException("Failed to connect to YAWL engine after " + attempts +
                 " attempts: " + config.getEngineUrl(), lastException);
     }
@@ -474,10 +498,16 @@ public class YawlConnectionPool {
             boolean healthy = true;
             int attempts = config.getHealthCheckRetryAttempts();
             long delayMs = config.getHealthCheckRetryDelayMs();
+            long backoffMs = 0;
 
             // Try to borrow and validate a session
             for (int i = 0; i < attempts; i++) {
+                int attemptNumber = i + 1;
                 YawlSession session = null;
+
+                RetryObservability.RetryContext retryCtx = retryObservability.startRetry(
+                        COMPONENT_NAME, "health-check", attemptNumber, attempts, backoffMs);
+
                 try {
                     session = pool.borrowObject(Duration.ofSeconds(5));
                     boolean valid = session.validate();
@@ -485,14 +515,18 @@ public class YawlConnectionPool {
 
                     if (valid) {
                         healthy = true;
+                        retryCtx.recordSuccess();
+                        retryObservability.completeSequence(COMPONENT_NAME, "health-check", true, attemptNumber);
                         break;
                     } else {
                         healthy = false;
-                        LOGGER.warning("Health check: session validation failed (attempt " + (i + 1) + "/" + attempts + ")");
+                        retryCtx.recordFailure(new RuntimeException("Session validation failed"));
+                        LOGGER.warning("Health check: session validation failed (attempt " + attemptNumber + "/" + attempts + ")");
                     }
                 } catch (Exception e) {
                     healthy = false;
-                    LOGGER.warning("Health check failed (attempt " + (i + 1) + "/" + attempts + "): " + e.getMessage());
+                    retryCtx.recordFailure(e);
+                    LOGGER.warning("Health check failed (attempt " + attemptNumber + "/" + attempts + "): " + e.getMessage());
 
                     if (session != null) {
                         try {
@@ -502,10 +536,14 @@ public class YawlConnectionPool {
                     }
 
                     if (i < attempts - 1) {
+                        backoffMs = delayMs;
+                        retryObservability.recordBackoff(COMPONENT_NAME, "health-check", backoffMs);
+
                         try {
                             Thread.sleep(delayMs);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
+                            retryObservability.completeSequence(COMPONENT_NAME, "health-check", false, attemptNumber);
                             break;
                         }
                     }
@@ -519,6 +557,7 @@ public class YawlConnectionPool {
                         ", idle=" + metrics.getIdleConnections());
             } else {
                 LOGGER.warning("Health check failed: engine may be unavailable");
+                retryObservability.completeSequence(COMPONENT_NAME, "health-check", false, attempts);
             }
 
         } finally {
@@ -626,6 +665,86 @@ public class YawlConnectionPool {
                 "created=" + metrics.getTotalCreated() +
                 ", destroyed=" + metrics.getTotalDestroyed() +
                 ", borrowed=" + metrics.getTotalBorrowed());
+    }
+
+    /**
+     * Borrow a session with fallback when pool is exhausted.
+     * If no session is available within timeout, uses the fallback supplier.
+     * Records fallback operations with FallbackObservability.
+     *
+     * @param timeoutMs maximum time to wait in milliseconds
+     * @param fallbackSupplier supplier for fallback session when pool exhausted
+     * @param fallbackDataTimestamp timestamp when fallback session data was created
+     * @return a valid YawlSession (from pool or fallback)
+     */
+    public YawlSession borrowSessionWithFallback(long timeoutMs,
+                                                 Supplier<YawlSession> fallbackSupplier,
+                                                 Instant fallbackDataTimestamp) {
+        if (shutdown.get()) {
+            throw new IllegalStateException("Pool is shutdown");
+        }
+        if (!initialized.get()) {
+            throw new IllegalStateException("Pool not initialized");
+        }
+
+        long startTime = System.currentTimeMillis();
+
+        try {
+            YawlSession session = pool.borrowObject(Duration.ofMillis(timeoutMs));
+            long waitTime = System.currentTimeMillis() - startTime;
+            metrics.recordBorrowed(waitTime);
+            updateMetrics();
+            return session;
+        } catch (NoSuchElementException e) {
+            // Pool exhausted - use fallback with observability
+            metrics.recordBorrowTimeout();
+
+            if (fallbackSupplier == null) {
+                throw new NoSuchElementException("Timeout waiting for YAWL connection after " + timeoutMs + "ms and no fallback provided");
+            }
+
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+            FallbackObservability.FallbackResult result = fallbackObs.recordFallback(
+                "connection-pool",
+                "borrowSession",
+                FallbackObservability.FallbackReason.BULKHEAD_FULL,
+                FallbackObservability.FallbackSource.SECONDARY_SERVICE,
+                fallbackSupplier,
+                fallbackDataTimestamp,
+                e
+            );
+
+            if (result.isStale()) {
+                LOGGER.warning(() -> "Connection pool fallback served stale session (age=" +
+                    result.getDataAgeMs() + "ms)");
+            }
+
+            LOGGER.info(() -> "Used fallback session due to pool exhaustion");
+            @SuppressWarnings("unchecked")
+            YawlSession fallbackSession = (YawlSession) result.getValue();
+            return fallbackSession;
+        } catch (Exception e) {
+            metrics.recordConnectionError("borrow_failed");
+
+            if (fallbackSupplier != null) {
+                FallbackObservability fallbackObs = FallbackObservability.getInstance();
+                FallbackObservability.FallbackResult result = fallbackObs.recordFallback(
+                    "connection-pool",
+                    "borrowSession",
+                    FallbackObservability.FallbackReason.SERVICE_ERROR,
+                    FallbackObservability.FallbackSource.SECONDARY_SERVICE,
+                    fallbackSupplier,
+                    Instant.now(),
+                    e
+                );
+
+                @SuppressWarnings("unchecked")
+                YawlSession fallbackSession = (YawlSession) result.getValue();
+                return fallbackSession;
+            }
+
+            throw new RuntimeException("Failed to borrow YawlSession: " + e.getMessage(), e);
+        }
     }
 
     /**

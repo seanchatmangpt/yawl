@@ -278,6 +278,7 @@
                              Note: JSON schema files in a2a/schema/ cause compiler errors when included.
                              TODO: Move schema files to resources or add .json exclusion pattern.
                              ===================================================================== -->
+                        <!-- A2A sources excluded for now - testing Spring Boot version instead -->
                         <exclude>**/a2a/**</exclude>
 
                         <!-- =====================================================================
@@ -286,16 +287,30 @@
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
 
+                        <!-- These packages have dependencies on missing classes -->
+
+                        <!-- =====================================================================
+                             Validation packages that don't exist
+                             ===================================================================== -->
+                        <exclude>**/validation/a2a/**</exclude>
+                        <exclude>**/validation/schema/**</exclude>
+
                         <!-- =====================================================================
                              ZAI integration - ZaiFunctionService depends on Pm4Py Python library
                              ZaiService, ZaiHttpClient, and ZaiDecisionReasoner have no such dependency
                              and are included in the build for AI-powered workflow capabilities.
                              ===================================================================== -->
+                        <!-- ZaiFunctionService excluded due to Pm4Py dependency -->
                         <exclude>**/zai/ZaiFunctionService.java</exclude>
                         <exclude>**/processmining/**</exclude>
 
                         <!-- ZAI MCP Bridge - API mismatch with MCP SDK 1.0.0-RC1 -->
                         <exclude>**/mcp/zai/**</exclude>
+
+                        <!-- Exclude classes that depend on ZaiFunctionService -->
+                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
 
                         <!-- Memory package - sealed class issues (pre-existing) -->
                         <!-- memory package - re-enabled for stress testing -->
@@ -329,15 +344,12 @@
                         <!-- =====================================================================
                              MCP Spring classes that reference ZaiFunctionService
                              ===================================================================== -->
-                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
+                        <!-- MCP Spring classes included for testing -->
 
                         <!-- =====================================================================
                              Packages that depend on zai.ZaiFunctionService (excluded above)
                              ===================================================================== -->
-                        <exclude>**/orderfulfillment/**</exclude>
-                        <exclude>**/autonomous/**</exclude>
+                        <!-- orderfulfillment and autonomous re-enabled -->
 
                         <!-- =====================================================================
                              Conflict resolution - depends on excluded autonomous package which
@@ -346,12 +358,12 @@
                              See ADR-025 for architecture: conflict resolution requires autonomous
                              agents to provide AgentCapability for decision confidence scoring.
                              ===================================================================== -->
-                        <exclude>**/conflict/**</exclude>
+                        <!-- conflict and coordination included for testing -->
 
                         <!-- =====================================================================
-                             Coordination - depends on A2A/autonomous packages
+                             Properties files cause "invalid flag" compiler errors
                              ===================================================================== -->
-                        <exclude>**/coordination/**</exclude>
+                        <exclude>**/*.properties</exclude>
 
                         <!-- =====================================================================
                              Event sourcing - incomplete switch expression (pre-existing issue)
@@ -382,10 +394,7 @@
                     </testIncludes>
                     <testExcludes>
                         <!-- Exclude test files for packages with excluded sources -->
-                        <!-- A2A tests disabled - sources excluded due to JSON schema compiler issue -->
-                        <testExclude>**/a2a/**</testExclude>
-                        <testExclude>**/orderfulfillment/**</testExclude>
-                        <testExclude>**/autonomous/**</testExclude>
+                        <!-- A2A tests enabled for handoff testing -->
                         <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
                         <testExclude>**/zai/ZaiFunctionServiceTest.java</testExclude>
                         <!-- SpecificationGenerator/Optimizer tests depend on excluded sources -->

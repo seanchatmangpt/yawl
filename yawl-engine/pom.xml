@@ -288,13 +288,17 @@
                         <include>**/org/yawlfoundation/yawl/logging/YLogPredicateWorkItemParser.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YLogServer.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YXESBuilder.java</include>
+                        <!-- Util classes that depend on engine observability - moved from yawl-utilities -->
+                        <include>**/org/yawlfoundation/yawl/util/ErrorSpanHelper.java</include>
                     </includes>
                     <excludes>
-                        <!-- Actuator, observability and REST classes require Spring Boot/OpenTelemetry/JAX-RS
+                        <!-- Actuator and REST classes require Spring Boot/JAX-RS
                              which are compiled in yawl-webapps module with full Spring Boot support -->
-                        <exclude>**/org/yawlfoundation/yawl/engine/actuator/**</exclude>
-                        <exclude>**/org/yawlfoundation/yawl/engine/observability/**</exclude>
-                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/rest/**</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/actuator/**/*.java</exclude>
+                        <!-- observability classes are now included - they have OpenTelemetry dependencies available -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/rest/**/*.java</exclude>
+                        <!-- Resilience health indicators require resilience4j dependencies not in local cache -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/**/*.java</exclude>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>

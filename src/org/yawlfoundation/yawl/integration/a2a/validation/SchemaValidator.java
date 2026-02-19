@@ -69,7 +69,7 @@ public class SchemaValidator {
      * Constructs a new SchemaValidator with default configuration.
      */
     public SchemaValidator() {
-        this("src/main/resources/org/yawlfoundation/yawl/integration/a2a/schema/");
+        this("");
     }
 
     /**
@@ -186,11 +186,10 @@ public class SchemaValidator {
      * @throws IOException if schema cannot be loaded
      */
     private JsonNode loadSchema(String schemaName) throws IOException {
-        String schemaPath = schemaBasePath + schemaName;
-        URL schemaUrl = getClass()..getClassLoader().getResource(schemaPath);
+        URL schemaUrl = getClass().getClassLoader().getResource(schemaName);
 
         if (schemaUrl == null) {
-            throw new IOException("Schema not found: " + schemaPath);
+            throw new IOException("Schema not found: " + schemaName);
         }
 
         try (InputStream inputStream = schemaUrl.openStream()) {

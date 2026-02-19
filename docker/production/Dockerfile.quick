@@ -1,0 +1,34 @@
+# Quick Dockerfile for MCP-A2A app using existing JAR
+FROM eclipse-temurin:25-jre-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Create non-root user for security
+RUN addgroup -S yawl && \
+    adduser -S dev -G yawl && \
+    mkdir -p /app && \
+    chown -R dev:yawl /app
+
+# Switch to non-root user
+USER dev:yawl
+
+# Set working directory
+WORKDIR /app
+
+# Copy JAR from build context
+COPY app.jar app.jar
+
+# Environment variables for optimization
+ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/./urandom"
+
+# Expose ports
+EXPOSE 8080 8081 8082
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8081/health || exit 1
+
+# Default command to start the A2A server
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

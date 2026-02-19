@@ -35,7 +35,6 @@ import io.opentelemetry.exporter.logging.LoggingMetricExporter;
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.prometheus.PrometheusHttpServer;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
@@ -175,21 +174,17 @@ public class OpenTelemetryConfig {
 
     /**
      * Create the metric reader for Prometheus.
+     * Prometheus export is handled via Micrometer in yawl-monitoring module.
+     * This returns a PeriodicMetricReader with LoggingMetricExporter as fallback.
      *
-     * @return the Prometheus MetricReader
+     * @return the MetricReader for metrics collection
      */
     @Bean
     public MetricReader prometheusMetricReader() {
-        try {
-            MetricReader reader = PrometheusHttpServer.builder()
-                .setPort(prometheusPort)
-                .build();
-            _logger.info("Prometheus MetricReader configured on port: {}", prometheusPort);
-            return reader;
-        } catch (Exception e) {
-            _logger.error("Failed to create Prometheus MetricReader: {}", e.getMessage());
-            throw new RuntimeException("Failed to configure Prometheus metrics", e);
-        }
+        _logger.info("Using PeriodicMetricReader with LoggingMetricExporter (Prometheus via Micrometer)");
+        return PeriodicMetricReader.builder(LoggingMetricExporter.create())
+            .setInterval(Duration.ofSeconds(metricsExportInterval))
+            .build();
     }
 
     /**

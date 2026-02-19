@@ -271,6 +271,32 @@ topology = hierarchical(μ) | mesh(integration)
 
 **A** = μ(O) | O ⊨ Java+BPM+PetriNet | μ∘μ = μ | drift(A) → 0
 
-**Verification**: Session setup via `.claude/hooks/session-start.sh` (Maven + H2 database)
+**Verification**: Session setup via `.claude/hooks/session-start.sh` (Maven + H2 database + Observatory)
 **Validation**: PostToolUse guards enforce H automatically
 **Quality**: Stop hook ensures clean state before completion
+
+## 📊 Observatory Cache Integration
+
+**Automatic on SessionStart**:
+- Observatory runs in `--facts` mode (~13s) to generate cached codebase facts
+- Facts stored in `docs/v6/latest/facts/` (24 JSON files)
+- Receipt with commit hash for staleness checking
+- Available immediately when sessions start
+
+**Reading Cached Data**:
+```bash
+# Full summary (default)
+./scripts/read-observatory.sh
+
+# Show specific data types
+./scripts/read-observatory.sh facts      # Facts summary only
+./scripts/read-observatory.sh diagrams   # Diagrams summary only
+./scripts/read-observatory.sh index      # INDEX.md content
+
+# Access raw facts directly
+cat docs/v6/latest/facts/modules.json    # Module inventory
+cat docs/v6/latest/facts/reactor.json    # Build order
+cat docs/v6/latest/facts/tests.json      # Test coverage
+```
+
+**Protocol**: Always read facts first before exploring codebase. 1 fact file ≈ 50 tokens vs. 5000 tokens for grep compression (100× savings).

@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.autonomous.resilience;
 
+import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -7,6 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.resilience.observability.FallbackObservability;
 
 /**
  * Circuit breaker for external service calls.
@@ -215,6 +217,63 @@ public class CircuitBreaker {
         state.set(State.CLOSED);
         consecutiveFailures.set(0);
         logger.info("Circuit breaker [{}] manually reset to CLOSED", name);
+    }
+
+    /**
+     * Execute operation through circuit breaker with fallback.
+     * If circuit is open, uses fallback supplier instead of failing fast.
+     * Records all fallback operations with observability.
+     *
+     * @param operation Operation to execute
+     * @param fallback Fallback supplier when circuit is open
+     * @param <T> Return type
+     * @return Result of successful execution or fallback
+     * @throws Exception If operation fails and circuit is closed (no fallback used)
+     */
+    public <T> T executeWithFallback(Callable<T> operation,
+                                     java.util.function.Supplier<T> fallback) throws Exception {
+        if (operation == null) {
+            throw new IllegalArgumentException("operation cannot be null");
+        }
+
+        State currentState = getStateAndUpdate();
+
+        if (currentState == State.OPEN) {
+            String msg = String.format("Circuit breaker [%s] is OPEN, using fallback", name);
+            logger.warn(msg);
+
+            if (fallback == null) {
+                throw new CircuitBreakerOpenException(
+                    "Circuit breaker [" + name + "] is OPEN and no fallback provided");
+            }
+
+            // Record fallback with observability
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+            FallbackObservability.FallbackResult result = fallbackObs.recordCircuitBreakerFallback(
+                "circuit-breaker-" + name,
+                "execute",
+                fallback
+            );
+
+            if (result.isStale()) {
+                logger.warn("Circuit breaker [{}] fallback served stale data (age={}ms)",
+                           name, result.getDataAgeMs());
+            }
+
+            @SuppressWarnings("unchecked")
+            T typedResult = (T) result.getValue();
+            return typedResult;
+        }
+
+        try {
+            T result = operation.call();
+            onSuccess();
+            return result;
+
+        } catch (Exception e) {
+            onFailure();
+            throw e;
+        }
     }
 
     public String getName() {
