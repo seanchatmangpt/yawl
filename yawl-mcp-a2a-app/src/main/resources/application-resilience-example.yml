@@ -1,0 +1,82 @@
+# YAWL MCP-A2A Application - Resilience Configuration Example
+# ============================================================
+# This file demonstrates the configuration options for MCP client
+# circuit breaker, retry, and fallback patterns.
+#
+# Copy relevant sections to your application.yml and adjust as needed.
+
+yawl:
+  mcp:
+    # Resilience patterns for MCP client
+    resilience:
+      # Master switch for all resilience features
+      # Set to false to disable circuit breaker, retry, and fallback
+      enabled: true
+
+      # Circuit Breaker Configuration
+      # Prevents cascade failures when MCP servers are unavailable
+      circuit-breaker:
+        enabled: true
+        # Failure rate threshold (1-100) that triggers circuit OPEN
+        # When this percentage of calls fail, the circuit opens
+        failure-rate-threshold: 50
+        # Slow call rate threshold (1-100) for circuit OPEN
+        slow-call-rate-threshold: 50
+        # Duration in seconds that defines a "slow call"
+        slow-call-duration-seconds: 10
+        # Duration in seconds the circuit stays OPEN before trying HALF_OPEN
+        wait-duration-open-state-seconds: 30
+        # Number of calls tracked in the sliding window
+        sliding-window-size: 100
+        # Minimum calls before failure rate is calculated
+        minimum-number-of-calls: 10
+        # Number of test calls permitted in HALF_OPEN state
+        permitted-number-of-calls-in-half-open-state: 5
+        # Automatically transition from OPEN to HALF_OPEN after wait duration
+        automatic-transition-from-open-to-half-open: true
+
+      # Retry with Jitter Configuration
+      # Handles transient failures with exponential backoff
+      retry:
+        enabled: true
+        # Maximum number of retry attempts (including initial call)
+        max-attempts: 3
+        # Base wait duration between retries in milliseconds
+        wait-duration-ms: 500
+        # Multiplier for exponential backoff
+        # wait = baseWait * (multiplier ^ attemptNumber)
+        exponential-backoff-multiplier: 2.0
+        # Jitter factor (0.0 - 1.0) to randomize retry timing
+        # Helps avoid thundering herd when multiple clients retry
+        jitter-factor: 0.5
+
+      # Fallback Strategy Configuration
+      # Provides degraded responses when circuits are open
+      fallback:
+        enabled: true
+        # Time-to-live for cached fallback responses in seconds
+        cache-ttl-seconds: 60
+        # Return stale cached data while fetching fresh data
+        stale-while-revalidate: true
+        # Behavior when circuit is open and no cache available
+        # Options: "empty", "error", "default"
+        fallback-response-behavior: "error"
+
+# Spring Boot Actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,resilience4j
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# Logging for circuit breaker events
+logging:
+  level:
+    io.github.resilience4j: INFO
+    org.yawlfoundation.yawl.mcp.a2a.service: DEBUG

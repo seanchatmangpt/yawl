@@ -1,0 +1,19 @@
+# YAWL MCP-A2A Application Namespace
+# Dedicated namespace for the MCP-A2A Spring Boot application
+# providing both MCP server and A2A agent capabilities.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/version: "6.0.0-Alpha"
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: yawl
+  annotations:
+    # Istio sidecar injection enabled for service mesh
+    sidecar.istio.io/inject: "true"
+    # Scheduler tolerations for standard node pools
+    scheduler.alpha.kubernetes.io/defaultTolerations: "[]"
+    scheduler.alpha.kubernetes.io/tolerationsWhitelist: "[]"

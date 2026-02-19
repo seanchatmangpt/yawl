@@ -175,6 +175,12 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+        <!-- Connection Pooling -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -285,6 +291,12 @@
                         <exclude>**/zai/ZaiFunctionService.java</exclude>
                         <exclude>**/processmining/**</exclude>
 
+                        <!-- ZAI MCP Bridge - API mismatch with MCP SDK 1.0.0-RC1 -->
+                        <exclude>**/mcp/zai/**</exclude>
+
+                        <!-- Memory package - sealed class issues (pre-existing) -->
+                        <!-- memory package - re-enabled for stress testing -->
+
                         <!-- =====================================================================
                              SPIFFE+ZAI integration - depends on zai.ZaiFunctionService
                              ===================================================================== -->
@@ -358,8 +370,12 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/mcp/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/spiffe/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/dedup/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/pool/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/memory/**</testInclude>
                         <!-- a2a tests excluded - sources excluded from build -->
                         <testInclude>**/org/yawlfoundation/yawl/integration/zai/**</testInclude>
+                        <!-- MCP-A2A end-to-end integration tests -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/YawlMcpA2aEndToEndIntegrationTest.java</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <!-- Exclude test files for packages with excluded sources -->

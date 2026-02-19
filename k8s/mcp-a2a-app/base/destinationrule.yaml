@@ -1,0 +1,83 @@
+# Istio DestinationRule for YAWL MCP-A2A Application
+# Configures traffic policies and load balancing for the application.
+# Requires Istio service mesh to be installed.
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: yawl-mcp-a2a-app
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: destination-rule
+    app.kubernetes.io/part-of: yawl
+spec:
+  host: yawl-mcp-a2a-app.yawl-mcp-a2a.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+        consecutiveGatewayErrors: 5
+        interval: 30s
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 25
+  subsets:
+    - name: stable
+      labels:
+        app.kubernetes.io/version: stable
+    - name: canary
+      labels:
+        app.kubernetes.io/version: canary
+---
+# Istio VirtualService for YAWL MCP-A2A Application
+# Configures routing rules and traffic splitting
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: yawl-mcp-a2a-app
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: virtual-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  hosts:
+    - yawl-mcp-a2a-app.yawl-mcp-a2a.svc.cluster.local
+  http:
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: yawl-mcp-a2a-app.yawl-mcp-a2a.svc.cluster.local
+            subset: canary
+          weight: 100
+    - route:
+        - destination:
+            host: yawl-mcp-a2a-app.yawl-mcp-a2a.svc.cluster.local
+            subset: stable
+          weight: 100
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: gateway-error,connect-failure,refused-stream
+      timeout: 30s
+      fault:
+        delay:
+          percentage:
+            value: 0
+          fixedDelay: 0s

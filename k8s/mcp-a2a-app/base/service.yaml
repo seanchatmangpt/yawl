@@ -1,0 +1,92 @@
+# YAWL MCP-A2A Application Services
+# Exposes the unified MCP-A2A application via multiple ClusterIP services.
+# Each service targets a specific port for clear separation of concerns.
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mcp-a2a-app
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "6.0.0-Alpha"
+  annotations:
+    # Istio service mesh annotations
+    traffic.istio.io/loadBalancerPort: "8080"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+  ports:
+    # Main HTTP port (Actuator, Spring MVC endpoints)
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+# MCP HTTP Service
+# Dedicated service for MCP protocol over HTTP transport
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mcp-a2a-mcp
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: mcp-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+  ports:
+    - name: mcp-http
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+---
+# A2A REST Service
+# Dedicated service for Agent-to-Agent REST protocol
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mcp-a2a-a2a
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: a2a-service
+    app.kubernetes.io/part-of: yawl
+  annotations:
+    # Enable A2A agent card discovery
+    a2a.io/agent-card-path: "/.well-known/agent.json"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+  ports:
+    - name: a2a-rest
+      port: 8082
+      targetPort: 8082
+      protocol: TCP
+---
+# Headless service for StatefulSet compatibility (if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-mcp-a2a-app-headless
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: headless-service
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

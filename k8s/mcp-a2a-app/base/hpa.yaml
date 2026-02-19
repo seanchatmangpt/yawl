@@ -1,0 +1,77 @@
+# HorizontalPodAutoscaler for YAWL MCP-A2A Application
+# Automatically scales the deployment based on CPU utilization and custom metrics.
+# Integrates with Prometheus Adapter for custom metric-based scaling.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yawl-mcp-a2a-app-hpa
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: hpa
+    app.kubernetes.io/part-of: yawl
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yawl-mcp-a2a-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU-based scaling (primary metric)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Memory-based scaling (secondary metric)
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    # Scale-up behavior
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        # Allow doubling the number of pods
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        # Or add up to 4 pods at a time
+        - type: Pods
+          value: 4
+          periodSeconds: 60
+      selectPolicy: Max
+    # Scale-down behavior
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        # Remove at most 25% of pods
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+        # Or remove at most 2 pods at a time
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Min
+---
+# PodDisruptionBudget for high availability during cluster maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yawl-mcp-a2a-app-pdb
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: pdb
+    app.kubernetes.io/part-of: yawl
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yawl-mcp-a2a-app

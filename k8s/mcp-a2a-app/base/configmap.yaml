@@ -1,0 +1,87 @@
+# YAWL MCP-A2A Application ConfigMap
+# Configuration for the unified MCP-A2A Spring Boot application.
+# Environment-specific overrides should use kustomize overlays.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-mcp-a2a-config
+  namespace: yawl-mcp-a2a
+  labels:
+    app.kubernetes.io/name: yawl-mcp-a2a-app
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: yawl
+    app.kubernetes.io/version: "6.0.0-Alpha"
+data:
+  # Spring profile activation
+  SPRING_PROFILES_ACTIVE: "prod"
+
+  # Server configuration
+  SERVER_PORT: "8080"
+  SERVER_SHUTDOWN: "graceful"
+
+  # YAWL Engine connection (internal cluster address)
+  YAWL_ENGINE_URL: "http://yawl-engine.yawl.svc.cluster.local:8080/yawl"
+  YAWL_USERNAME: "admin"
+
+  # MCP Server configuration
+  MCP_ENABLED: "true"
+  MCP_TRANSPORT: "stdio"
+  MCP_HTTP_ENABLED: "true"
+  MCP_HTTP_PORT: "8081"
+  MCP_HTTP_PATH: "/mcp"
+  MCP_SERVER_NAME: "yawl-mcp-server"
+  MCP_SERVER_VERSION: "6.0.0-Alpha"
+  MCP_LOG_LEVEL: "INFO"
+
+  # A2A Agent configuration
+  A2A_ENABLED: "true"
+  A2A_AGENT_NAME: "yawl-workflow-agent"
+  A2A_REST_ENABLED: "true"
+  A2A_REST_PORT: "8082"
+  A2A_JSONRPC_ENABLED: "false"
+  A2A_JSONRPC_PORT: "8083"
+  A2A_SERVER_NAME: "YAWL Workflow Engine"
+  A2A_SERVER_VERSION: "6.0.0-Alpha"
+  A2A_SPIFFE_TRUST_DOMAIN: "yawl.cluster.local"
+  A2A_JWT_ISSUER: "yawl-mcp-a2a"
+  A2A_LOG_LEVEL: "INFO"
+
+  # Agent registry for service discovery
+  AGENT_REGISTRY_URL: "http://yawl-agent-registry.yawl.svc.cluster.local:9090"
+
+  # Session management
+  SESSION_RECONNECT_INTERVAL_SECONDS: "30"
+
+  # Tool execution settings
+  TOOL_TIMEOUT_SECONDS: "60"
+
+  # OpenTelemetry configuration
+  OTEL_SDK_DISABLED: "false"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "otlp"
+  OTEL_LOGS_EXPORTER: "otlp"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4317"
+
+  # JVM options optimized for Java 25 with virtual threads
+  JAVA_OPTS: >-
+    -Xms1g
+    -Xmx2g
+    -XX:+UseZGC
+    -XX:ZGenerational=true
+    -XX:+UseCompactObjectHeaders
+    -XX:+UseStringDeduplication
+    -XX:MaxGCPauseMillis=10
+    -XX:+UseAOTCache
+    --enable-preview
+    -Djava.security.egd=file:/dev/./urandom
+    -Dlog4j2.configurationFile=classpath:log4j2.xml
+
+  # Logging configuration
+  LOG_LEVEL_ROOT: "WARN"
+  LOG_LEVEL_YAWL: "INFO"
+  LOG_LEVEL_SPRING: "WARN"
+  LOG_FILE: "/var/log/yawl/mcp-a2a.log"
+
+  # Actuator configuration
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
