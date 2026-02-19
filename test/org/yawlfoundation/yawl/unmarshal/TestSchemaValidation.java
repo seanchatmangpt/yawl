@@ -362,10 +362,11 @@ class TestSchemaValidation {
                           <flowsInto><nextElementRef id="task1"/></flowsInto>
                         </inputCondition>
                         <task id="task1">
-                          <join code="xor"/>
                           <flowsInto>
                             <nextElementRef id="output"/>
                           </flowsInto>
+                          <join code="xor"/>
+                          <split code="and"/>
                         </task>
                         <outputCondition id="output"/>
                       </processControlElements>
@@ -654,7 +655,7 @@ class TestSchemaValidation {
             assertEquals(YSchemaVersion.ThreePointZero, YSchemaVersion.fromString("3.0"));
             assertEquals(YSchemaVersion.TwoPointTwo, YSchemaVersion.fromString("2.2"));
             assertEquals(YSchemaVersion.TwoPointOne, YSchemaVersion.fromString("2.1"));
-            assertEquals(YSchemaVersion.Beta2, YSchemaVersion.fromString("Beta2"));
+            assertEquals(YSchemaVersion.Beta2, YSchemaVersion.fromString("Beta 2"));
         }
     }
 

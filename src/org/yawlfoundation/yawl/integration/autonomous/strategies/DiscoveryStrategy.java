@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
  *
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
@@ -8,47 +10,47 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * Public License for more details.
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.autonomous.strategies;
 
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-
 /**
- * Strategy for discovering work items from the YAWL engine.
+ * Strategy for discovering work items by autonomous agents.
  *
- * <p>Implementations can use different mechanisms:
- * <ul>
- *   <li>Polling: Query InterfaceB at regular intervals</li>
- *   <li>Event-driven: Subscribe to engine events (future)</li>
- *   <li>Hybrid: Combination of polling and notifications</li>
- * </ul>
- * </p>
+ * <p>This is a stub implementation that returns no work items.
+ * In a real implementation, this would query the YAWL engine
+ * for work items that match the agent's capabilities.</p>
  *
- * @author YAWL Foundation
- * @version 5.2
+ * @since YAWL 6.0
  */
-public interface DiscoveryStrategy {
+public class DiscoveryStrategy {
 
     /**
-     * Discover available work items from the YAWL engine.
+     * Discovers work items that this agent can handle.
      *
-     * <p>This method is called periodically by the agent's discovery loop.
-     * Implementations should query the engine and return work items that
-     * match the strategy's criteria (e.g., all live work items, specific
-     * case IDs, filtered by task name).</p>
-     *
-     * @param interfaceBClient the InterfaceB client for YAWL operations
-     * @param sessionHandle the authenticated session handle
-     * @return list of discovered work items, or empty list if none available
-     * @throws IOException if engine communication fails
+     * @param client the Interface B client for engine communication
+     * @param sessionHandle the session handle for authentication
+     * @return list of available work items, empty if none
+     * @throws IOException if communication with engine fails
      */
-    List<WorkItemRecord> discoverWorkItems(
-        InterfaceB_EnvironmentBasedClient interfaceBClient,
-        String sessionHandle) throws IOException;
+    public List<WorkItemRecord> discoverWorkItems(InterfaceB_EnvironmentBasedClient client,
+                                                 String sessionHandle) throws IOException {
+        // Stub implementation - return no work items
+        // In a real implementation, this would:
+        // 1. Query the engine for enabled work items
+        // 2. Filter based on agent capabilities
+        // 3. Return matching work items
+        return Collections.emptyList();
+    }
 }

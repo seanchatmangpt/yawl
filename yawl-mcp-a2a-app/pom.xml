@@ -223,12 +223,6 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.prometheus</groupId>
-                    <artifactId>prometheus-metrics-exposition-textformats</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- ============================================================== -->

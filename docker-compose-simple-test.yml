@@ -1,29 +1,19 @@
-# Simple Docker Compose for testing
-version: '3.8'
+# =============================================================================
+# YAWL v6.0.0 - Simple Docker Compose for MCP-A2A Testing
+# =============================================================================
+# This compose file runs MCP-A2A service without requiring the full YAWL engine.
+# The MCP-A2A service operates in standalone mode for testing purposes.
+#
+# Usage:
+#   docker compose -f docker-compose-simple-test.yml up -d
+#   docker compose -f docker-compose-simple-test.yml logs -f yawl-mcp-a2a
+#   docker compose -f docker-compose-simple-test.yml down
+# =============================================================================
 
 services:
-  # YAWL Engine
-  yawl-engine:
-    build:
-      context: .
-      dockerfile: docker/production/Dockerfile.engine
-    image: yawl-engine:6.0.0-alpha
-    container_name: yawl-engine-simple
-    hostname: yawl-engine
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
-      interval: 10s
-      timeout: 5s
-      start_period: 60s
-      retries: 5
-    networks:
-      - yawl-network
-
-  # MCP-A2A Application
+  # =============================================================================
+  # MCP-A2A Application (Spring Boot)
+  # =============================================================================
   yawl-mcp-a2a:
     build:
       context: .
@@ -36,7 +26,7 @@ services:
       - "18081:8081"  # MCP HTTP endpoint
       - "18082:8082"  # A2A REST endpoint
     environment:
-      # Engine connection (mock for testing)
+      # Engine connection (mock for testing - no engine dependency)
       YAWL_ENGINE_URL: http://localhost:8080/yawl
       YAWL_USERNAME: admin
       YAWL_PASSWORD: YAWL
@@ -47,24 +37,62 @@ services:
       A2A_API_KEY: "test-api-key-12345"
 
       # MCP Configuration
+      MCP_ENABLED: "true"
+      MCP_TRANSPORT: "http"
       MCP_HTTP_ENABLED: "true"
-      MCP_HTTP_PORT: 8081
+      MCP_HTTP_PORT: "8081"
 
-      # Spring profiles
+      # A2A Configuration
+      A2A_ENABLED: "true"
+      A2A_REST_ENABLED: "true"
+      A2A_AGENT_NAME: "yawl-test-agent"
+
+      # Spring profiles and disable problematic features
       SPRING_PROFILES_ACTIVE: test
-    # depends_on:
-      # yawl-engine:
-      #   condition: service_healthy
+      SERVER_PORT: "8080"
+
+      # Disable Prometheus metrics (fixes ClassNotFoundException)
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+      MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "false"
+      MANAGEMENT_METRICS_ENABLE: "false"
+      MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "false"
+
+      # Disable OpenTelemetry
+      OTEL_SDK_DISABLED: "true"
+      OTEL_TRACES_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+
+      # YAWL metrics
+      YAWL_METRICS_ENABLED: "false"
+      LOG_FILE: ""
+
+      # JVM options
+      JAVA_OPTS: >-
+        -XX:+UseZGC
+        -XX:+UseCompactObjectHeaders
+        -XX:MaxRAMPercentage=75.0
+        -Djava.security.egd=file:/dev/./urandom
+        -Dspring.main.lazy-initialization=true
+
     networks:
       - yawl-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
       interval: 10s
       timeout: 5s
-      start_period: 60s
-      retries: 5
+      start_period: 90s
+      retries: 10
+    restart: on-failure
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
+  # =============================================================================
   # Test Runner
+  # =============================================================================
   test-runner:
     image: alpine:3.19
     container_name: yawl-test-runner-simple
@@ -75,24 +103,40 @@ services:
       - ./scripts:/scripts:ro
       - ./test-results:/results
     environment:
-      YAWL_ENGINE_URL: http://yawl-engine:8080
       YAWL_MCP_URL: http://yawl-mcp-a2a:8081/mcp
       YAWL_A2A_URL: http://yawl-mcp-a2a:8082/a2a
+      YAWL_ENGINE_URL: http://yawl-mcp-a2a:8080
       A2A_API_KEY: test-api-key-12345
     command: >
       sh -c "
         apk add --no-cache curl jq bc &&
         echo 'Running A2A/MCP/Handoff tests...' &&
-        echo 'Engine health:' && curl -s http://yawl-engine:8080/actuator/health/liveness | jq . &&
+        echo 'Waiting for MCP-A2A service...' &&
+        sleep 5 &&
         echo 'MCP-A2A health:' && curl -s http://yawl-mcp-a2a:8080/actuator/health/liveness | jq . &&
         echo 'Test complete' > /results/test-summary.txt
       "
     networks:
       - yawl-network
+    restart: "no"
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   yawl-network:
     driver: bridge
+    name: yawl-test-network
+    labels:
+      app: yawl
+      environment: test
 
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   test-results:
+    name: yawl-test-results
+    labels:
+      app: yawl
+      description: "Test results output"

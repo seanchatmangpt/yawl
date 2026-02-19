@@ -16,13 +16,13 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.integration.autonomous.registry;
+package org.yawlfoundation.yawl.integration.a2a;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Information about an autonomous agent in the YAWL registry.
+ * Information about an autonomous agent in the YAWL system.
  *
  * <p>Provides agent identity, capabilities, and network endpoint for
  * agent-to-agent communication and work item handoff.</p>

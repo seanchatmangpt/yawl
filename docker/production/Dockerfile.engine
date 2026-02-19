@@ -41,7 +41,7 @@ RUN mvn -T 1.5C clean package \
 
 # Stage 2: Runtime (Minimal Java 25 JRE)
 # -----------------------------------------------------------------------------
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 ARG BUILD_DATE
 ARG VCS_REF

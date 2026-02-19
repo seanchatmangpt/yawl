@@ -18,18 +18,11 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Context information for an autonomous agent in the YAWL system.
+ * Context for an autonomous agent, providing identity and configuration.
  *
- * <p>Provides agent identity, security context, and operational state.
- * Used by the handoff service to coordinate agent-to-agent communication
- * and workflow item transfers.</p>
+ * <p>Agent context contains all the information needed to identify an agent
+ * and its operational parameters within the YAWL workflow system.</p>
  *
  * @since YAWL 6.0
  */
@@ -37,30 +30,35 @@ public class AgentContext {
 
     private final String agentId;
     private final String agentName;
-    private final AgentCapability capability;
-    private final String principalName;
-    private final Instant registrationTime;
-    private final Map<String, Object> properties;
-    private final String endpointUrl;
+    private final String engineUrl;
+    private final String sessionHandle;
 
     /**
      * Creates a new agent context.
      *
      * @param agentId the unique identifier for this agent
      * @param agentName the display name of this agent
-     * @param capability the capability describing what this agent can handle
-     * @param principalName the principal name for authentication (can be null)
-     * @param endpointUrl the URL where this agent can be reached
+     * @param engineUrl the URL of the YAWL engine
+     * @param sessionHandle the current session handle for engine communication
      */
-    public AgentContext(String agentId, String agentName, AgentCapability capability,
-                       String principalName, String endpointUrl) {
+    public AgentContext(String agentId, String agentName, String engineUrl, String sessionHandle) {
         this.agentId = agentId;
         this.agentName = agentName;
-        this.capability = capability;
-        this.principalName = principalName;
-        this.endpointUrl = endpointUrl;
-        this.registrationTime = Instant.now();
-        this.properties = new ConcurrentHashMap<>();
+        this.engineUrl = engineUrl;
+        this.sessionHandle = sessionHandle;
+    }
+
+    /**
+     * Creates an agent context from environment variables.
+     *
+     * @return the agent context from environment
+     */
+    public static AgentContext fromEnvironment() {
+        String agentId = System.getenv().getOrDefault("AGENT_ID", "agent-unknown");
+        String agentName = System.getenv().getOrDefault("AGENT_NAME", "Unknown Agent");
+        String engineUrl = System.getenv().getOrDefault("YAWL_ENGINE_URL", "http://localhost:8080/yawl");
+        String sessionHandle = System.getenv().getOrDefault("YAWL_SESSION_HANDLE", "");
+        return new AgentContext(agentId, agentName, engineUrl, sessionHandle);
     }
 
     /**
@@ -82,77 +80,29 @@ public class AgentContext {
     }
 
     /**
-     * Gets the capability describing what this agent can handle.
+     * Gets the YAWL engine URL.
      *
-     * @return the agent capability
+     * @return the engine URL
      */
-    public AgentCapability getCapability() {
-        return capability;
+    public String getEngineUrl() {
+        return engineUrl;
     }
 
     /**
-     * Gets the principal name for authentication.
+     * Gets the session handle for engine communication.
      *
-     * @return the principal name
+     * @return the session handle
      */
-    public String getPrincipalName() {
-        return principalName;
+    public String getSessionHandle() {
+        return sessionHandle;
     }
 
-    /**
-     * Gets the URL where this agent can be reached.
-     *
-     * @return the endpoint URL
-     */
-    public String getEndpointUrl() {
-        return endpointUrl;
-    }
-
-    /**
-     * Gets when this agent was registered.
-     *
-     * @return the registration time
-     */
-    public Instant getRegistrationTime() {
-        return registrationTime;
-    }
-
-    /**
-     * Gets a property value by name.
-     *
-     * @param key the property name
-     * @return the property value, or null if not set
-     */
-    public Object getProperty(String key) {
-        return properties.get(key);
-    }
-
-    /**
-     * Sets a property value.
-     *
-     * @param key the property name
-     * @param value the property value
-     */
-    public void setProperty(String key, Object value) {
-        properties.put(key, value);
-    }
-
-    /**
-     * Removes a property by name.
-     *
-     * @param key the property name
-     * @return the removed value, or null if not set
-     */
-    public Object removeProperty(String key) {
-        return properties.remove(key);
-    }
-
-    /**
-     * Gets all properties as a map.
-     *
-     * @return the properties map
-     */
-    public Map<String, Object> getProperties() {
-        return new ConcurrentHashMap<>(properties);
+    @Override
+    public String toString() {
+        return "AgentContext{" +
+                "agentId='" + agentId + '\'' +
+                ", agentName='" + agentName + '\'' +
+                ", engineUrl='" + engineUrl + '\'' +
+                '}';
     }
 }

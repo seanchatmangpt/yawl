@@ -2,7 +2,7 @@
 
 **Date**: Feb 2026 | **Status**: Research + Implementation Guide
 
-This document details 8 architectural patterns for Java 25 adoption in YAWL, each with specific file references to the codebase.
+This document details 10 architectural patterns for Java 25 adoption in YAWL, each with specific file references to the codebase.
 
 ---
 
@@ -16,8 +16,8 @@ This document details 8 architectural patterns for Java 25 adoption in YAWL, eac
 - **[../CLAUDE.md](../CLAUDE.md)** - Project specification (architecture section Γ)
 
 **In This Document**:
-- [8 Java 25 Patterns](#pattern-1-virtual-threads-for-workflow-concurrency) - Each with code examples
-- [3 MCP/A2A Deployment Patterns](#pattern-9-mcp-server-cicd-integration) - ADR-023/024/025 implementations
+- [10 Java 25 Patterns](#pattern-1-virtual-threads-for-workflow-concurrency) - Each with code examples
+- [3 MCP/A2A Deployment Patterns](#pattern-11-mcp-server-cicd-integration) - ADR-023/024/025 implementations
 - [Priority Matrix](#implementation-priority) - Effort vs benefit
 - [Files to Update](#implementation-priority) - Specific locations in codebase
 
@@ -632,9 +632,11 @@ public class YawlEngineConfiguration {
 | Reactive Events (7) | 2 | 2 days | Low | Medium |
 | Module System (6) | 3 | 1 week | High | High |
 | Constructor Injection (8) | 4 | 1 week | High | Medium |
-| MCP CI/CD Integration (9) | 1 | 2 days | Low | High |
-| Multi-Cloud Topology (10) | 3 | 2 weeks | Medium | High |
-| Agent Coordination Protocol (11) | 2 | 1 week | Low | High |
+| HTTP Transport for MCP (9) | 1 | 2 days | Low | High |
+| Handoff Protocol (10) | 1 | 3 days | Low | High |
+| MCP CI/CD Integration (11) | 1 | 2 days | Low | High |
+| Multi-Cloud Topology (12) | 3 | 2 weeks | Medium | High |
+| Agent Coordination Protocol (13) | 2 | 1 week | Low | High |
 
 **Recommended start**: Patterns 1, 3, 5 in parallel (weeks 1-2)
 
@@ -649,11 +651,423 @@ public class YawlEngineConfiguration {
 - Pattern 6: Java Modules - https://openjdk.org/projects/jigsaw/
 - Pattern 7: Reactive Streams - https://www.reactive-streams.org/
 - Pattern 8: Dependency Inversion - https://en.wikipedia.org/wiki/Dependency_inversion_principle
-- Pattern 9-11: ADR-023, ADR-024, ADR-025 in docs/architecture/decisions/
+- Pattern 9-10: HTTP Transport and Handoff Protocol implementations
+- Pattern 11-13: ADR-023, ADR-024, ADR-025 in docs/architecture/decisions/
 
 ---
 
-## Pattern 9: MCP Server CI/CD Integration
+## Pattern 9: HTTP Transport for MCP
+
+### Problem
+
+`YawlMcpServer` traditionally uses STDIO transport for process-to-process communication.
+For production deployments with multiple clients, HTTP-based transport (SSE/WebSocket)
+is required. The transport layer must handle session management, message broadcasting,
+and concurrent client connections.
+
+**Current Limitation**:
+```java
+// STDIO-only transport limits deployment options
+public class YawlMcpServer {
+    public void start() {
+        // Only supports stdin/stdout communication
+        StdioServerTransportProvider transport = new StdioServerTransportProvider();
+    }
+}
+```
+
+### Solution: HttpTransportProvider with SSE/WebSocket Support
+
+The `HttpTransportProvider` implements HTTP-based MCP transport with virtual thread
+concurrency, session management, and message broadcasting capabilities:
+
+```java
+// org.yawlfoundation.yawl.integration.mcp.transport.HttpTransportProvider
+public class HttpTransportProvider {
+
+    private final HttpClient httpClient;
+    private final ObjectMapper jsonMapper;
+    private final int httpPort;
+    private final ExecutorService executor;
+    private final Map<String, ClientSession> activeSessions;
+    private volatile boolean isRunning = false;
+
+    public HttpTransportProvider(int httpPort, ObjectMapper jsonMapper) {
+        this.httpPort = httpPort;
+        this.jsonMapper = jsonMapper;
+        // Virtual thread per task for scalable I/O
+        this.executor = Executors.newVirtualThreadPerTaskExecutor();
+        this.activeSessions = new ConcurrentHashMap<>();
+        this.httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .executor(executor)
+            .build();
+    }
+
+    public void start() throws IOException {
+        isRunning = true;
+        _logger.info("HTTP transport provider started on port {}", httpPort);
+        startServer();
+    }
+
+    public ClientSession createSession(String clientId) {
+        ClientSession session = new ClientSession(clientId);
+        activeSessions.put(clientId, session);
+        return session;
+    }
+
+    public void broadcast(JsonNode message) {
+        activeSessions.values().forEach(session -> session.sendMessage(message));
+    }
+}
+```
+
+### Session Management with Records
+
+Client sessions are immutable data holders with thread-safe metadata:
+
+```java
+public static class ClientSession {
+    private final String clientId;
+    private final String sessionId;
+    private final long createdAt;
+    private volatile boolean isActive = true;
+    private final Map<String, Object> metadata;
+
+    public ClientSession(String clientId) {
+        this.clientId = clientId;
+        this.sessionId = generateSessionId();
+        this.createdAt = System.currentTimeMillis();
+        this.metadata = new ConcurrentHashMap<>();
+    }
+
+    private String generateSessionId() {
+        return "session_" + System.currentTimeMillis() + "_" + clientId.hashCode();
+    }
+
+    public void sendMessage(JsonNode message) {
+        if (!isActive) {
+            throw new IllegalStateException("Session is not active");
+        }
+        _logger.debug("Sending message to client {}: {}", clientId, message);
+    }
+}
+```
+
+### MCP Request Handler
+
+The `MCPRequestHandler` processes JSON-RPC requests over HTTP:
+
+```java
+public static class MCPRequestHandler {
+    private final HttpTransportProvider transport;
+    private final ObjectMapper jsonMapper;
+
+    public String handleCallRequest(String requestBody) throws IOException {
+        JsonNode requestJson = jsonMapper.readTree(requestBody);
+        String method = requestJson.has("method")
+            ? requestJson.get("method").asText()
+            : "unknown";
+        JsonNode params = requestJson.has("params")
+            ? requestJson.get("params")
+            : jsonMapper.nullNode();
+
+        JsonNode response = handleMethod(method, params);
+        return jsonMapper.writeValueAsString(response);
+    }
+
+    private JsonNode handleMethod(String method, JsonNode params) throws IOException {
+        // Routes to appropriate MCP method implementation
+        // initialize, list_tools, call_tool, list_resources
+        return jsonMapper.createObjectNode()
+            .put("result", "Method not implemented: " + method);
+    }
+}
+```
+
+### Factory Pattern for Configuration
+
+```java
+public static class Factory {
+    public static HttpTransportProvider create(int httpPort) {
+        ObjectMapper mapper = new ObjectMapper();
+        return new HttpTransportProvider(httpPort, mapper);
+    }
+
+    public static HttpTransportProvider create(int httpPort, ObjectMapper jsonMapper) {
+        return new HttpTransportProvider(httpPort, jsonMapper);
+    }
+}
+```
+
+### Benefits
+
+- **Scalable Concurrency**: Virtual threads handle thousands of simultaneous connections
+- **Session Isolation**: Each client gets isolated session state
+- **Broadcast Support**: Server can push notifications to all clients
+- **HTTP Endpoints**: Standard HTTP/SSE/WebSocket protocols for cloud compatibility
+
+### Files Involved
+
+- `org.yawlfoundation.yawl.integration.mcp.transport.HttpTransportProvider`
+- `org.yawlfoundation.yawl.integration.mcp.YawlMcpServer` (uses transport)
+
+### Effort: 2 days
+
+---
+
+## Pattern 10: Handoff Protocol Implementation
+
+### Problem
+
+Autonomous agents may discover after checkout that they cannot complete a work item
+(due to missing capabilities, domain knowledge, or external dependencies). Without
+a structured handoff mechanism, work items remain blocked until timeout.
+
+### Solution: HandoffRequestService with Retry
+
+The `HandoffRequestService` orchestrates work item handoffs between agents with
+JWT-based authentication, capability matching, and asynchronous request handling:
+
+```java
+// org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService
+public class HandoffRequestService {
+
+    private final HandoffProtocol handoffProtocol;
+    private final YEngine yawlEngine;
+    private final AgentContext agentContext;
+    private final AgentInfoStore agentInfoStore;
+    private final HttpClient httpClient;
+    private final ExecutorService executorService;
+    private final String sessionHandle;
+
+    public HandoffRequestService(AgentContext agentContext,
+                                YEngine yawlEngine,
+                                AgentInfoStore agentInfoStore,
+                                JwtAuthenticationProvider jwtProvider,
+                                String sessionHandle) {
+        this.agentContext = agentContext;
+        this.yawlEngine = yawlEngine;
+        this.agentInfoStore = agentInfoStore;
+        this.handoffProtocol = new HandoffProtocol(jwtProvider);
+        this.sessionHandle = sessionHandle;
+        this.httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .executor(Executors.newVirtualThreadPerTaskExecutor())
+            .build();
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+    }
+}
+```
+
+### Handoff Initiation Flow
+
+```java
+public CompletableFuture<HandoffResult> initiateHandoff(String workItemId,
+                                                        String sourceAgentId)
+        throws HandoffException {
+
+    // Step 1: Validate work item exists and is in executing state
+    YWorkItem workItem = validateWorkItem(workItemId, sourceAgentId);
+
+    // Step 2: Find substitute agents with required capabilities
+    List<AgentInfo> substituteAgents = findSubstituteAgents(workItem);
+    if (substituteAgents.isEmpty()) {
+        throw new HandoffException(
+            "No substitute agents available for work item: " + workItemId);
+    }
+
+    // Step 3: Select target agent (simple strategy - first capable)
+    AgentInfo targetAgent = substituteAgents.get(0);
+
+    // Step 4: Generate signed handoff token
+    HandoffToken handoffToken = handoffProtocol.generateHandoffToken(
+        workItemId,
+        sourceAgentId,
+        targetAgent.getId(),
+        sessionHandle
+    );
+
+    // Step 5: Create handoff message with work item context
+    HandoffMessage handoffMessage = handoffProtocol.createHandoffMessage(
+        workItemId,
+        sourceAgentId,
+        targetAgent.getId(),
+        sessionHandle
+    );
+
+    // Step 6: Send async handoff request
+    return sendHandoffRequest(targetAgent, handoffMessage.toJson(), handoffToken);
+}
+```
+
+### Work Item Validation
+
+```java
+private YWorkItem validateWorkItem(String workItemId, String agentId)
+        throws HandoffException {
+    try {
+        YWorkItem workItem = yawlEngine.getWorkItem(workItemId);
+        if (workItem == null) {
+            throw new HandoffException("Work item not found: " + workItemId);
+        }
+
+        // Verify executing state (can only hand off items we're executing)
+        if (!workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
+            throw new HandoffException(
+                "Work item is not in executing state: " + workItemId);
+        }
+
+        return workItem;
+    } catch (Exception e) {
+        if (e instanceof HandoffException) {
+            throw (HandoffException) e;
+        }
+        throw new HandoffException(
+            "Failed to validate work item: " + workItemId, e);
+    }
+}
+```
+
+### Capability-Based Agent Discovery
+
+```java
+private List<AgentInfo> findSubstituteAgents(YWorkItem workItem) {
+    // Find the task associated with this work item
+    YTask task = findTaskForWorkItem(workItem);
+    if (task == null) {
+        return List.of();
+    }
+
+    // Query agent registry for agents with matching capability
+    return agentInfoStore.getAgentsByCapability(task.getName());
+}
+
+private YTask findTaskForWorkItem(YWorkItem workItem) {
+    try {
+        YSpecificationID specId = workItem.getSpecificationID();
+        YSpecification spec = yawlEngine.getSpecification(specId);
+        if (spec == null) return null;
+
+        YNet net = spec.getRootNet();
+        if (net == null) return null;
+
+        // Pattern matching for task lookup
+        String taskName = workItem.getTaskID();
+        for (YExternalNetElement element : net.getNetElements().values()) {
+            if (element instanceof YTask task) {
+                if (task.getName().equals(taskName) || task.getID().equals(taskName)) {
+                    return task;
+                }
+            }
+        }
+    } catch (Exception e) {
+        System.err.println("Error finding task: " + e.getMessage());
+    }
+    return null;
+}
+```
+
+### Async HTTP Request with Error Handling
+
+```java
+private CompletableFuture<HandoffResult> sendHandoffRequest(
+        AgentInfo targetAgent,
+        String handoffMessage,
+        HandoffToken handoffToken) {
+
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://" + targetAgent.getHost() + ":"
+            + targetAgent.getPort() + "/handoff"))
+        .header("Content-Type", "application/json")
+        .header("Authorization", "Bearer " + handoffToken.getJwt())
+        .POST(HttpRequest.BodyPublishers.ofString(handoffMessage))
+        .build();
+
+    CompletableFuture<HttpResponse<String>> responseFuture =
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+
+    return responseFuture.thenApply(response -> {
+        if (response.statusCode() == 200) {
+            return new HandoffResult(true,
+                "Handoff accepted by " + targetAgent.getId());
+        } else {
+            return new HandoffResult(false,
+                "Handoff rejected: HTTP " + response.statusCode());
+        }
+    }).exceptionally(throwable -> {
+        if (throwable.getCause() instanceof TimeoutException) {
+            return new HandoffResult(false, "Handoff request timed out");
+        } else if (throwable.getCause() instanceof IOException) {
+            return new HandoffResult(false,
+                "Network error: " + throwable.getCause().getMessage());
+        } else {
+            return new HandoffResult(false,
+                "Handoff failed: " + throwable.getMessage());
+        }
+    });
+}
+```
+
+### Result Record
+
+```java
+public static class HandoffResult {
+    private final boolean accepted;
+    private final String message;
+
+    public HandoffResult(boolean accepted, String message) {
+        this.accepted = accepted;
+        this.message = message;
+    }
+
+    public boolean isAccepted() { return accepted; }
+    public String getMessage() { return message; }
+}
+```
+
+### Handoff Sequence
+
+```
+Source Agent                    HandoffRequestService              Target Agent
+     |                                  |                                |
+     | 1. initiateHandoff(itemId)       |                                |
+     |--------------------------------->|                                |
+     |                                  | 2. Validate work item          |
+     |                                  | 3. Find substitute agents      |
+     |                                  | 4. Generate JWT token          |
+     |                                  |                                |
+     |                                  | 5. POST /handoff (JWT)         |
+     |                                  |------------------------------->|
+     |                                  |                                |
+     |                                  | 6. 200 OK (accepted)           |
+     |                                  |<-------------------------------|
+     |                                  |                                |
+     | 7. HandoffResult(accepted)       |                                |
+     |<---------------------------------| 8. Target checks out item      |
+     |                                  |                                |
+```
+
+### Benefits
+
+- **Non-Blocking**: Async CompletableFuture allows source agent to continue
+- **Secure**: JWT tokens with 60s TTL prevent replay attacks
+- **Resilient**: Clear error classification (timeout, network, rejection)
+- **Observable**: Result messages provide audit trail
+
+### Files Involved
+
+- `org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService`
+- `org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol`
+- `org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage`
+- `org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken`
+- `org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider`
+
+### Effort: 3 days
+
+---
+
+## Pattern 11: MCP Server CI/CD Integration
 
 **ADR**: [ADR-023](../docs/architecture/decisions/ADR-023-mcp-a2a-cicd-deployment.md)
 
@@ -744,7 +1158,7 @@ compile
 
 ---
 
-## Pattern 10: Multi-Cloud Agent Deployment Topology
+## Pattern 12: Multi-Cloud Agent Deployment Topology
 
 **ADR**: [ADR-024](../docs/architecture/decisions/ADR-024-multi-cloud-agent-deployment.md)
 
@@ -829,7 +1243,7 @@ cloud:
 
 ---
 
-## Pattern 11: Agent Coordination Protocol
+## Pattern 13: Agent Coordination Protocol
 
 **ADR**: [ADR-025](../docs/architecture/decisions/ADR-025-agent-coordination-protocol.md)
 

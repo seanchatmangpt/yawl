@@ -631,12 +631,13 @@ class TestUnmarshalPerformance {
         sb.append("""
             <?xml version="1.0" encoding="UTF-8"?>
             <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                              xmlns:xs="http://www.w3.org/2001/XMLSchema"
                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
               <specification uri="perf-test-spec">
                 <metaData>
                   <title>Performance Test</title>
                 </metaData>
-                <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                <xs:schema/>
                 <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
                   <processControlElements>
                     <inputCondition id="input">
@@ -672,10 +673,11 @@ class TestUnmarshalPerformance {
         sb.append("""
             <?xml version="1.0" encoding="UTF-8"?>
             <specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                              xmlns:xs="http://www.w3.org/2001/XMLSchema"
                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
               <specification uri="complex-perf-test">
                 <metaData/>
-                <schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>
+                <xs:schema/>
             """);
 
         // Root decomposition
