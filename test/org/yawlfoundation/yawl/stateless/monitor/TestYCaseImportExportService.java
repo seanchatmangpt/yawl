@@ -66,7 +66,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 @DisplayName("YCase Import/Export Service Tests")
 @Tag("unit")
-class TestYCaseImportExportService {
+public class TestYCaseImportExportService {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long EVENT_TIMEOUT_SEC = 10L;

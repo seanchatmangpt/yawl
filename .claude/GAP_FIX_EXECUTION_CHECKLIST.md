@@ -55,7 +55,7 @@
 - [ ] **1800:** Evening push
   - [ ] Complete all BLOCKER fixes
   - [ ] Final test: `mvn clean package`
-  - [ ] Update [removed] with FIXED status
+  - [ ] Update VIOLATION_REPORT.md with FIXED status
   - [ ] Final commit with summary
 
 #### Evening (1800-2400)
@@ -66,7 +66,7 @@
   - [ ] Violation scanner: `bash .claude/hooks/hyper-validate.sh`
   - [ ] All 12 BLOCKER violations marked FIXED
 - [ ] **2000:** Documentation update
-  - [ ] Update [removed] status
+  - [ ] Update VIOLATION_REPORT.md status
   - [ ] Update GAP_FIXES_SUMMARY.md progress
   - [ ] Note any issues discovered and resolved
 - [ ] **2200:** Prepare for Phase 2
@@ -126,7 +126,7 @@
   - [ ] Replace all `System.out.println` with `_log.info()/_log.debug()`
   - [ ] Replace all `System.err.println` with `_log.error()`
   - [ ] Add ERROR-level logging to silent catches
-  - [ ] Fix JWT security logging (DEBUG → WARN)
+  - [ ] Fix JWT security logging (DEBUG -> WARN)
 - [ ] **1200:** Checkpoint
   - [ ] Estimate 33% of HIGH violations should be fixed
   - [ ] Build: `mvn clean compile` must pass
@@ -151,7 +151,7 @@
 - [ ] **1800:** Evening push
   - [ ] Complete all HIGH fixes
   - [ ] Final test: `mvn clean package`
-  - [ ] Update [removed]
+  - [ ] Update VIOLATION_REPORT.md
 
 #### Evening (1800-2400)
 
@@ -162,7 +162,7 @@
   - [ ] All 12 BLOCKER violations still FIXED
   - [ ] All 31 HIGH violations now FIXED
 - [ ] **2000:** Documentation
-  - [ ] Update [removed] status
+  - [ ] Update VIOLATION_REPORT.md status
   - [ ] Note any integration issues
 - [ ] **2200:** Prepare Phase 3
   - [ ] Review 18 MEDIUM violations
@@ -279,7 +279,7 @@
   - [ ] Logger pattern uniform throughout
   - [ ] No duplicate code introduced
 - [ ] **1300:** Documentation finalization
-  - [ ] Update [removed] (final status)
+  - [ ] Update VIOLATION_REPORT.md (final status)
   - [ ] Create final remediation summary
   - [ ] Document any lessons learned during execution
   - [ ] Generate release notes
@@ -305,7 +305,7 @@
 - [ ] Performance baseline met
 
 **Violations:**
-- [ ] [removed] shows all 61 = FIXED
+- [ ] VIOLATION_REPORT.md shows all 61 = FIXED
 - [ ] BLOCKER violations: 12/12 FIXED (100%)
 - [ ] HIGH violations: 31/31 FIXED (100%)
 - [ ] MEDIUM violations: 18/18 FIXED (100%)
@@ -461,15 +461,29 @@ Build: PASS
 
 ## Critical Success Factors
 
-1. ✅ All violations clearly documented (GAP_FIXES_SUMMARY.md)
-2. ✅ Fix patterns provided for each violation (REMEDIATION_COMPLETED.md)
-3. ✅ Agent assignments clear (9 specialists assigned)
-4. ✅ Timeline aggressive but feasible (4-5 days)
-5. ⏳ Agents must start immediately (Phase 1 begins 2026-02-18 0800)
-6. ⏳ Daily builds must pass 100%
-7. ⏳ Coordination must be tight (daily syncs)
-8. ⏳ Code review must be thorough but fast
-9. ⏳ Stakeholder buy-in required for go/no-go decisions
+1. All violations clearly documented (GAP_FIXES_SUMMARY.md)
+2. Fix patterns provided for each violation (REMEDIATION_COMPLETED.md)
+3. Agent assignments clear (9 specialists assigned)
+4. Timeline aggressive but feasible (4-5 days)
+5. Agents must start immediately (Phase 1 begins 2026-02-18 0800)
+6. Daily builds must pass 100%
+7. Coordination must be tight (daily syncs)
+8. Code review must be thorough but fast
+9. Stakeholder buy-in required for go/no-go decisions
+
+---
+
+## Violation Report Reference
+
+The violation report is located at:
+```
+.claude/archive/2026-01/VIOLATION_REPORT.md
+```
+
+To check current violations:
+```bash
+grep "^### B-\|^### H-\|^### M-" .claude/archive/2026-01/VIOLATION_REPORT.md | wc -l
+```
 
 ---
 

@@ -1,0 +1,471 @@
+# =============================================================================
+# YAWL v6.0.0 - GitOps Deployment Workflow with ArgoCD
+# =============================================================================
+# Comprehensive GitOps workflow that:
+#   1. Builds and pushes container images
+#   2. Updates Helm chart values with new image tag
+#   3. Triggers ArgoCD sync (or auto-sync handles it)
+#   4. Monitors deployment health
+#   5. Handles rollbacks on failure
+#
+# Triggers:
+#   - Push to main/release branches
+#   - Manual workflow dispatch
+#   - Scheduled validation runs
+# =============================================================================
+name: GitOps Deployment
+
+on:
+  push:
+    branches: [main, 'release/**']
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile*'
+      - 'helm/**'
+      - 'k8s/**'
+      - '.github/workflows/gitops-deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'helm/**'
+      - 'k8s/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      strategy:
+        description: 'Deployment strategy'
+        required: true
+        default: 'rolling'
+        type: choice
+        options:
+          - rolling
+          - blue-green
+          - canary
+      version:
+        description: 'Version to deploy (default: from pom.xml)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip tests (not recommended for production)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  security-events: write
+  pull-requests: write
+
+env:
+  JAVA_VERSION: 25
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/yawl/engine
+  HELM_CHART_PATH: helm/yawl
+  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+
+jobs:
+  # ==========================================================================
+  # Stage 1: Build and Test
+  # ==========================================================================
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Extract Version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(grep -oP '<version>\K[^<]+' pom.xml | head -1)
+          fi
+
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          IMAGE_TAG="${VERSION}-${SHORT_SHA}"
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+          echo "Version: ${VERSION}"
+          echo "Image Tag: ${IMAGE_TAG}"
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-java${{ env.JAVA_VERSION }}-
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: |
+          mvn clean package \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress \
+            -T 1.5C \
+            -DskipTests=${{ github.event.inputs.skip_tests || 'false' }}
+
+      - name: Run Tests
+        if: github.event.inputs.skip_tests != 'true'
+        run: |
+          mvn test \
+            --enable-preview \
+            --batch-mode \
+            --no-transfer-progress
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-build-${{ steps.version.outputs.short_sha }}
+          path: |
+            target/*.jar
+            */target/*.jar
+          retention-days: 7
+
+  # ==========================================================================
+  # Stage 2: Container Build & Push
+  # ==========================================================================
+  container:
+    name: Build & Push Container
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ needs.build.outputs.version }}
+            type=sha,prefix=sha-
+            type=raw,value=${{ needs.build.outputs.image_tag }}
+          labels: |
+            org.opencontainers.image.title=YAWL Engine
+            org.opencontainers.image.description=Production-ready YAWL workflow engine
+            org.opencontainers.image.vendor=YAWL Foundation
+
+      - name: Build and Push Container
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/production/Dockerfile.engine
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.build.outputs.version }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Scan Container with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-container'
+
+  # ==========================================================================
+  # Stage 3: Update GitOps Repository
+  # ==========================================================================
+  gitops-update:
+    name: Update GitOps Configuration
+    runs-on: ubuntu-latest
+    needs: [build, container]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITOPS_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update Helm Values
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          DIGEST: ${{ needs.container.outputs.digest }}
+        run: |
+          # Update staging values with new image tag
+          sed -i "s|tag: \".*\"|tag: \"${IMAGE_TAG}\"|g" helm/yawl/envs/values-staging.yaml
+
+          # If production deployment, update production values
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            sed -i "s|tag: \".*\"|tag: \"${IMAGE_TAG}\"|g" helm/yawl/envs/values-production.yaml
+            sed -i "s|digest: \".*\"|digest: \"sha256:${DIGEST}\"|g" helm/yawl/envs/values-production.yaml
+          fi
+
+      - name: Update ArgoCD Application
+        run: |
+          # Update ArgoCD application with new image tag
+          if [ -f "gitops/argocd/apps/yawl-application.yaml" ]; then
+            sed -i "s|value: \".*\" # imageTag|value: \"${{ needs.build.outputs.image_tag }}\" # imageTag|g" gitops/argocd/apps/yawl-application.yaml
+          fi
+
+      - name: Commit and Push Changes
+        run: |
+          git add -A
+          git commit -m "chore: update image to ${{ needs.build.outputs.image_tag }} [skip ci]" || echo "No changes to commit"
+          git push origin ${{ github.ref_name }}
+
+  # ==========================================================================
+  # Stage 4: ArgoCD Sync & Monitor
+  # ==========================================================================
+  argocd-sync:
+    name: ArgoCD Sync & Monitor
+    runs-on: ubuntu-latest
+    needs: [build, container, gitops-update]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+      url: https://yawl-${{ github.event.inputs.environment || 'staging' }}.example.com
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      - name: Login to ArgoCD
+        env:
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+        run: |
+          argocd login ${{ env.ARGOCD_SERVER }} \
+            --username admin \
+            --password "${ARGOCD_PASSWORD}" \
+            --grpc-web
+
+      - name: Sync Application
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          APP_NAME="yawl-${ENVIRONMENT}"
+
+          # Trigger sync
+          argocd app sync ${APP_NAME} \
+            --revision ${{ github.ref_name }} \
+            --timeout 600 || true
+
+          # Wait for sync to complete
+          argocd app wait ${APP_NAME} \
+            --sync \
+            --health \
+            --timeout 600
+
+      - name: Verify Deployment Health
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          APP_NAME="yawl-${ENVIRONMENT}"
+
+          # Check application status
+          STATUS=$(argocd app get ${APP_NAME} -o json | jq -r '.status.health.status')
+
+          if [ "${STATUS}" != "Healthy" ]; then
+            echo "Application health check failed: ${STATUS}"
+            exit 1
+          fi
+
+          echo "Application is healthy: ${STATUS}"
+
+      - name: Run Post-Deployment Tests
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          # Run smoke tests against the deployed application
+          bash scripts/ci-cd/smoke-tests.sh ${ENVIRONMENT}
+
+  # ==========================================================================
+  # Stage 5: Rollback on Failure
+  # ==========================================================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [build, container, gitops-update, argocd-sync]
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      - name: Login to ArgoCD
+        env:
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+        run: |
+          argocd login ${{ env.ARGOCD_SERVER }} \
+            --username admin \
+            --password "${ARGOCD_PASSWORD}" \
+            --grpc-web
+
+      - name: Rollback Application
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          APP_NAME="yawl-${ENVIRONMENT}"
+
+          # Get previous revision
+          PREVIOUS=$(argocd app history ${APP_NAME} -o json | jq -r '.[1].revision' 2>/dev/null || echo "")
+
+          if [ -n "${PREVIOUS}" ]; then
+            echo "Rolling back to revision ${PREVIOUS}"
+            argocd app rollback ${APP_NAME} ${PREVIOUS}
+          else
+            echo "No previous revision available for rollback"
+          fi
+
+      - name: Notify on Rollback
+        if: always()
+        run: |
+          echo "Rollback completed for ${{ github.event.inputs.environment || 'staging' }}"
+
+  # ==========================================================================
+  # Stage 6: Notification
+  # ==========================================================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [build, container, argocd-sync]
+    if: always()
+
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Job Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # GitOps Deployment Summary
+
+          **Status:** ${{ steps.status.outputs.status }}
+          **Environment:** ${{ github.event.inputs.environment || 'staging' }}
+          **Version:** ${{ needs.build.outputs.version }}
+          **Image Tag:** ${{ needs.build.outputs.image_tag }}
+          **Strategy:** ${{ github.event.inputs.strategy || 'rolling' }}
+
+          ## Jobs
+
+          | Job | Status |
+          |-----|--------|
+          | Build & Test | ${{ needs.build.result }} |
+          | Container Build | ${{ needs.container.result }} |
+          | ArgoCD Sync | ${{ needs.argocd-sync.result }} |
+
+          ## Links
+          - [ArgoCD Dashboard](https://${{ env.ARGOCD_SERVER }})
+          - [GitHub Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+
+      - name: Send Slack Notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST ${SLACK_WEBHOOK_URL} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "${{ steps.status.outputs.color }}",
+                "title": "GitOps Deployment - ${{ steps.status.outputs.status }}",
+                "fields": [
+                  {"title": "Environment", "value": "${{ github.event.inputs.environment || 'staging' }}", "short": true},
+                  {"title": "Version", "value": "${{ needs.build.outputs.version }}", "short": true},
+                  {"title": "Image Tag", "value": "${{ needs.build.outputs.image_tag }}", "short": true},
+                  {"title": "Triggered By", "value": "${{ github.actor }}", "short": true}
+                ],
+                "footer": "YAWL GitOps Pipeline",
+                "ts": '"$(date +%s)"'
+              }]
+            }'

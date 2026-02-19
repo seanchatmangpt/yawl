@@ -439,7 +439,7 @@ CAPABILITIES.md (12K) - Detailed YAWL capabilities
 HYPER_STANDARDS.md (23K) - Guard definitions + examples (14 anti-patterns)
 STANDARDS.md (5.0K) - Coding standards summary
 ENFORCEMENT_SUMMARY.md (14K) - Hook system details
-[removed] (36K) - Historical violations + fixes
+archive/2026-01/VIOLATION_REPORT.md (85K) - V6 violation audit + remediation tracking
 ```
 
 ### Utilities & Tools

@@ -1,0 +1,553 @@
+# YAWL v6.0 - Comprehensive Validation Workflow
+#
+# Runs validation suites on every PR and push to main branches.
+# Supports both parallel and sequential execution modes.
+#
+# Jobs:
+#   validation-setup     - Prepare validation environment
+#   validation-docs      - Documentation validation (package-info, links, XSD)
+#   validation-observatory - Observatory freshness check
+#   validation-performance - Performance baseline validation
+#   validation-release   - Release readiness check (main/master only)
+#   aggregate-results    - Combine all results into unified reports
+#
+# Output:
+#   - validation-report.json - Aggregated JSON results
+#   - validation-report.xml  - JUnit XML for CI integration
+#   - validation-report.md   - Human-readable summary
+
+name: Validation
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [master, main]
+  schedule:
+    # Run validation daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      fail_fast:
+        description: 'Stop on first failure'
+        required: false
+        default: 'false'
+        type: boolean
+      parallel:
+        description: 'Run validations in parallel'
+        required: false
+        default: 'true'
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read
+
+env:
+  JAVA_VERSION: 25
+  VALIDATION_DIR: docs/validation
+  MAVEN_OPTS: >-
+    -Xmx2g
+    -Xms512m
+    -XX:+UseZGC
+    -Djava.awt.headless=true
+
+jobs:
+
+  # ==========================================================================
+  # Setup - Prepare environment
+  # ==========================================================================
+  validation-setup:
+    name: Setup Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      timestamp: ${{ steps.setup.outputs.timestamp }}
+      run-id: ${{ steps.setup.outputs.run-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        id: setup
+        run: |
+          echo "timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "run-id=$(date -u '+%Y%m%dT%H%M%SZ')" >> $GITHUB_OUTPUT
+
+          # Create validation directory
+          mkdir -p ${{ env.VALIDATION_DIR }}
+
+          # Initialize empty results file for aggregation
+          cat > ${{ env.VALIDATION_DIR }}/validation-report.json << EOF
+          {
+            "suite": "validation",
+            "timestamp": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.head_ref || github.ref_name }}",
+            "run_id": "${{ github.run_id }}",
+            "event": "${{ github.event_name }}",
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 0,
+            "results": [],
+            "suites": {}
+          }
+          EOF
+
+      - name: Upload initial state
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-state
+          path: ${{ env.VALIDATION_DIR }}/
+          retention-days: 1
+
+  # ==========================================================================
+  # Documentation Validation
+  # ==========================================================================
+  validation-docs:
+    name: Documentation
+    needs: validation-setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    outputs:
+      status: ${{ steps.validate.outputs.status }}
+      passed: ${{ steps.validate.outputs.passed }}
+      failed: ${{ steps.validate.outputs.failed }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Install dependencies
+        run: |
+          # Install markdown-link-check if available
+          npm install -g markdown-link-check 2>/dev/null || true
+
+      - name: Run documentation validation
+        id: validate
+        run: |
+          echo "Running documentation validation..."
+
+          START=$(date +%s%3N)
+
+          if bash scripts/validation/validate-documentation.sh 2>&1 | tee validation-docs.log; then
+            STATUS="pass"
+            EXIT_CODE=0
+          else
+            EXIT_CODE=$?
+            if [[ $EXIT_CODE -eq 2 ]]; then
+              STATUS="warn"
+            else
+              STATUS="fail"
+            fi
+          fi
+
+          END=$(date +%s%3N)
+          DURATION=$((END - START))
+
+          # Count results
+          PASSED=$(grep -c "PASSED\|VALID" validation-docs.log 2>/dev/null || echo "0")
+          FAILED=$(grep -c "FAILED\|ERROR\|INVALID" validation-docs.log 2>/dev/null || echo "0")
+
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
+          echo "passed=${PASSED}" >> $GITHUB_OUTPUT
+          echo "failed=${FAILED}" >> $GITHUB_OUTPUT
+          echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+          # Generate result JSON
+          mkdir -p ${{ env.VALIDATION_DIR }}
+          cat > ${{ env.VALIDATION_DIR }}/docs-result.json << EOF
+          {
+            "suite": "documentation",
+            "status": "${STATUS}",
+            "duration_ms": ${DURATION},
+            "passed": ${PASSED},
+            "failed": ${FAILED},
+            "exit_code": ${EXIT_CODE}
+          }
+          EOF
+
+          exit $EXIT_CODE
+        continue-on-error: true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-docs
+          path: |
+            ${{ env.VALIDATION_DIR }}/docs-result.json
+            docs/validation/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Observatory Validation
+  # ==========================================================================
+  validation-observatory:
+    name: Observatory
+    needs: validation-setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      status: ${{ steps.validate.outputs.status }}
+      freshness: ${{ steps.validate.outputs.freshness }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run observatory validation
+        id: validate
+        run: |
+          echo "Running observatory validation..."
+
+          START=$(date +%s%3N)
+
+          if bash scripts/validation/validate-observatory.sh 2>&1 | tee validation-obs.log; then
+            STATUS="pass"
+            EXIT_CODE=0
+          else
+            EXIT_CODE=$?
+            if [[ $EXIT_CODE -eq 2 ]]; then
+              STATUS="warn"
+            else
+              STATUS="fail"
+            fi
+          fi
+
+          END=$(date +%s%3N)
+          DURATION=$((END - START))
+
+          # Extract freshness
+          FRESHNESS=$(grep -oE '[0-9]+h old' validation-obs.log | head -1 || echo "unknown")
+
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
+          echo "freshness=${FRESHNESS}" >> $GITHUB_OUTPUT
+          echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+          # Generate result JSON
+          mkdir -p ${{ env.VALIDATION_DIR }}
+          cat > ${{ env.VALIDATION_DIR }}/observatory-result.json << EOF
+          {
+            "suite": "observatory",
+            "status": "${STATUS}",
+            "duration_ms": ${DURATION},
+            "freshness": "${FRESHNESS}",
+            "exit_code": ${EXIT_CODE}
+          }
+          EOF
+
+          exit $EXIT_CODE
+        continue-on-error: true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-observatory
+          path: ${{ env.VALIDATION_DIR }}/observatory-result.json
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Performance Validation
+  # ==========================================================================
+  validation-performance:
+    name: Performance
+    needs: validation-setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    outputs:
+      status: ${{ steps.validate.outputs.status }}
+      build-time: ${{ steps.validate.outputs.build-time }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run performance validation
+        id: validate
+        run: |
+          echo "Running performance validation..."
+
+          START=$(date +%s%3N)
+
+          if bash scripts/validation/validate-performance-baselines.sh 2>&1 | tee validation-perf.log; then
+            STATUS="pass"
+            EXIT_CODE=0
+          else
+            EXIT_CODE=$?
+            if [[ $EXIT_CODE -eq 2 ]]; then
+              STATUS="warn"
+            else
+              STATUS="fail"
+            fi
+          fi
+
+          END=$(date +%s%3N)
+          DURATION=$((END - START))
+
+          # Extract build time if available
+          BUILD_TIME=$(grep -oE 'Current:[[:space:]]+[0-9]+ms' validation-perf.log | grep -oE '[0-9]+' | head -1 || echo "0")
+
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
+          echo "build-time=${BUILD_TIME}ms" >> $GITHUB_OUTPUT
+          echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+          # Generate result JSON
+          mkdir -p ${{ env.VALIDATION_DIR }}
+          cat > ${{ env.VALIDATION_DIR }}/performance-result.json << EOF
+          {
+            "suite": "performance",
+            "status": "${STATUS}",
+            "duration_ms": ${DURATION},
+            "build_time_ms": ${BUILD_TIME},
+            "exit_code": ${EXIT_CODE}
+          }
+          EOF
+
+          exit $EXIT_CODE
+        continue-on-error: true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-performance
+          path: ${{ env.VALIDATION_DIR }}/performance-result.json
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Release Validation (main/master only)
+  # ==========================================================================
+  validation-release:
+    name: Release Readiness
+    needs: validation-setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
+
+    outputs:
+      status: ${{ steps.validate.outputs.status }}
+      checks-passed: ${{ steps.validate.outputs.checks-passed }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run release validation
+        id: validate
+        run: |
+          echo "Running release validation..."
+
+          START=$(date +%s%3N)
+
+          if bash scripts/validation/validate-release.sh 2>&1 | tee validation-release.log; then
+            STATUS="pass"
+            EXIT_CODE=0
+          else
+            EXIT_CODE=$?
+            STATUS="fail"
+          fi
+
+          END=$(date +%s%3N)
+          DURATION=$((END - START))
+
+          # Extract checks passed
+          CHECKS_PASSED=$(grep -oE 'Checks Passed:[[:space:]]+[0-9]+/[0-9]+' validation-release.log | head -1 || echo "0/8")
+
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
+          echo "checks-passed=${CHECKS_PASSED}" >> $GITHUB_OUTPUT
+          echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+          # Generate result JSON
+          mkdir -p ${{ env.VALIDATION_DIR }}
+          cat > ${{ env.VALIDATION_DIR }}/release-result.json << EOF
+          {
+            "suite": "release",
+            "status": "${STATUS}",
+            "duration_ms": ${DURATION},
+            "checks_passed": "${CHECKS_PASSED}",
+            "exit_code": ${EXIT_CODE}
+          }
+          EOF
+
+          exit $EXIT_CODE
+        continue-on-error: true
+
+      - name: Upload release report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-release
+          path: |
+            ${{ env.VALIDATION_DIR }}/release-result.json
+            docs/validation/release-validation-report.md
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # Aggregate Results
+  # ==========================================================================
+  aggregate-results:
+    name: Aggregate Results
+    needs: [validation-setup, validation-docs, validation-observatory, validation-performance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Aggregate validation results
+        id: aggregate
+        run: |
+          echo "Aggregating validation results..."
+
+          # Source aggregation library
+          source scripts/validation/lib/output-aggregation.sh
+
+          # Initialize master aggregation
+          agg_init "validation" "${{ env.VALIDATION_DIR }}"
+
+          # Merge individual results
+          for result_file in artifacts/validation-*/validation/*.json artifacts/validation-*/*-result.json; do
+            if [[ -f "$result_file" ]]; then
+              echo "Merging: $result_file"
+              agg_add_suite "$result_file" || true
+            fi
+          done
+
+          # Generate outputs
+          agg_output_json "${{ env.VALIDATION_DIR }}/validation-report.json"
+          agg_output_junit "${{ env.VALIDATION_DIR }}/validation-report.xml"
+          agg_output_summary > "${{ env.VALIDATION_DIR }}/validation-report.md"
+
+          # Get final status
+          TOTAL_FAILED=$(jq -r '.failed' "${{ env.VALIDATION_DIR }}/validation-report.json")
+          TOTAL_WARNINGS=$(jq -r '.warnings' "${{ env.VALIDATION_DIR }}/validation-report.json")
+
+          echo "total_failed=${TOTAL_FAILED}" >> $GITHUB_OUTPUT
+          echo "total_warnings=${TOTAL_WARNINGS}" >> $GITHUB_OUTPUT
+
+      - name: Generate Summary
+        run: |
+          echo "# Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** ${{ needs.validation-setup.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ needs.validation-setup.outputs.run-id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Suite Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Suite | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+
+          # Documentation
+          if [[ "${{ needs.validation-docs.result }}" == "success" ]]; then
+            echo "| Documentation | PASSED | - |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.validation-docs.result }}" == "failure" ]]; then
+            echo "| Documentation | FAILED | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Documentation | SKIPPED | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Observatory
+          if [[ "${{ needs.validation-observatory.result }}" == "success" ]]; then
+            echo "| Observatory | PASSED | - |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.validation-observatory.result }}" == "failure" ]]; then
+            echo "| Observatory | FAILED | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Observatory | SKIPPED | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Performance
+          if [[ "${{ needs.validation-performance.result }}" == "success" ]]; then
+            echo "| Performance | PASSED | - |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.validation-performance.result }}" == "failure" ]]; then
+            echo "| Performance | FAILED | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Performance | SKIPPED | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat ${{ env.VALIDATION_DIR }}/validation-report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload final reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-reports
+          path: |
+            ${{ env.VALIDATION_DIR }}/validation-report.json
+            ${{ env.VALIDATION_DIR }}/validation-report.xml
+            ${{ env.VALIDATION_DIR }}/validation-report.md
+          retention-days: 30
+
+      - name: Publish JUnit Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: ${{ env.VALIDATION_DIR }}/validation-report.xml
+          check_name: "Validation Results"
+          fail_on: failures
+
+      - name: Final Status
+        run: |
+          if [[ "${{ steps.aggregate.outputs.total_failed }}" -gt 0 ]]; then
+            echo "::error::Validation failed with ${{ steps.aggregate.outputs.total_failed }} error(s)"
+            exit 1
+          elif [[ "${{ steps.aggregate.outputs.total_warnings }}" -gt 0 ]]; then
+            echo "::warning::Validation passed with ${{ steps.aggregate.outputs.total_warnings }} warning(s)"
+            exit 0
+          else
+            echo "All validations passed!"
+            exit 0
+          fi

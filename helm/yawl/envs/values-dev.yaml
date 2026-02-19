@@ -1,0 +1,156 @@
+# =============================================================================
+# YAWL v6.0.0 - Development Environment Values
+# =============================================================================
+# Usage:
+#   helm install yawl ./helm/yawl -f helm/yawl/values.yaml -f helm/yawl/envs/values-dev.yaml -n yawl-dev
+# =============================================================================
+
+global:
+  namespace: yawl-dev
+  labels:
+    environment: development
+
+yawlVersion: "6.0.0"
+
+# Smaller instance for development
+image:
+  tag: "6.0.0-dev"
+
+# Minimal database for development
+postgresql:
+  auth:
+    database: yawl_dev
+  primary:
+    persistence:
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  readReplicas:
+    replicaCount: 0
+  backup:
+    enabled: false
+
+# Minimal Redis for development
+redis:
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 1Gi
+  replica:
+    replicaCount: 0
+
+# Service configurations - minimal replicas for dev
+services:
+  engine:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: false
+    startupProbe:
+      failureThreshold: 30
+    env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "development"
+      - name: LOG_LEVEL
+        value: "DEBUG"
+
+  resourceService:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+  workletService:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+  monitorService:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+  costService:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+  schedulingService:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+  balancer:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+
+# Ingress with development-friendly settings
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: yawl-dev.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: engine
+  tls: []
+
+# Monitoring enabled for dev testing
+monitoring:
+  enabled: true
+  serviceMonitorLabels:
+    release: prometheus
+
+# Istio disabled for dev simplicity
+istio:
+  enabled: false
+
+# Development-friendly JVM settings
+jvm:
+  opts: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=50.0
+    -XX:InitialRAMPercentage=25.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -Djava.security.egd=file:/dev/./urandom
+    -Djdk.virtualThreadScheduler.parallelism=16
+
+# Relaxed security for development
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+# Network policy less restrictive for dev
+networkPolicy:
+  enabled: false
+
+# Pod disruption budget not needed for dev
+podDisruptionBudget:
+  enabled: false
+
+# Development logging
+logging:
+  yawl: DEBUG
+  worklet: DEBUG
+  resource: DEBUG
+  hibernate: INFO
+  root: INFO

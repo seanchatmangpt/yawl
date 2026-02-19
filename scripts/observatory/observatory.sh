@@ -24,6 +24,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/lib"
 
 source "${LIB_DIR}/util.sh"
+source "${LIB_DIR}/locking.sh"
+source "${LIB_DIR}/dependency-registry.sh"
 source "${LIB_DIR}/discovery-cache.sh"
 source "${LIB_DIR}/incremental.sh"
 source "${LIB_DIR}/emit-facts.sh"
@@ -81,6 +83,15 @@ echo "  Mode:    $(is_force_mode && echo 'FORCE (full regeneration)' || echo 'IN
 echo "=================================================================="
 echo ""
 
+# ── Acquire exclusive lock to prevent concurrent runs ──────────────────────
+if ! acquire_lock; then
+    log_error "Failed to acquire observatory lock. Another run may be in progress."
+    log_info "If this is a stale lock, run: rm -f ${OBSERVATORY_LOCK_FILE}"
+    log_info "Or set OBSERVATORY_LOCK_TIMEOUT=30 to wait for lock release"
+    exit 1
+fi
+trap release_lock EXIT
+
 ensure_output_dirs
 
 # ── Warm discovery cache (parallel) ───────────────────────────────────────
@@ -109,10 +120,16 @@ if $RUN_FACTS; then
         log_info "Phase 1/6: Generating facts ... [PARALLEL]"
         timer_start
         record_memory "facts_start"
+        reset_cache_stats 2>/dev/null || true
         emit_all_facts
         FACTS_ELAPSED=$(timer_elapsed_ms)
         record_phase_timing "facts" "$FACTS_ELAPSED"
         echo "$FACTS_ELAPSED" > "${PHASE_TMP_DIR}/facts_elapsed"
+        # Export cache stats for aggregation (subshell isolation requires file export)
+        if declare -f get_cache_summary_json >/dev/null 2>&1; then
+            get_cache_summary_json > "${PHASE_TMP_DIR}/facts_cache_stats"
+            log_info "Facts cache stats exported: $(cat "${PHASE_TMP_DIR}/facts_cache_stats")"
+        fi
         log_ok "Facts completed in ${FACTS_ELAPSED}ms"
     ) &
     PHASE_PIDS[facts]=$!
@@ -124,10 +141,16 @@ if $RUN_DIAGRAMS; then
         log_info "Phase 2/6: Generating diagrams ... [PARALLEL]"
         timer_start
         record_memory "diagrams_start"
+        reset_cache_stats 2>/dev/null || true
         emit_all_diagrams
         DIAGRAMS_ELAPSED=$(timer_elapsed_ms)
         record_phase_timing "diagrams" "$DIAGRAMS_ELAPSED"
         echo "$DIAGRAMS_ELAPSED" > "${PHASE_TMP_DIR}/diagrams_elapsed"
+        # Export cache stats for aggregation (subshell isolation requires file export)
+        if declare -f get_cache_summary_json >/dev/null 2>&1; then
+            get_cache_summary_json > "${PHASE_TMP_DIR}/diagrams_cache_stats"
+            log_info "Diagrams cache stats exported: $(cat "${PHASE_TMP_DIR}/diagrams_cache_stats")"
+        fi
         log_ok "Diagrams completed in ${DIAGRAMS_ELAPSED}ms"
     ) &
     PHASE_PIDS[diagrams]=$!
@@ -139,10 +162,16 @@ if $RUN_YAWL; then
         log_info "Phase 3/6: Generating YAWL XML ... [PARALLEL]"
         timer_start
         record_memory "yawl_start"
+        reset_cache_stats 2>/dev/null || true
         emit_yawl_xml_all
         YAWL_XML_ELAPSED=$(timer_elapsed_ms)
         record_phase_timing "yawl_xml" "$YAWL_XML_ELAPSED"
         echo "$YAWL_XML_ELAPSED" > "${PHASE_TMP_DIR}/yawl_elapsed"
+        # Export cache stats for aggregation (subshell isolation requires file export)
+        if declare -f get_cache_summary_json >/dev/null 2>&1; then
+            get_cache_summary_json > "${PHASE_TMP_DIR}/yawl_cache_stats"
+            log_info "YAWL cache stats exported: $(cat "${PHASE_TMP_DIR}/yawl_cache_stats")"
+        fi
         log_ok "YAWL XML completed in ${YAWL_XML_ELAPSED}ms"
     ) &
     PHASE_PIDS[yawl]=$!
@@ -154,10 +183,16 @@ if $RUN_INTEGRATION; then
         log_info "Phase 4/6: Generating MCP/A2A integration diagrams ... [PARALLEL]"
         timer_start
         record_memory "integration_start"
+        reset_cache_stats 2>/dev/null || true
         emit_all_integration_diagrams
         INTEGRATION_ELAPSED=$(timer_elapsed_ms)
         record_phase_timing "integration" "$INTEGRATION_ELAPSED"
         echo "$INTEGRATION_ELAPSED" > "${PHASE_TMP_DIR}/integration_elapsed"
+        # Export cache stats for aggregation (subshell isolation requires file export)
+        if declare -f get_cache_summary_json >/dev/null 2>&1; then
+            get_cache_summary_json > "${PHASE_TMP_DIR}/integration_cache_stats"
+            log_info "Integration cache stats exported: $(cat "${PHASE_TMP_DIR}/integration_cache_stats")"
+        fi
         log_ok "Integration diagrams completed in ${INTEGRATION_ELAPSED}ms"
     ) &
     PHASE_PIDS[integration]=$!
@@ -169,11 +204,17 @@ if $RUN_STATIC_ANALYSIS; then
         log_info "Phase 5/6: Generating static analysis facts and diagrams ... [PARALLEL]"
         timer_start
         record_memory "static_analysis_start"
+        reset_cache_stats 2>/dev/null || true
         emit_static_analysis_facts
         emit_static_analysis_diagrams
         STATIC_ANALYSIS_ELAPSED=$(timer_elapsed_ms)
         record_phase_timing "static_analysis" "$STATIC_ANALYSIS_ELAPSED"
         echo "$STATIC_ANALYSIS_ELAPSED" > "${PHASE_TMP_DIR}/static_analysis_elapsed"
+        # Export cache stats for aggregation (subshell isolation requires file export)
+        if declare -f get_cache_summary_json >/dev/null 2>&1; then
+            get_cache_summary_json > "${PHASE_TMP_DIR}/static_analysis_cache_stats"
+            log_info "Static analysis cache stats exported: $(cat "${PHASE_TMP_DIR}/static_analysis_cache_stats")"
+        fi
         log_ok "Static analysis completed in ${STATIC_ANALYSIS_ELAPSED}ms"
     ) &
     PHASE_PIDS[static_analysis]=$!
@@ -199,6 +240,54 @@ done
 [[ -f "${PHASE_TMP_DIR}/yawl_elapsed" ]] && YAWL_XML_ELAPSED=$(cat "${PHASE_TMP_DIR}/yawl_elapsed")
 [[ -f "${PHASE_TMP_DIR}/integration_elapsed" ]] && INTEGRATION_ELAPSED=$(cat "${PHASE_TMP_DIR}/integration_elapsed")
 [[ -f "${PHASE_TMP_DIR}/static_analysis_elapsed" ]] && STATIC_ANALYSIS_ELAPSED=$(cat "${PHASE_TMP_DIR}/static_analysis_elapsed")
+
+# ── Aggregate cache statistics from parallel phases ─────────────────────────
+AGGREGATED_CACHE_HITS=0
+AGGREGATED_CACHE_MISSES=0
+AGGREGATED_CACHE_SKIPPED=0
+
+aggregate_phase_cache_stats() {
+    local phase="$1"
+    local stats_file="${PHASE_TMP_DIR}/${phase}_cache_stats"
+    if [[ -f "$stats_file" ]]; then
+        local hits misses skipped
+        # Robust JSON parsing with error handling
+        hits=$(python3 -c "import json; print(json.load(open('$stats_file')).get('hits', 0))" 2>/dev/null || echo "0")
+        misses=$(python3 -c "import json; print(json.load(open('$stats_file')).get('misses', 0))" 2>/dev/null || echo "0")
+        skipped=$(python3 -c "import json; print(json.load(open('$stats_file')).get('skipped', 0))" 2>/dev/null || echo "0")
+        # Ensure numeric values (handle edge cases)
+        hits=${hits:-0}
+        misses=${misses:-0}
+        skipped=${skipped:-0}
+        AGGREGATED_CACHE_HITS=$((AGGREGATED_CACHE_HITS + hits))
+        AGGREGATED_CACHE_MISSES=$((AGGREGATED_CACHE_MISSES + misses))
+        AGGREGATED_CACHE_SKIPPED=$((AGGREGATED_CACHE_SKIPPED + skipped))
+        log_info "Phase '$phase' cache: hits=$hits, misses=$misses, skipped=$skipped"
+    else
+        log_info "Phase '$phase' cache stats file not found (phase may have been skipped)"
+    fi
+}
+
+# Aggregate stats from all phases that ran
+log_info "Aggregating cache statistics from parallel phases..."
+for phase in facts diagrams yawl integration static_analysis; do
+    aggregate_phase_cache_stats "$phase"
+done
+
+# Calculate aggregate hit ratio
+AGGREGATED_TOTAL=$((AGGREGATED_CACHE_HITS + AGGREGATED_CACHE_MISSES))
+if [[ $AGGREGATED_TOTAL -gt 0 ]]; then
+    AGGREGATED_HIT_RATIO=$(echo "scale=2; $AGGREGATED_CACHE_HITS / $AGGREGATED_TOTAL" | bc 2>/dev/null || echo "0")
+    # Ensure leading zero for values < 1
+    if [[ "$AGGREGATED_HIT_RATIO" == .* ]]; then
+        AGGREGATED_HIT_RATIO="0${AGGREGATED_HIT_RATIO}"
+    fi
+else
+    AGGREGATED_HIT_RATIO="0.00"
+fi
+
+# Log cache performance
+log_info "Cache Performance Summary: ${AGGREGATED_CACHE_HITS} hits, ${AGGREGATED_CACHE_MISSES} misses, ${AGGREGATED_CACHE_SKIPPED} skipped, ${AGGREGATED_HIT_RATIO} hit ratio"
 
 # Report phase status
 for phase in "${!PHASE_STATUS[@]}"; do
@@ -264,6 +353,12 @@ echo "  Diagrams:      ${DIAGRAMS_ELAPSED:-0}ms"
 echo "  YAWL XML:      ${YAWL_XML_ELAPSED:-0}ms"
 echo "  Integration:   ${INTEGRATION_ELAPSED:-0}ms"
 echo "  Static Analysis: ${STATIC_ANALYSIS_ELAPSED:-0}ms"
+echo "------------------------------------------------------------------"
+echo "  Cache Performance (Incremental)"
+echo "  Cache Hits:    ${AGGREGATED_CACHE_HITS}"
+echo "  Cache Misses:  ${AGGREGATED_CACHE_MISSES}"
+echo "  Cache Skipped: ${AGGREGATED_CACHE_SKIPPED}"
+echo "  Hit Ratio:     ${AGGREGATED_HIT_RATIO}"
 echo "------------------------------------------------------------------"
 echo "  Performance Report: docs/v6/latest/performance/"
 echo "=================================================================="

@@ -37,7 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - 1000 YawlMcpServer constructions in under 5 seconds
  * - 10000 McpLoggingHandler level checks in under 1 second
  * - 50 concurrent capability constructions complete in under 2 seconds
- * - 1000 ApiKeyAuthenticationProvider key registrations in under 3 seconds
+ *
+ * Note: A2A authentication performance tests are in the a2a module tests.
  *
  * @author YAWL Foundation
  * @version 5.2
@@ -259,107 +260,5 @@ public class McpPerformanceTest extends TestCase {
         assertTrue("Concurrent level changes should complete in 3 seconds", finished);
         assertEquals("No errors should occur during concurrent level changes",
             0, errors.get());
-    }
-
-    // =========================================================================
-    // ApiKeyAuthenticationProvider key registration throughput
-    // =========================================================================
-
-    public void testThousandKeyRegistrationsUnder3Seconds() {
-        org.yawlfoundation.yawl.integration.a2a.auth.ApiKeyAuthenticationProvider provider =
-            new org.yawlfoundation.yawl.integration.a2a.auth.ApiKeyAuthenticationProvider(
-                "perf-test-master-key-16chars");
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 1_000; i++) {
-            provider.registerKey(
-                "agent-" + i,
-                "user-" + i,
-                "key-value-" + i,
-                java.util.Set.of(
-                    org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal.PERM_ALL)
-            );
-        }
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals("All 1000 keys should be registered",
-            1000, provider.registeredKeyCount());
-        assertTrue("1000 key registrations should complete in < 3000ms, took "
-            + elapsed + "ms", elapsed < 3000);
-    }
-
-    public void testKeyRevocationThroughput() {
-        org.yawlfoundation.yawl.integration.a2a.auth.ApiKeyAuthenticationProvider provider =
-            new org.yawlfoundation.yawl.integration.a2a.auth.ApiKeyAuthenticationProvider(
-                "revoke-perf-master-key-16c");
-
-        // Register 500 keys
-        for (int i = 0; i < 500; i++) {
-            provider.registerKey("agent-" + i, "user-" + i, "key-" + i,
-                java.util.Set.of(
-                    org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal.PERM_ALL));
-        }
-        assertEquals(500, provider.registeredKeyCount());
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 500; i++) {
-            provider.revokeKey("agent-" + i);
-        }
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals("All keys should be revoked", 0, provider.registeredKeyCount());
-        assertTrue("500 key revocations should complete in < 1000ms, took "
-            + elapsed + "ms", elapsed < 1000);
-    }
-
-    // =========================================================================
-    // JWT token issuance throughput
-    // =========================================================================
-
-    public void testHundredJwtTokenIssuanceUnder2Seconds() {
-        org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider provider =
-            new org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider(
-                "jwt-perf-test-secret-32-characters-long", null);
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 100; i++) {
-            String token = provider.issueToken(
-                "agent-perf-" + i,
-                java.util.List.of(
-                    org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal.PERM_ALL),
-                60_000L
-            );
-            assertNotNull("Issued token should not be null", token);
-            assertFalse("Issued token should not be empty", token.isEmpty());
-        }
-        long elapsed = System.currentTimeMillis() - start;
-        assertTrue("100 JWT token issuances should complete in < 2000ms, took "
-            + elapsed + "ms", elapsed < 2000);
-    }
-
-    // =========================================================================
-    // AuthenticatedPrincipal construction and permission check throughput
-    // =========================================================================
-
-    public void testTenThousandPrincipalConstructionsUnder1Second() {
-        long start = System.currentTimeMillis();
-        java.time.Instant now = java.time.Instant.now();
-        for (int i = 0; i < 10_000; i++) {
-            org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal principal =
-                new org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal(
-                    "agent-" + i,
-                    java.util.Set.of(
-                        org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal.PERM_ALL),
-                    "ApiKey",
-                    now,
-                    null
-                );
-            assertTrue("Principal should grant PERM_ALL",
-                principal.hasPermission(
-                    org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal.PERM_ALL));
-        }
-        long elapsed = System.currentTimeMillis() - start;
-        assertTrue("10000 principal constructions should complete in < 1000ms, took "
-            + elapsed + "ms", elapsed < 1000);
     }
 }

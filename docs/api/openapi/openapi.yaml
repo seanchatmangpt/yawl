@@ -1,0 +1,1505 @@
+openapi: 3.0.3
+info:
+  title: YAWL Engine API
+  description: |
+    Enterprise BPM/Workflow Engine REST API based on rigorous Petri net semantics.
+
+    ## Overview
+    YAWL (Yet Another Workflow Language) provides comprehensive workflow management
+    capabilities through four primary interfaces:
+
+    - **Interface A**: Design-time operations (specification upload, validation, management)
+    - **Interface B**: Runtime operations (case management, work item execution)
+    - **Interface E**: Event and audit logging (process monitoring, compliance)
+    - **Interface X**: Extended operations (exception handling, work item control)
+
+    ## Authentication
+    All endpoints require a valid `sessionHandle` obtained through the connect endpoint.
+    Sessions expire after one hour of inactivity.
+
+    ## Response Format
+    All responses are in XML format unless otherwise specified. Error responses follow
+    the pattern: `<failure>Error message</failure>`
+
+    ## Version
+    YAWL Engine v5.2 - Java 25 with virtual threads support
+  version: 5.2.0
+  contact:
+    name: YAWL Foundation
+    url: https://yawlfoundation.org
+  license:
+    name: GNU Lesser General Public License v3.0
+    url: https://www.gnu.org/licenses/lgpl-3.0.html
+
+servers:
+  - url: http://localhost:8080/yawl
+    description: Local development server
+  - url: https://yawl.example.com/yawl
+    description: Production server
+
+tags:
+  - name: Session
+    description: Session management and authentication
+  - name: InterfaceA
+    description: Design-time specification management
+  - name: InterfaceB
+    description: Runtime case and work item operations
+  - name: InterfaceE
+    description: Event logging and process monitoring
+  - name: InterfaceX
+    description: Extended exception handling operations
+  - name: Security
+    description: Certificate and signature management
+  - name: Audit
+    description: Receipt chain and compliance auditing
+
+paths:
+  # ============================================
+  # SESSION MANAGEMENT
+  # ============================================
+  /ib:
+    post:
+      tags: [Session]
+      summary: Connect to engine
+      description: |
+        Creates a user session with the engine. Returns a session handle for use in all
+        other engine access methods. Sessions expire after one hour of inactivity.
+      operationId: connect
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [action, userid, password]
+              properties:
+                action:
+                  type: string
+                  enum: [connect]
+                userid:
+                  type: string
+                  description: Valid user ID
+                password:
+                  type: string
+                  format: password
+                  description: Encrypted password
+      responses:
+        '200':
+          description: Session handle returned
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "12.3.4.5.abc123def456"
+        '401':
+          description: Authentication failed
+
+    get:
+      tags: [Session]
+      summary: Check connection
+      operationId: checkConnection
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connection status
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "<response><success>Connection active</success></response>"
+
+  /ia:
+    post:
+      tags: [Session]
+      summary: Disconnect from engine
+      operationId: disconnect
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [action, sessionHandle]
+              properties:
+                action:
+                  type: string
+                  enum: [disconnect]
+                sessionHandle:
+                  type: string
+      responses:
+        '200':
+          description: Disconnected successfully
+
+  # ============================================
+  # INTERFACE A - SPECIFICATION MANAGEMENT
+  # ============================================
+  /ia/specifications:
+    post:
+      tags: [InterfaceA]
+      summary: Upload specification
+      description: |
+        Uploads a YAWL specification XML to the engine for validation and loading.
+        The specification must conform to the YAWL Schema 4.0 XSD.
+      operationId: uploadSpecification
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Specification'
+            examples:
+              basic:
+                summary: Basic workflow specification
+                value: |
+                  <specificationSet xmlns="http://www.yawlfoundation.org/yawlschema">
+                    <specification uri="http://example.com/specs/approval">
+                      <net id="root">
+                        <inputPort name="request"/>
+                        <task id="approve"/>
+                        <outputPort name="result"/>
+                      </net>
+                    </specification>
+                  </specificationSet>
+      responses:
+        '200':
+          description: Specification uploaded successfully
+          content:
+            application/xml:
+              schema:
+                type: string
+                example: "<response><success>Specification loaded</success></response>"
+        '400':
+          description: Invalid specification XML
+        '401':
+          description: Invalid session handle
+
+    get:
+      tags: [InterfaceA]
+      summary: List all specifications
+      description: Returns a list of all loaded specifications in the engine
+      operationId: getSpecifications
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of specifications
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SpecificationList'
+
+  /ia/specifications/{specId}:
+    delete:
+      tags: [InterfaceA]
+      summary: Unload specification
+      description: Removes a loaded specification from the engine
+      operationId: unloadSpecification
+      parameters:
+        - name: specId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Specification identifier
+        - name: version
+          in: query
+          schema:
+            type: string
+          description: Specification version (defaults to 0.1 for pre-2.0 specs)
+        - name: uri
+          in: query
+          schema:
+            type: string
+          description: Specification URI
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Specification unloaded
+        '404':
+          description: Specification not found
+
+  # ============================================
+  # INTERFACE B - CASE MANAGEMENT
+  # ============================================
+  /ib/cases:
+    post:
+      tags: [InterfaceB]
+      summary: Launch case
+      description: |
+        Launches a new case instance of a specification. Supports delayed execution,
+        custom case IDs, and completion observers.
+      operationId: launchCase
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [action, sessionHandle]
+              properties:
+                action:
+                  type: string
+                  enum: [launchCase]
+                specidentifier:
+                  type: string
+                  description: Specification identifier
+                specversion:
+                  type: string
+                  default: "0.1"
+                specuri:
+                  type: string
+                  description: Specification URI
+                caseParams:
+                  type: string
+                  description: Case parameters as XML
+                caseid:
+                  type: string
+                  description: Pre-selected unique case identifier
+                completionObserverURI:
+                  type: string
+                  description: URI for case completion notifications
+                mSec:
+                  type: integer
+                  description: Milliseconds to wait before launching
+                logData:
+                  type: string
+                  description: Log data items as XML
+                sessionHandle:
+                  type: string
+      responses:
+        '200':
+          description: Case launched successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "12.3.4.5"
+
+    get:
+      tags: [InterfaceB]
+      summary: Get all running cases
+      operationId: getAllRunningCases
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [getAllRunningCases]
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of running case IDs
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/CaseList'
+
+  /ib/cases/{caseId}:
+    get:
+      tags: [InterfaceB]
+      summary: Get case state
+      description: Returns the current state of a case as an XML snapshot
+      operationId: getCaseState
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [getCaseState]
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case state snapshot
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/CaseState'
+
+    delete:
+      tags: [InterfaceB]
+      summary: Cancel case
+      description: Cancels a running case instance
+      operationId: cancelCase
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case cancelled
+
+  /ib/cases/{caseId}/data:
+    get:
+      tags: [InterfaceB]
+      summary: Get case data
+      operationId: getCaseData
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case data as XML
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  # ============================================
+  # INTERFACE B - WORK ITEM MANAGEMENT
+  # ============================================
+  /ib/workitems:
+    get:
+      tags: [InterfaceB]
+      summary: Get all live work items
+      operationId: getLiveWorkItems
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [getLiveItems]
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of live work items
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/WorkItemList'
+
+  /ib/workitems/{workItemId}:
+    get:
+      tags: [InterfaceB]
+      summary: Get work item details
+      operationId: getWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item details
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/WorkItemRecord'
+
+  /ib/workitems/{workItemId}/checkout:
+    post:
+      tags: [InterfaceB]
+      summary: Check out work item
+      description: |
+        Obtains ownership of a work item. The work item must be in 'enabled' or 'fired'
+        status. After successful checkout, the work item status becomes 'executing'.
+      operationId: checkOutWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: logPredicate
+          in: query
+          schema:
+            type: string
+          description: Optional logging predicate
+      responses:
+        '200':
+          description: Work item checked out
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/WorkItemRecord'
+
+  /ib/workitems/{workItemId}/checkin:
+    post:
+      tags: [InterfaceB]
+      summary: Check in work item
+      description: |
+        Returns a completed work item to the engine with updated data.
+        Successfully checking in will cause the work item to complete.
+      operationId: checkInWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: logPredicate
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: string
+                  description: Updated work item data as XML
+                  example: "<data><result>approved</result></data>"
+      responses:
+        '200':
+          description: Work item checked in
+
+  /ib/workitems/{workItemId}/suspend:
+    post:
+      tags: [InterfaceB, InterfaceX]
+      summary: Suspend work item
+      operationId: suspendWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item suspended
+
+  /ib/workitems/{workItemId}/unsuspend:
+    post:
+      tags: [InterfaceB, InterfaceX]
+      summary: Resume work item
+      operationId: unsuspendWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item resumed
+
+  /ib/workitems/{workItemId}/rollback:
+    post:
+      tags: [InterfaceB]
+      summary: Rollback work item
+      description: Rolls back a work item from 'executing' to 'fired' status
+      operationId: rollbackWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item rolled back
+
+  /ib/workitems/{workItemId}/skip:
+    post:
+      tags: [InterfaceB]
+      summary: Skip work item
+      operationId: skipWorkItem
+      parameters:
+        - name: workItemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item skipped
+
+  # ============================================
+  # INTERFACE X - EXTENDED OPERATIONS (REST)
+  # ============================================
+  /ix/workitems/{itemId}/cancel:
+    post:
+      tags: [InterfaceX]
+      summary: Cancel work item with exception
+      description: |
+        Cancels a work item with optional exception data. Used for handling
+        exceptional conditions in workflow execution.
+      operationId: cancelWorkItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fail
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Mark cancellation as failure
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              type: string
+              description: Optional exception data XML
+      responses:
+        '200':
+          description: Work item cancelled
+
+  /ix/workitems/{itemId}/suspend:
+    post:
+      tags: [InterfaceX]
+      summary: Suspend work item (REST)
+      operationId: suspendWorkItemRest
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item suspended
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /ix/workitems/{itemId}/resume:
+    post:
+      tags: [InterfaceX]
+      summary: Resume work item (REST)
+      operationId: resumeWorkItemRest
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Work item resumed
+
+  /ix/workitems/{itemId}/data:
+    put:
+      tags: [InterfaceX]
+      summary: Update work item data
+      description: Updates the data of a work item without checking it in
+      operationId: updateWorkItemData
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              type: string
+              example: "<data><status>in_progress</status></data>"
+      responses:
+        '200':
+          description: Data updated
+
+  /ix/listeners:
+    post:
+      tags: [InterfaceX]
+      summary: Register InterfaceX listener
+      description: Registers a URI to receive exception handling notifications
+      operationId: addListener
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: Listener URI
+              example: "http://localhost:8080/myService/exceptionHandler"
+      responses:
+        '200':
+          description: Listener registered
+
+    delete:
+      tags: [InterfaceX]
+      summary: Unregister InterfaceX listener
+      operationId: removeListener
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: uri
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Listener removed
+
+  # ============================================
+  # INTERFACE E - EVENT LOGGING
+  # ============================================
+  /ie/specifications:
+    get:
+      tags: [InterfaceE]
+      summary: Get logged specifications
+      description: Returns all specifications with logged execution data
+      operationId: getLoggedSpecifications
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of logged specifications
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /ie/specifications/{specKey}/cases:
+    get:
+      tags: [InterfaceE]
+      summary: Get cases for specification
+      operationId: getCasesForSpecification
+      parameters:
+        - name: specKey
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric specification log key
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of case instances
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /ie/listeners:
+    get:
+      tags: [InterfaceE]
+      summary: Get event listeners
+      description: Returns registered YAWL services that receive event notifications
+      operationId: getListeners
+      parameters:
+        - name: sessionHandle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of listener URIs
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  # ============================================
+  # SECURITY ENDPOINTS
+  # ============================================
+  /security/health:
+    get:
+      tags: [Security]
+      summary: Security subsystem health check
+      operationId: securityHealth
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "operational"
+                  module:
+                    type: string
+                    example: "YAWL Security PKI"
+                  version:
+                    type: string
+                    example: "5.2"
+
+  /security/certificates:
+    get:
+      tags: [Security]
+      summary: List certificates
+      description: Lists all available certificates in the keystore
+      operationId: listCertificates
+      responses:
+        '200':
+          description: List of certificates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  certificates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Certificate'
+
+  /security/certificates/{alias}:
+    get:
+      tags: [Security]
+      summary: Get certificate details
+      operationId: getCertificateDetails
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Certificate details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certificate'
+
+  /security/certificates/{alias}/sign:
+    post:
+      tags: [Security]
+      summary: Sign document
+      operationId: signDocument
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document:
+                  type: string
+                  format: byte
+                  description: Base64 encoded document
+      responses:
+        '200':
+          description: Document signed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  signature:
+                    type: string
+                    format: byte
+
+  /security/certificates/{alias}/verify:
+    post:
+      tags: [Security]
+      summary: Verify signature
+      operationId: verifySignature
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document:
+                  type: string
+                  format: byte
+                signature:
+                  type: string
+                  format: byte
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+
+  # ============================================
+  # AUDIT ENDPOINTS
+  # ============================================
+  /audit/case/{caseId}/receipts:
+    get:
+      tags: [Audit]
+      summary: Get receipt chain
+      description: Retrieves full receipt chain for a case (chronological order)
+      operationId: getReceiptChain
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Receipt chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptChainResponse'
+
+  /audit/case/{caseId}/state:
+    get:
+      tags: [Audit]
+      summary: Get computed case state
+      description: Returns case state computed from receipt chain (truth by recomputation)
+      operationId: getComputedCaseState
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Computed state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseId:
+                    type: string
+                  computedState:
+                    type: string
+                  method:
+                    type: string
+                    example: "recomputation-from-receipts"
+
+  /audit/case/{caseId}/stats:
+    get:
+      tags: [Audit]
+      summary: Get case statistics
+      description: Returns admission/rejection metrics for a case
+      operationId: getCaseStats
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseStats'
+
+  /audit/receipt/{receiptId}:
+    get:
+      tags: [Audit]
+      summary: Get single receipt
+      operationId: getReceipt
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Receipt details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+        '404':
+          description: Receipt not found
+
+  /audit/verify/{caseId}:
+    get:
+      tags: [Audit]
+      summary: Verify chain integrity
+      description: Performs tamper detection on receipt chain
+      operationId: verifyChainIntegrity
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseId:
+                    type: string
+                  chainValid:
+                    type: boolean
+                  result:
+                    type: string
+                    enum: [CHAIN_INTEGRITY_VERIFIED, CHAIN_INTEGRITY_VIOLATED]
+
+  /audit/case/{caseId}/time-range:
+    get:
+      tags: [Audit]
+      summary: Query by time range
+      description: Query receipts within a time range (incident response)
+      operationId: queryByTimeRange
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Start timestamp in milliseconds
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: End timestamp in milliseconds
+      responses:
+        '200':
+          description: Receipts in time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptChainResponse'
+
+  /audit/case/{caseId}/admitted:
+    get:
+      tags: [Audit]
+      summary: Get admitted transitions
+      description: Query all lawful (committed) transitions for a case
+      operationId: getAdmittedTransitions
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Admitted transitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptChainResponse'
+
+  /audit/case/{caseId}/rejected:
+    get:
+      tags: [Audit]
+      summary: Get rejected transitions
+      description: Query all policy-violating (rejected) transitions for debugging
+      operationId: getRejectedTransitions
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rejected transitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptChainResponse'
+
+components:
+  schemas:
+    # Core Data Types
+    SpecificationID:
+      type: object
+      description: Unique identifier for a YAWL specification
+      required: [uri]
+      properties:
+        identifier:
+          type: string
+          description: Unique identifier (v2.0+ specs)
+          nullable: true
+        version:
+          type: string
+          default: "0.1"
+          description: Specification version
+        uri:
+          type: string
+          description: Specification URI
+      example:
+        identifier: "approval-workflow"
+        version: "2.0"
+        uri: "http://example.com/specs/approval"
+
+    Specification:
+      type: object
+      description: YAWL workflow specification
+      xml:
+        name: specificationSet
+        namespace: http://www.yawlfoundation.org/yawlschema
+      properties:
+        specification:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecificationDetail'
+
+    SpecificationDetail:
+      type: object
+      properties:
+        uri:
+          type: string
+        name:
+          type: string
+        documentation:
+          type: string
+        net:
+          $ref: '#/components/schemas/Net'
+
+    Net:
+      type: object
+      description: Petri net definition
+      properties:
+        id:
+          type: string
+        inputPort:
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+        task:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        outputPort:
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+
+    Port:
+      type: object
+      properties:
+        name:
+          type: string
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+    SpecificationList:
+      type: object
+      xml:
+        name: specifications
+      properties:
+        specification:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecificationSummary'
+
+    SpecificationSummary:
+      type: object
+      properties:
+        identifier:
+          type: string
+        uri:
+          type: string
+        version:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Enabled, Disabled]
+
+    CaseList:
+      type: object
+      xml:
+        name: cases
+      properties:
+        caseId:
+          type: array
+          items:
+            type: string
+
+    CaseState:
+      type: object
+      description: Snapshot of case execution state
+      xml:
+        name: caseState
+      properties:
+        caseId:
+          type: string
+        specId:
+          $ref: '#/components/schemas/SpecificationID'
+        status:
+          type: string
+          enum: [Running, Complete, Cancelled, Failed]
+        netState:
+          type: object
+          description: Petri net marking state
+        workItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkItemSummary'
+
+    WorkItemSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        taskId:
+          type: string
+        status:
+          type: string
+
+    WorkItemList:
+      type: object
+      xml:
+        name: itemrecords
+      properties:
+        workItemRecord:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkItemRecord'
+
+    WorkItemRecord:
+      type: object
+      description: Complete work item record for passing across interfaces
+      xml:
+        name: workItemRecord
+      properties:
+        id:
+          type: string
+          description: Unique composite ID (caseID:taskID:status)
+        specversion:
+          type: string
+        specuri:
+          type: string
+        caseid:
+          type: string
+        taskid:
+          type: string
+        uniqueid:
+          type: string
+        taskname:
+          type: string
+        documentation:
+          type: string
+        allowsdynamiccreation:
+          type: string
+          enum: ["true", "false"]
+        requiresmanualresourcing:
+          type: string
+          enum: ["true", "false"]
+        codelet:
+          type: string
+          description: Auto-task codelet name
+        enablementTimeMs:
+          type: string
+          description: Enablement timestamp in milliseconds
+        firingTimeMs:
+          type: string
+        startTimeMs:
+          type: string
+        completionTimeMs:
+          type: string
+        timertrigger:
+          type: string
+        timerexpiry:
+          type: string
+        status:
+          type: string
+          enum: [Enabled, Fired, Executing, Complete, Is parent, Deadlocked,
+                 ForcedComplete, Failed, Suspended, Discarded]
+        resourceStatus:
+          type: string
+          enum: [Offered, Allocated, Started, Suspended, Unoffered, Unresourced]
+        startedBy:
+          type: string
+        completedBy:
+          type: string
+        tag:
+          type: string
+        customform:
+          type: string
+          format: uri
+        data:
+          type: string
+          description: Work item data as XML
+        updateddata:
+          type: string
+      example:
+        id: "12.3.4.5:approve_request:Executing"
+        specversion: "2.0"
+        specuri: "http://example.com/specs/approval"
+        caseid: "12.3.4.5"
+        taskid: "approve_request"
+        taskname: "Approve Request"
+        status: "Executing"
+        resourceStatus: "Started"
+        enablementTimeMs: "1708080000000"
+        startTimeMs: "1708080100000"
+
+    Certificate:
+      type: object
+      properties:
+        alias:
+          type: string
+        subject:
+          type: string
+        issuer:
+          type: string
+        notBefore:
+          type: string
+          format: date-time
+        notAfter:
+          type: string
+          format: date-time
+        serialNumber:
+          type: string
+
+    Receipt:
+      type: object
+      description: Immutable transition receipt for audit trail
+      properties:
+        receiptId:
+          type: integer
+          format: int64
+        caseId:
+          type: string
+        tokenHolder:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        beforeState:
+          type: string
+        delta:
+          type: string
+        afterState:
+          type: string
+        admission:
+          type: string
+          enum: [ADMITTED, REJECTED]
+        admissionReason:
+          type: string
+        validatorId:
+          type: string
+        hash:
+          type: string
+        parentHash:
+          type: string
+          nullable: true
+        ingressSource:
+          type: string
+
+    ReceiptChainResponse:
+      type: object
+      properties:
+        caseId:
+          type: string
+        receiptCount:
+          type: integer
+        receipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Receipt'
+        chainValid:
+          type: boolean
+
+    ReceiptResponse:
+      type: object
+      properties:
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+        provenance:
+          type: object
+          properties:
+            hash:
+              type: string
+            parentHash:
+              type: string
+              nullable: true
+            chainValid:
+              type: string
+
+    CaseStats:
+      type: object
+      properties:
+        caseId:
+          type: string
+        committedTransitions:
+          type: integer
+        rejectedTransitions:
+          type: integer
+        firstTransition:
+          type: string
+          format: date-time
+        lastTransition:
+          type: string
+          format: date-time
+        durationMs:
+          type: integer
+          format: int64
+
+    ErrorResponse:
+      type: object
+      xml:
+        name: failure
+      properties:
+        message:
+          type: string
+      example:
+        message: "Session handle is required"
+
+  securitySchemes:
+    SessionAuth:
+      type: apiKey
+      in: query
+      name: sessionHandle
+      description: YAWL session handle obtained through connect endpoint
+
+security:
+  - SessionAuth: []

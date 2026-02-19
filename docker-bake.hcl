@@ -43,7 +43,7 @@ variable "GIT_REF" {
 // -----------------------------------------------------------------------------
 target "dev" {
   context    = "."
-  dockerfile = "Dockerfile.dev"
+  dockerfile = "docker/development/Dockerfile.dev"
   platforms  = ["linux/amd64"]
   tags = [
     "${REGISTRY}/${IMAGE_NAME}:dev",
@@ -69,7 +69,7 @@ target "dev" {
 // -----------------------------------------------------------------------------
 target "builder" {
   context    = "."
-  dockerfile = "Dockerfile.modernized"
+  dockerfile = "docker/production/Dockerfile.engine"
   platforms  = ["linux/amd64", "linux/arm64"]
   target     = "builder"
   tags = [
@@ -90,7 +90,7 @@ target "builder" {
 // -----------------------------------------------------------------------------
 target "staging" {
   context    = "."
-  dockerfile = "Dockerfile.modernized"
+  dockerfile = "docker/production/Dockerfile.engine"
   platforms  = ["linux/amd64", "linux/arm64"]
   tags = [
     "${REGISTRY}/${IMAGE_NAME}:staging",
@@ -121,7 +121,7 @@ target "staging" {
 // -----------------------------------------------------------------------------
 target "production" {
   context    = "."
-  dockerfile = "Dockerfile.modernized"
+  dockerfile = "docker/production/Dockerfile.engine"
   platforms  = ["linux/amd64", "linux/arm64"]
   tags = [
     "${REGISTRY}/${IMAGE_NAME}:latest",
@@ -183,7 +183,7 @@ target "production-arm64" {
 // -----------------------------------------------------------------------------
 target "local" {
   context    = "."
-  dockerfile = "Dockerfile.modernized"
+  dockerfile = "docker/production/Dockerfile.engine"
   platforms  = ["linux/amd64"]  // Single platform for local loading
   tags = [
     "${IMAGE_NAME}:local",

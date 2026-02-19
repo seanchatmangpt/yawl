@@ -268,7 +268,7 @@ jobs:
       matrix:
         image:
           - name: yawl-engine
-            dockerfile: Dockerfile.modernized
+            dockerfile: docker/production/Dockerfile.engine
             registry: ghcr.io
 
     steps:

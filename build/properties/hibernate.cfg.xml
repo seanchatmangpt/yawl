@@ -6,10 +6,81 @@ PUBLIC "-//Hibernate/Hibernate Configuration DTD 6.0//EN"
 <hibernate-configuration>
    <session-factory>
 
-       <!-- Enable Hibernate's automatic session context management -->
+       <!-- ============================================ -->
+       <!-- Session Management                           -->
+       <!-- ============================================ -->
        <property name="hibernate.current_session_context_class">thread</property>
 
+       <!-- ============================================ -->
+       <!-- Query Optimization                           -->
+       <!-- Target: P95 < 50ms, P99 < 100ms              -->
+       <!-- ============================================ -->
+       
+       <!-- Disable SQL logging in production (enable for debugging) -->
        <property name="hibernate.show_sql">false</property>
+       <property name="hibernate.format_sql">false</property>
+       
+       <!-- Enable query statistics for performance monitoring -->
+       <property name="hibernate.generate_statistics">true</property>
+       
+       <!-- JDBC batch size for bulk operations -->
+       <property name="hibernate.jdbc.batch_size">50</property>
+       <property name="hibernate.order_inserts">true</property>
+       <property name="hibernate.order_updates">true</property>
+       <property name="hibernate.batch_versioned_data">true</property>
+       
+       <!-- Fetch optimization -->
+       <property name="hibernate.default_batch_fetch_size">25</property>
+       <property name="hibernate.max_fetch_depth">3</property>
+
+       <!-- ============================================ -->
+       <!-- Connection Pool (HikariCP)                   -->
+       <!-- Target: < 80% utilization                    -->
+       <!-- ============================================ -->
+       
+       <!-- HikariCP settings (via custom provider) -->
+       <property name="hibernate.hikari.maximumPoolSize">20</property>
+       <property name="hibernate.hikari.minimumIdle">5</property>
+       <property name="hibernate.hikari.connectionTimeout">30000</property>
+       <property name="hibernate.hikari.idleTimeout">600000</property>
+       <property name="hibernate.hikari.maxLifetime">1800000</property>
+       <property name="hibernate.hikari.keepaliveTime">120000</property>
+       <property name="hibernate.hikari.leakDetectionThreshold">60000</property>
+       
+       <!-- ============================================ -->
+       <!-- Second-Level Cache (L2)                      -->
+       <!-- Target: > 95% hit rate                       -->
+       <!-- ============================================ -->
+       
+       <!-- Enable second-level cache -->
+       <property name="hibernate.cache.use_second_level_cache">true</property>
+       <property name="hibernate.cache.use_query_cache">true</property>
+       
+       <!-- Cache provider (use Ehcache or Redis for production) -->
+       <property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</property>
+       <property name="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
+       <property name="hibernate.javax.cache.uri">ehcache.xml</property>
+       
+       <!-- Cache defaults -->
+       <property name="hibernate.cache.default_cache_concurrency_strategy">read-write</property>
+
+       <!-- ============================================ -->
+       <!-- Schema Management                            -->
+       <!-- ============================================ -->
+       
+       <!-- Use Flyway for schema migration instead of hbm2ddl in production -->
+       <!-- For development/testing: update, validate, create-drop -->
+       <property name="hibernate.hbm2ddl.auto">validate</property>
+
+       <!-- ============================================ -->
+       <!-- Performance Tuning                           -->
+       <!-- ============================================ -->
+       
+       <!-- Optimistic locking -->
+       <property name="hibernate.jdbc.batch_versioned_data">true</property>
+       
+       <!-- Flush mode - manual for best performance in web apps -->
+       <!-- property name="org.hibernate.flushMode">MANUAL</property -->
 
    </session-factory>
 </hibernate-configuration>

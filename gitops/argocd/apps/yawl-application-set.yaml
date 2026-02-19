@@ -1,0 +1,106 @@
+# =============================================================================
+# YAWL v6.0.0 - ArgoCD ApplicationSet (Multi-Environment)
+# =============================================================================
+# Deploys YAWL to multiple environments (dev, staging, production)
+# from a single ApplicationSet definition.
+#
+# Features:
+#   - Automatic environment creation from Git branches
+#   - Per-environment configuration via values files
+#   - Progressive sync (dev -> staging -> production)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: yawl-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: gitops
+spec:
+  generators:
+    # Matrix generator: combine list + git generators
+    - matrix:
+        generators:
+          # List of environments
+          - list:
+              elements:
+                - environment: dev
+                  namespace: yawl-dev
+                  cluster: https://kubernetes.default.svc
+                  autoSync: true
+                  prune: true
+                  replicas: 1
+                - environment: staging
+                  namespace: yawl-staging
+                  cluster: https://kubernetes.default.svc
+                  autoSync: true
+                  prune: true
+                  replicas: 2
+                - environment: production
+                  namespace: yawl-prod
+                  cluster: https://kubernetes.default.svc
+                  autoSync: false
+                  prune: false
+                  replicas: 3
+
+          # Git generator for image tag from commit
+          - git:
+              repoURL: https://github.com/yawlfoundation/yawl.git
+              revision: main
+              files:
+                - path: "gitops/argocd/config/image-tag.yaml"
+
+  template:
+    metadata:
+      name: 'yawl-{{environment}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: yawl
+        app.kubernetes.io/instance: '{{environment}}'
+        app.kubernetes.io/environment: '{{environment}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+
+    spec:
+      project: yawl
+
+      source:
+        repoURL: https://github.com/yawlfoundation/yawl.git
+        targetRevision: main
+        path: helm/yawl
+
+        helm:
+          valueFiles:
+            - values.yaml
+            - "envs/values-{{environment}}.yaml"
+
+          parameters:
+            - name: services.engine.replicaCount
+              value: '{{replicas}}'
+            - name: global.namespace
+              value: '{{namespace}}'
+
+      destination:
+        server: '{{cluster}}'
+        namespace: '{{namespace}}'
+
+      syncPolicy:
+        automated:
+          prune: {{autoSync}}
+          selfHeal: {{autoSync}}
+          allowEmpty: false
+
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+          - PrunePropagationPolicy=foreground
+          - ServerSideApply=true
+
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas

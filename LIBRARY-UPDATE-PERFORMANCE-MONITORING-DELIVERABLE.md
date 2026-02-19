@@ -457,7 +457,7 @@ jobs:
       
       - name: Compare
         run: |
-          ./scripts/check-regression.sh /tmp/baseline.txt /tmp/current.txt
+          bash scripts/performance/regression-test.sh /tmp/baseline.txt /tmp/current.txt
       
       - name: Upload results
         uses: actions/upload-artifact@v3

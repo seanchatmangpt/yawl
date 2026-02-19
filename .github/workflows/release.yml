@@ -317,7 +317,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.modernized
+          file: ./docker/production/Dockerfile.engine
           push: true
           tags: ghcr.io/${{ github.repository }}:v${{ needs.determine-version.outputs.version }}
           cache-from: type=gha

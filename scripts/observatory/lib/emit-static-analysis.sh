@@ -5,6 +5,10 @@
 # Integrates SpotBugs, PMD, and Checkstyle findings into the observatory
 # system for visualization and trend tracking.
 #
+# INCREMENTAL SUPPORT:
+#   Uses emit_if_stale() wrapper for cache-aware generation.
+#   Set OBSERVATORY_FORCE=1 to force regeneration.
+#
 # Outputs:
 #   facts/static-analysis.json - Aggregated findings summary
 #   facts/spotbugs-findings.json - SpotBugs bug instances
@@ -12,6 +16,8 @@
 #   facts/checkstyle-warnings.json - Checkstyle warnings
 #   diagrams/60-code-health-dashboard.mmd - Code health visualization
 #   diagrams/61-static-analysis-trends.mmd - Trend visualization
+#
+# Performance target: <2s cached, <5s cold (for analysis facts)
 # ==========================================================================
 
 # ── Directory for static analysis reports ─────────────────────────────────
@@ -821,22 +827,37 @@ emit_static_analysis_facts() {
     local op_start
     op_start=$(epoch_ms)
 
-    emit_spotbugs_findings
-    emit_pmd_violations
-    emit_checkstyle_warnings
-    emit_static_analysis_summary
+    log_info "Emitting static analysis facts with incremental cache support..."
+
+    # Use emit_if_stale for each fact - checks staleness before emitting
+    # This provides significant speedup when analysis reports haven't changed
+
+    # Phase 1: Tool-specific findings (depend on Maven reports)
+    emit_if_stale "facts/spotbugs-findings.json" emit_spotbugs_findings
+    emit_if_stale "facts/pmd-violations.json" emit_pmd_violations
+    emit_if_stale "facts/checkstyle-warnings.json" emit_checkstyle_warnings
+
+    # Phase 2: Aggregated summary (depends on tool findings)
+    emit_if_stale "facts/static-analysis.json" emit_static_analysis_summary
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_static_analysis_facts" "$op_elapsed"
+
+    log_ok "Static analysis facts emitted in ${op_elapsed}ms"
 }
 
 emit_static_analysis_diagrams() {
     local op_start
     op_start=$(epoch_ms)
 
-    emit_code_health_dashboard_diagram
-    emit_static_analysis_trends_diagram
+    log_info "Emitting static analysis diagrams with incremental cache support..."
+
+    # Use emit_if_stale for each diagram - checks staleness before emitting
+    emit_if_stale "diagrams/60-code-health-dashboard.mmd" emit_code_health_dashboard_diagram
+    emit_if_stale "diagrams/61-static-analysis-trends.mmd" emit_static_analysis_trends_diagram
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_static_analysis_diagrams" "$op_elapsed"
+
+    log_ok "Static analysis diagrams emitted in ${op_elapsed}ms"
 }

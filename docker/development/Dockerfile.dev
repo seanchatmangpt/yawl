@@ -87,8 +87,11 @@ ARG VCS_REF
 LABEL maintainer="YAWL Foundation"
 LABEL version="${VERSION}"
 LABEL description="YAWL Workflow Engine - Development Environment"
+LABEL org.opencontainers.image.title="YAWL Development Environment"
+LABEL org.opencontainers.image.description="YAWL Workflow Engine - Development Environment with full tooling"
 LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
 LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.licenses="LGPL-3.0"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
@@ -301,6 +304,7 @@ HEALTHCHECK --interval=30s \
 # - Maximum RAM percentage for containers
 # - Virtual threads support (Java 25 standard)
 # - Heap dump on OOM for debugging
+# - TLS 1.3 enforcement (security by default)
 # ============================================================================
 ENV JAVA_OPTS="\
     -XX:+UseContainerSupport \
@@ -323,6 +327,9 @@ ENV JAVA_OPTS="\
     -Djdk.virtualThreadScheduler.parallelism=200 \
     -Djdk.virtualThreadScheduler.maxPoolSize=256 \
     -Djdk.tracePinnedThreads=full \
+    -Djdk.tls.disabledAlgorithms=SSLv3,TLSv1,TLSv1.1,RC4,MD5,SHA-1,DES,3DES \
+    -Djdk.certpath.disabledAlgorithms=MD2,MD5,SHA1,RSA\ keySize\ <3072 \
+    -Djdk.jce.disabledAlgorithms=DES,3DES,RC4,Blowfish \
     -Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG \
     -Dlog4j2.debug=true"
 

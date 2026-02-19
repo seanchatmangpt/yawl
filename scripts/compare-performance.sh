@@ -7,7 +7,7 @@
 set -e
 
 # Source common utilities
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/validation/lib/common.sh"
 
 log_section "YAWL Performance Comparison"
 

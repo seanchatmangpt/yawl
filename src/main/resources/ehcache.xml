@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  YAWL Hibernate Second-Level Cache Configuration
+  Target: > 95% cache hit rate, < 10ms cache response time
+-->
+<config xmlns="http://www.ehcache.org/v3"
+        xmlns:jsr107="http://www.ehcache.org/v3/jsr107">
+    
+    <!-- Default cache template -->
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="minutes">30</ttl>
+        </expiry>
+        <heap unit="entries">1000</heap>
+    </cache-template>
+    
+    <!-- Read-heavy cache template (specifications, users) -->
+    <cache-template name="read-heavy">
+        <expiry>
+            <ttl unit="hours">2</ttl>
+        </expiry>
+        <heap unit="entries">5000</heap>
+        <offheap unit="MB">64</offheap>
+    </cache-template>
+    
+    <!-- Write-frequent cache template (work items) -->
+    <cache-template name="write-frequent">
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+        <heap unit="entries">2000</heap>
+    </cache-template>
+    
+    <!-- High-frequency cache template (net runners) -->
+    <cache-template name="high-frequency">
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+        <heap unit="entries">5000</heap>
+        <offheap unit="MB">128</offheap>
+    </cache-template>
+
+    <!-- ========================================= -->
+    <!-- YAWL Entity Caches                        -->
+    <!-- ========================================= -->
+    
+    <!-- Specifications - rarely change, heavy read -->
+    <cache alias="org.yawlfoundation.yawl.elements.YSpecification" uses-template="read-heavy">
+        <jsr107:mbeans enable-statistics="true" enable-management="true"/>
+    </cache>
+    
+    <!-- Work Items - frequent updates -->
+    <cache alias="org.yawlfoundation.yawl.engine.YWorkItem" uses-template="write-frequent">
+        <jsr107:mbeans enable-statistics="true" enable-management="true"/>
+    </cache>
+    
+    <!-- Net Runners - active cases, high frequency -->
+    <cache alias="org.yawlfoundation.yawl.engine.YNetRunner" uses-template="high-frequency">
+        <jsr107:mbeans enable-statistics="true" enable-management="true"/>
+    </cache>
+    
+    <!-- Identifiers -->
+    <cache alias="org.yawlfoundation.yawl.elements.state.YIdentifier" uses-template="default">
+        <jsr107:mbeans enable-statistics="true"/>
+    </cache>
+    
+    <!-- External Clients (users) - read heavy -->
+    <cache alias="org.yawlfoundation.yawl.authentication.YExternalClient" uses-template="read-heavy">
+        <jsr107:mbeans enable-statistics="true" enable-management="true"/>
+    </cache>
+    
+    <!-- AWL Service References -->
+    <cache alias="org.yawlfoundation.yawl.elements.YAWLServiceReference" uses-template="read-heavy">
+        <jsr107:mbeans enable-statistics="true"/>
+    </cache>
+
+    <!-- ========================================= -->
+    <!-- Query Caches                              -->
+    <!-- ========================================= -->
+    
+    <!-- Default query cache -->
+    <cache alias="org.hibernate.cache.internal.StandardQueryCache">
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+        <heap unit="entries">1000</heap>
+        <jsr107:mbeans enable-statistics="true"/>
+    </cache>
+    
+    <!-- Update timestamps cache -->
+    <cache alias="org.hibernate.cache.spi.TimestampsCache">
+        <expiry>
+            <ttl unit="hours">24</ttl>
+        </expiry>
+        <heap unit="entries">10000</heap>
+        <jsr107:mbeans enable-statistics="true"/>
+    </cache>
+
+    <!-- ========================================= -->
+    <!-- Named Query Caches                        -->
+    <!-- ========================================= -->
+    
+    <!-- Active work items by status -->
+    <cache alias="query.workItems.byStatus">
+        <expiry>
+            <ttl unit="minutes">2</ttl>
+        </expiry>
+        <heap unit="entries">500</heap>
+    </cache>
+    
+    <!-- Active cases by spec -->
+    <cache alias="query.cases.bySpec">
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+        <heap unit="entries">500</heap>
+    </cache>
+
+</config>

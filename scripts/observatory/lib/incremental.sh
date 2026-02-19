@@ -306,6 +306,8 @@ EOF
 #   2. Check if output needs regeneration
 #   3. If stale: call emit_function, increment CACHE_MISSES
 #   4. If fresh: skip, increment CACHE_HITS
+#
+# Debug Mode: Set INCREMENTAL_DEBUG=1 for verbose logging
 emit_if_stale() {
     local output_file="$1"
     local emit_func="$2"
@@ -345,6 +347,11 @@ emit_if_stale() {
             ;;
     esac
 
+    # Debug logging for cache decisions
+    if [[ "${INCREMENTAL_DEBUG:-0}" == "1" ]]; then
+        log_info "[DEBUG] emit_if_stale: output=$output_file inputs=${all_inputs[*]} path=$full_output_path"
+    fi
+
     # Record start time for timing
     local check_start
     check_start=$(epoch_ms)
@@ -365,6 +372,11 @@ emit_if_stale() {
             record_cache_event "$output_file" "miss" "$emit_elapsed"
             ((CACHE_TOTAL_MISSES++))
             CACHE_MISSES=${CACHE_TOTAL_MISSES}
+
+            # Debug logging for miss timing
+            if [[ "${INCREMENTAL_DEBUG:-0}" == "1" ]]; then
+                log_info "[DEBUG] Cache MISS completed: $output_file in ${emit_elapsed}ms (result=$result)"
+            fi
             return $result
         else
             log_error "emit_if_stale: Function '$emit_func' not found"
@@ -377,7 +389,12 @@ emit_if_stale() {
         record_cache_event "$output_file" "hit" "$time_saved"
         ((CACHE_TOTAL_HITS++))
         CACHE_HITS=${CACHE_TOTAL_HITS}
-        log_ok "Cache HIT: $output_file (up to date)"
+        log_ok "Cache HIT: $output_file (up to date, saved ~${time_saved}ms)"
+
+        # Debug logging for hit
+        if [[ "${INCREMENTAL_DEBUG:-0}" == "1" ]]; then
+            log_info "[DEBUG] Cache HIT: $output_file exists at $full_output_path"
+        fi
         return 0
     fi
 }

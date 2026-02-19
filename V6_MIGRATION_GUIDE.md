@@ -663,7 +663,7 @@ fi
 
 # 4. Verify rollback procedure
 echo "4. Testing rollback procedure..."
-./rollback-to-v5.2.sh --test
+bash scripts/rollback.sh --test
 if [ $? -eq 0 ]; then
     echo "   ✅ Rollback procedure works"
 else
@@ -745,7 +745,7 @@ done
 if [ $ELAPSED -ge $MAX_WAIT ]; then
     echo "❌ Engine startup timeout after ${MAX_WAIT}s"
     echo "🔄 INITIATING AUTOMATIC ROLLBACK"
-    ./rollback-to-v5.2.sh
+    bash scripts/rollback.sh
     exit 1
 fi
 
@@ -755,7 +755,7 @@ HEALTH=$(curl -s http://localhost:8080/yawl/ia)
 if [ -z "$HEALTH" ]; then
     echo "❌ Health check failed"
     echo "🔄 INITIATING AUTOMATIC ROLLBACK"
-    ./rollback-to-v5.2.sh
+    bash scripts/rollback.sh
     exit 1
 fi
 
@@ -1021,7 +1021,7 @@ Total: 4 weeks (can be compressed to 2-3 weeks with parallel work)
 
 ```bash
 #!/bin/bash
-# rollback-to-v5.2.sh
+# scripts/rollback.sh
 
 echo "🔄 Rolling back to v5.2..."
 

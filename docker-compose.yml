@@ -15,7 +15,7 @@
 #     docker compose --profile production --profile observability up -d
 #
 # Build first:
-#   docker build -f Dockerfile.modernized -t yawl-engine:6.0.0-alpha .
+#   docker build -f docker/production/Dockerfile.engine -t yawl-engine:6.0.0-alpha .
 #
 # Health checks:
 #   curl http://localhost:8080/actuator/health/liveness

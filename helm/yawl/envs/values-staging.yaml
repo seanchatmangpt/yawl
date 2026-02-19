@@ -1,0 +1,198 @@
+# =============================================================================
+# YAWL v6.0.0 - Staging Environment Values
+# =============================================================================
+# Usage:
+#   helm install yawl ./helm/yawl -f helm/yawl/values.yaml -f helm/yawl/envs/values-staging.yaml -n yawl-staging
+# =============================================================================
+
+global:
+  namespace: yawl-staging
+  labels:
+    environment: staging
+
+yawlVersion: "6.0.0"
+
+# Staging uses release tags
+image:
+  tag: "6.0.0"
+  pullPolicy: Always
+
+# Production-like database for staging
+postgresql:
+  auth:
+    database: yawl_staging
+    existingSecret: yawl-postgresql-staging
+  primary:
+    persistence:
+      size: 20Gi
+      storageClass: fast-ssd
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  readReplicas:
+    replicaCount: 1
+  backup:
+    enabled: true
+    schedule: "0 3 * * *"
+    retentionDays: 3
+
+# Redis with persistence
+redis:
+  auth:
+    enabled: true
+    existingSecret: yawl-redis-staging
+  master:
+    persistence:
+      size: 4Gi
+  replica:
+    replicaCount: 1
+
+# Service configurations - production-like with fewer replicas
+services:
+  engine:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 75
+    env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "staging"
+
+  resourceService:
+    replicaCount: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+
+  workletService:
+    replicaCount: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+
+  monitorService:
+    replicaCount: 1
+
+  costService:
+    replicaCount: 1
+
+  schedulingService:
+    replicaCount: 1
+
+  balancer:
+    replicaCount: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 3
+
+# Ingress with staging domain
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: yawl-staging.example.com
+      paths:
+        - path: /yawl
+          pathType: Prefix
+          service: engine
+        - path: /resourceService
+          pathType: Prefix
+          service: resource-service
+        - path: /workletService
+          pathType: Prefix
+          service: worklet-service
+  tls:
+    - secretName: yawl-staging-tls
+      hosts:
+        - yawl-staging.example.com
+
+# Full monitoring for staging
+monitoring:
+  enabled: true
+  namespace: monitoring
+  scrapeInterval: 30s
+  serviceMonitorLabels:
+    release: prometheus
+  ruleLabels:
+    release: prometheus
+
+# Istio enabled for staging
+istio:
+  enabled: true
+  ingressNamespace: istio-system
+  canary:
+    enabled: false
+
+# Production-like JVM settings
+jvm:
+  opts: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=70.0
+    -XX:InitialRAMPercentage=30.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+UseStringDeduplication
+    -XX:+ExitOnOutOfMemoryError
+    -Djava.security.egd=file:/dev/./urandom
+    -Djdk.virtualThreadScheduler.parallelism=64
+
+# Production-like security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+
+# Network policy enabled
+networkPolicy:
+  enabled: true
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Staging logging
+logging:
+  yawl: INFO
+  worklet: INFO
+  resource: INFO
+  hibernate: WARN
+  root: WARN
+
+# Node affinity for staging nodes
+nodeSelector:
+  node-role.kubernetes.io/staging: "true"
+
+tolerations:
+  - key: "environment"
+    operator: "Equal"
+    value: "staging"
+    effect: "NoSchedule"

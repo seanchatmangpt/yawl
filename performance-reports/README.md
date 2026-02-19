@@ -237,7 +237,7 @@ jobs:
       - name: Run baseline
         run: mvn test -Dtest=EnginePerformanceBaseline
       - name: Check for regressions
-        run: ./scripts/check-performance-regression.sh
+        run: bash scripts/performance/regression-test.sh
 ```
 
 ## Report Format

@@ -557,7 +557,7 @@ curl -X POST http://staging-engine:8080/yawl/ia \
 **3. Validation:**
 ```bash
 # Run v6 validation suite
-./scripts/validate-v6-deployment.sh
+bash scripts/validation/validate-all.sh
 
 # Expected output:
 # ✅ Java 25 verified
@@ -579,7 +579,7 @@ pg_dump production_yawl > yawl-v5.2-backup-$(date +%s).sql
 tar czf yawl-v5.2-deployment-$(date +%s).tar.gz $CATALINA_HOME
 
 # Verify rollback plan tested
-./scripts/rollback-to-v5.2.sh --test
+bash scripts/rollback.sh --test
 ```
 
 **2. Cutover Procedure:**
@@ -1558,7 +1558,7 @@ mvn -version >> /backups/pre-deployment-state.txt
 psql -c "SELECT version();" >> /backups/pre-deployment-state.txt
 
 # 4. Test rollback procedure (in non-production)
-./scripts/rollback-to-v5.2.sh --test
+bash scripts/rollback.sh --test
 ```
 
 ### Rollback Procedure
@@ -1567,7 +1567,7 @@ psql -c "SELECT version();" >> /backups/pre-deployment-state.txt
 
 ```bash
 #!/bin/bash
-# Rollback script: rollback-to-v5.2.sh
+# Rollback script: scripts/rollback.sh
 
 set -e
 

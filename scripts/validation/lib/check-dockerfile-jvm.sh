@@ -82,7 +82,7 @@ done
 log_section "Additional JVM Checks"
 
 # Check for deprecated flags
-deprecated_flags=(
+declare -a deprecated_flags=(
     "-XX:+UseG1GC"
     "-XX:+UseParallelGC"
     "-XX:+UseSerialGC"
@@ -92,7 +92,7 @@ deprecated_flags=(
 
 for file in "${dockerfiles[@]}"; do
     content=$(cat "$file" 2>/dev/null || echo "")
-    deprecated_found=()
+    declare -a deprecated_found=()
 
     for flag in "${deprecated_flags[@]}"; do
         if echo "$content" | grep -q -- "$flag"; then

@@ -59,7 +59,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 @DisplayName("YCaseImporter Tests")
 @Tag("unit")
-class TestYCaseImporter {
+public class TestYCaseImporter {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long EVENT_TIMEOUT_SEC = 10L;
@@ -382,7 +382,9 @@ class TestYCaseImporter {
             List<YNetRunner> runners = importer.unmarshal(caseXml, yEngine.getAnnouncer());
 
             YNetRunner restoredRunner = runners.get(0);
-            List<YWorkItem> workItems = restoredRunner.getWorkItemRepository().getWorkItems();
+            // getWorkItems() returns Set, convert to List for indexed access
+            List<YWorkItem> workItems = new java.util.ArrayList<>(
+                restoredRunner.getWorkItemRepository().getWorkItems());
 
             assertNotNull(workItems, "Work items list should not be null");
             assertFalse(workItems.isEmpty(), "Should have at least one work item");
@@ -400,7 +402,8 @@ class TestYCaseImporter {
             List<YNetRunner> runners = importer.unmarshal(caseXml, yEngine.getAnnouncer());
 
             YNetRunner restoredRunner = runners.get(0);
-            List<YWorkItem> workItems = restoredRunner.getWorkItemRepository().getWorkItems();
+            List<YWorkItem> workItems = new java.util.ArrayList<>(
+                restoredRunner.getWorkItemRepository().getWorkItems());
 
             YWorkItem restoredItem = workItems.get(0);
             assertEquals("task1", restoredItem.getTaskID(),
@@ -419,7 +422,8 @@ class TestYCaseImporter {
             List<YNetRunner> runners = importer.unmarshal(caseXml, yEngine.getAnnouncer());
 
             YNetRunner restoredRunner = runners.get(0);
-            List<YWorkItem> workItems = restoredRunner.getWorkItemRepository().getWorkItems();
+            List<YWorkItem> workItems = new java.util.ArrayList<>(
+                restoredRunner.getWorkItemRepository().getWorkItems());
 
             YWorkItem restoredItem = workItems.get(0);
             assertEquals("Enabled", restoredItem.getStatus().toString(),
@@ -438,7 +442,8 @@ class TestYCaseImporter {
             List<YNetRunner> runners = importer.unmarshal(caseXml, yEngine.getAnnouncer());
 
             YNetRunner restoredRunner = runners.get(0);
-            List<YWorkItem> workItems = restoredRunner.getWorkItemRepository().getWorkItems();
+            List<YWorkItem> workItems = new java.util.ArrayList<>(
+                restoredRunner.getWorkItemRepository().getWorkItems());
 
             YWorkItem restoredItem = workItems.get(0);
             assertEquals(caseId, restoredItem.getCaseID().toString(),
@@ -482,7 +487,9 @@ class TestYCaseImporter {
             List<YNetRunner> runners = importer.unmarshal(caseXml, yEngine.getAnnouncer());
 
             YNetRunner restoredRunner = runners.get(0);
-            List<YWorkItem> workItems = restoredRunner.getWorkItemRepository().getWorkItems();
+            // getWorkItems() returns Set, convert to List for indexed access
+            List<YWorkItem> workItems = new java.util.ArrayList<>(
+                restoredRunner.getWorkItemRepository().getWorkItems());
 
             YWorkItem restoredItem = workItems.get(0);
             assertNotNull(restoredItem.getEnablementTime(),

@@ -1,7 +1,7 @@
 # V6 Upgrade - Gap-Fix Patterns & Lessons Learned
 
 **Date:** 2026-02-17
-**Version:** v6.0.0-Alpha → v6.0.0 Production
+**Version:** v6.0.0-Alpha -> v6.0.0 Production
 **Purpose:** Document remediation patterns for future maintainers
 
 ---
@@ -668,10 +668,10 @@ exit 0
 ### Strategy 4: Code Review Checklist
 
 Every PR review includes:
-1. Search for System.out/err → must find 0 matches in src/main/
-2. Search for e.printStackTrace() → must find 0 matches
-3. Search for empty catch blocks → must find 0 matches
-4. All new methods returning null → documented with @Nullable or use Optional
+1. Search for System.out/err -> must find 0 matches in src/main/
+2. Search for e.printStackTrace() -> must find 0 matches
+3. Search for empty catch blocks -> must find 0 matches
+4. All new methods returning null -> documented with @Nullable or use Optional
 5. No new classes with Demo/Test/Stub in name
 
 ### Strategy 5: Automated Analysis
@@ -723,7 +723,7 @@ mvn clean package
 
 - `/home/user/yawl/GAP_FIXES_SUMMARY.md` - Comprehensive gap fix coordination
 - `/home/user/yawl/REMEDIATION_COMPLETED.md` - Before/after patterns for each violation
-- `/home/user/yawl/.claude/[removed]` - Full violation audit details
+- `/home/user/yawl/.claude/archive/2026-01/VIOLATION_REPORT.md` - Full violation audit details
 - `/home/user/yawl/.claude/HYPER_STANDARDS.md` - Standards guard definitions
 - `/home/user/yawl/.claude/BEST-PRACTICES-2026.md` - 2026 best practices guide
 
