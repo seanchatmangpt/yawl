@@ -109,7 +109,7 @@ for file in "${dockerfiles[@]}"; do
     content=$(cat "$file" 2>/dev/null || echo "")
 
     # Check for virtual threads configuration
-    if echo "$content" | grep -q "virtualThread" || echo "$content" | grep -q "jdk\\.virtualThread"; then
+    if echo "$content" | grep -q "virtualThread" || echo "$content" | grep -q "jdk.virtualThread"; then
         log_test "PASS" "Virtual threads configured in $(basename "$file")" "dockerfile-virtualthreads-$(basename "$file")"
     else
         # Warning only, not required for all Dockerfiles

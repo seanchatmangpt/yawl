@@ -1,0 +1,16 @@
+{
+    "timestamp": "2026-02-19T00:06:33Z",
+    "total_tests": 2,
+    "passed": 1,
+    "failed": 0,
+    "warnings": 1,
+    "passed_tests": [
+                "module-sync"
+    ],
+    "failed_tests": [
+                ""
+    ],
+    "warnings": [
+                "module-sync-extra: Extra modules detected
+    ]
+}

@@ -22,6 +22,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.security.CredentialKey;
 import org.yawlfoundation.yawl.security.CredentialManager;
 import org.yawlfoundation.yawl.security.CredentialManagerFactory;
@@ -50,6 +52,7 @@ import java.lang.reflect.Field;
  *
  * @author YAWL Foundation - SOC2 Compliance 2026-02-17
  */
+@Execution(ExecutionMode.SAME_THREAD)  // Uses CredentialManagerFactory singleton
 public class CredentialManagerFactoryTest extends TestCase {
 
     public CredentialManagerFactoryTest(String name) {

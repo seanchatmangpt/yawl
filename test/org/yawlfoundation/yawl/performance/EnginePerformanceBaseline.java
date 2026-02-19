@@ -21,6 +21,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import junit.framework.TestCase;
 
 /**
@@ -38,6 +40,7 @@ import junit.framework.TestCase;
  * @since 2026-02-16
  */
 @Tag("slow")
+@Execution(ExecutionMode.SAME_THREAD)  // Uses YEngine singleton
 public class EnginePerformanceBaseline extends TestCase {
     
     private YEngine engine;

@@ -81,11 +81,29 @@ parse_args() {
             -h|--help)
                 show_help
                 exit 0
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
                 ;;
             *)
                 log_error "Unknown option: $1"
                 show_help
                 exit 1
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
                 ;;
         esac
     done
@@ -97,6 +115,15 @@ parse_args() {
         *)
             log_error "Invalid mode: $MODE. Must be one of: pre-commit, ci, full"
             exit 1
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
             ;;
     esac
 }
@@ -131,8 +158,8 @@ get_checks() {
     case "$MODE" in
         pre-commit)
             checks=(
-                "$LIB_DIR/check-module-sync.sh --json"
-                "$LIB_DIR/check-singleton-ann.sh --json"
+                "$LIB_DIR/check-module-sync.sh"
+                "$LIB_DIR/check-singleton-ann.sh"
             )
             ;;
         ci)
@@ -164,7 +191,7 @@ get_checks() {
                 "$LIB_DIR/check-observatory-timing.sh"
                 # Additional checks for full mode
                 "bash -c 'echo \"Checking Maven build...\"; mvn clean compile -q'"
-                "bash -c 'echo \"Running basic syntax check...\"; find src -name \"*.java\" -exec javac -cp \"src/*\" {} \\; 2>/dev/null || true'"
+                "bash -c 'echo \"Running basic syntax check...\"; find src -name \"*.java\" -exec javac -cp \"src/*\" {} \; 2>/dev/null || true'"
             )
             ;;
     esac
@@ -197,6 +224,15 @@ main() {
             (
                 if ! run_check "$check" "$(basename "$check")"; then
                     exit 1
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
                 fi
             ) &
         done
@@ -219,17 +255,62 @@ main() {
     if output_summary; then
         log_success "All checks passed"
         exit 0
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
     else
         log_error "$failed_checks check(s) failed"
+        exit 1
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+        output_junit
+    fi
+
+    # Output JSON if requested
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        output_json
+    fi
+    fi
+}
+
+# Handle signals
+trap 'log_error "Validation interrupted"; exit 1' INT TERM
+    # Output JUnit if requested
+    if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+    # Output summary
+    if output_summary; then
+        log_success "All checks passed"
+        # Output JUnit if requested
+        if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+            output_junit
+        fi
+        # Output JSON if requested
+        if [[ "$JSON_OUTPUT" == "true" ]]; then
+            output_json
+        fi
+        exit 0
+    else
+        log_error "$failed_checks check(s) failed"
+        # Output JUnit if requested
+        if [[ "$JUNIT_OUTPUT" == "true" ]]; then
+            output_junit
+        fi
+        # Output JSON if requested
+        if [[ "$JSON_OUTPUT" == "true" ]]; then
+            output_json
+        fi
         exit 1
     fi
 }
 
-# Output functions for different formats
-{
-    # Handle signals
-    trap 'log_error "Validation interrupted"; exit 1' INT TERM
+# Handle signals
+trap 'log_error "Validation interrupted"; exit 1' INT TERM
 
-    # Main entry point
-    main "$@"
-}
+# Main entry point
+main "$@"

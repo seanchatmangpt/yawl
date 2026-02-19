@@ -28,6 +28,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 /**
  * Comprehensive tests for YCaseNbrStore following Chicago TDD methodology.
@@ -39,6 +41,7 @@ import org.junit.jupiter.api.Test;
  */
 @DisplayName("YCaseNbrStore Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)  // Uses YCaseNbrStore singleton
 class TestYCaseNbrStore {
 
     // ========================================================================

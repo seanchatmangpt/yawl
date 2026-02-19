@@ -14,6 +14,8 @@ import org.jdom2.input.SAXBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
 
 /**
@@ -25,6 +27,7 @@ import org.yawlfoundation.yawl.engine.interfce.AuthenticationConfig;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)  // Uses AuthenticationConfig singleton
 class TestWSIFInvoker {
     private static AuthenticationConfig _authconfig;
     private SAXBuilder _builder;

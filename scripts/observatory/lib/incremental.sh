@@ -29,43 +29,95 @@
 INCREMENTAL_STATE_DIR="${OUT_DIR}/.incremental"
 mkdir -p "$INCREMENTAL_STATE_DIR" 2>/dev/null || true
 
-# ── Cache Statistics ───────────────────────────────────────────────────────
-# Global counters for cache performance tracking
-CACHE_HITS=0
-CACHE_MISSES=0
-CACHE_SKIPPED=0
+# ── Cache Statistics (Array-based tracking) ─────────────────────────────────
+# Per-output cache status tracking for detailed reporting
+declare -A CACHE_STATUS=()        # ["facts/modules.json"]="hit|miss|skipped"
+declare -A CACHE_TIMINGS=()       # ["facts/modules.json"]="123" (ms saved or spent)
+declare -i CACHE_TOTAL_HITS=0
+declare -i CACHE_TOTAL_MISSES=0
+declare -i CACHE_TOTAL_SKIPPED=0
 
 # Reset cache statistics (call at start of observatory run)
 reset_cache_stats() {
-    CACHE_HITS=0
-    CACHE_MISSES=0
-    CACHE_SKIPPED=0
+    CACHE_STATUS=()
+    CACHE_TIMINGS=()
+    CACHE_TOTAL_HITS=0
+    CACHE_TOTAL_MISSES=0
+    CACHE_TOTAL_SKIPPED=0
+}
+
+# Record a cache event with timing
+# Args: output_file status (hit|miss|skipped) timing_ms
+record_cache_event() {
+    local output_file="$1"
+    local status="$2"
+    local timing_ms="${3:-0}"
+
+    CACHE_STATUS["$output_file"]="$status"
+    CACHE_TIMINGS["$output_file"]="$timing_ms"
+
+    case "$status" in
+        hit)     ((CACHE_TOTAL_HITS++)) ;;
+        miss)    ((CACHE_TOTAL_MISSES++)) ;;
+        skipped) ((CACHE_TOTAL_SKIPPED++)) ;;
+    esac
 }
 
 # Get cache hit ratio (0.0 - 1.0)
 get_cache_hit_ratio() {
-    local total=$((CACHE_HITS + CACHE_MISSES))
+    local total=$((CACHE_TOTAL_HITS + CACHE_TOTAL_MISSES))
     if [[ $total -eq 0 ]]; then
         echo "0.0"
     else
-        echo "scale=2; $CACHE_HITS / $total" | bc 2>/dev/null || echo "0.0"
+        echo "scale=2; $CACHE_TOTAL_HITS / $total" | bc 2>/dev/null || echo "0.0"
     fi
 }
 
-# Get cache statistics as JSON
+# Get cache statistics as JSON (detailed per-output)
 get_cache_stats_json() {
     local ratio
     ratio=$(get_cache_hit_ratio)
+    local total=$((CACHE_TOTAL_HITS + CACHE_TOTAL_MISSES))
+
+    # Build detailed status entries
+    local status_entries=""
+    local first=true
+    for output in "${!CACHE_STATUS[@]}"; do
+        $first || status_entries+=","
+        first=false
+        local status="${CACHE_STATUS[$output]}"
+        local timing="${CACHE_TIMINGS[$output]:-0}"
+        status_entries+=$'\n'"      \"$(json_escape "$output")\": {\"status\": \"$status\", \"timing_ms\": $timing}"
+    done
+
     cat << EOF
 {
-  "hits": $CACHE_HITS,
-  "misses": $CACHE_MISSES,
-  "skipped": $CACHE_SKIPPED,
-  "hit_ratio": $ratio,
-  "total_checks": $((CACHE_HITS + CACHE_MISSES))
+  "summary": {
+    "hits": $CACHE_TOTAL_HITS,
+    "misses": $CACHE_TOTAL_MISSES,
+    "skipped": $CACHE_TOTAL_SKIPPED,
+    "hit_ratio": $ratio,
+    "total_checks": $total
+  },
+  "details": {${status_entries}
+  }
 }
 EOF
 }
+
+# Get simplified cache summary for receipt embedding
+get_cache_summary_json() {
+    local ratio
+    ratio=$(get_cache_hit_ratio)
+    cat << EOF
+{"hits": $CACHE_TOTAL_HITS, "misses": $CACHE_TOTAL_MISSES, "skipped": $CACHE_TOTAL_SKIPPED, "hit_ratio": $ratio}
+EOF
+}
+
+# Backwards compatible globals for existing code
+CACHE_HITS=${CACHE_TOTAL_HITS}
+CACHE_MISSES=${CACHE_TOTAL_MISSES}
+CACHE_SKIPPED=${CACHE_TOTAL_SKIPPED}
 
 # ── Get the newest mtime from a list of paths ──────────────────────────────
 get_newest_mtime() {
@@ -175,42 +227,38 @@ get_incremental_status() {
     local diagrams_upto_date=0
     local diagrams_stale=0
 
-    # Check facts
+    # Check facts using registry
     for fact_file in "$FACTS_DIR"/*.json; do
         [[ -f "$fact_file" ]] || continue
         local basename
         basename=$(basename "$fact_file")
+        local output_key="facts/${basename}"
 
-        case "$basename" in
-            modules.json)
-                if needs_regeneration "$fact_file" "pom.xml"; then
-                    ((facts_stale++))
-                else
-                    ((facts_upto_date++))
-                fi
-                ;;
-            reactor.json)
-                if needs_regeneration "$fact_file" "pom.xml" "yawl-*/pom.xml"; then
-                    ((facts_stale++))
-                else
-                    ((facts_upto_date++))
-                fi
-                ;;
-            *)
-                # Generic check
-                if needs_regeneration "$fact_file" "src/"; then
-                    ((facts_stale++))
-                else
-                    ((facts_upto_date++))
-                fi
-                ;;
-        esac
+        # Get inputs from registry
+        local inputs
+        inputs=$(get_inputs "$output_key" 2>/dev/null || echo "src/")
+
+        # Convert to array and check
+        read -ra input_array <<< "$inputs"
+        if needs_regeneration "$fact_file" "${input_array[@]}"; then
+            ((facts_stale++))
+        else
+            ((facts_upto_date++))
+        fi
     done
 
-    # Check diagrams
+    # Check diagrams using registry
     for diagram_file in "$DIAGRAMS_DIR"/*.mmd; do
         [[ -f "$diagram_file" ]] || continue
-        if needs_regeneration "$diagram_file" "src/"; then
+        local basename
+        basename=$(basename "$diagram_file")
+        local output_key="diagrams/${basename}"
+
+        local inputs
+        inputs=$(get_inputs "$output_key" 2>/dev/null || echo "src/")
+
+        read -ra input_array <<< "$inputs"
+        if needs_regeneration "$diagram_file" "${input_array[@]}"; then
             ((diagrams_stale++))
         else
             ((diagrams_upto_date++))
@@ -227,6 +275,7 @@ get_incremental_status() {
     "up_to_date": $diagrams_upto_date,
     "stale": $diagrams_stale
   },
+  "cache": $(get_cache_summary_json),
   "force_mode": $(is_force_mode && echo "true" || echo "false")
 }
 EOF
@@ -289,23 +338,38 @@ emit_if_stale() {
             ;;
     esac
 
+    # Record start time for timing
+    local check_start
+    check_start=$(epoch_ms)
+
     # Check staleness (with force mode support)
     if needs_regeneration_with_force "$full_output_path" "${all_inputs[@]}"; then
         # Output is stale or doesn't exist - regenerate
-        ((CACHE_MISSES++))
+        local emit_start emit_elapsed
+        emit_start=$(epoch_ms)
+
         log_info "Cache MISS: $output_file (regenerating)"
 
         # Call the emit function
         if declare -f "$emit_func" >/dev/null; then
             "$emit_func"
-            return $?
+            local result=$?
+            emit_elapsed=$(( $(epoch_ms) - emit_start ))
+            record_cache_event "$output_file" "miss" "$emit_elapsed"
+            ((CACHE_TOTAL_MISSES++))
+            CACHE_MISSES=${CACHE_TOTAL_MISSES}
+            return $result
         else
             log_error "emit_if_stale: Function '$emit_func' not found"
+            record_cache_event "$output_file" "error" "0"
             return 1
         fi
     else
         # Output is fresh - use cache
-        ((CACHE_HITS++))
+        local time_saved=$(( $(epoch_ms) - check_start ))
+        record_cache_event "$output_file" "hit" "$time_saved"
+        ((CACHE_TOTAL_HITS++))
+        CACHE_HITS=${CACHE_TOTAL_HITS}
         log_ok "Cache HIT: $output_file (up to date)"
         return 0
     fi
@@ -317,14 +381,22 @@ emit_force() {
     local output_file="$1"
     local emit_func="$2"
 
+    local emit_start emit_elapsed
+    emit_start=$(epoch_ms)
+
     log_info "Force emit: $output_file"
-    ((CACHE_MISSES++))
 
     if declare -f "$emit_func" >/dev/null; then
         "$emit_func"
-        return $?
+        local result=$?
+        emit_elapsed=$(( $(epoch_ms) - emit_start ))
+        record_cache_event "$output_file" "forced" "$emit_elapsed"
+        ((CACHE_TOTAL_MISSES++))
+        CACHE_MISSES=${CACHE_TOTAL_MISSES}
+        return $result
     else
         log_error "emit_force: Function '$emit_func' not found"
+        record_cache_event "$output_file" "error" "0"
         return 1
     fi
 }
@@ -351,7 +423,15 @@ emit_with_fallback() {
 print_cache_summary() {
     local ratio
     ratio=$(get_cache_hit_ratio)
-    local total=$((CACHE_HITS + CACHE_MISSES))
+    local total=$((CACHE_TOTAL_HITS + CACHE_TOTAL_MISSES))
 
-    echo "Cache Summary: ${CACHE_HITS} hits, ${CACHE_MISSES} misses, ${total} total (${ratio} hit ratio)"
+    echo "Cache Summary: ${CACHE_TOTAL_HITS} hits, ${CACHE_TOTAL_MISSES} misses, ${CACHE_TOTAL_SKIPPED} skipped, ${total} total (${ratio} hit ratio)"
+}
+
+# Export cache stats to file for receipt consumption
+export_cache_stats() {
+    local output_file="${1:-${PERF_DIR}/cache-stats.json}"
+    mkdir -p "$(dirname "$output_file")" 2>/dev/null
+    get_cache_stats_json > "$output_file"
+    echo "$output_file"
 }

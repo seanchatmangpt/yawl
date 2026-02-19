@@ -3,6 +3,8 @@ package org.yawlfoundation.yawl.performance;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.engine.YWorkItemStatusIndex;
 import org.yawlfoundation.yawl.engine.YNetRunnerLockMetrics;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author YAWL Foundation
  * @version 5.2
  */
+@Execution(ExecutionMode.SAME_THREAD)  // Uses HttpConnectionPoolMetrics singleton
 public class Soc2PerformanceOptimizationTest extends TestCase {
 
     // ── P1: Vault Credential Cache ──────────────────────────────────────────
