@@ -15,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Engine Core Integration Tests
  * Tests YEngine and YNetRunner with real workflow execution (Chicago TDD)
@@ -41,6 +43,8 @@ class EngineIntegrationTest {
         EngineClearer.clear(engine);
         specification = createMinimalSpecification();
     }
+
+    @Execution(ExecutionMode.SAME_THREAD)
 
     @AfterEach
     void tearDown() throws Exception {

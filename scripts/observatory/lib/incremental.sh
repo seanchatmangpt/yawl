@@ -5,10 +5,20 @@
 # Skip regeneration if inputs unchanged based on mtime comparison.
 # Provides 90%+ time savings on subsequent runs with no changes.
 #
+# Features:
+#   - Cache statistics tracking (hits/misses/ratio)
+#   - Registry-based dependency lookup
+#   - Force mode support (OBSERVATORY_FORCE=1)
+#
 # Usage:
 #   source lib/incremental.sh
+#   source lib/dependency-registry.sh
 #
-#   if needs_regeneration "facts/modules.json" "pom.xml" ".mvn/"; then
+#   # Using wrapper (recommended):
+#   emit_if_stale "facts/modules.json" emit_modules
+#
+#   # Manual check:
+#   if needs_regeneration "facts/modules.json" "pom.xml"; then
 #       emit_modules
 #   else
 #       log_info "Skipping modules.json (up to date)"
@@ -18,6 +28,44 @@
 # ── State file for tracking input hashes ──────────────────────────────────
 INCREMENTAL_STATE_DIR="${OUT_DIR}/.incremental"
 mkdir -p "$INCREMENTAL_STATE_DIR" 2>/dev/null || true
+
+# ── Cache Statistics ───────────────────────────────────────────────────────
+# Global counters for cache performance tracking
+CACHE_HITS=0
+CACHE_MISSES=0
+CACHE_SKIPPED=0
+
+# Reset cache statistics (call at start of observatory run)
+reset_cache_stats() {
+    CACHE_HITS=0
+    CACHE_MISSES=0
+    CACHE_SKIPPED=0
+}
+
+# Get cache hit ratio (0.0 - 1.0)
+get_cache_hit_ratio() {
+    local total=$((CACHE_HITS + CACHE_MISSES))
+    if [[ $total -eq 0 ]]; then
+        echo "0.0"
+    else
+        echo "scale=2; $CACHE_HITS / $total" | bc 2>/dev/null || echo "0.0"
+    fi
+}
+
+# Get cache statistics as JSON
+get_cache_stats_json() {
+    local ratio
+    ratio=$(get_cache_hit_ratio)
+    cat << EOF
+{
+  "hits": $CACHE_HITS,
+  "misses": $CACHE_MISSES,
+  "skipped": $CACHE_SKIPPED,
+  "hit_ratio": $ratio,
+  "total_checks": $((CACHE_HITS + CACHE_MISSES))
+}
+EOF
+}
 
 # ── Get the newest mtime from a list of paths ──────────────────────────────
 get_newest_mtime() {
@@ -182,4 +230,128 @@ get_incremental_status() {
   "force_mode": $(is_force_mode && echo "true" || echo "false")
 }
 EOF
+}
+
+# ==========================================================================
+# EMIT_IF_STALE WRAPPER
+# ==========================================================================
+
+# Wrapper that checks staleness using dependency registry before emitting
+# Args: output_file emit_function [additional_inputs...]
+#
+# Usage:
+#   emit_if_stale "facts/modules.json" emit_modules
+#   emit_if_stale "facts/reactor.json" emit_reactor
+#
+# Returns: 0 on success (emitted or cached), 1 on error
+#
+# Behavior:
+#   1. Look up inputs from DEPENDENCY_REGISTRY
+#   2. Check if output needs regeneration
+#   3. If stale: call emit_function, increment CACHE_MISSES
+#   4. If fresh: skip, increment CACHE_HITS
+emit_if_stale() {
+    local output_file="$1"
+    local emit_func="$2"
+    shift 2
+    local extra_inputs=("$@")
+
+    # Get inputs from registry (if available)
+    local registry_inputs=""
+    if declare -p DEPENDENCY_REGISTRY >/dev/null 2>&1; then
+        registry_inputs=$(get_inputs "$output_file" 2>/dev/null || echo "")
+    fi
+
+    # Combine registry inputs with extra inputs
+    local all_inputs=()
+    if [[ -n "$registry_inputs" ]]; then
+        read -ra reg_arr <<< "$registry_inputs"
+        all_inputs=("${reg_arr[@]}")
+    fi
+    all_inputs+=("${extra_inputs[@]}")
+
+    # Default to src and pom.xml if no inputs found
+    if [[ ${#all_inputs[@]} -eq 0 ]]; then
+        all_inputs=("src" "pom.xml")
+    fi
+
+    # Build full output path
+    local full_output_path
+    case "$output_file" in
+        facts/*)
+            full_output_path="${FACTS_DIR}/${output_file#facts/}"
+            ;;
+        diagrams/*)
+            full_output_path="${DIAGRAMS_DIR}/${output_file#diagrams/}"
+            ;;
+        *)
+            full_output_path="${OUT_DIR}/${output_file}"
+            ;;
+    esac
+
+    # Check staleness (with force mode support)
+    if needs_regeneration_with_force "$full_output_path" "${all_inputs[@]}"; then
+        # Output is stale or doesn't exist - regenerate
+        ((CACHE_MISSES++))
+        log_info "Cache MISS: $output_file (regenerating)"
+
+        # Call the emit function
+        if declare -f "$emit_func" >/dev/null; then
+            "$emit_func"
+            return $?
+        else
+            log_error "emit_if_stale: Function '$emit_func' not found"
+            return 1
+        fi
+    else
+        # Output is fresh - use cache
+        ((CACHE_HITS++))
+        log_ok "Cache HIT: $output_file (up to date)"
+        return 0
+    fi
+}
+
+# Variant that always emits (ignores cache) for critical outputs
+# Args: output_file emit_function
+emit_force() {
+    local output_file="$1"
+    local emit_func="$2"
+
+    log_info "Force emit: $output_file"
+    ((CACHE_MISSES++))
+
+    if declare -f "$emit_func" >/dev/null; then
+        "$emit_func"
+        return $?
+    else
+        log_error "emit_force: Function '$emit_func' not found"
+        return 1
+    fi
+}
+
+# Emit with fallback to default if function doesn't exist
+# Args: output_file emit_function default_function
+emit_with_fallback() {
+    local output_file="$1"
+    local emit_func="$2"
+    local default_func="$3"
+
+    if declare -f "$emit_func" >/dev/null; then
+        emit_if_stale "$output_file" "$emit_func"
+    elif declare -f "$default_func" >/dev/null; then
+        log_warn "Using fallback emitter for $output_file"
+        emit_if_stale "$output_file" "$default_func"
+    else
+        log_error "No emitter available for $output_file"
+        return 1
+    fi
+}
+
+# Print cache summary for logging
+print_cache_summary() {
+    local ratio
+    ratio=$(get_cache_hit_ratio)
+    local total=$((CACHE_HITS + CACHE_MISSES))
+
+    echo "Cache Summary: ${CACHE_HITS} hits, ${CACHE_MISSES} misses, ${total} total (${ratio} hit ratio)"
 }

@@ -27,6 +27,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * @author Lachlan Aldred
  * Date: 21/05/2004
@@ -58,6 +60,8 @@ class TestCaseCancellation {
                 StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
 
         _engine.loadSpecification(_specification);
+    @Execution(ExecutionMode.SAME_THREAD)
+
         URI serviceURI = new URI("mock://mockedURL/testingCaseCompletion");
 
         YAWLServiceReference service = new YAWLServiceReference(serviceURI.toString(), null);

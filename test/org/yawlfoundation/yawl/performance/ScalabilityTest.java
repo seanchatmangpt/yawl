@@ -15,21 +15,24 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import junit.framework.TestCase;
 
 /**
  * Scalability tests for YAWL Engine.
- * 
+ *
  * Tests:
  * - Linear scalability up to 50 concurrent users
  * - Memory scaling with case count
  * - Degradation patterns under extreme load
- * 
+ *
  * @author YAWL Performance Team
  * @version 5.2
  * @since 2026-02-16
  */
 @Tag("slow")
+@Execution(ExecutionMode.SAME_THREAD)  // Uses YEngine singleton
 public class ScalabilityTest extends TestCase {
     
     private YEngine engine;

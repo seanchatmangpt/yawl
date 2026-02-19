@@ -133,4 +133,4 @@ Automatic rollback triggered by:
 
 **Validator:** prod-val agent  
 **Framework:** YAWL HYPER_STANDARDS + Production Gates v1.0  
-**Documentation:** `/home/user/yawl/.claude/agents/definitions.md`
+**Documentation:** `.claude/agents/AGENTS_REFERENCE.md`

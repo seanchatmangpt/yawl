@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Comprehensive tests for the V6-upgraded YPersistenceManager with real H2
  * database integration (Chicago TDD - no mocks).
@@ -68,6 +70,8 @@ class TestYPersistenceManager {
     @AfterEach
     void tearDown() throws Exception {
         if (_caseID != null && _engine != null) {
+    @Execution(ExecutionMode.SAME_THREAD)
+
             try {
                 _engine.cancelCase(_caseID);
             } catch (Exception e) {

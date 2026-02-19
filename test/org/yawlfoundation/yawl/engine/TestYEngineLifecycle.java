@@ -22,6 +22,8 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Comprehensive YEngine Lifecycle Tests using Chicago TDD methodology.
  * Tests real YEngine instances with real specifications and cases.
@@ -49,6 +51,8 @@ class TestYEngineLifecycle {
     }
 
     // =========================================================================
+    @Execution(ExecutionMode.SAME_THREAD)
+
     // Engine Initialization Tests
     // =========================================================================
 

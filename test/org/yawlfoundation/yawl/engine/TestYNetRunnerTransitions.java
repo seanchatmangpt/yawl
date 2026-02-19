@@ -50,6 +50,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Comprehensive tests for YNetRunner state transitions following Chicago TDD methodology.
  *
@@ -102,6 +104,8 @@ class TestYNetRunnerTransitions {
             EngineClearer.clear(_engine);
         }
     }
+
+    @Execution(ExecutionMode.SAME_THREAD)
 
     /**
      * Helper method to load a specification from a test resource file.

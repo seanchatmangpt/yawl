@@ -38,6 +38,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Behavioral tests for YAWL Task lifecycle semantics.
  *
@@ -71,6 +73,8 @@ class TaskLifecycleBehavioralTest {
     // ========================================================================
     // AND JOIN SEMANTICS
     // ========================================================================
+
+    @Execution(ExecutionMode.SAME_THREAD)
 
     @Nested
     @DisplayName("AND Join Enablement Semantics")

@@ -16,11 +16,15 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import junit.framework.TestCase;
 
 /**
  * Load testing suite for YAWL Engine.
- * 
+ *
+ * @Execution(ExecutionMode.SAME_THREAD) - Uses YEngine singleton
+ */ 
  * Simulates production-like load scenarios:
  * - Sustained load (50 concurrent users, 5 minutes)
  * - Burst load (100 concurrent users, 1 minute)

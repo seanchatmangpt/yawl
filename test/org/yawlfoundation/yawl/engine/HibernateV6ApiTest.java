@@ -40,6 +40,8 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Hibernate 6 API integration tests using a real H2 in-memory database.
  *
@@ -83,6 +85,8 @@ class HibernateV6ApiTest {
             factory.close();
         }
         if (registry != null) {
+    @Execution(ExecutionMode.SAME_THREAD)
+
             StandardServiceRegistryBuilder.destroy(registry);
         }
     }

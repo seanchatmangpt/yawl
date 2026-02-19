@@ -18,6 +18,8 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  /**
  *
@@ -43,6 +45,8 @@ class TestDeadlockingWorkflows{
             JDOMException, IOException, YStateException, YPersistenceException, YEngineStateException, YQueryException, YDataStateException {
         URL fileURL = getClass().getResource("DeadlockingSpecification.xml");
         File yawlXMLFile = new File(fileURL.getFile());
+    @Execution(ExecutionMode.SAME_THREAD)
+
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
 

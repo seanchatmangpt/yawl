@@ -18,6 +18,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * Author: Lachlan Aldred
@@ -42,6 +44,8 @@ class TestSimpleExecutionUseCases{
         _engine = YEngine.getInstance();
         _workItemRepository = _engine.getWorkItemRepository();
         EngineClearer.clear(_engine);
+    @Execution(ExecutionMode.SAME_THREAD)
+
         _engine.loadSpecification(specification);
         _caseId =  _engine.startCase(specification.getSpecificationID(), null, null,
                 null, new YLogDataItemList(), null, false);

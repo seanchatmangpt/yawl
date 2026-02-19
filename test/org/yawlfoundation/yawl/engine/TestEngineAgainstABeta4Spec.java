@@ -17,6 +17,8 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * @author Lachlan Aldred
@@ -45,6 +47,8 @@ class TestEngineAgainstABeta4Spec {
 
         _engine = YEngine.getInstance();
     }
+    @Execution(ExecutionMode.SAME_THREAD)
+
 
     @Test
 

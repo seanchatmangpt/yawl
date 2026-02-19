@@ -24,6 +24,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * Author: Lachlan Aldred
@@ -54,6 +56,8 @@ class TestEngineSystem2 {
         EngineClearer.clear(_engine);
         _workItemRepository = _engine.getWorkItemRepository();
     }
+    @Execution(ExecutionMode.SAME_THREAD)
+
 
     @Test
 

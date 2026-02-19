@@ -8,12 +8,16 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 @Tag("unit")
 public class YawlServletTestNextIdNew extends TestCase {
 
     public YawlServletTestNextIdNew(String name) {
         super(name);
     }
+
+    @Execution(ExecutionMode.SAME_THREAD)
 
     protected void setUp() {
     }

@@ -12,6 +12,8 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  /**
  * 
@@ -32,6 +34,8 @@ public class TestMarlonsEagerNessExperiment {
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
+    @Execution(ExecutionMode.SAME_THREAD)
+
         YEngine engine2 = YEngine.getInstance();
         engine2.loadSpecification(specification);
         _idForTopNet = engine2.startCase(specification.getSpecificationID(), null, null, null, null, null, false);

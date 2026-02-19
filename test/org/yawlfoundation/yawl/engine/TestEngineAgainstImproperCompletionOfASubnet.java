@@ -15,6 +15,8 @@ import org.yawlfoundation.yawl.exceptions.*;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * Author: Lachlan Aldred
@@ -36,6 +38,8 @@ class TestEngineAgainstImproperCompletionOfASubnet {
     void setUp() throws YSyntaxException, JDOMException, YSchemaBuildingException, IOException {
 //        new YLocalWorklist("Barbara");
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
+    @Execution(ExecutionMode.SAME_THREAD)
+
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = null;
         _specification = (YSpecification) YMarshal.

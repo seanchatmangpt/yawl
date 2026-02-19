@@ -47,6 +47,8 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceX.InterfaceX_EngineSideC
 import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Comprehensive tests for YAnnouncer following Chicago TDD methodology.
  *
@@ -86,6 +88,8 @@ class TestYAnnouncer {
         task = new YAtomicTask("announcer-test-task", YTask._XOR, YTask._AND, null);
         workItem = new YWorkItem(null, specID, task, workItemID, true, false);
     }
+    @Execution(ExecutionMode.SAME_THREAD)
+
 
     // ========================================================================
     // Gateway Registration Tests

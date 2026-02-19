@@ -18,6 +18,8 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  /**
  *
@@ -43,6 +45,8 @@ class TestImproperCompletion {
         URL fileURL = getClass().getResource("TestImproperCompletion.xml");
         assertNotNull(fileURL, "Test resource TestImproperCompletion.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
+    @Execution(ExecutionMode.SAME_THREAD)
+
         _specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(
                                     yawlXMLFile.getAbsolutePath())).get(0);

@@ -19,6 +19,8 @@ import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * @author Lachlan Aldred
@@ -44,6 +46,8 @@ class TestRestServiceMethods{
         _specification2 = (YSpecification) YMarshal.
                 unmarshalSpecifications(StringUtil.fileToString(mm2File.getAbsolutePath())).get(0);
         _engine = YEngine.getInstance();
+    @Execution(ExecutionMode.SAME_THREAD)
+
         EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);
         _engine.loadSpecification(_specification2);
