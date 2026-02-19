@@ -18,6 +18,9 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * @author Lachlan Aldred
@@ -26,6 +29,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestOrJoin {
     private long _sleepTime = 100;
     private YEngine _engine;

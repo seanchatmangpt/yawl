@@ -310,7 +310,7 @@ on:
 jobs:
   performance:
     - name: Compare performance
-      run: ./scripts/check-performance-regression.sh
+      run: bash scripts/performance/regression-test.sh
     - name: Fail if critical regression
       run: |
         if grep "CRITICAL" comparison.txt; then

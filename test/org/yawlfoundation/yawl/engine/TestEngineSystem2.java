@@ -24,6 +24,9 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * Author: Lachlan Aldred
@@ -32,6 +35,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestEngineSystem2 {
     private YIdentifier _idForBottomNet;
 //    private YIdentifier _idForTopNet;
@@ -42,7 +46,6 @@ class TestEngineSystem2 {
     private YSpecification _specification;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YEngineStateException, YPersistenceException {
         URL fileURL = getClass().getResource("YAWL_Specification4.xml");
         assertNotNull(fileURL, "Test specification file YAWL_Specification4.xml must exist in classpath");
@@ -56,7 +59,6 @@ class TestEngineSystem2 {
     }
 
     @Test
-
     void testMultimergeNets() throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized(this){
         EngineClearer.clear(_engine);

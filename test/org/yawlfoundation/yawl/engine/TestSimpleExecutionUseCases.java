@@ -18,6 +18,9 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * Author: Lachlan Aldred
@@ -26,13 +29,13 @@ import org.yawlfoundation.yawl.util.StringUtil;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestSimpleExecutionUseCases{
     private YIdentifier _caseId;
     private YWorkItemRepository _workItemRepository;
     private YEngine _engine;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
         assertNotNull(fileURL, "Test resource ImproperCompletion.xml not found in classpath");
@@ -42,6 +45,7 @@ class TestSimpleExecutionUseCases{
         _engine = YEngine.getInstance();
         _workItemRepository = _engine.getWorkItemRepository();
         EngineClearer.clear(_engine);
+
         _engine.loadSpecification(specification);
         _caseId =  _engine.startCase(specification.getSpecificationID(), null, null,
                 null, new YLogDataItemList(), null, false);

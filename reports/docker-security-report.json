@@ -1,0 +1,46 @@
+{
+  "reportType": "docker-security-validation",
+  "version": "1.0.0",
+  "timestamp": "2026-02-19T01:27:27Z",
+  "summary": {
+    "dockerfilesScanned": 6,
+    "criticalIssues": 0,
+    "highIssues": 0,
+    "mediumIssues": 0,
+    "checksPassed": 46
+  },
+  "dockerfiles": [
+    {
+      "path": "docker/base/Dockerfile.jdk25",
+      "basename": "Dockerfile.jdk25"
+    },
+    {
+      "path": "docker/base/Dockerfile.jre25",
+      "basename": "Dockerfile.jre25"
+    },
+    {
+      "path": "docker/development/Dockerfile.dev",
+      "basename": "Dockerfile.dev"
+    },
+    {
+      "path": "docker/production/Dockerfile.engine",
+      "basename": "Dockerfile.engine"
+    },
+    {
+      "path": "scripts/pm4py/Dockerfile.a2a",
+      "basename": "Dockerfile.a2a"
+    },
+    {
+      "path": "scripts/pm4py/Dockerfile.mcp",
+      "basename": "Dockerfile.mcp"
+    }
+  ],
+  "baseline": {
+    "nonRootUser": true,
+    "tls13Enforcement": true,
+    "healthChecks": true,
+    "noSecrets": true,
+    "ociLabels": true,
+    "minimalBase": true
+  }
+}

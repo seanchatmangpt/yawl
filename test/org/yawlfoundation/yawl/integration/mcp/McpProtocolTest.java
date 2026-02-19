@@ -17,6 +17,7 @@ import junit.framework.TestCase;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.mcp.YawlMcpServer;
 
 /**
  * MCP protocol tests for the YAWL MCP server.

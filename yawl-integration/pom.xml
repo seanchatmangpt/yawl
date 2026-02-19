@@ -334,6 +334,8 @@
                         <testExclude>**/EnterpriseIntegrationPatternsTest.java</testExclude>
                         <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
                         <testExclude>**/spiffe/SpiffeWorkloadIdentityTest.java</testExclude>
+                        <!-- SpiffeExceptionTest references excluded SpiffeException source -->
+                        <testExclude>**/spiffe/SpiffeExceptionTest.java</testExclude>
                         <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL -->
                         <testExclude>**/observability/OpenTelemetryConfigTest.java</testExclude>
                         <!-- IT tests require failsafe plugin not available offline -->
@@ -342,6 +344,11 @@
                         <testExclude>**/mcp/zai/**</testExclude>
                         <!-- YawlMcpServerTest references excluded YawlMcpServer source -->
                         <testExclude>**/mcp/YawlMcpServerTest.java</testExclude>
+                        <!-- McpProtocolTest and McpPerformanceTest reference excluded YawlMcpServer -->
+                        <testExclude>**/mcp/McpProtocolTest.java</testExclude>
+                        <testExclude>**/mcp/McpPerformanceTest.java</testExclude>
+                        <!-- McpTestSuite references excluded YawlMcpServerTest -->
+                        <testExclude>**/mcp/McpTestSuite.java</testExclude>
                     </testExcludes>
                 </configuration>
             </plugin>
@@ -370,12 +377,19 @@
 
                         <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
                         <exclude>**/spiffe/SpiffeWorkloadIdentityTest.java</exclude>
+                        <!-- SpiffeExceptionTest references excluded SpiffeException -->
+                        <exclude>**/spiffe/SpiffeExceptionTest.java</exclude>
 
                         <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL 1.52.0 -->
                         <exclude>**/observability/OpenTelemetryConfigTest.java</exclude>
 
                         <!-- MCP ZAI tests depend on excluded mcp/zai/ sources -->
                         <exclude>**/mcp/zai/**</exclude>
+                        <!-- MCP tests referencing excluded YawlMcpServer -->
+                        <exclude>**/mcp/McpProtocolTest.java</exclude>
+                        <exclude>**/mcp/McpPerformanceTest.java</exclude>
+                        <exclude>**/mcp/McpTestSuite.java</exclude>
+                        <exclude>**/mcp/YawlMcpServerTest.java</exclude>
                     </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Tests to verify that virtual thread pinning does not occur in YAWL engine operations.
  *
@@ -42,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @date 2026-02-16
  */
 @Tag("slow")
+@Execution(ExecutionMode.SAME_THREAD)
 class VirtualThreadPinningTest {
 
     private YEngine engine;

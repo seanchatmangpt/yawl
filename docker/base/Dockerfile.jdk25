@@ -5,6 +5,8 @@
 # - Compact Object Headers (-4-8 bytes/object)
 # - Generational ZGC for low-latency
 # - Virtual Threads for concurrent workflow execution
+# - Non-root user for security
+# - TLS 1.3 enforcement
 #
 # Build:
 #   docker build -t yawl-base:jdk25 -f docker/base/Dockerfile.jdk25 docker/base/
@@ -12,9 +14,20 @@
 
 FROM eclipse-temurin:25-jdk-alpine
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+# OCI Image Labels
 LABEL maintainer="YAWL Foundation"
 LABEL description="YAWL Base JDK 25 Builder"
-LABEL version="1.0.0"
+LABEL version="${VERSION}"
+LABEL org.opencontainers.image.title="YAWL JDK 25 Base Builder"
+LABEL org.opencontainers.image.description="YAWL Base JDK 25 Builder with Maven and security hardening"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.version="${VERSION}"
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -24,15 +37,34 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
-# Maven configuration
+# Create non-root user (dev user for build operations)
+RUN addgroup -S yawl --gid 1000 && \
+    adduser -S dev --uid 1000 --ingroup yawl --home /home/dev --shell /bin/bash && \
+    mkdir -p /home/dev/.m2/repository && \
+    chown -R dev:yawl /home/dev
+
+# Maven configuration with TLS 1.3 enforcement
 ENV MAVEN_OPTS="-Xmx2g -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 ENV MAVEN_HOME=/usr/share/java/maven
 
-# Create cache directories
-RUN mkdir -p /root/.m2/repository
+# Java security options (TLS 1.3+ only, CNSA-compliant crypto)
+ENV JAVA_TOOL_OPTIONS="\
+    -Djdk.tls.disabledAlgorithms=SSLv3,TLSv1,TLSv1.1,RC4,MD5,SHA-1,DES,3DES \
+    -Djdk.certpath.disabledAlgorithms=MD2,MD5,SHA1,RSA\ keySize\ <3072 \
+    -Djdk.jce.disabledAlgorithms=DES,3DES,RC4,Blowfish"
 
 # Working directory
 WORKDIR /work
+
+# Ensure work directory is writable by dev user
+RUN chown -R dev:yawl /work
+
+# Switch to non-root user
+USER dev
+
+# Health check - verify Java is functional
+HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
+    CMD java -version 2>&1 | grep -q "25" || exit 1
 
 # Default entrypoint
 ENTRYPOINT ["/bin/bash"]

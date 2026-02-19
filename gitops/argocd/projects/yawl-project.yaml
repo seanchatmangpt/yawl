@@ -1,0 +1,156 @@
+# =============================================================================
+# YAWL v6.0.0 - ArgoCD Project Definition
+# =============================================================================
+# Defines the YAWL project with proper RBAC and cluster access.
+#
+# Projects allow you to:
+#   - Restrict which clusters applications can be deployed to
+#   - Restrict which namespaces applications can be deployed to
+#   - Restrict which repositories applications can source from
+#   - Restrict permitted template types (e.g., Helm, Kustomize)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: yawl
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: gitops
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: YAWL Workflow Engine - Enterprise BPM Platform
+
+  # Allow source repositories
+  sourceRepos:
+    - 'https://github.com/yawlfoundation/yawl.git'
+    - 'https://charts.bitnami.com/bitnami'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+
+  # Allow destination clusters and namespaces
+  destinations:
+    # Development environments
+    - namespace: 'yawl-dev'
+      server: https://kubernetes.default.svc
+      name: in-cluster
+
+    # Staging environments
+    - namespace: 'yawl-staging'
+      server: https://kubernetes.default.svc
+      name: in-cluster
+
+    # Production environments
+    - namespace: 'yawl-prod'
+      server: https://kubernetes.default.svc
+      name: in-cluster
+
+    # Allow cross-namespace resources (monitoring, ingress)
+    - namespace: 'monitoring'
+      server: https://kubernetes.default.svc
+    - namespace: 'ingress-nginx'
+      server: https://kubernetes.default.svc
+    - namespace: 'cert-manager'
+      server: https://kubernetes.default.svc
+
+  # Allow all namespaced resources YAWL uses
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: ReplicaSet
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+    - group: security.istio.io
+      kind: PeerAuthentication
+    - group: security.istio.io
+      kind: AuthorizationPolicy
+    - group: networking.istio.io
+      kind: DestinationRule
+    - group: networking.istio.io
+      kind: VirtualService
+
+  # Cluster-wide resources
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+
+  # Sync windows for production safety
+  syncWindows:
+    # Allow syncs anytime for dev/staging
+    - kind: allow
+      schedule: '* * * * *'
+      duration: 24h
+      applications:
+        - 'yawl-dev-*'
+        - 'yawl-staging-*'
+
+    # Restrict production syncs to business hours (9am-6pm UTC)
+    - kind: allow
+      schedule: '0 9-18 * * 1-5'
+      duration: 1h
+      applications:
+        - 'yawl-prod-*'
+      manualSync: true  # Require manual sync outside window
+
+  # Roles for RBAC
+  roles:
+    # Developer role - can view and sync non-prod
+    - name: developer
+      description: Developer access to dev and staging
+      policies:
+        - p, proj:yawl:developer, applications, get, yawl-dev/*, allow
+        - p, proj:yawl:developer, applications, get, yawl-staging/*, allow
+        - p, proj:yawl:developer, applications, sync, yawl-dev/*, allow
+        - p, proj:yawl:developer, applications, sync, yawl-staging/*, allow
+        - p, proj:yawl:developer, applications, get, yawl-prod/*, allow
+      groups:
+        - yawl:developers
+
+    # SRE role - can sync all environments
+    - name: sre
+      description: SRE access to all environments
+      policies:
+        - p, proj:yawl:sre, applications, *, yawl-dev/*, allow
+        - p, proj:yawl:sre, applications, *, yawl-staging/*, allow
+        - p, proj:yawl:sre, applications, get, yawl-prod/*, allow
+        - p, proj:yawl:sre, applications, sync, yawl-prod/*, allow
+        - p, proj:yawl:sre, applications, rollback, yawl-prod/*, allow
+      groups:
+        - yawl:sre
+
+    # Admin role - full access
+    - name: admin
+      description: Full administrative access
+      policies:
+        - p, proj:yawl:admin, applications, *, yawl/*, allow
+        - p, proj:yawl:admin, projects, get, yawl, allow
+      groups:
+        - yawl:admins

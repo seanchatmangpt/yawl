@@ -223,7 +223,7 @@
         <maven.war.plugin.version>3.4.0</maven.war.plugin.version>
         <maven.clean.plugin.version>3.2.0</maven.clean.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
-        <maven.install.plugin.version>3.1.5</maven.install.plugin.version>
+        <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
         <maven.deploy.plugin.version>3.1.5</maven.deploy.plugin.version>
         <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
@@ -1078,21 +1078,8 @@
                 <scope>test</scope>
             </dependency>
 
-<<<<<<< HEAD
             <!-- Testcontainers explicit versions (BOM import moved to docker profile
                  to avoid offline resolution failures; these pins are sufficient) -->
-=======
-            <!-- Testcontainers BOM for container-based integration tests -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- Testcontainers explicit versions (BOM import order issue workaround) -->
->>>>>>> origin/master
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
@@ -1187,15 +1174,9 @@
                         <release>${maven.compiler.release}</release>
                         <useIncrementalCompilation>true</useIncrementalCompilation>
                         <fork>true</fork>
-<<<<<<< HEAD
                         <meminitial>512m</meminitial>
                         <maxmem>2048m</maxmem>
-=======
-                        <meminitial>256m</meminitial>
-                        <maxmem>1024m</maxmem>
->>>>>>> origin/master
                         <compilerArgs>
-                            <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
                             <arg>-parameters</arg>
                         </compilerArgs>
@@ -1244,7 +1225,6 @@
                             <database.type>h2</database.type>
                             <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                         </systemPropertyVariables>
-<<<<<<< HEAD
                         <parallel>classesAndMethods</parallel>
                         <threadCount>${surefire.threadCount}</threadCount>
                         <perCoreThreadCount>true</perCoreThreadCount>
@@ -1265,20 +1245,6 @@
                                 junit.jupiter.execution.parallel.config.dynamic.factor=1.5
                             </configurationParameters>
                         </properties>
-=======
-                        <!-- Legacy parallel mode for JUnit 4 tests still in the suite.
-                             JUnit 5 tests use junit-platform.properties instead. -->
-                        <parallel>classesAndMethods</parallel>
-                        <threadCount>${surefire.threadCount}</threadCount>
-                        <perCoreThreadCount>true</perCoreThreadCount>
-                        <!-- 600s covers the slowest Petri-net simulation tests. -->
-                        <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
-                        <!-- Abort after 5 consecutive failures to cut CI feedback time. -->
-                        <skipAfterFailureCount>5</skipAfterFailureCount>
-                        <!-- Full stack traces are needed to diagnose engine-level
-                             failures in YNetRunner and YWorkItem state machines. -->
-                        <trimStackTrace>false</trimStackTrace>
->>>>>>> origin/master
                     </configuration>
                 </plugin>
 
@@ -1715,12 +1681,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <release>21</release>
+                    <release>${maven.compiler.release}</release>
                     <compilerArgs>
-                        <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
+                        <arg>-parameters</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -1775,8 +1739,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.release.java25>25</maven.compiler.release.java25>
+                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
@@ -1788,8 +1752,8 @@
         <profile>
             <id>java24</id>
             <properties>
-                <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.release.java25>25</maven.compiler.release.java25>
+                <maven.compiler.release>24</maven.compiler.release>
+                <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <jacoco.skip>true</jacoco.skip>
             </properties>
             <build>
@@ -2377,19 +2341,11 @@
         </profile>
 
         <!-- ================================================================ -->
-<<<<<<< HEAD
         <!-- Fast profile: excludes slow integration tests for CI             -->
         <!-- This profile is active by default for quick feedback loops.      -->
         <!-- Usage: mvn clean test                   (fast - default)         -->
         <!--        mvn clean test -P docker         (full integration)       -->
         <!-- Excluded groups: integration, docker, containers                 -->
-=======
-        <!-- Fast profile: excludes slow/integration/docker tests by default  -->
-        <!-- This profile is active by default for quick feedback loops.      -->
-        <!-- Usage: mvn clean test                   (fast - default)         -->
-        <!--        mvn clean test -P docker         (full integration)       -->
-        <!-- Excluded groups: integration, slow, docker, containers, chaos    -->
->>>>>>> origin/master
         <!-- ================================================================ -->
         <profile>
             <id>fast</id>
@@ -2405,11 +2361,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-<<<<<<< HEAD
                             <excludedGroups>integration,docker,containers</excludedGroups>
-=======
-                            <excludedGroups>integration,slow,docker,containers,chaos</excludedGroups>
->>>>>>> origin/master
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
                             </systemPropertyVariables>
@@ -2420,7 +2372,6 @@
         </profile>
 
         <!-- ================================================================ -->
-<<<<<<< HEAD
         <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
         <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
         <!-- Usage: mvn compile test -P agent-dx                              -->
@@ -2436,17 +2387,7 @@
                 <spotbugs.skip>true</spotbugs.skip>
                 <pmd.skip>true</pmd.skip>
                 <enforcer.skip>true</enforcer.skip>
-                <surefire.threadCount>2C</surefire.threadCount>
-=======
-        <!-- Integration-test profile: runs unit + integration tests          -->
-        <!-- Excludes only Docker/container/chaos tests (no daemon required). -->
-        <!-- Usage: mvn clean test -P integration-test                        -->
-        <!-- Included groups: unit, integration (excludes docker/slow/chaos)  -->
-        <!-- ================================================================ -->
-        <profile>
-            <id>integration-test</id>
-            <properties>
->>>>>>> origin/master
+                <surefire.threadCount>8</surefire.threadCount>
                 <test.docker.enabled>false</test.docker.enabled>
             </properties>
             <build>
@@ -2455,11 +2396,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-<<<<<<< HEAD
                             <excludedGroups>integration,docker,containers,slow</excludedGroups>
-=======
-                            <groups>unit,integration</groups>
-                            <excludedGroups>docker,containers,slow,chaos</excludedGroups>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
                             </systemPropertyVariables>
@@ -2528,7 +2465,6 @@
                             <reuseForks>true</reuseForks>
                             <!-- Fail on the first test failure. Gets the developer to the
                                  red bar immediately without running the rest of the suite. -->
->>>>>>> origin/master
                             <skipAfterFailureCount>1</skipAfterFailureCount>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
@@ -2654,7 +2590,6 @@
             </build>
         </profile>
 
-<<<<<<< HEAD
         <!-- ================================================================ -->
         <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
         <!-- ================================================================ -->
@@ -2743,8 +2678,6 @@
             </build>
         </profile>
 
-=======
->>>>>>> origin/master
     </profiles>
 
 </project>

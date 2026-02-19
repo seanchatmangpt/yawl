@@ -40,6 +40,8 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  * Hibernate 6 API integration tests using a real H2 in-memory database.
  *
@@ -63,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("Hibernate V6 API Integration Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class HibernateV6ApiTest {
 
     private SessionFactory factory;

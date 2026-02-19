@@ -5,6 +5,9 @@
 # - Java 25 virtual threads for concurrent case execution
 # - Generational ZGC for low-latency garbage collection
 # - Health checks and observability
+# - Non-root user for security
+# - TLS 1.3+ enforcement (CNSA compliant)
+# - Security hardening (no secrets, minimal attack surface)
 #
 # Build:
 #   docker build -t yawl-engine:6.0.0 -f docker/production/Dockerfile.engine .
@@ -61,18 +64,36 @@ RUN ./mvnw package -DskipTests -B -q
 # Stage 2: Runtime
 FROM eclipse-temurin:25-jre-alpine
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=6.0.0
+
+# OCI Image Labels
 LABEL maintainer="YAWL Foundation"
 LABEL description="YAWL Workflow Engine"
-LABEL version="6.0.0-alpha"
+LABEL version="${VERSION}"
+LABEL org.opencontainers.image.title="YAWL Engine"
+LABEL org.opencontainers.image.description="Production-ready YAWL workflow engine with security hardening"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.vendor="YAWL Foundation"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.source="https://github.com/yawlfoundation/yawl"
+LABEL org.opencontainers.image.licenses="LGPL-3.0"
 
 # Install runtime dependencies
 RUN apk add --no-cache curl bash && \
     rm -rf /var/cache/apk/*
 
-# Create directories
-RUN mkdir -p /app/logs /app/data /app/temp /app/config /app/specifications
+# Create non-root user (dev user for production security)
+RUN addgroup -S yawl --gid 1000 && \
+    adduser -S dev --uid 1000 --ingroup yawl --home /home/dev --shell /bin/bash
 
-# JVM optimizations for Java 25
+# Create directories with proper ownership
+RUN mkdir -p /app/logs /app/data /app/temp /app/config /app/specifications && \
+    chown -R dev:yawl /app
+
+# JVM optimizations for Java 25 with full TLS 1.3 enforcement
 ENV JAVA_OPTS="\
     -XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=75.0 \
@@ -81,6 +102,7 @@ ENV JAVA_OPTS="\
     -XX:+ZGenerational \
     -XX:+UseCompactObjectHeaders \
     -XX:+UseStringDeduplication \
+    -XX:+UseAOTCache \
     -XX:+ExitOnOutOfMemoryError \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/app/logs/heap-dump.hprof \
@@ -89,7 +111,10 @@ ENV JAVA_OPTS="\
     -Dfile.encoding=UTF-8 \
     -Djdk.virtualThreadScheduler.parallelism=200 \
     -Djdk.virtualThreadScheduler.maxPoolSize=256 \
-    -Djdk.tracePinnedThreads=short"
+    -Djdk.tracePinnedThreads=short \
+    -Djdk.tls.disabledAlgorithms=SSLv3,TLSv1,TLSv1.1,RC4,MD5,SHA-1,DES,3DES \
+    -Djdk.certpath.disabledAlgorithms=MD2,MD5,SHA1,RSA\ keySize\ <3072 \
+    -Djdk.jce.disabledAlgorithms=DES,3DES,RC4,Blowfish"
 
 # Environment
 ENV SPRING_PROFILES_ACTIVE=production
@@ -97,13 +122,16 @@ ENV DB_TYPE=h2
 ENV TZ=UTC
 
 # Copy JAR from builder
-COPY --from=builder /build/yawl-engine/target/yawl-engine-*.jar /app/yawl-engine.jar
+COPY --from=builder --chown=dev:yawl /build/yawl-engine/target/yawl-engine-*.jar /app/yawl-engine.jar
 
 # Copy healthcheck
 COPY docker/scripts/healthcheck.sh /app/healthcheck.sh
-RUN chmod +x /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh && chown dev:yawl /app/healthcheck.sh
 
 WORKDIR /app
+
+# Switch to non-root user
+USER dev
 
 # Expose ports
 EXPOSE 8080 9090

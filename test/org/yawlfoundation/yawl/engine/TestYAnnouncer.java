@@ -47,6 +47,9 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceX.InterfaceX_EngineSideC
 import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Comprehensive tests for YAnnouncer following Chicago TDD methodology.
  *
@@ -59,6 +62,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  */
 @DisplayName("YAnnouncer Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYAnnouncer {
 
     private YAnnouncer announcer;

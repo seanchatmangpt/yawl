@@ -60,7 +60,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 @DisplayName("Import/Export Performance Tests")
 @Tag("performance")
-class ImportExportPerformanceTest {
+public class ImportExportPerformanceTest {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long EVENT_TIMEOUT_SEC = 30L;

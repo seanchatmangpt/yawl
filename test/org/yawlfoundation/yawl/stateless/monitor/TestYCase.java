@@ -55,7 +55,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 @DisplayName("YCase Tests")
 @Tag("unit")
-class TestYCase {
+public class TestYCase {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long EVENT_TIMEOUT_SEC = 10L;

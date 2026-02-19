@@ -4,6 +4,8 @@
 #
 # Receipt binds inputs -> outputs with SHA-256 checksums.
 # INDEX.md provides human-readable entry point.
+#
+# Includes cache statistics for incremental mode tracking.
 # ==========================================================================
 
 # ── observatory.json ──────────────────────────────────────────────────────
@@ -78,6 +80,27 @@ emit_receipt() {
         done
     fi
 
+    # Get cache statistics from cache-stats.json if available
+    local cache_stats_json
+    local cache_stats_file="${PERF_DIR}/cache-stats.json"
+    if [[ -f "$cache_stats_file" ]]; then
+        # Read summary from cache-stats.json
+        cache_stats_json=$(python3 -c "
+import json
+with open('$cache_stats_file') as f:
+    data = json.load(f)
+print(json.dumps(data.get('summary', {'hits': 0, 'misses': 0, 'skipped': 0, 'hit_ratio': 0.0})))
+" 2>/dev/null || echo '{"hits": 0, "misses": 0, "skipped": 0, "hit_ratio": 0.0}')
+    elif declare -f get_cache_summary_json >/dev/null 2>&1; then
+        cache_stats_json=$(get_cache_summary_json)
+    else
+        cache_stats_json='{"hits": 0, "misses": 0, "skipped": 0, "hit_ratio": 0.0}'
+    fi
+
+    # Get incremental mode status
+    local incremental_mode="true"
+    is_force_mode && incremental_mode="false"
+
     cat > "$out" << RECEIPT_JSON
 {
   "run_id": "${run_id}",
@@ -94,6 +117,11 @@ emit_receipt() {
     "java": $(get_java_info_json),
     "maven": "$(detect_maven_version)"
   },
+  "mode": {
+    "incremental": ${incremental_mode},
+    "force": $(is_force_mode && echo "true" || echo "false")
+  },
+  "cache": ${cache_stats_json},
   "inputs": {
     "root_pom_sha256": "${root_pom_sha}"
   },
@@ -119,7 +147,7 @@ emit_receipt() {
 }
 RECEIPT_JSON
 
-    log_ok "Receipt written: status=${status} refusals=${#REFUSALS[@]} warnings=${#WARNINGS[@]}"
+    log_ok "Receipt written: status=${status} refusals=${#REFUSALS[@]} warnings=${#WARNINGS[@]} cache_hits=${CACHE_TOTAL_HITS:-0}"
 }
 
 # ── INDEX.md ──────────────────────────────────────────────────────────────

@@ -58,7 +58,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 @DisplayName("YCaseExporter Tests")
 @Tag("unit")
-class TestYCaseExporter {
+public class TestYCaseExporter {
 
     private static final String MINIMAL_SPEC_RESOURCE = "resources/MinimalSpec.xml";
     private static final long EVENT_TIMEOUT_SEC = 10L;
@@ -504,8 +504,8 @@ class TestYCaseExporter {
             YNetRunner runner = launchCaseWithMonitoring(caseId);
 
             // Complete all work items to clear repository
-            List<YWorkItem> items = runner.getWorkItemRepository().getEnabledWorkItems();
-            for (YWorkItem item : items) {
+            // getEnabledWorkItems() returns Set, iterate directly
+            for (YWorkItem item : runner.getWorkItemRepository().getEnabledWorkItems()) {
                 runner.getWorkItemRepository().removeWorkItemFamily(item);
             }
 

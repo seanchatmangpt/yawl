@@ -10,6 +10,10 @@
 #   Architecture: shared-src, dual-family, duplicates, tests, gates
 #   Static Analysis: spotbugs-findings, pmd-violations, checkstyle-warnings, static-analysis
 #   Coverage: coverage
+#
+# Incremental Mode:
+#   Uses dependency-registry.sh and incremental.sh for cache-aware emission.
+#   Set OBSERVATORY_FORCE=1 to force regeneration.
 # ==========================================================================
 
 # Source emission scripts
@@ -17,8 +21,19 @@ source "$(dirname "${BASH_SOURCE[0]}")/emit-coverage.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/emit-static-analysis.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/emit-architecture-facts.sh"
 
-# ── 1. modules.json ───────────────────────────────────────────────────────
-emit_modules() {
+# Source dependency registry for incremental emission (already sourced by observatory.sh)
+# But ensure it's available if emit-facts.sh is sourced standalone
+if [[ ! -v DEPENDENCY_REGISTRY ]]; then
+    source "$(dirname "${BASH_SOURCE[0]}")/dependency-registry.sh"
+fi
+
+# ==========================================================================
+# INTERNAL IMPLEMENTATION FUNCTIONS
+# These do the actual work and are called via emit_if_stale
+# ==========================================================================
+
+# ── modules.json implementation ───────────────────────────────────────────
+_emit_modules_impl() {
     local out="$FACTS_DIR/modules.json"
     local op_start
     op_start=$(epoch_ms)
@@ -92,8 +107,8 @@ emit_modules() {
     record_operation "emit_modules" "$op_elapsed"
 }
 
-# ── 2. reactor.json ───────────────────────────────────────────────────────
-emit_reactor() {
+# ── reactor.json implementation ───────────────────────────────────────────
+_emit_reactor_impl() {
     local out="$FACTS_DIR/reactor.json"
     local op_start
     op_start=$(epoch_ms)
@@ -143,8 +158,8 @@ emit_reactor() {
     record_operation "emit_reactor" "$op_elapsed"
 }
 
-# ── 3. integration.json ───────────────────────────────────────────────────
-emit_integration() {
+# ── integration.json implementation ───────────────────────────────────────
+_emit_integration_impl() {
     local out="$FACTS_DIR/integration.json"
     local op_start
     op_start=$(epoch_ms)
@@ -200,12 +215,39 @@ emit_integration() {
     record_operation "emit_integration" "$op_elapsed"
 }
 
+# ==========================================================================
+# PUBLIC EMIT FUNCTIONS (with incremental caching)
+# These wrap the implementation functions with cache-aware emission
+# ==========================================================================
+
+# ── 1. modules.json ───────────────────────────────────────────────────────
+emit_modules() {
+    emit_if_stale "facts/modules.json" _emit_modules_impl
+}
+
+# ── 2. reactor.json ───────────────────────────────────────────────────────
+emit_reactor() {
+    emit_if_stale "facts/reactor.json" _emit_reactor_impl
+}
+
+# ── 3. integration.json ───────────────────────────────────────────────────
+emit_integration() {
+    emit_if_stale "facts/integration.json" _emit_integration_impl
+}
+
+# ==========================================================================
+# MAIN DISPATCHER
+# ==========================================================================
+
 # ── Main dispatcher ──────────────────────────────────────────────────────
 emit_all_facts() {
     timer_start
     record_memory "facts_start"
 
-    # Core facts
+    # Reset cache stats at start of fact emission
+    reset_cache_stats 2>/dev/null || true
+
+    # Core facts (with incremental caching)
     emit_modules
     emit_reactor
     emit_integration
@@ -220,8 +262,15 @@ emit_all_facts() {
     FACTS_ELAPSED=$(timer_elapsed_ms)
     record_phase_timing "facts" "$FACTS_ELAPSED"
 
+    # Export cache stats for receipt
+    export_cache_stats "${PERF_DIR}/cache-stats.json" 2>/dev/null || true
+
     # Count total facts
     local facts_count
     facts_count=$(ls "$FACTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+
+    # Print cache summary
+    print_cache_summary 2>/dev/null || true
+
     log_ok "All $facts_count facts emitted in ${FACTS_ELAPSED}ms"
 }

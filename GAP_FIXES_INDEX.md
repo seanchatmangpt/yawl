@@ -23,7 +23,7 @@
 
 ### For Architects & Technical Leads
 - **Comprehensive Coordination:** [`GAP_FIXES_SUMMARY.md`](#gap-fixes-summary) (full details)
-- **Violation Details:** [`.claude/VIOLATION_REPORT.md`](#violation-report) (audit findings)
+- **Violation Details:** [`.claude/archive/2026-01/VIOLATION_REPORT.md`](#violation-report) (audit findings)
 - **Fix Patterns Reference:** [`REMEDIATION_COMPLETED.md`](#remediation-completed) (best practices)
 - **Prevention Strategies:** [`V6_UPGRADE_PATTERNS.md`](#upgrade-patterns)
 
@@ -197,7 +197,7 @@ Go/No-Go Decision: 2026-02-19 0800
 ---
 
 ### Document 5: VIOLATION_REPORT.md (Updated)
-**File Path:** `/home/user/yawl/.claude/VIOLATION_REPORT.md`
+**File Path:** `/home/user/yawl/.claude/archive/2026-01/VIOLATION_REPORT.md`
 **Purpose:** Original audit report with added tracking section
 **Audience:** Technical leads, compliance reviewers
 
@@ -246,7 +246,7 @@ Status by Severity:
 | REMEDIATION_COMPLETED.md | `/home/user/yawl/` | 45KB | Before/after patterns |
 | V6_UPGRADE_PATTERNS.md | `/home/user/yawl/` | 50KB | Lessons learned |
 | V6_DEPLOYMENT_READINESS.md | `/home/user/yawl/` | 40KB | Production readiness |
-| VIOLATION_REPORT.md | `/home/user/yawl/.claude/` | 85KB | Audit findings + tracking |
+| VIOLATION_REPORT.md | `.claude/archive/2026-01/` | 85KB | Audit findings + tracking |
 
 ---
 
@@ -414,10 +414,10 @@ Status by Severity:
 ## Next Steps
 
 ### Immediate (2026-02-17, today)
-- Coordination documents complete ✅
-- Agent assignments ready ✅
-- Remediation patterns documented ✅
-- Deployment timeline established ✅
+- Coordination documents complete
+- Agent assignments ready
+- Remediation patterns documented
+- Deployment timeline established
 - **ACTION:** Initialize agent team for Phase 1
 
 ### Day 1 (2026-02-18)
@@ -484,7 +484,7 @@ Status by Severity:
 - `REMEDIATION_COMPLETED.md` - Before/after fix patterns
 - `V6_UPGRADE_PATTERNS.md` - Lessons learned
 - `V6_DEPLOYMENT_READINESS.md` - Production readiness
-- `.claude/VIOLATION_REPORT.md` - Full audit findings
+- `.claude/archive/2026-01/VIOLATION_REPORT.md` - Full audit findings
 - `.claude/BEST-PRACTICES-2026.md` - Coding standards
 - `.claude/HYPER_STANDARDS.md` - Guard definitions
 

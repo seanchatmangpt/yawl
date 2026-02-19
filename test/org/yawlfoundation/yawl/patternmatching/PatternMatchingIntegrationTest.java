@@ -97,7 +97,7 @@ class PatternMatchingIntegrationTest {
             int atomicCount = 0;
             int compositeCount = 0;
 
-            for (var element : rootNet.getNetElements()) {
+            for (var element : rootNet.getNetElements().values()) {
                 if (element instanceof YAtomicTask) {
                     atomicCount++;
                 } else if (element instanceof YCompositeTask) {
@@ -176,7 +176,7 @@ class PatternMatchingIntegrationTest {
         void compositeTaskReferencesCorrectDecomposition() {
             YNet rootNet = specification.getRootNet();
 
-            for (var element : rootNet.getNetElements()) {
+            for (var element : rootNet.getNetElements().values()) {
                 if (element instanceof YCompositeTask composite) {
                     YDecomposition decomp = composite.getDecompositionPrototype();
                     assertNotNull(decomp, "Composite task should have decomposition");
@@ -279,7 +279,7 @@ class PatternMatchingIntegrationTest {
         void roundtripPreservesTaskConfiguration() throws YSyntaxException {
             YNet originalNet = specification.getRootNet();
             int originalTaskCount = 0;
-            for (var element : originalNet.getNetElements()) {
+            for (var element : originalNet.getNetElements().values()) {
                 if (element instanceof YTask) {
                     originalTaskCount++;
                 }
@@ -291,7 +291,7 @@ class PatternMatchingIntegrationTest {
 
             YNet restoredNet = restored.getRootNet();
             int restoredTaskCount = 0;
-            for (var element : restoredNet.getNetElements()) {
+            for (var element : restoredNet.getNetElements().values()) {
                 if (element instanceof YTask) {
                     restoredTaskCount++;
                 }
@@ -334,7 +334,7 @@ class PatternMatchingIntegrationTest {
             YAWLServiceGateway restoredGateway = (YAWLServiceGateway)
                 restored.get(0).getDecomposition("ext-gateway");
 
-            assertTrue(restoredGateway.requiresManualInteraction());
+            assertTrue(restoredGateway.requiresResourcingDecisions());
         }
 
         @Test

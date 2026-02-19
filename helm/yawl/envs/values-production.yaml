@@ -1,0 +1,392 @@
+# =============================================================================
+# YAWL v6.0.0 - Production Environment Values
+# =============================================================================
+# Usage:
+#   helm install yawl ./helm/yawl -f helm/yawl/values.yaml -f helm/yawl/envs/values-production.yaml -n yawl-prod
+#
+# CRITICAL: Review ALL values before production deployment
+# =============================================================================
+global:
+  namespace: yawl-prod
+  labels:
+    environment: production
+
+yawlVersion: "6.0.0"
+
+# Production image with immutable digest
+image:
+  tag: "6.0.0"
+  digest: "sha256:PRODUCTION_DIGEST_PLACEHOLDER"
+  pullPolicy: Always
+  pullSecrets:
+    - name: ghcr-pull-secret
+
+# High-availability PostgreSQL cluster
+postgresql:
+  enabled: true
+  auth:
+    database: yawl_production
+    existingSecret: yawl-postgresql-prod
+  primary:
+    persistence:
+      size: 100Gi
+      storageClass: fast-ssd-replicated
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+    priorityClassName: high-priority
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: postgresql
+            topologyKey: kubernetes.io/hostname
+  readReplicas:
+    replicaCount: 2
+  metrics:
+    enabled: true
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+    retentionDays: 30
+
+# Redis cluster mode
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: yawl-redis-prod
+  master:
+    persistence:
+      size: 8Gi
+      storageClass: fast-ssd
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  replica:
+    replicaCount: 2
+    persistence:
+      size: 8Gi
+  metrics:
+    enabled: true
+
+# High-availability service configurations
+services:
+  engine:
+    replicaCount: 3
+    clustering:
+      enabled: true
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 6Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 20
+      targetCPUUtilizationPercentage: 65
+      targetMemoryUtilizationPercentage: 75
+      metrics:
+        - type: External
+          external:
+            metric:
+              name: yawl_active_cases
+            target:
+              type: AverageValue
+              value: "1000"
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: yawl-engine
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: yawl-engine
+            topologyKey: kubernetes.io/hostname
+    priorityClassName: high-priority
+    env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "production"
+      - name: JAVA_OPTS
+        valueFrom:
+          configMapKeyRef:
+            name: yawl-jvm-config
+            key: production-opts
+
+  resourceService:
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 3Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: yawl-resource-service
+
+  workletService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+
+  monitorService:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  costService:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  schedulingService:
+    replicaCount: 2
+
+  balancer:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 8
+
+# Production ingress with strict security
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+      add_header Content-Security-Policy "default-src 'self'" always;
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/acme-challenge-type: dns01
+    cert-manager.io/acme-dns01-provider: cloud-dns
+  hosts:
+    - host: yawl.example.com
+      paths:
+        - path: /yawl
+          pathType: Prefix
+          service: engine
+        - path: /resourceService
+          pathType: Prefix
+          service: resource-service
+        - path: /workletService
+          pathType: Prefix
+          service: worklet-service
+        - path: /monitorService
+          pathType: Prefix
+          service: monitor-service
+  tls:
+    - secretName: yawl-prod-tls
+      hosts:
+        - yawl.example.com
+
+# Full monitoring stack
+monitoring:
+  enabled: true
+  namespace: monitoring
+  scrapeInterval: 15s
+  scrapeTimeout: 10s
+  serviceMonitorLabels:
+    release: kube-prometheus-stack
+  ruleLabels:
+    release: kube-prometheus-stack
+
+# Istio service mesh for production
+istio:
+  enabled: true
+  ingressNamespace: istio-system
+  canary:
+    enabled: true
+    weight: 0
+    stableWeight: 100
+
+# Production-optimized JVM settings
+jvm:
+  opts: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=25.0
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -XX:+UseCompactObjectHeaders
+    -XX:+UseStringDeduplication
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=/app/logs/heap-dump.hprof
+    -Djava.security.egd=file:/dev/./urandom
+    -Djdk.virtualThreadScheduler.parallelism=200
+    -Djdk.virtualThreadScheduler.maxPoolSize=512
+    -Djdk.tracePinnedThreads=full
+    -Djdk.tls.disabledAlgorithms=SSLv3,TLSv1,TLSv1.1,RC4,MD5,SHA-1,DES,3DES
+    -Djdk.certpath.disabledAlgorithms=MD2,MD5,SHA1,RSA\ keySize\ <3072
+
+# Strict security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+  supplementalGroups:
+    - 10001
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+# Strict network policy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 9090
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: yawl-prod
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+
+# High availability pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Production logging
+logging:
+  yawl: INFO
+  worklet: INFO
+  resource: INFO
+  scheduling: INFO
+  proclet: INFO
+  hibernate: ERROR
+  root: WARN
+  mail: WARN
+
+# Secrets configuration
+secrets:
+  database:
+    create: false
+    existingSecret: yawl-postgresql-prod
+  apiKeys:
+    create: false
+    existingSecret: yawl-api-keys-prod
+
+# Production node placement
+nodeSelector:
+  node-role.kubernetes.io/production: "true"
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "yawl"
+    effect: "NoSchedule"
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node-role.kubernetes.io/production
+              operator: Exists
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+
+# Termination grace period for graceful shutdown
+terminationGracePeriodSeconds: 120
+
+# Priority class for critical workloads
+priorityClassName: high-priority
+
+# Service account with minimal permissions
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/yawl-engine-role
+  automountServiceAccountToken: false

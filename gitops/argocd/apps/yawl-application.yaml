@@ -1,0 +1,96 @@
+# =============================================================================
+# YAWL v6.0.0 - ArgoCD Application (Root Application Set)
+# =============================================================================
+# This is the main ArgoCD Application that deploys YAWL to Kubernetes.
+#
+# Prerequisites:
+#   1. ArgoCD installed in the cluster
+#   2. Target cluster configured in ArgoCD
+#   3. Helm repository added or chart bundled
+#
+# Deploy:
+#   kubectl apply -f gitops/argocd/apps/yawl-application.yaml -n argocd
+#
+# GitOps Workflow:
+#   1. Developer pushes to GitHub
+#   2. CI builds and pushes image
+#   3. ArgoCD detects drift (auto-sync enabled)
+#   4. ArgoCD applies changes to cluster
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yawl
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: yawl
+    app.kubernetes.io/component: gitops
+    app.kubernetes.io/part-of: yawl-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: yawl
+
+  source:
+    repoURL: https://github.com/yawlfoundation/yawl.git
+    targetRevision: main
+    path: helm/yawl
+
+    helm:
+      valueFiles:
+        - values.yaml
+        - envs/values-{{ .Values.environment }}.yaml
+
+      parameters:
+        - name: image.tag
+          value: "{{ .Values.imageTag }}"
+        - name: yawlVersion
+          value: "6.0.0"
+
+      # Release name
+      releaseName: yawl
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: yawl
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - PrunePropagationPolicy=foreground
+      - Replace=false
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+
+  info:
+    - name: Description
+      value: YAWL Workflow Engine - Enterprise BPM Platform
+    - name: Version
+      value: "6.0.0"
+    - name: Documentation
+      value: https://yawlfoundation.github.io/yawl/v6.0/

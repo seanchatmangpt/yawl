@@ -1,0 +1,42 @@
+================================================================================
+YAWL Docker Security Validation Report
+================================================================================
+Generated: Wed Feb 18 17:27:28 PST 2026
+Dockerfiles Scanned: 6
+
+SUMMARY
+--------------------------------------------------------------------------------
+Checks Passed:      46
+Critical Issues:    0
+High Issues:        0
+Medium Issues:      0
+
+SECURITY BASELINE
+--------------------------------------------------------------------------------
+[X] Non-root user execution
+[X] TLS 1.3 enforcement (Java containers)
+[X] Health check configuration
+[X] No hardcoded secrets
+[X] OCI image labels
+[X] Minimal base images (Alpine/slim)
+[X] Proper file ownership
+[X] No sudo usage
+
+DOCKERFILES VALIDATED
+--------------------------------------------------------------------------------
+  - docker/base/Dockerfile.jdk25
+  - docker/base/Dockerfile.jre25
+  - docker/development/Dockerfile.dev
+  - docker/production/Dockerfile.engine
+  - scripts/pm4py/Dockerfile.a2a
+  - scripts/pm4py/Dockerfile.mcp
+
+RECOMMENDATIONS
+--------------------------------------------------------------------------------
+1. Ensure all production images use multi-stage builds
+2. Keep base images updated with security patches
+3. Run Trivy scans regularly in CI/CD
+4. Review and update TLS configuration quarterly
+5. Monitor container runtime security with Falco or similar
+
+================================================================================

@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Comprehensive tests for the V6-upgraded YPersistenceManager with real H2
  * database integration (Chicago TDD - no mocks).
@@ -44,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Engine Team - V6 upgrade 2026-02-17
  */
 @Tag("unit")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYPersistenceManager {
 
     private YEngine _engine;

@@ -1,0 +1,1293 @@
+{
+  "info": {
+    "name": "YAWL Engine API v5.2",
+    "description": "Enterprise BPM/Workflow Engine REST API Collection\n\n## Overview\nYAWL (Yet Another Workflow Language) provides comprehensive workflow management capabilities through four primary interfaces:\n\n- **Interface A**: Design-time operations (specification upload, validation, management)\n- **Interface B**: Runtime operations (case management, work item execution)\n- **Interface E**: Event and audit logging (process monitoring, compliance)\n- **Interface X**: Extended operations (exception handling, work item control)\n\n## Authentication\nAll endpoints require a valid sessionHandle obtained through the connect endpoint. Sessions expire after one hour of inactivity.\n\n## Usage\n1. Run the 'Connect' request to obtain a session handle\n2. The session handle will be automatically saved to the collection variable\n3. All subsequent requests will use the saved session handle",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "5.2.0"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set session handle if available",
+          "if (pm.collectionVariables.get(\"sessionHandle\")) {",
+          "    pm.request.addQueryParam({",
+          "        key: \"sessionHandle\",",
+          "        value: pm.collectionVariables.get(\"sessionHandle\")",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-save session handle from connect response",
+          "if (pm.info.requestName === \"Connect\" && pm.response.code === 200) {",
+          "    const handle = pm.response.text().trim();",
+          "    if (handle && !handle.includes(\"failure\")) {",
+          "        pm.collectionVariables.set(\"sessionHandle\", handle);",
+          "        console.log(\"Session handle saved:\", handle);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/yawl",
+      "type": "string"
+    },
+    {
+      "key": "sessionHandle",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "specIdentifier",
+      "value": "my-workflow",
+      "type": "string"
+    },
+    {
+      "key": "specVersion",
+      "value": "1.0",
+      "type": "string"
+    },
+    {
+      "key": "specUri",
+      "value": "http://example.com/specs/workflow",
+      "type": "string"
+    },
+    {
+      "key": "caseId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Session Management",
+      "item": [
+        {
+          "name": "Connect",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "connect",
+                  "type": "text"
+                },
+                {
+                  "key": "userid",
+                  "value": "admin",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "YAWL",
+                  "type": "text",
+                  "description": "Will be encrypted by engine"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Creates a user session with the engine. Returns a session handle for use in all other engine access methods. Sessions expire after one hour of inactivity."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=checkConnection&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "checkConnection"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Checks that a session handle is active and valid."
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "disconnect",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ia",
+              "host": ["{{baseUrl}}"],
+              "path": ["ia"]
+            },
+            "description": "Disconnects an external entity from the engine."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Interface A - Specifications",
+      "item": [
+        {
+          "name": "Upload Specification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<specificationSet xmlns=\"http://www.yawlfoundation.org/yawlschema\">\n  <specification uri=\"http://example.com/specs/approval\">\n    <metaData>\n      <title>Approval Workflow</title>\n      <creator>admin</creator>\n    </metaData>\n    <rootNet id=\"root\">\n      <inputPort name=\"request\" />\n      <task id=\"approve_request\">\n        <name>Approve Request</name>\n      </task>\n      <outputPort name=\"result\" />\n    </rootNet>\n  </specification>\n</specificationSet>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ia/specifications?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ia", "specifications"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Uploads a YAWL specification XML to the engine for validation and loading."
+          },
+          "response": []
+        },
+        {
+          "name": "List Specifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ia/specifications?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ia", "specifications"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns a list of all loaded specifications in the engine."
+          },
+          "response": []
+        },
+        {
+          "name": "Unload Specification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ia/specifications/{{specId}}?version={{specVersion}}&uri={{specUri}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ia", "specifications", "{{specId}}"],
+              "query": [
+                {
+                  "key": "version",
+                  "value": "{{specVersion}}"
+                },
+                {
+                  "key": "uri",
+                  "value": "{{specUri}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Removes a loaded specification from the engine."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specification List (Interface B)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getSpecificationPrototypesList&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getSpecificationPrototypesList"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Gets a list of SpecificationData objects for the specifications currently loaded."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Interface B - Cases",
+      "item": [
+        {
+          "name": "Launch Case",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save case ID from response",
+                  "if (pm.response.code === 200) {",
+                  "    const caseId = pm.response.text().trim();",
+                  "    if (caseId && !caseId.includes(\"failure\")) {",
+                  "        pm.collectionVariables.set(\"caseId\", caseId);",
+                  "        console.log(\"Case ID saved:\", caseId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "launchCase",
+                  "type": "text"
+                },
+                {
+                  "key": "specidentifier",
+                  "value": "{{specIdentifier}}",
+                  "type": "text"
+                },
+                {
+                  "key": "specversion",
+                  "value": "{{specVersion}}",
+                  "type": "text"
+                },
+                {
+                  "key": "specuri",
+                  "value": "{{specUri}}",
+                  "type": "text"
+                },
+                {
+                  "key": "caseParams",
+                  "value": "<data><requestType>vacation</requestType></data>",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Launches a new case instance of a specification."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Running Cases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getAllRunningCases&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getAllRunningCases"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Gets a complete list of all running case IDs from the engine."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cases for Specification",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getCasesForSpecification&specidentifier={{specIdentifier}}&specversion={{specVersion}}&specuri={{specUri}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getCasesForSpecification"
+                },
+                {
+                  "key": "specidentifier",
+                  "value": "{{specIdentifier}}"
+                },
+                {
+                  "key": "specversion",
+                  "value": "{{specVersion}}"
+                },
+                {
+                  "key": "specuri",
+                  "value": "{{specUri}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Gets the set of active cases for a specification."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Case State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getCaseState&caseID={{caseId}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getCaseState"
+                },
+                {
+                  "key": "caseID",
+                  "value": "{{caseId}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns an XML snapshot of the current case state."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Case Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getCaseData&caseID={{caseId}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getCaseData"
+                },
+                {
+                  "key": "caseID",
+                  "value": "{{caseId}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns the current data of a case."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Case",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "cancelCase",
+                  "type": "text"
+                },
+                {
+                  "key": "caseID",
+                  "value": "{{caseId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Cancels a running case instance."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Case State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=exportCaseState&caseID={{caseId}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "exportCaseState"
+                },
+                {
+                  "key": "caseID",
+                  "value": "{{caseId}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Exports case state for import/migration purposes."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Interface B - Work Items",
+      "item": [
+        {
+          "name": "Get All Live Work Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getLiveItems&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getLiveItems"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns a list of all work items currently active in the engine."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Work Item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getWorkItem&workItemID={{workItemId}}&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getWorkItem"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns an XML description of a current work item."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Work Items for Case",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ib?action=getWorkItemsWithIdentifier&id={{caseId}}&idType=case&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getWorkItemsWithIdentifier"
+                },
+                {
+                  "key": "id",
+                  "value": "{{caseId}}"
+                },
+                {
+                  "key": "idType",
+                  "value": "case"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns the current set of active work items for a case."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Out Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "checkout",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Obtains ownership of a work item. After checkout, status becomes 'executing'."
+          },
+          "response": []
+        },
+        {
+          "name": "Check In Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "checkin",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "data",
+                  "value": "<data><result>approved</result></data>",
+                  "type": "text"
+                },
+                {
+                  "key": "logPredicate",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Returns a completed work item to the engine with updated data."
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "suspend",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Suspends a work item."
+          },
+          "response": []
+        },
+        {
+          "name": "Unsuspend Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "unsuspend",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Resumes a suspended work item."
+          },
+          "response": []
+        },
+        {
+          "name": "Rollback Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "rollback",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Rolls back a work item from 'executing' to 'fired' status."
+          },
+          "response": []
+        },
+        {
+          "name": "Skip Work Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "action",
+                  "value": "skip",
+                  "type": "text"
+                },
+                {
+                  "key": "workItemID",
+                  "value": "{{workItemId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ib",
+              "host": ["{{baseUrl}}"],
+              "path": ["ib"]
+            },
+            "description": "Skips a work item."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Interface X - Extended Operations",
+      "item": [
+        {
+          "name": "Cancel Work Item (REST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<exceptionData>\n  <reason>User cancelled</reason>\n  <timestamp>2026-02-18T12:00:00Z</timestamp>\n</exceptionData>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ix/workitems/{{workItemId}}/cancel?sessionHandle={{sessionHandle}}&fail=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "workitems", "{{workItemId}}", "cancel"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                },
+                {
+                  "key": "fail",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Cancels a work item with optional exception data."
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Work Item (REST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ix/workitems/{{workItemId}}/suspend?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "workitems", "{{workItemId}}", "suspend"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Suspends a work item via REST API."
+          },
+          "response": []
+        },
+        {
+          "name": "Resume Work Item (REST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ix/workitems/{{workItemId}}/resume?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "workitems", "{{workItemId}}", "resume"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Resumes a suspended work item via REST API."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Work Item Data",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<data>\n  <status>in_progress</status>\n  <lastUpdated>2026-02-18T12:00:00Z</lastUpdated>\n</data>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ix/workitems/{{workItemId}}/data?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "workitems", "{{workItemId}}", "data"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Updates work item data without checking it in."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Listener",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "http://localhost:8080/myService/exceptionHandler"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ix/listeners?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "listeners"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Registers a URI to receive InterfaceX exception notifications."
+          },
+          "response": []
+        },
+        {
+          "name": "Unregister Listener",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ix/listeners?uri=http://localhost:8080/myService/exceptionHandler&sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ix", "listeners"],
+              "query": [
+                {
+                  "key": "uri",
+                  "value": "http://localhost:8080/myService/exceptionHandler"
+                },
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Unregisters an InterfaceX listener."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Interface E - Event Logging",
+      "item": [
+        {
+          "name": "Get Logged Specifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ie/specifications?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ie", "specifications"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns all specifications with logged execution data."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cases for Specification (Logs)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ie/specifications/{{specKey}}/cases?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ie", "specifications", "{{specKey}}", "cases"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns all case instances for a specification log key."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Event Listeners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ie/listeners?sessionHandle={{sessionHandle}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ie", "listeners"],
+              "query": [
+                {
+                  "key": "sessionHandle",
+                  "value": "{{sessionHandle}}"
+                }
+              ]
+            },
+            "description": "Returns registered YAWL services that receive event notifications."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Security",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/security/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "health"]
+            },
+            "description": "Returns the health status of the security subsystem."
+          },
+          "response": []
+        },
+        {
+          "name": "List Certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/security/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "certificates"]
+            },
+            "description": "Lists all available certificates in the keystore."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Certificate Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/security/certificates/{{alias}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "certificates", "{{alias}}"]
+            },
+            "description": "Returns details for a specific certificate."
+          },
+          "response": []
+        },
+        {
+          "name": "Sign Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document\": \"SGVsbG8gV29ybGQh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/security/certificates/{{alias}}/sign",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "certificates", "{{alias}}", "sign"]
+            },
+            "description": "Signs a document using the specified certificate."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Signature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document\": \"SGVsbG8gV29ybGQh\",\n  \"signature\": \"c2lnbmF0dXJlLXZhbHVl\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/security/certificates/{{alias}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "certificates", "{{alias}}", "verify"]
+            },
+            "description": "Verifies a signature against a certificate."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Audit",
+      "item": [
+        {
+          "name": "Get Receipt Chain",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/receipts",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "receipts"]
+            },
+            "description": "Retrieves full receipt chain for a case (chronological order)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Computed Case State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/state",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "state"]
+            },
+            "description": "Returns case state computed from receipt chain (truth by recomputation)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Case Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "stats"]
+            },
+            "description": "Returns admission/rejection metrics for a case."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/receipt/{{receiptId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "receipt", "{{receiptId}}"]
+            },
+            "description": "Retrieves a single receipt by ID with provenance information."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Chain Integrity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/verify/{{caseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "verify", "{{caseId}}"]
+            },
+            "description": "Performs tamper detection on receipt chain."
+          },
+          "response": []
+        },
+        {
+          "name": "Query by Time Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/time-range?start=1708080000000&end=1708166400000",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "time-range"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1708080000000",
+                  "description": "Start timestamp in milliseconds"
+                },
+                {
+                  "key": "end",
+                  "value": "1708166400000",
+                  "description": "End timestamp in milliseconds"
+                }
+              ]
+            },
+            "description": "Query receipts within a time range (incident response)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admitted Transitions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/admitted",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "admitted"]
+            },
+            "description": "Query all lawful (committed) transitions for a case."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Rejected Transitions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/case/{{caseId}}/rejected",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "case", "{{caseId}}", "rejected"]
+            },
+            "description": "Query all policy-violating (rejected) transitions for debugging."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

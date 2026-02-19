@@ -126,7 +126,7 @@
   - [ ] Replace all `System.out.println` with `_log.info()/_log.debug()`
   - [ ] Replace all `System.err.println` with `_log.error()`
   - [ ] Add ERROR-level logging to silent catches
-  - [ ] Fix JWT security logging (DEBUG → WARN)
+  - [ ] Fix JWT security logging (DEBUG -> WARN)
 - [ ] **1200:** Checkpoint
   - [ ] Estimate 33% of HIGH violations should be fixed
   - [ ] Build: `mvn clean compile` must pass
@@ -461,15 +461,29 @@ Build: PASS
 
 ## Critical Success Factors
 
-1. ✅ All violations clearly documented (GAP_FIXES_SUMMARY.md)
-2. ✅ Fix patterns provided for each violation (REMEDIATION_COMPLETED.md)
-3. ✅ Agent assignments clear (9 specialists assigned)
-4. ✅ Timeline aggressive but feasible (4-5 days)
-5. ⏳ Agents must start immediately (Phase 1 begins 2026-02-18 0800)
-6. ⏳ Daily builds must pass 100%
-7. ⏳ Coordination must be tight (daily syncs)
-8. ⏳ Code review must be thorough but fast
-9. ⏳ Stakeholder buy-in required for go/no-go decisions
+1. All violations clearly documented (GAP_FIXES_SUMMARY.md)
+2. Fix patterns provided for each violation (REMEDIATION_COMPLETED.md)
+3. Agent assignments clear (9 specialists assigned)
+4. Timeline aggressive but feasible (4-5 days)
+5. Agents must start immediately (Phase 1 begins 2026-02-18 0800)
+6. Daily builds must pass 100%
+7. Coordination must be tight (daily syncs)
+8. Code review must be thorough but fast
+9. Stakeholder buy-in required for go/no-go decisions
+
+---
+
+## Violation Report Reference
+
+The violation report is located at:
+```
+.claude/archive/2026-01/VIOLATION_REPORT.md
+```
+
+To check current violations:
+```bash
+grep "^### B-\|^### H-\|^### M-" .claude/archive/2026-01/VIOLATION_REPORT.md | wc -l
+```
 
 ---
 

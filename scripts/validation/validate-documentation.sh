@@ -14,12 +14,20 @@
 # Exit codes:
 #   0 - All validations passed
 #   1 - One or more validations failed
+#   2 - Warnings only (no failures)
+#
+# Output:
+#   docs/validation/validation-report.json - JSON results
+#   docs/validation/validation-report.xml  - JUnit XML (if requested)
 # ==========================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 VALIDATION_DIR="${PROJECT_ROOT}/docs/validation"
+
+# Source output aggregation library
+source "${SCRIPT_DIR}/lib/output-aggregation.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -29,6 +37,9 @@ NC='\033[0m' # No Color
 
 ERRORS=0
 WARNINGS=0
+
+# Initialize aggregation
+agg_init "documentation" "${VALIDATION_DIR}"
 
 # Initialize validation directory
 mkdir -p "${VALIDATION_DIR}"
@@ -45,12 +56,18 @@ echo ""
 # -------------------------------------------------------------------------
 echo "[1/4] Checking package-info.java coverage..."
 
+CHECK_START=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+
 PACKAGES=$(find "${PROJECT_ROOT}/src" -type d -name "java" -exec find {} -mindepth 1 -type d \; 2>/dev/null | wc -l | tr -d ' ')
 PACKAGE_INFOS=$(find "${PROJECT_ROOT}/src" -name "package-info.java" 2>/dev/null | wc -l | tr -d ' ')
+
+CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+CHECK_DURATION=$((CHECK_END - CHECK_START))
 
 if [[ -z "$PACKAGES" || "$PACKAGES" -eq 0 ]]; then
     echo -e "  ${YELLOW}WARNING: No packages found in src/${NC}"
     WARNINGS=$((WARNINGS + 1))
+    agg_add_result "package-info-coverage" "WARN" "No packages found in src/" "${CHECK_DURATION}"
 else
     COVERAGE=$((PACKAGE_INFOS * 100 / PACKAGES))
     echo "  Packages found: ${PACKAGES}"
@@ -60,8 +77,10 @@ else
     if [[ $COVERAGE -lt 100 ]]; then
         echo -e "  ${RED}ERROR: Coverage below 100%${NC}"
         ERRORS=$((ERRORS + 1))
+        agg_add_result "package-info-coverage" "FAIL" "Coverage ${COVERAGE}% < 100%" "${CHECK_DURATION}"
     else
         echo -e "  ${GREEN}PASSED: 100% package-info coverage${NC}"
+        agg_add_result "package-info-coverage" "PASS" "100% coverage (${PACKAGE_INFOS} files)" "${CHECK_DURATION}"
     fi
 fi
 
@@ -71,6 +90,8 @@ echo ""
 # 2. Markdown Link Validation
 # -------------------------------------------------------------------------
 echo "[2/4] Validating markdown links..."
+
+CHECK_START=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
 
 LINK_REPORT="${VALIDATION_DIR}/link-check-report.txt"
 BROKEN_COUNT=0
@@ -87,17 +108,25 @@ if command -v markdown-link-check &> /dev/null; then
         fi
     done < <(find "${PROJECT_ROOT}/docs" -name "*.md" -print0 2>/dev/null)
 
+    CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+    CHECK_DURATION=$((CHECK_END - CHECK_START))
+
     if [[ $BROKEN_COUNT -gt 0 ]]; then
         echo -e "  ${RED}ERROR: ${BROKEN_COUNT} files have broken links${NC}"
         echo "  See: ${LINK_REPORT}"
         ERRORS=$((ERRORS + 1))
+        agg_add_result "markdown-links" "FAIL" "${BROKEN_COUNT} files have broken links" "${CHECK_DURATION}"
     else
         echo -e "  ${GREEN}PASSED: All markdown links valid${NC}"
+        agg_add_result "markdown-links" "PASS" "All links valid" "${CHECK_DURATION}"
     fi
 else
+    CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+    CHECK_DURATION=$((CHECK_END - CHECK_START))
     echo -e "  ${YELLOW}SKIPPED: markdown-link-check not installed${NC}"
     echo "  Install: npm install -g markdown-link-check"
     WARNINGS=$((WARNINGS + 1))
+    agg_add_result "markdown-links" "SKIP" "markdown-link-check not installed" "${CHECK_DURATION}"
 fi
 
 echo ""
@@ -106,6 +135,8 @@ echo ""
 # 3. XSD Schema Validation
 # -------------------------------------------------------------------------
 echo "[3/4] Validating XSD schemas..."
+
+CHECK_START=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
 
 SCHEMA_DIR="${PROJECT_ROOT}/schema"
 SCHEMA_ERRORS=0
@@ -122,15 +153,23 @@ if [[ -d "$SCHEMA_DIR" ]]; then
         fi
     done
 
+    CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+    CHECK_DURATION=$((CHECK_END - CHECK_START))
+
     if [[ $SCHEMA_ERRORS -gt 0 ]]; then
         echo -e "  ${RED}ERROR: ${SCHEMA_ERRORS} schema validation failures${NC}"
         ERRORS=$((ERRORS + 1))
+        agg_add_result "xsd-schemas" "FAIL" "${SCHEMA_ERRORS} schema validation failures" "${CHECK_DURATION}"
     else
         echo -e "  ${GREEN}PASSED: All XSD schemas valid${NC}"
+        agg_add_result "xsd-schemas" "PASS" "All schemas valid" "${CHECK_DURATION}"
     fi
 else
+    CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+    CHECK_DURATION=$((CHECK_END - CHECK_START))
     echo -e "  ${YELLOW}SKIPPED: No schema directory found${NC}"
     WARNINGS=$((WARNINGS + 1))
+    agg_add_result "xsd-schemas" "SKIP" "No schema directory found" "${CHECK_DURATION}"
 fi
 
 echo ""
@@ -139,6 +178,8 @@ echo ""
 # 4. Observatory Receipt Verification
 # -------------------------------------------------------------------------
 echo "[4/4] Verifying observatory receipt..."
+
+CHECK_START=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
 
 RECEIPT="${PROJECT_ROOT}/docs/v6/latest/receipts/observatory.json"
 INDEX_FILE="${PROJECT_ROOT}/docs/v6/latest/INDEX.md"
@@ -156,28 +197,40 @@ if [[ -f "$RECEIPT" && -f "$INDEX_FILE" ]]; then
             ACTUAL=""
         fi
 
+        CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        CHECK_DURATION=$((CHECK_END - CHECK_START))
+
         if [[ -n "$ACTUAL" ]]; then
             if [[ "$EXPECTED" == "$ACTUAL" ]]; then
                 echo -e "  ${GREEN}PASSED: Observatory receipt valid${NC}"
+                agg_add_result "observatory-receipt" "PASS" "Receipt hash verified" "${CHECK_DURATION}"
             else
                 echo -e "  ${RED}ERROR: Observatory receipt mismatch${NC}"
                 echo "    Expected: ${EXPECTED}"
                 echo "    Actual:   ${ACTUAL}"
                 echo "    Run: bash scripts/observatory/observatory.sh"
                 ERRORS=$((ERRORS + 1))
+                agg_add_result "observatory-receipt" "FAIL" "Receipt hash mismatch" "${CHECK_DURATION}"
             fi
         else
             echo -e "  ${YELLOW}SKIPPED: No SHA256 tool available${NC}"
             WARNINGS=$((WARNINGS + 1))
+            agg_add_result "observatory-receipt" "SKIP" "No SHA256 tool available" "${CHECK_DURATION}"
         fi
     else
+        CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        CHECK_DURATION=$((CHECK_END - CHECK_START))
         echo -e "  ${YELLOW}WARNING: Receipt missing index_sha256${NC}"
         WARNINGS=$((WARNINGS + 1))
+        agg_add_result "observatory-receipt" "WARN" "Receipt missing index_sha256" "${CHECK_DURATION}"
     fi
 else
+    CHECK_END=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+    CHECK_DURATION=$((CHECK_END - CHECK_START))
     echo -e "  ${YELLOW}SKIPPED: Observatory receipt or INDEX.md not found${NC}"
     echo "    Run: bash scripts/observatory/observatory.sh"
     WARNINGS=$((WARNINGS + 1))
+    agg_add_result "observatory-receipt" "SKIP" "Receipt or INDEX.md not found" "${CHECK_DURATION}"
 fi
 
 echo ""
@@ -218,12 +271,25 @@ cat > "${VALIDATION_DIR}/validation-report.json" << EOF
 }
 EOF
 
+# Output aggregated results
+agg_output_json "${VALIDATION_DIR}/documentation-results.json" > /dev/null
+agg_output_junit "${VALIDATION_DIR}/documentation-junit.xml" > /dev/null
+
 echo "Report saved to: ${VALIDATION_DIR}/validation-report.json"
+echo "JSON results:    ${VALIDATION_DIR}/documentation-results.json"
+echo "JUnit XML:       ${VALIDATION_DIR}/documentation-junit.xml"
 echo ""
+
+# Get exit code from aggregation
+agg_get_exit_code
+exit_code=$?
 
 if [[ $ERRORS -gt 0 ]]; then
     echo -e "${RED}VALIDATION FAILED${NC}"
     exit 1
+elif [[ $WARNINGS -gt 0 ]]; then
+    echo -e "${YELLOW}VALIDATION PASSED WITH WARNINGS${NC}"
+    exit 2
 else
     echo -e "${GREEN}VALIDATION PASSED${NC}"
     exit 0

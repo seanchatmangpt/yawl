@@ -328,7 +328,7 @@ services:
     image: yawl/engine:${YAWL_VERSION:-6.0.0-Alpha}
     build:
       context: .
-      dockerfile: Dockerfile.modernized
+      dockerfile: docker/production/Dockerfile.engine
     container_name: yawl-engine
     restart: unless-stopped
     depends_on:

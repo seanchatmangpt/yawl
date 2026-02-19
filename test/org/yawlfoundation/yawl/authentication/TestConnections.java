@@ -9,6 +9,8 @@ import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.exceptions.YAuthenticationException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 /**
  *
  * @author Lachlan Aldred
@@ -21,6 +23,7 @@ class TestConnections {
     private YSessionCache _sessionCache;
     private YEngine _engine;
 
+    @Execution(ExecutionMode.SAME_THREAD)
     @BeforeEach
     void setUp() throws YAuthenticationException {
         _engine = YEngine.getInstance();

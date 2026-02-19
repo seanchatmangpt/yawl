@@ -9,6 +9,9 @@
 #   - tests.json: Test inventory and coverage hints
 #   - gates.json: Quality gates configuration
 #
+# Incremental Mode:
+#   Uses emit_if_stale for cache-aware emission via dependency-registry.
+#
 # Usage:
 #   source lib/emit-architecture-facts.sh
 #   emit_all_architecture_facts
@@ -23,7 +26,7 @@ fi
 # ==========================================================================
 # SHARED-SRC: Maps modules to their source directory strategies
 # ==========================================================================
-emit_shared_src() {
+_emit_shared_src_impl() {
     local out="$FACTS_DIR/shared-src.json"
     local op_start
     op_start=$(epoch_ms)
@@ -97,7 +100,7 @@ emit_shared_src() {
 # ==========================================================================
 # DUAL-FAMILY: Stateful vs Stateless engine families
 # ==========================================================================
-emit_dual_family() {
+_emit_dual_family_impl() {
     local out="$FACTS_DIR/dual-family.json"
     local op_start
     op_start=$(epoch_ms)
@@ -165,46 +168,61 @@ emit_dual_family() {
 }
 
 # ==========================================================================
-# DUPLICATES: Find duplicate FQCNs across modules
+# DUPLICATES: Find duplicate FQCNs across modules (Optimized - batch grep)
 # ==========================================================================
-emit_duplicates() {
+_emit_duplicates_impl() {
     local out="$FACTS_DIR/duplicates.json"
     local op_start
     op_start=$(epoch_ms)
     log_info "Emitting facts/duplicates.json ..."
 
-    # Find all Java files and extract package+classname
+    # Use cached discovery if available, otherwise find files
+    local java_files
+    if [[ -n "${_DISCOVERY_JAVA_FILES:-}" ]]; then
+        java_files="$_DISCOVERY_JAVA_FILES"
+    else
+        java_files=$(find "$REPO_ROOT/src" -name "*.java" -type f 2>/dev/null | grep -v target)
+    fi
+
+    # Filter out test files
+    local non_test_files
+    non_test_files=$(echo "$java_files" | grep -v 'Test\.java$')
+
+    # Batch extract package declarations with grep -H (filename header)
+    local package_data
+    package_data=$(echo "$non_test_files" | xargs grep -h '^package ' 2>/dev/null | head -2000)
+
+    # Build FQN list using shell string manipulation (fast for ~1000 files)
     local -A fqn_counts=()
     local -A fqn_locations=()
+    local total_fqns=0
 
     while IFS= read -r java_file; do
         [[ -z "$java_file" ]] && continue
 
-        # Extract package declaration
+        # Get package from file using grep
         local pkg
         pkg=$(grep -m1 '^package ' "$java_file" 2>/dev/null | sed 's/package //;s/;//;s/ //g')
         [[ -z "$pkg" ]] && continue
 
-        # Extract class name
+        # Get class name
         local classname
         classname=$(basename "$java_file" .java)
-        [[ "$classname" == *Test ]] && continue  # Skip test classes
+        [[ "$classname" == *Test ]] && continue
 
         local fqn="${pkg}.${classname}"
-
-        # Count occurrences
-        fqn_counts["$fqn"]=$(( ${fqn_counts["$fqn"]:-0} + 1 ))
-
-        # Record location
         local rel_path="${java_file#"$REPO_ROOT"/}"
+
+        ((total_fqns++))
+        fqn_counts["$fqn"]=$(( ${fqn_counts["$fqn"]:-0} + 1 ))
         if [[ -z "${fqn_locations[$fqn]:-}" ]]; then
             fqn_locations["$fqn"]="$rel_path"
         else
             fqn_locations["$fqn"]="${fqn_locations[$fqn]}|$rel_path"
         fi
-    done < <(find "$REPO_ROOT/src" -name "*.java" -type f 2>/dev/null | head -1000)
+    done <<< "$non_test_files"
 
-    # Find actual duplicates (FQCNs appearing more than once)
+    # Find actual duplicates (FQNs appearing more than once)
     local -a duplicate_entries=()
     for fqn in "${!fqn_counts[@]}"; do
         local count="${fqn_counts[$fqn]}"
@@ -222,7 +240,7 @@ emit_duplicates() {
         printf '  "generated_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         printf '  "commit": "%s",\n' "$(git_commit)"
         printf '  "summary": {\n'
-        printf '    "total_fqns_scanned": %d,\n' "${#fqn_counts[@]}"
+        printf '    "total_fqns_scanned": %d,\n' "$total_fqns"
         printf '    "duplicate_count": %d,\n' "${#duplicate_entries[@]}"
         printf '    "status": "%s"\n' "$([[ ${#duplicate_entries[@]} -eq 0 ]] && echo "clean" || echo "duplicates_found")"
         printf '  },\n'
@@ -239,14 +257,14 @@ emit_duplicates() {
 
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_duplicates" "$op_elapsed"
-    log_ok "Duplicates: scanned ${#fqn_counts[@]} FQNs, found ${#duplicate_entries[@]} duplicates"
+    log_ok "Duplicates: scanned $total_fqns FQNs, found ${#duplicate_entries[@]} duplicates"
 }
 
 # ==========================================================================
-# TESTS: Test inventory and coverage hints
+# TESTS: Test inventory and coverage hints (Optimized)
 # Phase 1: Scan shared test/ directory at $REPO_ROOT/test/
 # ==========================================================================
-emit_tests() {
+_emit_tests_impl() {
     local out="$FACTS_DIR/tests.json"
     local op_start
     op_start=$(epoch_ms)
@@ -255,6 +273,14 @@ emit_tests() {
     local -a test_inventory=()
     local total_tests=0
     local total_modules=0
+
+    # Use cached discovery if available
+    local test_files
+    if [[ -n "${_DISCOVERY_TEST_FILES:-}" ]]; then
+        test_files="$_DISCOVERY_TEST_FILES"
+    else
+        test_files=$(find "$REPO_ROOT" -path "*/test/*" -name "*.java" -type f 2>/dev/null | grep -v target)
+    fi
 
     # Phase 1: Primary scan - shared test directory at $REPO_ROOT/test/
     local shared_test_dir="$REPO_ROOT/test"
@@ -265,24 +291,27 @@ emit_tests() {
     if [[ -d "$shared_test_dir" ]]; then
         log_info "Scanning shared test directory: $shared_test_dir"
 
-        # Count test files in shared directory
-        while IFS= read -r test_file; do
-            [[ -z "$test_file" ]] && continue
-            ((shared_test_count++))
-            ((total_tests++))
+        # Get test files and batch-detect JUnit versions using xargs + grep -l
+        local shared_tests
+        shared_tests=$(echo "$test_files" | grep "^${shared_test_dir}")
 
-            # Detect JUnit version by imports
-            if grep -q "org.junit.jupiter" "$test_file" 2>/dev/null; then
-                ((junit5_count++))
-            elif grep -q "org.junit.Test\|org.junit.Before" "$test_file" 2>/dev/null; then
-                ((junit4_count++))
+        if [[ -n "$shared_tests" ]]; then
+            shared_test_count=$(echo "$shared_tests" | grep -c .)
+
+            # Batch JUnit detection using grep -l (lists files matching pattern)
+            local j5_files j4_files
+            j5_files=$(echo "$shared_tests" | xargs grep -l "org.junit.jupiter" 2>/dev/null | wc -l | tr -d ' ')
+            j4_files=$(echo "$shared_tests" | xargs grep -l "org.junit.Test\|org.junit.Before" 2>/dev/null | wc -l | tr -d ' ')
+
+            junit5_count=$((junit5_count + j5_files))
+            junit4_count=$((junit4_count + j4_files))
+            total_tests=$((total_tests + shared_test_count))
+
+            if [[ $shared_test_count -gt 0 ]]; then
+                test_inventory+=("{\"module\": \"shared-root-test\", \"test_count\": $shared_test_count, \"junit5\": $j5_files, \"junit4\": $j4_files, \"source\": \"test/\"}")
+                ((total_modules++))
+                log_ok "Found $shared_test_count tests in shared test/ directory"
             fi
-        done < <(find "$shared_test_dir" \( -name "*Test.java" -o -name "*Tests.java" -o -name "*IT.java" \) -type f 2>/dev/null)
-
-        if [[ $shared_test_count -gt 0 ]]; then
-            test_inventory+=("{\"module\": \"shared-root-test\", \"test_count\": $shared_test_count, \"junit5\": $junit5_count, \"junit4\": $junit4_count, \"source\": \"test/\"}")
-            ((total_modules++))
-            log_ok "Found $shared_test_count tests in shared test/ directory"
         fi
     fi
 
@@ -294,36 +323,33 @@ emit_tests() {
 
         ((total_modules++))
 
-        local mod_test_count=0
-        local mod_junit5_count=0
-        local mod_junit4_count=0
+        # Filter test files for this module
+        local mod_tests
+        mod_tests=$(echo "$test_files" | grep "^${test_dir}")
 
-        # Count test files
-        while IFS= read -r test_file; do
-            [[ -z "$test_file" ]] && continue
-            ((mod_test_count++))
+        if [[ -n "$mod_tests" ]]; then
+            local mod_test_count
+            mod_test_count=$(echo "$mod_tests" | grep -c .)
 
-            # Detect JUnit version by imports
-            if grep -q "org.junit.jupiter" "$test_file" 2>/dev/null; then
-                ((mod_junit5_count++))
-            elif grep -q "org.junit.Test\|org.junit.Before" "$test_file" 2>/dev/null; then
-                ((mod_junit4_count++))
-            fi
-        done < <(find "$test_dir" \( -name "*Test.java" -o -name "*Tests.java" -o -name "*IT.java" \) -type f 2>/dev/null)
+            # Batch JUnit detection
+            local mod_junit5 mod_junit4
+            mod_junit5=$(echo "$mod_tests" | xargs grep -l "org.junit.jupiter" 2>/dev/null | wc -l | tr -d ' ')
+            mod_junit4=$(echo "$mod_tests" | xargs grep -l "org.junit.Test\|org.junit.Before" 2>/dev/null | wc -l | tr -d ' ')
 
-        if [[ $mod_test_count -gt 0 ]]; then
-            test_inventory+=("{\"module\": \"$mod\", \"test_count\": $mod_test_count, \"junit5\": $mod_junit5_count, \"junit4\": $mod_junit4_count, \"source\": \"$mod/src/test/java/\"}")
+            test_inventory+=("{\"module\": \"$mod\", \"test_count\": $mod_test_count, \"junit5\": $mod_junit5, \"junit4\": $mod_junit4, \"source\": \"$mod/src/test/java/\"}")
             total_tests=$((total_tests + mod_test_count))
-            junit5_count=$((junit5_count + mod_junit5_count))
-            junit4_count=$((junit4_count + mod_junit4_count))
+            junit5_count=$((junit5_count + mod_junit5))
+            junit4_count=$((junit4_count + mod_junit4))
         fi
     done < <(ls -d "$REPO_ROOT"/yawl-* 2>/dev/null | xargs -n1 basename)
 
-    # Find test resources
+    # Find test resources using cached discovery
     local test_resource_count=0
-    while IFS= read -r resource; do
-        [[ -n "$resource" ]] && ((test_resource_count++))
-    done < <(find "$REPO_ROOT" -path "*/test/resources/*" -type f 2>/dev/null | head -200)
+    if [[ -n "${_DISCOVERY_RESOURCE_FILES:-}" ]]; then
+        test_resource_count=$(echo "$_DISCOVERY_RESOURCE_FILES" | grep -c "/test/resources/")
+    else
+        test_resource_count=$(find "$REPO_ROOT" -path "*/test/resources/*" -type f 2>/dev/null | wc -l | tr -d ' ')
+    fi
 
     # Check for JaCoCo data
     local jacoco_exec_exists=false
@@ -366,7 +392,7 @@ emit_tests() {
 # ==========================================================================
 # GATES: Quality gates configuration
 # ==========================================================================
-emit_gates() {
+_emit_gates_impl() {
     local out="$FACTS_DIR/gates.json"
     local op_start
     op_start=$(epoch_ms)
@@ -442,6 +468,30 @@ emit_gates() {
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_gates" "$op_elapsed"
     log_ok "Gates: ${#profiles[@]} profiles, plugins: spotbugs=$has_spotbugs checkstyle=$has_checkstyle pmd=$has_pmd"
+}
+
+# ==========================================================================
+# PUBLIC WRAPPER FUNCTIONS (with incremental caching)
+# ==========================================================================
+
+emit_shared_src() {
+    emit_if_stale "facts/shared-src.json" _emit_shared_src_impl
+}
+
+emit_dual_family() {
+    emit_if_stale "facts/dual-family.json" _emit_dual_family_impl
+}
+
+emit_duplicates() {
+    emit_if_stale "facts/duplicates.json" _emit_duplicates_impl
+}
+
+emit_tests() {
+    emit_if_stale "facts/tests.json" _emit_tests_impl
+}
+
+emit_gates() {
+    emit_if_stale "facts/gates.json" _emit_gates_impl
 }
 
 # ==========================================================================

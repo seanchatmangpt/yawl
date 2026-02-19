@@ -13,6 +13,9 @@ import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * Author: Lachlan Aldred
@@ -21,17 +24,18 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYWorkItemRepository {
     private YWorkItemRepository _workitemRepository;
     private YWorkItem _parentWorkItem;
     private YTask _task;
 
     @BeforeEach
-
     void setUp() throws Exception {
         _workitemRepository = YEngine.getInstance().getWorkItemRepository();
         _workitemRepository.clear();
         _task = new YAtomicTask("task-123", YTask._XOR, YTask._AND, null);
+
         YIdentifier identifier = new YIdentifier(null);
         YWorkItemID workItemID = new YWorkItemID(identifier, "task-123");
         _parentWorkItem = new YWorkItem(null, new YSpecificationID("ASpecID"), _task, workItemID, false, false);
@@ -41,7 +45,6 @@ class TestYWorkItemRepository {
     }
 
     @Test
-
     void testGetItem() throws YPersistenceException {
         assertTrue(_workitemRepository.getEnabledWorkItems().size() == 0);
         new YWorkItem(null, new YSpecificationID("ASpecID"), _task, new YWorkItemID(new YIdentifier(null), "task4321"), false, false);

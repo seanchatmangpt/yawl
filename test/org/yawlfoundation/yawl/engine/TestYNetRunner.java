@@ -23,6 +23,9 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * Author: Lachlan Aldred
@@ -31,13 +34,13 @@ import org.yawlfoundation.yawl.util.StringUtil;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYNetRunner {
     private YNetRunner _netRunner1;
     private YIdentifier _id1;
     private Document _d;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YSyntaxException, YEngineStateException, YQueryException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException {
         URL fileURL = getClass().getResource("YAWL_Specification2.xml");
         assertNotNull(fileURL, "Test resource YAWL_Specification2.xml not found in classpath");
@@ -52,6 +55,7 @@ class TestYNetRunner {
                 new YLogDataItemList(), null, false);
            _netRunner1 = engine2._netRunnerRepository.get(_id1);
         _d = new Document();
+
         _d.setRootElement(new Element("data"));
     }
 

@@ -4,6 +4,12 @@
 #
 # Each diagram is regenerated from scratch using data from $FACTS_DIR.
 # Sources util.sh for constants and helpers.
+#
+# INCREMENTAL SUPPORT:
+#   Diagrams use emit_if_stale() wrapper for cache-aware generation.
+#   Set OBSERVATORY_FORCE=1 to force regeneration.
+#
+# Performance target: <5s cached, <10s cold
 # ==========================================================================
 
 # ── 10-maven-reactor.mmd ─────────────────────────────────────────────────
@@ -447,13 +453,28 @@ emit_fmea_risk_diagram() {
 emit_all_diagrams() {
     timer_start
     record_memory "diagrams_start"
-    emit_reactor_diagram
-    emit_fmea_risk_diagram
-    emit_mcp_architecture_diagram
-    emit_a2a_topology_diagram
-    emit_agent_capabilities_diagram
-    emit_protocol_sequences_diagram
+
+    log_info "Emitting core diagrams with incremental cache support..."
+
+    # Use emit_if_stale for each diagram - checks staleness before emitting
+    # This provides significant speedup when inputs haven't changed
+
+    # Core architecture diagrams only - integration diagrams emitted by emit-integration-diagrams.sh
+    # This avoids duplicate work since both modules share the same output files
+    emit_if_stale "diagrams/10-maven-reactor.mmd" emit_reactor_diagram
+    emit_if_stale "diagrams/50-risk-surfaces.mmd" emit_fmea_risk_diagram
+
+    # Note: Integration diagrams (60-*.mmd, 65-*.mmd, 70-*.mmd, 75-*.mmd) are emitted
+    # by emit_all_integration_diagrams() in emit-integration-diagrams.sh which has
+    # more accurate source code scanning for component detection.
+
     DIAGRAMS_ELAPSED=$(timer_elapsed_ms)
     record_phase_timing "diagrams" "$DIAGRAMS_ELAPSED"
-    log_ok "All diagrams emitted in ${DIAGRAMS_ELAPSED}ms"
+
+    # Log cache summary for debugging
+    if declare -f print_cache_summary >/dev/null 2>&1; then
+        print_cache_summary | while read -r line; do log_info "$line"; done
+    fi
+
+    log_ok "Core diagrams emitted in ${DIAGRAMS_ELAPSED}ms"
 }
