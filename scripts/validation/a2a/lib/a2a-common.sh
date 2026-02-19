@@ -13,6 +13,36 @@ A2A_SERVER_PORT="${A2A_SERVER_PORT:-8080}"
 A2A_BASE_URL="http://${A2A_SERVER_HOST}:${A2A_SERVER_PORT}"
 A2A_TIMEOUT="${A2A_TIMEOUT:-30}"
 
+# ── Color Definitions ─────────────────────────────────────────────────────
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+# ── Logging Functions ─────────────────────────────────────────────────────
+log_verbose() {
+    [[ "${VERBOSE:-0}" -eq 1 ]] && echo "[VERBOSE] $*" >&2
+}
+
+log_info() {
+    echo -e "${CYAN}[INFO]${NC} $*"
+}
+
+log_success() {
+    echo -e "${GREEN}[PASS]${NC} $*"
+}
+
+log_error() {
+    echo -e "${RED}[FAIL]${NC} $*" >&2
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARN]${NC} $*"
+}
+
 # ── HTTP Helper Functions ────────────────────────────────────────────────
 http_get() {
     local url="$1"

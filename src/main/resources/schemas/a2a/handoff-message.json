@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/a2a/handoff-message.json",
+  "title": "A2A Handoff Message",
+  "description": "Handoff message for transferring work items between agents",
+  "type": "object",
+  "required": ["parts"],
+  "properties": {
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["text", "data"]
+          },
+          "text": {
+            "type": "string",
+            "description": "Text content of the message",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "data": {
+            "type": "object",
+            "description": "Additional payload data",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "description": "Reason for handoff"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["low", "normal", "high", "critical"],
+                "default": "normal"
+              },
+              "estimated_duration": {
+                "type": "string",
+                "pattern": "^PT(?:\\d+H)?(?:\\d+M)?(?:\\d+S)?$",
+                "description": "ISO 8601 duration format (PT1H30M)"
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Additional metadata about the handoff"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 2
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "parts": {
+          "items": {
+            "required": ["type", "text"]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "parts": {
+          "items": [
+            {
+              "required": ["type", "text"]
+            },
+            {
+              "required": ["type", "data"]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

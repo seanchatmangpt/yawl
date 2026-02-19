@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawl.foundation/schemas/a2a/skill-response.schema.json",
+  "title": "A2A Skill Response",
+  "description": "Response format for A2A skill invocations",
+  "type": "object",
+  "required": ["jsonrpc", "id"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "const": "2.0",
+      "description": "JSON-RPC protocol version"
+    },
+    "id": {
+      "oneOf": [
+        {"type": "string"},
+        {"type": "integer"}
+      ],
+      "description": "Corresponding request identifier"
+    },
+    "result": {
+      "oneOf": [
+        {"$ref": "#/$defs/launchWorkflowResult"},
+        {"$ref": "#/$defs/queryWorkflowsResult"},
+        {"$ref": "#/$defs/manageWorkitemsResult"},
+        {"$ref": "#/$defs/cancelWorkflowResult"},
+        {"$ref": "#/$defs/handoffWorkitemResult"},
+        {"$ref": "#/$defs/genericResult"}
+      ],
+      "description": "Skill result on success"
+    },
+    "error": {
+      "$ref": "a2a-error.schema.json",
+      "description": "Error object on failure"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "launchWorkflowResult": {
+      "type": "object",
+      "required": ["case_id", "status"],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "description": "Launched case ID"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["running", "completed", "failed"],
+          "description": "Initial case status"
+        },
+        "spec_identifier": {
+          "type": "string",
+          "description": "Specification identifier"
+        },
+        "spec_version": {
+          "type": "string",
+          "description": "Specification version"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Case start timestamp"
+        },
+        "callback_received": {
+          "type": "boolean",
+          "description": "Whether callback URL was validated"
+        }
+      },
+      "additionalProperties": true
+    },
+    "queryWorkflowsResult": {
+      "type": "object",
+      "required": ["cases", "total"],
+      "properties": {
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["case_id", "status"],
+            "properties": {
+              "case_id": {"type": "string"},
+              "spec_identifier": {"type": "string"},
+              "status": {"type": "string"},
+              "started_at": {"type": "string", "format": "date-time"},
+              "completed_at": {"type": "string", "format": "date-time"},
+              "work_item_count": {"type": "integer"}
+            }
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total matching cases"
+        },
+        "offset": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "manageWorkitemsResult": {
+      "type": "object",
+      "required": ["work_item_id", "action", "success"],
+      "properties": {
+        "work_item_id": {
+          "type": "string",
+          "description": "Work item ID"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action performed"
+        },
+        "success": {
+          "type": "boolean",
+          "description": "Whether action succeeded"
+        },
+        "previous_status": {
+          "type": "string",
+          "description": "Status before action"
+        },
+        "new_status": {
+          "type": "string",
+          "description": "Status after action"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable result message"
+        }
+      },
+      "additionalProperties": true
+    },
+    "cancelWorkflowResult": {
+      "type": "object",
+      "required": ["case_id", "cancelled"],
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "cancelled": {
+          "type": "boolean"
+        },
+        "cancelled_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "work_items_cancelled": {
+          "type": "integer",
+          "description": "Number of work items cancelled"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "handoffWorkitemResult": {
+      "type": "object",
+      "required": ["work_item_id", "target_agent", "accepted"],
+      "properties": {
+        "work_item_id": {
+          "type": "string"
+        },
+        "target_agent": {
+          "type": "string",
+          "format": "uri"
+        },
+        "accepted": {
+          "type": "boolean"
+        },
+        "handoff_token": {
+          "type": "string",
+          "description": "JWT handoff token for the receiving agent"
+        },
+        "handoff_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique handoff identifier"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Token expiration"
+        }
+      },
+      "additionalProperties": true
+    },
+    "genericResult": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "default": true
+        },
+        "message": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Tool Call Response",
+  "description": "Response from YAWL tool execution",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["text"],
+            "description": "Content type"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text content from tool execution"
+          }
+        },
+        "required": ["type", "text"]
+      },
+      "description": "Content array with tool execution results"
+    },
+    "isError": {
+      "type": "boolean",
+      "description": "Whether the tool execution resulted in an error"
+    },
+    "callId": {
+      "type": "string",
+      "description": "Unique identifier for this tool call"
+    }
+  },
+  "required": ["content"],
+  "examples": [
+    {
+      "description": "Successful response - List specifications",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Loaded Specifications (2):\n\n1. Order Processing\n   Identifier: OrderProcessing\n   Version: 1.0\n   URI: OrderProcessing\n   Status: loaded\n\n2. Invoice Generation\n   Identifier: InvoiceGeneration\n   Version: 1.0\n   URI: InvoiceGeneration\n   Status: loaded"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Successful response - Launch case",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Case launched successfully. Case ID: case123\nSpecification: OrderProcessing (version 1.0, URI: OrderProcessing)"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Error response - Invalid case ID",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error launching case: Invalid case ID format"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "description": "Successful response - Check out work item",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Work item case123:task1 checked out successfully.\nEngine response: <workitem id=\"case123:task1\" status=\"claimed\"/>"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Successful response - Natural language query",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "I found 2 specifications loaded:\n1. OrderProcessing (version 1.0, loaded)\n2. InvoiceGeneration (version 1.0, loaded)\n\nYou can launch a new case by specifying the specification identifier."
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.github.io/yawl/schema/message.schema.json",
+  "title": "A2A Message",
+  "description": "A2A protocol message format for agent-to-agent communication",
+  "type": "object",
+  "required": [
+    "parts"
+  ],
+  "properties": {
+    "parts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/part"
+      },
+      "minItems": 1,
+      "maxItems": 20,
+      "description": "Content parts of the message"
+    },
+    "metadata": {
+      "$ref": "#/definitions/metadata",
+      "description": "Optional metadata about the message"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "part": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["text"],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000,
+              "description": "Text content"
+            },
+            "role": {
+              "type": "string",
+              "enum": ["user", "assistant", "system", "tool"],
+              "default": "user",
+              "description": "Role of the message part"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["image"],
+          "properties": {
+            "image": {
+              "$ref": "#/definitions/media"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["audio"],
+          "properties": {
+            "audio": {
+              "$ref": "#/definitions/media"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["video"],
+          "properties": {
+            "video": {
+              "$ref": "#/definitions/media"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["file"],
+          "properties": {
+            "file": {
+              "$ref": "#/definitions/media"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "media": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the media content"
+        },
+        "mimeType": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9!#$&^_-]*\\/[a-zA-Z0-9][a-zA-Z0-9!#$&^_-]*$",
+          "description": "MIME type of the media"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 104857600,
+          "description": "Size in bytes (max 100MB)"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Description of the media"
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Identifier for the conversation"
+        },
+        "parentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "ID of the parent message (for threading)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the message"
+        },
+        "traceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Trace ID for distributed tracing"
+        },
+        "spanId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Span ID for distributed tracing"
+        },
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Session identifier"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Request identifier"
+        },
+        "tenantId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Tenant identifier"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "User identifier"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "urgent"],
+          "default": "normal",
+          "description": "Message priority"
+        },
+        "ttl": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400,
+          "description": "Time to live in seconds"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "maxItems": 10,
+          "description": "Tags for categorization"
+        },
+        "compression": {
+          "type": "string",
+          "enum": ["none", "gzip", "deflate"],
+          "default": "none",
+          "description": "Compression method used"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "errorMessage": {
+    "required": {
+      "missingProperty": "Message is missing required property: {{missingProperty}}",
+      "required": "Message requires properties: {{required}}"
+    },
+    "type": "Message must be an object",
+    "properties": {
+      "parts": "Message parts must be an array with 1-20 items",
+      "metadata": "Metadata must be a valid object"
+    }
+  }
+}

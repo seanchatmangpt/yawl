@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.github.io/yawl/schema/task.schema.json",
+  "title": "A2A Task",
+  "description": "Task information for tracking A2A agent operations",
+  "type": "object",
+  "required": [
+    "id",
+    "status",
+    "createdAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9_\\-]+$",
+      "description": "Unique task identifier"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled", "timeout"],
+      "description": "Current status of the task"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the task was created"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the task was last updated"
+    },
+    "skillId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50,
+      "description": "Identifier of the skill being executed"
+    },
+    "agentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Identifier of the agent executing the task"
+    },
+    "request": {
+      "$ref": "#/definitions/message",
+      "description": "Original request message"
+    },
+    "response": {
+      "$ref": "#/definitions/message",
+      "description": "Response message (if completed)"
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "Error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        },
+        "stackTrace": {
+          "type": "string",
+          "description": "Stack trace if available"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Error information if task failed"
+    },
+    "progress": {
+      "type": "object",
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Progress percentage"
+        },
+        "current": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Current step number"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of steps"
+        },
+        "message": {
+          "type": "string",
+          "description": "Progress message"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Progress information"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600,
+      "description": "Timeout in seconds"
+    },
+    "retryCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Number of retry attempts"
+    },
+    "maxRetries": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Maximum retry attempts allowed"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "normal", "high", "urgent"],
+      "default": "normal",
+      "description": "Task priority"
+    },
+    "metadata": {
+      "$ref": "#/definitions/metadata",
+      "description": "Additional task metadata"
+    }
+  },
+  "additionalProperties": false,
+  "errorMessage": {
+    "required": {
+      "missingProperty": "Task is missing required property: {{missingProperty}}",
+      "required": "Task requires properties: {{required}}"
+    },
+    "type": "Task must be an object",
+    "properties": {
+      "id": "Task ID must be a string with 1-100 characters, containing only letters, numbers, underscores, and hyphens",
+      "status": "Task status must be one of: pending, running, completed, failed, cancelled, timeout",
+      "createdAt": "Task creation timestamp must be in ISO 8601 format",
+      "skillId": "Skill ID must be a string with 1-50 characters",
+      "agentId": "Agent ID must be a string with 1-100 characters",
+      "timeout": "Timeout must be between 1 and 3600 seconds"
+    }
+  },
+  "definitions": {
+    "message": {
+      "$ref": "message.schema.json#/definitions/message"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Conversation identifier"
+        },
+        "tenantId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Tenant identifier"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "User identifier"
+        },
+        "traceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Trace ID for distributed tracing"
+        },
+        "spanId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Span ID for distributed tracing"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "maxItems": 10,
+          "description": "Task tags"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

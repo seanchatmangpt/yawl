@@ -1,0 +1,327 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.github.io/yawl/schema/agent-card.schema.json",
+  "title": "A2A Agent Card",
+  "description": "Agent card for A2A protocol discovery and capability advertisement",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "description",
+    "provider",
+    "skills"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9_\\-\\s]+$",
+      "description": "Human-readable name of the agent"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version of the agent"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "Detailed description of the agent's capabilities"
+    },
+    "provider": {
+      "$ref": "#/definitions/provider"
+    },
+    "capabilities": {
+      "$ref": "#/definitions/capabilities"
+    },
+    "defaultInputModes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["text", "image", "audio", "video", "file"]
+      },
+      "minItems": 1,
+      "maxItems": 5,
+      "description": "Default input modes supported by the agent"
+    },
+    "defaultOutputModes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["text", "image", "audio", "video", "file", "json"]
+      },
+      "minItems": 1,
+      "maxItems": 5,
+      "description": "Default output modes supported by the agent"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/skill"
+      },
+      "minItems": 1,
+      "maxItems": 50,
+      "description": "List of skills offered by the agent"
+    },
+    "contact": {
+      "$ref": "#/definitions/contact"
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to agent documentation"
+        },
+        "swaggerUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to OpenAPI/Swagger documentation"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "provider": {
+      "type": "object",
+      "required": ["name", "url"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Name of the provider/organization"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the provider"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email for the provider"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "streaming": {
+          "type": "boolean",
+          "description": "Whether the agent supports streaming responses"
+        },
+        "pushNotifications": {
+          "type": "boolean",
+          "description": "Whether the agent supports push notifications"
+        },
+        "batchProcessing": {
+          "type": "boolean",
+          "description": "Whether the agent supports batch processing"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum concurrent requests the agent can handle"
+        }
+      },
+      "additionalProperties": false
+    },
+    "skill": {
+      "type": "object",
+      "required": ["id", "name", "description", "inputModes", "outputModes"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique identifier for the skill"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Human-readable name of the skill"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Detailed description of what the skill does"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-zA-Z0-9_\\-]+$"
+          },
+          "maxItems": 10,
+          "description": "Tags for categorizing the skill"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200,
+            "description": "Example usage of the skill"
+          },
+          "maxItems": 5,
+          "description": "Example prompts for the skill"
+        },
+        "inputModes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "image", "audio", "video", "file"]
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "description": "Input modes supported by the skill"
+        },
+        "outputModes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "image", "audio", "video", "file", "json"]
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "description": "Output modes supported by the skill"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parameter"
+          },
+          "description": "Parameters the skill accepts"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "Timeout in seconds for the skill execution"
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Maximum retry attempts for the skill"
+        }
+      },
+      "additionalProperties": false,
+      "errorMessage": {
+        "required": {
+          "missingProperty": "Skill is missing required property: {{missingProperty}}",
+          "required": "Skill requires properties: {{required}}"
+        },
+        "type": "Skill must be an object",
+        "properties": {
+          "id": "Skill ID must be a string with 1-50 characters, containing only letters, numbers, underscores, and hyphens",
+          "name": "Skill name must be a string with 1-100 characters",
+          "description": "Skill description must be a string with 10-500 characters",
+          "tags": "Tags must be an array of strings with 1-30 characters each",
+          "examples": "Examples must be an array of strings with 5-200 characters each",
+          "inputModes": "Input modes must be an array of valid mode strings",
+          "outputModes": "Output modes must be an array of valid mode strings"
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9_]+$",
+          "description": "Parameter name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "array", "object"],
+          "description": "Parameter type"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether the parameter is required"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 200,
+          "description": "Parameter description"
+        },
+        "default": {
+          "description": "Default value for the parameter"
+        },
+        "enum": {
+          "type": "array",
+          "items": {},
+          "description": "Allowed values for the parameter"
+        },
+        "minimum": {
+          "type": "number",
+          "description": "Minimum value for numeric parameters"
+        },
+        "maximum": {
+          "type": "number",
+          "description": "Maximum value for numeric parameters"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum length for string parameters"
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum length for string parameters"
+        }
+      },
+      "additionalProperties": false
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Contact URL"
+        },
+        "support": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Support URL"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Support email"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

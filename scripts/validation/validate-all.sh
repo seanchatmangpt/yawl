@@ -6,19 +6,33 @@
 #   bash scripts/validation/validate-all.sh [OPTIONS]
 #
 # Options:
-#   --parallel     Run validations in parallel (default)
-#   --sequential   Run validations sequentially
-#   --fail-fast    Stop on first failure
-#   --no-fail-fast Continue even on failures (default for parallel)
-#   --output-dir   Directory for output files (default: docs/validation)
-#   --format       Output format: json, junit, both (default: both)
-#   --help         Show this help
+#   --parallel       Run validations in parallel (default)
+#   --sequential     Run validations sequentially
+#   --fail-fast      Stop on first failure
+#   --no-fail-fast   Continue even on failures (default for parallel)
+#   --output-dir DIR Directory for output files (default: docs/validation)
+#   --format FMT     Output format: json, junit, both (default: both)
+#   --a2a-only       Run only A2A validations
+#   --mcp-only       Run only MCP validations
+#   --quick          Skip time-intensive tests (chaos, stress)
+#   --help           Show this help
 #
 # Runs all validation suites:
-#   1. Documentation validation
-#   2. Observatory validation
-#   3. Performance baseline validation
-#   4. Release readiness check
+#   Core:
+#     1. Documentation validation
+#     2. Observatory validation
+#     3. Performance baseline validation
+#     4. Release readiness check
+#   A2A:
+#     5. A2A protocol tests
+#     6. A2A auth tests
+#     7. A2A skills tests
+#     8. A2A handoff tests
+#   MCP:
+#     9. MCP STDIO tests
+#     10. MCP tool tests
+#   Chaos:
+#     11. Chaos engineering tests
 #
 # Output:
 #   - validation-report.json    - Aggregated JSON results
@@ -43,12 +57,16 @@ PARALLEL=true
 FAIL_FAST=false
 OUTPUT_DIR="${PROJECT_ROOT}/docs/validation"
 FORMAT="both"
+A2A_ONLY=false
+MCP_ONLY=false
+QUICK=false
 
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 # -------------------------------------------------------------------------
@@ -67,13 +85,30 @@ Options:
   --no-fail-fast   Continue even on failures (default for parallel)
   --output-dir DIR Directory for output files (default: docs/validation)
   --format FMT     Output format: json, junit, both (default: both)
+  --a2a-only       Run only A2A validations (protocol, auth, skills, handoff)
+  --mcp-only       Run only MCP validations (stdio, tools)
+  --quick          Skip time-intensive tests (chaos, stress)
   --help           Show this help
 
 Validations:
-  1. documentation  - Package-info, markdown links, XSD schemas
-  2. observatory    - Fact freshness, hash verification
-  3. performance    - Build time, observatory runtime
-  4. release        - Complete release readiness
+  Core:
+    documentation  - Package-info, markdown links, XSD schemas
+    observatory    - Fact freshness, hash verification
+    performance    - Build time, observatory runtime
+    release        - Complete release readiness
+
+  A2A (Agent-to-Agent):
+    a2a-protocol   - Agent discovery, message format, error handling
+    a2a-auth       - SPIFFE, JWT, API Key, OAuth2 authentication
+    a2a-skills     - launch_workflow, query_workflows, manage_workitems
+    a2a-handoff    - JWT handoff tokens, session management
+
+  MCP (Model Context Protocol):
+    mcp-stdio      - STDIO transport, protocol handshake
+    mcp-tools      - Tool registration, invocation, responses
+
+  Chaos Engineering:
+    chaos          - Network, CPU, memory stress, resilience tests
 
 Examples:
   # Run all validations in parallel
@@ -84,6 +119,15 @@ Examples:
 
   # JSON output only for CI
   bash scripts/validation/validate-all.sh --format json --no-fail-fast
+
+  # Quick validation (skip chaos/stress tests)
+  bash scripts/validation/validate-all.sh --quick
+
+  # A2A only during A2A development
+  bash scripts/validation/validate-all.sh --a2a-only
+
+  # MCP only during MCP development
+  bash scripts/validation/validate-all.sh --mcp-only
 EOF
 }
 
@@ -115,6 +159,18 @@ while [[ $# -gt 0 ]]; do
         --format)
             FORMAT="$2"
             shift 2
+            ;;
+        --a2a-only)
+            A2A_ONLY=true
+            shift
+            ;;
+        --mcp-only)
+            MCP_ONLY=true
+            shift
+            ;;
+        --quick)
+            QUICK=true
+            shift
             ;;
         --help)
             show_help
@@ -199,6 +255,46 @@ run_validation_async() {
 }
 
 # -------------------------------------------------------------------------
+# Build suites array based on options
+# -------------------------------------------------------------------------
+build_suites() {
+    declare -A suites
+
+    # Core validations (always run unless a2a-only or mcp-only)
+    if [[ "$A2A_ONLY" = false ]] && [[ "$MCP_ONLY" = false ]]; then
+        suites["documentation"]="${SCRIPT_DIR}/validate-documentation.sh"
+        suites["observatory"]="${SCRIPT_DIR}/validate-observatory.sh"
+        suites["performance"]="${SCRIPT_DIR}/validate-performance-baselines.sh"
+        suites["release"]="${SCRIPT_DIR}/validate-release.sh"
+    fi
+
+    # A2A validations (run if --a2a-only or not --mcp-only)
+    if [[ "$A2A_ONLY" = true ]] || [[ "$MCP_ONLY" = false ]]; then
+        suites["a2a-protocol"]="${SCRIPT_DIR}/a2a/tests/test-protocol.sh"
+        suites["a2a-auth"]="${SCRIPT_DIR}/a2a/tests/test-auth.sh"
+        suites["a2a-skills"]="${SCRIPT_DIR}/a2a/tests/test-skills-validation.sh"
+        suites["a2a-handoff"]="${SCRIPT_DIR}/a2a/tests/test-handoff-protocol.sh"
+    fi
+
+    # MCP validations (run if --mcp-only or not --a2a-only)
+    if [[ "$MCP_ONLY" = true ]] || [[ "$A2A_ONLY" = false ]]; then
+        suites["mcp-stdio"]="${SCRIPT_DIR}/mcp/tests/test-protocol-handshake.sh"
+        suites["mcp-tools"]="${SCRIPT_DIR}/mcp/validate-mcp-compliance.sh"
+    fi
+
+    # Chaos engineering (skip if --quick)
+    if [[ "$QUICK" = false ]] && [[ "$A2A_ONLY" = false ]] && [[ "$MCP_ONLY" = false ]]; then
+        suites["chaos-engineering"]="${SCRIPT_DIR}/validate-chaos-stress.sh"
+    fi
+
+    # Return suites as nameref
+    local -n suites_ref=$1
+    for key in "${!suites[@]}"; do
+        suites_ref["$key"]="${suites[$key]}"
+    done
+}
+
+# -------------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------------
 echo ""
@@ -210,18 +306,23 @@ echo ""
 echo "Mode: $([ "$PARALLEL" = true ] && echo "Parallel" || echo "Sequential")"
 echo "Fail-fast: $([ "$FAIL_FAST" = true ] && echo "Enabled" || echo "Disabled")"
 echo "Output: ${OUTPUT_DIR}"
+if [[ "$A2A_ONLY" = true ]]; then
+    echo "Scope: A2A only"
+elif [[ "$MCP_ONLY" = true ]]; then
+    echo "Scope: MCP only"
+elif [[ "$QUICK" = true ]]; then
+    echo "Scope: Quick (no chaos/stress)"
+else
+    echo "Scope: All validations"
+fi
 echo ""
 
 # Initialize master aggregation
 agg_init "master-validation" "${OUTPUT_DIR}"
 
-# Validation suites
-declare -A SUITES=(
-    ["documentation"]="${SCRIPT_DIR}/validate-documentation.sh"
-    ["observatory"]="${SCRIPT_DIR}/validate-observatory.sh"
-    ["performance"]="${SCRIPT_DIR}/validate-performance-baselines.sh"
-    ["release"]="${SCRIPT_DIR}/validate-release.sh"
-)
+# Build validation suites based on options
+declare -A SUITES=()
+build_suites SUITES
 
 declare -A PIDS=()
 declare -A EXIT_CODES=()

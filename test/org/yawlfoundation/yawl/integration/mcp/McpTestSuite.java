@@ -19,6 +19,8 @@ import junit.framework.TestSuite;
 /**
  * MCP test suite aggregating all Model Context Protocol tests.
  *
+ * Tests SDK v1 (0.18.0+) compatibility implementing MCP 2025-11-25 specification.
+ *
  * Includes:
  * - YawlMcpServerTest: constructor validation, lifecycle, failed connection
  * - McpProtocolTest: server capabilities, resource URIs, logging levels, error handling
@@ -26,7 +28,7 @@ import junit.framework.TestSuite;
  * - McpPerformanceTest: construction latency, throughput, concurrent access
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class McpTestSuite {
 

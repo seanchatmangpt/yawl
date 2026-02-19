@@ -15,13 +15,15 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
- * YAWL Prompt Specifications for MCP SDK 0.17.2.
+ * YAWL Prompt Specifications for MCP SDK v1 (0.18.0+).
  *
  * Creates prompt templates that guide AI models through YAWL workflow operations.
  * Each prompt fetches real data from the YAWL engine to populate context.
  *
+ * Implements MCP 2025-11-25 specification with exchange-based handlers.
+ *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public final class YawlPromptSpecifications {
 

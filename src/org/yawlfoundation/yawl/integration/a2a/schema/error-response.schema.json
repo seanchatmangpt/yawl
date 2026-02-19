@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.github.io/yawl/schema/error-response.schema.json",
+  "title": "A2A Error Response",
+  "description": "Standard error response format for A2A protocol",
+  "type": "object",
+  "required": [
+    "error",
+    "timestamp"
+  ],
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[A-Z0-9_]+$",
+          "description": "Error code (uppercase letters, numbers, underscores)"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details",
+          "additionalProperties": true
+        },
+        "stackTrace": {
+          "type": "string",
+          "description": "Stack trace (for internal debugging, not client-facing)"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "validation_error",
+            "authentication_error",
+            "authorization_error",
+            "not_found",
+            "conflict",
+            "rate_limit_error",
+            "internal_error",
+            "timeout_error",
+            "unavailable_error"
+          ],
+          "description": "Type of error"
+        },
+        "retryAfter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600,
+          "description": "Number of seconds to wait before retrying (for rate limits)"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Request identifier that caused the error"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path that caused the error"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+          "description": "HTTP method that caused the error"
+        }
+      },
+      "additionalProperties": false,
+      "errorMessage": {
+        "required": {
+          "missingProperty": "Error object is missing required property: {{missingProperty}}",
+          "required": "Error requires properties: {{required}}"
+        },
+        "type": "Error must be an object",
+        "properties": {
+          "code": "Error code must be an uppercase string with 1-50 characters, containing only letters, numbers, and underscores",
+          "message": "Error message must be a string with 1-1000 characters"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the error occurred"
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Request identifier"
+    },
+    "traceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Trace ID for distributed tracing"
+    },
+    "spanId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Span ID for distributed tracing"
+    },
+    "help": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to get help for this error"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/error"
+      },
+      "description": "Array of errors (for multi-error responses)",
+      "maxItems": 10
+    }
+  },
+  "additionalProperties": false,
+  "errorMessage": {
+    "required": {
+      "missingProperty": "Error response is missing required property: {{missingProperty}}",
+      "required": "Error response requires properties: {{required}}"
+    },
+    "type": "Error response must be an object"
+  },
+  "definitions": {
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[A-Z0-9_]+$",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "Error message"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional error details"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path that caused the error"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

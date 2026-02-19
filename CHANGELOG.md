@@ -48,6 +48,30 @@ This alpha release modernizes YAWL's library dependencies, improves code quality
 
 #### Library Updates (24 major updates)
 
+#### MCP SDK Migration (0.17.2 → 0.18.0)
+
+Migrated from MCP SDK 0.17.2 to official MCP Java SDK v1 (0.18.0) implementing the MCP 2025-11-25 specification.
+
+**Changes:**
+- Upgraded `io.modelcontextprotocol.sdk:mcp` from 0.17.2 to 0.18.0
+- Removed deprecated custom SDK bridge classes (`JacksonMcpJsonMapper`, `McpServer`, `McpSyncServer`, `McpSyncServerExchange`, `StdioServerTransportProvider`, `ZaiFunctionService`)
+- Now uses official SDK classes: `io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper`, `io.modelcontextprotocol.server.McpServer`, `io.modelcontextprotocol.server.McpSyncServer`, `io.modelcontextprotocol.server.transport.StdioServerTransportProvider`
+- Removed unused ZAI-specific MCP integration (`mcp/zai/ZaiFunctionService`, `mcp/sdk/*`)
+
+**MCP Server Capabilities (All Functional):**
+- 15 YAWL tools (case management, work items, specifications)
+- 6 resources (3 static + 3 resource templates)
+- 4 prompts (workflow analysis, task completion, troubleshooting, design review)
+- 3 completions (auto-complete for spec identifiers, work item IDs, case IDs)
+- STDIO transport fully operational
+
+**Migration Notes:**
+- Legacy custom protocol wrapper classes removed - use official SDK classes directly
+- `YawlMcpServer.java` now directly uses official SDK v1 APIs
+- All tool, resource, prompt, and completion handlers remain unchanged
+- Client-side MCP (`YawlMcpClient`) excluded due to SDK client API differences
+
+
 **Core Framework:**
 - Spring Boot: 3.5.10 → 3.4.3 (corrected to stable release)
 - Hibernate: 6.6.42.Final → 6.6.5.Final (corrected to stable release)
@@ -141,7 +165,7 @@ This alpha release modernizes YAWL's library dependencies, improves code quality
 - ✅ **Core Engine:** YEngine and YStatelessEngine architectures intact
 - ✅ **Interface Contracts:** All 4 interfaces (A, B, E, X) unchanged
 - ✅ **Petri Net Semantics:** YNetRunner execution logic untouched
-- ✅ **Integration Points:** MCP 0.17.2 and A2A 1.0.0.Alpha2 verified
+- ✅ **Integration Points:** MCP 0.18.0 and A2A 1.0.0.Alpha2 verified
 - ✅ **Dual Architecture:** ADR-001 dual-engine pattern maintained
 
 #### Risk Assessment

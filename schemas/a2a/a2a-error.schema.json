@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawl.foundation/schemas/a2a/a2a-error.schema.json",
+  "title": "A2A Error Response",
+  "description": "Standardized error response format for A2A protocol errors",
+  "type": "object",
+  "required": ["code", "message"],
+  "properties": {
+    "code": {
+      "type": "integer",
+      "description": "A2A error code (JSON-RPC 2.0 compatible range)",
+      "examples": [-32700, -32600, -32601, -32602, -32603, -32001]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Human-readable error message suitable for logging"
+    },
+    "data": {
+      "type": "object",
+      "description": "Additional structured error data",
+      "properties": {
+        "errorType": {
+          "type": "string",
+          "enum": [
+            "parse_error",
+            "invalid_request",
+            "method_not_found",
+            "invalid_params",
+            "internal_error",
+            "agent_not_found",
+            "skill_not_found",
+            "authentication_failed",
+            "authorization_failed",
+            "rate_limit_exceeded",
+            "handoff_rejected",
+            "workflow_error",
+            "timeout",
+            "capacity_exceeded"
+          ],
+          "description": "Categorized error type for programmatic handling"
+        },
+        "retryable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the client should retry this request"
+        },
+        "retryAfter": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds to wait before retry (for rate limiting)"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Error-specific details"
+        },
+        "stackTrace": {
+          "type": "string",
+          "description": "Server-side stack trace (only in development mode)"
+        },
+        "requestId": {
+          "type": "string",
+          "description": "Original request ID for correlation"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the error occurred"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": -32001,
+      "message": "Agent not found: http://localhost:8091",
+      "data": {
+        "errorType": "agent_not_found",
+        "retryable": false,
+        "requestId": "req-12345"
+      }
+    },
+    {
+      "code": -32005,
+      "message": "Rate limit exceeded. Please retry after 60 seconds.",
+      "data": {
+        "errorType": "rate_limit_exceeded",
+        "retryable": true,
+        "retryAfter": 60
+      }
+    }
+  ]
+}

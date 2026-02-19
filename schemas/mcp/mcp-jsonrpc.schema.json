@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JSON-RPC 2.0 Envelope",
+  "description": "Base JSON-RPC 2.0 message envelope with JSON-RPC and Notification variants",
+  "type": "object",
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "enum": ["2.0"],
+      "description": "JSON-RPC version identifier"
+    },
+    "id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Request ID for request/response messages"
+        },
+        {
+          "type": "number",
+          "description": "Request ID for request/response messages"
+        },
+        {
+          "type": "null",
+          "description": "Null for notification messages (no response expected)"
+        }
+      ]
+    },
+    "method": {
+      "type": "string",
+      "description": "Method name to call"
+    },
+    "params": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Named parameters for the method"
+        },
+        {
+          "type": "array",
+          "description": "Positional parameters for the method"
+        }
+      ]
+    },
+    "result": {
+      "description": "Result value (for successful responses only)"
+    },
+    "error": {
+      "$ref": "#/definitions/errorObject",
+      "description": "Error object (for error responses only)"
+    }
+  },
+  "required": [
+    "jsonrpc"
+  ],
+  "anyOf": [
+    {
+      "required": ["method", "params"],
+      "description": "Request message"
+    },
+    {
+      "required": ["method", "params", "id"],
+      "description": "Request with ID"
+    },
+    {
+      "required": ["result", "id"],
+      "description": "Successful response"
+    },
+    {
+      "required": ["error", "id"],
+      "description": "Error response"
+    }
+  ],
+  "definitions": {
+    "errorObject": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "description": "Error code defined by JSON-RPC spec"
+        },
+        "message": {
+          "type": "string",
+          "description": "Error message explaining the error"
+        },
+        "data": {
+          "description": "Additional error information (optional)"
+        }
+      },
+      "required": ["code", "message"]
+    }
+  },
+  "examples": [
+    {
+      "description": "JSON-RPC Request",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "method": "tools/call",
+        "params": {
+          "name": "yawl_list_specifications",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "description": "JSON-RPC Notification",
+      "value": {
+        "jsonrpc": "2.0",
+        "method": "notifications/list_resources",
+        "params": {}
+      }
+    },
+    {
+      "description": "JSON-RPC Success Response",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "result": {
+          "content": "Live Work Items (3):\n\n1. Work Item: case123:task1\n   Case ID: case123\n   Task ID: task1\n   Status: enabled"
+        }
+      }
+    },
+    {
+      "description": "JSON-RPC Error Response",
+      "value": {
+        "jsonrpc": "2.0",
+        "id": "req-123",
+        "error": {
+          "code": -32601,
+          "message": "Method not found: unknown_tool"
+        }
+      }
+    }
+  ]
+}

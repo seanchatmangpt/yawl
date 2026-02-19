@@ -18,8 +18,10 @@ import io.modelcontextprotocol.spec.McpSchema;
  * Uses McpSyncServer.loggingNotification() to push log messages
  * to all connected clients in real time.
  *
+ * Implements MCP 2025-11-25 specification (SDK v1 0.18.0+).
+ *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class McpLoggingHandler {
 

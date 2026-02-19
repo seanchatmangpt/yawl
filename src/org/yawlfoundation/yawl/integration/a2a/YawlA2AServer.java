@@ -29,7 +29,7 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.mcp.sdk.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;

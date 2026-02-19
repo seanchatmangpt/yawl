@@ -153,6 +153,7 @@
         <!-- JSON / serialisation                                               -->
         <!-- ================================================================ -->
         <gson.version>2.13.2</gson.version>
+        <networknt.json.schema.validator.version>1.5.7</networknt.json.schema.validator.version>
 
         <!-- ================================================================ -->
         <!-- XML processing                                                     -->
@@ -171,7 +172,7 @@
         <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
-        <mcp.version>0.17.2</mcp.version>
+        <mcp.version>0.18.0</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
         <!-- ================================================================ -->
@@ -687,6 +688,13 @@
                 <version>${gson.version}</version>
             </dependency>
 
+            <!-- JSON Schema Validator - NetworkNT (recommended for Java 8+) -->
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>json-schema-validator</artifactId>
+                <version>${networknt.json.schema.validator.version}</version>
+            </dependency>
+
             <!-- ============================================================== -->
             <!-- 8. XML PROCESSING                                              -->
             <!-- ============================================================== -->
@@ -743,11 +751,6 @@
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
                 <artifactId>mcp-core</artifactId>
-                <version>${mcp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.modelcontextprotocol.sdk</groupId>
-                <artifactId>mcp-json</artifactId>
                 <version>${mcp.version}</version>
             </dependency>
             <dependency>
@@ -1685,6 +1688,7 @@
                 <configuration>
                     <release>${maven.compiler.release}</release>
                     <compilerArgs>
+                        <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
                         <arg>-parameters</arg>
                     </compilerArgs>

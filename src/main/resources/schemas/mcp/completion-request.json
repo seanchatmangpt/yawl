@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/mcp/completion-request.json",
+  "title": "MCP Completion Request",
+  "description": "Request for autocomplete values in MCP",
+  "type": "object",
+  "required": ["jsonrpc", "id", "method", "params"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "enum": ["2.0"],
+      "default": "2.0"
+    },
+    "id": {
+      "$ref": "https://schema.yawlfoundation.org/common/identifier.json"
+    },
+    "method": {
+      "type": "string",
+      "enum": ["completions/list"],
+      "default": "completions/list"
+    },
+    "params": {
+      "type": "object",
+      "required": ["reference"],
+      "properties": {
+        "reference": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["prompt", "resource"]
+            },
+            "uri": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "oneOf": [
+            {
+              "required": ["type", "name"]
+            },
+            {
+              "required": ["uri"]
+            }
+          ]
+        },
+        "argument": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the argument being completed"
+            },
+            "value": {
+              "type": "string",
+              "description": "Partial value entered so far"
+            }
+          },
+          "required": ["name"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

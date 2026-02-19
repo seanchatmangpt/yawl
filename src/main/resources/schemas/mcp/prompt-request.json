@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/mcp/prompt-request.json",
+  "title": "MCP Prompt Request",
+  "description": "Request to generate an MCP prompt",
+  "type": "object",
+  "required": ["jsonrpc", "id", "method", "params"],
+  "properties": {
+    "jsonrpc": {
+      "type": "string",
+      "enum": ["2.0"],
+      "default": "2.0"
+    },
+    "id": {
+      "$ref": "https://schema.yawlfoundation.org/common/identifier.json"
+    },
+    "method": {
+      "type": "string",
+      "enum": ["prompts/get"],
+      "default": "prompts/get"
+    },
+    "params": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Name of the prompt to generate"
+        },
+        "arguments": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Arguments for prompt generation"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

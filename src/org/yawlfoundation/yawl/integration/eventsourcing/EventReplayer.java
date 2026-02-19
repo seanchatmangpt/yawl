@@ -167,6 +167,10 @@ public final class EventReplayer {
             case WORKITEM_SUSPENDED  -> state.withActiveWorkItem(event.getWorkItemId(),
                                                                  "SUSPENDED", event.getTimestamp());
             case SPEC_LOADED, SPEC_UNLOADED -> state; // spec events don't affect case state
+            // ADR-025 coordination events - don't modify case state directly
+            case CONFLICT_DETECTED, CONFLICT_RESOLVED,
+                 HANDOFF_INITIATED, HANDOFF_COMPLETED,
+                 AGENT_DECISION_MADE -> state.withLastEventAt(event.getTimestamp());
         };
     }
 

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.yawlfoundation.org/mcp/tool-result.json",
+  "title": "MCP Tool Call Result",
+  "description": "Result from an MCP tool call",
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["jsonrpc", "id", "result"],
+      "properties": {
+        "jsonrpc": {
+          "type": "string",
+          "enum": ["2.0"]
+        },
+        "id": {
+          "$ref": "https://schema.yawlfoundation.org/common/identifier.json"
+        },
+        "result": {
+          "type": "object",
+          "description": "Successful result data",
+          "properties": {
+            "caseId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "workItemId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "status": {
+              "type": "string",
+              "enum": ["completed", "accepted", "rejected", "cancelled"]
+            },
+            "data": {
+              "type": "object",
+              "description": "Result data from the tool"
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Additional metadata"
+            },
+            "nextActions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["complete", "pause", "route", "escalate"]
+              },
+              "description": "Suggested next actions"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["jsonrpc", "id", "error"],
+      "properties": {
+        "jsonrpc": {
+          "type": "string",
+          "enum": ["2.0"]
+        },
+        "id": {
+          "$ref": "https://schema.yawlfoundation.org/common/identifier.json"
+        },
+        "error": {
+          "$ref": "https://schema.yawlfoundation.org/common/error.json"
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

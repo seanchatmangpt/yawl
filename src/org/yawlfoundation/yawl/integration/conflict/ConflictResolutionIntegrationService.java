@@ -14,11 +14,16 @@
 package org.yawlfoundation.yawl.integration.conflict;
 
 import java.util.*;
-//import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-// Import only core YAWL interfaces
+// Import core YAWL interfaces
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+// Import A2A integration
+import org.yawlfoundation.yawl.integration.a2a.A2AException;
+// Import autonomous agent interface
+import org.yawlfoundation.yawl.integration.autonomous.AutonomousAgent;
+import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
 
 /**
  * Integration service that connects conflict resolution with existing YAWL framework.
@@ -199,7 +204,7 @@ public class ConflictResolutionIntegrationService {
             Map<String, Object> contextData = new HashMap<>();
             contextData.put("workItemId", workItem.getID());
             contextData.put("caseId", workItem.getCaseID());
-            contextData.put("decompositionId", workItem.getDecompositionID());
+            contextData.put("taskId", workItem.getTaskID());
 
             return new ConflictContext(conflictId, workflowId, taskId, severity, decisions, contextData);
         }
@@ -316,9 +321,9 @@ public class ConflictResolutionIntegrationService {
      *
      * @param workItem The work item to complete
      * @param agents List of agents to coordinate (simplified)
-     * @return Resolution result
+     * @return CompletableFuture containing the resolution result
      */
-    public ConflictResolutionService.ResolutionResult completeWorkItemWithConflictResolution(
+    public CompletableFuture<ConflictResolutionService.ResolutionResult> completeWorkItemWithConflictResolution(
         WorkItemRecord workItem, List<Object> agents) {
 
         metrics.increment("workItemCompletionAttempts");
@@ -424,7 +429,8 @@ public class ConflictResolutionIntegrationService {
 
         } catch (Exception e) {
             metrics.increment("a2aResolutionFailures");
-            throw new A2AException("A2A conflict resolution failed: " + e.getMessage());
+            throw new A2AException(A2AException.ErrorCode.TASK_EXECUTION_FAILED,
+                "A2A conflict resolution failed: " + e.getMessage(), e);
         }
     }
 
@@ -438,8 +444,8 @@ public class ConflictResolutionIntegrationService {
         List<String> recommendations = new ArrayList<>();
 
         // Check work item characteristics
-        String decompositionId = workItem.getDecompositionID();
-        String workItemData = workItem.getData();
+        String taskId = workItem.getTaskID();
+        String workItemData = workItem.getDataListString();
 
         // Simple recommendation logic
         if (isCriticalWorkItem(workItem)) {
@@ -518,21 +524,45 @@ public class ConflictResolutionIntegrationService {
 
     // Helper methods
 
-    private List<AgentDecision> collectAgentDecisions(WorkItemRecord workItem, List<AutonomousAgent> agents) {
+    private List<AgentDecision> collectAgentDecisions(WorkItemRecord workItem, List<Object> agents) {
         return agents.stream()
             .map(agent -> {
                 try {
-                    // Get decision from agent
-                    String decision = agent.completeWorkItem(workItem);
+                    // Get decision from agent - handle AutonomousAgent interface
+                    String agentId;
+                    String decision;
+                    double confidence;
+                    String rationale;
+
+                    if (agent instanceof AutonomousAgent autonomousAgent) {
+                        // Use AutonomousAgent's capability for decision
+                        agentId = autonomousAgent.toString();
+                        AgentCapability capability = autonomousAgent.getCapability();
+                        if (capability != null) {
+                            decision = capability.getDomain();
+                            rationale = capability.getDescription();
+                        } else {
+                            decision = "APPROVE";
+                            rationale = "Agent without capability defaults to approval";
+                        }
+                        confidence = 0.8;
+                    } else {
+                        // Handle generic agent objects
+                        agentId = agent.toString();
+                        decision = agent.toString();
+                        rationale = "Generic agent decision";
+                        confidence = 0.5;
+                    }
+
                     Map<String, Object> metadata = new HashMap<>();
                     metadata.put("agentType", agent.getClass().getSimpleName());
-                    metadata.put("agentId", agent.toString());
+                    metadata.put("agentId", agentId);
                     return new AgentDecision(
-                        agent.toString(),
+                        agentId,
                         decision,
                         metadata,
-                        0.8, // Default confidence
-                        "Standard work item completion"
+                        confidence,
+                        rationale
                     );
                 } catch (Exception e) {
                     // Return error decision
@@ -585,7 +615,7 @@ public class ConflictResolutionIntegrationService {
         Map<String, Object> metadata = new HashMap<>();
             metadata.put("resolutionMethod", resolutionMethod);
             metadata.put("workItemId", workItem.getID());
-            metadata.put("decompositionId", workItem.getDecompositionID());
+            metadata.put("taskId", workItem.getTaskID());
 
         return new ConflictResolutionService.ResolutionResult(
             resolutionId,
@@ -608,13 +638,14 @@ public class ConflictResolutionIntegrationService {
 
     private boolean isCriticalWorkItem(WorkItemRecord workItem) {
         // Implement logic to determine if work item is critical
-        return workItem.getDecompositionID().contains("critical") ||
-               workItem.getDecompositionID().contains("approve");
+        String taskId = workItem.getTaskID();
+        return taskId != null && (taskId.contains("critical") || taskId.contains("approve"));
     }
 
     private boolean isComplexWorkItem(WorkItemRecord workItem) {
         // Implement logic to determine if work item is complex
-        return workItem.getData() != null && workItem.getData().length() > 1000;
+        String data = workItem.getDataListString();
+        return data != null && data.length() > 1000;
     }
 
     private Map<String, Object> getAgentMetrics() {

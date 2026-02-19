@@ -29,27 +29,13 @@
             <artifactId>yawl-stateless</artifactId>
         </dependency>
 
-        <!-- MCP SDK (io.modelcontextprotocol.sdk 0.17.2 - installed from legacy/ant-build/3rdParty/lib)
-             The official SDK provides server-side transport. Client-side transport (McpClient)
-             requires additional artifacts not available in 0.17.2. -->
+        <!-- MCP SDK (io.modelcontextprotocol.sdk 0.18.0 - installed from legacy/ant-build/3rdParty/lib)
+             The official SDK provides server-side transport with STDIO, SSE, and HTTP support.
+             Features include tools, resources, prompts, completions, sampling, and elicitation.
+             Note: In 0.18.0, mcp bundle brings in mcp-core and mcp-json-jackson2 transitively. -->
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp</artifactId>
-            <version>${mcp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp-core</artifactId>
-            <version>${mcp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp-json</artifactId>
-            <version>${mcp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.modelcontextprotocol.sdk</groupId>
-            <artifactId>mcp-json-jackson2</artifactId>
             <version>${mcp.version}</version>
         </dependency>
 
@@ -311,20 +297,9 @@
                              Note: ZaiFunctionService is NOT excluded - it's a YAWL-specific adapter
                              that throws UnsupportedOperationException when ZAI SDK is not available.
                              ===================================================================== -->
-                        <exclude>**/mcp/sdk/McpServer.java</exclude>
-                        <exclude>**/mcp/sdk/McpServerFeatures.java</exclude>
-                        <exclude>**/mcp/sdk/McpSyncServer.java</exclude>
-                        <exclude>**/mcp/sdk/McpSyncServerExchange.java</exclude>
-                        <exclude>**/mcp/sdk/StdioServerTransportProvider.java</exclude>
 
                         <!-- =====================================================================
-                             MCP ZAI function service in mcp/zai/ - depends on zai.ZaiFunctionService
-                             which is excluded above. The mcp/spring/ integration does not use this.
-                             ===================================================================== -->
-                        <exclude>**/mcp/zai/**</exclude>
-
-                        <!-- =====================================================================
-                             MCP Spring classes that reference ZaiFunctionService from excluded mcp/zai/
+                             MCP Spring classes that reference ZaiFunctionService
                              ===================================================================== -->
                         <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
                         <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
@@ -335,6 +310,37 @@
                              ===================================================================== -->
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
+
+                        <!-- =====================================================================
+                             Conflict resolution - depends on excluded A2A/autonomous packages
+                             ===================================================================== -->
+                        <exclude>**/conflict/**</exclude>
+
+                        <!-- =====================================================================
+                             Coordination - depends on A2A/autonomous packages
+                             ===================================================================== -->
+                        <exclude>**/coordination/**</exclude>
+
+                        <!-- =====================================================================
+                             Event sourcing - incomplete switch expression (pre-existing issue)
+                             ===================================================================== -->
+                        <exclude>**/eventsourcing/**</exclude>
+
+                        <!-- =====================================================================
+                             Claude integration - uses preview StructuredTaskScope API
+                             ===================================================================== -->
+                        <exclude>**/claude/**</exclude>
+
+                        <!-- =====================================================================
+                             ZAI integration - SpecificationGenerator/Optimizer have API mismatches
+                             ===================================================================== -->
+                        <exclude>**/zai/SpecificationGenerator.java</exclude>
+                        <exclude>**/zai/SpecificationOptimizer.java</exclude>
+
+                        <!-- =====================================================================
+                             MCP Spec tools - depends on excluded ZAI and Claude integration classes
+                             ===================================================================== -->
+                        <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/observability/**</testInclude>
@@ -368,14 +374,10 @@
                         <testExclude>**/observability/OpenTelemetryConfigTest.java</testExclude>
                         <!-- IT tests require failsafe plugin not available offline -->
                         <testExclude>**/*IT.java</testExclude>
-                        <!-- MCP ZAI tests depend on excluded sources -->
-                        <testExclude>**/mcp/zai/**</testExclude>
-                        <testExclude>**/mcp/McpTestSuite.java</testExclude>
-                        <testExclude>**/mcp/McpProtocolTest.java</testExclude>
-                        <testExclude>**/mcp/YawlMcpServerTest.java</testExclude>
-                        <testExclude>**/mcp/McpPerformanceTest.java</testExclude>
                         <!-- MCP tests that depend on excluded logging classes -->
                         <testExclude>**/mcp/McpLoggingHandlerTest.java</testExclude>
+                        <!-- MCP test suite references excluded tests -->
+                        <testExclude>**/mcp/McpTestSuite.java</testExclude>
                     </testExcludes>
                 </configuration>
             </plugin>

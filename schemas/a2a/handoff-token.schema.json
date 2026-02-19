@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawl.foundation/schemas/a2a/handoff-token.schema.json",
+  "title": "A2A Handoff Token",
+  "description": "JWT handoff token for secure work transfer between agents",
+  "type": "object",
+  "required": ["header", "payload", "signature"],
+  "properties": {
+    "header": {
+      "type": "object",
+      "required": ["alg", "typ"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512"],
+          "description": "JWT signing algorithm"
+        },
+        "typ": {
+          "type": "string",
+          "const": "JWT",
+          "description": "Token type, must be JWT"
+        },
+        "kid": {
+          "type": "string",
+          "description": "Key ID for key rotation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "payload": {
+      "type": "object",
+      "required": ["iss", "sub", "aud", "iat", "jti"],
+      "properties": {
+        "iss": {
+          "type": "string",
+          "format": "uri",
+          "description": "Issuer agent URI (the agent initiating handoff)"
+        },
+        "sub": {
+          "type": "string",
+          "description": "Subject - work item ID being handed off"
+        },
+        "aud": {
+          "oneOf": [
+            {"type": "string", "format": "uri"},
+            {"type": "array", "items": {"type": "string", "format": "uri"}}
+          ],
+          "description": "Audience - target agent URI(s)"
+        },
+        "iat": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Issued at timestamp (Unix epoch seconds)"
+        },
+        "exp": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Expiration timestamp (default: iat + 300)"
+        },
+        "nbf": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Not valid before timestamp"
+        },
+        "jti": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique JWT identifier for replay protection"
+        },
+        "case_id": {
+          "type": "string",
+          "description": "YAWL case ID for the work item"
+        },
+        "spec_id": {
+          "type": "string",
+          "description": "YAWL specification identifier"
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Task ID within the specification"
+        },
+        "context": {
+          "type": "object",
+          "description": "Work context to transfer",
+          "properties": {
+            "inputData": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Input data for the task"
+            },
+            "constraints": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Constraints on task execution"
+            },
+            "deadline": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Deadline for task completion"
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 50,
+              "description": "Priority level (0=lowest, 100=highest)"
+            }
+          },
+          "additionalProperties": true
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["read", "write", "execute", "admin", "handoff"]
+          },
+          "description": "Permissions granted to the receiving agent"
+        },
+        "handoff_reason": {
+          "type": "string",
+          "enum": ["capacity", "specialization", "load_balance", "failover", "user_request"],
+          "description": "Reason for handoff"
+        }
+      },
+      "additionalProperties": true
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Base64URL-encoded signature"
+    }
+  },
+  "additionalProperties": false
+}
