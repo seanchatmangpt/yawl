@@ -1,4 +1,4 @@
-# YAWL v5.2 Performance Baseline & Load Testing Delivery
+# YAWL v6.0.0 Performance Baseline & Load Testing Delivery
 
 ## Executive Summary
 
@@ -6,7 +6,7 @@
 **Status**: ✅ COMPLETE  
 **Priority**: 2
 
-Successfully established comprehensive performance baseline testing framework for YAWL v5.2, including:
+Successfully established comprehensive performance baseline testing framework for YAWL v6.0.0, including:
 - Performance baseline measurements (5 metrics)
 - Load testing suite (3 scenarios)
 - Scalability validation tests
@@ -549,7 +549,7 @@ All deliverables completed:
 6. ✅ Provided CI/CD integration examples
 7. ✅ Established monitoring and alerting guidelines
 
-**Result**: YAWL v5.2 now has a production-ready performance testing framework with clear baselines, comprehensive load testing, and capacity planning guidance.
+**Result**: YAWL v6.0.0 now has a production-ready performance testing framework with clear baselines, comprehensive load testing, and capacity planning guidance.
 
 ---
 

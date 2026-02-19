@@ -12,7 +12,7 @@
 
 ## What Happened
 
-The YAWL v5.2 project compilation was run on 2026-02-16 and failed with 1,206 errors.
+The YAWL v6.0.0 project compilation was run on 2026-02-16 and failed with 1,206 errors.
 
 **Root Analysis**:
 - Dependency JAR files are defined in `build/build.xml` but NOT included in the `cp.compile` classpath
@@ -182,7 +182,7 @@ ant -f build/build.xml buildAll
 - **Build Tool**: Apache Ant (legacy mode)
 - **Primary Build**: Maven 3.9.11 (available)
 - **Java Version**: OpenJDK 25.x
-- **Build Target**: YAWL v5.2
+- **Build Target**: YAWL v6.0.0
 
 ### Deprecation Timeline
 - 2026-02-15: Maven becomes primary

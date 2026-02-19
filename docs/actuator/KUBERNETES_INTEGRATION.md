@@ -2,7 +2,7 @@
 
 ## Overview
 
-YAWL v5.2 includes production-ready Spring Boot Actuator endpoints for cloud-native deployments on Kubernetes (GKE, EKS, AKS) and Google Cloud Run.
+YAWL v6.0.0 includes production-ready Spring Boot Actuator endpoints for cloud-native deployments on Kubernetes (GKE, EKS, AKS) and Google Cloud Run.
 
 ## Health Endpoints
 

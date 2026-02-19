@@ -1,6 +1,6 @@
-# Migration Guide: YAWL v5.2 to v6.0.0
+# Migration Guide: YAWL v6.0.0 to v6.0.0
 
-**From**: YAWL v5.2 | **To**: YAWL v6.0.0 | **Effort**: Low (documentation-only)
+**From**: YAWL v6.0.0 | **To**: YAWL v6.0.0 | **Effort**: Low (documentation-only)
 
 ---
 

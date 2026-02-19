@@ -1,6 +1,6 @@
 # YAWL .claude/ Directory Index
 
-**Comprehensive navigation for YAWL v5.2 + Java 25 + Claude Code 2026**
+**Comprehensive navigation for YAWL v6.0.0 + Java 25 + Claude Code 2026**
 
 **Last Updated**: 2026-02-18 | **Total Files**: 35+ | **Coverage**: 120KB+ documentation
 
@@ -389,7 +389,7 @@ mvn clean verify -P security
 ### Classic Quick Reference
 ```
 +--------------------------------------------------------------+
-| YAWL v5.2 + Java 25 Quick Reference                          |
+| YAWL v6.0.0 + Java 25 Quick Reference                          |
 +--------------------------------------------------------------+
 | Agent DX (fast):    bash scripts/dx.sh (~5-15s changed)     |
 | Agent DX (all):     bash scripts/dx.sh all (~30-60s)        |

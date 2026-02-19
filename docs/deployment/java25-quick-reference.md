@@ -1,6 +1,6 @@
 # Java 25 Virtual Threads - Quick Reference
 
-**YAWL v5.2 | Java 25 Upgrade**
+**YAWL v6.0.0 | Java 25 Upgrade**
 **Quick Reference for Developers**
 
 ---

@@ -428,7 +428,7 @@ For detailed information, refer to:
 - Zero HYPER_STANDARDS violations
 - Complete documentation and deployment procedures
 
-**All files are ready for integration into the YAWL v5.2 build system and CI/CD pipeline.**
+**All files are ready for integration into the YAWL v6.0.0 build system and CI/CD pipeline.**
 
 ---
 

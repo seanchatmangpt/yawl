@@ -1,6 +1,6 @@
 # Advanced Static Analysis & SonarQube Configuration 2026
 
-**For**: YAWL v5.2 (Java 25, 89 packages) | **Date**: 2026-02-17 | **Framework**: Maven
+**For**: YAWL v6.0.0 (Java 25, 89 packages) | **Date**: 2026-02-17 | **Framework**: Maven
 
 ---
 

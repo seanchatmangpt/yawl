@@ -1,6 +1,6 @@
 # Hibernate 5.6.14 → 6.5.1 Migration Checklist
 
-**Project:** YAWL v5.2
+**Project:** YAWL v6.0.0
 **Date:** 2026-02-15
 **Status:** Production-Ready
 

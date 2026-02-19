@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation Summary
+# YAWL v6.0.0 Production Validation Summary
 
 **Date:** 2026-02-16  
 **Status:** ⚠️ CONDITIONAL PASS  

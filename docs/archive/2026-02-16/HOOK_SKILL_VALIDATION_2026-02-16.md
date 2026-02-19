@@ -1,14 +1,14 @@
-# YAWL v5.2 Hooks & Skills Comprehensive Validation Report
+# YAWL v6.0.0 Hooks & Skills Comprehensive Validation Report
 **Test Date**: February 16, 2026  
 **Test Environment**: Claude Code Web Sandbox  
-**Java Version in Test**: OpenJDK 21.0.10 (Java 25 required for YAWL v5.2)  
+**Java Version in Test**: OpenJDK 21.0.10 (Java 25 required for YAWL v6.0.0)  
 **Test Status**: COMPLETE - 3/3 Hooks & Skills Ready (1 Critical Issue Found)
 
 ---
 
 ## Executive Summary
 
-A comprehensive validation of YAWL v5.2 hooks and skills has been completed. The following components have been tested:
+A comprehensive validation of YAWL v6.0.0 hooks and skills has been completed. The following components have been tested:
 
 - **1 New Hook**: `java25-validate.sh` (Java 25 best practices validation)
 - **2 Updated Hooks**: `session-start.sh` (environment setup), existing hooks
@@ -414,7 +414,7 @@ yawl-pattern.sh   → ✅ exists
 ```
 Ant:   ✅ Present at /home/user/yawl/build/build.xml
 Maven: ✅ Present at /home/user/yawl/pom.xml
-Java:  OpenJDK 21.0.10 (YAWL v5.2 requires Java 25)
+Java:  OpenJDK 21.0.10 (YAWL v6.0.0 requires Java 25)
 ```
 
 **Maven Installation**:
@@ -545,7 +545,7 @@ Fallback: If Maven fails, Ant can be used (with deprecation warning)
 
 ## Conclusion
 
-The YAWL v5.2 hooks and skills infrastructure is **mostly complete and functional**, with one critical bug that must be fixed immediately:
+The YAWL v6.0.0 hooks and skills infrastructure is **mostly complete and functional**, with one critical bug that must be fixed immediately:
 
 **yawl-build.sh line 137 needs to be corrected to make Maven builds work.**
 

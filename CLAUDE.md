@@ -1,4 +1,4 @@
-# YAWL v5.2 | A = μ(O)
+# YAWL v6.0.0 | A = μ(O)
 
 O = {engine, elements, stateless, integration, schema, test}
 Σ = Java25 + Maven + JUnit + XML/XSD | Λ = compile ≺ test ≺ validate ≺ deploy

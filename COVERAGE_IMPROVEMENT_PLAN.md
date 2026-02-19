@@ -1,4 +1,4 @@
-# Test Coverage Improvement Plan for YAWL v5.2
+# Test Coverage Improvement Plan for YAWL v6.0.0
 
 ## Current Status
 - **Total Test Files**: 176

@@ -1,4 +1,4 @@
-# YAWL v5.2 - Production Validation Artifacts Index
+# YAWL v6.0.0 - Production Validation Artifacts Index
 
 **Validation Date:** 2026-02-16  
 **Validator:** YAWL Production Validator Agent  
@@ -377,7 +377,7 @@ VALIDATION_ARTIFACTS_INDEX.md (this file)
 
 ## Final Status
 
-**YAWL v5.2 Production Readiness:** ✅ CONDITIONALLY APPROVED
+**YAWL v6.0.0 Production Readiness:** ✅ CONDITIONALLY APPROVED
 
 **Staging Deployment:** ✅ APPROVED IMMEDIATELY  
 **Production Deployment:** ⚠️ APPROVED AFTER STAGING VALIDATION

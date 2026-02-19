@@ -2,7 +2,7 @@
 
 ## Overview
 
-Complete performance testing, benchmarking, and capacity planning documentation for YAWL v5.2.
+Complete performance testing, benchmarking, and capacity planning documentation for YAWL v6.0.0.
 
 ## Quick Links
 

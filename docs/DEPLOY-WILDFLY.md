@@ -1,4 +1,4 @@
-# Deploying YAWL v5.2 on WildFly 27+
+# Deploying YAWL v6.0.0 on WildFly 27+
 
 **Target Runtime**: WildFly 27.x, 28.x
 **Java Version**: Java 25 (required for Jakarta EE 10 support and virtual threads)

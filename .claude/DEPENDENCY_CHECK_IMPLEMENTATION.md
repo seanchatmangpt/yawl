@@ -8,7 +8,7 @@
 
 ## Overview
 
-Comprehensive dependency security scanning system for YAWL v5.2, providing automated detection of outdated packages and CVE vulnerabilities.
+Comprehensive dependency security scanning system for YAWL v6.0.0, providing automated detection of outdated packages and CVE vulnerabilities.
 
 ## Files Created
 
@@ -558,7 +558,7 @@ To add features, modify `/home/user/yawl/.claude/check-dependencies.sh` and upda
 
 ## Summary
 
-Successfully implemented comprehensive dependency health checking system for YAWL v5.2 with:
+Successfully implemented comprehensive dependency health checking system for YAWL v6.0.0 with:
 
 - **Full-featured scanner** (14 KB script)
 - **Multiple report formats** (Markdown, HTML, JSON)

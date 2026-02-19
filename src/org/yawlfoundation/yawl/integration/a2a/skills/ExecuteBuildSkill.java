@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,6 +52,14 @@ public class ExecuteBuildSkill implements A2ASkill {
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
     private static final Set<String> VALID_MODES = Set.of("incremental", "full");
     private static final Set<String> VALID_PROFILES = Set.of("fast", "agent-dx", "analysis", "security");
+
+    /**
+     * Validates module names to prevent command injection.
+     * Allows: alphanumeric, underscores, hyphens. Comma-separated list.
+     */
+    private static final Pattern MODULE_NAME_PATTERN = Pattern.compile(
+        "^[a-zA-Z][a-zA-Z0-9_-]*(,[a-zA-Z][a-zA-Z0-9_-]*)*$"
+    );
 
     private final Path projectRoot;
 
@@ -103,6 +112,13 @@ public class ExecuteBuildSkill implements A2ASkill {
         }
 
         String modules = request.getParameter("modules", "");
+
+        // Validate module names to prevent command injection
+        if (!modules.isEmpty() && !MODULE_NAME_PATTERN.matcher(modules).matches()) {
+            return SkillResult.error("Invalid module name format: " + modules +
+                ". Module names must start with a letter and contain only alphanumeric characters, underscores, or hyphens.");
+        }
+
         int timeoutSeconds = parseInt(request.getParameter("timeout_seconds", ""), DEFAULT_TIMEOUT_SECONDS);
 
         _logger.info("Executing {} build with profile: {}", mode, profile.isEmpty() ? "default" : profile);

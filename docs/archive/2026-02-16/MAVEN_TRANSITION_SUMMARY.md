@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document summarizes the complete Maven-first transition architecture for YAWL v5.2, providing a production-ready build system with:
+This document summarizes the complete Maven-first transition architecture for YAWL v6.0.0, providing a production-ready build system with:
 
 - **17 Maven modules** (9 core + 8 services)
 - **Zero dependency conflicts** via BOM management
@@ -448,7 +448,7 @@ Security Lead
 
 ## Conclusion
 
-The Maven-first transition architecture for YAWL v5.2 is **production-ready** with:
+The Maven-first transition architecture for YAWL v6.0.0 is **production-ready** with:
 
 ✓ **17 Maven modules** fully specified
 ✓ **Zero dependency conflicts** via BOM management

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully integrated SPIFFE/SPIRE workload identity into YAWL v5.2, replacing "secrets everywhere" with "workload identity everywhere" for enterprise-grade, cross-cloud authentication.
+Successfully integrated SPIFFE/SPIRE workload identity into YAWL v6.0.0, replacing "secrets everywhere" with "workload identity everywhere" for enterprise-grade, cross-cloud authentication.
 
 ## What Was Delivered
 

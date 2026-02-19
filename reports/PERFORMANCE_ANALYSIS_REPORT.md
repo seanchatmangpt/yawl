@@ -4,7 +4,7 @@
 **Analysis Scope:** Static code analysis + existing benchmark infrastructure  
 **Analyst Role:** YAWL Performance Optimization Specialist  
 **JVM Target:** Java 25 (OpenJDK)  
-**Reference Baseline:** YAWL v5.2
+**Reference Baseline:** YAWL v6.0.0
 
 ---
 

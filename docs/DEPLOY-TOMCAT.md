@@ -1,4 +1,4 @@
-# Deploying YAWL v5.2 on Apache Tomcat 10.1+
+# Deploying YAWL v6.0.0 on Apache Tomcat 10.1+
 
 **Target Runtime**: Apache Tomcat 10.1.x, 11.x
 **Java Version**: Java 25 (required for Jakarta EE 10 support and virtual threads)

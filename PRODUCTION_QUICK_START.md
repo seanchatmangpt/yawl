@@ -1,4 +1,4 @@
-# YAWL v5.2 - Production Quick Start Guide
+# YAWL v6.0.0 - Production Quick Start Guide
 
 **Status:** ✅ APPROVED FOR STAGING | ⚠️ CONDITIONAL FOR PRODUCTION  
 **Date:** 2026-02-16  

@@ -285,7 +285,7 @@ public class CommitChangesSkill implements A2ASkill {
             case "commit" -> {
                 command.add("commit");
                 command.add("-m");
-                command.add(message);
+                command.add(sanitizeCommitMessage(message));
             }
             case "branch" -> {
                 command.add("branch");
@@ -315,6 +315,32 @@ public class CommitChangesSkill implements A2ASkill {
         if (path.contains("..") || path.startsWith("/") || path.contains("~")) {
             throw new SecurityException("Unsafe path detected: " + path);
         }
+    }
+
+    /**
+     * Sanitizes commit messages to prevent git injection attacks.
+     * Removes control characters and normalizes whitespace.
+     *
+     * @param message the raw commit message
+     * @return sanitized message safe for git command line
+     */
+    private static String sanitizeCommitMessage(String message) {
+        if (message == null || message.isEmpty()) {
+            return "Automated commit";
+        }
+        // Remove control characters (including newlines that could inject commands)
+        // Normalize whitespace to single spaces
+        String sanitized = message
+            .replaceAll("[\\x00-\\x1f\\x7f]", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
+
+        // Truncate to reasonable length
+        if (sanitized.length() > 500) {
+            sanitized = sanitized.substring(0, 497) + "...";
+        }
+
+        return sanitized;
     }
 
     private String extractCommitHash(String output) {

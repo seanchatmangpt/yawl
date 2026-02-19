@@ -5,7 +5,7 @@
 Comprehensive integration test suite for YAWL REST API (Interface B) created with Chicago TDD methodology.
 
 **Date**: 2026-02-16
-**Version**: YAWL v5.2
+**Version**: YAWL v6.0.0
 **Total Tests**: 53 integration tests
 **Coverage Target**: 80%+ line, 75%+ branch
 
@@ -421,6 +421,6 @@ Tests are ready when:
 ---
 
 **Created**: 2026-02-16
-**Specification**: YAWL v5.2
+**Specification**: YAWL v6.0.0
 **Methodology**: Chicago TDD (Detroit School)
 **Total Lines of Test Code**: ~2,400

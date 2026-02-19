@@ -1,11 +1,11 @@
-# YAWL v5.2 Maven Build Validation Report
+# YAWL v6.0.0 Maven Build Validation Report
 **Date**: 2026-02-16
 **Environment**: Java 21.0.10, Maven 3.x (offline mode), Ant 1.10.14
 **Session**: https://claude.ai/code/session_01M9qKcZGsm3noCzcf7fN6oM
 
 ## Executive Summary
 
-The YAWL v5.2 project has been migrated to Maven as the primary build system, with Ant remaining in legacy support mode. The Maven structure is well-designed with proper multi-module organization, but the build environment is currently offline and requires network access to download Maven plugins and dependencies.
+The YAWL v6.0.0 project has been migrated to Maven as the primary build system, with Ant remaining in legacy support mode. The Maven structure is well-designed with proper multi-module organization, but the build environment is currently offline and requires network access to download Maven plugins and dependencies.
 
 **Status**: PARTIALLY OPERATIONAL
 - Maven pom.xml files: ✓ Valid and well-configured

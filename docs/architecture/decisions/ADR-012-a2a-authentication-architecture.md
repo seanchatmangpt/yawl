@@ -57,7 +57,7 @@ VPN, service mesh) is a substitute for endpoint-level authentication, because:
 
 ### Decision Drivers
 
-- YAWL v5.2 already ships a complete SPIFFE/SPIRE stack (ADR-005)
+- YAWL v6.0.0 already ships a complete SPIFFE/SPIRE stack (ADR-005)
 - jjwt-jackson 0.13.0 is already a direct dependency
 - The A2A server is the primary entry point for autonomous agents; it is the
   highest-risk endpoint in the system

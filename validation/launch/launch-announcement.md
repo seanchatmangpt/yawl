@@ -104,7 +104,7 @@ Get started with a free trial: [link]
 
 **Post 2: Technical Focus**
 
-YAWL v5.2 brings formal verification to cloud-native workflow automation:
+YAWL v6.0.0 brings formal verification to cloud-native workflow automation:
 
 - Petri net-based execution engine
 - Support for complex control-flow patterns
@@ -131,7 +131,7 @@ Get started: [link]
 #WorkflowAutomation #Cloud
 
 **Tweet 2:**
-New in YAWL v5.2:
+New in YAWL v6.0.0:
 - 43+ workflow patterns
 - Multi-cloud deployment
 - SOC 2 Type II compliant
@@ -144,7 +144,7 @@ Deploy now: [link]
 **Tweet 3:**
 One platform, six clouds.
 
-YAWL v5.2 brings consistent workflow automation across all major cloud providers.
+YAWL v6.0.0 brings consistent workflow automation across all major cloud providers.
 
 Try it free: [link]
 
@@ -175,7 +175,7 @@ Organizations today operate in complex, multi-cloud environments. They need tool
 
 **Enhanced Cloud Integration**
 
-YAWL v5.2 includes native integrations with cloud-native services:
+YAWL v6.0.0 includes native integrations with cloud-native services:
 - Managed databases (Cloud SQL, RDS, Azure SQL, etc.)
 - Object storage (GCS, S3, Blob Storage)
 - Message queues (Pub/Sub, SQS, Service Bus)
@@ -260,7 +260,7 @@ The YAWL Team
 
 ## Internal Announcement
 
-### Subject: YAWL v5.2 Multi-Cloud Marketplace Launch - LIVE
+### Subject: YAWL v6.0.0 Multi-Cloud Marketplace Launch - LIVE
 
 Team,
 

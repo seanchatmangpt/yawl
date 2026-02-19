@@ -171,7 +171,7 @@ Update all Dockerfiles to use Java 25 base images:
 #### Main Dockerfile
 
 ```dockerfile
-# YAWL v5.2 - Cloud-Native Container Image with Java 25
+# YAWL v6.0.0 - Cloud-Native Container Image with Java 25
 FROM eclipse-temurin:25-jre-alpine
 
 LABEL maintainer="YAWL Foundation"

@@ -1,4 +1,4 @@
-# YAWL v5.2 Maven-First Build Transition - COMPLETION REPORT
+# YAWL v6.0.0 Maven-First Build Transition - COMPLETION REPORT
 
 **Status**: ✅ **MAVEN-FIRST BUILD SYSTEM COMPLETE**  
 **Date**: 2026-02-16  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The YAWL v5.2 build system has been successfully transitioned from **Ant-primary to Maven-primary** while maintaining **Ant as legacy support**. An 8-agent team executed a comprehensive modernization covering:
+The YAWL v6.0.0 build system has been successfully transitioned from **Ant-primary to Maven-primary** while maintaining **Ant as legacy support**. An 8-agent team executed a comprehensive modernization covering:
 
 - **Maven-first architecture**: Multi-module POM structure with BOM dependency management
 - **Ant preservation**: Ant build remains functional for backward compatibility
@@ -375,7 +375,7 @@ ant -f build/build.xml unitTest
 
 ## Conclusion
 
-The YAWL v5.2 Maven-first build transition is **COMPLETE AND PRODUCTION-READY**. The system:
+The YAWL v6.0.0 Maven-first build transition is **COMPLETE AND PRODUCTION-READY**. The system:
 
 ✅ **Compiles cleanly** with zero errors  
 ✅ **Maintains Ant compatibility** for legacy support  
@@ -385,7 +385,7 @@ The YAWL v5.2 Maven-first build transition is **COMPLETE AND PRODUCTION-READY**.
 ✅ **Preserves all functionality** - no behavioral changes  
 ✅ **Documented comprehensively** for team understanding  
 
-The build system is **ready for production deployment** and provides a solid foundation for YAWL v5.2's continued evolution and cloud-native modernization.
+The build system is **ready for production deployment** and provides a solid foundation for YAWL v6.0.0's continued evolution and cloud-native modernization.
 
 ---
 

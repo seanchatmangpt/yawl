@@ -445,7 +445,7 @@ output_file = "test/org/yawlfoundation/yawl/Test{{ shape }}.java"
 
 ```toml
 # =============================================================================
-# YAWL v5.2 ggen Manifest - Comprehensive Code Generation
+# YAWL v6.0.0 ggen Manifest - Comprehensive Code Generation
 # =============================================================================
 
 [project]

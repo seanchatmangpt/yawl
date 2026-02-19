@@ -125,7 +125,19 @@ public class GenerateCodeSkill implements A2ASkill {
             result.put("generated_at", Instant.now().toString());
 
             if (targetPath != null && !targetPath.isEmpty()) {
-                Path target = projectRoot.resolve(targetPath);
+                // Validate path to prevent path traversal attacks
+                if (targetPath.contains("..") || targetPath.startsWith("/") || targetPath.startsWith("~")) {
+                    return SkillResult.error("Invalid target_path: must be a relative path within the project (no .., /, or ~ allowed)");
+                }
+
+                // Normalize and verify path stays within project root
+                Path target = projectRoot.resolve(targetPath).normalize();
+                Path normalizedRoot = projectRoot.normalize();
+
+                if (!target.startsWith(normalizedRoot)) {
+                    return SkillResult.error("Path traversal detected: target_path must be within project root");
+                }
+
                 writeGeneratedCode(target, generatedCode);
                 result.put("written_to", targetPath);
             }

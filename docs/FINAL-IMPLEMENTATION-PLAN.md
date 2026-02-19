@@ -592,7 +592,7 @@ If critical issues found:
 **File**: `/Users/sac/cre/vendors/yawl/docs/MIGRATION-v5.2-to-v6.0.md`
 
 ```markdown
-# Migration Guide: YAWL v5.2 to v6.0.0
+# Migration Guide: YAWL v6.0.0 to v6.0.0
 
 ## Overview
 

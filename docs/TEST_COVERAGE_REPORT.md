@@ -1,4 +1,4 @@
-# YAWL v5.2 Test Coverage Report
+# YAWL v6.0.0 Test Coverage Report
 ## Comprehensive Test Suite Analysis
 **Date:** 2026-02-16
 **Branch:** claude/maven-first-build-kizBd

@@ -274,6 +274,9 @@
                              A2A SDK Dependencies - JARs in legacy/ant-build/3rdParty/lib/ require
                              local Maven install. After running install commands (see A2A deps above),
                              remove these excludes to enable A2A integration.
+
+                             Note: JSON schema files in a2a/schema/ cause compiler errors when included.
+                             TODO: Move schema files to resources or add .json exclusion pattern.
                              ===================================================================== -->
                         <exclude>**/a2a/**</exclude>
 
@@ -379,6 +382,7 @@
                     </testIncludes>
                     <testExcludes>
                         <!-- Exclude test files for packages with excluded sources -->
+                        <!-- A2A tests disabled - sources excluded due to JSON schema compiler issue -->
                         <testExclude>**/a2a/**</testExclude>
                         <testExclude>**/orderfulfillment/**</testExclude>
                         <testExclude>**/autonomous/**</testExclude>
@@ -460,7 +464,7 @@
                         <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL 1.52.0 -->
                         <exclude>**/observability/OpenTelemetryConfigTest.java</exclude>
 
-                        <!-- MCP ZAI tests depend on excluded mcp/zai/ sources -->
+                        <!-- MCP ZAI tests disabled - API mismatch with MCP SDK 1.0.0-RC1 -->
                         <exclude>**/mcp/zai/**</exclude>
                         <!-- MCP tests that depend on excluded logging classes -->
                         <exclude>**/mcp/McpLoggingHandlerTest.java</exclude>

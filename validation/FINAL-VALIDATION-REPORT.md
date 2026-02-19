@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation - Final Report
+# YAWL v6.0.0 Production Validation - Final Report
 
 **Session:** claude/update-libraries-fix-tests-Vw4Si  
 **Date:** 2026-02-16T22:46:00Z  

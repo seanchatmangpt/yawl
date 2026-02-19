@@ -20,10 +20,14 @@ package org.yawlfoundation.yawl.integration.memory;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +46,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
@@ -79,12 +88,23 @@ public final class UpgradeMemoryStore {
     private final ObjectMapper objectMapper;
     private final ReentrantReadWriteLock fileLock;
     private final ConcurrentHashMap<String, UpgradeRecord> recordsById;
+    private final ExecutorService fileWriteExecutor;
+    private final AtomicBoolean pendingSave;
     private volatile MemoryStoreMetadata metadata;
 
     /**
      * Sealed class hierarchy for upgrade outcomes.
      * Enables exhaustive pattern matching in switch expressions.
+     *
+     * <p>Uses Jackson polymorphic type handling with @type property.</p>
      */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = Success.class, name = "success"),
+        @JsonSubTypes.Type(value = Failure.class, name = "failure"),
+        @JsonSubTypes.Type(value = Partial.class, name = "partial"),
+        @JsonSubTypes.Type(value = InProgress.class, name = "inProgress")
+    })
     public sealed interface UpgradeOutcome permits
             UpgradeMemoryStore.Success,
             UpgradeMemoryStore.Failure,
@@ -108,7 +128,7 @@ public final class UpgradeMemoryStore {
 
         @JsonCreator
         public Success(@JsonProperty("message") String message) {
-            this.message = Objects.requireNonNull(message, "message cannot be null");
+            this.message = Objects.requireNonNullElse(message, "");
         }
 
         @Override
@@ -121,6 +141,7 @@ public final class UpgradeMemoryStore {
             return "SUCCESS: " + message;
         }
 
+        @JsonProperty("message")
         public String message() {
             return message;
         }
@@ -150,7 +171,7 @@ public final class UpgradeMemoryStore {
                 @JsonProperty("errorMessage") String errorMessage,
                 @JsonProperty("errorType") String errorType,
                 @JsonProperty("stackTrace") String stackTrace) {
-            this.errorMessage = Objects.requireNonNull(errorMessage, "errorMessage cannot be null");
+            this.errorMessage = Objects.requireNonNullElse(errorMessage, "Unknown error");
             this.errorType = Objects.requireNonNullElse(errorType, "Unknown");
             this.stackTrace = Objects.requireNonNullElse(stackTrace, "");
         }
@@ -212,7 +233,7 @@ public final class UpgradeMemoryStore {
                 @JsonProperty("lastCompletedPhase") String lastCompletedPhase) {
             this.completedPhases = completedPhases;
             this.totalPhases = totalPhases;
-            this.lastCompletedPhase = Objects.requireNonNull(lastCompletedPhase, "lastCompletedPhase cannot be null");
+            this.lastCompletedPhase = Objects.requireNonNullElse(lastCompletedPhase, "unknown");
         }
 
         @Override
@@ -262,7 +283,7 @@ public final class UpgradeMemoryStore {
         public InProgress(
                 @JsonProperty("currentPhase") String currentPhase,
                 @JsonProperty("progressPercent") double progressPercent) {
-            this.currentPhase = Objects.requireNonNull(currentPhase, "currentPhase cannot be null");
+            this.currentPhase = Objects.requireNonNullElse(currentPhase, "unknown");
             this.progressPercent = Math.max(0.0, Math.min(100.0, progressPercent));
         }
 
@@ -541,15 +562,42 @@ public final class UpgradeMemoryStore {
      */
     public UpgradeMemoryStore(Path memoryDirectory) {
         this.memoryDirectory = Objects.requireNonNull(memoryDirectory, "memoryDirectory cannot be null");
-        this.objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .enable(SerializationFeature.INDENT_OUTPUT);
+        this.objectMapper = createObjectMapper();
         this.fileLock = new ReentrantReadWriteLock();
         this.recordsById = new ConcurrentHashMap<>();
+        this.fileWriteExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "memory-store-writer");
+            t.setDaemon(true);
+            return t;
+        });
+        this.pendingSave = new AtomicBoolean(false);
         this.metadata = MemoryStoreMetadata.initial();
 
         initializeStore();
+    }
+
+    /**
+     * Creates and configures the ObjectMapper for JSON serialization.
+     * Configures polymorphic type handling for sealed interface hierarchy.
+     */
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                // Don't fail on unknown properties for forward compatibility
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+        // Register subtypes for polymorphic UpgradeOutcome deserialization
+        // This allows Jackson to serialize/deserialize the sealed interface
+        mapper.registerSubtypes(
+                new NamedType(Success.class, "success"),
+                new NamedType(Failure.class, "failure"),
+                new NamedType(Partial.class, "partial"),
+                new NamedType(InProgress.class, "inProgress")
+        );
+
+        return mapper;
     }
 
     /**
@@ -614,10 +662,41 @@ public final class UpgradeMemoryStore {
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE);
 
+            pendingSave.set(false);
             log.debug("Saved {} upgrade records to {}", records.size(), historyPath);
         } finally {
             fileLock.readLock().unlock();
         }
+    }
+
+    /**
+     * Schedules an asynchronous save to disk. Multiple concurrent calls are
+     * coalesced into a single save operation to reduce I/O contention.
+     *
+     * <p>This method is designed for high-concurrency scenarios where immediate
+     * persistence is not critical.</p>
+     */
+    private void scheduleAsyncSave() {
+        if (pendingSave.compareAndSet(false, true)) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    saveToDisk();
+                } catch (IOException e) {
+                    log.warn("Async save failed: {}", e.getMessage());
+                    pendingSave.set(false);
+                }
+            }, fileWriteExecutor);
+        }
+    }
+
+    /**
+     * Forces an immediate synchronous save to disk.
+     * Use sparingly - prefer scheduleAsyncSave() for most operations.
+     *
+     * @throws IOException if the save fails
+     */
+    private void forceSave() throws IOException {
+        saveToDisk();
     }
 
     /**
@@ -632,13 +711,10 @@ public final class UpgradeMemoryStore {
         recordsById.put(record.id(), record);
         metadata = metadata.withUpdated(recordsById.size());
 
-        try {
-            saveToDisk();
-            log.info("Stored upgrade record: id={}, outcome={}",
-                    record.id(), record.outcome().description());
-        } catch (IOException e) {
-            throw new MemoryStoreException("Failed to store upgrade record: " + record.id(), e);
-        }
+        // Use async save to reduce lock contention under high concurrency
+        scheduleAsyncSave();
+        log.info("Stored upgrade record: id={}, outcome={}",
+                record.id(), record.outcome().description());
     }
 
     /**
@@ -656,12 +732,9 @@ public final class UpgradeMemoryStore {
 
         recordsById.put(record.id(), record);
 
-        try {
-            saveToDisk();
-            log.debug("Updated upgrade record: id={}", record.id());
-        } catch (IOException e) {
-            throw new MemoryStoreException("Failed to update upgrade record: " + record.id(), e);
-        }
+        // Use async save to reduce lock contention under high concurrency
+        scheduleAsyncSave();
+        log.debug("Updated upgrade record: id={}", record.id());
     }
 
     /**
@@ -816,11 +889,55 @@ public final class UpgradeMemoryStore {
         metadata = MemoryStoreMetadata.initial();
 
         try {
-            saveToDisk();
+            forceSave();
             log.info("Cleared all upgrade records");
         } catch (IOException e) {
             throw new MemoryStoreException("Failed to clear upgrade records", e);
         }
+    }
+
+    /**
+     * Flushes any pending saves to disk synchronously.
+     * Call this before reading from disk to ensure all writes are persisted.
+     *
+     * @throws MemoryStoreException if the flush fails
+     */
+    public void flush() {
+        try {
+            if (pendingSave.get()) {
+                forceSave();
+            }
+        } catch (IOException e) {
+            throw new MemoryStoreException("Failed to flush pending saves", e);
+        }
+    }
+
+    /**
+     * Shuts down the memory store, flushing any pending saves and releasing resources.
+     * After calling this method, the store should not be used.
+     *
+     * @param timeoutSeconds maximum time to wait for pending saves
+     */
+    public void shutdown(int timeoutSeconds) {
+        try {
+            // Flush any pending saves synchronously
+            if (pendingSave.get()) {
+                forceSave();
+            }
+        } catch (IOException e) {
+            log.warn("Failed to flush pending saves during shutdown: {}", e.getMessage());
+        }
+
+        fileWriteExecutor.shutdown();
+        try {
+            if (!fileWriteExecutor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
+                fileWriteExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            fileWriteExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        log.info("Memory store shut down successfully");
     }
 
     /**

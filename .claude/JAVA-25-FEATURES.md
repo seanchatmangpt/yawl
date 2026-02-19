@@ -1,6 +1,6 @@
-# Java 25 Features & Adoption Strategy for YAWL v5.2
+# Java 25 Features & Adoption Strategy for YAWL v6.0.0
 
-**Status**: Production-Ready | **Date**: Feb 2026 | **Applies to**: YAWL v5.2+
+**Status**: Production-Ready | **Date**: Feb 2026 | **Applies to**: YAWL v6.0.0+
 
 ---
 

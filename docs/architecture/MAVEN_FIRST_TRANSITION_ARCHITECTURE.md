@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document provides the complete Maven-first transition architecture for YAWL v5.2+, including:
+This document provides the complete Maven-first transition architecture for YAWL v6.0.0+, including:
 
 - **Multi-module Maven structure** (9 core modules + 8 service modules)
 - **BOM-based dependency management** (Spring Boot 3.4, Jakarta EE 10, OpenTelemetry 1.40)

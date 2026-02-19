@@ -1,6 +1,6 @@
-# YAWL v5.2 - Final Test Execution Report
+# YAWL v6.0.0 - Final Test Execution Report
 
-**Project**: YAWL v5.2
+**Project**: YAWL v6.0.0
 **Branch**: claude/maven-first-build-kizBd
 **Date**: 2026-02-16
 **Status**: ⚠️ BLOCKED - Compilation Errors Prevent Test Execution

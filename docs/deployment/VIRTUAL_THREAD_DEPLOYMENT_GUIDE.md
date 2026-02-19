@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for deploying YAWL v5.2 with virtual threads enabled. Virtual threads provide **10-100x performance improvement** for I/O-bound operations with zero code complexity increase.
+This guide provides step-by-step instructions for deploying YAWL v6.0.0 with virtual threads enabled. Virtual threads provide **10-100x performance improvement** for I/O-bound operations with zero code complexity increase.
 
 ---
 

@@ -82,7 +82,7 @@ import java.util.concurrent.Executors;
 public class YawlA2AServer {
 
     private static final Logger _logger = LogManager.getLogger(YawlA2AServer.class);
-    private static final String SERVER_VERSION = "5.2.0";
+    private static final String SERVER_VERSION = "6.0.0";
 
     private final String yawlEngineUrl;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;

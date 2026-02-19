@@ -1,6 +1,6 @@
 # YAWL Roadmap
 
-**System**: YAWL v5.2 — Yet Another Workflow Language
+**System**: YAWL v6.0.0 — Yet Another Workflow Language
 **Semantics**: Petri net-based BPM engine | **Platform**: Java 25 + Maven
 **Date**: February 2026 | **Horizon**: 24 months
 

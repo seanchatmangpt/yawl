@@ -57,6 +57,28 @@ public class RunTestsSkill implements A2ASkill {
     private static final int DEFAULT_COVERAGE_THRESHOLD = 80;
     private static final Set<String> VALID_MODES = Set.of("incremental", "full");
 
+    /**
+     * Validates test class names to prevent command injection.
+     * Allows: fully qualified class names with dots (e.g., com.example.TestClass).
+     */
+    private static final Pattern TEST_CLASS_PATTERN = Pattern.compile(
+        "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)*$"
+    );
+
+    /**
+     * Validates test method names to prevent command injection.
+     * Allows: alphanumeric and underscores only.
+     */
+    private static final Pattern TEST_METHOD_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
+
+    /**
+     * Validates JUnit 5 tag names to prevent command injection.
+     * Allows: alphanumeric, underscores, hyphens. Comma-separated list.
+     */
+    private static final Pattern JUNIT_TAG_PATTERN = Pattern.compile(
+        "^[a-zA-Z][a-zA-Z0-9_-]*(,[a-zA-Z][a-zA-Z0-9_-]*)*$"
+    );
+
     private static final Pattern TEST_COUNT_PATTERN =
         Pattern.compile("Tests run:\\s*(\\d+),\\s*Failures:\\s*(\\d+),\\s*Errors:\\s*(\\d+)");
     private static final Pattern COVERAGE_PATTERN =
@@ -108,8 +130,29 @@ public class RunTestsSkill implements A2ASkill {
         }
 
         String testClass = request.getParameter("test_class", "");
+
+        // Validate test class name to prevent command injection
+        if (!testClass.isEmpty() && !TEST_CLASS_PATTERN.matcher(testClass).matches()) {
+            return SkillResult.error("Invalid test class format: " + testClass +
+                ". Test class must be a valid Java identifier (alphanumeric, dots, underscores).");
+        }
+
         String testMethod = request.getParameter("test_method", "");
+
+        // Validate test method name to prevent command injection
+        if (!testMethod.isEmpty() && !TEST_METHOD_PATTERN.matcher(testMethod).matches()) {
+            return SkillResult.error("Invalid test method format: " + testMethod +
+                ". Test method must be a valid Java identifier (alphanumeric, underscores only).");
+        }
+
         String tags = request.getParameter("tags", "");
+
+        // Validate JUnit tags to prevent command injection
+        if (!tags.isEmpty() && !JUNIT_TAG_PATTERN.matcher(tags).matches()) {
+            return SkillResult.error("Invalid tags format: " + tags +
+                ". Tags must be alphanumeric with underscores or hyphens, comma-separated.");
+        }
+
         int coverageThreshold = parseInt(request.getParameter("coverage_threshold", ""),
             DEFAULT_COVERAGE_THRESHOLD);
         int timeoutSeconds = parseInt(request.getParameter("timeout_seconds", ""),

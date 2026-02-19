@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document defines the Maven multi-module architecture for YAWL v5.2, transforming the current monolithic build into a modular, dependency-managed structure. The design follows Maven best practices, leverages BOM-based dependency management, and establishes clear module boundaries aligned with YAWL's logical architecture.
+This document defines the Maven multi-module architecture for YAWL v6.0.0, transforming the current monolithic build into a modular, dependency-managed structure. The design follows Maven best practices, leverages BOM-based dependency management, and establishes clear module boundaries aligned with YAWL's logical architecture.
 
 ## Design Goals
 

@@ -6,7 +6,7 @@ Get production-grade fault tolerance in 5 minutes.
 
 ### Step 1: Dependencies (Already Included)
 
-YAWL v5.2 ships with Resilience4j. No additional dependencies needed.
+YAWL v6.0.0 ships with Resilience4j. No additional dependencies needed.
 
 ```xml
 <!-- Already in pom.xml -->

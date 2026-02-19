@@ -337,7 +337,7 @@ zai:  # Required if using ZAI engines
 
 ## License
 
-Part of the YAWL v5.2 project. See main YAWL license.
+Part of the YAWL v6.0.0 project. See main YAWL license.
 
 ---
 
@@ -345,7 +345,7 @@ Part of the YAWL v5.2 project. See main YAWL license.
 
 For questions about this configuration:
 - See documentation files in this directory
-- Refer to YAWL v5.2 main documentation
+- Refer to YAWL v6.0.0 main documentation
 - Check CLAUDE.md in project root
 
 ---

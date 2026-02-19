@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/name: yawl-agent-registry
     app.kubernetes.io/component: agent-registry
     app.kubernetes.io/part-of: yawl
-    app.kubernetes.io/version: "5.2"
+    app.kubernetes.io/version: "6.0.0"
 spec:
   # Single replica: registry state is in-memory, HA via restart policy
   replicas: 1

@@ -1,4 +1,4 @@
-# Production Incident Response Runbook - YAWL v5.2
+# Production Incident Response Runbook - YAWL v6.0.0
 
 **Emergency Operations Guide**
 **Version:** 5.2

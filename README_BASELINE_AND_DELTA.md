@@ -1,6 +1,6 @@
 # YAWL Baseline & Delta Testing Framework
 
-Welcome to the comprehensive baseline and regression testing framework for YAWL v5.2.
+Welcome to the comprehensive baseline and regression testing framework for YAWL v6.0.0.
 
 This framework provides:
 - Established baseline metrics (176 tests, 98.9% pass rate)

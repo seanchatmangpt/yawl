@@ -1,4 +1,4 @@
-# Kubernetes Security Runbook - YAWL v5.2
+# Kubernetes Security Runbook - YAWL v6.0.0
 
 **Production Security Operations Guide**
 **Version:** 5.2

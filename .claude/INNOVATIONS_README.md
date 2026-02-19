@@ -1,6 +1,6 @@
-# YAWL v5.2 Maven Build Innovations Guide
+# YAWL v6.0.0 Maven Build Innovations Guide
 
-This guide explains all 6 Maven build innovations integrated into YAWL v5.2, how to use them, and how they work together with existing tools.
+This guide explains all 6 Maven build innovations integrated into YAWL v6.0.0, how to use them, and how they work together with existing tools.
 
 ## Overview
 

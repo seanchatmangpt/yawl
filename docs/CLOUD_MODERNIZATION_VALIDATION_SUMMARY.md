@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Comprehensive integration tests have been created for all cloud modernization components of YAWL v5.2. These tests validate:
+Comprehensive integration tests have been created for all cloud modernization components of YAWL v6.0.0. These tests validate:
 
 1. **Spring AI MCP Integration** - Resource lifecycle and tool management
 2. **OpenTelemetry Observability** - Distributed tracing and metrics

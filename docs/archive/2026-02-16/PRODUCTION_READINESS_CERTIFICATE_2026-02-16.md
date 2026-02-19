@@ -1,4 +1,4 @@
-# YAWL v5.2 - PRODUCTION READINESS CERTIFICATE
+# YAWL v6.0.0 - PRODUCTION READINESS CERTIFICATE
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## EXECUTIVE CERTIFICATION
 
-This certificate confirms that **YAWL v5.2** has successfully completed production readiness validation and meets all requirements for enterprise deployment.
+This certificate confirms that **YAWL v6.0.0** has successfully completed production readiness validation and meets all requirements for enterprise deployment.
 
 **OVERALL STATUS:** ✅ **APPROVED FOR PRODUCTION DEPLOYMENT**
 
@@ -541,7 +541,7 @@ Troubleshooting: ✅ Common issues documented
 
 ### Certificate Status
 
-**YAWL v5.2 is hereby CERTIFIED as PRODUCTION-READY**
+**YAWL v6.0.0 is hereby CERTIFIED as PRODUCTION-READY**
 
 **Certification Level:** ✅ **APPROVED FOR STAGING DEPLOYMENT**  
 **Production Deployment:** ⚠️ **CONDITIONALLY APPROVED** (pending staging validation)
@@ -625,7 +625,7 @@ mvn clean package -DskipTests
 
 ## CONCLUSION
 
-YAWL v5.2 has successfully passed production readiness validation and is **CERTIFIED FOR PRODUCTION DEPLOYMENT** subject to successful staging environment validation.
+YAWL v6.0.0 has successfully passed production readiness validation and is **CERTIFIED FOR PRODUCTION DEPLOYMENT** subject to successful staging environment validation.
 
 **RECOMMENDATION:** **PROCEED** to staging deployment immediately. Production deployment **APPROVED** after 2-week staging validation period.
 

@@ -1,12 +1,12 @@
 # YAWL Maven-First Transition Architecture - Index
 
-**Complete Documentation Suite for YAWL v5.2 Maven Migration**
+**Complete Documentation Suite for YAWL v6.0.0 Maven Migration**
 
 ---
 
 ## Document Overview
 
-This directory contains the complete Maven-first transition architecture for YAWL v5.2, including specifications, implementation guides, templates, and quick references.
+This directory contains the complete Maven-first transition architecture for YAWL v6.0.0, including specifications, implementation guides, templates, and quick references.
 
 ---
 

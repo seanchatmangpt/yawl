@@ -344,7 +344,7 @@ The Spring integration uses `McpServer.sync()` builder pattern from the SDK and 
 
 ## Standards Compliance
 
-This implementation follows YAWL v5.2 standards from CLAUDE.md:
+This implementation follows YAWL v6.0.0 standards from CLAUDE.md:
 
 - **Real API Integration**: All tools/resources use real YAWL engine calls
 - **No Stubs/Mocks**: All implementations throw exceptions or return real data

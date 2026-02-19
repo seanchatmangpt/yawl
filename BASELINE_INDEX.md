@@ -1,4 +1,4 @@
-# YAWL v5.2 | Baseline Test Status - Complete Reference
+# YAWL v6.0.0 | Baseline Test Status - Complete Reference
 
 **Date Established**: 2026-02-16  
 **Current Status**: BASELINE ESTABLISHED & READY FOR MONITORING  

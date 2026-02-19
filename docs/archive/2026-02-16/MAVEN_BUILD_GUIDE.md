@@ -2,7 +2,7 @@
 
 ## Module Structure
 
-YAWL v5.2 uses a Maven multi-module build with the following structure:
+YAWL v6.0.0 uses a Maven multi-module build with the following structure:
 
 ```
 yawl-parent (pom)

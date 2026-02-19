@@ -1,4 +1,4 @@
-# YAWL v5.2 Staging Deployment Checklist
+# YAWL v6.0.0 Staging Deployment Checklist
 
 ## Pre-Deployment (48 hours before)
 

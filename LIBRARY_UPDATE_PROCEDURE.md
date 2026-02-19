@@ -1,4 +1,4 @@
-# YAWL v5.2 | Controlled Library Update Procedure
+# YAWL v6.0.0 | Controlled Library Update Procedure
 
 ## Overview
 
@@ -420,4 +420,4 @@ git push origin claude/revert-bad-update
 
 **Last Updated**: 2026-02-16
 **Baseline Date**: 2026-02-16
-**Valid For**: YAWL v5.2+
+**Valid For**: YAWL v6.0.0+

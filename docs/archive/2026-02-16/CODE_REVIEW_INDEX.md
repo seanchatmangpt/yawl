@@ -1,4 +1,4 @@
-# YAWL v5.2 Code Review - Document Index
+# YAWL v6.0.0 Code Review - Document Index
 
 **Review Completed:** 2026-02-16  
 **Status:** ❌ PRODUCTION DEPLOYMENT BLOCKED  

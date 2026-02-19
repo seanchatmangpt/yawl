@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Go-Live Checklist
+# YAWL v6.0.0 Production Go-Live Checklist
 
 **Target Go-Live Date:** March 2, 2026
 **Version:** 5.2.0

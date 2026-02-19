@@ -1,6 +1,6 @@
 # YAWL Jakarta EE Migration - Documentation Index
 
-**YAWL v5.2**
+**YAWL v6.0.0**
 **Migration:** Java EE 8 (javax.*) → Jakarta EE 10 (jakarta.*)
 **Date:** 2026-02-15
 

@@ -1,6 +1,6 @@
 # Java EE → Jakarta EE Migration Guide
 
-**YAWL v5.2 Migration Documentation**
+**YAWL v6.0.0 Migration Documentation**
 **Date:** 2026-02-15
 **Migration Type:** Comprehensive javax.* → jakarta.* namespace migration
 

@@ -1,6 +1,6 @@
 # Jakarta EE Migration - Summary
 
-**YAWL v5.2 - Java EE 8 → Jakarta EE 10 Migration**
+**YAWL v6.0.0 - Java EE 8 → Jakarta EE 10 Migration**
 **Date:** 2026-02-15
 **Status:** ✅ MIGRATION INFRASTRUCTURE COMPLETE - READY FOR EXECUTION
 

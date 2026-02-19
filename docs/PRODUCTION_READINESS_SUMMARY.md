@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Readiness Summary
+# YAWL v6.0.0 Production Readiness Summary
 **Executive Summary for Deployment Approval**  
 **Date**: 2026-02-15  
 **Status**: ⚠️ CONDITIONAL PASS - Action Items Required
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 has undergone comprehensive production readiness validation for enterprise cloud deployment across GKE/GCP, EKS/AWS, and AKS/Azure platforms. The system demonstrates strong technical foundations with advanced security (SPIFFE/SPIRE), observability (OpenTelemetry), and cloud-native architecture.
+YAWL v6.0.0 has undergone comprehensive production readiness validation for enterprise cloud deployment across GKE/GCP, EKS/AWS, and AKS/Azure platforms. The system demonstrates strong technical foundations with advanced security (SPIFFE/SPIRE), observability (OpenTelemetry), and cloud-native architecture.
 
 **Overall Verdict**: CONDITIONAL PASS with critical action items that must be completed before production deployment.
 
@@ -398,7 +398,7 @@ flyway repair -url=jdbc:postgresql://prod-db:5432/yawl
 
 ## Conclusion
 
-YAWL v5.2 demonstrates strong production readiness with enterprise-grade security, observability, and cloud-native architecture. The system is well-architected for multi-cloud deployment with SPIFFE/SPIRE identity, OpenTelemetry observability, and Kubernetes-native scaling.
+YAWL v6.0.0 demonstrates strong production readiness with enterprise-grade security, observability, and cloud-native architecture. The system is well-architected for multi-cloud deployment with SPIFFE/SPIRE identity, OpenTelemetry observability, and Kubernetes-native scaling.
 
 **Key Strengths**:
 - ✅ Advanced security (SPIFFE/SPIRE workload identity)

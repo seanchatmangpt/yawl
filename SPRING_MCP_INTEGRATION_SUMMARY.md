@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully designed and implemented **Spring AI Model Context Protocol (MCP) integration** for YAWL v5.2 that standardizes the tool/resource/prompt plane using enterprise Java patterns.
+Successfully designed and implemented **Spring AI Model Context Protocol (MCP) integration** for YAWL v6.0.0 that standardizes the tool/resource/prompt plane using enterprise Java patterns.
 
 **Date:** 2026-02-15
 **Status:** Design complete, working implementation delivered
@@ -197,7 +197,7 @@ McpSyncServer server = McpServer.sync(transportProvider)
     .build();
 ```
 
-## Compliance with YAWL v5.2 Standards
+## Compliance with YAWL v6.0.0 Standards
 
 ### CLAUDE.md Requirements
 

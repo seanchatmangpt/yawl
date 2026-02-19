@@ -1,4 +1,4 @@
-# YAWL v5.2 - Dependency Upgrade Summary
+# YAWL v6.0.0 - Dependency Upgrade Summary
 ## Priority 2: Build Dependencies & Library Upgrades
 ### Date: 2026-02-16
 

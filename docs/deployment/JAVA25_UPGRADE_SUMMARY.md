@@ -1,6 +1,6 @@
 # YAWL Java 25 Upgrade - Implementation Summary
 
-**Project:** YAWL v5.2 Java 25 Upgrade with Native Virtual Threads
+**Project:** YAWL v6.0.0 Java 25 Upgrade with Native Virtual Threads
 **Status:** READY FOR IMPLEMENTATION
 **Date:** 2026-02-15
 **Team:** YAWL Architecture Team

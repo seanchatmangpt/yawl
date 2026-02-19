@@ -1,4 +1,4 @@
-# YAWL v5.2 - Third-Party License Inventory
+# YAWL v6.0.0 - Third-Party License Inventory
 
 **Generated**: 2026-02-16  
 **Repository**: YAWL (Yet Another Workflow Language)  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-YAWL v5.2 complies with open-source licensing requirements through careful dependency management. The codebase uses primarily permissive licenses (Apache 2.0, MIT, EPL) with clear attribution paths.
+YAWL v6.0.0 complies with open-source licensing requirements through careful dependency management. The codebase uses primarily permissive licenses (Apache 2.0, MIT, EPL) with clear attribution paths.
 
 **License Distribution**:
 - **Apache License 2.0**: ~45 libraries (Primary)
@@ -440,7 +440,7 @@ These are custom or bundled libraries without clear public license documentation
 ### Attribution Template
 
 ```
-YAWL v5.2 uses the following third-party libraries:
+YAWL v6.0.0 uses the following third-party libraries:
 
 1. Apache Commons Libraries
    License: Apache License 2.0

@@ -1,4 +1,4 @@
-# YAWL v5.2 Maven Modules Structure
+# YAWL v6.0.0 Maven Modules Structure
 
 **Date**: 2026-02-16
 **Version**: YAWL 5.2

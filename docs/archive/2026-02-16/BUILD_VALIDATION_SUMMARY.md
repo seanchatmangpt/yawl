@@ -7,7 +7,7 @@
 
 ## Validation Status: FAILED
 
-The YAWL v5.2 build system has been comprehensively validated and found to have **critical failures** preventing successful compilation.
+The YAWL v6.0.0 build system has been comprehensively validated and found to have **critical failures** preventing successful compilation.
 
 ---
 
@@ -316,7 +316,7 @@ The build will be considered **FIXED** when:
 
 ## Conclusion
 
-The YAWL v5.2 build system is **NOT READY for production**. While significant modernization work has been done (Jakarta EE 10, JUnit 5, modern dependencies), the migration is **incomplete**.
+The YAWL v6.0.0 build system is **NOT READY for production**. While significant modernization work has been done (Jakarta EE 10, JUnit 5, modern dependencies), the migration is **incomplete**.
 
 **Critical findings:**
 - Build.xml configuration has version mismatches

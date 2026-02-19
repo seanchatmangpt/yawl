@@ -1,7 +1,7 @@
 # JaCoCo Code Coverage Configuration Guide
 
 ## Overview
-JaCoCo (Java Code Coverage) has been configured for YAWL v5.2 with the following targets:
+JaCoCo (Java Code Coverage) has been configured for YAWL v6.0.0 with the following targets:
 - **Overall Coverage Target**: 75%+
 - **Minimum Threshold (enforced in CI)**: 65%
 - **Branch Coverage**: 60%+

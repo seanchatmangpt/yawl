@@ -9,7 +9,7 @@
 
 ## Overview
 
-This index provides navigation to all baseline and regression testing documentation for YAWL v5.2. Use this when:
+This index provides navigation to all baseline and regression testing documentation for YAWL v6.0.0. Use this when:
 
 - Setting up regression testing after code changes
 - Comparing current test results against baseline

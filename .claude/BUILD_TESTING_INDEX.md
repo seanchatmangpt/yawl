@@ -1,6 +1,6 @@
 # Build System & Testing Research 2025-2026 - Document Index
 
-**Research Completed**: 2026-02-17 | **For**: YAWL v5.2 (Java 25, Maven, 89 packages)
+**Research Completed**: 2026-02-17 | **For**: YAWL v6.0.0 (Java 25, Maven, 89 packages)
 
 ---
 
@@ -127,7 +127,7 @@ This research synthesizes the latest build system and testing improvements for J
 
 ### JUnit/Testing
 - **Current**: JUnit 5 LTS (5.14.0), JUnit 6 (Sep 2025)
-- **For YAWL v5.2**: Continue with JUnit 5.14.0
+- **For YAWL v6.0.0**: Continue with JUnit 5.14.0
 - **Plan**: JUnit 6 migration for YAWL v6+
 - **Features**: Parallel execution, dynamic tests, parameterized tests
 
@@ -361,4 +361,4 @@ For questions on specific sections:
 
 ---
 
-**Document Status**: Complete | **Verification**: All tools Java 25 compatible | **Applicability**: Direct YAWL v5.2 use
+**Document Status**: Complete | **Verification**: All tools Java 25 compatible | **Applicability**: Direct YAWL v6.0.0 use

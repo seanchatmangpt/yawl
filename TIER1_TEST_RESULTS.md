@@ -1,4 +1,4 @@
-# Tier 1 Test Results — YAWL v5.2 Technical Debt Sprint
+# Tier 1 Test Results — YAWL v6.0.0 Technical Debt Sprint
 
 **Date**: 2026-02-17
 **Executor**: YAWL Tester Agent (Chicago TDD)

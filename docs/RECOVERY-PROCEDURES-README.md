@@ -1,8 +1,8 @@
-# YAWL v5.2 Recovery Procedures - Complete Guide
+# YAWL v6.0.0 Recovery Procedures - Complete Guide
 
 ## Overview
 
-This document outlines the complete rollback and recovery system for YAWL v5.2. The system consists of:
+This document outlines the complete rollback and recovery system for YAWL v6.0.0. The system consists of:
 
 1. **Documentation**: Comprehensive guides for deployment and recovery
 2. **Automation**: Production-ready scripts for backup, rollback, and health checking

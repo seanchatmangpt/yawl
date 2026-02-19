@@ -23,7 +23,7 @@ Java 21+ provides virtual threads (Project Loom) as a production-ready feature. 
 - Can be created in millions without memory exhaustion
 - Automatically yield on blocking I/O operations
 
-YAWL v5.2 already requires Java 25, making virtual threads immediately available.
+YAWL v6.0.0 already requires Java 25, making virtual threads immediately available.
 
 ## Decision
 
@@ -184,7 +184,7 @@ Benefits:
 ### Negative
 
 1. **Pinned thread risk**: Synchronized blocks can pin virtual threads to carriers
-2. **JVM compatibility**: Requires Java 21+ (already required for YAWL v5.2)
+2. **JVM compatibility**: Requires Java 21+ (already required for YAWL v6.0.0)
 3. **Debugging differences**: Thread dumps show virtual threads differently
 4. **Monitoring changes**: Traditional thread pool metrics don't apply
 

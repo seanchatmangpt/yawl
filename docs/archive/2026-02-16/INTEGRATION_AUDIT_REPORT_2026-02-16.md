@@ -1,4 +1,4 @@
-# YAWL v5.2 Subsystem Integration Audit Report
+# YAWL v6.0.0 Subsystem Integration Audit Report
 **Date:** 2026-02-16
 **Auditor:** YAWL Integration Specialist
 **Scope:** Jakarta EE Migration, Dependencies, Integration Points, Security
@@ -438,7 +438,7 @@ Obsolete Dependencies Removed:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ YAWL v5.2 Integration Health Scorecard                  │
+│ YAWL v6.0.0 Integration Health Scorecard                  │
 ├─────────────────────────────────────────────────────────┤
 │ Category              Status    Score   Grade           │
 ├─────────────────────────────────────────────────────────┤
@@ -523,7 +523,7 @@ ls -la build/3rdParty/lib/ | grep -E "axis|bcprov|bcmail|saaj"
 
 ## 9. Conclusion
 
-**YAWL v5.2 Integration Subsystems Audit Summary:**
+**YAWL v6.0.0 Integration Subsystems Audit Summary:**
 
 ✅ **Strengths:**
 - MCP/A2A/Z.AI integration code is production-ready with zero stubs/mocks

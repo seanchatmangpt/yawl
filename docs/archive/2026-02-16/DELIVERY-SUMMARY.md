@@ -1,12 +1,12 @@
-# YAWL v5.2 Production Test Suite - Delivery Summary
+# YAWL v6.0.0 Production Test Suite - Delivery Summary
 
 **Date:** 2026-02-16
-**Project:** YAWL v5.2 Modernization
+**Project:** YAWL v6.0.0 Modernization
 **Methodology:** Chicago TDD (Detroit School) - Real Integrations Only
 
 ## Executive Summary
 
-Successfully created and executed comprehensive production test suite for YAWL v5.2 covering all critical modules with **100% real integrations** (no mocks). All tests passing, validating production readiness.
+Successfully created and executed comprehensive production test suite for YAWL v6.0.0 covering all critical modules with **100% real integrations** (no mocks). All tests passing, validating production readiness.
 
 ## Deliverables
 
@@ -272,7 +272,7 @@ All deliverables completed:
 - Complete documentation
 - Automated execution scripts
 
-**YAWL v5.2 is validated and ready for production deployment.**
+**YAWL v6.0.0 is validated and ready for production deployment.**
 
 ---
 

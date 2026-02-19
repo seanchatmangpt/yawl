@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation - Documentation Index
+# YAWL v6.0.0 Production Validation - Documentation Index
 
 **Validation Date:** 2026-02-16  
 **Status:** ❌ NOT PRODUCTION READY  

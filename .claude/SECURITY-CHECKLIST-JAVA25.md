@@ -1,4 +1,4 @@
-# Java 25 Security Checklist for YAWL v5.2
+# Java 25 Security Checklist for YAWL v6.0.0
 
 **Date**: Feb 2026 | **Version**: 1.0 | **Status**: Production Guidelines
 

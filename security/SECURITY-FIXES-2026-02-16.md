@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document details critical security fixes for **12 hardcoded credentials** and **1 unsafe deserialization vulnerability** in YAWL v5.2.
+This document details critical security fixes for **12 hardcoded credentials** and **1 unsafe deserialization vulnerability** in YAWL v6.0.0.
 
 **Severity**: CRITICAL (Priority 1)
 **Status**: FIXED

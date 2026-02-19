@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully integrated OpenTelemetry observability into YAWL v5.2, providing production-ready distributed tracing, metrics, and logs across all cloud platforms.
+Successfully integrated OpenTelemetry observability into YAWL v6.0.0, providing production-ready distributed tracing, metrics, and logs across all cloud platforms.
 
 **Implementation Date**: 2026-02-15
 **YAWL Version**: 5.2

@@ -1,4 +1,4 @@
-# YAWL v5.2 Cloud Deployment Runbooks
+# YAWL v6.0.0 Cloud Deployment Runbooks
 **Enterprise Production Operations Guide**  
 **Version**: 5.2  
 **Date**: 2026-02-15

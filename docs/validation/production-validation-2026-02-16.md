@@ -1,4 +1,4 @@
-# YAWL v5.2 Production Validation Report
+# YAWL v6.0.0 Production Validation Report
 **Date**: 2026-02-16  
 **Session**: claude/production-validation-01T1nsx5AkeRQcgbQ7jBnRBs  
 **Validator**: Production Validator Agent  
@@ -425,7 +425,7 @@ curl http://localhost:8080/yawl/health/live
 
 ```bash
 #!/bin/bash
-# Production environment configuration for YAWL v5.2
+# Production environment configuration for YAWL v6.0.0
 
 # Database (load from AWS Secrets Manager / Vault)
 export YAWL_JDBC_DRIVER="org.postgresql.Driver"

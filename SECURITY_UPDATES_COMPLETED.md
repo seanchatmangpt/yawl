@@ -3,7 +3,7 @@
 **Date:** 2026-02-15
 **Status:** ✅ COMPLETED
 **Priority:** BLOCKING - Production Critical
-**Version:** YAWL v5.2
+**Version:** YAWL v6.0.0
 
 ---
 

@@ -230,6 +230,45 @@ group "ci" {
 }
 
 // -----------------------------------------------------------------------------
+// Target: MCP-A2A Application (Spring Boot with MCP and A2A integration)
+// -----------------------------------------------------------------------------
+target "mcp-a2a-app" {
+  context    = "."
+  dockerfile = "docker/production/Dockerfile.mcp-a2a-app"
+  platforms  = ["linux/amd64", "linux/arm64"]
+  tags = [
+    "${REGISTRY}/yawl-mcp-a2a-app:latest",
+    "${REGISTRY}/yawl-mcp-a2a-app:${VERSION}",
+    "${REGISTRY}/yawl-mcp-a2a-app:${GIT_SHA}"
+  ]
+  cache-from = [
+    "type=registry,ref=${REGISTRY}/yawl-mcp-a2a-app:cache"
+  ]
+  cache-to   = ["type=registry,ref=${REGISTRY}/yawl-mcp-a2a-app:cache,mode=max"]
+  labels = {
+    "org.opencontainers.image.title"       = "YAWL MCP-A2A Application"
+    "org.opencontainers.image.description" = "Spring Boot application with MCP server and A2A agent integration"
+    "org.opencontainers.image.version"     = "${VERSION}"
+    "org.opencontainers.image.created"     = "${BUILD_DATE}"
+    "org.opencontainers.image.revision"    = "${GIT_SHA}"
+    "org.opencontainers.image.source"      = "https://github.com/yawlfoundation/yawl"
+    "org.opencontainers.image.vendor"      = "YAWL Foundation"
+    "org.opencontainers.image.licenses"    = "LGPL-3.0"
+    "environment"                          = "production"
+    "app"                                  = "mcp-a2a"
+    "ports.exposed"                        = "8080,8081,8082"
+    "ports.internal"                       = "8080/spring-boot,8081/mcp-server,8082/a2a-agent"
+  }
+  // Provenance and SBOM for marketplace submission
+  attest = [
+    "type=provenance,mode=max",
+    "type=sbom,generator=docker/scout-sbom-indexer:latest"
+  ]
+  // Optimized output
+  output = ["type=registry,compression=zstd,compression-level=9"]
+}
+
+// -----------------------------------------------------------------------------
 // Group: Quick (Fast local builds without cache)
 // -----------------------------------------------------------------------------
 group "quick" {

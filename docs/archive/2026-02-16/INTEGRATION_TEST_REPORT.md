@@ -244,7 +244,7 @@ jobs:
 **Error Message**:
 ```
 ❌ ERROR: Java 25 required, found Java 21
-   YAWL v5.2 requires Java 25 specifically
+   YAWL v6.0.0 requires Java 25 specifically
    Install: https://jdk.java.net/25/
 ```
 

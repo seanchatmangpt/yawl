@@ -1,4 +1,4 @@
-# YAWL v5.2 Code Review - Executive Summary
+# YAWL v6.0.0 Code Review - Executive Summary
 
 **Review Date:** 2026-02-16  
 **Review Type:** HYPER_STANDARDS Enforcement & Production Readiness Assessment  

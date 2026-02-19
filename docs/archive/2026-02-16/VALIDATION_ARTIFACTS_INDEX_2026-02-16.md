@@ -1,4 +1,4 @@
-# YAWL v5.2 - Validation Artifacts Index
+# YAWL v6.0.0 - Validation Artifacts Index
 **Date:** 2026-02-16  
 **Validator:** YAWL Production Validator Agent  
 **Session:** claude/enterprise-java-cloud-v9OlT
@@ -9,7 +9,7 @@
 
 ### Executive Summary
 
-All Priority 2 work items have been completed. YAWL v5.2 is **APPROVED FOR STAGING DEPLOYMENT** and **CONDITIONALLY APPROVED FOR PRODUCTION** pending environment-dependent validations (performance benchmarking, full integration testing in deployed environment).
+All Priority 2 work items have been completed. YAWL v6.0.0 is **APPROVED FOR STAGING DEPLOYMENT** and **CONDITIONALLY APPROVED FOR PRODUCTION** pending environment-dependent validations (performance benchmarking, full integration testing in deployed environment).
 
 **Status:** ✅ **COMPLETE**
 
@@ -516,7 +516,7 @@ Security:
 
 ### Overall Status
 
-**YAWL v5.2 Priority 2 Work:** ✅ **COMPLETE**
+**YAWL v6.0.0 Priority 2 Work:** ✅ **COMPLETE**
 
 **Production Readiness Score:** 9.0/10
 
@@ -616,7 +616,7 @@ sha256sum PRODUCTION_READINESS_CERTIFICATE_2026-02-16.md
 
 ## CONCLUSION
 
-All Priority 2 work items have been successfully completed. YAWL v5.2 is **APPROVED FOR STAGING DEPLOYMENT** and **PRODUCTION-READY** pending successful validation in a deployed staging environment.
+All Priority 2 work items have been successfully completed. YAWL v6.0.0 is **APPROVED FOR STAGING DEPLOYMENT** and **PRODUCTION-READY** pending successful validation in a deployed staging environment.
 
 **Status:** ✅ **COMPLETE**
 

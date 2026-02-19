@@ -5,14 +5,14 @@
 
 ## Context
 
-YAWL v5.2 modernizes the technology stack to leverage the latest Java and Spring Boot features. This decision enables cloud-native deployment, modern observability, and significant performance improvements.
+YAWL v6.0.0 modernizes the technology stack to leverage the latest Java and Spring Boot features. This decision enables cloud-native deployment, modern observability, and significant performance improvements.
 
 ### Technology Evolution
 
 **Historical Context:**
 - YAWL v4.x: Java 8, Tomcat 8, Java EE 7
 - YAWL v5.0: Java 11, Tomcat 9, Java EE 8
-- YAWL v5.2: Java 25, Spring Boot 3.4, Jakarta EE 10
+- YAWL v6.0.0: Java 25, Spring Boot 3.4, Jakarta EE 10
 
 ### Java 25 Features (LTS Release)
 
@@ -101,7 +101,7 @@ YAWL v5.2 modernizes the technology stack to leverage the latest Java and Spring
 
 ## Decision
 
-**YAWL v5.2 will adopt Spring Boot 3.4 and require Java 25 (LTS) as the minimum version.**
+**YAWL v6.0.0 will adopt Spring Boot 3.4 and require Java 25 (LTS) as the minimum version.**
 
 ### Architecture
 
@@ -399,7 +399,7 @@ public class JavaVersionValidator {
     static {
         if (Runtime.version().feature() < 25) {
             throw new IllegalStateException(
-                "YAWL v5.2 requires Java 25 or later. " +
+                "YAWL v6.0.0 requires Java 25 or later. " +
                 "Current version: " + Runtime.version()
             );
         }

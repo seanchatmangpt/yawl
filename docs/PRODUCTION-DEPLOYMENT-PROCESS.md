@@ -983,7 +983,7 @@ Wiki: https://wiki.yawlfoundation.org/deployment
 ### B. Template: Deployment Runbook
 
 ```markdown
-# Deployment Runbook: YAWL v5.2.0
+# Deployment Runbook: YAWL v6.0.0.0
 
 ## Pre-Deployment
 - [ ] Verify all readiness checks passed

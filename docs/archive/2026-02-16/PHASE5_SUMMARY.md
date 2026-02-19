@@ -1,4 +1,4 @@
-# YAWL v5.2 - Phase 5: XML Processing & Build System Refinement
+# YAWL v6.0.0 - Phase 5: XML Processing & Build System Refinement
 
 ## Status: PARTIALLY COMPLETE
 

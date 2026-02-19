@@ -2,7 +2,7 @@
 
 ## Context
 
-YAWL v5.2/v6.0 implements MCP (Model Context Protocol) for AI tool integration. This plan focuses **exclusively on rewriting MCP support for v1** to achieve full compliance with the latest standards.
+YAWL v6.0.0/v6.0 implements MCP (Model Context Protocol) for AI tool integration. This plan focuses **exclusively on rewriting MCP support for v1** to achieve full compliance with the latest standards.
 
 **Current State:**
 - **MCP**: Currently uses SDK 0.17.2, latest is 0.17.1 (no v1 yet)

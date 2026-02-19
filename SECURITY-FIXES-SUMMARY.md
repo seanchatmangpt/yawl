@@ -1,4 +1,4 @@
-# Security Fixes Summary - YAWL v5.2
+# Security Fixes Summary - YAWL v6.0.0
 
 **Date**: 2026-02-16
 **Session**: https://claude.ai/code/session_01T1nsx5AkeRQcgbQ7jBnRBs
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Successfully fixed **12 hardcoded credentials** and **1 critical unsafe deserialization vulnerability** in YAWL v5.2.
+Successfully fixed **12 hardcoded credentials** and **1 critical unsafe deserialization vulnerability** in YAWL v6.0.0.
 
 ### Impact
 - **Hardcoded Credentials**: 100% eliminated (9 instances removed)

@@ -1,6 +1,6 @@
 # Maven Quick Reference Card
 
-**YAWL v5.2 Maven Build System**
+**YAWL v6.0.0 Maven Build System**
 
 ---
 

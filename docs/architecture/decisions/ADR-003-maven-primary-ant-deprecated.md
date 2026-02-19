@@ -118,7 +118,7 @@ Problems:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   YAWL v5.2 (Current)                   │
+│                   YAWL v6.0.0 (Current)                   │
 │                                                          │
 │   Ant (Primary) ────────┐                               │
 │                         ├───> Compile, Test, Package    │

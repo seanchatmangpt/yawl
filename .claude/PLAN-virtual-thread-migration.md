@@ -1,5 +1,5 @@
 # Virtual Thread Migration Plan
-# YAWL v5.2 — No Capabilities Changed
+# YAWL v6.0.0 — No Capabilities Changed
 
 **Date**: February 2026 | **Branch**: claude/create-roadmap-Ysol8
 **Constraint**: Same behavior, same APIs, same error semantics — platform threads → virtual threads only.
