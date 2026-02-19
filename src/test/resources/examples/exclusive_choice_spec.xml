@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="exclusiveChoiceWorkflow">
+    <metaData>
+      <title>Exclusive Choice Workflow</title>
+      <creator>YAWL Z.ai Generator</creator>
+      <description>Exclusive choice pattern with conditional routing</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="choiceFlow" xsi:type="NetFactsType" isRootNet="true">
+      <name>Choice Flow</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="choiceTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="choiceTask">
+          <name>Choice Task</name>
+          <documentation>Determines which branch to execute based on conditions</documentation>
+          <flowsInto>
+            <nextElementRef id="branchA"/>
+            <predicate>priority == 'high'</predicate>
+            <isDefaultFlow/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchB"/>
+            <predicate>priority == 'medium'</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="branchC"/>
+            <predicate>priority == 'low'</predicate>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+        </task>
+        <task id="branchA">
+          <name>High Priority Branch</name>
+          <documentation>High priority processing</documentation>
+          <flowsInto>
+            <nextElementRef id="merge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="branchB">
+          <name>Medium Priority Branch</name>
+          <documentation>Medium priority processing</documentation>
+          <flowsInto>
+            <nextElementRef id="merge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="branchC">
+          <name>Low Priority Branch</name>
+          <documentation>Low priority processing</documentation>
+          <flowsInto>
+            <nextElementRef id="merge"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="merge">
+          <name>Merge Task</name>
+          <documentation>Merges all branches back together</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

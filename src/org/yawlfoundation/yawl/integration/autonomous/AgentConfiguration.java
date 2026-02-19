@@ -13,9 +13,15 @@
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
+import org.yawlfoundation.yawl.integration.autonomous.PartitionConfig;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistryClient;
+import org.yawlfoundation.yawl.integration.autonomous.conflict.ConflictResolver;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
+import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
 
 /**
  * Configuration for generic autonomous agents.
@@ -38,6 +44,13 @@ public final class AgentConfiguration {
     private final DiscoveryStrategy discoveryStrategy;
     private final EligibilityReasoner eligibilityReasoner;
     private final DecisionReasoner decisionReasoner;
+    private final PartitionConfig partitionConfig;
+    private final AgentRegistryClient registryClient;
+    private final HandoffProtocol handoffProtocol;
+    private final HandoffRequestService handoffService;
+    private final ConflictResolver conflictResolver;
+    private final YawlA2AClient a2aClient;
+    private final String id;
 
     private AgentConfiguration(Builder builder) {
         this.capability = builder.capability;
@@ -50,6 +63,13 @@ public final class AgentConfiguration {
         this.discoveryStrategy = builder.discoveryStrategy;
         this.eligibilityReasoner = builder.eligibilityReasoner;
         this.decisionReasoner = builder.decisionReasoner;
+        this.partitionConfig = builder.partitionConfig;
+        this.registryClient = builder.registryClient;
+        this.handoffProtocol = builder.handoffProtocol;
+        this.handoffService = builder.handoffService;
+        this.conflictResolver = builder.conflictResolver;
+        this.a2aClient = builder.a2aClient;
+        this.id = builder.id;
     }
 
     public AgentCapability getCapability() {
@@ -96,6 +116,34 @@ public final class AgentConfiguration {
         return decisionReasoner;
     }
 
+    public PartitionConfig getPartitionConfig() {
+        return partitionConfig;
+    }
+
+    public AgentRegistryClient getAgentRegistryClient() {
+        return registryClient;
+    }
+
+    public HandoffProtocol getHandoffProtocol() {
+        return handoffProtocol;
+    }
+
+    public HandoffRequestService getHandoffService() {
+        return handoffService;
+    }
+
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
+    }
+
+    public YawlA2AClient getA2AClient() {
+        return a2aClient;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -111,6 +159,13 @@ public final class AgentConfiguration {
         private DiscoveryStrategy discoveryStrategy;
         private EligibilityReasoner eligibilityReasoner;
         private DecisionReasoner decisionReasoner;
+        private PartitionConfig partitionConfig;
+        private AgentRegistryClient registryClient;
+        private HandoffProtocol handoffProtocol;
+        private HandoffRequestService handoffService;
+        private ConflictResolver conflictResolver;
+        private YawlA2AClient a2aClient;
+        private String id;
 
         private Builder() {
         }
@@ -162,6 +217,41 @@ public final class AgentConfiguration {
 
         public Builder decisionReasoner(DecisionReasoner decisionReasoner) {
             this.decisionReasoner = decisionReasoner;
+            return this;
+        }
+
+        public Builder partitionConfig(PartitionConfig partitionConfig) {
+            this.partitionConfig = partitionConfig;
+            return this;
+        }
+
+        public Builder registryClient(AgentRegistryClient registryClient) {
+            this.registryClient = registryClient;
+            return this;
+        }
+
+        public Builder handoffProtocol(HandoffProtocol handoffProtocol) {
+            this.handoffProtocol = handoffProtocol;
+            return this;
+        }
+
+        public Builder handoffService(HandoffRequestService handoffService) {
+            this.handoffService = handoffService;
+            return this;
+        }
+
+        public Builder conflictResolver(ConflictResolver conflictResolver) {
+            this.conflictResolver = conflictResolver;
+            return this;
+        }
+
+        public Builder a2AClient(YawlA2AClient a2aClient) {
+            this.a2aClient = a2aClient;
+            return this;
+        }
+
+        public Builder id(String id) {
+            this.id = id;
             return this;
         }
 

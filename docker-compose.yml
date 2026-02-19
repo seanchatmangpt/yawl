@@ -66,7 +66,6 @@ services:
         -XX:MaxRAMPercentage=75.0
         -XX:InitialRAMPercentage=50.0
         -XX:+UseZGC
-        -XX:+ZGenerational
         -XX:+UseStringDeduplication
         -XX:+ExitOnOutOfMemoryError
         -XX:+HeapDumpOnOutOfMemoryError
@@ -247,7 +246,6 @@ services:
         -XX:MaxRAMPercentage=75.0
         -XX:InitialRAMPercentage=50.0
         -XX:+UseZGC
-        -XX:+ZGenerational
         -XX:+UseStringDeduplication
         -XX:+ExitOnOutOfMemoryError
         -XX:+HeapDumpOnOutOfMemoryError

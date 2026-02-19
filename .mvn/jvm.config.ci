@@ -7,7 +7,7 @@
 
 # Java 25 Optimizations
 -XX:+UseCompactObjectHeaders     # 5-10% throughput, 10-20% memory
--XX:+UseZGC -XX:+ZGenerational   # Better pause times with generational
+-XX:+UseZGC                       # ZGC for low pause times
 -XX:+UseStringDeduplication
 
 # Tiered compilation balanced for CI

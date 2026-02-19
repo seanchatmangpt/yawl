@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ADR-025 Coordination Extensions for YAWL Schema 4.0
+  ~
+  ~ XML Schema extensions for agent-to-agent coordination and conflict resolution features.
+  ~ Extends YAWL_Schema4.0.xsd with coordination-specific elements and types.
+  ~
+  ~ @author YAWL Foundation
+  ~ @version 5.2
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:yawl="http://www.yawlfoundation.org/yawlschema"
+           xmlns:adr025="http://www.yawlfoundation.org/yawlschema/adr025"
+           targetNamespace="http://www.yawlfoundation.org/yawlschema/adr025"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+	<!-- Import base YAWL schema -->
+	<xs:import namespace="http://www.yawlfoundation.org/yawlschema"
+               schemaLocation="YAWL_Schema4.0.xsd"/>
+
+	<!--=======================================================================================
+		COORDINATION EXTENSIONS - NEW ELEMENT TYPES FOR ADR-025
+	=======================================================================================-->
+
+	<!-- Conflict Resolution Simple Types -->
+	<xs:simpleType name="ConflictResolutionStrategyType">
+		<xs:annotation>
+			<xs:documentation>Strategy identifiers for conflict resolution in multi-agent systems.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="majorityVote"/>
+			<xs:enumeration value="escalatingArbiter"/>
+			<xs:enumeration value="humanFallback"/>
+			<xs:enumeration value="hybrid"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ConflictSeverityType">
+		<xs:annotation>
+			<xs:documentation>Severity levels for conflicts in coordination scenarios.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="LOW"/>
+			<xs:enumeration value="MEDIUM"/>
+			<xs:enumeration value="HIGH"/>
+			<xs:enumeration value="CRITICAL"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="AgentCapabilityType">
+		<xs:annotation>
+			<xs:documentation>Capability identifiers for autonomous agents in YAWL.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="decisionMaking"/>
+			<xs:enumeration value="resourceAllocation"/>
+			<xs:enumeration value="conflictResolution"/>
+			<xs:enumeration value="monitoring"/>
+			<xs:enumeration value="optimization"/>
+			<xs:enumeration value="workflowOrchestration"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="CoordinationModeType">
+		<xs:annotation>
+			<xs:documentation>Coordination modes for agent interactions.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="hierarchical"/>
+			<xs:enumeration value="peerToPeer"/>
+			<xs:enumeration value="marketBased"/>
+			<xs:enumeration value="contractNet"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!--=======================================================================================
+		COMPLEX TYPES FOR COORDINATION EXTENSIONS
+	=======================================================================================-->
+
+	<!-- Agent Configuration Type -->
+	<xs:complexType name="AgentConfigType">
+		<xs:annotation>
+			<xs:documentation>Configuration for autonomous agents in YAWL workflows.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="agentId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="endpoint" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="capabilities" type="adr025:AgentCapabilityType" minOccurs="1" maxOccurs="unbounded"/>
+			<xs:element name="coordinationMode" type="adr025:CoordinationModeType" minOccurs="0"/>
+			<xs:element name="heartbeatInterval" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="timeout" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="metadata" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Conflict Resolution Configuration Type -->
+	<xs:complexType name="ConflictResolutionConfigType">
+		<xs:annotation>
+			<xs:documentation>Configuration for conflict resolution in multi-agent workflows.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="strategy" type="adr025:ConflictResolutionStrategyType" minOccurs="1"/>
+			<xs:element name="severityThreshold" type="adr025:ConflictSeverityType" minOccurs="0"/>
+			<xs:element name="arbiter" type="xs:NCName" minOccurs="0"/>
+			<xs:element name="escalationTimeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="votingWeight" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="fallbackStrategy" type="adr025:ConflictResolutionStrategyType" minOccurs="0"/>
+			<xs:element name="resolutionTimeout" type="xs:duration" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Binding Configuration Type -->
+	<xs:complexType name="AgentBindingType">
+		<xs:annotation>
+			<xs:documentation>Binding configuration for agents to specific workflow elements.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="taskId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="agentId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="bindingType" type="xs:string" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="primary"/>
+						<xs:enumeration value="secondary"/>
+						<xs:enumeration value="backup"/>
+						<xs:enumeration value="shared"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="loadBalancing" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="failoverEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="priority" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="capabilities" type="adr025:AgentCapabilityType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- A2A (Agent-to-Agent) Communication Type -->
+	<xs:complexType name="A2ACommunicationType">
+		<xs:annotation>
+			<xs:documentation>Configuration for agent-to-agent communication protocols.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="protocol" type="xs:string" minOccurs="0"/>
+			<xs:element name="encoding" type="xs:string" minOccurs="0"/>
+			<xs:element name="compressionEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="encryptionEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="maxMessageSize" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="timeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="retryPolicy" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Coordination Service Configuration Type -->
+	<xs:complexType name="CoordinationServiceConfigType">
+		<xs:annotation>
+			<xs:documentation>Configuration for coordination services in YAWL.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="serviceName" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="maxConcurrentRequests" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="cacheSize" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="cacheTimeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="monitoringEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="loggingEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="telemetryEnabled" type="xs:boolean" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		EXTENSION POINTS FOR EXISTING YAWL TYPES
+	=======================================================================================-->
+
+	<!-- Extension to DecompositionFactsType for coordination -->
+	<xs:complexType name="DecompositionCoordinationFactsType">
+		<xs:complexContent>
+			<xs:extension base="yawl:DecompositionFactsType">
+				<xs:sequence>
+					<xs:element name="coordination" type="adr025:CoordinationConfigFactsType" minOccurs="0"/>
+					<xs:element name="agentBindings" type="adr025:AgentBindingSetFactsType" minOccurs="0"/>
+					<xs:element name="conflictResolution" type="adr025:ConflictResolutionConfigType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- Extension to ExternalTaskFactsType for agent binding -->
+	<xs:complexType name="ExternalTaskCoordinationFactsType">
+		<xs:complexContent>
+			<xs:extension base="yawl:ExternalTaskFactsType">
+				<xs:sequence>
+					<xs:element name="agentBinding" type="adr025:AgentBindingType" minOccurs="0"/>
+					<xs:element name="conflictResolution" type="adr025:ConflictResolutionConfigType" minOccurs="0"/>
+					<xs:element name="a2aCommunication" type="adr025:A2ACommunicationType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- Coordination Configuration Facts Type -->
+	<xs:complexType name="CoordinationConfigFactsType">
+		<xs:sequence>
+			<xs:element name="coordinationMode" type="adr025:CoordinationModeType" minOccurs="0"/>
+			<xs:element name="timeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="retryAttempts" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="consensusProtocol" type="xs:string" minOccurs="0"/>
+			<xs:element name="monitoring" type="adr025:CoordinationServiceConfigType" minOccurs="0"/>
+			<xs:element name="telemetry" type="adr025:CoordinationServiceConfigType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Binding Set Facts Type -->
+	<xs:complexType name="AgentBindingSetFactsType">
+		<xs:sequence>
+			<xs:element name="binding" type="adr025:AgentBindingType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueBinding">
+			<xs:selector xpath="adr025:binding"/>
+			<xs:field xpath="@taskId"/>
+			<xs:field xpath="@agentId"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		NEW TOP-LEVEL ELEMENTS FOR COORDINATION CONFIGURATION
+	=======================================================================================-->
+
+	<!-- Coordination Configuration Root Element -->
+	<xs:element name="coordinationConfiguration" type="adr025:CoordinationConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Root element for ADR-025 coordination configuration.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Coordination Configuration Type -->
+	<xs:complexType name="CoordinationConfigurationType">
+		<xs:sequence>
+			<xs:element name="version" type="xs:string" fixed="1.0"/>
+			<xs:element name="agents" type="adr025:AgentSetFactsType" minOccurs="0"/>
+			<xs:element name="services" type="adr025:CoordinationServiceSetFactsType" minOccurs="0"/>
+			<xs:element name="protocols" type="adr025:ProtocolSetFactsType" minOccurs="0"/>
+			<xs:element name="globalSettings" type="adr025:GlobalCoordinationSettingsType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Set Facts Type -->
+	<xs:complexType name="AgentSetFactsType">
+		<xs:sequence>
+			<xs:element name="agent" type="adr025:AgentConfigType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueAgent">
+			<xs:selector xpath="adr025:agent"/>
+			<xs:field xpath="adr025:agentId"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Coordination Service Set Facts Type -->
+	<xs:complexType name="CoordinationServiceSetFactsType">
+		<xs:sequence>
+			<xs:element name="service" type="adr025:CoordinationServiceConfigType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueService">
+			<xs:selector xpath="adr025:service"/>
+			<xs:field xpath="adr025:serviceName"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Protocol Set Facts Type -->
+	<xs:complexType name="ProtocolSetFactsType">
+		<xs:sequence>
+			<xs:element name="protocol" type="adr025:ProtocolType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueProtocol">
+			<xs:selector xpath="adr025:protocol"/>
+			<xs:field xpath="adr025:name"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Protocol Type -->
+	<xs:complexType name="ProtocolType">
+		<xs:sequence>
+			<xs:element name="name" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="encoding" type="xs:string" minOccurs="0"/>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+			<xs:element name="features" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Global Coordination Settings Type -->
+	<xs:complexType name="GlobalCoordinationSettingsType">
+		<xs:sequence>
+			<xs:element name="defaultTimeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="maxConcurrentRequests" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="cacheSize" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="defaultCoordinationMode" type="adr025:CoordinationModeType" minOccurs="0"/>
+			<xs:element name="monitoringEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="loggingEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="telemetryEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="security" type="adr025:CoordinationSecurityType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Coordination Security Type -->
+	<xs:complexType name="CoordinationSecurityType">
+		<xs:sequence>
+			<xs:element name="authenticationEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="authorizationEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="encryptionEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="auditEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="trustedAgents" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		INTEGRATION EXTENSION: OVERRIDE EXISTING TYPES TO INCLUDE COORDINATION
+	=======================================================================================-->
+
+	<!-- Override decomposition type to include coordination -->
+	<xs:element name="decomposition" type="adr025:DecompositionCoordinationFactsType" substitutionGroup="yawl:decomposition"/>
+
+	<!-- Override external task type to include coordination -->
+	<xs:element name="task" type="adr025:ExternalTaskCoordinationFactsType" substitutionGroup="yawl:task"/>
+
+</xs:schema>

@@ -53,11 +53,7 @@
             <version>${mcp.version}</version>
         </dependency>
 
-        <!-- A2A SDK - JARs in legacy/ant-build/3rdParty/lib/ require local Maven install:
-             mvn install:install-file -Dfile=legacy/ant-build/3rdParty/lib/a2a-java-sdk-spec-1.0.0.Alpha2.jar \
-               -DgroupId=io.anthropic -DartifactId=a2a-java-sdk-spec -Dversion=${a2a.version} -Dpackaging=jar
-             Repeat for: spec, common, server-common, transport-rest, http-client
-             After installation, uncomment these dependencies and remove source excludes.
+        <!-- A2A SDK - Installed from legacy/ant-build/3rdParty/lib/ -->
         <dependency>
             <groupId>io.anthropic</groupId>
             <artifactId>a2a-java-sdk-spec</artifactId>
@@ -83,7 +79,36 @@
             <artifactId>a2a-java-sdk-http-client</artifactId>
             <version>${a2a.version}</version>
         </dependency>
-        -->
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-client</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-client-transport-jsonrpc</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-client-transport-rest</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-client-transport-spi</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-jsonrpc-common</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.anthropic</groupId>
+            <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
+            <version>${a2a.version}</version>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>
@@ -239,6 +264,7 @@
                     <excludes>
                         <!-- OpenTelemetry config requires OTEL SDK jars not locally cached -->
                         <exclude>**/observability/OpenTelemetryConfig.java</exclude>
+
                         <!-- =====================================================================
                              A2A SDK Dependencies - JARs in legacy/ant-build/3rdParty/lib/ require
                              local Maven install. After running install commands (see A2A deps above),
@@ -253,10 +279,11 @@
                         <exclude>**/autonomous/**</exclude>
 
                         <!-- =====================================================================
-                             ZAI integration - depends on orderfulfillment.Pm4PyClient and
-                             processmining.EventLogExporter which require A2A SDK
+                             ZAI integration - ZaiFunctionService depends on Pm4Py Python library
+                             ZaiService, ZaiHttpClient, and ZaiDecisionReasoner have no such dependency
+                             and are included in the build for AI-powered workflow capabilities.
                              ===================================================================== -->
-                        <exclude>**/zai/**</exclude>
+                        <exclude>**/zai/ZaiFunctionService.java</exclude>
                         <exclude>**/processmining/**</exclude>
 
                         <!-- =====================================================================
@@ -280,13 +307,15 @@
                              UnsupportedOperationException. The official MCP SDK 0.17.2 provides the
                              real implementations used directly by YawlMcpServer and Spring config.
                              Exclude these legacy bridge files to avoid classpath conflicts.
+
+                             Note: ZaiFunctionService is NOT excluded - it's a YAWL-specific adapter
+                             that throws UnsupportedOperationException when ZAI SDK is not available.
                              ===================================================================== -->
                         <exclude>**/mcp/sdk/McpServer.java</exclude>
                         <exclude>**/mcp/sdk/McpServerFeatures.java</exclude>
                         <exclude>**/mcp/sdk/McpSyncServer.java</exclude>
                         <exclude>**/mcp/sdk/McpSyncServerExchange.java</exclude>
                         <exclude>**/mcp/sdk/StdioServerTransportProvider.java</exclude>
-                        <exclude>**/mcp/sdk/ZaiFunctionService.java</exclude>
 
                         <!-- =====================================================================
                              MCP ZAI function service in mcp/zai/ - depends on zai.ZaiFunctionService
@@ -302,27 +331,26 @@
                         <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
 
                         <!-- =====================================================================
-                             YawlMcpServer references ZaiFunctionService - exclude until ZAI is available
+                             Packages that depend on zai.ZaiFunctionService (excluded above)
                              ===================================================================== -->
-                        <exclude>**/mcp/YawlMcpServer.java</exclude>
-
-                        <!-- =====================================================================
-                             MCP spec classes that reference ZaiFunctionService
-                             ===================================================================== -->
-                        <exclude>**/mcp/spec/YawlToolSpecifications.java</exclude>
+                        <exclude>**/orderfulfillment/**</exclude>
+                        <exclude>**/autonomous/**</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/observability/**</testInclude>
                         <testInclude>**/mcp/**</testInclude>
                         <testInclude>**/spiffe/**</testInclude>
                         <testInclude>**/dedup/**</testInclude>
+                        <!-- a2a tests excluded - sources excluded from build -->
+                        <testInclude>**/zai/**</testInclude>
                     </testIncludes>
                     <testExcludes>
-                        <!-- Exclude test files for A2A/autonomous packages (source excluded above) -->
+                        <!-- Exclude test files for packages with excluded sources -->
                         <testExclude>**/a2a/**</testExclude>
                         <testExclude>**/orderfulfillment/**</testExclude>
                         <testExclude>**/autonomous/**</testExclude>
-                        <testExclude>**/zai/**</testExclude>
+                        <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
+                        <testExclude>**/zai/ZaiFunctionServiceTest.java</testExclude>
                         <testExclude>**/processmining/**</testExclude>
                         <testExclude>**/SelfPlayTest.java</testExclude>
                         <!-- IntegrationTestSuite references excluded classes -->
@@ -342,13 +370,12 @@
                         <testExclude>**/*IT.java</testExclude>
                         <!-- MCP ZAI tests depend on excluded sources -->
                         <testExclude>**/mcp/zai/**</testExclude>
-                        <!-- YawlMcpServerTest references excluded YawlMcpServer source -->
-                        <testExclude>**/mcp/YawlMcpServerTest.java</testExclude>
-                        <!-- McpProtocolTest and McpPerformanceTest reference excluded YawlMcpServer -->
-                        <testExclude>**/mcp/McpProtocolTest.java</testExclude>
-                        <testExclude>**/mcp/McpPerformanceTest.java</testExclude>
-                        <!-- McpTestSuite references excluded YawlMcpServerTest -->
                         <testExclude>**/mcp/McpTestSuite.java</testExclude>
+                        <testExclude>**/mcp/McpProtocolTest.java</testExclude>
+                        <testExclude>**/mcp/YawlMcpServerTest.java</testExclude>
+                        <testExclude>**/mcp/McpPerformanceTest.java</testExclude>
+                        <!-- MCP tests that depend on excluded logging classes -->
+                        <testExclude>**/mcp/McpLoggingHandlerTest.java</testExclude>
                     </testExcludes>
                 </configuration>
             </plugin>
@@ -356,12 +383,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Exclude packages with missing source dependencies (A2A SDK) -->
+                    <!-- Exclude packages with missing source dependencies -->
                     <excludes>
-                        <exclude>**/a2a/**</exclude>
                         <exclude>**/orderfulfillment/**</exclude>
                         <exclude>**/autonomous/**</exclude>
-                        <exclude>**/zai/**</exclude>
+                        <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
+                        <exclude>**/zai/ZaiFunctionServiceTest.java</exclude>
                         <exclude>**/processmining/**</exclude>
                         <exclude>**/test/SelfPlayTest.java</exclude>
 
@@ -385,11 +412,12 @@
 
                         <!-- MCP ZAI tests depend on excluded mcp/zai/ sources -->
                         <exclude>**/mcp/zai/**</exclude>
-                        <!-- MCP tests referencing excluded YawlMcpServer -->
-                        <exclude>**/mcp/McpProtocolTest.java</exclude>
-                        <exclude>**/mcp/McpPerformanceTest.java</exclude>
+                        <!-- MCP tests that depend on excluded logging classes -->
+                        <exclude>**/mcp/McpLoggingHandlerTest.java</exclude>
                         <exclude>**/mcp/McpTestSuite.java</exclude>
+                        <exclude>**/mcp/McpProtocolTest.java</exclude>
                         <exclude>**/mcp/YawlMcpServerTest.java</exclude>
+                        <exclude>**/mcp/McpPerformanceTest.java</exclude>
                     </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

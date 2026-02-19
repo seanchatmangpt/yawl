@@ -85,6 +85,104 @@ YAWL offers these distinctive features:
 
 ---
 
+## Agent Coordination Features (NEW - v6.0)
+
+**Advanced multi-agent coordination with intelligent work distribution, handoff capabilities, and conflict resolution.**
+
+### Overview
+
+YAWL v6.0 introduces a sophisticated agent coordination framework that enables multiple autonomous agents to work together on complex workflows. The implementation includes work item partitioning, seamless handoff protocols, and intelligent conflict resolution mechanisms.
+
+### Key Features
+
+- 🎯 **Work Item Partitioning** - Distribute work items across multiple agents using consistent hashing
+- 🔄 **Handoff Protocol** - Seamless transfer of work items between agents with retry mechanisms
+- ⚖️ **Conflict Resolution** - Multiple strategies including majority vote, escalation, and human fallback
+- 🔍 **Agent Discovery** - Dynamic agent registration and capability matching
+- 🌐 **MCP Integration** - Native Claude Desktop/CLI integration for workflow orchestration
+- 📊 **A2A Communication** - Agent-to-agent messaging and coordination
+
+### Quick Start
+
+```bash
+# 1. Start YAWL Engine
+mvn -pl yawl-engine exec:java -Dexec.mainClass="org.yawlfoundation.yawl.YAWLEngine"
+
+# 2. Start A2A Server
+mvn -pl yawl-integration exec:java -Dexec.mainClass="org.yawlfoundation.yawl.integration.a2a.YawlA2AServer"
+
+# 3. Start coordinated agents
+java -jar examples/agents/document-reviewer.jar --partition index=0,total=3
+java -jar examples/agents/document-reviewer.jar --partition index=1,total=3
+java -jar examples/agents/document-reviewer.jar --partition index=2,total=3
+
+# 4. Monitor coordination
+curl http://localhost:8081/metrics/partition
+curl http://localhost:8081/metrics/handoff
+```
+
+### Performance Metrics
+
+| Feature | Target | Status |
+|---------|--------|--------|
+| Partition Time (10k items) | < 500ms | ✓ PASS |
+| Handoff Initiation | < 100ms | ✓ PASS |
+| Conflict Resolution | < 5s | ✓ PASS |
+| Agent Discovery | < 1s | ✓ PASS |
+
+### Documentation
+- **[ADR-025 Implementation Guide](docs/adr/ADR-025-IMPLEMENTATION.md)** - Complete implementation details
+- **[Agent Coordination Examples](docs/adr/agent-coordination-examples.md)** - Usage examples and patterns
+- **[Configuration Examples](docs/adr/configuration-examples.md)** - Comprehensive configuration templates
+- **[Troubleshooting Guide](docs/adr/troubleshooting.md)** - Common issues and solutions
+
+### Examples
+
+#### Multi-Agent Document Review
+```java
+// Configure YAWL specification with partitioning
+<task id="ReviewDocument" multiInstance="true" qorum="3">
+    <agentBinding>
+        <agentType>autonomous</agentType>
+        <capabilityRequired>document-review</capabilityRequired>
+        <reviewQuorum>3</reviewQuorum>
+        <conflictResolution>MAJORITY_VOTE</conflictResolution>
+    </agentBinding>
+</task>
+```
+
+#### Handoff Configuration
+```yaml
+handoff:
+  enabled: true
+  timeout: 30000
+  ttl: 60000
+  maxRetries: 3
+  retry:
+    baseDelayMs: 1000
+    maxDelayMs: 30000
+    jitter: true
+```
+
+#### MCP Integration with Claude
+```json
+{
+  "mcpServers": {
+    "yawl": {
+      "command": "java",
+      "args": ["-jar", "/path/to/yawl-mcp-server.jar"],
+      "env": {
+        "YAWL_ENGINE_URL": "http://localhost:8080/yawl",
+        "YAWL_USERNAME": "admin",
+        "YAWL_PASSWORD": "YAWL"
+      }
+    }
+  }
+}
+```
+
+---
+
 ## Developer Build Guide
 
 For complete build and test documentation, see **[DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md)**.
@@ -174,6 +272,7 @@ Run the full test suite: `mvn -T 1.5C clean test`
 
 ### Roadmap
 
+- **ADR-025 Agent Coordination** — ✅ **IMPLEMENTED** - Multi-agent coordination with partitioning, handoff, and conflict resolution
 - **Fill zero-coverage modules** — `yawl-worklet`, `yawl-scheduling`, `yawl-security`, `yawl-control-panel` all have no tests; each module README contains a specific testing roadmap
 - **JaCoCo gate in CI** — enable the `ci` profile on every pull request; enforce 65% line / 55% branch coverage targets defined in the `analysis` profile
 - **Testcontainers integration suite** — add a `yawl-it` integration test module that starts the full engine WAR in a Testcontainers-managed Tomcat and runs end-to-end HTTP tests

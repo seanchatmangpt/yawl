@@ -222,6 +222,50 @@ public class ZaiService {
         );
     }
 
+    /**
+     * Get the system prompt.
+     *
+     * @return the current system prompt, or null if not set
+     */
+    public String getSystemPrompt() {
+        return systemPrompt;
+    }
+
+    /**
+     * Get conversation history.
+     *
+     * @return the conversation history list
+     */
+    public List<Map<String, String>> getConversationHistory() {
+        return conversationHistory;
+    }
+
+    /**
+     * Get the underlying HTTP client.
+     *
+     * @return the HTTP client instance
+     */
+    public ZaiHttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    /**
+     * Get the default model being used.
+     *
+     * @return the default model identifier
+     */
+    public String getDefaultModel() {
+        return defaultModel();
+    }
+
+    /**
+     * Shutdown the service and release resources.
+     */
+    public void shutdown() {
+        clearHistory();
+        initialized = false;
+    }
+
     private Map<String, String> mapOf(String... keyValues) {
         Map<String, String> map = new HashMap<>();
         for (int i = 0; i < keyValues.length - 1; i += 2) {

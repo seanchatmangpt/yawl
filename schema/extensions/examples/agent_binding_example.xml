@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Agent Binding Configuration Example
+  ~
+  ~ Example XML demonstrating agent binding features with various binding types,
+  * load balancing, failover, and policies.
+  *
+  * @author YAWL Foundation
+  * @version 5.2
+ -->
+
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                 xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+                 xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+                 version="4.0">
+
+    <specification uri="http://example.com/workflows/agent-binding-demo">
+        <name>Agent Binding Demo</name>
+        <documentation>Example workflow demonstrating agent binding configurations</documentation>
+        <metaData>
+            <title>Agent Binding Configuration Example</title>
+            <creator>YAWL Foundation</creator>
+            <subject>ADR-025 Agent Binding</subject>
+            <description>Demonstration of various agent binding patterns</description>
+            <version>5.2.0</version>
+            <status>Example</status>
+        </metaData>
+
+        <!-- Agent binding configuration root -->
+        <agentBindingConfiguration>
+            <version>1.0</version>
+
+            <!-- Agent profiles -->
+            <agents>
+                <agent>
+                    <agentId>classifier-agent-1</agentId>
+                    <name>Primary Classification Agent</name>
+                    <capabilities>
+                        <capability>
+                            <capability>decisionMaking</capability>
+                            <version>1.2</version>
+                            <proficiency>0.95</proficiency>
+                            <metadata>ML-based classification model</metadata>
+                        </capability>
+                        <capability>
+                            <capability>classification</capability>
+                            <version>1.0</version>
+                            <proficiency>0.98</proficiency>
+                        </capability>
+                    </capabilities>
+                    <capacity>10</capacity>
+                    <currentLoad>0.3</currentLoad>
+                    <location>http://classifier1.example.com</location>
+                    <version>1.2.0</version>
+                    <metadata>Production classification agent</metadata>
+                    <healthStatus>active</healthStatus>
+                </agent>
+
+                <agent>
+                    <agentId>classifier-agent-2</agentId>
+                    <name>Secondary Classification Agent</name>
+                    <capabilities>
+                        <capability>
+                            <capability>decisionMaking</capability>
+                            <version>1.1</version>
+                            <proficiency>0.92</proficiency>
+                        </capability>
+                        <capability>
+                            <capability>classification</capability>
+                            <version>1.0</version>
+                            <proficiency>0.94</proficiency>
+                        </capability>
+                    </capabilities>
+                    <capacity>8</capacity>
+                    <currentLoad>0.2</currentLoad>
+                    <location>http://classifier2.example.com</location>
+                    <version>1.1.5</version>
+                    <metadata>Standby classification agent</metadata>
+                    <healthStatus>standby</healthStatus>
+                </agent>
+
+                <agent>
+                    <agentId>processor-agent-1</agentId>
+                    <name>Primary Processing Agent</name>
+                    <capabilities>
+                        <capability>
+                            <capability>resourceAllocation</capability>
+                            <version>2.0</version>
+                            <proficiency>0.99</proficiency>
+                        </capability>
+                        <capability>
+                            <capability>optimization</capability>
+                            <version>1.5</version>
+                            <proficiency>0.97</proficiency>
+                        </capability>
+                    </capabilities>
+                    <capacity>5</capacity>
+                    <currentLoad>0.8</currentLoad>
+                    <location>http://processor1.example.com</location>
+                    <version>2.1.0</version>
+                    <metadata>High-performance processing agent</metadata>
+                    <healthStatus>busy</healthStatus>
+                </agent>
+
+                <agent>
+                    <agentId>processor-agent-2</agentId>
+                    <name>Secondary Processing Agent</name>
+                    <capabilities>
+                        <capability>
+                            <capability>resourceAllocation</capability>
+                            <version>2.0</version>
+                            <proficiency>0.95</proficiency>
+                        </capability>
+                        <capability>
+                            <capability>optimization</capability>
+                            <version>1.5</version>
+                            <proficiency>0.96</proficiency>
+                        </capability>
+                    </capabilities>
+                    <capacity>4</capacity>
+                    <currentLoad>0.1</currentLoad>
+                    <location>http://processor2.example.com</location>
+                    <version>2.0.5</version>
+                    <metadata>Backup processing agent</metadata>
+                    <healthStatus>active</healthStatus>
+                </agent>
+
+                <agent>
+                    <agentId>arbiter-agent</agentId>
+                    <name>Conflict Resolution Arbiter</name>
+                    <capabilities>
+                        <capability>
+                            <capability>conflictResolution</capability>
+                            <version>1.0</version>
+                            <proficiency>1.0</proficiency>
+                        </capability>
+                    </capabilities>
+                    <capacity>1</capacity>
+                    <currentLoad>0.0</currentLoad>
+                    <location>http://arbiter.example.com</location>
+                    <version>1.0.0</version>
+                    <metadata>Specialized conflict resolution agent</metadata>
+                    <healthStatus>active</healthStatus>
+                </agent>
+            </agents>
+
+            <!-- Binding policies -->
+            <policies>
+                <policy>
+                    <name>ClassificationPolicy</name>
+                    <description>Policy for classification task binding</description>
+                    <rules>
+                        <bindingRule>
+                            <condition>task.type == 'classification'</condition>
+                            <action>bindToLeastLoaded</action>
+                            <weight>0.8</weight>
+                            <enabled>true</enabled>
+                        </bindingRule>
+                        <bindingRule>
+                            <condition>agent.healthStatus == 'active'</condition>
+                            <action>considerForBinding</action>
+                            <weight>1.0</weight>
+                            <enabled>true</enabled>
+                        </bindingRule>
+                        <bindingRule>
+                            <condition>task.priority > 5</condition>
+                            <action>bindToHighestCapability</action>
+                            <weight>0.9</weight>
+                            <enabled>true</enabled>
+                        </bindingRule>
+                    </rules>
+                    <priorities>
+                        <priority>
+                            <factor>proficiency</factor>
+                            <weight>0.7</weight>
+                            <direction>descending</direction>
+                        </priority>
+                        <priority>
+                            <factor>currentLoad</factor>
+                            <weight>0.3</weight>
+                            <direction>ascending</direction>
+                        </priority>
+                    </priorities>
+                </policy>
+
+                <policy>
+                    <name>ProcessingPolicy</name>
+                    <description>Policy for processing task binding</description>
+                    <rules>
+                        <bindingRule>
+                            <condition>task.type == 'processing'</condition>
+                            <action>loadBalance</action>
+                            <weight>1.0</weight>
+                            <enabled>true</enabled>
+                        </bindingRule>
+                        <bindingRule>
+                            <condition>task.requiresOptimization == true</condition>
+                            <action>bindToOptimizationCapability</action>
+                            <weight>0.9</weight>
+                            <enabled>true</enabled>
+                        </bindingRule>
+                    </rules>
+                    <priorities>
+                        <priority>
+                            <factor>capacity</factor>
+                            <weight>0.5</weight>
+                            <direction>descending</direction>
+                        </priority>
+                        <priority>
+                            <factor>responseTime</factor>
+                            <weight>0.5</weight>
+                            <direction>ascending</direction>
+                        </priority>
+                    </priorities>
+                </policy>
+            </policies>
+
+            <!-- Binding manager configuration -->
+            <managerConfig>
+                <maxBindings>1000</maxBindings>
+                <refreshInterval>PT1M</refreshInterval>
+                <cacheTimeout>PT5M</cacheTimeout>
+                <monitoringEnabled>true</monitoringEnabled>
+                <telemetryEnabled>true</telemetryEnabled>
+                <loggingEnabled>true</loggingEnabled>
+                <healthCheck>heartbeat</healthCheck>
+            </managerConfig>
+        </agentBindingConfiguration>
+
+        <decomposition id="binding-demo-net">
+            <name>Agent Binding Demo Net</name>
+            <documentation>Demonstration of various binding patterns</documentation>
+
+            <inputParam name="data" type="string" isUntyped="true"/>
+            <outputParam name="result" type="string" isUntyped="true"/>
+
+            <processControlElements>
+                <inputCondition id="start">
+                    <name>Start</name>
+                </inputCondition>
+
+                <!-- Task with static binding -->
+                <task id="initial-classification" name="Initial Classification">
+                    <name>Initial Classification</name>
+                    <documentation>Static binding to primary classification agent</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <agentBinding>
+                        <taskId>initial-classification</taskId>
+                        <bindingType>static</bindingType>
+                        <agentSelector>capabilityBased</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>classifier-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>1.0</weight>
+                                <capabilities>
+                                    <capability>
+                                        <capability>decisionMaking</capability>
+                                        <proficiency>0.95</proficiency>
+                                    </capability>
+                                </capabilities>
+                            </agent>
+                        </agents>
+                        <timeout>PT1M</timeout>
+                        <metadata>Static binding to primary classifier</metadata>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="dynamic-classification"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Task with dynamic binding -->
+                <task id="dynamic-classification" name="Dynamic Classification">
+                    <name>Dynamic Classification</name>
+                    <documentation>Dynamic binding with load balancing</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <agentBinding>
+                        <taskId>dynamic-classification</taskId>
+                        <bindingType>dynamic</bindingType>
+                        <agentSelector>leastLoaded</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>classifier-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>0.6</weight>
+                            </agent>
+                            <agent>
+                                <agentId>classifier-agent-2</agentId>
+                                <priority>2</priority>
+                                <weight>0.4</weight>
+                            </agent>
+                        </agents>
+                        <loadBalancer>
+                            <strategy>leastLoaded</strategy>
+                            <metric>queueSize</metric>
+                            <threshold>0.8</threshold>
+                            <checkInterval>PT10S</checkInterval>
+                            <healthCheck>heartbeat</healthCheck>
+                            <stickySessions>false</stickySessions>
+                        </loadBalancer>
+                        <failover>
+                            <enabled>true</enabled>
+                            <detectionTime>PT15S</detectionTime>
+                            <switchTime>PT5S</switchTime>
+                            <backoffStrategy>exponential</backoffStrategy>
+                            <failoverAgents>
+                                <agent>
+                                    <agentId>classifier-agent-2</agentId>
+                                    <priority>1</priority>
+                                </agent>
+                            </failoverAgents>
+                        </failover>
+                        <timeout>PT2M</timeout>
+                        <retryCount>3</retryCount>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="decision-point"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Condition with adaptive binding -->
+                <condition id="decision-point" name="Decision Point">
+                    <name>Decision Point</name>
+                    <documentation>Adaptive binding for critical decisions</documentation>
+
+                    <agentBinding>
+                        <taskId>decision-point</taskId>
+                        <bindingType>adaptive</bindingType>
+                        <agentSelector>weighted</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>classifier-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>0.7</weight>
+                            </agent>
+                            <agent>
+                                <agentId>arbiter-agent</agentId>
+                                <priority>2</priority>
+                                <weight>0.3</weight>
+                            </agent>
+                        </agents>
+                        <bindingConstraints>
+                            <timeWindow>PT30M</timeWindow>
+                            <capabilityConstraint>decisionMaking</capabilityConstraint>
+                            <priorityConstraint>1</priorityConstraint>
+                        </bindingConstraints>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="primary-processing"/>
+                    </flowsInto>
+
+                    <flowsInto>
+                        <nextElementRef id="backup-processing"/>
+                        <predicate ordering="1">
+                            XQuery="true()"
+                        </predicate>
+                    </flowsInto>
+                </condition>
+
+                <!-- Task with load balanced binding -->
+                <task id="primary-processing" name="Primary Processing">
+                    <name>Primary Processing</name>
+                    <documentation>Load balanced processing with multiple agents</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <agentBinding>
+                        <taskId>primary-processing</taskId>
+                        <bindingType>loadBalanced</bindingType>
+                        <agentSelector>roundRobin</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>processor-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>0.6</weight>
+                            </agent>
+                            <agent>
+                                <agentId>processor-agent-2</agentId>
+                                <priority>2</priority>
+                                <weight>0.4</weight>
+                            </agent>
+                        </agents>
+                        <loadBalancer>
+                            <strategy>roundRobin</strategy>
+                            <metric>queueSize</metric>
+                            <threshold>0.7</threshold>
+                            <checkInterval>PT5S</checkInterval>
+                            <healthCheck>ping</healthCheck>
+                            <stickySessions>true</stickySessions>
+                        </loadBalancer>
+                        <failover>
+                            <enabled>true</enabled>
+                            <detectionTime>PT10S</detectionTime>
+                            <switchTime>PT2S</switchTime>
+                            <backoffStrategy>linear</backoffStrategy>
+                            <failoverAgents>
+                                <agent>
+                                    <agentId>processor-agent-2</agentId>
+                                    <priority>1</priority>
+                                </agent>
+                            </failoverAgents>
+                        </failover>
+                        <timeout>PT5M</timeout>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="merge-results"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Task with failover binding -->
+                <task id="backup-processing" name="Backup Processing">
+                    <name>Backup Processing</name>
+                    <documentation>Failover binding for processing tasks</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <agentBinding>
+                        <taskId>backup-processing</taskId>
+                        <bindingType>failover</bindingType>
+                        <agentSelector>capabilityBased</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>processor-agent-2</agentId>
+                                <priority>1</priority>
+                                <weight>1.0</weight>
+                            </agent>
+                        </agents>
+                        <failover>
+                            <enabled>true</enabled>
+                            <detectionTime>PT5S</detectionTime>
+                            <switchTime>PT1S</switchTime>
+                            <backoffStrategy>immediate</backoffStrategy>
+                        </failover>
+                        <timeout>PT3M</timeout>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="merge-results"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Task with binding constraints -->
+                <task id="merge-results" name="Merge Results">
+                    <name>Merge Results</name>
+                    <documentation>Task with binding constraints</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <agentBinding>
+                        <taskId>merge-results</taskId>
+                        <bindingType>static</bindingType>
+                        <agents>
+                            <agent>
+                                <agentId>processor-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>1.0</weight>
+                                <capabilities>
+                                    <capability>
+                                        <capability>optimization</capability>
+                                        <proficiency>0.97</proficiency>
+                                    </capability>
+                                </capabilities>
+                            </agent>
+                        </agents>
+                        <bindingConstraints>
+                            <locationConstraint>same-region</locationConstraint>
+                            <resourceConstraint>high-memory</resourceConstraint>
+                            <priorityConstraint>1</priorityConstraint>
+                        </bindingConstraints>
+                        <timeout>PT2M</timeout>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="end"/>
+                    </flowsInto>
+                </task>
+
+                <outputCondition id="end">
+                    <name>End</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+    </specification>
+</specificationSet>

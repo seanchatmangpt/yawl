@@ -21,7 +21,7 @@
 # Production baseline
 -XX:+UseCompactObjectHeaders     # 5-10% throughput (free win)
 -Xms1g -Xmx4g                    # Heap sizing
--XX:+UseZGC -XX:ZGenerational=true  # Low-latency GC (large heaps)
+-XX:+UseZGC  # ZGC for low-latency GC (large heaps)
 
 # Container environments
 -XX:+UseContainerSupport         # Auto-detect container limits
@@ -84,7 +84,7 @@ COPY --from=builder /app/target/yawl-engine-*.jar app.jar
 
 # Java 25 optimized JVM flags
 ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders \
-               -XX:+UseZGC -XX:ZGenerational=true \
+               -XX:+UseZGC \
                -XX:+UseContainerSupport \
                -XX:MaxRAMPercentage=75.0 \
                -XX:+UseAOTCache \
@@ -112,7 +112,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JAVA_OPTS=-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:ZGenerational=true -Xms1g -Xmx4g
+      - JAVA_OPTS=-XX:+UseCompactObjectHeaders -XX:+UseZGC -Xms1g -Xmx4g
       - SPRING_PROFILES_ACTIVE=production
       - YAWL_DB_HOST=postgres
       - YAWL_DB_PORT=5432
@@ -206,7 +206,7 @@ spec:
             - name: JAVA_OPTS
               value: >
                 -XX:+UseCompactObjectHeaders
-                -XX:+UseZGC -XX:ZGenerational=true
+                -XX:+UseZGC
                 -XX:+UseContainerSupport
                 -XX:MaxRAMPercentage=75.0
                 -XX:+UseAOTCache
@@ -296,16 +296,15 @@ data:
 |-----------|----------|----------------|-----------|
 | < 4GB | General | G1GC (default) | None needed |
 | 4-64GB | Low-latency | Shenandoah | `-XX:+UseShenandoahGC` |
-| > 64GB | Ultra-low-latency | Generational ZGC | `-XX:+UseZGC -XX:ZGenerational=true` |
+| > 64GB | Ultra-low-latency | ZGC | `-XX:+UseZGC` |
 | Any | Maximum throughput | G1GC | `-XX:+UseG1GC -XX:MaxGCPauseMillis=200` |
 
-### 4.2 Generational ZGC Configuration
+### 4.2 ZGC Configuration
 
 For deployments with heaps > 64GB or requiring sub-millisecond pauses:
 
 ```bash
 JAVA_OPTS="-XX:+UseZGC \
-           -XX:ZGenerational=true \
            -XX:ZFragmentLimit=5 \
            -Xms64g -Xmx128g \
            -Xlog:gc*:file=/app/logs/gc.log:time,uptime,level,tags"

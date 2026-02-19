@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="wsIntegrationWorkflow">
+    <metaData>
+      <title>Web Service Integration Workflow</title>
+      <creator>YAWL Z.ai Generator</creator>
+      <description>Workflow with external web service integration</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wsFlow" xsi:type="NetFactsType" isRootNet="true">
+      <name>Web Service Flow</name>
+      <inputParam name="requestData">
+        <type>xs:string</type>
+      </inputParam>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="wsTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="wsTask">
+          <name>Call Web Service</name>
+          <documentation>Invokes external web service</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="webServiceGateway"/>
+          <resourcing>
+            <offer initiator="system"/>
+            <allocate initiator="user"/>
+            <start initiator="system"/>
+          </resourcing>
+          <timer>
+            <trigger>OnEnabled</trigger>
+            <expiry>300000</expiry>
+            <workdays>true</workdays>
+          </timer>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="webServiceGateway" xsi:type="WebServiceGatewayFactsType">
+      <name>External Service Gateway</name>
+      <documentation>Web service integration endpoint</documentation>
+      <externalInteraction>automated</externalInteraction>
+      <yawlService id="externalService">
+        <wsdlLocation>http://example.com/service?wsdl</wsdlLocation>
+        <operationName>processRequest</operationName>
+        <documentation>External service operation</documentation>
+      </yawlService>
+    </decomposition>
+  </specification>
+</specificationSet>
