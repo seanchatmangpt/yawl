@@ -303,8 +303,7 @@ java -XX:+UseAOTCache \
 
 **If heap > 100GB**:
 ```bash
--XX:+UseZGC
--XX:ZGenerational=true          # Generational mode (default Java 25)
+-XX:+UseZGC                      # ZGC for low pause times (no longer available in Java 25)
 # Pause times: 0.1-0.5ms regardless of heap size
 ```
 

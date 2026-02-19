@@ -154,10 +154,10 @@ Impact: Global lock overhead, no benefit
 
 ### 3.1 Current Configuration
 
-**Build-time GC:** Generational ZGC
+**Build-time GC:** ZGC
 ```bash
 # .mvn/jvm.config
--XX:+UseZGC -XX:+ZGenerational
+-XX:+UseZGC
 ```
 
 **Runtime GC (Recommended):** G1GC
@@ -171,7 +171,7 @@ Impact: Global lock overhead, no benefit
 
 ### 3.2 GC Comparison
 
-| Metric | G1GC | ZGC Generational |
+| Metric | G1GC | ZGC |
 |--------|------|------------------|
 | Max pause time | ~200ms (target) | <1ms |
 | Throughput | High | Very High |
