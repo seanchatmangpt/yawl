@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Behavioral tests for YNetRunner execution semantics.
  *
@@ -56,6 +57,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @DisplayName("Net Runner Behavioral Tests (Petri Net Semantics)")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class NetRunnerBehavioralTest {
 
     private YEngine engine;
@@ -75,8 +77,6 @@ class NetRunnerBehavioralTest {
     // ========================================================================
     // KICK CONTINUATION SEMANTICS
     // ========================================================================
-
-    @Execution(ExecutionMode.SAME_THREAD)
 
     @Nested
     @DisplayName("kick() Continuation Semantics")

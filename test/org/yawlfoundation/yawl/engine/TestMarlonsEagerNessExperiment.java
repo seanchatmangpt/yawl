@@ -14,15 +14,16 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
- /**
- * 
+ *
  * @author Lachlan Aldred
  * Date: 26/03/2004
  * Time: 15:54:07
- * 
+ *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 public class TestMarlonsEagerNessExperiment {
     private static YIdentifier _idForTopNet;
     private static YWorkItemRepository _workItemRepository;
@@ -34,7 +35,6 @@ public class TestMarlonsEagerNessExperiment {
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
-    @Execution(ExecutionMode.SAME_THREAD)
 
         YEngine engine2 = YEngine.getInstance();
         engine2.loadSpecification(specification);

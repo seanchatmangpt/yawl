@@ -20,8 +20,8 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
- /**
  *
  * @author Lachlan Aldred
  * Date: 3/03/2004
@@ -29,23 +29,21 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestDeadlockingWorkflows{
     private YIdentifier _idForTopNet;
 
     @BeforeEach
-
     void setUp(){
 
     }
 
     @Test
-
     void testDeadlockingSpecification()
             throws YSchemaBuildingException, YSyntaxException,
             JDOMException, IOException, YStateException, YPersistenceException, YEngineStateException, YQueryException, YDataStateException {
         URL fileURL = getClass().getResource("DeadlockingSpecification.xml");
         File yawlXMLFile = new File(fileURL.getFile());
-    @Execution(ExecutionMode.SAME_THREAD)
 
         YSpecification specification = YMarshal.
                         unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);

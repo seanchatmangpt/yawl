@@ -17,6 +17,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * Author: Lachlan Aldred
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestEngineAgainstImproperCompletionOfASubnet {
 
     private YIdentifier _idForTopNet;
@@ -34,11 +36,9 @@ class TestEngineAgainstImproperCompletionOfASubnet {
     private YSpecification _specification;
 
     @BeforeEach
-
     void setUp() throws YSyntaxException, JDOMException, YSchemaBuildingException, IOException {
 //        new YLocalWorklist("Barbara");
         URL fileURL = getClass().getResource("ImproperCompletion.xml");
-    @Execution(ExecutionMode.SAME_THREAD)
 
         File yawlXMLFile = new File(fileURL.getFile());
         _specification = null;

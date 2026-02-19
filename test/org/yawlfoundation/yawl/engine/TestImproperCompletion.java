@@ -20,8 +20,8 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
- /**
  *
  * @author Lachlan Aldred
  * Date: 27/04/2004
@@ -29,6 +29,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestImproperCompletion {
 
     // Returned by trim() when the input string contains no parseable caseID element
@@ -40,12 +41,10 @@ class TestImproperCompletion {
     private YSpecification _specification;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YEngineStateException, YPersistenceException {
         URL fileURL = getClass().getResource("TestImproperCompletion.xml");
         assertNotNull(fileURL, "Test resource TestImproperCompletion.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
-    @Execution(ExecutionMode.SAME_THREAD)
 
         _specification = YMarshal.
                             unmarshalSpecifications(StringUtil.fileToString(

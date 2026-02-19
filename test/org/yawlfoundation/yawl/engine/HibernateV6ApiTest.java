@@ -65,6 +65,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @DisplayName("Hibernate V6 API Integration Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class HibernateV6ApiTest {
 
     private SessionFactory factory;
@@ -85,8 +86,6 @@ class HibernateV6ApiTest {
             factory.close();
         }
         if (registry != null) {
-    @Execution(ExecutionMode.SAME_THREAD)
-
             StandardServiceRegistryBuilder.destroy(registry);
         }
     }

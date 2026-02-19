@@ -80,9 +80,18 @@ emit_receipt() {
         done
     fi
 
-    # Get cache statistics if available
+    # Get cache statistics from cache-stats.json if available
     local cache_stats_json
-    if declare -f get_cache_summary_json >/dev/null 2>&1; then
+    local cache_stats_file="${PERF_DIR}/cache-stats.json"
+    if [[ -f "$cache_stats_file" ]]; then
+        # Read summary from cache-stats.json
+        cache_stats_json=$(python3 -c "
+import json
+with open('$cache_stats_file') as f:
+    data = json.load(f)
+print(json.dumps(data.get('summary', {'hits': 0, 'misses': 0, 'skipped': 0, 'hit_ratio': 0.0})))
+" 2>/dev/null || echo '{"hits": 0, "misses": 0, "skipped": 0, "hit_ratio": 0.0}')
+    elif declare -f get_cache_summary_json >/dev/null 2>&1; then
         cache_stats_json=$(get_cache_summary_json)
     else
         cache_stats_json='{"hits": 0, "misses": 0, "skipped": 0, "hit_ratio": 0.0}'

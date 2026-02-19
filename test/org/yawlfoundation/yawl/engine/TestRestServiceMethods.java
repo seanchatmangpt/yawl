@@ -21,6 +21,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * @author Lachlan Aldred
@@ -29,13 +30,13 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestRestServiceMethods{
     private YEngine _engine;
     private YSpecification _specification;
     private YSpecification _specification2;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YEngineStateException, YSyntaxException, JDOMException, IOException, YPersistenceException {
         URL makeMusic = getClass().getResource("MakeMusic.xml");
         URL makeMusic2 = getClass().getResource("MakeMusic2.xml");
@@ -46,7 +47,6 @@ class TestRestServiceMethods{
         _specification2 = (YSpecification) YMarshal.
                 unmarshalSpecifications(StringUtil.fileToString(mm2File.getAbsolutePath())).get(0);
         _engine = YEngine.getInstance();
-    @Execution(ExecutionMode.SAME_THREAD)
 
         EngineClearer.clear(_engine);
         _engine.loadSpecification(_specification);

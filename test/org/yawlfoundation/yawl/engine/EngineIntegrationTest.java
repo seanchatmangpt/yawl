@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Engine Core Integration Tests
  * Tests YEngine and YNetRunner with real workflow execution (Chicago TDD)
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  * - Performance (identifier creation throughput)
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class EngineIntegrationTest {
 
     private YEngine engine;
@@ -43,8 +45,6 @@ class EngineIntegrationTest {
         EngineClearer.clear(engine);
         specification = createMinimalSpecification();
     }
-
-    @Execution(ExecutionMode.SAME_THREAD)
 
     @AfterEach
     void tearDown() throws Exception {

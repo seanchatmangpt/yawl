@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Behavioral tests for YAWL Task lifecycle semantics.
  *
@@ -54,6 +55,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @DisplayName("Task Lifecycle Behavioral Tests (Petri Net Semantics)")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TaskLifecycleBehavioralTest {
 
     private YEngine engine;
@@ -73,8 +75,6 @@ class TaskLifecycleBehavioralTest {
     // ========================================================================
     // AND JOIN SEMANTICS
     // ========================================================================
-
-    @Execution(ExecutionMode.SAME_THREAD)
 
     @Nested
     @DisplayName("AND Join Enablement Semantics")

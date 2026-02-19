@@ -1177,7 +1177,6 @@
                         <meminitial>512m</meminitial>
                         <maxmem>2048m</maxmem>
                         <compilerArgs>
-                            <arg>--enable-preview</arg>
                             <arg>-Xlint:all</arg>
                             <arg>-parameters</arg>
                         </compilerArgs>
@@ -1682,12 +1681,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <release>21</release>
+                    <release>${maven.compiler.release}</release>
                     <compilerArgs>
-                        <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
+                        <arg>-parameters</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -1742,8 +1739,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.release.java25>25</maven.compiler.release.java25>
+                <maven.compiler.release>25</maven.compiler.release>
+                <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
@@ -1755,8 +1752,8 @@
         <profile>
             <id>java24</id>
             <properties>
-                <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.release.java25>25</maven.compiler.release.java25>
+                <maven.compiler.release>24</maven.compiler.release>
+                <maven.compiler.release.java25>25</maven.compiler.release.java25>
                 <jacoco.skip>true</jacoco.skip>
             </properties>
             <build>
@@ -2390,7 +2387,7 @@
                 <spotbugs.skip>true</spotbugs.skip>
                 <pmd.skip>true</pmd.skip>
                 <enforcer.skip>true</enforcer.skip>
-                <surefire.threadCount>2C</surefire.threadCount>
+                <surefire.threadCount>8</surefire.threadCount>
                 <test.docker.enabled>false</test.docker.enabled>
             </properties>
             <build>
@@ -2468,7 +2465,6 @@
                             <reuseForks>true</reuseForks>
                             <!-- Fail on the first test failure. Gets the developer to the
                                  red bar immediately without running the rest of the suite. -->
->>>>>>> origin/master
                             <skipAfterFailureCount>1</skipAfterFailureCount>
                             <systemPropertyVariables>
                                 <test.docker.enabled>false</test.docker.enabled>
@@ -2594,7 +2590,6 @@
             </build>
         </profile>
 
-<<<<<<< HEAD
         <!-- ================================================================ -->
         <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
         <!-- ================================================================ -->
@@ -2683,8 +2678,6 @@
             </build>
         </profile>
 
-=======
->>>>>>> origin/master
     </profiles>
 
 </project>

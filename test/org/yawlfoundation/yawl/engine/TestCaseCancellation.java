@@ -29,12 +29,14 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * @author Lachlan Aldred
  * Date: 21/05/2004
  * Time: 15:41:36
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestCaseCancellation {
     private YIdentifier _idForTopNet;
     private YEngine _engine;
@@ -46,7 +48,6 @@ class TestCaseCancellation {
     private YLogDataItemList _logdata;
 
     @BeforeEach
-
     void setUp() throws YAWLException, YSchemaBuildingException, YSyntaxException, JDOMException, IOException, YStateException, YPersistenceException, YDataStateException, URISyntaxException, YEngineStateException, YQueryException {
         _engine = YEngine.getInstance();
         EngineClearer.clear(_engine);
@@ -60,7 +61,6 @@ class TestCaseCancellation {
                 StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
 
         _engine.loadSpecification(_specification);
-    @Execution(ExecutionMode.SAME_THREAD)
 
         URI serviceURI = new URI("mock://mockedURL/testingCaseCompletion");
 

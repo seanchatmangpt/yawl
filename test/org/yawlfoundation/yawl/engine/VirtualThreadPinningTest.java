@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Tests to verify that virtual thread pinning does not occur in YAWL engine operations.
  *
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  * @date 2026-02-16
  */
 @Tag("slow")
+@Execution(ExecutionMode.SAME_THREAD)
 class VirtualThreadPinningTest {
 
     private YEngine engine;
@@ -64,8 +66,6 @@ class VirtualThreadPinningTest {
             EngineClearer.clear(engine);
         }
     }
-
-    @Execution(ExecutionMode.SAME_THREAD)
 
     /**
      * Loads a minimal test specification from the engine test resources.

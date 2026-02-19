@@ -20,6 +20,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * @author Lachlan Aldred
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  *
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestOrJoin {
     private long _sleepTime = 100;
     private YEngine _engine;
@@ -44,8 +46,6 @@ class TestOrJoin {
         assertNotNull(fileURL, "Test resource TestOrJoin.xml not found in classpath");
         File yawlXMLFile = new File(fileURL.getFile());
         YSpecification specification = YMarshal.
-    @Execution(ExecutionMode.SAME_THREAD)
-
                             unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
         _engine.loadSpecification(specification);
         YIdentifier id = _engine.startCase(specification.getSpecificationID(), null, null,

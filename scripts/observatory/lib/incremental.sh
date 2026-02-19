@@ -69,7 +69,14 @@ get_cache_hit_ratio() {
     if [[ $total -eq 0 ]]; then
         echo "0.0"
     else
-        echo "scale=2; $CACHE_TOTAL_HITS / $total" | bc 2>/dev/null || echo "0.0"
+        local ratio
+        ratio=$(echo "scale=2; $CACHE_TOTAL_HITS / $total" | bc 2>/dev/null || echo "0")
+        # Ensure leading zero for values < 1
+        if [[ "$ratio" == .* ]]; then
+            echo "0$ratio"
+        else
+            echo "$ratio"
+        fi
     fi
 }
 

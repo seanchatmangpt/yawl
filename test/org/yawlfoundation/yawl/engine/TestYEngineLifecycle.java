@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Comprehensive YEngine Lifecycle Tests using Chicago TDD methodology.
  * Tests real YEngine instances with real specifications and cases.
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @DisplayName("YEngine Lifecycle Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYEngineLifecycle {
 
     private YEngine engine;
@@ -51,8 +53,6 @@ class TestYEngineLifecycle {
     }
 
     // =========================================================================
-    @Execution(ExecutionMode.SAME_THREAD)
-
     // Engine Initialization Tests
     // =========================================================================
 

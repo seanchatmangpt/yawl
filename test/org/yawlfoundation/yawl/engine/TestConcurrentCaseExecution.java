@@ -21,6 +21,7 @@ import junit.textui.TestRunner;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  * Comprehensive concurrency tests for YAWL Engine.
  * Tests concurrent case launches, work item operations, and database connection pooling.
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  * Date: 2026-02-16
  */
 @Tag("slow")
+@Execution(ExecutionMode.SAME_THREAD)
 public class TestConcurrentCaseExecution extends TestCase {
 
     private YEngine _engine;
@@ -48,8 +50,6 @@ public class TestConcurrentCaseExecution extends TestCase {
         super.setUp();
 
         _engine = YEngine.getInstance();
-    @Execution(ExecutionMode.SAME_THREAD)
-
 
         // Load test specification
         URL fileURL = getClass().getResource("YAWL_Specification1.xml");

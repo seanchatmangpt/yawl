@@ -19,6 +19,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
 /**
  *
  * @author Lachlan Aldred
@@ -32,13 +33,13 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  * http://www.yawl-system.com
  */
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestEngineAgainstABeta4Spec {
     private YSpecification _specification;
     private YEngine _engine;
     private YNetRunner _netRunner;
 
     @BeforeEach
-
     void setUp() throws YSchemaBuildingException, YSyntaxException, JDOMException, IOException {
         URL fileURL = getClass().getResource("MakeRecordings(Beta4).xml");
         File yawlXMLFile = new File(fileURL.getFile());
@@ -47,11 +48,8 @@ class TestEngineAgainstABeta4Spec {
 
         _engine = YEngine.getInstance();
     }
-    @Execution(ExecutionMode.SAME_THREAD)
-
 
     @Test
-
     void testExpectedNormalOperation() throws YDataStateException, YEngineStateException, YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
         synchronized (this) {
             EngineClearer.clear(_engine);

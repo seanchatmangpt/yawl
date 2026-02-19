@@ -76,6 +76,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @DisplayName("YNetRunner State Transition Tests")
 @Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
 class TestYNetRunnerTransitions {
 
     private YEngine _engine;
@@ -104,8 +105,6 @@ class TestYNetRunnerTransitions {
             EngineClearer.clear(_engine);
         }
     }
-
-    @Execution(ExecutionMode.SAME_THREAD)
 
     /**
      * Helper method to load a specification from a test resource file.

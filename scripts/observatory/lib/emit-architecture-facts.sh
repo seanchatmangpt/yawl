@@ -9,6 +9,9 @@
 #   - tests.json: Test inventory and coverage hints
 #   - gates.json: Quality gates configuration
 #
+# Incremental Mode:
+#   Uses emit_if_stale for cache-aware emission via dependency-registry.
+#
 # Usage:
 #   source lib/emit-architecture-facts.sh
 #   emit_all_architecture_facts
@@ -23,7 +26,7 @@ fi
 # ==========================================================================
 # SHARED-SRC: Maps modules to their source directory strategies
 # ==========================================================================
-emit_shared_src() {
+_emit_shared_src_impl() {
     local out="$FACTS_DIR/shared-src.json"
     local op_start
     op_start=$(epoch_ms)
@@ -97,7 +100,7 @@ emit_shared_src() {
 # ==========================================================================
 # DUAL-FAMILY: Stateful vs Stateless engine families
 # ==========================================================================
-emit_dual_family() {
+_emit_dual_family_impl() {
     local out="$FACTS_DIR/dual-family.json"
     local op_start
     op_start=$(epoch_ms)
@@ -167,7 +170,7 @@ emit_dual_family() {
 # ==========================================================================
 # DUPLICATES: Find duplicate FQCNs across modules
 # ==========================================================================
-emit_duplicates() {
+_emit_duplicates_impl() {
     local out="$FACTS_DIR/duplicates.json"
     local op_start
     op_start=$(epoch_ms)
@@ -246,7 +249,7 @@ emit_duplicates() {
 # TESTS: Test inventory and coverage hints
 # Phase 1: Scan shared test/ directory at $REPO_ROOT/test/
 # ==========================================================================
-emit_tests() {
+_emit_tests_impl() {
     local out="$FACTS_DIR/tests.json"
     local op_start
     op_start=$(epoch_ms)
@@ -366,7 +369,7 @@ emit_tests() {
 # ==========================================================================
 # GATES: Quality gates configuration
 # ==========================================================================
-emit_gates() {
+_emit_gates_impl() {
     local out="$FACTS_DIR/gates.json"
     local op_start
     op_start=$(epoch_ms)
@@ -442,6 +445,30 @@ emit_gates() {
     local op_elapsed=$(( $(epoch_ms) - op_start ))
     record_operation "emit_gates" "$op_elapsed"
     log_ok "Gates: ${#profiles[@]} profiles, plugins: spotbugs=$has_spotbugs checkstyle=$has_checkstyle pmd=$has_pmd"
+}
+
+# ==========================================================================
+# PUBLIC WRAPPER FUNCTIONS (with incremental caching)
+# ==========================================================================
+
+emit_shared_src() {
+    emit_if_stale "facts/shared-src.json" _emit_shared_src_impl
+}
+
+emit_dual_family() {
+    emit_if_stale "facts/dual-family.json" _emit_dual_family_impl
+}
+
+emit_duplicates() {
+    emit_if_stale "facts/duplicates.json" _emit_duplicates_impl
+}
+
+emit_tests() {
+    emit_if_stale "facts/tests.json" _emit_tests_impl
+}
+
+emit_gates() {
+    emit_if_stale "facts/gates.json" _emit_gates_impl
 }
 
 # ==========================================================================
