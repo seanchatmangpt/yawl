@@ -15,6 +15,7 @@ package org.yawlfoundation.yawl.integration.conflict;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 // Import core YAWL interfaces
@@ -51,7 +52,7 @@ public class ConflictResolutionIntegrationService {
 
     private final ConflictResolutionService conflictService;
     private final AgentRegistry agentRegistry;
-    private final ConflictDetector conflictDetector;
+    private final AtomicReference<ConflictDetector> conflictDetectorRef;
     private final IntegrationMetrics metrics;
     private final Map<String, CompletableFuture<ConflictResolutionService.ResolutionResult>> pendingResolutions;
 
@@ -292,7 +293,9 @@ public class ConflictResolutionIntegrationService {
         this.configuration = new HashMap<>(DEFAULT_CONFIGURATION);
         this.conflictService = ConflictResolutionService.getInstance();
         this.agentRegistry = new AgentRegistry();
-        this.conflictDetector = new ConflictDetector((int) configuration.get("conflictThreshold"));
+        this.conflictDetectorRef = new AtomicReference<>(
+            new ConflictDetector((int) configuration.get("conflictThreshold"))
+        );
         this.metrics = new IntegrationMetrics();
         this.pendingResolutions = new HashMap<>();
 
@@ -333,7 +336,7 @@ public class ConflictResolutionIntegrationService {
             List<AgentDecision> decisions = collectAgentDecisions(workItem, agents);
 
             // Check for conflict
-            if (conflictDetector.detectConflict(decisions)) {
+            if (conflictDetectorRef.get().detectConflict(decisions)) {
                 metrics.increment("conflictsDetected");
                 return resolveConflict(workItem, decisions);
             } else {
@@ -467,8 +470,8 @@ public class ConflictResolutionIntegrationService {
      * @param agentId The agent ID
      * @param status The new status
      */
-    public void updateAgentStatus(String agentId, AgentRegistry.AgentStatus.Status status) {
-        AgentRegistry.AgentStatus agentStatus = agentRegistry.getAgentStatus().get(agentId);
+    public void updateAgentStatus(String agentId, AgentStatus.Status status) {
+        AgentStatus agentStatus = agentRegistry.getAgentStatus().get(agentId);
         if (agentStatus != null) {
             agentRegistry.agentStatus.put(agentId, agentStatus.withStatus(status));
         }
@@ -517,7 +520,7 @@ public class ConflictResolutionIntegrationService {
             // Update conflict threshold if changed
             if (configuration.containsKey("conflictThreshold")) {
                 int threshold = (int) configuration.get("conflictThreshold");
-                this.conflictDetector = new ConflictDetector(threshold);
+                this.conflictDetectorRef.set(new ConflictDetector(threshold));
             }
         }
     }
@@ -539,8 +542,8 @@ public class ConflictResolutionIntegrationService {
                         agentId = autonomousAgent.toString();
                         AgentCapability capability = autonomousAgent.getCapability();
                         if (capability != null) {
-                            decision = capability.getDomain();
-                            rationale = capability.getDescription();
+                            decision = capability.domainName();
+                            rationale = capability.description();
                         } else {
                             decision = "APPROVE";
                             rationale = "Agent without capability defaults to approval";
@@ -587,7 +590,7 @@ public class ConflictResolutionIntegrationService {
         pendingResolutions.put(resolutionId, future);
 
         try {
-            ConflictContext context = conflictDetector.createConflictContext(workItem, decisions);
+            ConflictContext context = conflictDetectorRef.get().createConflictContext(workItem, decisions);
 
             conflictService.resolveConflictAsync(context)
                 .thenAccept(result -> {
@@ -650,17 +653,17 @@ public class ConflictResolutionIntegrationService {
 
     private Map<String, Object> getAgentMetrics() {
         Map<String, Object> agentMetrics = new HashMap<>();
-        Map<String, AgentRegistry.AgentStatus> statusMap = agentRegistry.getAgentStatus();
+        Map<String, AgentStatus> statusMap = agentRegistry.getAgentStatus();
 
-        Map<AgentRegistry.AgentStatus.Status, Long> statusCounts = statusMap.values().stream()
+        Map<AgentStatus.Status, Long> statusCounts = statusMap.values().stream()
             .collect(Collectors.groupingBy(
-                AgentRegistry.AgentStatus::getStatus,
+                AgentStatus::getStatus,
                 Collectors.counting()
             ));
 
         agentMetrics.put("totalAgents", statusMap.size());
         agentMetrics.put("statusCounts", statusCounts);
-        agentMetrics.put("activeAgents", statusCounts.getOrDefault(AgentRegistry.AgentStatus.Status.ACTIVE, 0L));
+        agentMetrics.put("activeAgents", statusCounts.getOrDefault(AgentStatus.Status.ACTIVE, 0L));
 
         return agentMetrics;
     }

@@ -85,8 +85,8 @@ Options:
   --no-fail-fast   Continue even on failures (default for parallel)
   --output-dir DIR Directory for output files (default: docs/validation)
   --format FMT     Output format: json, junit, both (default: both)
-  --a2a-only       Run only A2A validations (protocol, auth, skills, handoff)
-  --mcp-only       Run only MCP validations (stdio, tools)
+  --a2a-only       Run only A2A validations (protocol, auth, skills, handoff, schema, rate-limits)
+  --mcp-only       Run only MCP validations (stdio, tools, schema)
   --quick          Skip time-intensive tests (chaos, stress)
   --help           Show this help
 
@@ -102,13 +102,18 @@ Validations:
     a2a-auth       - SPIFFE, JWT, API Key, OAuth2 authentication
     a2a-skills     - launch_workflow, query_workflows, manage_workitems
     a2a-handoff    - JWT handoff tokens, session management
+    a2a-schema     - Agent card schema validation
+    a2a-rate-limits - Rate limiting and throttling validation
 
   MCP (Model Context Protocol):
     mcp-stdio      - STDIO transport, protocol handshake
     mcp-tools      - Tool registration, invocation, responses
+    mcp-schema     - MCP schema validation
 
   Chaos Engineering:
-    chaos          - Network, CPU, memory stress, resilience tests
+    chaos-engineering - Network, CPU, memory stress, resilience tests
+    stress-test     - Concurrent load testing with virtual threads
+    chaos-test      - Chaotic failure injection and recovery
 
 Examples:
   # Run all validations in parallel
@@ -274,17 +279,26 @@ build_suites() {
         suites["a2a-auth"]="${SCRIPT_DIR}/a2a/tests/test-auth.sh"
         suites["a2a-skills"]="${SCRIPT_DIR}/a2a/tests/test-skills-validation.sh"
         suites["a2a-handoff"]="${SCRIPT_DIR}/a2a/tests/test-handoff-protocol.sh"
+        suites["a2a-schema"]="${SCRIPT_DIR}/a2a/validate-agent-card-schema.sh"
+        suites["a2a-rate-limits"]="${SCRIPT_DIR}/a2a/validate-a2a-rate-limits.sh"
     fi
 
     # MCP validations (run if --mcp-only or not --a2a-only)
     if [[ "$MCP_ONLY" = true ]] || [[ "$A2A_ONLY" = false ]]; then
         suites["mcp-stdio"]="${SCRIPT_DIR}/mcp/tests/test-protocol-handshake.sh"
         suites["mcp-tools"]="${SCRIPT_DIR}/mcp/validate-mcp-compliance.sh"
+        suites["mcp-schema"]="${SCRIPT_DIR}/mcp/validate-mcp-schema.sh"
     fi
 
     # Chaos engineering (skip if --quick)
     if [[ "$QUICK" = false ]] && [[ "$A2A_ONLY" = false ]] && [[ "$MCP_ONLY" = false ]]; then
         suites["chaos-engineering"]="${SCRIPT_DIR}/validate-chaos-stress.sh"
+
+    # Stress and chaos tests (skip if --quick)
+    if [[ "" = false ]] && [[ "" = false ]] && [[ "" = false ]]; then
+        suites["stress-test"]="${SCRIPT_DIR}/validate-concurrent-stress.sh"
+        suites["chaos-test"]="${SCRIPT_DIR}/validate-chaos.sh"
+    fi
     fi
 
     # Return suites as nameref

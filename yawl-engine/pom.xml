@@ -282,6 +282,8 @@
                         <!-- Logging classes that depend on engine - moved from yawl-utilities -->
                         <include>**/org/yawlfoundation/yawl/logging/YEventLogger.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YEventKeyCache.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YLogDataItem.java</include>
+                        <include>**/org/yawlfoundation/yawl/logging/YLogDataItemList.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YLogPredicate.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YLogPredicateWorkItemParser.java</include>
                         <include>**/org/yawlfoundation/yawl/logging/YLogServer.java</include>
