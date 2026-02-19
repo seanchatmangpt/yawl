@@ -41,7 +41,8 @@ public class YawlResourceProvider {
     private static final Logger LOGGER = Logger.getLogger(YawlResourceProvider.class.getName());
 
     private YawlResourceProvider() {
-        // Static factory class - prevent instantiation
+        throw new UnsupportedOperationException(
+            "YawlResourceProvider is a static factory class and cannot be instantiated");
     }
 
     /**

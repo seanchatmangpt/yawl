@@ -3,7 +3,7 @@ package org.yawlfoundation.yawl.integration.mcp;
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
@@ -18,7 +18,7 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
 /**
- * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (0.18.0+).
+ * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
