@@ -102,7 +102,14 @@ public final class WorkflowEvent {
 
         // Specification lifecycle
         SPEC_LOADED,
-        SPEC_UNLOADED
+        SPEC_UNLOADED,
+
+        // Coordination events (ADR-025)
+        CONFLICT_DETECTED,       // A conflict was detected
+        CONFLICT_RESOLVED,       // A conflict was resolved
+        HANDOFF_INITIATED,       // Handoff transfer initiated
+        HANDOFF_COMPLETED,       // Handoff transfer completed
+        AGENT_DECISION_MADE;     // Agent decision made
     }
 
     /** Current schema version. Increment on breaking changes only. */

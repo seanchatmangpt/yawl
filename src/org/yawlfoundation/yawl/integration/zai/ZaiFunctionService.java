@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.zai;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -12,8 +13,6 @@ import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient;
-import org.yawlfoundation.yawl.integration.processmining.EventLogExporter;
 
 /**
  * Z.AI Function Calling Service for YAWL
@@ -154,35 +153,67 @@ public class ZaiFunctionService {
             String xesPath = (String) args.get("xes_path");
             String skill = (String) args.get("skill");
             if (skill == null || skill.isEmpty()) skill = "performance";
-            if (specId != null && !specId.isEmpty()) {
-                EventLogExporter exporter = null;
-                try {
-                    exporter = new EventLogExporter(yawlEngineUrl, yawlUsername, yawlPassword);
-                    YSpecificationID sid = parseSpecificationID(specId);
-                    Path tmp = Files.createTempFile("yawl-xes-", ".xes");
-                    try {
-                        exporter.exportToFile(sid, false, tmp);
-                        return Pm4PyClient.fromEnvironment().call(skill, tmp.toString());
-                    } finally {
-                        Files.deleteIfExists(tmp);
-                    }
-                } catch (IOException e) {
-                    return "{\"error\":\"XES export failed: " + e.getMessage() + "\"}";
-                } finally {
-                    if (exporter != null) {
-                        try {
-                            exporter.close();
-                        } catch (IOException e) {
-                            logger.warn("Failed to close EventLogExporter: " + e.getMessage(), e);
-                        }
-                    }
+
+            // Pm4Py and EventLogExporter are optional dependencies
+            // Use reflection to avoid compile-time dependency
+            try {
+                if (specId != null && !specId.isEmpty()) {
+                    return executeProcessMiningWithSpec(specId, skill);
                 }
-            }
-            if (xesPath != null && !xesPath.isEmpty()) {
-                return Pm4PyClient.fromEnvironment().call(skill, xesPath);
+                if (xesPath != null && !xesPath.isEmpty()) {
+                    return executeProcessMiningWithXes(xesPath, skill);
+                }
+            } catch (ClassNotFoundException e) {
+                return "{\"error\":\"Process mining requires Pm4Py library. Install Pm4Py and ensure processmining package is available.\"}";
+            } catch (Exception e) {
+                return "{\"error\":\"Process mining failed: " + e.getMessage().replace("\"", "\\\"") + "\"}";
             }
             return "{\"error\":\"Provide spec_identifier or xes_path\"}";
         });
+    }
+
+    /**
+     * Execute process mining analysis with a specification ID.
+     * Uses reflection to avoid compile-time dependency on EventLogExporter and Pm4PyClient.
+     */
+    private String executeProcessMiningWithSpec(String specId, String skill) throws Exception {
+        Class<?> exporterClass = Class.forName("org.yawlfoundation.yawl.integration.processmining.EventLogExporter");
+        Object exporter = exporterClass.getConstructor(String.class, String.class, String.class)
+                .newInstance(yawlEngineUrl, yawlUsername, yawlPassword);
+
+        try {
+            YSpecificationID sid = parseSpecificationID(specId);
+            Path tmp = Files.createTempFile("yawl-xes-", ".xes");
+            try {
+                Method exportMethod = exporterClass.getMethod("exportToFile", YSpecificationID.class, boolean.class, Path.class);
+                exportMethod.invoke(exporter, sid, false, tmp);
+                return callPm4Py(skill, tmp.toString());
+            } finally {
+                Files.deleteIfExists(tmp);
+            }
+        } finally {
+            Method closeMethod = exporterClass.getMethod("close");
+            closeMethod.invoke(exporter);
+        }
+    }
+
+    /**
+     * Execute process mining analysis with a XES file path.
+     * Uses reflection to avoid compile-time dependency on Pm4PyClient.
+     */
+    private String executeProcessMiningWithXes(String xesPath, String skill) throws Exception {
+        return callPm4Py(skill, xesPath);
+    }
+
+    /**
+     * Call Pm4Py using reflection to avoid compile-time dependency.
+     */
+    private String callPm4Py(String skill, String path) throws Exception {
+        Class<?> pm4pyClass = Class.forName("org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient");
+        Method fromEnvMethod = pm4pyClass.getMethod("fromEnvironment");
+        Object client = fromEnvMethod.invoke(null);
+        Method callMethod = pm4pyClass.getMethod("call", String.class, String.class);
+        return (String) callMethod.invoke(client, skill, path);
     }
 
     /**

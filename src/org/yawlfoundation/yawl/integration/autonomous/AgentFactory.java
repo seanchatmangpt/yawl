@@ -16,6 +16,7 @@ package org.yawlfoundation.yawl.integration.autonomous;
 import java.io.IOException;
 
 import org.yawlfoundation.yawl.integration.CredentialManager;
+import org.yawlfoundation.yawl.integration.autonomous.PartitionConfig;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
@@ -108,6 +109,8 @@ public final class AgentFactory {
      * <ul>
      *   <li><code>AGENT_PORT</code> - HTTP server port (default: 8091)</li>
      *   <li><code>POLL_INTERVAL_MS</code> - Discovery poll interval in milliseconds (default: 3000)</li>
+     *   <li><code>AGENT_PARTITION_INDEX</code> - Partition index for horizontal scaling (default: 0)</li>
+     *   <li><code>AGENT_PARTITION_TOTAL</code> - Total partitions for horizontal scaling (default: 1)</li>
      *   <li><code>ZAI_API_KEY</code> - Z.AI API key for AI-based reasoning (required if using ZAI strategies)</li>
      * </ul>
      * </p>
@@ -134,6 +137,9 @@ public final class AgentFactory {
         int port = parsePort(getEnv("AGENT_PORT", "8091"));
         long pollIntervalMs = parseLong(getEnv("POLL_INTERVAL_MS", "3000"));
 
+        int partitionIndex = parseInt(getEnv("AGENT_PARTITION_INDEX", "0"));
+        int partitionTotal = parseInt(getEnv("AGENT_PARTITION_TOTAL", "1"));
+
         String zaiKey = System.getenv("ZAI_API_KEY");
         if (zaiKey == null || zaiKey.trim().isEmpty()) {
             throw new IllegalStateException(
@@ -147,6 +153,8 @@ public final class AgentFactory {
         EligibilityReasoner eligibilityReasoner = createDefaultEligibilityReasoner(capability, zaiService);
         DecisionReasoner decisionReasoner = createDefaultDecisionReasoner(zaiService);
 
+        PartitionConfig partitionConfig = createPartitionConfig(partitionIndex, partitionTotal);
+
         AgentConfiguration config = AgentConfiguration.builder()
             .capability(capability)
             .engineUrl(engineUrl)
@@ -157,9 +165,82 @@ public final class AgentFactory {
             .discoveryStrategy(discoveryStrategy)
             .eligibilityReasoner(eligibilityReasoner)
             .decisionReasoner(decisionReasoner)
+            .partitionConfig(partitionConfig)
             .build();
 
         return create(config);
+    }
+
+    /**
+     * Create a partitioned autonomous agent for specific partition assignment.
+     *
+     * <p>Creates an agent that will only process work items assigned to the
+     * specified partition. Uses hash-based partitioning with formula:
+     * (hash % totalAgents) == agentIndex.</p>
+     *
+     * @param capability agent domain capability
+     * @param engineUrl YAWL engine URL
+     * @param username YAWL username
+     * @param password YAWL password
+     * @param port HTTP server port
+     * @param partitionIndex current agent's partition index (0-based)
+     * @param partitionTotal total number of partitions
+     * @param discoveryStrategy discovery strategy implementation
+     * @param eligibilityReasoner eligibility reasoner implementation
+     * @param decisionReasoner decision reasoner implementation
+     * @return configured partitioned autonomous agent
+     * @throws IOException if connection to YAWL engine fails
+     */
+    public static AutonomousAgent createPartitioned(
+            AgentCapability capability,
+            String engineUrl,
+            String username,
+            String password,
+            int port,
+            int partitionIndex,
+            int partitionTotal,
+            DiscoveryStrategy discoveryStrategy,
+            EligibilityReasoner eligibilityReasoner,
+            DecisionReasoner decisionReasoner) throws IOException {
+
+        PartitionConfig partitionConfig = createPartitionConfig(partitionIndex, partitionTotal);
+
+        AgentConfiguration config = AgentConfiguration.builder()
+                .capability(capability)
+                .engineUrl(engineUrl)
+                .username(username)
+                .password(password)
+                .port(port)
+                .discoveryStrategy(discoveryStrategy)
+                .eligibilityReasoner(eligibilityReasoner)
+                .decisionReasoner(decisionReasoner)
+                .partitionConfig(partitionConfig)
+                .build();
+
+        return create(config);
+    }
+
+    /**
+     * Create partition configuration from environment variables.
+     *
+     * <p>Parses partition settings and validates them. Creates a PartitionConfig
+     * for horizontal scaling of autonomous agents.</p>
+     *
+     * @param partitionIndex current agent's partition index (0-based)
+     * @param partitionTotal total number of partitions
+     * @return partition configuration
+     * @throws IllegalStateException if partition configuration is invalid
+     */
+    private static PartitionConfig createPartitionConfig(int partitionIndex, int partitionTotal) {
+        try {
+            return PartitionConfig.builder()
+                    .agentIndex(partitionIndex)
+                    .totalAgents(partitionTotal)
+                    .build();
+        } catch (IllegalStateException e) {
+            throw new IllegalStateException(
+                    "Invalid partition configuration: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -360,6 +441,17 @@ public final class AgentFactory {
     private static long parseLong(String value) {
         try {
             return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Invalid numeric value: " + value);
+        }
+    }
+
+    /**
+     * Parse integer value from environment variable.
+     */
+    private static int parseInt(String value) {
+        try {
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new IllegalStateException("Invalid numeric value: " + value);
         }

@@ -55,27 +55,39 @@ done
 
 # ── Logging Functions ───────────────────────────────────────────────────────
 log_verbose() {
-    [[ "$VERBOSE" -eq 1 ]] && echo "[VERBOSE] $*" >&2
+    if [[ "$VERBOSE" -eq 1 ]]; then
+        echo "[VERBOSE] $*" >&2
+    fi
 }
 
 log_info() {
-    [[ "$OUTPUT_FORMAT" == "text" ]] && echo -e "${CYAN}[INFO]${NC} $*"
+    if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+        echo -e "${CYAN}[INFO]${NC} $*"
+    fi
 }
 
 log_success() {
-    [[ "$OUTPUT_FORMAT" == "text" ]] && echo -e "${GREEN}[OK]${NC} $*"
+    if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+        echo -e "${GREEN}[OK]${NC} $*"
+    fi
 }
 
 log_warning() {
-    [[ "$OUTPUT_FORMAT" == "text" ]] && echo -e "${YELLOW}[WARN]${NC} $*"
+    if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+        echo -e "${YELLOW}[WARN]${NC} $*"
+    fi
 }
 
 log_error() {
-    [[ "$OUTPUT_FORMAT" == "text" ]] && echo -e "${RED}[ERROR]${NC} $*" >&2
+    if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+        echo -e "${RED}[ERROR]${NC} $*" >&2
+    fi
 }
 
 log_section() {
-    [[ "$OUTPUT_FORMAT" == "text" ]] && echo -e "\n${BOLD}${BLUE}=== $1 ===${NC}"
+    if [[ "$OUTPUT_FORMAT" == "text" ]]; then
+        echo -e "\n${BOLD}${BLUE}=== $1 ===${NC}"
+    fi
 }
 
 # ── Version Extraction from POM ─────────────────────────────────────────────
@@ -86,7 +98,7 @@ extract_version_from_pom() {
     if [[ ! -f "$pom_file" ]]; then
         log_error "POM file not found: $pom_file"
         echo ""
-        return 1
+        return 0  # Return 0 to avoid set -e exit; empty string indicates failure
     fi
 
     # Extract version from <property.name>value</property.name>
@@ -169,7 +181,7 @@ get_latest_mcp_version() {
     if [[ -z "$metadata" ]]; then
         log_warning "Could not fetch MCP metadata from Maven Central (offline?)"
         echo ""
-        return 1
+        return 0  # Return 0 to avoid set -e exit; empty string indicates failure
     fi
 
     # Extract latest version from metadata
@@ -194,15 +206,15 @@ get_local_a2a_version() {
     if [[ ! -d "$m2_path" ]]; then
         log_verbose "A2A not found in local Maven repository"
         echo ""
-        return 1
+        return 0  # Return 0 to avoid set -e exit; empty string indicates failure
     fi
 
     # Look for a2a-java-sdk-spec directory
     local spec_path="${m2_path}/a2a-java-sdk-spec"
     if [[ -d "$spec_path" ]]; then
-        # Get the highest version directory
+        # Get the highest version directory (exclude maven-metadata files)
         local version
-        version=$(ls -1 "$spec_path" 2>/dev/null | sort -V | tail -1 || true)
+        version=$(ls -1 "$spec_path" 2>/dev/null | grep -v "maven-metadata" | grep -v "\.xml" | sort -V | tail -1 || true)
         if [[ -n "$version" ]]; then
             echo "$version"
             return 0
@@ -214,7 +226,7 @@ get_local_a2a_version() {
         local artifact_path="${m2_path}/${artifact}"
         if [[ -d "$artifact_path" ]]; then
             local version
-            version=$(ls -1 "$artifact_path" 2>/dev/null | sort -V | tail -1 || true)
+            version=$(ls -1 "$artifact_path" 2>/dev/null | grep -v "maven-metadata" | grep -v "\.xml" | sort -V | tail -1 || true)
             if [[ -n "$version" ]]; then
                 echo "$version"
                 return 0
@@ -292,7 +304,7 @@ check_a2a_features() {
 # ── Check for Deprecated Features ───────────────────────────────────────────
 check_deprecated_features() {
     local -a deprecations=()
-    local integration_pom="${REPO_ROOT}/yawlintegration/pom.xml"
+    local integration_pom="${REPO_ROOT}/yawl-integration/pom.xml"
 
     # Check for excluded MCP bridge files
     local mcp_bridges=(
@@ -314,26 +326,37 @@ check_deprecated_features() {
     done
 
     if [[ $excluded_bridges -gt 0 ]]; then
-        deprecations+=("mcp_bridge_exclusions:${excluded_bridges} files excluded (using official SDK)")
+        deprecations+=("mcp_bridge_exclusions|${excluded_bridges} files excluded (using official SDK)")
     fi
 
     # Check for HTTP transport usage issues (MCP SDK 0.17.2 has limited HTTP support)
     if grep -rq "HttpMcpTransport\|McpClient.*http\|WebMvcSseServerTransport" \
         "${REPO_ROOT}/src/org/yawlfoundation/yawl/integration/mcp/" 2>/dev/null; then
-        deprecations+=("http_transport_limited:MCP SDK 0.17.2 has limited HTTP transport support")
+        deprecations+=("http_transport_limited|MCP SDK 0.17.2 has limited HTTP transport support")
     fi
 
     # Check for A2A source exclusions
     if grep -q "exclude>.*a2a" "$integration_pom" 2>/dev/null; then
-        deprecations+=("a2a_sdk_excluded:A2A SDK sources excluded pending local Maven install")
+        deprecations+=("a2a_sdk_excluded|A2A SDK sources excluded pending local Maven install")
     fi
 
     # Check for ZAI integration exclusions
     if grep -q "exclude>.*zai" "$integration_pom" 2>/dev/null; then
-        deprecations+=("zai_excluded:ZAI integration sources excluded (requires A2A SDK)")
+        deprecations+=("zai_excluded|ZAI integration sources excluded (requires A2A SDK)")
     fi
 
-    echo "${deprecations[*]:-}"
+    # Use ||| as delimiter between items
+    local result=""
+    local first=1
+    for item in "${deprecations[@]}"; do
+        if [[ $first -eq 1 ]]; then
+            result="${item}"
+            first=0
+        else
+            result="${result}|||${item}"
+        fi
+    done
+    echo "$result"
 }
 
 # ── Save Compliance Report ──────────────────────────────────────────────────
@@ -341,12 +364,58 @@ save_compliance_report() {
     local report_dir="${REPO_ROOT}/docs/v6/latest/compliance"
     local report_file="${report_dir}/protocol-compliance.json"
 
-    mkdir -p "$report_dir"
+    mkdir -p "$report_dir" || return 0
+
+    # Build JSON arrays using jq
+    local mcp_supported_json mcp_unsupported_json
+    local a2a_supported_json a2a_unsupported_json
+    local deprecations_json
+
+    # Helper function to create JSON array from space-separated string
+    make_json_array() {
+        local input="$1"
+        if [[ -z "${input// /}" ]]; then
+            echo "[]"
+        else
+            printf '%s' "$input" | tr ' ' '\n' | grep -v '^$' | jq -R . 2>/dev/null | jq -s . 2>/dev/null || echo "[]"
+        fi
+    }
+
+    mcp_supported_json=$(make_json_array "${MCP_SUPPORTED_FEATURES:-}")
+    mcp_unsupported_json=$(make_json_array "${MCP_UNSUPPORTED_FEATURES:-}")
+    a2a_supported_json=$(make_json_array "${A2A_SUPPORTED_FEATURES:-}")
+    a2a_unsupported_json=$(make_json_array "${A2A_UNSUPPORTED_FEATURES:-}")
+    # Deprecations use ||| as item delimiter
+    if [[ -z "${DEPRECATIONS:-}" ]]; then
+        deprecations_json="[]"
+    else
+        deprecations_json=$(printf '%s' "${DEPRECATIONS:-}" | sed 's/|||/\n/g' | grep -v '^$' | jq -R . 2>/dev/null | jq -s . 2>/dev/null || echo "[]")
+    fi
+
+    local yawl_version
+    # Extract project version (not a property, direct element)
+    yawl_version=$(sed -n 's/.*<version>\([^<]*\)<\/version>.*/\1/p' "${REPO_ROOT}/pom.xml" 2>/dev/null | head -1 || echo "unknown")
+    # If version contains ${, it's a property reference, try to get actual value
+    if [[ "$yawl_version" == *'$'* ]]; then
+        yawl_version="6.0.0-Alpha"  # Fallback to known version
+    fi
+
+    local all_current="false"
+    [[ "$ISSUES_FOUND" -eq 0 ]] && all_current="true"
+
+    # Build recommendations array
+    local recommendations="[]"
+    if [[ "$MCP_STATUS" == "OUTDATED" ]]; then
+        recommendations=$(echo "$recommendations" | jq --arg v "Update MCP SDK from ${MCP_CURRENT_VERSION} to ${MCP_LATEST_VERSION}" '. + [$v]' 2>/dev/null || echo "[]")
+    fi
+    if [[ "$A2A_STATUS" == "NOT_INSTALLED" ]]; then
+        recommendations=$(echo "$recommendations" | jq --arg v "Install A2A SDK JARs to local Maven repository" '. + [$v]' 2>/dev/null || echo "[]")
+    fi
 
     cat > "$report_file" << REPORT_EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "yawl_version": "$(extract_version_from_pom "${REPO_ROOT}/pom.xml" "project.version" 2>/dev/null || echo "unknown")",
+  "yawl_version": "${yawl_version}",
   "protocols": {
     "mcp": {
       "groupId": "io.modelcontextprotocol.sdk",
@@ -355,8 +424,8 @@ save_compliance_report() {
       "latest_version": "${MCP_LATEST_VERSION:-unknown}",
       "status": "${MCP_STATUS:-unknown}",
       "features": {
-        "supported": $(printf '%s\n' "${MCP_SUPPORTED_FEATURES:-}" | jq -R -s 'split(" ") | map(select(length > 0))'),
-        "unsupported": $(printf '%s\n' "${MCP_UNSUPPORTED_FEATURES:-}" | jq -R -s 'split(" ") | map(select(length > 0))')
+        "supported": ${mcp_supported_json},
+        "unsupported": ${mcp_unsupported_json}
       }
     },
     "a2a": {
@@ -367,19 +436,16 @@ save_compliance_report() {
       "status": "${A2A_STATUS:-unknown}",
       "on_maven_central": false,
       "features": {
-        "supported": $(printf '%s\n' "${A2A_SUPPORTED_FEATURES:-}" | jq -R -s 'split(" ") | map(select(length > 0))'),
-        "unsupported": $(printf '%s\n' "${A2A_UNSUPPORTED_FEATURES:-}" | jq -R -s 'split(" ") | map(select(length > 0))')
+        "supported": ${a2a_supported_json},
+        "unsupported": ${a2a_unsupported_json}
       }
     }
   },
-  "deprecated_features": $(echo "${DEPRECATIONS:-}" | jq -R -s 'split(" ") | map(select(length > 0))'),
+  "deprecated_features": ${deprecations_json},
   "issues_found": ${ISSUES_FOUND},
   "summary": {
-    "all_current": $([ "$ISSUES_FOUND" -eq 0 ] && echo "true" || echo "false"),
-    "recommendations": [
-      $(if [[ "$MCP_STATUS" == "OUTDATED" ]]; then echo "\"Update MCP SDK from ${MCP_CURRENT_VERSION} to ${MCP_LATEST_VERSION}\""; fi)
-      $(if [[ "$A2A_STATUS" == "NOT_INSTALLED" ]]; then echo ",\"Install A2A SDK JARs to local Maven repository\""; fi)
-    ]
+    "all_current": ${all_current},
+    "recommendations": ${recommendations}
   }
 }
 REPORT_EOF
@@ -462,16 +528,17 @@ output_text() {
     echo ""
     log_section "Deprecated Features Detection"
     if [[ -n "${DEPRECATIONS:-}" ]]; then
-        IFS=' ' read -ra deprecation_items <<< "$DEPRECATIONS"
-        for item in "${deprecation_items[@]}"; do
-            if [[ "$item" == *":"* ]]; then
-                local key="${item%%:*}"
-                local value="${item#*:}"
+        # Items are separated by ||| and key|value within each item
+        while IFS= read -r item; do
+            [[ -z "$item" ]] && continue
+            if [[ "$item" == *"|"* ]]; then
+                local key="${item%%|*}"
+                local value="${item#*|}"
                 echo -e "  ${YELLOW}[DEPRECATED]${NC} ${key}: ${value}"
             else
                 echo -e "  ${YELLOW}[DEPRECATED]${NC} ${item}"
             fi
-        done
+        done <<< "$(echo "$DEPRECATIONS" | sed 's/|||/\n/g')"
     else
         echo "  No deprecated features detected."
     fi
@@ -509,8 +576,9 @@ MCP_LATEST_VERSION=$(get_latest_mcp_version)
 log_verbose "MCP current: ${MCP_CURRENT_VERSION:-unknown}, latest: ${MCP_LATEST_VERSION:-unknown}"
 
 if [[ -n "$MCP_CURRENT_VERSION" && -n "$MCP_LATEST_VERSION" ]]; then
-    compare_versions "$MCP_CURRENT_VERSION" "$MCP_LATEST_VERSION"
-    case $? in
+    MCP_CMP_RESULT=0
+    compare_versions "$MCP_CURRENT_VERSION" "$MCP_LATEST_VERSION" || MCP_CMP_RESULT=$?
+    case $MCP_CMP_RESULT in
         0) MCP_STATUS="CURRENT" ;;
         1) MCP_STATUS="AHEAD" ;;
         2) MCP_STATUS="OUTDATED"; ((ISSUES_FOUND++)) || true ;;
@@ -521,8 +589,8 @@ fi
 
 # Get MCP features
 MCP_FEATURES=$(check_mcp_features "${MCP_CURRENT_VERSION:-0}")
-MCP_SUPPORTED_FEATURES=$(echo "$MCP_FEATURES" | grep "^supported:" | cut -d: -f2-)
-MCP_UNSUPPORTED_FEATURES=$(echo "$MCP_FEATURES" | grep "^unsupported:" | cut -d: -f2-)
+MCP_SUPPORTED_FEATURES=$(echo "$MCP_FEATURES" | grep "^supported:" | cut -d: -f2- || echo "")
+MCP_UNSUPPORTED_FEATURES=$(echo "$MCP_FEATURES" | grep "^unsupported:" | cut -d: -f2- || echo "")
 
 # ── A2A Version Check ───────────────────────────────────────────────────────
 log_verbose "Starting A2A version check..."
@@ -546,8 +614,8 @@ fi
 
 # Get A2A features
 A2A_FEATURES=$(check_a2a_features "${A2A_CURRENT_VERSION:-0}")
-A2A_SUPPORTED_FEATURES=$(echo "$A2A_FEATURES" | grep "^supported:" | cut -d: -f2-)
-A2A_UNSUPPORTED_FEATURES=$(echo "$A2A_FEATURES" | grep "^unsupported:" | cut -d: -f2-)
+A2A_SUPPORTED_FEATURES=$(echo "$A2A_FEATURES" | grep "^supported:" | cut -d: -f2- || echo "")
+A2A_UNSUPPORTED_FEATURES=$(echo "$A2A_FEATURES" | grep "^unsupported:" | cut -d: -f2- || echo "")
 
 # ── Deprecated Features Check ───────────────────────────────────────────────
 log_verbose "Checking for deprecated features..."

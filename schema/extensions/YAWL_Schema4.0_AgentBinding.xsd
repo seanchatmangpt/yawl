@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Agent Binding Extensions for YAWL Schema 4.0
+  ~
+  ~ XML Schema extensions for agent binding capabilities in YAWL workflows.
+  ~ Defines agent-to-workflow-element binding patterns and configurations.
+  ~
+  ~ @author YAWL Foundation
+  ~ @version 5.2
+ -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:yawl="http://www.yawlfoundation.org/yawlschema"
+           xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+           targetNamespace="http://www.yawlfoundation.org/yawlschema/binding"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+	<!-- Import base YAWL schema -->
+	<xs:import namespace="http://www.yawlfoundation.org/yawlschema"
+               schemaLocation="YAWL_Schema4.0.xsd"/>
+
+	<!--=======================================================================================
+		AGENT BINDING SIMPLE TYPES
+	=======================================================================================-->
+
+	<xs:simpleType name="BindingTypeType">
+		<xs:annotation>
+			<xs:documentation>Types of bindings between agents and workflow elements.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="static"/>
+			<xs:enumeration value="dynamic"/>
+			<xs:enumeration value="adaptive"/>
+			<xs:enumeration value="loadBalanced"/>
+			<xs:enumeration value="failover"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="AgentSelectionStrategyType">
+		<xs:annotation>
+			<xsdocumentation>Strategies for selecting agents in binding scenarios.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="roundRobin"/>
+			<xs:enumeration value="leastLoaded"/>
+			<xs:enumeration value="capabilityBased"/>
+			<xs:enumeration value="priorityBased"/>
+			<xs:enumeration value="random"/>
+			<xs:enumeration value="weighted"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="AgentStatusType">
+		<xs:annotation>
+			<xs:documentation>Status of bound agents.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="active"/>
+			<xs:enumeration value="standby"/>
+			<xs:enumeration value="busy"/>
+			<xs:enumeration value="offline"/>
+			<xs:enumeration value="failed"/>
+			<xs:enumeration value="maintenance"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="LoadMetricType">
+		<xs:annotation>
+			<xs:documentation>Metric types for agent load balancing.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="cpu"/>
+			<xs:enumeration value="memory"/>
+			<xs:enumeration value="queueSize"/>
+			<xs:enumeration value="responseTime"/>
+			<xs:enumeration value="throughput"/>
+			<xs:enumeration value="composite"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="HealthCheckType">
+		<xs:annotation>
+			<xs:documentation>Types of health checks for bound agents.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="heartbeat"/>
+			<xs:enumeration value="ping"/>
+			<xs:enumeration value="testTask"/>
+			<xs:enumeration value="performanceCheck"/>
+			<xs:enumeration value="resourceCheck"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!--=======================================================================================
+		COMPLEX TYPES FOR AGENT BINDING
+	=======================================================================================-->
+
+	<!-- Agent Profile Type -->
+	<xs:complexType name="AgentProfileType">
+		<xs:annotation>
+			<xs:documentation>Detailed profile information for agents in the binding system.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="agentId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="name" type="xs:string" minOccurs="0"/>
+			<xs:element name="capabilities" type="binding:AgentCapabilityType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="capacity" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="currentLoad" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="location" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+			<xs:element name="metadata" type="xs:string" minOccurs="0"/>
+			<xs:element name="healthStatus" type="binding:AgentStatusType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Capability Type -->
+	<xs:complexType name="AgentCapabilityType">
+		<xs:sequence>
+			<xs:element name="capability" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+			<xs:element name="proficiency" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="metadata" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Binding Configuration Type -->
+	<xs:complexType name="BindingConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Configuration for binding agents to workflow tasks.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="taskId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="bindingType" type="binding:BindingTypeType" minOccurs="1"/>
+			<xs:element name="agentSelector" type="binding:AgentSelectionStrategyType" minOccurs="0"/>
+			<xs:element name="agents" type="binding:AgentSetType" minOccurs="1"/>
+			<xs:element name="loadBalancer" type="binding:LoadBalancerType" minOccurs="0"/>
+			<xs:element name="failover" type="binding:FailoverType" minOccurs="0"/>
+			<xs:element name="timeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="retryCount" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="metadata" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Set Type -->
+	<xs:complexType name="AgentSetType">
+		<xs:sequence>
+			<xs:element name="agent" type="binding:AgentReferenceType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueAgentReference">
+			<xs:selector xpath="binding:agent"/>
+			<xs:field xpath="@agentId"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Agent Reference Type -->
+	<xs:complexType name="AgentReferenceType">
+		<xs:sequence>
+			<xs:element name="agentId" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="priority" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="weight" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="capabilities" type="binding:AgentCapabilityType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Load Balancer Type -->
+	<xs:complexType name="LoadBalancerType">
+		<xs:sequence>
+			<xs:element name="strategy" type="binding:AgentSelectionStrategyType" minOccurs="1"/>
+			<xs:element name="metric" type="binding:LoadMetricType" minOccurs="0"/>
+			<xs:element name="threshold" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="checkInterval" type="xs:duration" minOccurs="0"/>
+			<xs:element name="healthCheck" type="binding:HealthCheckType" minOccurs="0"/>
+			<xs:element name="stickySessions" type="xs:boolean" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Failover Type -->
+	<xs:complexType name="FailoverType">
+		<xs:sequence>
+			<xs:element name="enabled" type="xs:boolean" minOccurs="1"/>
+			<xs:element name="detectionTime" type="xs:duration" minOccurs="0"/>
+			<xs:element name="switchTime" type="xs:duration" minOccurs="0"/>
+			<xs:element name="backoffStrategy" type="xs:string" minOccurs="0"/>
+			<xs:element name="failoverAgents" type="binding:AgentSetType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Binding Manager Configuration Type -->
+	<xs:complexType name="BindingManagerConfigType">
+		<xs:annotation>
+			<xs:documentation>Configuration for the binding manager service.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="maxBindings" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="refreshInterval" type="xs:duration" minOccurs="0"/>
+			<xs:element name="cacheTimeout" type="xs:duration" minOccurs="0"/>
+			<xs:element name="monitoringEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="telemetryEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="loggingEnabled" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="healthCheck" type="binding:HealthCheckType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		EXTENSION POINTS FOR YAWL ELEMENTS
+	=======================================================================================-->
+
+	<!-- Extension to TaskFactsType for agent binding -->
+	<xs:complexType name="TaskWithBindingFactsType">
+		<xs:complexContent>
+			<xs:extension base="yawl:ExternalTaskFactsType">
+				<xs:sequence>
+					<xs:element name="agentBinding" type="binding:BindingConfigurationType" minOccurs="0"/>
+					<xs:element name="bindingConstraints" type="binding:BindingConstraintType" minOccurs="0"/>
+					<xs:element name="bindingPolicies" type="binding:BindingPolicyType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- Binding Constraint Type -->
+	<xs:complexType name="BindingConstraintType">
+		<xs:sequence>
+			<xs:element name="timeWindow" type="xs:duration" minOccurs="0"/>
+			<xs:element name="locationConstraint" type="xs:string" minOccurs="0"/>
+			<xs:element name="capabilityConstraint" type="xs:string" minOccurs="0"/>
+			<xs:element name="resourceConstraint" type="xs:string" minOccurs="0"/>
+			<xs:element name="priorityConstraint" type="xs:positiveInteger" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Binding Policy Type -->
+	<xs:complexType name="BindingPolicyType">
+		<xs:sequence>
+			<xs:element name="name" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="rules" type="binding:BindingRuleType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="priorities" type="binding:PriorityType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Binding Rule Type -->
+	<xs:complexType name="BindingRuleType">
+		<xs:sequence>
+			<xs:element name="condition" type="xs:string" minOccurs="1"/>
+			<xs:element name="action" type="xs:string" minOccurs="1"/>
+			<xs:element name="weight" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Priority Type -->
+	<xs:complexType name="PriorityType">
+		<xs:sequence>
+			<xs:element name="factor" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="weight" type="xs:decimal" minOccurs="1"/>
+			<xs:element name="direction" type="xs:string" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="ascending"/>
+						<xs:enumeration value="descending"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		TOP-LEVEL ELEMENTS FOR AGENT BINDING
+	=======================================================================================-->
+
+	<!-- Agent Binding Configuration Root Element -->
+	<xs:element name="agentBindingConfiguration" type="binding:AgentBindingConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Root element for agent binding configuration.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Agent Binding Configuration Type -->
+	<xs:complexType name="AgentBindingConfigurationType">
+		<xs:sequence>
+			<xs:element name="version" type="xs:string" fixed="1.0"/>
+			<xs:element name="agents" type="binding:AgentProfileSetType" minOccurs="0"/>
+			<xs:element name="bindings" type="binding:BindingSetType" minOccurs="0"/>
+			<xs:element name="policies" type="binding:PolicySetType" minOccurs="0"/>
+			<xs:element name="managerConfig" type="binding:BindingManagerConfigType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Agent Profile Set Type -->
+	<xs:complexType name="AgentProfileSetType">
+		<xs:sequence>
+			<xs:element name="agent" type="binding:AgentProfileType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueAgentProfile">
+			<xs:selector xpath="binding:agent"/>
+			<xs:field xpath="binding:agentId"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Binding Set Type -->
+	<xs:complexType name="BindingSetType">
+		<xs:sequence>
+			<xs:element name="binding" type="binding:BindingConfigurationType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniqueBinding">
+			<xs:selector xpath="binding:binding"/>
+			<xs:field xpath="binding:taskId"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!-- Policy Set Type -->
+	<xs:complexType name="PolicySetType">
+		<xs:sequence>
+			<xs:element name="policy" type="binding:BindingPolicyType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:unique name="uniquePolicy">
+			<xs:selector xpath="binding:policy"/>
+			<xs:field xpath="binding:name"/>
+		</xs:unique>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		INTEGRATION EXTENSION: OVERRIDE EXISTING TYPES
+	=======================================================================================-->
+
+	<!-- Override task type to include binding -->
+	<xs:element name="task" type="binding:TaskWithBindingFactsType" substitutionGroup="yawl:task"/>
+
+</xs:schema>

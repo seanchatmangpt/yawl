@@ -135,6 +135,14 @@ public final class CompositeAuthenticationProvider implements A2AAuthenticationP
             }
         }
 
+        // 4. Handoff Token - for agent-to-agent work item transfer
+        // Always available for handoff operations
+        try {
+            stack.add(new HandoffTokenAuthenticationProvider());
+        } catch (Exception e) {
+            errors.add("HandoffTokenAuthenticationProvider: " + e.getMessage());
+        }
+
         if (stack.isEmpty()) {
             throw new IllegalStateException(
                 "No authentication providers could be configured. "

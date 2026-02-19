@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Validation Example for ADR-025 Coordination Features
+  *
+ * Example demonstrating schema validation for coordination and agent binding features.
+ *
+ * @author YAWL Foundation
+ * @version 5.2
+ -->
+
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                 xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+                 xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+                 xmlns:validation="http://www.yawlfoundation.org/yawlschema/validation"
+                 version="4.0">
+
+    <specification uri="http://example.com/workflows/validation-demo">
+        <name>Validation Demo</name>
+        <documentation>Example workflow demonstrating validation features</documentation>
+        <metaData>
+            <title>Validation Configuration Example</title>
+            <creator>YAWL Foundation</creator>
+            <subject>ADR-025 Validation Features</subject>
+            <description>Demonstration of validation rules and constraints</description>
+            <version>5.2.0</version>
+            <status>Example</status>
+        </metaData>
+
+        <!-- Validation configuration -->
+        <validation>
+            <validationConfiguration>
+                <version>1.0</version>
+                <level>comprehensive</level>
+
+                <!-- Schema validation rules -->
+                <rules>
+                    <validationRule>
+                        <name>AgentIDFormat</name>
+                        <description>Validate agent ID format matches naming conventions</description>
+                        <level>strict</level>
+                        <mode>schema</mode>
+                        <condition>matches(coord:agents/coord:agent/coord:agentId, '^[a-z][a-z0-9-]*$')</condition>
+                        <message>Agent ID must start with lowercase letter and contain only lowercase letters, numbers, and hyphens</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>EndpointURLFormat</name>
+                        <description>Validate agent endpoint URLs are properly formatted</description>
+                        <level>strict</level>
+                        <mode>schema</mode>
+                        <condition>starts-with(coord:agents/coord:agent/coord:endpoint, 'http://') or starts-with(coord:agents/coord:agent/coord:endpoint, 'https://')</condition>
+                        <message>Agent endpoint must be a valid HTTP or HTTPS URL</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+
+                <!-- Business logic validation rules -->
+                <rules>
+                    <validationRule>
+                        <name>ConflictResolutionStrategyCompatibility</name>
+                        <description>Ensure conflict resolution strategy is compatible with task type</description>
+                        <level>strict</level>
+                        <mode>businessLogic</mode>
+                        <condition>
+                            let $strategy := coord:conflictResolution/coord:strategy
+                            let $severity := coord:conflictResolution/coord:severityThreshold
+                            return ($strategy = 'majorityVote' and $severity in ('LOW', 'MEDIUM')) or
+                                   ($strategy = 'escalatingArbiter' and $severity in ('MEDIUM', 'HIGH', 'CRITICAL')) or
+                                   ($strategy = 'humanFallback' and $severity = 'CRITICAL')
+                        </condition>
+                        <message>Conflict resolution strategy must be compatible with severity level</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>AgentCapabilityConsistency</name>
+                        <description>Validate agent capabilities match task requirements</description>
+                        <level>basic</level>
+                        <mode>businessLogic</mode>
+                        <condition>
+                            let $requiredCaps := ('decisionMaking', 'resourceAllocation')
+                            let $agentCaps := coord:agents/coord:agent/coord:capabilities
+                            return every $cap in $requiredCaps satisfies $agentCaps = $cap
+                        </condition>
+                        <message>Agent capabilities must include all required capabilities</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+
+                <!-- Consistency validation rules -->
+                <rules>
+                    <validationRule>
+                        <name>BindingConsistency</name>
+                        <description>Validate consistency across all bindings</description>
+                        <level>strict</level>
+                        <mode>consistency</mode>
+                        <condition>
+                            let $bindings := coord:agentBindings/coord:binding
+                            let $uniqueTasks := distinct-values($bindings/coord:taskId)
+                            return count($bindings) = count($uniqueTasks)
+                        </condition>
+                        <message>Each task can have only one primary binding</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>AgentHealthStatus</name>
+                        <description>Validate agent health status for active bindings</description>
+                        <level>basic</level>
+                        <mode>consistency</mode>
+                        <condition>
+                            let $activeBindings := coord:agentBindings/coord:binding[coord:bindingType = 'primary']
+                            let $activeAgents := $activeBindings/coord:agentId
+                            return every $agentId in $activeAgents satisfies
+                                   coord:agents/coord:agent[coord:agentId = $agentId]/coord:healthStatus = 'active'
+                        </condition>
+                        <message>All bound agents must be in active state</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+
+                <!-- Performance validation rules -->
+                <rules>
+                    <validationRule>
+                        <name>ResourceUtilization</name>
+                        <description>Validate resource utilization levels are within bounds</description>
+                        <level>basic</level>
+                        <mode>performance</mode>
+                        <condition>
+                            let $avgLoad := avg(coord:agents/coord:agent/coord:currentLoad)
+                            return $avgLoad <= 0.8
+                        </condition>
+                        <message>Average agent load should not exceed 80%</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>TimeoutConfiguration</name>
+                        <description>Validate timeout configurations are reasonable</description>
+                        <level>basic</level>
+                        <mode>performance</mode>
+                        <condition>
+                            let $resolutionTimeout := coord:conflictResolution/coord:resolutionTimeout
+                            let $escalationTimeout := coord:conflictResolution/coord:escalationTimeout
+                            return $resolutionTimeout >= $escalationTimeout
+                        </condition>
+                        <message>Resolution timeout must be greater than escalation timeout</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+
+                <!-- Exclusions for specific scenarios -->
+                <exclusions>
+                    <rule>ResourceUtilization</rule>
+                    <reason>Demo scenario intentionally utilizes high resources</reason>
+                </exclusions>
+            </validationConfiguration>
+        </validation>
+
+        <decomposition id="validation-demo-net">
+            <name>Validation Demo Net</name>
+            <documentation>Net demonstrating validation features</documentation>
+
+            <inputParam name="inputData" type="string" isUntyped="true"/>
+            <outputParam name="validationResult" type="string" isUntyped="true"/>
+
+            <processControlElements>
+                <inputCondition id="start">
+                    <name>Start</name>
+                </inputCondition>
+
+                <!-- Task with validation-configuration -->
+                <task id="validation-check" name="Validation Check">
+                    <name>Validation Check</name>
+                    <documentation>Task that validates coordination configuration</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <flowsInto>
+                        <nextElementRef id="validated-processing"/>
+                    </flowsInto>
+                </task>
+
+                <task id="validated-processing" name="Validated Processing">
+                    <name>Validated Processing</name>
+                    <documentation>Processing with validated configuration</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <flowsInto>
+                        <nextElementRef id="validation-report"/>
+                    </flowsInto>
+                </task>
+
+                <task id="validation-report" name="Validation Report">
+                    <name>Validation Report</name>
+                    <documentation>Generate validation report</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <flowsInto>
+                        <nextElementRef id="end"/>
+                    </flowsInto>
+                </task>
+
+                <outputCondition id="end">
+                    <name>End</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <!-- Coordination configuration with potential validation issues -->
+        <coordination>
+            <coordinationMode>hierarchical</coordinationMode>
+            <timeout>PT5M</timeout>
+
+            <!-- Agents with potential validation issues -->
+            <agents>
+                <agent>
+                    <agentId>Agent_Invalid_Format</agentId>
+                    <endpoint>https://agent1.example.com/api</endpoint>
+                    <capabilities>decisionMaking</capabilities>
+                    <capabilities>resourceAllocation</capabilities>
+                    <coordinationMode>hierarchical</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT2M</timeout>
+                    <metadata>Agent with invalid ID format (should trigger validation)</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>agent-valid</agentId>
+                    <endpoint>https://agent2.example.com/api</endpoint>
+                    <capabilities>decisionMaking</capabilities>
+                    <capabilities>resourceAllocation</capabilities>
+                    <coordinationMode>hierarchical</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT2M</timeout>
+                    <metadata>Valid agent format</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>inactive-agent</agentId>
+                    <endpoint>https://agent3.example.com/api</endpoint>
+                    <capabilities>monitoring</capabilities>
+                    <coordinationMode>hierarchical</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT2M</timeout>
+                    <metadata>Inactive agent (should trigger health validation)</metadata>
+                    <healthStatus>offline</healthStatus>
+                </agent>
+            </agents>
+
+            <!-- Conflict resolution configuration -->
+            <conflictResolution>
+                <strategy>majorityVote</strategy>
+                <severityThreshold>HIGH</severityThreshold>
+                <arbiter>arbiter-agent</arbiter>
+                <escalationTimeout>PT30S</escalationTimeout>
+                <votingWeight>0.6</votingWeight>
+                <fallbackStrategy>humanFallback</fallbackStrategy>
+                <resolutionTimeout>PT5M</resolutionTimeout>
+            </conflictResolution>
+
+            <!-- Agent bindings -->
+            <agentBindings>
+                <binding>
+                    <taskId>validation-check</taskId>
+                    <agentId>agent-valid</agentId>
+                    <bindingType>primary</bindingType>
+                    <loadBalancing>true</loadBalancing>
+                    <failoverEnabled>true</failoverEnabled>
+                    <priority>1</priority>
+                </binding>
+                <binding>
+                    <taskId>validation-check</taskId>
+                    <agentId>inactive-agent</agentId>
+                    <bindingType>secondary</bindingType>
+                    <priority>2</priority>
+                </binding>
+                <!-- Duplicate binding (should trigger validation) -->
+                <binding>
+                    <taskId>validation-check</taskId>
+                    <agentId>agent-valid</agentId>
+                    <bindingType>primary</bindingType>
+                    <priority>1</priority>
+                </binding>
+            </agentBindings>
+
+            <a2aCommunication>
+                <protocol>HTTP/2</protocol>
+                <encoding>application/json</encoding>
+                <compressionEnabled>true</compressionEnabled>
+                <encryptionEnabled>true</encryptionEnabled>
+                <maxMessageSize>1048576</maxMessageSize>
+                <timeout>PT30S</timeout>
+                <retryPolicy>exponentialBackoff</retryPolicy>
+            </a2aCommunication>
+        </coordination>
+    </specification>
+
+    <!-- Validation report showing expected issues -->
+    <validation>
+        <validationReport>
+            <timestamp>2026-02-18T10:00:00Z</timestamp>
+            <status>validation_complete_with_issues</status>
+            <summary>Validation completed with 3 issues detected</summary>
+
+            <!-- Expected validation errors -->
+            <errors>
+                <validationError>
+                    <id>AgentIDFormat</id>
+                    <message>Agent ID must start with lowercase letter and contain only lowercase letters, numbers, and hyphens</message>
+                    <location>/specification/coordination/agents/agent[1]</location>
+                    <path>/specification/coordination/agents/agent[1]/agentId</path>
+                    <suggestion>Change 'Agent_Invalid_Format' to 'agent-invalid-format'</suggestion>
+                </validationError>
+
+                <validationError>
+                    <id>BindingConsistency</id>
+                    <message>Each task can have only one primary binding</message>
+                    <location>/specification/coordination/agentBindings/binding[3]</location>
+                    <path>/specification/coordination/agentBindings/binding[3]</path>
+                    <suggestion>Remove duplicate binding or change binding type</suggestion>
+                </validationError>
+
+                <validationError>
+                    <id>AgentHealthStatus</id>
+                    <message>All bound agents must be in active state</message>
+                    <location>/specification/coordination/agentBindings/binding[2]</location>
+                    <path>/specification/coordination/agentBindings/binding[2]</path>
+                    <suggestion>Change agent health status to 'active' or remove binding</suggestion>
+                </validationError>
+            </errors>
+
+            <!-- Expected warnings -->
+            <warnings>
+                <validationWarning>
+                    <id>ConflictResolutionStrategyCompatibility</id>
+                    <message>Conflict resolution strategy must be compatible with severity level</message>
+                    <location>/specification/coordination/conflictResolution</location>
+                    <path>/specification/coordination/conflictResolution/strategy</path>
+                    <suggestion>Change strategy to 'escalatingArbiter' or reduce severity to 'MEDIUM'</suggestion>
+                </validationWarning>
+
+                <validationWarning>
+                    <id>TimeoutConfiguration</id>
+                    <message>Resolution timeout must be greater than escalation timeout</message>
+                    <location>/specification/coordination/conflictResolution</location>
+                    <path>/specification/coordination/conflictResolution/resolutionTimeout</path>
+                    <suggestion>Ensure resolution timeout is longer than escalation timeout</suggestion>
+                </validationWarning>
+            </warnings>
+
+            <!-- Informational messages -->
+            <infos>
+                <validationInfo>
+                    <id>ValidationEnabled</id>
+                    <message>Comprehensive validation mode enabled</message>
+                    <location>/specification/validation/validationConfiguration</location>
+                </validationInfo>
+
+                <validationInfo>
+                    <id>ExclusionsApplied</id>
+                    <message>1 validation rule excluded for this demo</message>
+                    <location>/specification/validation/validationConfiguration/exclusions</location>
+                </validationInfo>
+            </infos>
+        </validationReport>
+    </validation>
+</specificationSet>

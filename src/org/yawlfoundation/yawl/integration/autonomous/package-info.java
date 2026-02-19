@@ -30,6 +30,7 @@
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.AgentFactory} - Factory for agent creation</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.AgentRegistry} - Agent registration and discovery</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.GenericPartyAgent} - Configurable agent implementation</li>
+ *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.PartitionConfig} - Partition configuration for horizontal scaling</li>
  * </ul>
  *
  * <p>Subpackages:</p>
@@ -41,6 +42,11 @@
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.reasoners} - AI-based decision reasoning</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.resilience} - Circuit breakers and fallbacks</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.strategies} - Core strategy interfaces</li>
+ *   <li>{@link org.yawlfoundation.yawl.integration.autonomous.registry} - Agent registration and discovery</li>
  * </ul>
+ *
+ * <p><strong>Partition Strategy:</strong> Agents support horizontal scaling through partitioned work item
+ * distribution using hash-based assignment: (hash % totalAgents) == agentIndex. This enables
+ * even workload distribution across multiple autonomous agent instances.</p>
  */
 package org.yawlfoundation.yawl.integration.autonomous;

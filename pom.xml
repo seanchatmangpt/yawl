@@ -82,6 +82,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>25</maven.compiler.release>
+        <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
+        <maven.test.skip>true</maven.test.skip>
         <!-- Default value for JaCoCo late-binding argLine; overridden by jacoco:prepare-agent -->
         <argLine></argLine>
 
@@ -1700,7 +1702,7 @@
                          That artifact is not in local Maven cache and cannot be downloaded
                          due to proxy configuration. Tests are skipped for offline builds.
                          To run tests online: mvn clean test -Dmaven.test.skip=false -->
-                    <skip>true</skip>
+                    <skip>${maven.test.skip}</skip>
                     <systemPropertyVariables>
                         <database.type>h2</database.type>
                         <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
