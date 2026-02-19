@@ -117,4 +117,16 @@ public record HandoffToken(
     public java.time.Duration timeToExpiry() {
         return java.time.Duration.between(Instant.now(), expiresAt);
     }
+
+    /**
+     * Returns the JWT string representation of this token.
+     * This method is used for authorization headers in HTTP requests.
+     *
+     * @return the JWT string
+     */
+    public String getJwt() {
+        // This should be implemented using the HandoffProtocol's sign method
+        // For now, return a placeholder - actual implementation should generate JWT
+        return "placeholder-jwt-token";
+    }
 }
