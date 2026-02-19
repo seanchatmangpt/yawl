@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification xmlns="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/schema/YAWL_Schema4.0.xsd">
+  <header>
+    <specificationName>SimpleOrderProcess</specificationName>
+    <specificationVersion>1.0</specificationVersion>
+    <creator>YAWL Test Suite</creator>
+    <description>A simple test specification for A2A capability testing</description>
+    <version>1.0</version>
+    <dateCreated>2024-01-01T00:00:00</dateCreated>
+  </header>
+  <schema>
+    <inputParameters></inputParameters>
+    <outputParameters></outputParameters>
+    <variables></variables>
+    <net id="net_1">
+      <inputCondition id="start">
+        <predicate>
+          <expression>true</expression>
+        </predicate>
+      </inputCondition>
+      <edges>
+        <flowCondition id="flow_1">
+          <sourceRef>start</sourceRef>
+          <targetRef>Task_1</targetRef>
+        </flowCondition>
+      </edges>
+      <places>
+        <place id="p_1">
+          <edges>
+            <flowCondition id="flow_2">
+              <sourceRef>p_1</sourceRef>
+              <targetRef>Task_1</targetRef>
+            </flowCondition>
+          </edges>
+        </place>
+        <place id="p_2">
+          <edges>
+            <flowCondition id="flow_3">
+              <sourceRef>Task_1</sourceRef>
+              <targetRef>p_2</targetRef>
+            </flowCondition>
+          </edges>
+        </place>
+      </places>
+      <tasks>
+        <task id="Task_1" name="Simple Task">
+          <inputCondition id="input_1">
+            <predicate>
+              <expression>true</expression>
+            </predicate>
+          </inputCondition>
+          <outputCondition id="output_1">
+            <predicate>
+              <expression>true</expression>
+            </predicate>
+          </outputCondition>
+          <edges>
+            <flowCondition id="flow_4">
+              <sourceRef>Task_1</sourceRef>
+              <targetRef>p_2</targetRef>
+            </flowCondition>
+          </edges>
+        </task>
+      </tasks>
+      <outputCondition id="end">
+        <predicate>
+          <expression>true</expression>
+        </predicate>
+      </outputCondition>
+    </net>
+  </schema>
+</specification>
