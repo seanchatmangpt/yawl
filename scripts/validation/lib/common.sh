@@ -30,6 +30,8 @@ declare -a WARNINGS=()
 declare -i TOTAL_TESTS=0
 declare -i PASS_COUNT=0
 declare -i FAIL_COUNT=0
+declare -a JSON_RESULTS=()
+declare -a JUNIT_RESULTS=[]
 
 # Logging functions
 log_info() {

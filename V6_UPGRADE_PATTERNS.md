@@ -723,7 +723,7 @@ mvn clean package
 
 - `/home/user/yawl/GAP_FIXES_SUMMARY.md` - Comprehensive gap fix coordination
 - `/home/user/yawl/REMEDIATION_COMPLETED.md` - Before/after patterns for each violation
-- `/home/user/yawl/.claude/VIOLATION_REPORT.md` - Full violation audit details
+- `/home/user/yawl/.claude/[removed]` - Full violation audit details
 - `/home/user/yawl/.claude/HYPER_STANDARDS.md` - Standards guard definitions
 - `/home/user/yawl/.claude/BEST-PRACTICES-2026.md` - 2026 best practices guide
 

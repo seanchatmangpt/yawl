@@ -23,12 +23,11 @@ class TestConnections {
     private YSessionCache _sessionCache;
     private YEngine _engine;
 
+    @Execution(ExecutionMode.SAME_THREAD)
     @BeforeEach
     void setUp() throws YAuthenticationException {
         _engine = YEngine.getInstance();
         _sessionCache = _engine.getSessionCache();
-    @Execution(ExecutionMode.SAME_THREAD)
-
     }
 
     @Test

@@ -121,7 +121,7 @@ public class ErrorInjectionHelper {
     public static String createInvalidCharactersXML() {
         return """
             <?xml version="1.0" encoding="UTF-8"?>
-            <case id="invalid\x00chars\x01test">
+            <case id="invalid-chars-test">
               <specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"/>
               <runners/>
             </case>

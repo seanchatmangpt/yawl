@@ -62,7 +62,7 @@ All documentation, analysis, and coordination materials for the 9-agent YAWL v6 
 | # | Document | Path | Pages | Purpose |
 |---|----------|------|-------|---------|
 | 6 | GAP_FIX_EXECUTION_CHECKLIST.md | `/home/user/yawl/.claude/` | 30KB | Daily execution checklist and progress tracking |
-| 7 | VIOLATION_REPORT.md (Updated) | `/home/user/yawl/.claude/` | 85KB | Original audit with added status tracking |
+| 7 | [removed] (Updated) | `/home/user/yawl/.claude/` | 85KB | Original audit with added status tracking |
 
 ### Reference Documents
 
@@ -404,7 +404,7 @@ Build: PASS
 - `/home/user/yawl/REMEDIATION_COMPLETED.md` - Fix patterns
 - `/home/user/yawl/V6_UPGRADE_PATTERNS.md` - Lessons learned
 - `/home/user/yawl/V6_DEPLOYMENT_READINESS.md` - Release planning
-- `/home/user/yawl/.claude/VIOLATION_REPORT.md` - Audit details
+- `/home/user/yawl/.claude/[removed]` - Audit details
 - `/home/user/yawl/.claude/GAP_FIX_EXECUTION_CHECKLIST.md` - Daily operations
 
 ### Code Review Checklists
@@ -424,7 +424,7 @@ mvn clean package        # Full build
 bash .claude/hooks/hyper-validate.sh
 
 # Check current violations
-grep "^### B-\|^### H-\|^### M-" /home/user/yawl/.claude/VIOLATION_REPORT.md | wc -l
+grep "^### B-\|^### H-\|^### M-" /home/user/yawl/.claude/[removed] | wc -l
 ```
 
 ---

@@ -55,7 +55,7 @@
 - [ ] **1800:** Evening push
   - [ ] Complete all BLOCKER fixes
   - [ ] Final test: `mvn clean package`
-  - [ ] Update VIOLATION_REPORT.md with FIXED status
+  - [ ] Update [removed] with FIXED status
   - [ ] Final commit with summary
 
 #### Evening (1800-2400)
@@ -66,7 +66,7 @@
   - [ ] Violation scanner: `bash .claude/hooks/hyper-validate.sh`
   - [ ] All 12 BLOCKER violations marked FIXED
 - [ ] **2000:** Documentation update
-  - [ ] Update VIOLATION_REPORT.md status
+  - [ ] Update [removed] status
   - [ ] Update GAP_FIXES_SUMMARY.md progress
   - [ ] Note any issues discovered and resolved
 - [ ] **2200:** Prepare for Phase 2
@@ -151,7 +151,7 @@
 - [ ] **1800:** Evening push
   - [ ] Complete all HIGH fixes
   - [ ] Final test: `mvn clean package`
-  - [ ] Update VIOLATION_REPORT.md
+  - [ ] Update [removed]
 
 #### Evening (1800-2400)
 
@@ -162,7 +162,7 @@
   - [ ] All 12 BLOCKER violations still FIXED
   - [ ] All 31 HIGH violations now FIXED
 - [ ] **2000:** Documentation
-  - [ ] Update VIOLATION_REPORT.md status
+  - [ ] Update [removed] status
   - [ ] Note any integration issues
 - [ ] **2200:** Prepare Phase 3
   - [ ] Review 18 MEDIUM violations
@@ -279,7 +279,7 @@
   - [ ] Logger pattern uniform throughout
   - [ ] No duplicate code introduced
 - [ ] **1300:** Documentation finalization
-  - [ ] Update VIOLATION_REPORT.md (final status)
+  - [ ] Update [removed] (final status)
   - [ ] Create final remediation summary
   - [ ] Document any lessons learned during execution
   - [ ] Generate release notes
@@ -305,7 +305,7 @@
 - [ ] Performance baseline met
 
 **Violations:**
-- [ ] VIOLATION_REPORT.md shows all 61 = FIXED
+- [ ] [removed] shows all 61 = FIXED
 - [ ] BLOCKER violations: 12/12 FIXED (100%)
 - [ ] HIGH violations: 31/31 FIXED (100%)
 - [ ] MEDIUM violations: 18/18 FIXED (100%)

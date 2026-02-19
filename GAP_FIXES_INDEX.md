@@ -23,7 +23,7 @@
 
 ### For Architects & Technical Leads
 - **Comprehensive Coordination:** [`GAP_FIXES_SUMMARY.md`](#gap-fixes-summary) (full details)
-- **Violation Details:** [`.claude/VIOLATION_REPORT.md`](#violation-report) (audit findings)
+- **Violation Details:** [`.claude/[removed]`](#violation-report) (audit findings)
 - **Fix Patterns Reference:** [`REMEDIATION_COMPLETED.md`](#remediation-completed) (best practices)
 - **Prevention Strategies:** [`V6_UPGRADE_PATTERNS.md`](#upgrade-patterns)
 
@@ -196,8 +196,8 @@ Go/No-Go Decision: 2026-02-19 0800
 
 ---
 
-### Document 5: VIOLATION_REPORT.md (Updated)
-**File Path:** `/home/user/yawl/.claude/VIOLATION_REPORT.md`
+### Document 5: [removed] (Updated)
+**File Path:** `/home/user/yawl/.claude/[removed]`
 **Purpose:** Original audit report with added tracking section
 **Audience:** Technical leads, compliance reviewers
 
@@ -246,7 +246,7 @@ Status by Severity:
 | REMEDIATION_COMPLETED.md | `/home/user/yawl/` | 45KB | Before/after patterns |
 | V6_UPGRADE_PATTERNS.md | `/home/user/yawl/` | 50KB | Lessons learned |
 | V6_DEPLOYMENT_READINESS.md | `/home/user/yawl/` | 40KB | Production readiness |
-| VIOLATION_REPORT.md | `/home/user/yawl/.claude/` | 85KB | Audit findings + tracking |
+| [removed] | `/home/user/yawl/.claude/` | 85KB | Audit findings + tracking |
 
 ---
 
@@ -367,7 +367,7 @@ Status by Severity:
 
 ### Daily Updates
 1. Agents commit fixes with clear messages
-2. Coordinator updates VIOLATION_REPORT.md status
+2. Coordinator updates [removed] status
 3. Updates reflect agent progress in GAP_FIXES_SUMMARY.md
 4. Build verification: `mvn clean package && mvn clean test`
 
@@ -448,7 +448,7 @@ Status by Severity:
 ## Document Maintenance
 
 ### Update Schedule
-- **Daily:** VIOLATION_REPORT.md status tracking (during phases)
+- **Daily:** [removed] status tracking (during phases)
 - **Daily:** GAP_FIXES_SUMMARY.md agent progress notes
 - **Weekly:** Phase completion summaries
 - **Final:** After Phase 4, mark all violations as FIXED
@@ -484,7 +484,7 @@ Status by Severity:
 - `REMEDIATION_COMPLETED.md` - Before/after fix patterns
 - `V6_UPGRADE_PATTERNS.md` - Lessons learned
 - `V6_DEPLOYMENT_READINESS.md` - Production readiness
-- `.claude/VIOLATION_REPORT.md` - Full audit findings
+- `.claude/[removed]` - Full audit findings
 - `.claude/BEST-PRACTICES-2026.md` - Coding standards
 - `.claude/HYPER_STANDARDS.md` - Guard definitions
 

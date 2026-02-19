@@ -167,7 +167,7 @@ else
         fi
         
         if ! timeout "$TIMEOUT" "$check"; then
-            local exit_code=$?
+            exit_code=$?
             if [[ $exit_code -eq 124 ]]; then
                 log_error "$(basename "$check") timed out after $TIMEOUT seconds"
             else

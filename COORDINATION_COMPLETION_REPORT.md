@@ -35,7 +35,7 @@ The Gap-Fix Coordination Specialist has completed a comprehensive coordination a
 |----------|------|-------|---------|
 | **GAP_FIX_EXECUTION_CHECKLIST.md** | 15KB | 700 | Daily execution checklist, sync templates, progress tracking |
 | **GAP_FIXES_COORDINATION_MANIFEST.md** | 18KB | 698 | Manifest and completion summary with all references |
-| **VIOLATION_REPORT.md (Updated)** | 85KB | 680 | Original audit + new status tracking section |
+| **[removed] (Updated)** | 85KB | 680 | Original audit + new status tracking section |
 
 **Subtotal:** 118KB, 2,078 lines
 
@@ -398,7 +398,7 @@ Build: PASS
 
 .claude/
 ├── GAP_FIX_EXECUTION_CHECKLIST.md          (15KB - Daily operations)
-└── VIOLATION_REPORT.md                     (Updated with tracking)
+└── [removed]                     (Updated with tracking)
 ```
 
 **Total:** 216KB of documentation

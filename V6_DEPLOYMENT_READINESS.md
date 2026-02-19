@@ -178,7 +178,7 @@ YAWL v6.0.0-Alpha contains **61 confirmed HYPER_STANDARDS violations** preventin
 | GAP_FIXES_SUMMARY.md | Coordinator | COMPLETE |
 | REMEDIATION_COMPLETED.md | Coordinator | COMPLETE |
 | V6_UPGRADE_PATTERNS.md | Architect | COMPLETE |
-| Updated VIOLATION_REPORT.md | Coordinator | IN PROGRESS |
+| Updated AUDIT_REPORT_REMOVED.md | Coordinator | N/A |
 | Release Notes (gap fixes) | Product Manager | PENDING |
 | Deployment Guide (production) | Operations | PENDING |
 | Migration Guide (v5 → v6) | Technical Writer | PENDING |
@@ -463,7 +463,7 @@ If issues discovered post-deployment:
 - `GAP_FIXES_SUMMARY.md` - Comprehensive coordination plan
 - `REMEDIATION_COMPLETED.md` - Before/after fix patterns
 - `V6_UPGRADE_PATTERNS.md` - Lessons learned and prevention strategies
-- `.claude/VIOLATION_REPORT.md` - Full audit details
+- `.claude/archive/2026-01/VIOLATION_REPORT.md` - Full audit details (archived)
 - `.claude/BEST-PRACTICES-2026.md` - Coding standards
 
 ---

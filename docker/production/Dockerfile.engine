@@ -81,6 +81,7 @@ ENV JAVA_OPTS="\
     -XX:+ZGenerational \
     -XX:+UseCompactObjectHeaders \
     -XX:+UseStringDeduplication \
+    -XX:+UseAOTCache \
     -XX:+ExitOnOutOfMemoryError \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/app/logs/heap-dump.hprof \
@@ -90,6 +91,9 @@ ENV JAVA_OPTS="\
     -Djdk.virtualThreadScheduler.parallelism=200 \
     -Djdk.virtualThreadScheduler.maxPoolSize=256 \
     -Djdk.tracePinnedThreads=short"
+
+# TLS 1.3 security enforcement
+ENV JAVA_TOOL_OPTIONS="-Djdk.tls.disabledAlgorithms=SSLv3,TLSv1,TLSv1.1,RC4,MD5,SHA-1,DES,3DES"
 
 # Environment
 ENV SPRING_PROFILES_ACTIVE=production

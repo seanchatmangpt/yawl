@@ -29,7 +29,7 @@ services:
   yawl-engine:
     build:
       context: .
-      dockerfile: Dockerfile.modernized
+      dockerfile: docker/production/Dockerfile.engine
       args:
         VERSION: 6.0.0-Alpha
         BUILD_DATE: ${BUILD_DATE:-2026-02-16}
@@ -205,7 +205,7 @@ services:
   yawl-engine-prod:
     build:
       context: .
-      dockerfile: Dockerfile.modernized
+      dockerfile: docker/production/Dockerfile.engine
       args:
         VERSION: 6.0.0-Alpha
         BUILD_DATE: ${BUILD_DATE:-2026-02-16}

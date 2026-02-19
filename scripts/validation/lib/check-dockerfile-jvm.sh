@@ -24,10 +24,13 @@ readonly PROD_FLAGS=(
     "-XX:+UseAOTCache"
 )
 
-# Files to check
+# Files to check (exclude Python-based Dockerfiles and base images)
 declare -a dockerfiles
 while IFS= read -r -d '' file; do
-    dockerfiles+=("$file")
+    # Skip Python-based Dockerfiles and base images
+    if [[ "$file" != *"mcp"* && "$file" != *"a2a"* ]]; then
+        dockerfiles+=("$file")
+    fi
 done < <(find . -name "Dockerfile*" -type f ! -path "./docker/base/*" ! -path "./node_modules/*" -print0)
 
 # Check function
@@ -50,7 +53,7 @@ check_dockerfile() {
 
     # Check each required flag
     for flag in "${required_flags[@]}"; do
-        if echo "$content" | grep -q "$flag"; then
+        if echo "$content" | grep -q -- "$flag"; then
             found_flags+=("$flag")
         else
             missing_flags+=("$flag")
@@ -88,12 +91,11 @@ deprecated_flags=(
 )
 
 for file in "${dockerfiles[@]}"; do
-    local content
     content=$(cat "$file" 2>/dev/null || echo "")
-    local deprecated_found=()
+    deprecated_found=()
 
     for flag in "${deprecated_flags[@]}"; do
-        if echo "$content" | grep -q "$flag"; then
+        if echo "$content" | grep -q -- "$flag"; then
             deprecated_found+=("$flag")
         fi
     done
@@ -105,7 +107,6 @@ done
 
 # Check for Java 25 specific features
 for file in "${dockerfiles[@]}"; do
-    local content
     content=$(cat "$file" 2>/dev/null || echo "")
 
     # Check for virtual threads configuration

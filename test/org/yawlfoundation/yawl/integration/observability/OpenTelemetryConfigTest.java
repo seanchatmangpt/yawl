@@ -7,6 +7,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
@@ -21,6 +23,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
  * @version 5.2
  */
 @Tag("unit")
+@Execution(ExecutionMode.CONCURRENT)
 class OpenTelemetryConfigTest {
 
     private OpenTelemetryConfig config;
