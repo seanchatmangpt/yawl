@@ -168,7 +168,7 @@ _emit_dual_family_impl() {
 }
 
 # ==========================================================================
-# DUPLICATES: Find duplicate FQCNs across modules (Optimized with awk)
+# DUPLICATES: Find duplicate FQCNs across modules (Optimized - batch grep)
 # ==========================================================================
 _emit_duplicates_impl() {
     local out="$FACTS_DIR/duplicates.json"
@@ -184,51 +184,53 @@ _emit_duplicates_impl() {
         java_files=$(find "$REPO_ROOT/src" -name "*.java" -type f 2>/dev/null | grep -v target)
     fi
 
-    # Filter out test files and extract FQNs using awk for batch processing
-    local fqn_data
-    fqn_data=$(echo "$java_files" | grep -v 'Test\.java$' | awk -v root="$REPO_ROOT" '
-    {
-        file = $0
-        cmd = "grep -m1 \"^package \" \"" file "\" 2>/dev/null"
-        cmd | getline pkgline
-        close(cmd)
+    # Filter out test files
+    local non_test_files
+    non_test_files=$(echo "$java_files" | grep -v 'Test\.java$')
 
-        if (pkgline != "") {
-            gsub(/^package[[:space:]]+/, "", pkgline)
-            gsub(/;.*$/, "", pkgline)
-            gsub(/[[:space:]]/, "", pkgline)
+    # Batch extract package declarations with grep -H (filename header)
+    local package_data
+    package_data=$(echo "$non_test_files" | xargs grep -h '^package ' 2>/dev/null | head -2000)
 
-            n = split(file, parts, "/")
-            classname = parts[n]
-            gsub(/\.java$/, "", classname)
+    # Build FQN list using shell string manipulation (fast for ~1000 files)
+    local -A fqn_counts=()
+    local -A fqn_locations=()
+    local total_fqns=0
 
-            if (pkgline != "" && classname !~ /Test$/) {
-                rel_path = substr(file, length(root) + 2)
-                print pkgline "." classname "|" rel_path
-            }
-        }
-    }')
+    while IFS= read -r java_file; do
+        [[ -z "$java_file" ]] && continue
 
-    # Count FQNs using sort/uniq for speed
-    local fqn_counts total_fqns
-    fqn_counts=$(echo "$fqn_data" | cut -d'|' -f1 | sort | uniq -c | sort -rn)
-    total_fqns=$(echo "$fqn_data" | cut -d'|' -f1 | sort -u | wc -l | tr -d ' ')
+        # Get package from file using grep
+        local pkg
+        pkg=$(grep -m1 '^package ' "$java_file" 2>/dev/null | sed 's/package //;s/;//;s/ //g')
+        [[ -z "$pkg" ]] && continue
 
-    # Find duplicates (count > 1) using awk
-    local -a duplicate_entries=()
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        local count fqn
-        count=$(echo "$line" | awk '{print $1}')
-        fqn=$(echo "$line" | awk '{print $2}')
+        # Get class name
+        local classname
+        classname=$(basename "$java_file" .java)
+        [[ "$classname" == *Test ]] && continue
 
-        if [[ "$count" -gt 1 ]]; then
-            # Find all locations for this FQN
-            local fqn_locs
-            fqn_locs=$(echo "$fqn_data" | grep "^${fqn}|" | cut -d'|' -f2 | tr '\n' '|' | sed 's/|$//;s/|/", "/g')
-            duplicate_entries+=("{\"fqn\": \"$fqn\", \"count\": $count, \"locations\": [\"$fqn_locs\"]}")
+        local fqn="${pkg}.${classname}"
+        local rel_path="${java_file#"$REPO_ROOT"/}"
+
+        ((total_fqns++))
+        fqn_counts["$fqn"]=$(( ${fqn_counts["$fqn"]:-0} + 1 ))
+        if [[ -z "${fqn_locations[$fqn]:-}" ]]; then
+            fqn_locations["$fqn"]="$rel_path"
+        else
+            fqn_locations["$fqn"]="${fqn_locations[$fqn]}|$rel_path"
         fi
-    done <<< "$fqn_counts"
+    done <<< "$non_test_files"
+
+    # Find actual duplicates (FQNs appearing more than once)
+    local -a duplicate_entries=()
+    for fqn in "${!fqn_counts[@]}"; do
+        local count="${fqn_counts[$fqn]}"
+        if [[ "$count" -gt 1 ]]; then
+            local locations="${fqn_locations[$fqn]}"
+            duplicate_entries+=("{\"fqn\": \"$fqn\", \"count\": $count, \"locations\": [\"$(echo "$locations" | sed 's/|/", "/g')\"]}")
+        fi
+    done
 
     # Sort duplicates for consistent output
     IFS=$'\n' sorted_duplicates=($(sort <<<"${duplicate_entries[*]}")); unset IFS

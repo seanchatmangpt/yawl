@@ -102,11 +102,11 @@ case "$MODE" in
     ci)
         if [[ "$PARALLEL" == "true" ]]; then
             checks=(
-                "$LIB_DIR/check-module-sync.sh --json"
-                "$LIB_DIR/check-singleton-ann.sh --json"
-                "$LIB_DIR/check-dockerfile-jvm.sh --json"
-                "$LIB_DIR/check-doc-links.sh --json"
-                "$LIB_DIR/check-observatory-timing.sh --json"
+                "$LIB_DIR/check-module-sync.sh"
+                "$LIB_DIR/check-singleton-ann.sh"
+                "$LIB_DIR/check-dockerfile-jvm.sh"
+                "$LIB_DIR/check-doc-links.sh"
+                "$LIB_DIR/check-observatory-timing.sh"
             )
         else
             checks=(
