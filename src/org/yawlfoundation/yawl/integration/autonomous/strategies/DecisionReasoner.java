@@ -21,46 +21,48 @@ package org.yawlfoundation.yawl.integration.autonomous.strategies;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
- * Produces output for work items based on agent decision logic.
+ * Functional interface for producing output decisions for work items processed by autonomous agents.
  *
- * <p>This is a stub implementation that returns minimal output.
- * In a real implementation, this would:</p>
+ * <p>Implementers of this interface apply agent decision logic to work items and
+ * generate appropriate output. Implementations typically perform:
  * <ul>
- *   <li>Analyze work item data</li>
- *   <li>Apply domain-specific logic</li>
- *   <li>Generate appropriate output</li>
- *   <li>Handle edge cases and errors</li>
+ *   <li>Analysis of work item input data and context</li>
+ *   <li>Application of domain-specific logic and rules</li>
+ *   <li>Generation of task completion output</li>
+ *   <li>Handling of validation and error conditions</li>
  * </ul>
+ *
+ * <p>This is a functional interface and can be implemented using lambda expressions:</p>
+ * <pre>{@code
+ * DecisionReasoner reasoner = workItem ->
+ *     "Approved: " + workItem.getTaskName();
+ * }</pre>
  *
  * @since YAWL 6.0
  */
-public class DecisionReasoner {
+@FunctionalInterface
+public interface DecisionReasoner {
 
     /**
-     * Produces output for the given work item.
+     * Produces output for the given work item based on agent decision logic.
      *
-     * @param workItem the work item to process
-     * @return the output data for the work item
-     * @throws RuntimeException if decision fails
+     * <p>This method applies the agent's reasoning capabilities to the work item
+     * and produces the output data that represents the agent's decision or result.
+     * The process typically involves:
+     * <ol>
+     *   <li>Extracting and analyzing work item input data</li>
+     *   <li>Applying business logic and domain-specific rules</li>
+     *   <li>Generating appropriate output representing the decision</li>
+     *   <li>Validating the output against requirements</li>
+     * </ol></p>
+     *
+     * <p>The output format is implementation-specific and depends on the domain
+     * and task requirements. Common formats include XML, JSON, or plain text.</p>
+     *
+     * @param workItem the work item to process and generate output for
+     * @return the output data produced by applying decision logic to the work item
+     * @throws IllegalArgumentException if the work item is invalid or incomplete
+     * @throws RuntimeException if decision logic fails or validation errors occur
      */
-    public String produceOutput(WorkItemRecord workItem) {
-        // Stub implementation - return minimal output
-        // In a real implementation, this would:
-        // 1. Analyze work item input data
-        // 2. Apply business logic and rules
-        // 3. Generate appropriate output
-        // 4. Handle validation and error cases
-
-        if (workItem == null) {
-            throw new IllegalArgumentException("Work item cannot be null");
-        }
-
-        // Generate simple output based on task name
-        String taskName = workItem.getTaskName();
-        if (taskName == null || taskName.trim().isEmpty()) {
-            return "<output>Task completed</output>";
-        }
-
-        return String.format("<output>Task '%s' completed successfully</output>", taskName);
-    }
+    String produceOutput(WorkItemRecord workItem);
 }

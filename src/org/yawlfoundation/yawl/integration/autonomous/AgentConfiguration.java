@@ -10,7 +10,7 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * License for more details.
+ * Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
@@ -82,6 +82,73 @@ public record AgentConfiguration(
         int port,
         String version,
         long pollIntervalMs) {
+
+    private AgentConfiguration(Builder builder) {
+        this.capability = builder.capability;
+        this.engineUrl = builder.engineUrl;
+        this.username = builder.username;
+        this.password = builder.password;
+        this.discoveryStrategy = builder.discoveryStrategy;
+        this.eligibilityReasoner = builder.eligibilityReasoner;
+        this.decisionReasoner = builder.decisionReasoner;
+        this.port = builder.port;
+        this.version = builder.version;
+        this.pollIntervalMs = builder.pollIntervalMs;
+    }
+
+    /**
+     * Creates a new builder for AgentConfiguration.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Gets the agent's capability description.
+     *
+     * @return the agent capability
+     */
+    public AgentCapability getCapability() {
+        return capability;
+    }
+
+    /**
+     * Gets the agent display name, derived from the capability domain name.
+     *
+     * @return the agent name
+     */
+    public String getAgentName() {
+        return capability.domainName();
+    }
+
+    /**
+     * Gets the YAWL engine URL.
+     *
+     * @return the engine URL
+     */
+    public String getEngineUrl() {
+        return engineUrl;
+    }
+
+    /**
+     * Gets the username for engine authentication.
+     *
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * Gets the password for engine authentication.
+     *
+     * @return the password
+     */
+    public String getPassword() {
+        return password;
+    }
 
     /**
      * Canonical constructor with validation of required fields.

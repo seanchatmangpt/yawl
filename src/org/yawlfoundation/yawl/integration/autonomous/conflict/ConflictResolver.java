@@ -10,7 +10,7 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * License for more details.
+ * Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
@@ -20,49 +20,97 @@ package org.yawlfoundation.yawl.integration.autonomous.conflict;
 
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Resolves conflicts when multiple agents compete for the same work item.
  *
- * <p>This is a stub implementation that provides no conflict resolution.
- * In a real implementation, this would:</p>
- * <ul>
- *   <li>Detect work item conflicts</li>
- *   <li>Apply resolution strategies (first-come, priority, etc.)</li>
- *   <li>Handle arbitration and negotiation</li>
- *   <li>Manage deadlock scenarios</li>
- * </ul>
+ * <p>Uses a first-come priority strategy: agents are ranked by their position
+ * in the competing agents list, which represents arrival order. The first
+ * agent in the list wins the conflict. Tracks active conflicts for
+ * observability.</p>
+ *
+ * <p>Thread-safe: uses ConcurrentHashMap for conflict tracking.</p>
  *
  * @since YAWL 6.0
  */
 public class ConflictResolver {
 
+    private final Map<String, String> activeConflicts = new ConcurrentHashMap<>();
+
     /**
-     * Resolves conflicts for a work item among competing agents.
+     * Resolves a conflict for a work item among competing agents.
+     *
+     * <p>Strategy: first-come-first-served. The first agent in the competing
+     * agents list is selected as the winner. The conflict is recorded for
+     * observability.</p>
      *
      * @param workItem the work item with conflicts
-     * @param competingAgents list of agents wanting the work item
-     * @return the ID of the selected agent, or null if no resolution
+     * @param competingAgents list of agent IDs wanting the work item, ordered by arrival
+     * @return the ID of the selected agent
+     * @throws IllegalArgumentException if workItem is null or competingAgents is null/empty
      */
     public String resolveConflict(WorkItemRecord workItem, List<String> competingAgents) {
-        // Stub implementation - no resolution
-        // In a real implementation, this would:
-        // 1. Analyze the conflict scenario
-        // 2. Apply resolution strategy (priority, load balancing, etc.)
-        // 3. Select the most appropriate agent
-        // 4. Return the selected agent ID
-        return null;
+        if (workItem == null) {
+            throw new IllegalArgumentException("workItem is required");
+        }
+        if (competingAgents == null || competingAgents.isEmpty()) {
+            throw new IllegalArgumentException("competingAgents must contain at least one agent");
+        }
+
+        String workItemId = workItem.getID();
+        String winner = competingAgents.getFirst();
+
+        activeConflicts.put(workItemId, winner);
+
+        return winner;
     }
 
     /**
-     * Gets the list of work items currently in conflict.
+     * Gets the work item IDs that have had conflicts resolved.
      *
-     * @return list of conflicting work item IDs
+     * @return unmodifiable list of work item IDs with recorded conflicts
      */
     public List<String> getConflictingWorkItems() {
-        // Stub implementation - no conflicts
-        return Collections.emptyList();
+        return List.copyOf(activeConflicts.keySet());
+    }
+
+    /**
+     * Gets the winning agent for a previously resolved conflict.
+     *
+     * @param workItemId the work item ID
+     * @return the winning agent ID, or null if no conflict recorded
+     */
+    public String getWinner(String workItemId) {
+        return activeConflicts.get(workItemId);
+    }
+
+    /**
+     * Clears a resolved conflict once the work item has been processed.
+     *
+     * @param workItemId the work item ID to clear
+     */
+    public void clearConflict(String workItemId) {
+        if (workItemId != null) {
+            activeConflicts.remove(workItemId);
+        }
+    }
+
+    /**
+     * Clears all recorded conflicts.
+     */
+    public void clearAll() {
+        activeConflicts.clear();
+    }
+
+    /**
+     * Gets the number of active conflicts being tracked.
+     *
+     * @return the count of active conflicts
+     */
+    public int getActiveConflictCount() {
+        return activeConflicts.size();
     }
 }
