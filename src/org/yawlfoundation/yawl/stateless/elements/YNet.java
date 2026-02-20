@@ -454,8 +454,7 @@ public final class YNet extends YDecomposition {
             if (element instanceof YTask) {
                 xml.append(element.toXML());
             }
-            else {
-                YCondition condition = (YCondition) element;
+            else if (element instanceof YCondition condition) {
                 if (! (condition instanceof YInputCondition ||
                         condition instanceof YOutputCondition || condition.isImplicit())) {
                     xml.append(condition.toXML());
