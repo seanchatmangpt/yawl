@@ -121,7 +121,9 @@ public class IntrospectCodebaseSkill implements A2ASkill {
     private Map<String, Object> executeQuery(String query) throws IOException {
         Path factsDir = observatoryRoot.resolve("facts");
 
-        return switch (query) {
+        // This switch is safe because the caller (execute method) has already validated
+        // the query against SUPPORTED_QUERIES. The default case is defensive programming.
+        Map<String, Object> result = switch (query) {
             case "modules" -> readJsonFile(factsDir.resolve("modules.json"));
             case "reactor" -> readJsonFile(factsDir.resolve("reactor.json"));
             case "gates" -> readJsonFile(factsDir.resolve("gates.json"));
@@ -132,17 +134,16 @@ public class IntrospectCodebaseSkill implements A2ASkill {
             case "checkstyle" -> readJsonFile(factsDir.resolve("checkstyle-warnings.json"));
             case "all" -> aggregateAllFacts(factsDir);
             default -> {
-                // Unknown query type. Return error response instead of throwing.
-                // The caller has already validated against SUPPORTED_QUERIES, so this
-                // should never occur in normal operation, but we provide a real response.
-                _logger.warn("Query type not recognized: {}. Supported types: {}", query, SUPPORTED_QUERIES);
+                // Should never occur due to validation in execute(), but handle gracefully
+                _logger.warn("Unrecognized query in executeQuery: {}. This suggests a validation gap.", query);
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("error", "Query '" + query + "' is not supported");
                 errorResponse.put("supported_queries", SUPPORTED_QUERIES);
-                errorResponse.put("hint", "Query must be one of: modules, reactor, gates, integration, static-analysis, spotbugs, pmd, checkstyle, all");
+                errorResponse.put("hint", "Supported queries: modules, reactor, gates, integration, static-analysis, spotbugs, pmd, checkstyle, all");
                 yield errorResponse;
             }
         };
+        return result;
     }
 
     @SuppressWarnings("unchecked")

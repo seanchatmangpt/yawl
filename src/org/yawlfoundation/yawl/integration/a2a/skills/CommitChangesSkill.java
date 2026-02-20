@@ -127,6 +127,13 @@ public class CommitChangesSkill implements A2ASkill {
                 "Toyota Production System: build quality in, don't hide defects.");
         }
 
+        if (!isValidOperation(operation)) {
+            String validOps = String.join(", ", SAFE_OPERATIONS, MODERATE_OPERATIONS, DANGEROUS_OPERATIONS);
+            _logger.warn("Invalid git operation requested: {}. Valid operations: {}", operation, validOps);
+            return SkillResult.error(
+                "Unknown operation: '" + operation + "'. Valid operations are: " + validOps);
+        }
+
         validateParameters(operation, files, message, branch);
 
         try {
@@ -166,6 +173,12 @@ public class CommitChangesSkill implements A2ASkill {
             _logger.error("Git operation failed: {}", e.getMessage());
             return SkillResult.error("Git operation failed: " + e.getMessage());
         }
+    }
+
+    private boolean isValidOperation(String operation) {
+        return SAFE_OPERATIONS.contains(operation) ||
+               MODERATE_OPERATIONS.contains(operation) ||
+               DANGEROUS_OPERATIONS.contains(operation);
     }
 
     private SafetyClass classifyOperation(String operation) {
@@ -304,14 +317,6 @@ public class CommitChangesSkill implements A2ASkill {
                 command.add("-u");
                 command.add("origin");
                 command.add(branch);
-            }
-            default -> {
-                // Unknown operation not in the supported set. Log and return empty command,
-                // which will be handled by the caller as a validation error.
-                _logger.warn("Unknown git operation requested: {}. Supported operations: {}",
-                        operation, Set.of("status", "log", "diff", "show", "stage", "commit", "branch", "checkout", "push"));
-                // Return command with only "git" to trigger a controlled git error later
-                return command;
             }
         }
 
