@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WCP-25: Cancel and Complete Multiple Instances
+  A multi-instance task where the MI set can be cancelled or force-completed.
+  Pattern: start -> processMI (MI, dynamic) -> handleResult -> end
+  The MI task uses dynamic creation mode so additional instances can be fired.
+-->
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="Wcp25CancelCompleteMI">
+    <metaData>
+      <title>WCP-25 Cancel and Complete Multiple Instances</title>
+      <creator>YAWL Stateless Test</creator>
+      <description>WCP-25: Multi-instance task with dynamic instance creation, supporting cancel and force-complete of remaining instances.</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wcp25Net" xsi:type="NetFactsType" isRootNet="true">
+      <name>WCP-25 Net</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="startTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="startTask">
+          <name>Start Task</name>
+          <documentation>Initialise the workflow</documentation>
+          <flowsInto>
+            <nextElementRef id="processMI"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="startTaskGW"/>
+        </task>
+        <task id="processMI" xsi:type="MultipleInstanceExternalTaskFactsType">
+          <name>Process Items MI</name>
+          <documentation>Process multiple items; supports dynamic instance creation, force-complete and cancel of remaining instances.</documentation>
+          <flowsInto>
+            <nextElementRef id="handleResult"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <minimum>1</minimum>
+          <maximum>5</maximum>
+          <threshold>3</threshold>
+          <creationMode code="dynamic"/>
+          <decomposesTo id="processMIGW"/>
+        </task>
+        <task id="handleResult">
+          <name>Handle Result</name>
+          <documentation>Handle the MI processing result</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="handleResultGW"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="startTaskGW" xsi:type="WebServiceGatewayFactsType">
+      <name>startTaskGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="processMIGW" xsi:type="WebServiceGatewayFactsType">
+      <name>processMIGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="handleResultGW" xsi:type="WebServiceGatewayFactsType">
+      <name>handleResultGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+  </specification>
+</specificationSet>

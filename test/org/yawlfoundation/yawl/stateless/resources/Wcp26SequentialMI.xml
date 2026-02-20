@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WCP-26: Sequential Multiple Instances Without A Priori Knowledge
+  The number of instances is not known before runtime; instances execute one after another.
+  Pattern: start -> processSeq (MI sequential) -> finalize -> end
+-->
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="Wcp26SequentialMI">
+    <metaData>
+      <title>WCP-26 Sequential Multiple Instances Without A Priori Knowledge</title>
+      <creator>YAWL Stateless Test</creator>
+      <description>WCP-26: Sequential MI task where instance count is determined at runtime.</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wcp26Net" xsi:type="NetFactsType" isRootNet="true">
+      <name>WCP-26 Net</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="startTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="startTask">
+          <name>Start Task</name>
+          <documentation>Prepare for sequential multi-instance processing</documentation>
+          <flowsInto>
+            <nextElementRef id="processSeq"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="startTaskGW"/>
+        </task>
+        <task id="processSeq" xsi:type="MultipleInstanceExternalTaskFactsType">
+          <name>Sequential Process</name>
+          <documentation>WCP-26: Sequential instances where count is determined during execution. Uses dynamic creation so instances are fired one at a time.</documentation>
+          <flowsInto>
+            <nextElementRef id="finalize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <minimum>1</minimum>
+          <maximum>4</maximum>
+          <threshold>2</threshold>
+          <creationMode code="dynamic"/>
+          <decomposesTo id="processSeqGW"/>
+        </task>
+        <task id="finalize">
+          <name>Finalize</name>
+          <documentation>Finalize sequential processing results</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="finalizeGW"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="startTaskGW" xsi:type="WebServiceGatewayFactsType">
+      <name>startTaskGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="processSeqGW" xsi:type="WebServiceGatewayFactsType">
+      <name>processSeqGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="finalizeGW" xsi:type="WebServiceGatewayFactsType">
+      <name>finalizeGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+  </specification>
+</specificationSet>
