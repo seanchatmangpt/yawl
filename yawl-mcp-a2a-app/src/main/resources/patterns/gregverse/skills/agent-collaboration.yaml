@@ -1,0 +1,250 @@
+# Agent Collaboration Skill
+# Multi-agent coordination and collaboration patterns
+
+id: agent-collaboration
+name: Multi-Agent Collaboration Design
+description: |
+  Designs collaboration patterns for multiple AI agents working together on
+  complex tasks. Defines communication protocols, task distribution strategies,
+  conflict resolution mechanisms, and consensus building approaches. Supports
+  various coordination topologies including hierarchical, mesh, and hybrid.
+
+agent: coordination-architect
+
+input_schema:
+  type: object
+  properties:
+    collaboration_name:
+      type: string
+      description: Name for this collaboration pattern
+    objective:
+      type: string
+      description: Overall goal of the multi-agent collaboration
+    participating_agents:
+      type: array
+      items:
+        type: object
+        properties:
+          agent_type: { type: string }
+          role: { type: string }
+          capabilities: { type: array }
+          constraints: { type: array }
+    task_breakdown:
+      type: array
+      items:
+        type: object
+        properties:
+          task_id: { type: string }
+          description: { type: string }
+          dependencies: { type: array }
+          required_capabilities: { type: array }
+          estimated_complexity: { type: string, enum: [low, medium, high] }
+    coordination_requirements:
+      type: object
+      properties:
+        topology_preference:
+          type: string
+          enum: [hierarchical, mesh, ring, star, hybrid]
+          description: Preferred coordination topology
+        communication_frequency:
+          type: string
+          enum: [continuous, periodic, event_driven, on_demand]
+        synchronization_points:
+          type: array
+          items:
+            type: object
+            properties:
+              milestone: { type: string }
+              required_agents: { type: array }
+        conflict_resolution:
+          type: string
+          enum: [coordinator_decides, voting, consensus, escalation]
+        failure_handling:
+          type: string
+          enum: [retry, fallback_agent, abort, graceful_degradation]
+    constraints:
+      type: object
+      properties:
+        max_agents: { type: integer }
+        max_duration: { type: string }
+        resource_limits: { type: object }
+        priority_level: { type: string, enum: [low, normal, high, critical] }
+    success_criteria:
+      type: array
+      items: { type: string }
+    known_challenges:
+      type: array
+      items: { type: string }
+      description: Anticipated coordination challenges
+  required:
+    - collaboration_name
+    - objective
+    - participating_agents
+
+output_format:
+  type: object
+  properties:
+    collaboration_blueprint:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        topology:
+          type: object
+          properties:
+            type: { type: string }
+            diagram: { type: string }
+            rationale: { type: string }
+    agent_assignments:
+      type: array
+      items:
+        type: object
+        properties:
+          agent_type: { type: string }
+          assigned_tasks: { type: array }
+          decision_authority: { type: array }
+          communication_channels: { type: array }
+          fallback_behavior: { type: string }
+    task_workflow:
+      type: object
+      properties:
+        phases:
+          type: array
+          items:
+            type: object
+            properties:
+              phase_name: { type: string }
+              tasks: { type: array }
+              parallel_execution: { type: boolean }
+              entry_conditions: { type: array }
+              exit_conditions: { type: array }
+        critical_path: { type: array }
+        estimated_duration: { type: string }
+    communication_protocol:
+      type: object
+      properties:
+        message_types:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              purpose: { type: string }
+              format: { type: string }
+        synchronization_mechanisms:
+          type: array
+          items:
+            type: object
+            properties:
+              mechanism: { type: string }
+              trigger: { type: string }
+              participants: { type: array }
+        shared_state:
+          type: object
+          properties:
+            state_elements: { type: array }
+            update_policy: { type: string }
+            access_control: { type: object }
+    conflict_resolution_strategy:
+      type: object
+      properties:
+        primary_method: { type: string }
+        escalation_path: { type: array }
+        decision_criteria: { type: array }
+        tie_breaking: { type: string }
+    failure_recovery:
+      type: object
+      properties:
+        failure_scenarios:
+          type: array
+          items:
+            type: object
+            properties:
+              scenario: { type: string }
+              detection: { type: string }
+              recovery_action: { type: string }
+        checkpoint_strategy: { type: string }
+        rollback_procedures: { type: array }
+    performance_optimization:
+      type: object
+      properties:
+        parallelization_opportunities: { type: array }
+        caching_strategy: { type: string }
+        load_balancing: { type: string }
+        resource_allocation: { type: object }
+    monitoring_and_observability:
+      type: object
+      properties:
+        key_metrics:
+          type: array
+          items: { type: string }
+        health_checks: { type: array }
+        alerting_conditions: { type: array }
+        logging_requirements: { type: array }
+    implementation_checklist:
+      type: array
+      items:
+        type: object
+        properties:
+          step: { type: string }
+          responsible_agent: { type: string }
+          dependencies: { type: array }
+    yaml_workflow_definition:
+      type: string
+      description: Complete workflow definition in YAML format
+
+examples:
+  - input:
+      collaboration_name: "Content Marketing Campaign"
+      objective: "Create and execute a multi-channel content marketing campaign"
+      participating_agents:
+        - agent_type: "content-strategist"
+          role: "Campaign planning and content calendar"
+          capabilities: ["strategy", "planning", "research"]
+        - agent_type: "copywriter"
+          role: "Write all content assets"
+          capabilities: ["writing", "editing", "seo"]
+        - agent_type: "designer"
+          role: "Visual asset creation"
+          capabilities: ["graphic_design", "branding"]
+        - agent_type: "analyst"
+          role: "Performance tracking and optimization"
+          capabilities: ["analytics", "reporting", "optimization"]
+      coordination_requirements:
+        topology_preference: "hierarchical"
+        communication_frequency: "event_driven"
+        conflict_resolution: "coordinator_decides"
+    description: Marketing team multi-agent design
+
+  - input:
+      collaboration_name: "Software Architecture Review"
+      objective: "Comprehensive review of system architecture with recommendations"
+      participating_agents:
+        - agent_type: "security-specialist"
+          role: "Security assessment"
+          capabilities: ["security_audit", "threat_modeling"]
+        - agent_type: "performance-engineer"
+          role: "Performance analysis"
+          capabilities: ["benchmarking", "optimization"]
+        - agent_type: "architect"
+          role: "Architecture evaluation and synthesis"
+          capabilities: ["design_patterns", "tradeoffs"]
+      task_breakdown:
+        - task_id: "T1"
+          description: "Security vulnerability assessment"
+          required_capabilities: ["security_audit"]
+          estimated_complexity: "high"
+        - task_id: "T2"
+          description: "Performance bottleneck identification"
+          required_capabilities: ["benchmarking"]
+          estimated_complexity: "medium"
+        - task_id: "T3"
+          description: "Synthesize findings and recommendations"
+          dependencies: ["T1", "T2"]
+          estimated_complexity: "high"
+      coordination_requirements:
+        topology_preference: "mesh"
+        communication_frequency: "continuous"
+        conflict_resolution: "consensus"
+    description: Technical review collaboration pattern

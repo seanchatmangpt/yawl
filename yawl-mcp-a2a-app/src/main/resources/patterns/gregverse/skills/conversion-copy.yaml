@@ -1,0 +1,185 @@
+# Conversion Copy Skill
+# High-converting copywriting for landing pages and marketing materials
+
+id: conversion-copy
+name: Conversion Copywriting
+description: |
+  Creates high-converting copy for landing pages, sales pages, emails, and
+  marketing materials. Uses persuasion psychology, customer research insights,
+  and A/B testing principles to craft copy that drives action. Follows
+  frameworks like PAS (Problem-Agitation-Solution), AIDA, and Jobs-to-be-Done.
+
+agent: conversion-copywriter
+
+input_schema:
+  type: object
+  properties:
+    copy_type:
+      type: string
+      enum: [landing_page, sales_page, email_sequence, ad_copy, product_page, checkout_flow]
+      description: Type of copy needed
+    product_name:
+      type: string
+      description: Name of product or service
+    product_description:
+      type: string
+      description: What the product does
+    target_audience:
+      type: object
+      properties:
+        demographics: { type: string }
+        psychographics: { type: string }
+        pain_points: { type: array }
+        desires: { type: array }
+    unique_selling_points:
+      type: array
+      items: { type: string }
+      description: Key differentiators
+    social_proof:
+      type: object
+      properties:
+        testimonials: { type: array }
+        case_studies: { type: array }
+        metrics: { type: array }
+        trust_badges: { type: array }
+    offer_details:
+      type: object
+      properties:
+        price: { type: string }
+        guarantee: { type: string }
+        bonuses: { type: array }
+        urgency_elements: { type: array }
+    brand_voice:
+      type: object
+      properties:
+        tone: { type: string }
+        do_say: { type: array }
+        dont_say: { type: array }
+    primary_cta:
+      type: string
+      description: Primary action you want users to take
+    secondary_ctas:
+      type: array
+      items: { type: string }
+      description: Secondary actions
+    current_copy:
+      type: string
+      description: Existing copy to improve (if any)
+    conversion_goal:
+      type: string
+      description: Specific conversion metric to optimize
+  required:
+    - copy_type
+    - product_name
+    - product_description
+    - primary_cta
+
+output_format:
+  type: object
+  properties:
+    headline:
+      type: object
+      properties:
+        primary:
+          type: string
+          description: Main headline
+        alternatives:
+          type: array
+          items: { type: string }
+        rationale:
+          type: string
+    subheadline:
+      type: string
+    body_sections:
+      type: array
+      items:
+        type: object
+        properties:
+          section_type: { type: string }
+          headline: { type: string }
+          copy: { type: string }
+          psychological_trigger: { type: string }
+    call_to_action:
+      type: object
+      properties:
+        primary:
+          type: object
+          properties:
+            button_text: { type: string }
+            supporting_copy: { type: string }
+            placement: { type: string }
+        secondary:
+          type: array
+          items:
+            type: object
+            properties:
+              button_text: { type: string }
+              context: { type: string }
+    objection_handlers:
+      type: array
+      items:
+        type: object
+        properties:
+          objection: { type: string }
+          response_copy: { type: string }
+          placement: { type: string }
+    urgency_elements:
+      type: array
+      items:
+        type: object
+        properties:
+          type: { type: string }
+          copy: { type: string }
+          ethical_consideration: { type: string }
+    a_b_test_suggestions:
+      type: array
+      items:
+        type: object
+        properties:
+          element: { type: string }
+          variant_a: { type: string }
+          variant_b: { type: string }
+          hypothesis: { type: string }
+          traffic_split: { type: string }
+    copy_checklist:
+      type: array
+      items: { type: string }
+
+examples:
+  - input:
+      copy_type: "landing_page"
+      product_name: "FocusFlow"
+      product_description: "AI-powered time blocking app for remote workers"
+      target_audience:
+        pain_points:
+          - "Constantly switching between tasks"
+          - "End the day feeling unproductive"
+          - "Overwhelmed by to-do lists"
+        desires:
+          - "Feel in control of my day"
+          - "Accomplish deep work"
+      unique_selling_points:
+        - "AI learns your productivity patterns"
+        - "Syncs with all calendar apps"
+        - "Pomodoro timer built-in"
+      primary_cta: "Start free trial"
+      social_proof:
+        testimonials:
+          - "Finally, I end my day feeling accomplished" - Sarah, Designer
+    description: SaaS landing page copy
+
+  - input:
+      copy_type: "email_sequence"
+      product_name: "Course Creator Pro"
+      product_description: "Platform to create and sell online courses"
+      target_audience:
+        pain_points:
+          - "Technical complexity of course platforms"
+          - "Low completion rates"
+      offer_details:
+        price: "$297/year"
+        guarantee: "30-day money-back guarantee"
+      brand_voice:
+        tone: "Encouraging, practical, no-fluff"
+      primary_cta: "Claim your discount"
+    description: Email sequence for course platform

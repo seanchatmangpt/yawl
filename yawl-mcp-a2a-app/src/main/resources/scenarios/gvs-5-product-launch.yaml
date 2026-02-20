@@ -1,0 +1,227 @@
+id: gvs-5-product-launch
+name: Full Product Launch
+description: |
+  Comprehensive multi-agent product launch orchestrating all 8 Gregverse agents.
+  Each agent contributes their specialized expertise to deliver a complete launch.
+version: "1.0.0"
+
+agents:
+  - greg-isenberg
+  - leo-leojrr
+  - james
+  - nicolas-cole
+  - dickie-bush
+  - justin-welsh
+  - blake-anderson
+  - dan-romero
+
+steps:
+  - id: strategy-define
+    agentId: greg-isenberg
+    skillId: launch-strategist
+    input:
+      phase: strategy
+      deliverables:
+        - market-analysis
+        - competitive-landscape
+        - launch-timeline
+    required: true
+    timeout: 900000
+    output:
+      to: launch-strategy
+
+  - id: product-build
+    agentId: leo-leojrr
+    skillId: rapid-builder
+    input:
+      source: launch-strategy
+      sprintLength: 7
+      mvpScope: core-features
+    required: true
+    timeout: 604800000
+    output:
+      to: product-build
+
+  - id: positioning-define
+    agentId: james
+    skillId: market-positioning
+    input:
+      source: launch-strategy
+      differentiationStrategy: unique-value
+    required: true
+    timeout: 600000
+    output:
+      to: positioning
+
+  - id: skill-package
+    agentId: nicolas-cole
+    skillId: deliverable-packager
+    input:
+      source: product-build
+      format: skill
+      includeOnboarding: true
+    required: true
+    timeout: 600000
+    output:
+      to: packaged-skill
+
+  - id: content-create
+    agentId: dickie-bush
+    skillId: content-system
+    input:
+      source: positioning
+      channels:
+        - newsletter
+        - twitter
+        - blog
+      contentCalendar: 30-days
+    required: true
+    timeout: 900000
+    output:
+      to: content-system
+
+  - id: monetization-setup
+    agentId: justin-welsh
+    skillId: revenue-architect
+    input:
+      source: packaged-skill
+      pricingStrategy: tiered
+      paymentIntegration: stripe
+    required: true
+    timeout: 600000
+    output:
+      to: monetization
+
+  - id: engagement-design
+    agentId: blake-anderson
+    skillId: engagement-system
+    input:
+      source: content-system
+      gamification: true
+      analytics: comprehensive
+    required: true
+    timeout: 600000
+    output:
+      to: engagement
+
+  - id: infrastructure-setup
+    agentId: dan-romero
+    skillId: infra-orchestrator
+    input:
+      source: product-build
+      scalingStrategy: auto
+      monitoring: full-stack
+    required: true
+    timeout: 900000
+    output:
+      to: infrastructure
+
+  - id: final-launch
+    agentId: greg-isenberg
+    skillId: launch-coordinator
+    input:
+      strategy: launch-strategy
+      product: product-build
+      positioning: positioning
+      skill: packaged-skill
+      content: content-system
+      monetization: monetization
+      engagement: engagement
+      infrastructure: infrastructure
+    required: true
+    timeout: 1800000
+    output:
+      to: launch-complete
+
+dependencies:
+  - from: strategy-define
+    to: product-build
+    condition: output.approved == true
+  - from: strategy-define
+    to: positioning-define
+    condition: output.approved == true
+  - from: product-build
+    to: skill-package
+    condition: output.buildComplete == true
+  - from: product-build
+    to: infrastructure-setup
+    condition: output.buildComplete == true
+  - from: positioning
+    to: content-create
+    condition: output.positioned == true
+  - from: skill-package
+    to: monetization-setup
+    condition: output.packaged == true
+  - from: content-create
+    to: engagement-design
+    condition: output.calendarReady == true
+  - from: product-build
+    to: final-launch
+    condition: output.buildComplete == true
+  - from: positioning
+    to: final-launch
+    condition: output.positioned == true
+  - from: skill-package
+    to: final-launch
+    condition: output.packaged == true
+  - from: content-system
+    to: final-launch
+    condition: output.calendarReady == true
+  - from: monetization
+    to: final-launch
+    condition: output.revenueReady == true
+  - from: engagement
+    to: final-launch
+    condition: output.engagementReady == true
+  - from: infrastructure
+    to: final-launch
+    condition: output.infraReady == true
+
+compensation:
+  onFailure: full-rollback
+  steps:
+    - id: rollback-infrastructure
+      agentId: dan-romero
+      skillId: infra-rollback
+      input:
+        infraId: infrastructure.id
+    - id: rollback-monetization
+      agentId: justin-welsh
+      skillId: monetization-rollback
+      input:
+        monetizationId: monetization.id
+        processRefunds: true
+    - id: unpublish-content
+      agentId: dickie-bush
+      skillId: content-unpublish
+      input:
+        contentId: content-system.id
+    - id: unpublish-skill
+      agentId: nicolas-cole
+      skillId: skill-unpublish
+      input:
+        skillId: packaged-skill.id
+    - id: notify-stakeholders
+      agentId: greg-isenberg
+      skillId: launch-failure-notification
+      input:
+        workflowId: gvs-5-product-launch
+        failedStep: ${failedStepId}
+        rollbackComplete: true
+
+metadata:
+  createdAt: "2026-02-19T00:00:00Z"
+  author: gregverse-system
+  tags:
+    - launch
+    - full-stack
+    - multi-agent
+    - orchestration
+    - production
+  estimatedDuration: 1209600000
+  parallelism: high
+  criticalPath:
+    - strategy-define
+    - product-build
+    - skill-package
+    - final-launch

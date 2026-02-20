@@ -1,0 +1,90 @@
+id: gvs-3-api-infrastructure
+name: API Infrastructure Design
+description: |
+  Technical infrastructure flow: Dan designs the API architecture,
+  Blake adds engagement hooks, and Greg reviews the strategic positioning.
+version: "1.0.0"
+
+agents:
+  - dan-romero
+  - blake-anderson
+  - greg-isenberg
+
+steps:
+  - id: design-api
+    agentId: dan-romero
+    skillId: api-architect
+    input:
+      style: restful
+      versioning: semantic
+      authentication: oauth2
+      rateLimiting: true
+    required: true
+    timeout: 900000
+    output:
+      to: api-specification
+
+  - id: add-engagement
+    agentId: blake-anderson
+    skillId: engagement-hooks
+    input:
+      source: api-specification
+      hooks:
+        - webhooks
+        - event-streams
+        - analytics-pixels
+      retentionFocus: true
+    required: true
+    timeout: 600000
+    output:
+      to: engagement-layer
+
+  - id: review-strategy
+    agentId: greg-isenberg
+    skillId: strategic-review
+    input:
+      source: engagement-layer
+      criteria:
+        - market-fit
+        - scalability
+        - competitive-advantage
+        - revenue-potential
+    required: true
+    timeout: 600000
+    output:
+      to: strategic-assessment
+
+dependencies:
+  - from: design-api
+    to: add-engagement
+    condition: output.specValidated == true
+  - from: add-engagement
+    to: review-strategy
+    condition: output.hooksIntegrated == true
+
+compensation:
+  onFailure: rollback-api
+  steps:
+    - id: rollback-api
+      agentId: dan-romero
+      skillId: api-rollback
+      input:
+        apiId: api-specification.id
+        preserveData: false
+    - id: notify-stakeholders
+      agentId: greg-isenberg
+      skillId: stakeholder-notification
+      input:
+        workflowId: gvs-3-api-infrastructure
+        status: failed
+        reason: ${failureReason}
+
+metadata:
+  createdAt: "2026-02-19T00:00:00Z"
+  author: gregverse-system
+  tags:
+    - api
+    - infrastructure
+    - engagement
+    - strategy
+  estimatedDuration: 2100000

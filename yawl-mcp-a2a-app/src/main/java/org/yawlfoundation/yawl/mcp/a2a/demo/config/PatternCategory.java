@@ -116,6 +116,12 @@ public enum PatternCategory {
     AGENT("Agent Patterns", "\u001B[38;5;40m"),
 
     /**
+     * Greg-Verse Scenario patterns.
+     * <p>Multi-agent A2A business simulations.</p>
+     */
+    GREGVERSE_SCENARIO("GregVerse Scenarios", "\u001B[38;5;213m"),
+
+    /**
      * Advanced Branching patterns.
      * <p>Includes: Multi-Choice, Structured Synchronizing Merge,
      * Multi-Merge, Structured Discriminator.</p>
@@ -317,6 +323,11 @@ public enum PatternCategory {
         // Agent patterns
         if (id.startsWith("AGT-")) {
             return AGENT;
+        }
+
+        // GregVerse Scenario patterns
+        if (id.startsWith("GVS-") || id.startsWith("GV-")) {
+            return GREGVERSE_SCENARIO;
         }
 
         // Distributed patterns

@@ -1,0 +1,230 @@
+# Skill Creation Skill
+# Meta-skill for designing AI-callable skills and capabilities
+
+id: skill-creation
+name: AI Skill Creation Framework
+description: |
+  Design and structure AI-callable skills that can be invoked by agents and
+  workflows. Defines input schemas, output formats, validation rules, and
+  usage examples. Follows best practices for skill design including clear
+  boundaries, composability, and deterministic outputs where possible.
+
+agent: skill-architect
+
+input_schema:
+  type: object
+  properties:
+    skill_name:
+      type: string
+      description: Desired name for the new skill
+    skill_purpose:
+      type: string
+      description: What the skill should accomplish
+    use_cases:
+      type: array
+      items: { type: string }
+      description: Specific scenarios where this skill would be used
+    target_agents:
+      type: array
+      items: { type: string }
+      description: Which agent types should use this skill
+    input_requirements:
+      type: object
+      properties:
+        required_inputs:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              type: { type: string }
+              description: { type: string }
+              validation_rules: { type: array }
+        optional_inputs:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              type: { type: string }
+              default_value: { type: string }
+              description: { type: string }
+    output_requirements:
+      type: object
+      properties:
+        primary_output:
+          type: object
+          properties:
+            type: { type: string }
+            description: { type: string }
+        secondary_outputs:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              type: { type: string }
+        success_criteria: { type: array }
+    constraints:
+      type: object
+      properties:
+        max_execution_time: { type: string }
+        dependencies: { type: array }
+        excluded_functionality: { type: array }
+    composition_opportunities:
+      type: array
+      items:
+        type: object
+        properties:
+          can_follow: { type: array }
+          can_precede: { type: array }
+          can_parallelize: { type: array }
+    reference_examples:
+      type: array
+      items:
+        type: object
+        properties:
+          scenario: { type: string }
+          input: { type: object }
+          expected_output: { type: object }
+  required:
+    - skill_name
+    - skill_purpose
+    - use_cases
+
+output_format:
+  type: object
+  properties:
+    skill_definition:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Generated skill ID (kebab-case)
+        name:
+          type: string
+          description: Display name
+        description:
+          type: string
+          description: Full skill description
+        agent:
+          type: string
+          description: Recommended specialist agent
+    input_schema:
+      type: object
+      properties:
+        type: { type: string, enum: [object] }
+        properties: { type: object }
+        required: { type: array }
+        additionalProperties: { type: boolean }
+      description: Complete JSON schema for inputs
+    output_format:
+      type: object
+      properties:
+        type: { type: string }
+        properties: { type: object }
+        description: Complete JSON schema for outputs
+    validation_rules:
+      type: array
+      items:
+        type: object
+        properties:
+          field: { type: string }
+          rule: { type: string }
+          error_message: { type: string }
+    error_handling:
+      type: object
+      properties:
+        error_types:
+          type: array
+          items:
+            type: object
+            properties:
+              error: { type: string }
+              handling: { type: string }
+              recovery: { type: string }
+    examples:
+      type: array
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          description: { type: string }
+          input: { type: object }
+          expected_output: { type: object }
+    composition_map:
+      type: object
+      properties:
+        recommended_preceding_skills: { type: array }
+        recommended_following_skills: { type: array }
+        parallel_compatible_skills: { type: array }
+        workflow_patterns: { type: array }
+    implementation_guidance:
+      type: object
+      properties:
+        key_algorithms: { type: array }
+        data_structures: { type: array }
+        external_dependencies: { type: array }
+        performance_considerations: { type: array }
+    quality_checklist:
+      type: array
+      items:
+        type: object
+        properties:
+          criterion: { type: string }
+          met: { type: boolean }
+          notes: { type: string }
+    yaml_output:
+      type: string
+      description: Complete skill definition in YAML format ready for file
+
+examples:
+  - input:
+      skill_name: "Customer Segmentation"
+      skill_purpose: "Analyze customer data and identify meaningful segments"
+      use_cases:
+        - "Marketing campaign targeting"
+        - "Product feature prioritization"
+        - "Pricing strategy development"
+      target_agents: ["marketing-analyst", "data-scientist"]
+      input_requirements:
+        required_inputs:
+          - name: "customer_data"
+            type: "array"
+            description: "List of customer records with attributes"
+      output_requirements:
+        primary_output:
+          type: "array"
+          description: "List of customer segments with characteristics"
+    description: Creating a data analysis skill
+
+  - input:
+      skill_name: "API Documentation Generator"
+      skill_purpose: "Generate comprehensive API documentation from code or specs"
+      use_cases:
+        - "Document new API endpoints"
+        - "Update existing documentation"
+        - "Create developer guides"
+      input_requirements:
+        required_inputs:
+          - name: "api_spec"
+            type: "object"
+            description: "OpenAPI/Swagger specification or code annotations"
+        optional_inputs:
+          - name: "template"
+            type: "string"
+            default_value: "standard"
+            description: "Documentation template to use"
+      constraints:
+        max_execution_time: "30s"
+        dependencies: ["openapi-parser"]
+      reference_examples:
+        - scenario: "Document REST API"
+          input:
+            api_spec:
+              openapi: "3.0.0"
+              paths:
+                /users:
+                  get:
+                    summary: "List users"
+    description: Creating a documentation skill

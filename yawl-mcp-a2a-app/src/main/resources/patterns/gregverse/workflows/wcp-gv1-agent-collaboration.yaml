@@ -1,0 +1,185 @@
+# WCP-GV1: Agent Collaboration Pattern
+# Two agents negotiate a deal through proposal/counter-proposal cycles
+
+name: AgentCollaborationPattern
+uri: agent-collaboration.xml
+first: InitializeNegotiation
+
+variables:
+  - name: negotiationId
+    type: xs:string
+  - name: agentAId
+    type: xs:string
+  - name: agentBId
+    type: xs:string
+  - name: initialProposal
+    type: xs:string
+  - name: currentProposal
+    type: xs:string
+  - name: counterProposal
+    type: xs:string
+  - name: negotiationRounds
+    type: xs:integer
+    default: 0
+  - name: maxRounds
+    type: xs:integer
+    default: 5
+  - name: negotiationStatus
+    type: xs:string
+    default: "pending"
+  - name: agreedTerms
+    type: xs:string
+  - name: timeoutSeconds
+    type: xs:integer
+    default: 300
+
+tasks:
+  - id: InitializeNegotiation
+    flows: [AgentAPropose]
+    split: xor
+    join: xor
+    description: "Initialize negotiation context and participants"
+
+  - id: AgentAPropose
+    flows: [SetProposalTimeout]
+    split: xor
+    join: xor
+    description: "Agent A submits initial proposal"
+
+  - id: SetProposalTimeout
+    flows: [AgentBReview]
+    split: xor
+    join: xor
+    description: "Set timeout for response"
+
+  - id: AgentBReview
+    flows: [EvaluateProposal, HandleTimeout]
+    condition: responseReceived == true -> EvaluateProposal
+    default: HandleTimeout
+    split: xor
+    join: xor
+    description: "Agent B reviews the proposal"
+
+  - id: HandleTimeout
+    flows: [EscalateNegotiation, AbortNegotiation]
+    condition: negotiationRounds < maxRounds -> EscalateNegotiation
+    default: AbortNegotiation
+    split: xor
+    join: xor
+    description: "Handle response timeout"
+
+  - id: EscalateNegotiation
+    flows: [AgentAPropose]
+    split: xor
+    join: xor
+    description: "Escalate and retry negotiation"
+
+  - id: AbortNegotiation
+    flows: [NegotiationFailed]
+    split: xor
+    join: xor
+    description: "Abort negotiation due to timeout"
+
+  - id: EvaluateProposal
+    flows: [AgentBAccept, AgentBCounter, AgentBReject]
+    condition: proposalAcceptable == true -> AgentBAccept
+    condition: counterOfferNeeded == true -> AgentBCounter
+    default: AgentBReject
+    split: xor
+    join: xor
+    description: "Evaluate if proposal is acceptable"
+
+  - id: AgentBAccept
+    flows: [FinalizeAgreement]
+    split: xor
+    join: xor
+    description: "Agent B accepts the proposal"
+
+  - id: AgentBCounter
+    flows: [IncrementRound, CheckRoundLimit]
+    split: xor
+    join: xor
+    description: "Agent B makes counter-proposal"
+
+  - id: IncrementRound
+    flows: [CheckRoundLimit]
+    split: xor
+    join: xor
+    description: "Increment negotiation round counter"
+
+  - id: CheckRoundLimit
+    flows: [AgentAReview, AbortNegotiation]
+    condition: negotiationRounds < maxRounds -> AgentAReview
+    default: AbortNegotiation
+    split: xor
+    join: xor
+    description: "Check if max rounds exceeded"
+
+  - id: AgentAReview
+    flows: [AgentAAccept, AgentACounter, AgentAReject]
+    condition: counterProposalAcceptable == true -> AgentAAccept
+    condition: newCounterNeeded == true -> AgentACounter
+    default: AgentAReject
+    split: xor
+    join: xor
+    description: "Agent A reviews counter-proposal"
+
+  - id: AgentAAccept
+    flows: [FinalizeAgreement]
+    split: xor
+    join: xor
+    description: "Agent A accepts counter-proposal"
+
+  - id: AgentACounter
+    flows: [AgentBReview]
+    split: xor
+    join: xor
+    description: "Agent A makes new counter-proposal"
+
+  - id: AgentAReject
+    flows: [NegotiationFailed]
+    split: xor
+    join: xor
+    description: "Agent A rejects counter-proposal"
+
+  - id: AgentBReject
+    flows: [NegotiationFailed]
+    split: xor
+    join: xor
+    description: "Agent B rejects proposal"
+
+  - id: FinalizeAgreement
+    flows: [RecordAgreement, NotifyAgents, end]
+    split: and
+    join: xor
+    description: "Finalize and record the agreement"
+
+  - id: RecordAgreement
+    flows: [end]
+    split: xor
+    join: and
+    description: "Record agreement in ledger"
+
+  - id: NotifyAgents
+    flows: [end]
+    split: xor
+    join: and
+    description: "Notify both agents of agreement"
+
+  - id: NegotiationFailed
+    flows: [LogFailure, NotifyFailure, end]
+    split: and
+    join: xor
+    description: "Handle negotiation failure"
+
+  - id: LogFailure
+    flows: [end]
+    split: xor
+    join: and
+    description: "Log failure reason"
+
+  - id: NotifyFailure
+    flows: [end]
+    split: xor
+    join: and
+    description: "Notify agents of failure"

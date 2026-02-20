@@ -1,0 +1,120 @@
+# SEO Audit Skill
+# Comprehensive SEO analysis for web content and pages
+
+id: seo-audit
+name: SEO Audit
+description: |
+  Performs comprehensive SEO analysis on web content or URLs. Analyzes on-page
+  factors including title tags, meta descriptions, heading structure, content
+  quality, keyword usage, internal linking, and technical SEO issues. Provides
+  actionable recommendations for improving search engine visibility.
+
+agent: seo-specialist
+
+input_schema:
+  type: object
+  properties:
+    target:
+      type: string
+      description: URL or content to analyze
+    keywords:
+      type: array
+      items:
+        type: string
+      description: Target keywords to evaluate
+    competitor_urls:
+      type: array
+      items:
+        type: string
+      description: Optional competitor URLs for comparison
+    depth:
+      type: string
+      enum: [quick, standard, comprehensive]
+      default: standard
+      description: Analysis depth level
+    focus_areas:
+      type: array
+      items:
+        type: string
+        enum: [technical, content, links, keywords, ux, mobile]
+      description: Specific areas to focus analysis
+  required:
+    - target
+
+output_format:
+  type: object
+  properties:
+    overall_score:
+      type: integer
+      minimum: 0
+      maximum: 100
+      description: Overall SEO health score
+    categories:
+      type: object
+      properties:
+        technical:
+          type: object
+          properties:
+            score: { type: integer }
+            issues: { type: array }
+            recommendations: { type: array }
+        content:
+          type: object
+          properties:
+            score: { type: integer }
+            issues: { type: array }
+            recommendations: { type: array }
+        links:
+          type: object
+          properties:
+            score: { type: integer }
+            issues: { type: array }
+            recommendations: { type: array }
+        keywords:
+          type: object
+          properties:
+            score: { type: integer }
+            issues: { type: array }
+            recommendations: { type: array }
+    keyword_analysis:
+      type: array
+      items:
+        type: object
+        properties:
+          keyword: { type: string }
+          density: { type: number }
+          prominence: { type: number }
+          recommendations: { type: array }
+    priority_actions:
+      type: array
+      items:
+        type: object
+        properties:
+          priority: { type: string, enum: [critical, high, medium, low] }
+          action: { type: string }
+          impact: { type: string }
+    competitor_comparison:
+      type: object
+      description: Comparison metrics if competitors provided
+
+examples:
+  - input:
+      target: "https://example.com/product-page"
+      keywords: ["best widgets", "widget reviews", "affordable widgets"]
+      depth: "comprehensive"
+      focus_areas: ["content", "keywords"]
+    description: Full SEO audit of a product page
+
+  - input:
+      target: "https://blog.example.com/article"
+      keywords: ["machine learning basics"]
+      depth: "quick"
+    description: Quick SEO check for a blog article
+
+  - input:
+      target: "<html><head><title>My Page</title></head><body>Content here</body></html>"
+      keywords: ["local services"]
+      competitor_urls:
+        - "https://competitor1.com"
+        - "https://competitor2.com"
+    description: SEO audit with competitor comparison

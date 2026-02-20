@@ -1,0 +1,86 @@
+id: gvs-2-content-business
+name: Content Business Builder
+description: |
+  Content creation and monetization flow: Dickie designs the newsletter framework,
+  Justin builds the monetization engine, and Blake adds gamification for engagement.
+version: "1.0.0"
+
+agents:
+  - dickie-bush
+  - justin-welsh
+  - blake-anderson
+
+steps:
+  - id: design-newsletter
+    agentId: dickie-bush
+    skillId: newsletter-architect
+    input:
+      format: weekly-digest
+      audienceSize: 10000
+      voice: conversational
+    required: true
+    timeout: 600000
+    output:
+      to: newsletter-framework
+
+  - id: monetize-content
+    agentId: justin-welsh
+    skillId: monetization-engine
+    input:
+      source: newsletter-framework
+      revenueModel:
+        - sponsorships
+        - paid-tier
+        - consulting-upsell
+      targetRevenue: 10000
+    required: true
+    timeout: 600000
+    output:
+      to: monetization-plan
+
+  - id: gamify-engagement
+    agentId: blake-anderson
+    skillId: gamification-designer
+    input:
+      source: monetization-plan
+      elements:
+        - streaks
+        - badges
+        - leaderboards
+        - rewards
+    required: true
+    timeout: 600000
+    output:
+      to: gamified-system
+
+dependencies:
+  - from: design-newsletter
+    to: monetize-content
+    condition: output.frameworkComplete == true
+  - from: monetize-content
+    to: gamify-engagement
+    condition: output.revenueStreams >= 2
+
+compensation:
+  onFailure: cleanup-content
+  steps:
+    - id: cleanup-content
+      agentId: dickie-bush
+      skillId: content-rollback
+      input:
+        contentId: newsletter-framework.id
+    - id: revert-monetization
+      agentId: justin-welsh
+      skillId: monetization-rollback
+      input:
+        planId: monetization-plan.id
+
+metadata:
+  createdAt: "2026-02-19T00:00:00Z"
+  author: gregverse-system
+  tags:
+    - content
+    - newsletter
+    - monetization
+    - gamification
+  estimatedDuration: 1800000

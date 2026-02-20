@@ -1,0 +1,277 @@
+# Idea Qualification Skill
+# Startup idea validation and market opportunity assessment
+
+id: idea-qualification
+name: Startup Idea Qualification
+description: |
+  Evaluates startup ideas for viability, market potential, and founder-fit.
+  Uses structured frameworks to assess problem-solution fit, market size,
+  competitive landscape, and execution feasibility. Provides go/no-go
+  recommendations with specific validation experiments to run.
+
+agent: startup-analyst
+
+input_schema:
+  type: object
+  properties:
+    idea_name:
+      type: string
+      description: Name or title of the idea
+    idea_description:
+      type: string
+      description: Detailed description of the idea
+    problem_statement:
+      type: string
+      description: The problem being solved
+    proposed_solution:
+      type: string
+      description: How the idea solves the problem
+    target_customer:
+      type: object
+      properties:
+        description: { type: string }
+        segments: { type: array }
+        existing_alternatives: { type: array }
+    founder_background:
+      type: object
+      properties:
+        relevant_experience: { type: string }
+        industry_knowledge: { type: string }
+        unique_advantages: { type: array }
+        gaps: { type: array }
+    market_information:
+      type: object
+      properties:
+        industry: { type: string }
+        tam_estimate: { type: number }
+        sam_estimate: { type: number }
+        growth_trends: { type: array }
+        regulatory_considerations: { type: array }
+    current_validation:
+      type: object
+      properties:
+        customer_interviews: { type: number }
+        survey_responses: { type: number }
+        waitlist_signups: { type: number }
+        mvp_users: { type: number }
+        revenue: { type: number }
+        competitor_analysis_done: { type: boolean }
+    business_model:
+      type: object
+      properties:
+        revenue_model: { type: string }
+        pricing_tier: { type: string }
+        customer_acquisition_channels: { type: array }
+        key_costs: { type: array }
+    constraints:
+      type: object
+      properties:
+        capital_available: { type: string }
+        time_commitment: { type: string }
+        geographic_focus: { type: string }
+        timeline_to_revenue: { type: string }
+    questions:
+      type: array
+      items: { type: string }
+      description: Specific questions about the idea
+  required:
+    - idea_name
+    - idea_description
+    - problem_statement
+
+output_format:
+  type: object
+  properties:
+    qualification_score:
+      type: object
+      properties:
+        overall:
+          type: integer
+          minimum: 1
+          maximum: 10
+        breakdown:
+          type: object
+          properties:
+            problem_clarity: { type: integer }
+            market_opportunity: { type: integer }
+            solution_differentiation: { type: integer }
+            founder_fit: { type: integer }
+            execution_feasibility: { type: integer }
+            business_model: { type: integer }
+    problem_analysis:
+      type: object
+      properties:
+        problem_validity:
+          type: string
+          enum: [validated, likely_real, unclear, likely_not_real]
+        evidence:
+          type: array
+          items: { type: string }
+        urgency_level:
+          type: string
+          enum: [must_have, nice_to_have, vitamin, unknown]
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, rarely]
+        willingness_to_pay_indicators:
+          type: array
+          items: { type: string }
+    market_assessment:
+      type: object
+      properties:
+        market_size_verdict:
+          type: string
+          enum: [large, moderate, small, niche, unknown]
+        tam_analysis:
+          type: object
+          properties:
+            estimated_tam: { type: string }
+            methodology: { type: string }
+            confidence: { type: string }
+        market_trends:
+          type: array
+          items:
+            type: object
+            properties:
+              trend: { type: string }
+              impact: { type: string }
+        timing_assessment:
+          type: string
+          enum: [too_early, right_time, too_late, unclear]
+    competitive_landscape:
+      type: object
+      properties:
+        competition_level:
+          type: string
+          enum: [blue_ocean, moderate, crowded, red_ocean]
+        direct_competitors:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              strengths: { type: array }
+              weaknesses: { type: array }
+        indirect_competitors:
+          type: array
+          items: { type: string }
+        differentiation_opportunity:
+          type: string
+        competitive_moat_potential:
+          type: string
+          enum: [strong, moderate, weak, none]
+    founder_fit_assessment:
+      type: object
+      properties:
+        fit_score:
+          type: integer
+          minimum: 1
+          maximum: 10
+        strengths:
+          type: array
+          items: { type: string }
+        gaps:
+          type: array
+          items: { type: string }
+        team_needs:
+          type: array
+          items: { type: string }
+        recommendation:
+          type: string
+    business_model_analysis:
+      type: object
+      properties:
+        model_validity:
+          type: string
+          enum: [proven, unproven_but_viable, challenging, unclear]
+        unit_economics_concerns:
+          type: array
+          items: { type: string }
+        scalability:
+          type: string
+          enum: [highly_scalable, moderately_scalable, limited]
+        revenue_potential:
+          type: string
+        risks:
+          type: array
+          items: { type: string }
+    validation_roadmap:
+      type: array
+      items:
+        type: object
+        properties:
+          phase: { type: string }
+          experiments:
+            type: array
+            items:
+              type: object
+              properties:
+                experiment: { type: string }
+                success_criteria: { type: string }
+                time_required: { type: string }
+                cost: { type: string }
+          go_criteria: { type: array }
+          no_go_criteria: { type: array }
+    recommendation:
+      type: object
+      properties:
+        verdict:
+          type: string
+          enum: [strong_pursue, pursue_with_validation, pivot_recommended, kill]
+        confidence: { type: string }
+        key_reasons: { type: array }
+        critical_assumptions: { type: array }
+        next_steps: { type: array }
+        timeline_suggestion: { type: string }
+    red_flags:
+      type: array
+      items:
+        type: object
+        properties:
+          flag: { type: string }
+          severity: { type: string, enum: [critical, warning, watch] }
+          mitigation: { type: string }
+    answer_to_questions:
+      type: array
+      items:
+        type: object
+        properties:
+          question: { type: string }
+          answer: { type: string }
+          confidence: { type: string }
+
+examples:
+  - input:
+      idea_name: "AI Meeting Assistant"
+      idea_description: "AI that joins meetings, takes notes, and creates action items"
+      problem_statement: "People waste time in meetings and forget action items"
+      proposed_solution: "AI bot that joins video calls and automatically summarizes"
+      target_customer:
+        description: "Knowledge workers who attend many meetings"
+        segments: ["Product managers", "Sales teams", "Executives"]
+        existing_alternatives: ["Otter.ai", "Fireflies.ai", "Manual note-taking"]
+      current_validation:
+        customer_interviews: 15
+        waitlist_signups: 250
+        competitor_analysis_done: true
+      constraints:
+        capital_available: "Bootstrap/Pre-seed"
+        time_commitment: "Full-time"
+    description: B2B SaaS idea evaluation
+
+  - input:
+      idea_name: "Local Food Delivery Co-op"
+      idea_description: "Community-owned food delivery platform with lower fees"
+      problem_statement: "Restaurants lose 30% to delivery apps; drivers earn minimum wage"
+      proposed_solution: "Co-op model where restaurants and drivers own equity"
+      founder_background:
+        relevant_experience: "Former restaurant owner for 8 years"
+        industry_knowledge: "Deep connections to local restaurant community"
+        gaps: ["No tech experience", "No platform development background"]
+      market_information:
+        industry: "Food delivery"
+        growth_trends: ["Consolidation among major players", "Rising restaurant dissatisfaction"]
+      questions:
+        - "How do I build the tech with no experience?"
+        - "Is the co-op model legally complex?"
+    description: Marketplace idea with specific questions

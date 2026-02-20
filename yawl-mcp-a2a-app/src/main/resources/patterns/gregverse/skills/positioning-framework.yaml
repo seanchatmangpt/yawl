@@ -1,0 +1,149 @@
+# Positioning Framework Skill
+# Market positioning and differentiation strategy development
+
+id: positioning-framework
+name: Market Positioning Framework
+description: |
+  Develops comprehensive market positioning strategy for products, services,
+  or brands. Analyzes competitive landscape, identifies unique value propositions,
+  defines target segments, and creates positioning statements. Follows April
+  Dunford's positioning framework methodology for systematic approach.
+
+agent: positioning-strategist
+
+input_schema:
+  type: object
+  properties:
+    company_name:
+      type: string
+      description: Name of the company or product
+    product_name:
+      type: string
+      description: Name of the specific product/service
+    product_description:
+      type: string
+      description: Brief description of what the product does
+    current_positioning:
+      type: string
+      description: How the product is currently positioned (if any)
+    target_market:
+      type: string
+      description: Current or intended target market
+    competitors:
+      type: array
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          positioning: { type: string }
+          strengths: { type: array, items: { type: string } }
+    unique_features:
+      type: array
+      items:
+        type: string
+      description: Features that differentiate from competitors
+    customer_feedback:
+      type: array
+      items:
+        type: string
+      description: Customer quotes or feedback about value received
+    pricing_model:
+      type: string
+      description: Current or planned pricing approach
+    business_goals:
+      type: array
+      items:
+        type: string
+      description: Key business objectives for positioning
+  required:
+    - product_name
+    - product_description
+
+output_format:
+  type: object
+  properties:
+    positioning_statement:
+      type: string
+      description: Core positioning statement
+    market_category:
+      type: object
+      properties:
+        primary: { type: string }
+        alternatives: { type: array }
+        rationale: { type: string }
+    target_segments:
+      type: array
+      items:
+        type: object
+        properties:
+          segment_name: { type: string }
+          description: { type: string }
+          pain_points: { type: array }
+          buying_criteria: { type: array }
+    competitive_alternatives:
+      type: object
+      properties:
+        direct_competitors: { type: array }
+        indirect_alternatives: { type: array }
+        status_quo: { type: string }
+    unique_value_proposition:
+      type: object
+      properties:
+        primary_uvp: { type: string }
+        supporting_points: { type: array }
+        proof_points: { type: array }
+    differentiated_features:
+      type: array
+      items:
+        type: object
+        properties:
+          feature: { type: string }
+          competitive_advantage: { type: string }
+          customer_value: { type: string }
+    messaging_framework:
+      type: object
+      properties:
+        tagline: { type: string }
+        headline_options: { type: array }
+        key_messages: { type: array }
+        proof_points: { type: array }
+    positioning_risks:
+      type: array
+      items:
+        type: object
+        properties:
+          risk: { type: string }
+          mitigation: { type: string }
+    implementation_checklist:
+      type: array
+      items:
+        type: string
+
+examples:
+  - input:
+      product_name: "DataSync Pro"
+      product_description: "Real-time data synchronization platform for enterprises"
+      target_market: "Mid-market SaaS companies"
+      unique_features:
+        - "Sub-second sync latency"
+        - "No-code configuration"
+        - "Built-in compliance auditing"
+      competitors:
+        - name: "Competitor A"
+          positioning: "Enterprise-only data integration"
+        - name: "Competitor B"
+          positioning: "Developer-focused ETL tool"
+    description: Positioning for B2B data platform
+
+  - input:
+      company_name: "StartupCo"
+      product_name: "AI Writing Assistant"
+      product_description: "AI-powered writing tool for content creators"
+      current_positioning: "Generic AI writing tool"
+      customer_feedback:
+        - "It understands my brand voice better than others"
+        - "The SEO suggestions actually work"
+      business_goals:
+        - "Differentiate from ChatGPT and generic AI tools"
+        - "Target professional content marketers"
+    description: Repositioning an AI writing tool
