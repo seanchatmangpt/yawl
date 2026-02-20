@@ -1,0 +1,3 @@
+#!/bin/bash
+# Quick shorthand: ./yawl-tasks [cmd] instead of ./scripts/yawl-tasks.sh [cmd]
+exec "$(dirname "$0")/scripts/yawl-tasks.sh" "$@"
