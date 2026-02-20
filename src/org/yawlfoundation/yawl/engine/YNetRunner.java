@@ -1252,8 +1252,8 @@ public class YNetRunner {
             if (element instanceof YCondition cond) {
                 if (cond.containsIdentifier()) return false;
             }
-            else {
-                if (((YTask) element).t_isBusy()) return false;
+            else if (element instanceof YTask task && task.t_isBusy()) {
+                return false;
             }
         }
         return true;
