@@ -95,12 +95,12 @@ public class WorkflowSoundnessVerifier {
         }
 
         /** Convenience factory for a sound (no-violation) result. */
-        static SoundnessResult sound() {
+        static SoundnessResult ofSound() {
             return new SoundnessResult(true, List.of());
         }
 
         /** Convenience factory for a violated result. */
-        static SoundnessResult violated(List<String> violations) {
+        static SoundnessResult ofViolated(List<String> violations) {
             return new SoundnessResult(false, violations);
         }
     }
@@ -161,14 +161,14 @@ public class WorkflowSoundnessVerifier {
         List<Map<String, Object>> tasks = getTasks(spec);
         if (tasks.isEmpty()) {
             violations.add("Workflow contains no tasks; at least one task is required");
-            return SoundnessResult.violated(violations);
+            return SoundnessResult.ofViolated(violations);
         }
 
         // Collect all declared task IDs
         Set<String> declaredIds = collectDeclaredIds(tasks, violations);
         if (declaredIds.isEmpty()) {
             // Every task entry lacked an 'id' field — already recorded violations
-            return SoundnessResult.violated(violations);
+            return SoundnessResult.ofViolated(violations);
         }
 
         // Determine the entry task (first task reachable from i-top)
@@ -182,7 +182,7 @@ public class WorkflowSoundnessVerifier {
                 violations.add("Cannot determine the first task: "
                         + "no 'first' field and no tasks with an 'id' field");
             }
-            return SoundnessResult.violated(violations);
+            return SoundnessResult.ofViolated(violations);
         }
 
         // Build forward adjacency list: taskId -> set of successor IDs
@@ -224,7 +224,7 @@ public class WorkflowSoundnessVerifier {
                     + "to output condition (o-top)");
         }
 
-        return violations.isEmpty() ? SoundnessResult.sound() : SoundnessResult.violated(violations);
+        return violations.isEmpty() ? SoundnessResult.ofSound() : SoundnessResult.ofViolated(violations);
     }
 
     // -------------------------------------------------------------------------
