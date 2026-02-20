@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class YEnabledTransitionSet {
 
     // a table of [place id, set of enabled transitions]
-    private Map<String, TaskGroup> transitions = new HashMap<String, TaskGroup>();
+    private Map<String, TaskGroup> transitions = new HashMap<>();
 
     // the only constructor
     public YEnabledTransitionSet() { }
@@ -92,7 +92,7 @@ public class YEnabledTransitionSet {
      * @return a set of condition ids
      */
     private Set<String> getFlowsFromIDs(YTask task) {
-        Set<String> priorSet = new HashSet<String>();
+        Set<String> priorSet = new HashSet<>();
         for (YFlow flow : task.getPresetFlows()) {
             YNetElement prior = flow.getPriorElement();
             if (isEnablingCondition(prior)) priorSet.add(prior.getID()) ;
@@ -211,17 +211,17 @@ public class YEnabledTransitionSet {
 
 
         private boolean addCompositeTask(YCompositeTask task) {
-            if (_compositeTasks == null) _compositeTasks = new ArrayList<YCompositeTask>();
+            if (_compositeTasks == null) _compositeTasks = new ArrayList<>();
             return _compositeTasks.add(task);
         }
 
 
         private boolean addAtomicTask(YAtomicTask task) {
             if (task.getDecompositionPrototype() != null) {
-                if (_atomicTasks == null) _atomicTasks = new ArrayList<YAtomicTask>();
+                if (_atomicTasks == null) _atomicTasks = new ArrayList<>();
                 return _atomicTasks.add(task);
             }
-            if (_emptyAtomicTasks == null) _emptyAtomicTasks = new ArrayList<YAtomicTask>();
+            if (_emptyAtomicTasks == null) _emptyAtomicTasks = new ArrayList<>();
             return _emptyAtomicTasks.add(task);
         }
 

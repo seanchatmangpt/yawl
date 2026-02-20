@@ -59,7 +59,7 @@ public class BlockCP {
 	}
 
 	private List<EntityMID> calculateEmids() {
-		List<EntityMID> emids = new ArrayList<EntityMID>();
+		List<EntityMID> emids = new ArrayList<>();
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		for (InteractionGraph graph : igraphs.getGraphs()) {
 			for (InteractionNode node : graph.getNodes()) {
@@ -89,7 +89,7 @@ public class BlockCP {
 
 	public void processWIR() {
 		myLog.debug("PROCESSWIR");
-		List<ProcessEntityMID> pemids = new ArrayList<ProcessEntityMID>();
+		List<ProcessEntityMID> pemids = new ArrayList<>();
 		// get the data from the wir
 		Element dataList = wir.getDataList();
 		List<EntityMID> emids = getEntityMIDsFromData(dataList);
@@ -225,7 +225,7 @@ public class BlockCP {
 									myLog.debug("considering graph:" + graph.getEntityMID());
 									if (graph.getEntityMID().getValue().equals(emidToRemove.getValue() + "TEMP")) {
 										// find if there are outgoing CP arcs with no outgoing or incoming arcs
-										List<InteractionNode> nodesRemove = new ArrayList<InteractionNode>();
+										List<InteractionNode> nodesRemove = new ArrayList<>();
 										for (InteractionNode node : graph.getNodes()) {
 											boolean found = false;
 											for (InteractionArc arc : graph.getArcs()) {
@@ -351,7 +351,7 @@ public class BlockCP {
 	}
 	
 	public static List<EntityMID> getAvailableEmidsToUser() {
-		List<EntityMID> emidList = new ArrayList<EntityMID>();
+		List<EntityMID> emidList = new ArrayList<>();
 		List items = DBConnection.getStoredItems(Item.EmidSelection);
         for (Object o : items) {
             StoredItem item = (StoredItem) o;
@@ -362,7 +362,7 @@ public class BlockCP {
 	}
 
 	public static List<InteractionNode> getInteractionNodesUser () {
-		List<InteractionNode> nodes = new ArrayList<InteractionNode>();
+		List<InteractionNode> nodes = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.WorkItemSelection);
         for (Object item : items) {
             nodes.add(((StoredItem) item).newInteractionNode());
@@ -420,7 +420,7 @@ public class BlockCP {
 	}
 	
 	public static List<EntityMID> getEntityMIDsFromData (Element dataList) {
-		List<EntityMID> returnList = new ArrayList<EntityMID>();
+		List<EntityMID> returnList = new ArrayList<>();
 		Element eidData = dataList.getChild("entities");
 		if (eidData != null) {
 			List<Element> children = eidData.getChildren("entity");
@@ -438,9 +438,9 @@ public class BlockCP {
 				InteractionArc.ArcState.CONSUMED);
 		arc.getEntityID().getEsid().setEsid("5");
 		Performatives perfsInst = Performatives.getInstance();
-		List<EntityID> eidTest = new ArrayList<EntityID>();
+		List<EntityID> eidTest = new ArrayList<>();
 		eidTest.add(new EntityID("1","1"));
-		List<String> receivers = new ArrayList<String>();
+		List<String> receivers = new ArrayList<>();
 		receivers.add("r1");
 		Performative perf = new Performative("chann","s",receivers,"a","c","s", ProcletPort.Direction.OUT,eidTest);
 		perfsInst.addPerformative(perf);

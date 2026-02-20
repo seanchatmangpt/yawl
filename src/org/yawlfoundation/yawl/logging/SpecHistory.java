@@ -80,7 +80,7 @@ public class SpecHistory {
 
     private XNode processResults(List events, boolean withData) {
         _log.debug("XES #process: begins");
-        Map<String, XNode> caseMap = new TreeMap<String, XNode>();
+        Map<String, XNode> caseMap = new TreeMap<>();
         for (Object o : events) {
             Object[] array = (Object[]) o;
             YLogNetInstance netInstance = (YLogNetInstance) array[0];

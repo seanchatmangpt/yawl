@@ -1213,7 +1213,7 @@ public class YAWLTelemetry {
             currentDeadlockedTasks.get(),
             activeDeadlocks.size(),
             resolvedDeadlocks.size(),
-            Collections.unmodifiableMap(new ConcurrentHashMap<>(activeDeadlocks))
+            Map.copyOf(new ConcurrentHashMap<>(activeDeadlocks))
         );
     }
 
@@ -1234,7 +1234,7 @@ public class YAWLTelemetry {
             maxLockWaitTimeMs.get(),
             contentionsAboveThreshold.get(),
             LOCK_CONTENTION_THRESHOLD_MS,
-            Collections.unmodifiableMap(new ConcurrentHashMap<>(contentionByOperation))
+            Map.copyOf(new ConcurrentHashMap<>(contentionByOperation))
         );
     }
 

@@ -43,10 +43,10 @@ public class YMetaData {
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
 
     private String title;
-    private List<String> creators = new ArrayList<String>();
-    private List<String> subjects = new ArrayList<String>();
+    private List<String> creators = new ArrayList<>();
+    private List<String> subjects = new ArrayList<>();
     private String description;
-    private List<String> contributors = new ArrayList<String>();
+    private List<String> contributors = new ArrayList<>();
     private String coverage;
     private LocalDate validFrom;
     private LocalDate validUntil;

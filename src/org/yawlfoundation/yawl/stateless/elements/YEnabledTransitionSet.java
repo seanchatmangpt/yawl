@@ -43,7 +43,7 @@ import org.yawlfoundation.yawl.elements.YNetElement;
 public class YEnabledTransitionSet {
 
     // a table of [place id, set of enabled transitions]
-    private Map<String, TaskGroup> transitions = new HashMap<String, TaskGroup>();
+    private Map<String, TaskGroup> transitions = new HashMap<>();
 
     // the only constructor
     public YEnabledTransitionSet() { }
@@ -93,7 +93,7 @@ public class YEnabledTransitionSet {
      * @return a set of condition ids
      */
     private Set<String> getFlowsFromIDs(YTask task) {
-        Set<String> priorSet = new HashSet<String>();
+        Set<String> priorSet = new HashSet<>();
         for (YFlow flow : task.getPresetFlows()) {
             YNetElement prior = flow.getPriorElement();
             if (isEnablingCondition(prior)) priorSet.add(prior.getID()) ;

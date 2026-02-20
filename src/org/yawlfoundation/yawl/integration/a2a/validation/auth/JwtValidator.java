@@ -420,7 +420,7 @@ public class JwtValidator {
         // Getters
         public boolean isValid() { return valid; }
         public String getMessage() { return message; }
-        public Map<String, Object> getDetails() { return Collections.unmodifiableMap(details); }
+        public Map<String, Object> getDetails() { return Map.copyOf(details); }
         public Instant getTimestamp() { return timestamp; }
     }
 

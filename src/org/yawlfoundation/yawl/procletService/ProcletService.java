@@ -258,7 +258,7 @@ public class ProcletService extends InterfaceBWebsideController  {
     }
 
     public List<String> getSpecURIsForRunningCases() {
-        List<String> uris = new ArrayList<String>();
+        List<String> uris = new ArrayList<>();
 
         if (connect()) {
             XNode cases = getAllRunningCases();
@@ -272,7 +272,7 @@ public class ProcletService extends InterfaceBWebsideController  {
     }
 
     public List<String> getRunningCaseIDs() {
-        List<String> caseIDs = new ArrayList<String>();
+        List<String> caseIDs = new ArrayList<>();
 
         if (connect()) {
             XNode cases = getAllRunningCases();

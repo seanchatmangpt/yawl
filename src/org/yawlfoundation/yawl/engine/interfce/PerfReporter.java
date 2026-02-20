@@ -77,7 +77,7 @@ public class PerfReporter {
 
     private static List<TimeSpan> getOrAdd(String action) {
         if (! _requestMap.containsKey(action)) {
-            _requestMap.put(action, new ArrayList<TimeSpan>());
+            _requestMap.put(action, new ArrayList<>());
         }
         return _requestMap.get(action);
     }

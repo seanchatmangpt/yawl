@@ -318,7 +318,7 @@ public class YWorkItem {
 
             // if this parent has no children yet, create the set and log it
             if (_children == null) {
-                _children = new HashSet<YWorkItem>();
+                _children = new HashSet<>();
                 _eventLog.logWorkItemEvent(this, _status, createLogDataList("createChild"));
             }
 

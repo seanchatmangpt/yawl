@@ -109,7 +109,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @see YMultiInstanceAttributes
  * @see YDecomposition
  */
-public abstract class YTask extends YExternalNetElement implements IMarkingTask {
+public abstract sealed class YTask extends YExternalNetElement implements IMarkingTask permits YAtomicTask, YCompositeTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());
@@ -1711,8 +1711,7 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");

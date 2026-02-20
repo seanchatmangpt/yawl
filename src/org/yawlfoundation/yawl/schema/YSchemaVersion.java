@@ -64,7 +64,7 @@ public enum YSchemaVersion {
 
 
     private static final Map<String, YSchemaVersion> _fromStringMap =
-            new HashMap<String, YSchemaVersion>();
+            new HashMap<>();
 
 
     static {

@@ -270,7 +270,7 @@ public class BlockFO {
 //		final BlockPI bpi = new BlockPI(wir,pmodel4.getBlock("register"),null);
 //		bpi.processWIR();
 //		Performatives perfsInst = Performatives.getInstance();
-//		List<EntityID> eidTest = new ArrayList<EntityID>();
+//		List<EntityID> eidTest = new ArrayList<>();
 //		eidTest.add(new EntityID("1","1"));
 //		Performative perf = new Performative("chann","s","r","a","c","s",Direction.OUT,eidTest);
 //		perfsInst.addPerformative(perf);
@@ -282,14 +282,14 @@ public class BlockFO {
 //		};
 //		thr.start();
 //		Performatives perfsInst = Performatives.getInstance();
-//		List<EntityID> eidTest = new ArrayList<EntityID>();
+//		List<EntityID> eidTest = new ArrayList<>();
 //		eidTest.add(new EntityID("1","2"));
 //		Performative perf = new Performative("chann","s","r","a","c","s",Direction.OUT,eidTest);
 //		perfsInst.addPerformative(perf);
 //		SingleInstanceClass sic = SingleInstanceClass.getInstance();
 //		sic.notifyPerformativeListeners();
 //		//
-//		List<EntityID> eidTest2 = new ArrayList<EntityID>();
+//		List<EntityID> eidTest2 = new ArrayList<>();
 //		eidTest2.add(new EntityID("1","1"));
 //		Performative perf2 = new Performative("chann","s","r","a","c","s",Direction.OUT,eidTest2);
 //		perfsInst.addPerformative(perf2);
@@ -322,7 +322,7 @@ public class BlockFO {
 		ccdc.removalCaseCompletionCase();
 //		BlockPICreate bpc = new BlockPICreate();
 //		Performatives perfsInst = Performatives.getInstance();
-//		List<EntityID> eidTest = new ArrayList<EntityID>();
+//		List<EntityID> eidTest = new ArrayList<>();
 //		eidTest.add(new EntityID("1","1"));
 //		Performative perf = new Performative("chann","s","r","a","c","s",Direction.OUT,eidTest);
 //		perfsInst.addPerformative(perf);

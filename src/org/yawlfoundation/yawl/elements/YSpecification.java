@@ -75,7 +75,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
     private String _specURI;
     private YNet _rootNet;
     private Map<String, YDecomposition> _decompositions =
-                                        new HashMap<String, YDecomposition>();
+                                        new HashMap<>();
     private String _name;
     private String _documentation;
     private YSchemaVersion _version = YSchemaVersion.defaultVersion();
@@ -371,7 +371,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
     private void checkForEmptyExecutionPaths(YVerificationHandler handler) {
         for (YDecomposition decomposition : _decompositions.values()) {
             if (decomposition instanceof YNet net) {
-                Set<YExternalNetElement> visited = new HashSet<YExternalNetElement>();
+                Set<YExternalNetElement> visited = new HashSet<>();
                 visited.add(net.getInputCondition());
 
                 Set<YExternalNetElement> visiting = getEmptyPostsetAtThisLevel(visited);
@@ -393,7 +393,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
     private Set<YExternalNetElement> getEmptyPostsetAtThisLevel(Set<YExternalNetElement> aSet) {
         Set<YExternalNetElement> elements = YNet.getPostset(aSet);
-        Set<YExternalNetElement> resultSet = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> resultSet = new HashSet<>();
         for (YExternalNetElement element : elements) {
             if ((element instanceof YCondition cond) || ((element instanceof YTask task) &&
                     (task.getDecompositionPrototype() == null))) {
@@ -407,14 +407,14 @@ public final class YSpecification implements Cloneable, YVerifiable {
     private void checkForInfiniteLoops(YVerificationHandler handler) {
 
         //check infinite loops under rootnet and generate error messages
-        Set<YDecomposition> relevantNets = new HashSet<YDecomposition>();
+        Set<YDecomposition> relevantNets = new HashSet<>();
         relevantNets.add(_rootNet);
         Set<YExternalNetElement> relevantTasks = selectEmptyAndDecomposedTasks(relevantNets);
         checkTheseTasksForInfiniteLoops(relevantTasks, false, handler);
         checkForEmptyTasksWithTimerParams(relevantTasks, handler);
 
         //check infinite loops not under rootnet and generate warning messages
-        Set<YDecomposition> netsBeingUsed = new HashSet<YDecomposition>();
+        Set<YDecomposition> netsBeingUsed = new HashSet<>();
         unfoldNetChildren(_rootNet, netsBeingUsed, null);
         relevantNets = new HashSet<YDecomposition>(_decompositions.values());
         relevantNets.removeAll(netsBeingUsed);
@@ -427,7 +427,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
     private void checkTheseTasksForInfiniteLoops(Set<YExternalNetElement> relevantTasks,
                 boolean generateWarnings, YVerificationHandler handler) {
         for (YExternalNetElement element : relevantTasks) {
-            Set<YExternalNetElement> visited = new HashSet<YExternalNetElement>();
+            Set<YExternalNetElement> visited = new HashSet<>();
             visited.add(element);
 
             Set<YExternalNetElement> visiting = getEmptyTasksPostset(visited);
@@ -462,19 +462,19 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
 
     private Set<YExternalNetElement> selectEmptyAndDecomposedTasks(Set<YDecomposition> relevantNets) {
-        Set<YExternalNetElement> relevantTasks = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> relevantTasks = new HashSet<>();
         for (YDecomposition decomposition : relevantNets) {
             relevantTasks.addAll(unfoldNetChildren(decomposition,
-                                 new HashSet<YDecomposition>(), "emptyTasks"));
+                                 new HashSet<>(), "emptyTasks"));
             relevantTasks.addAll(unfoldNetChildren(decomposition,
-                                 new HashSet<YDecomposition>(), "decomposedTasks"));
+                                 new HashSet<>(), "decomposedTasks"));
         }
         return relevantTasks;
     }
 
 
     private Set<YExternalNetElement> getEmptyTasksPostset(Set<YExternalNetElement> set) {
-        Set<YExternalNetElement> resultSet = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> resultSet = new HashSet<>();
         for (YExternalNetElement element : set) {
             YTask task = (YTask) element;
             if (task.getDecompositionPrototype() instanceof YNet net) {
@@ -504,7 +504,7 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
 
     private void checkDecompositionUsage(YVerificationHandler handler) {
-        Set<YDecomposition> netsBeingUsed = new HashSet<YDecomposition>();
+        Set<YDecomposition> netsBeingUsed = new HashSet<>();
         unfoldNetChildren(_rootNet, netsBeingUsed, null);
         Set<YDecomposition> specifiedDecompositions =
                 new HashSet<YDecomposition>(_decompositions.values());
@@ -521,13 +521,13 @@ public final class YSpecification implements Cloneable, YVerifiable {
 
     private Set<YExternalNetElement> unfoldNetChildren(YDecomposition decomposition,
                                   Set<YDecomposition> netsAlreadyExplored, String criterion) {
-        Set<YExternalNetElement> resultSet = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> resultSet = new HashSet<>();
         netsAlreadyExplored.add(decomposition);
         if (decomposition instanceof YAWLServiceGateway gateway) {
             return resultSet;
         }
-        Set<YExternalNetElement> visited = new HashSet<YExternalNetElement>();
-        Set<YExternalNetElement> visiting = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> visited = new HashSet<>();
+        Set<YExternalNetElement> visiting = new HashSet<>();
         visiting.add(((YNet) decomposition).getInputCondition());
         do {
             visited.addAll(visiting);

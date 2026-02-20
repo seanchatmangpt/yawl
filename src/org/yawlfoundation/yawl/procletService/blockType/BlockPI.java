@@ -396,7 +396,7 @@ public class BlockPI {
 									// "TEMP"
 									if (graph.getEntityMID().getValue().equals(emidToRemove.getValue() + "TEMP")) {
 										// find if there are outgoing CP arcs with no outgoing or incoming arcs
-										List<InteractionNode> nodesRemove = new ArrayList<InteractionNode>();
+										List<InteractionNode> nodesRemove = new ArrayList<>();
 										for (InteractionNode node : graph.getNodes()) {
 											boolean found = false;
 											for (InteractionArc arc : graph.getArcs()) {
@@ -515,7 +515,7 @@ public class BlockPI {
 		// get all relevant arcs 
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionArc> allArcs = igraphs.getAllArcs();
-		List<InteractionArc> relevantArcs = new ArrayList<InteractionArc>();
+		List<InteractionArc> relevantArcs = new ArrayList<>();
 		for (InteractionArc arc : allArcs) {
 			if (arc.getHead().getProcletID().equals(wir.getCaseID()) && 
 					arc.getHead().getBlockID().equals(wir.getTaskID())) {
@@ -777,7 +777,7 @@ public class BlockPI {
 	}
 	
 	private List determineFailingEmidsWIR(List<EntityID> eids) {
-		List<EntityMID> emids = new ArrayList<EntityMID>();
+		List<EntityMID> emids = new ArrayList<>();
 		for (EntityID eid : eids) {
 			// 10032010
 			// do not add twice
@@ -865,7 +865,7 @@ public class BlockPI {
             String emidsStr = item.getEmid();
 
             // split the string
-            List<EntityMID> emids = new ArrayList<EntityMID>();
+            List<EntityMID> emids = new ArrayList<>();
             String[] split = emidsStr.split(",");
             for (int i=0; i<split.length; i++) {
                 String t = split[i];
@@ -934,7 +934,7 @@ public class BlockPI {
 	}
 	
 	public static List<EntityMID> getAvailableEmidsBlockExceptionToUser() {
-        List<EntityMID> emidList = new ArrayList<EntityMID>();
+        List<EntityMID> emidList = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelectionBlock);
         for (Object o : items) {
              emidList.add(((StoredItem) o).newEntityMID());
@@ -954,7 +954,7 @@ public class BlockPI {
 	}
 	
 	public static List<InteractionNode> getExceptionBlockSelected () {
-        List<InteractionNode> nodes = new ArrayList<InteractionNode>();
+        List<InteractionNode> nodes = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.ExceptionCaseSelectionBlock);
 	    for (Object o : items) {
             StoredItem item = (StoredItem) o;

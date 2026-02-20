@@ -443,7 +443,7 @@ public class SpiffeValidator {
             return new ChainValidationResult(false, message, null, null);
         }
 
-        public List<X509Certificate> getCertChain() { return Collections.unmodifiableList(certChain); }
+        public List<X509Certificate> getCertChain() { return List.copyOf(certChain); }
     }
 
     /**

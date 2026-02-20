@@ -220,7 +220,7 @@ public class CaseExporter {
 
 
     private List<YIdentifier> csvToIdentifierList(String csv) {
-        if (csv == null) return Collections.emptyList();
+        if (csv == null) return List.of();
         List<YIdentifier> caseList = new ArrayList<>();
         String[] caseArray = csv.split("\\s*,\\s*");
         for (String caseStr : caseArray) {

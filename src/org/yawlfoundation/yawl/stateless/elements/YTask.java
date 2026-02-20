@@ -54,7 +54,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @author Lachlan Aldred
  * @author Michael Adams (v2.0 and later)
  */
-public abstract class YTask extends YExternalNetElement implements IMarkingTask {
+public abstract sealed class YTask extends YExternalNetElement implements IMarkingTask permits YAtomicTask, YCompositeTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());
@@ -724,10 +724,10 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
             }
             //remove tokens from cancellation set
             for (YExternalNetElement netElement : _removeSet) {
-                if (netElement instanceof YTask) {
-                    ((YTask) netElement).cancel();
-                } else if (netElement instanceof YCondition) {
-                    ((YCondition) netElement).removeAll();
+                if (netElement instanceof YTask removeTask) {
+                    removeTask.cancel();
+                } else if (netElement instanceof YCondition removeCondition) {
+                    removeCondition.removeAll();
                 }
             }
             purgeLocations();
@@ -1322,8 +1322,7 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
-            if (netElement instanceof YCondition) {
-                YCondition maybeImplicit = (YCondition) netElement;
+            if (netElement instanceof YCondition maybeImplicit) {
                 if (maybeImplicit.isImplicit()) {
                     removeTokensFromFlow.append("<removesTokensFromFlow>");
                     YExternalNetElement pre = maybeImplicit.getPresetElements().iterator().next();
@@ -1526,8 +1525,7 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");

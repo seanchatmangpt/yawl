@@ -49,8 +49,8 @@ public class YAWLServiceGateway extends YDecomposition implements YVerifiable {
      */
     public YAWLServiceGateway(String id, YSpecification specification) {
         super(id, specification);
-        _yawlServices = new HashMap<String, YAWLServiceReference>();
-        _enablementParameters = new HashMap<String, YParameter>();
+        _yawlServices = new HashMap<>();
+        _enablementParameters = new HashMap<>();
     }
 
 

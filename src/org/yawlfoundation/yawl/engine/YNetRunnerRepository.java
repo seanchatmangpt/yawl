@@ -83,7 +83,7 @@ public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRun
 
 
     public List<YNetRunner> getAllRunnersForCase(YIdentifier primaryCaseID) {
-        List<YNetRunner> runners = new ArrayList<YNetRunner>();
+        List<YNetRunner> runners = new ArrayList<>();
         for (YNetRunner runner : this.values()) {
             if (primaryCaseID.equalsOrIsAncestorOf(runner.getCaseID())) {
                 runners.add(runner);

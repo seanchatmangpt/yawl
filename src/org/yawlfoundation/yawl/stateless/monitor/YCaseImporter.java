@@ -153,7 +153,7 @@ public class YCaseImporter {
     
     private <T> void addChild(Map<String, Set<T>> parentChildMap, String parentID, T child) {
         if (parentID != null) {
-            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<T>());
+            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<>());
             children.add(child);
         }
     }
@@ -192,7 +192,7 @@ public class YCaseImporter {
     private YIdentifier unmarshalIdentifier(Element nIdentifier) {
         YIdentifier id = new YIdentifier(nIdentifier.getAttributeValue("id"));
         Element nLocations = nIdentifier.getChild("locations");
-        List<String> locations = new ArrayList<String>();
+        List<String> locations = new ArrayList<>();
         for (Element nLocation : nLocations.getChildren()) {
             locations.add(nLocation.getText());
         }
@@ -417,13 +417,12 @@ public class YCaseImporter {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask) {
-                    task = (YTask) element;
+                if (element instanceof YTask task) {
                     task.setI(id);
                     task.prepareDataDocsForTaskOutput();
                     id.addLocation(task);
-                } else if (element instanceof YCondition) {
-                    ((YConditionInterface) element).add(id);
+                } else if (element instanceof YCondition condition) {
+                    ((YConditionInterface) condition).add(id);
                 }
             }
         }
@@ -567,11 +566,10 @@ public class YCaseImporter {
      */
     private YTask getTask(String taskID) {
         for (YDecomposition decomposition : _spec.getDecompositions()) {
-            if (decomposition instanceof YNet) {
-                YNet net = (YNet) decomposition;
+            if (decomposition instanceof YNet net) {
                 YExternalNetElement element = net.getNetElement(taskID);
-                if (element instanceof YTask) {
-                    return (YTask) element;
+                if (element instanceof YTask task) {
+                    return task;
                 }
             }
         }

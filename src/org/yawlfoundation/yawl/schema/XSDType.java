@@ -277,7 +277,7 @@ public class XSDType {
 
 
     private static List<String> makeList() {
-        List<String> typeList = new ArrayList<String>();
+        List<String> typeList = new ArrayList<>();
         for (int i = ANY_TYPE; i<= ANY_URI; i++) {
             typeList.add(getString(i));
         }

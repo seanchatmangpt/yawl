@@ -169,7 +169,7 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
         System.out.println("performSMSSend::username = " + _smsUsername);
         // SECURITY: Never log passwords or API keys
 
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("u", _smsUsername);
         params.put("p", _smsPassword);
         params.put("d", toPhone);
@@ -318,7 +318,7 @@ public class SMSSender extends InterfaceBWebsideController implements Runnable {
     }
 
     private List getReplies(String smsJobID) throws IOException {
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("u", _smsUsername);
         params.put("p", _smsPassword);
         params.put("j", smsJobID);

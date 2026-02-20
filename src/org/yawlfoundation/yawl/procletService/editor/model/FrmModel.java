@@ -270,7 +270,7 @@ private void initComponents() {
 	        vv = new VisualizationViewer(new CircleLayout(pconnsInst));
 	        
 	        // options
-	        java.util.List<String> options = new ArrayList<String>();
+	        java.util.List<String> options = new ArrayList<>();
 	        options.add("FRLayout");
 	        options.add("KKLayout");
 	        options.add("CircleLayout");

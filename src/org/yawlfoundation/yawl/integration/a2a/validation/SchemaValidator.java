@@ -497,14 +497,14 @@ public class SchemaValidator {
          * Creates a successful validation result.
          */
         public static ValidationResult success(String schemaName, long validationTime) {
-            return new ValidationResult(true, schemaName, "Validation passed", Collections.emptyList(), validationTime);
+            return new ValidationResult(true, schemaName, "Validation passed", List.of(), validationTime);
         }
 
         /**
          * Creates a failed validation result.
          */
         public static ValidationResult failure(String schemaName, String errorSummary) {
-            return new ValidationResult(false, schemaName, errorSummary, Collections.emptyList(), 0);
+            return new ValidationResult(false, schemaName, errorSummary, List.of(), 0);
         }
 
         /**
@@ -519,7 +519,7 @@ public class SchemaValidator {
         public boolean isValid() { return valid; }
         public String getSchemaName() { return schemaName; }
         public String getSummary() { return summary; }
-        public List<ValidationErrorDetail> getErrors() { return Collections.unmodifiableList(errors); }
+        public List<ValidationErrorDetail> getErrors() { return List.copyOf(errors); }
         public long getValidationTime() { return validationTime; }
         public long getTimestamp() { return timestamp; }
 

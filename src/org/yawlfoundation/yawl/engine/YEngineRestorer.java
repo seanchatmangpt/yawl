@@ -71,8 +71,8 @@ public class YEngineRestorer {
     protected YEngineRestorer(YEngine engine, YPersistenceManager pmgr) {
         _engine = engine;
         _pmgr = pmgr;
-        _idLookupTable = new HashMap<String, YIdentifier>();
-        _taskLookupTable = new HashMap<String, YTask>();
+        _idLookupTable = new HashMap<>();
+        _taskLookupTable = new HashMap<>();
         _miOutputDataLookupTable = new HashMap<>();
         _miTasks = new ArrayList<>();
         _log = LogManager.getLogger(this.getClass());
@@ -203,8 +203,8 @@ public class YEngineRestorer {
 
     protected void restoreWorkItems(List<YWorkItem> workItems) throws YPersistenceException {
         _log.debug("Restoring {} work items", workItems.size());
-        List<YWorkItem> toBeRestored = new ArrayList<YWorkItem>();
-        List<YWorkItem> toBeRemoved = new ArrayList<YWorkItem>();
+        List<YWorkItem> toBeRestored = new ArrayList<>();
+        List<YWorkItem> toBeRemoved = new ArrayList<>();
 
         for (YWorkItem witem : workItems) {
             if (hasRestoredIdentifier(witem))
@@ -286,8 +286,8 @@ public class YEngineRestorer {
 
     protected Set<YTimedObject> restoreWorkItemTimers() throws YPersistenceException {
         _log.debug("Restoring work item timers - Starts");
-        Set<YTimedObject> expiredTimers = new HashSet<YTimedObject>();
-        Set<YWorkItemTimer> orphanedTimers = new HashSet<YWorkItemTimer>();
+        Set<YTimedObject> expiredTimers = new HashSet<>();
+        Set<YWorkItemTimer> orphanedTimers = new HashSet<>();
 
         for (YWorkItemTimer witemTimer : restoreObjects(YWorkItemTimer.class)) {
             witemTimer.setPersisting(true);
@@ -319,7 +319,7 @@ public class YEngineRestorer {
 
     protected Set<YTimedObject> restoreDelayedLaunches() throws YPersistenceException {
         _log.debug("Restoring delayed launch timers - Starts");
-        Set<YTimedObject> expiredTimers = new HashSet<YTimedObject>();
+        Set<YTimedObject> expiredTimers = new HashSet<>();
         for (YLaunchDelayer delayer : restoreObjects(YLaunchDelayer.class)) {
             delayer.setPersisting(true);
 
@@ -396,7 +396,7 @@ public class YEngineRestorer {
 
     private List<YNetRunner> removeDeadRunners(List<YNetRunner> runners)
             throws YPersistenceException {
-        List<YNetRunner> result = new ArrayList<YNetRunner>();
+        List<YNetRunner> result = new ArrayList<>();
 
         for (YNetRunner runner : runners) {
             if (getSpecification(runner) != null) {
@@ -421,7 +421,7 @@ public class YEngineRestorer {
 
     private Map<String, YNetRunner> restoreNets(List<YNetRunner> runners)
             throws YPersistenceException {
-        Map<String, YNetRunner> runnerMap = new HashMap<String, YNetRunner>();
+        Map<String, YNetRunner> runnerMap = new HashMap<>();
         Set<YNetRunner> orphanedRunners = new HashSet<>();
 
         // restore all root nets first
@@ -561,8 +561,7 @@ public class YEngineRestorer {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask) {
-                    task = (YTask) element;
+                if (element instanceof YTask task) {
                     task.setI(id);
                     if (task.isMultiInstance()) {
                         _miTasks.add(task);
@@ -575,7 +574,7 @@ public class YEngineRestorer {
                     }
 
                     task.prepareDataDocsForTaskOutput(null);
-                    
+
                     if (task.isMultiInstance()) {
                         String uniqueID = id.get_idString() + ":" + task.getID();
                         GroupedMIOutputData miOutputData = _miOutputDataLookupTable.get(uniqueID);
@@ -585,8 +584,8 @@ public class YEngineRestorer {
                     }
 
                     id.addLocation(null, task);
-                } else if (element instanceof YCondition) {
-                    ((YConditionInterface) element).add(_pmgr, id);
+                } else if (element instanceof YCondition condition) {
+                    ((YConditionInterface) condition).add(_pmgr, id);
                 }
             }
         }
@@ -679,7 +678,7 @@ public class YEngineRestorer {
      * @return the sublist of items not to restore (if any)
      */
     private List<YWorkItem> checkWorkItemFamiliesIntact(List<YWorkItem> itemList) {
-        List<YWorkItem> orphans = new ArrayList<YWorkItem>();
+        List<YWorkItem> orphans = new ArrayList<>();
         for (YWorkItem witem : itemList) {
             if (witem.getStatus().equals(YWorkItemStatus.statusIsParent)) {
                 Set<YWorkItem> children = witem.getChildren();
@@ -731,8 +730,8 @@ public class YEngineRestorer {
      * cases that are no longer executing
      */
     private void removeOrphanedIdentifiers() {
-        Set<YIdentifier> orphaned = new HashSet<YIdentifier>();
-        List<String> caseIDs = new ArrayList<String>();
+        Set<YIdentifier> orphaned = new HashSet<>();
+        List<String> caseIDs = new ArrayList<>();
         for (YIdentifier id : _engine.getRunningCaseIDs()) {
             caseIDs.add(id.toString());
         }
@@ -783,7 +782,7 @@ public class YEngineRestorer {
     
 
     private <T> List<T> restoreObjects(Class<T> clazz, String queryString) throws YPersistenceException {
-        List<T> list = new ArrayList<T>();
+        List<T> list = new ArrayList<>();
         TypedQuery<Object> query = _pmgr.createQuery(queryString);
         List<?> results = query.getResultList();
         if (results != null) {

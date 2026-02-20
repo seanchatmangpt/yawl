@@ -289,12 +289,12 @@ public final class YawlNetGraphBuilder {
 
         /** Return nodes as an unmodifiable view. */
         public List<GraphNode> nodes() {
-            return Collections.unmodifiableList(nodes);
+            return List.copyOf(nodes);
         }
 
         /** Return edges as an unmodifiable view. */
         public List<GraphEdge> edges() {
-            return Collections.unmodifiableList(edges);
+            return List.copyOf(edges);
         }
     }
 }

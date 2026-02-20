@@ -31,9 +31,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -207,40 +210,43 @@ class FullEngineLifecycleTest {
     void testConcurrentCaseExecution() throws Exception {
         String specId = "lifecycle-concurrent";
         int caseCount = 20;
-        int threads = 4;
 
         YSpecification spec = WorkflowDataFactory.buildMinimalSpec(specId);
         WorkflowDataFactory.seedSpecification(db, specId, "1.0", spec.getName());
 
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
-        CountDownLatch latch = new CountDownLatch(caseCount);
         AtomicInteger successCount = new AtomicInteger(0);
-        List<String> runnerIds = new ArrayList<>();
 
         Instant start = Instant.now();
 
-        for (int i = 0; i < caseCount; i++) {
-            String runnerId = "runner-concurrent-" + i;
-            runnerIds.add(runnerId);
+        // Use StructuredTaskScope for coordinated parallel case execution
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure<Void>()) {
+            for (int i = 0; i < caseCount; i++) {
+                String runnerId = "runner-concurrent-" + i;
 
-            executor.submit(() -> {
-                try {
-                    executeCase(db, specId, runnerId, "process");
-                    successCount.incrementAndGet();
-                } catch (Exception e) {
-                    System.err.println("Case execution failed: " + e.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
+                scope.fork(() -> {
+                    try {
+                        executeCase(db, specId, runnerId, "process");
+                        successCount.incrementAndGet();
+                    } catch (Exception e) {
+                        System.err.println("Case execution failed: " + e.getMessage());
+                    }
+                    return null;
+                });
+            }
+
+            // Wait for all cases with automatic failure cancellation
+            try {
+                scope.joinUntil(Instant.now().plusSeconds(30));
+                scope.throwIfFailed();
+            } catch (ExecutionException e) {
+                throw new AssertionError("Case execution failed", e.getCause());
+            } catch (TimeoutException e) {
+                throw new AssertionError("Case execution timed out", e);
+            }
         }
-
-        boolean completed = latch.await(30, TimeUnit.SECONDS);
-        executor.shutdown();
 
         long durationMs = Instant.now().toEpochMilli() - start.toEpochMilli();
 
-        assertTrue(completed, "All cases must complete within timeout");
         assertEquals(caseCount, successCount.get(),
                 "All cases must succeed");
 
@@ -270,10 +276,27 @@ class FullEngineLifecycleTest {
 
         Instant start = Instant.now();
 
-        for (int i = 0; i < caseCount; i++) {
-            String runnerId = "runner-hv-" + i;
-            WorkflowDataFactory.seedNetRunner(db, runnerId, specId, "1.0",
-                    "root", "COMPLETED");
+        // Use StructuredTaskScope for parallel high-volume case creation
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure<Void>()) {
+            for (int i = 0; i < caseCount; i++) {
+                final int caseId = i;
+                scope.fork(() -> {
+                    String runnerId = "runner-hv-" + caseId;
+                    WorkflowDataFactory.seedNetRunner(db, runnerId, specId, "1.0",
+                            "root", "COMPLETED");
+                    return null;
+                });
+            }
+
+            // Wait for all cases with automatic failure cancellation
+            try {
+                scope.joinUntil(Instant.now().plusSeconds(10));
+                scope.throwIfFailed();
+            } catch (ExecutionException e) {
+                throw new AssertionError("High-volume case creation failed", e.getCause());
+            } catch (TimeoutException e) {
+                throw new AssertionError("High-volume case creation timed out", e);
+            }
         }
 
         long durationMs = Instant.now().toEpochMilli() - start.toEpochMilli();

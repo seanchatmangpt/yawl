@@ -90,7 +90,7 @@ public final class SpiffeAuthenticationProvider implements A2AAuthenticationProv
             throw new IllegalArgumentException("trustedDomain must not be blank");
         }
         this.trustedDomain   = trustedDomain;
-        this.pathPermissions = Collections.unmodifiableMap(pathPermissions);
+        this.pathPermissions = Map.copyOf(pathPermissions);
     }
 
     /**

@@ -51,7 +51,7 @@ public class YMarshal {
     private static List<YSpecification> buildSpecifications(
             Element specificationSetElem, Namespace ns, YSchemaVersion version)
             throws YSyntaxException {
-        List<YSpecification> specifications = new ArrayList<YSpecification>();
+        List<YSpecification> specifications = new ArrayList<>();
 
         // parse each specification element into a YSpecification
         for (Element xmlSpecification : specificationSetElem.getChildren("specification", ns)) {
@@ -148,7 +148,7 @@ public class YMarshal {
      * @return the XML Document, rendered as a String
      */
     public static String marshal(YSpecification specification) {
-        List<YSpecification> spLst = new ArrayList<YSpecification>();
+        List<YSpecification> spLst = new ArrayList<>();
         spLst.add(specification);
         return marshal(spLst, specification.getSchemaVersion());
     }

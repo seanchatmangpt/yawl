@@ -101,7 +101,7 @@ public class YWorkItemRepository {
 
     public Set<YWorkItem> removeWorkItemFamily(YWorkItem workItem) {
         _logger.debug("--> removeWorkItemFamily: {}", workItem.getIDString());
-        Set<YWorkItem> removedSet = new HashSet<YWorkItem>();
+        Set<YWorkItem> removedSet = new HashSet<>();
         YWorkItem parent = workItem.getParent() != null ? workItem.getParent() : workItem;
         Set<YWorkItem> children = parent.getChildren();
         if (children != null) {
@@ -121,7 +121,7 @@ public class YWorkItemRepository {
      * @param caseIDForNet
      */
     public Set<YWorkItem> cancelNet(YIdentifier caseIDForNet) {
-        Set<String> itemsToRemove = new HashSet<String>();
+        Set<String> itemsToRemove = new HashSet<>();
         for (YWorkItem item : _itemMap.values()) {
             YIdentifier identifier = item.getWorkItemID().getCaseID();
             if (identifier.isImmediateChildOf(caseIDForNet) ||
@@ -135,7 +135,7 @@ public class YWorkItemRepository {
 
 
     private Set<YWorkItem> removeItems(Set<String> itemsToRemove) {
-        Set<YWorkItem> removedSet = new HashSet<YWorkItem>();
+        Set<YWorkItem> removedSet = new HashSet<>();
         for (String workItemID : itemsToRemove) {
             YWorkItem item = _itemMap.remove(workItemID);
             if (item != null) removedSet.add(item);
@@ -165,7 +165,7 @@ public class YWorkItemRepository {
 
 
     public Set<YWorkItem> getExecutingWorkItems(String serviceName) {
-        Set<YWorkItem> executingItems = new HashSet<YWorkItem>();
+        Set<YWorkItem> executingItems = new HashSet<>();
         for (YWorkItem workitem : getWorkItems(statusExecuting)) {
             if (workitem.getExternalClient().getUserName().equals(serviceName)) {
                 executingItems.add(workitem);
@@ -213,7 +213,7 @@ public class YWorkItemRepository {
 
     // check that the items in the repository are in synch with the engine
     public void cleanseRepository() {
-        Set<String> itemsToRemove = new HashSet<String>();
+        Set<String> itemsToRemove = new HashSet<>();
         for (YWorkItem workitem : _itemMap.values()) {
 
             // keep deadlocked items in repository for visibility and handling
@@ -247,7 +247,7 @@ public class YWorkItemRepository {
 
     public Set<YWorkItem> getChildrenOf(String workItemID) {
         YWorkItem item = _itemMap.get(workItemID);
-        return (item != null) ? item.getChildren() : new HashSet<YWorkItem>();
+        return (item != null) ? item.getChildren() : new HashSet<>();
     }
 
     /**
@@ -262,7 +262,7 @@ public class YWorkItemRepository {
             throw new IllegalArgumentException("the argument <caseID> is not valid.");
         }
 
-        Set<YWorkItem> removedItems = new HashSet<YWorkItem>();
+        Set<YWorkItem> removedItems = new HashSet<>();
         for (YWorkItem item : getWorkItemsForCase(caseID)) {
             removedItems.addAll(removeWorkItemFamily(item));
         }
@@ -275,7 +275,7 @@ public class YWorkItemRepository {
             throw new IllegalArgumentException("the argument <caseID> is not valid.");
         }
         
-        List<YWorkItem> caseItems = new ArrayList<YWorkItem>();
+        List<YWorkItem> caseItems = new ArrayList<>();
         for (YWorkItem item : getWorkItems()) {
             YWorkItemID wid = item.getWorkItemID();
 
@@ -292,7 +292,7 @@ public class YWorkItemRepository {
 
 
     public Set<YWorkItem> getWorkItemsWithIdentifier(String idType, String id) {
-        Set<YWorkItem> matches = new HashSet<YWorkItem>() ;
+        Set<YWorkItem> matches = new HashSet<>() ;
 
         // find out which items belong to the specified case/spec/task
         for (YWorkItem item : getWorkItems()) {
@@ -311,7 +311,7 @@ public class YWorkItemRepository {
     
 
     public Set<YWorkItem> getWorkItemsForService(String serviceURI) {
-        Set<YWorkItem> matches = new HashSet<YWorkItem>();
+        Set<YWorkItem> matches = new HashSet<>();
         YAWLServiceReference defWorklist = YEngine.getInstance().getDefaultWorklist();
 
         // find out which items belong to the specified service

@@ -29,7 +29,7 @@ public class ProcletModels {
 	
 	private String procletModelTN = "procletmodel";
 	private static ProcletModels pModels = null;
-	private static List<ProcletModel> pModelsList = new ArrayList<ProcletModel>();
+	private static List<ProcletModel> pModelsList = new ArrayList<>();
 	
 	private ProcletModels () {
 		
@@ -69,7 +69,7 @@ public class ProcletModels {
 	}
 	
 	public List<ProcletPort> getPorts() {
-		List<ProcletPort> portsTot = new ArrayList<ProcletPort>();
+		List<ProcletPort> portsTot = new ArrayList<>();
 		for (ProcletModel pmodel : this.pModelsList) {
 			List<ProcletPort> ports = pmodel.getPorts();
 			portsTot.addAll(ports);
@@ -136,7 +136,7 @@ public class ProcletModels {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
 		// step1, 
-		List<PortConnection> intermediate = new ArrayList<PortConnection>();
+		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : oPorts) {
 			for (PortConnection pconn : pconns) {
 				if (port.getPortID().equals(pconn.getIPort().getPortID())) {
@@ -166,7 +166,7 @@ public class ProcletModels {
 		PortConnections conns = PortConnections.getInstance();
 		List<PortConnection> pconns = conns.getPortConnections();
 		// step1, 
-		List<PortConnection> intermediate = new ArrayList<PortConnection>();
+		List<PortConnection> intermediate = new ArrayList<>();
 		for (ProcletPort port : iPorts) {
 			for (PortConnection pconn : pconns) {
 				if (port.getPortID().equals(pconn.getOPort().getPortID())) {

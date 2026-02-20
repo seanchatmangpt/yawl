@@ -84,7 +84,7 @@ public class YDecompositionParser {
         _version = version;
         _postsetIDs = new Postset();
         _removeSetIDs = new HashMap<YTask, List<String>>();
-        _decomposesToIDs = new HashMap<YTask, String>();
+        _decomposesToIDs = new HashMap<>();
         _decomposition = createDecomposition(decompElem);
         _postsetIDs.addImplicitConditions();
         linkElements();
@@ -293,18 +293,18 @@ public class YDecompositionParser {
         List<Element> removeSetForFlows =
                 externalTaskElem.getChildren("removesTokensFromFlow", _yawlNS);
         if (removeSetForFlows != null) {
-            List<Element> removeIDs = new ArrayList<Element>();
+            List<Element> removeIDs = new ArrayList<>();
             for (Element id : removeSetForFlows) {
                 removeIDs.add(id);
             }
             return removeIDs;
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
 
     private Map<String, String> parseMappings(Element mappingsElem, boolean isStartMappings) {
-        Map<String, String> map = new TreeMap<String, String>();
+        Map<String, String> map = new TreeMap<>();
         for (Element mapping : mappingsElem.getChildren()) {
             String expression = mapping.getChild("expression", _yawlNS).getAttributeValue("query");
             String varOrParam = mapping.getChildText("mapsTo", _yawlNS);
@@ -319,7 +319,7 @@ public class YDecompositionParser {
 
 
     private List<String> parseRemoveSet(Element externalTaskElem) {
-        List<String> removeIDs = new ArrayList<String>();
+        List<String> removeIDs = new ArrayList<>();
         for (Element removesElem : externalTaskElem.getChildren("removesTokens", _yawlNS)) {
             removeIDs.add(removesElem.getAttributeValue("id"));
         }
@@ -440,7 +440,7 @@ public class YDecompositionParser {
 
 
     private List<FlowStruct> parsePostset(Element netElementElem) {
-        List<FlowStruct> postsetFlowStructs = new ArrayList<FlowStruct>();
+        List<FlowStruct> postsetFlowStructs = new ArrayList<>();
         for (Element flowsIntoElem : netElementElem.getChildren("flowsInto", _yawlNS)) {
             String nextElementRef = flowsIntoElem.getChild("nextElementRef", _yawlNS).getAttributeValue("id");
             FlowStruct flowStruct = new FlowStruct(nextElementRef,
@@ -644,7 +644,7 @@ public class YDecompositionParser {
             }
 
             for (YTask externalTask : _removeSetIDs.keySet()) {
-                List<YExternalNetElement> removeSetObjects = new ArrayList<YExternalNetElement>();
+                List<YExternalNetElement> removeSetObjects = new ArrayList<>();
                 for (String id : _removeSetIDs.get(externalTask)) {
                     removeSetObjects.add(decomposition.getNetElement(id));
                 }
@@ -667,7 +667,7 @@ public class YDecompositionParser {
                             YTask taskAfterImplicit = (YTask) oneTaskInThisList.iterator().next();
                             if (taskAfterImplicit.equals(flowDest)) {
                                 List<YExternalNetElement> additionalRemoves =
-                                        new ArrayList<YExternalNetElement>();
+                                        new ArrayList<>();
                                 additionalRemoves.add(maybeImplicit);
                                 taskWithRemoveSet.addRemovesTokensFrom(additionalRemoves);
                             }
@@ -689,7 +689,7 @@ public class YDecompositionParser {
         public void add(String id, List<FlowStruct> postsetStruct) {
             List<FlowStruct> oldRefIDs = _postsetMap.get(id);
             if (oldRefIDs == null) {
-                oldRefIDs = new ArrayList<FlowStruct>();
+                oldRefIDs = new ArrayList<>();
             }
             oldRefIDs.addAll(postsetStruct);
             _postsetMap.put(id, oldRefIDs);
@@ -702,7 +702,7 @@ public class YDecompositionParser {
 
 
         public List getPostset(List<String> ids) {
-            List<FlowStruct> postset = new ArrayList<FlowStruct>();
+            List<FlowStruct> postset = new ArrayList<>();
             for (String id : ids) {
                 postset.addAll(_postsetMap.get(id));
             }
@@ -729,7 +729,7 @@ public class YDecompositionParser {
                             ((YNet) _decomposition).addNetElement(condition);
                             String tempElemID = flowStruct._flowInto;
                             flowStruct._flowInto = condition.getID();
-                            List<FlowStruct> dom = new ArrayList<FlowStruct>();
+                            List<FlowStruct> dom = new ArrayList<>();
                             dom.add(new FlowStruct(tempElemID, null, null));
                             _postsetMap.put(condition.getID(), dom);
                         }

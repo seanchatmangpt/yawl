@@ -1206,7 +1206,7 @@ public class InterfaceB_EnvironmentBasedClient extends Interface_Client {
      * @return a list of WorkItemRecord objects
      */
     private List<WorkItemRecord> unPackWorkItemList(String xml) {
-        List<WorkItemRecord> result = new ArrayList<WorkItemRecord>();
+        List<WorkItemRecord> result = new ArrayList<>();
         if (xml != null && successful(xml)) {
             Document doc = JDOMUtil.stringToDocument(xml);
             if (doc != null) {

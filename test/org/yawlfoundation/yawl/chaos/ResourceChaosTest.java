@@ -176,15 +176,14 @@ class ResourceChaosTest {
         void testConcurrentMemoryIntensiveOperations() throws Exception {
             int threads = 10;
             int operationsPerThread = 5;
-            ExecutorService executor = Executors.newFixedThreadPool(threads);
-            CountDownLatch latch = new CountDownLatch(threads);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger oomCount = new AtomicInteger(0);
 
-            for (int t = 0; t < threads; t++) {
-                final int threadId = t;
-                executor.submit(() -> {
-                    try {
+            // Use StructuredTaskScope for coordinated parallel memory operations
+            try (var scope = new StructuredTaskScope.ShutdownOnFailure<Void>()) {
+                for (int t = 0; t < threads; t++) {
+                    final int threadId = t;
+                    scope.fork(() -> {
                         for (int i = 0; i < operationsPerThread; i++) {
                             try {
                                 // Memory-intensive operation
@@ -205,14 +204,19 @@ class ResourceChaosTest {
                                 System.gc();
                             }
                         }
-                    } finally {
-                        latch.countDown();
-                    }
-                });
-            }
+                        return null;
+                    });
+                }
 
-            latch.await(60, TimeUnit.SECONDS);
-            executor.shutdown();
+                try {
+                    scope.joinUntil(Instant.now().plusSeconds(60));
+                    scope.throwIfFailed();
+                } catch (ExecutionException e) {
+                    throw new AssertionError("Memory operation failed", e.getCause());
+                } catch (TimeoutException e) {
+                    throw new AssertionError("Memory operations timed out", e);
+                }
+            }
 
             int expectedOps = threads * operationsPerThread;
             double successRate = (double) successCount.get() / expectedOps * 100;

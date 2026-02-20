@@ -544,7 +544,7 @@ public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
                     _fileChooser.getCurrentDirectory().getAbsolutePath()
             );
         }
-        List<YVerificationMessage> errorMessages = new ArrayList<YVerificationMessage>();
+        List<YVerificationMessage> errorMessages = new ArrayList<>();
         List<YSpecificationID> newSpecIDs = null;
         YVerificationHandler verificationHandler = new YVerificationHandler();
         try {

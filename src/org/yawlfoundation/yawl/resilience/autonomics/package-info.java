@@ -80,15 +80,15 @@
  *
  * // Monitor health
  * HealthReport health = autonomics.getHealthReport();
- * System.out.println("Active cases: " + health.getActiveCases());
- * System.out.println("Stuck cases: " + health.getStuckCases());
+ * System.out.println("Active cases: " + health.activeCases());
+ * System.out.println("Stuck cases: " + health.stuckCases());
  *
  * // Handle unrecoverable failures
  * DeadLetterQueue dlq = autonomics.getDeadLetterQueue();
  * while (dlq.size() > 0) {
  *     StuckCase stuck = dlq.poll().orElse(null);
  *     if (stuck != null) {
- *         operatorAlert.escalate(stuck.getCaseID(), stuck.getReason());
+ *         operatorAlert.escalate(stuck.caseID(), stuck.reason());
  *     }
  * }
  * }</pre>
