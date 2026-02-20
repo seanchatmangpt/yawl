@@ -131,7 +131,17 @@ public class IntrospectCodebaseSkill implements A2ASkill {
             case "pmd" -> readJsonFile(factsDir.resolve("pmd-violations.json"));
             case "checkstyle" -> readJsonFile(factsDir.resolve("checkstyle-warnings.json"));
             case "all" -> aggregateAllFacts(factsDir);
-            default -> throw new UnsupportedOperationException("Query not implemented: " + query);
+            default -> {
+                // Unknown query type. Return error response instead of throwing.
+                // The caller has already validated against SUPPORTED_QUERIES, so this
+                // should never occur in normal operation, but we provide a real response.
+                _logger.warn("Query type not recognized: {}. Supported types: {}", query, SUPPORTED_QUERIES);
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Query '" + query + "' is not supported");
+                errorResponse.put("supported_queries", SUPPORTED_QUERIES);
+                errorResponse.put("hint", "Query must be one of: modules, reactor, gates, integration, static-analysis, spotbugs, pmd, checkstyle, all");
+                yield errorResponse;
+            }
         };
     }
 

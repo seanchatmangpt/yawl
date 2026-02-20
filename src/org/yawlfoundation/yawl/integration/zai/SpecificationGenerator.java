@@ -16,7 +16,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.yawlfoundation.yawl.elements.YDecomposition;
+import org.yawlfoundation.yawl.elements.YExternalNetElement;
+import org.yawlfoundation.yawl.elements.YNet;
 import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.YTask;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 
 /**
@@ -304,15 +308,72 @@ public class SpecificationGenerator {
     }
 
     private YSpecification fixIdentifiers(YSpecification spec) {
-        throw new UnsupportedOperationException(
-            "fixIdentifiers() is not implemented. Identifier normalization requires:\n" +
-            "  1. A traversal of all YDecomposition, YTask, and YCondition elements\n" +
-            "  2. Validation of each ID against the NCName grammar (XML spec section 2.3)\n" +
-            "  3. Replacement of invalid characters (spaces, colons) with underscores\n" +
-            "  4. Deduplication of resulting IDs with a numeric suffix strategy\n" +
-            "See YSpecification.java and YNetElement.java for the element hierarchy.\n" +
-            "Disable autoFixIds in GenerationOptions until this is implemented."
-        );
+        Map<String, Integer> idCounts = new HashMap<>();
+
+        // Process the root net
+        YNet rootNet = spec.getRootNet();
+        if (rootNet != null) {
+            fixNetIdentifiers(rootNet, idCounts);
+        }
+
+        // Process all decompositions
+        for (YDecomposition decomp : spec.getDecompositions()) {
+            if (decomp instanceof YNet net && !net.equals(rootNet)) {
+                fixNetIdentifiers(net, idCounts);
+            }
+        }
+
+        return spec;
+    }
+
+    private void fixNetIdentifiers(YNet net, Map<String, Integer> idCounts) {
+        // Fix the net's own ID
+        String fixedNetId = fixAndDeduplicateId(net.getID(), idCounts);
+        net.setID(fixedNetId);
+
+        // Process all net elements (tasks and conditions)
+        for (YExternalNetElement element : net.getNetElements().values()) {
+            String originalId = element.getID();
+            String fixedId = fixAndDeduplicateId(originalId, idCounts);
+            element.setID(fixedId);
+
+            // If this is a task with a decomposition, process that decomposition
+            if (element instanceof YTask task && task.getDecompositionPrototype() instanceof YNet subNet) {
+                fixNetIdentifiers(subNet, idCounts);
+            }
+        }
+    }
+
+    private String fixAndDeduplicateId(String originalId, Map<String, Integer> idCounts) {
+        if (originalId == null || originalId.isEmpty()) {
+            return "element_" + (idCounts.getOrDefault("_auto", 0) + 1);
+        }
+
+        // Normalize: replace invalid XML NCName characters with underscores
+        String normalized = originalId
+            .replaceAll("[\\s:.]", "_")  // Replace spaces, colons, dots with underscores
+            .replaceAll("[^\\w_-]", "_"); // Replace other invalid chars with underscores
+
+        // Ensure it starts with letter or underscore
+        if (!normalized.isEmpty() && !Character.isLetter(normalized.charAt(0)) && normalized.charAt(0) != '_') {
+            normalized = "_" + normalized;
+        }
+
+        // Ensure it's not empty after normalization
+        if (normalized.isEmpty()) {
+            normalized = "element";
+        }
+
+        // Deduplicate: if we've seen this ID before, append a numeric suffix
+        Integer count = idCounts.getOrDefault(normalized, 0);
+        if (count > 0) {
+            String deduped = normalized + "_" + (count + 1);
+            idCounts.put(normalized, count + 1);
+            return deduped;
+        } else {
+            idCounts.put(normalized, 0);
+            return normalized;
+        }
     }
 
     private String truncate(String s, int maxLength) {

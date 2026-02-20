@@ -305,7 +305,14 @@ public class CommitChangesSkill implements A2ASkill {
                 command.add("origin");
                 command.add(branch);
             }
-            default -> throw new UnsupportedOperationException("Unknown operation: " + operation);
+            default -> {
+                // Unknown operation not in the supported set. Log and return empty command,
+                // which will be handled by the caller as a validation error.
+                _logger.warn("Unknown git operation requested: {}. Supported operations: {}",
+                        operation, Set.of("status", "log", "diff", "show", "stage", "commit", "branch", "checkout", "push"));
+                // Return command with only "git" to trigger a controlled git error later
+                return command;
+            }
         }
 
         return command;

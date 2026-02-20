@@ -25,6 +25,7 @@ import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
 import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
 import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffException;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffSession;

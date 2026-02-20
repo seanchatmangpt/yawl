@@ -21,32 +21,41 @@ package org.yawlfoundation.yawl.integration.autonomous.strategies;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
- * Produces output for work items based on agent decision logic.
+ * Abstract base class for producing output for work items based on agent decision logic.
  *
- * <p>Output production is not yet implemented. The method throws
- * {@link UnsupportedOperationException} to prevent silent fabrication
- * of output data in production. A concrete subclass must supply the
- * domain-specific decision logic.</p>
+ * <p>Subclasses must implement {@link #produceOutput} with domain-specific business rules
+ * for deriving work item output from input data. Output production typically involves:
+ * <ol>
+ *   <li>Parsing of work item input data via {@link WorkItemRecord#getDataList()}</li>
+ *   <li>Application of domain-specific rules to derive output values</li>
+ *   <li>Serialization of result back to YAWL data XML format</li>
+ * </ol></p>
  *
  * @since YAWL 6.0
  */
-public class DecisionReasoner {
+public abstract class DecisionReasoner {
 
     /**
      * Produces output for the given work item.
      *
+     * <p>Subclasses must implement this method with domain-specific logic that derives
+     * output data from the work item's input data and task context.</p>
+     *
      * @param workItem the work item to process
-     * @return the output data for the work item
-     * @throws UnsupportedOperationException always — not yet implemented
+     * @return the output data for the work item (typically XML-formatted)
+     * @throws IllegalArgumentException if workItem is null
      */
-    public String produceOutput(WorkItemRecord workItem) {
-        throw new UnsupportedOperationException(
-            "produceOutput() is not implemented. Output production requires:\n" +
-            "  1. Domain-specific business rules for each task type\n" +
-            "  2. Parsing of work item input data (workItem.getDataListAsXML())\n" +
-            "  3. Application of XQuery/XPath expressions to derive output values\n" +
-            "  4. Serialisation of result back to YAWL data XML format\n" +
-            "Create a concrete subclass of DecisionReasoner with task-specific logic."
-        );
+    public abstract String produceOutput(WorkItemRecord workItem);
+
+    /**
+     * Gets the task name or type that this reasoner handles.
+     *
+     * <p>May be overridden by subclasses for task-specific reasoning. Default
+     * implementation returns null (reasoning applies to any task).</p>
+     *
+     * @return the task name this reasoner handles, or null for all tasks
+     */
+    public String getHandledTaskName() {
+        return null;
     }
 }
