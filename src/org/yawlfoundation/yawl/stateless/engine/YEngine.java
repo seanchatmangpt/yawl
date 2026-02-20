@@ -92,7 +92,9 @@ public class YEngine {
         _engineNbr = ENGINE_COUNTER.incrementAndGet();
         _announcer = new YAnnouncer(this);
         _logger = LogManager.getLogger(YEngine.class);
+        _buildProps = new YBuildProperties();
         setEngineStatus(Status.Running);
+        _logger.info("Stateless YEngine #" + _engineNbr + " initialized");
     }
 
 

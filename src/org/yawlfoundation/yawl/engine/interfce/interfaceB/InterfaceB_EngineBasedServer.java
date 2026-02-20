@@ -65,23 +65,32 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
 
         try {
             ServletContext context = getServletContext();
+            _log.info("Initializing InterfaceB_EngineBasedServer");
 
             // set the path to external db gateway plugin classes (if any)
             String pluginPath = context.getInitParameter("ExternalPluginsPath");
             ExternalDataGatewayFactory.setExternalPaths(pluginPath);
             PredicateEvaluatorFactory.setExternalPaths(pluginPath);
 
-            // init engine reference
-            _engine = (EngineGateway) context.getAttribute("engine");
-            if (_engine == null) {
-                Class<? extends YEngine> engineImpl = getEngineImplClass();
-                boolean persist = getBooleanFromContext("EnablePersistence");
-                boolean enableHbnStats = getBooleanFromContext("EnableHibernateStatisticsGathering");
-                boolean redundantMode = getBooleanFromContext("StartInRedundantMode");
-                _engine = new EngineGatewayImpl(engineImpl, persist,
-                        enableHbnStats, redundantMode);
-                _engine.setActualFilePath(context.getRealPath("/"));
-                context.setAttribute("engine", _engine);
+            // init engine reference - synchronize to prevent concurrent initialization
+            synchronized (context) {
+                _engine = (EngineGateway) context.getAttribute("engine");
+                if (_engine == null) {
+                    _log.info("Creating new YAWL engine instance");
+                    Class<? extends YEngine> engineImpl = getEngineImplClass();
+                    boolean persist = getBooleanFromContext("EnablePersistence");
+                    boolean enableHbnStats = getBooleanFromContext("EnableHibernateStatisticsGathering");
+                    boolean redundantMode = getBooleanFromContext("StartInRedundantMode");
+                    _log.debug("Engine config - persist: " + persist + ", hibernateStats: " +
+                               enableHbnStats + ", redundant: " + redundantMode);
+                    _engine = new EngineGatewayImpl(engineImpl, persist,
+                            enableHbnStats, redundantMode);
+                    _engine.setActualFilePath(context.getRealPath("/"));
+                    context.setAttribute("engine", _engine);
+                    _log.info("YAWL engine instance created and stored in servlet context");
+                } else {
+                    _log.info("Using existing YAWL engine instance from servlet context");
+                }
             }
 
             // enable performance statistics gathering if requested
@@ -116,8 +125,14 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
             }
 
             // read the current version properties
-            _engine.initBuildProperties(context.getResourceAsStream(
-                               "/WEB-INF/classes/version.properties"));
+            java.io.InputStream versionStream = context.getResourceAsStream(
+                               "/WEB-INF/classes/version.properties");
+            if (versionStream != null) {
+                _engine.initBuildProperties(versionStream);
+                _log.info("Build properties loaded from version.properties");
+            } else {
+                _log.warn("version.properties not found - using defaults");
+            }
 
             // init any 3rd party observer gateways
             String gatewayStr = context.getInitParameter("ObserverGateway");
