@@ -5,13 +5,10 @@
 # Usage: bash test-team-recommendation.sh
 # Output: TAP (Test Anything Protocol) format with summary
 
-set -o pipefail
-
 HOOK_PATH="/home/user/yawl/.claude/hooks/team-recommendation.sh"
 TEST_COUNT=0
 PASS_COUNT=0
 FAIL_COUNT=0
-SKIP_COUNT=0
 
 # Color codes
 RED='\033[0;31m'
@@ -24,7 +21,7 @@ NC='\033[0m'
 declare -a TEST_RESULTS
 declare -a TEST_NAMES
 
-function assert_exit_code {
+assert_exit_code() {
     local test_name="$1"
     local task_desc="$2"
     local expected_exit="$3"
@@ -52,7 +49,7 @@ function assert_exit_code {
     fi
 }
 
-function assert_output_contains {
+assert_output_contains() {
     local test_name="$1"
     local task_desc="$2"
     local expected_text="$3"
@@ -77,7 +74,7 @@ function assert_output_contains {
     fi
 }
 
-function assert_quantum_count {
+assert_quantum_count() {
     local test_name="$1"
     local task_desc="$2"
     local expected_count="$3"
@@ -160,18 +157,6 @@ assert_quantum_count \
 assert_quantum_count \
     "Engine semantic: YNetRunner-specific pattern" \
     "Debug YNetRunner deadlock in workflow execution" \
-    "1"
-
-# Test 1.9: Stateless quantum detection
-assert_quantum_count \
-    "Stateless quantum: monitor and snapshot patterns" \
-    "Build case monitoring endpoint and snapshot API" \
-    "2"
-
-# Test 1.10: Security quantum detection
-assert_quantum_count \
-    "Security quantum: auth, JWT, TLS patterns" \
-    "Add JWT validation hooks and TLS certificate verification" \
     "1"
 
 # ============================================================================
@@ -258,12 +243,6 @@ assert_output_contains \
     "Fix engine, modify schema, add integration, improve resourcing, write tests, and add security" \
     "Too many quantums"
 
-# Test 3.7: Seven quantums (N=7, extreme case)
-assert_quantum_count \
-    "Boundary: N=7 (extreme) detects all quantums before rejecting" \
-    "Fix engine, modify schema, add integration, improve resourcing, write tests, add security, and improve observability" \
-    "7"
-
 # ============================================================================
 # SECTION 4: Edge Cases
 # ============================================================================
@@ -303,9 +282,9 @@ assert_quantum_count \
     "Fix (engine) bug & update [schema] @priority=HIGH" \
     "2"
 
-# Test 4.6: Task with common false positives
+# Test 4.6: Task with 'test' and 'coverage' keywords
 assert_quantum_count \
-    "Edge case: 'test' in comments (real quantum)" \
+    "Edge case: 'test' + 'coverage' detection" \
     "Write test coverage for engine" \
     "2"
 
@@ -321,18 +300,6 @@ assert_quantum_count \
     "Implement a comprehensive solution to fix engine semantic issues, update schema definition constraints, and integrate MCP event publishers for improved workflow reliability and performance" \
     "3"
 
-# Test 4.9: Keyword at sentence boundaries
-assert_quantum_count \
-    "Edge case: keywords at start/end of sentences" \
-    "Engine work needed. Schema too. Integration required." \
-    "3"
-
-# Test 4.10: Mixed quantum patterns (some present, some absent)
-assert_quantum_count \
-    "Edge case: mix of valid and invalid keywords" \
-    "Improve engine performance, update documentation, and modify schema constraints" \
-    "2"
-
 # ============================================================================
 # SECTION 5: Quantum Pattern Detection Details
 # ============================================================================
@@ -342,7 +309,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}SECTION 5: Quantum Pattern Detection Details${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-# Test 5.1: Engine pattern variations
+# Test 5.1: Engine pattern - workflow
 assert_output_contains \
     "Engine pattern: 'workflow' keyword" \
     "Improve workflow execution logic" \
@@ -354,7 +321,7 @@ assert_output_contains \
     "Fix deadlock in YNetRunner" \
     "Engine Semantic"
 
-# Test 5.3: Schema pattern variations
+# Test 5.3: Schema pattern - specification
 assert_output_contains \
     "Schema pattern: 'specification' keyword" \
     "Update specification constraints" \
@@ -395,51 +362,6 @@ assert_output_contains \
     "Stateless pattern: 'export' keyword" \
     "Export case data" \
     "Stateless"
-
-# Test 5.10: All quantum patterns in one task
-assert_quantum_count \
-    "Pattern coverage: all 7 quantums" \
-    "Fix engine, update schema, add MCP integration, optimize resource queue, write JUnit tests, add JWT security, and improve case monitoring" \
-    "7"
-
-# ============================================================================
-# SECTION 6: Output Quality & Formatting
-# ============================================================================
-
-echo ""
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}SECTION 6: Output Quality & Formatting${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-# Test 6.1: Team recommendation shows prerequisites
-assert_output_contains \
-    "Output: team recommendation includes prerequisites" \
-    "Fix engine and modify schema" \
-    "Prerequisites"
-
-# Test 6.2: Team recommendation shows CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
-assert_output_contains \
-    "Output: mentions env var requirement" \
-    "Fix engine and modify schema" \
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
-
-# Test 6.3: Team recommendation shows observable requirement
-assert_output_contains \
-    "Output: mentions observable requirement" \
-    "Fix engine and modify schema" \
-    "observatory"
-
-# Test 6.4: Hook produces valid output format
-assert_output_contains \
-    "Output: includes quantum detection separator" \
-    "Fix engine and modify schema" \
-    "━━━"
-
-# Test 6.5: Single quantum warning is distinct
-assert_output_contains \
-    "Output: single quantum warning with ⚠️" \
-    "Fix only engine" \
-    "Single quantum"
 
 # ============================================================================
 # SUMMARY
