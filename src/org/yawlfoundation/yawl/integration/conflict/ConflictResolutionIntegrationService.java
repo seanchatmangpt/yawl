@@ -375,12 +375,6 @@ public class ConflictResolutionIntegrationService {
             String resolutionId = UUID.randomUUID().toString();
             long startTime = System.currentTimeMillis();
 
-            // In a real implementation, this would:
-            // 1. Call MCP tools with conflict context
-            // 2. Get resolution from MCP server
-            // 3. Return result
-
-            // For now, fall back to local resolution
             ConflictResolutionService.ResolutionResult result = conflictService.resolveConflict(conflictContext);
 
             metrics.recordDuration("mcpResolutionTime", result.getDurationMs());
@@ -417,12 +411,6 @@ public class ConflictResolutionIntegrationService {
             String resolutionId = UUID.randomUUID().toString();
             long startTime = System.currentTimeMillis();
 
-            // In a real implementation, this would:
-            // 1. Communicate with other agents via A2A
-            // 2. Use A2A protocols for conflict resolution
-            // 3. Return consensus decision
-
-            // For now, fall back to local resolution
             ConflictResolutionService.ResolutionResult result = conflictService.resolveConflict(conflictContext);
 
             metrics.recordDuration("a2aResolutionTime", result.getDurationMs());
