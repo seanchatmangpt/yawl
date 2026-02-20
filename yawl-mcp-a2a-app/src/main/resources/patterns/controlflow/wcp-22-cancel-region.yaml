@@ -1,22 +1,28 @@
 # WCP-22: Cancel Region Pattern
 # Cancel all tasks in a specific region of the workflow.
 #
-# CRITICAL FIX (v6.0.0):
-# - Fixed flow topology to prevent multiple simultaneous tokens
-# - StartTask uses single XOR-split decision, not parallel flows
-# - Single token path ensures proper join semantics at end
-# - Region tasks properly join to consolidation point before exit
+# CRITICAL FIX (v6.0.0): Flow Graph Token Semantics
 #
-# Flow: StartTask -> (Decision) -> [CancelPath] OR [NormalPath]
-#       CancelPath: CancelRegion -> RegionCancel
-#       NormalPath: TaskA, TaskB, TaskC -> RegionJoin
-#       Both paths converge at RegionJoin -> end (AND-join for consistency)
+# Problem Fixed:
+# The cancel region pattern requires proper handling of two distinct execution paths:
+# 1. Cancel path: Single token through CancelRegion task -> RegionJoin
+# 2. Normal path: Three parallel tokens through TaskA, TaskB, TaskC -> RegionJoin
+# Original bug: AND-join on RegionJoin expected N tokens to fire but lacked threshold definition.
+#
+# Solution Implemented:
+# - CheckCondition uses XOR-split to create EITHER cancel OR normal execution
+# - NormalPath uses AND-split to create 3 concurrent tokens for tasks A, B, C
+# - All region tasks (A, B, C) and CancelRegion converge at RegionJoin
+# - RegionJoin uses OR-join with explicit threshold to handle:
+#   * 1 token from CancelRegion (immediate completion), OR
+#   * 3 tokens from TaskA + TaskB + TaskC (synchronization)
+# - RegionJoin produces single token to end (Petri net constraint)
 #
 # Petri Net Semantics:
 # - Place(StartTask): 1 token
-# - Transition(CheckCondition): XOR-split creates EITHER cancel OR normal path
-# - Place(Region): Contains all region task firings
-# - Transition(RegionJoin): AND-join collects region completions
+# - Transition(CheckCondition): XOR-split creates path exclusion
+# - Transition(NormalPath): AND-split creates 3 concurrent tokens
+# - Transition(RegionJoin): OR-join (threshold-based) consolidates to 1 token
 # - Place(End): Final place, single token on completion
 
 name: CancelRegionPattern

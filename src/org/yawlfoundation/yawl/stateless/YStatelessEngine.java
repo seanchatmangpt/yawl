@@ -22,6 +22,8 @@ import org.yawlfoundation.yawl.stateless.monitor.YCaseExporter;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseImporter;
 import org.yawlfoundation.yawl.stateless.monitor.YCaseMonitor;
 import org.yawlfoundation.yawl.stateless.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.stateless.engine.util.LoopIterationTracker;
+import org.yawlfoundation.yawl.stateless.engine.util.LoopTerminationValidator;
 
 /**
  * A stateless facade for the YAWL workflow engine designed for modern deployment scenarios.
@@ -99,6 +101,8 @@ public class YStatelessEngine {
 
     private final YEngine _engine;
     private YCaseMonitor _caseMonitor;                        // watches for idle cases
+    private final LoopIterationTracker _loopIterationTracker;  // tracks loop iterations (WCP-28 to WCP-31)
+    private final LoopTerminationValidator _loopTerminationValidator;  // validates loop termination
 
 
     /**
@@ -106,6 +110,8 @@ public class YStatelessEngine {
      */
     public YStatelessEngine() {
         _engine = new YEngine();
+        _loopIterationTracker = new LoopIterationTracker();
+        _loopTerminationValidator = new LoopTerminationValidator();
     }
 
 
@@ -297,6 +303,25 @@ public class YStatelessEngine {
      */
     public boolean isMultiThreadedAnnouncementsEnabled() {
         return _engine.getAnnouncer().isMultiThreadedAnnouncementsEnabled();
+    }
+
+
+    /**
+     * Get the loop iteration tracker for monitoring loop iterations across workflow patterns
+     * WCP-28 to WCP-31 (structured loops, arbitrary cycles, interleaved routing, milestones).
+     * @return the LoopIterationTracker instance
+     */
+    public LoopIterationTracker getLoopIterationTracker() {
+        return _loopIterationTracker;
+    }
+
+
+    /**
+     * Get the loop termination validator for verifying proper loop exit and join semantics.
+     * @return the LoopTerminationValidator instance
+     */
+    public LoopTerminationValidator getLoopTerminationValidator() {
+        return _loopTerminationValidator;
     }
 
 
@@ -580,11 +605,15 @@ public class YStatelessEngine {
 
     public void cancelCase(YNetRunner runner) throws YStateException {
         checkIsLoadedCase(runner, "cancel case");
+        YIdentifier caseID = runner.getTopRunner().getCaseID();
         for (YNetRunner aRunner : runner.getAllRunnersForCase()) {
             aRunner.cancel();
         }
         runner.getAnnouncer().announceCaseEvent(
                 new YCaseEvent(YEventType.CASE_CANCELLED, runner.getTopRunner()));
+        // Clean up loop tracking state for this case
+        _loopIterationTracker.clearCase(caseID);
+        _loopTerminationValidator.clearCase(caseID);
     }
 
 

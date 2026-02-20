@@ -1,5 +1,42 @@
 # WCP-11: Implicit Termination Pattern
 # Process ends when no active work items remain
+#
+# Termination Semantics:
+# The workflow does NOT require explicit synchronization or join gates.
+# Termination occurs implicitly when:
+#   1. All active work items reach end places (true completion)
+#   2. All work items are cancelled or blocked (no active items)
+#   3. Case state = completed (fire-once semantic)
+#
+# This is distinct from explicit termination (WCP-10) where a dedicated
+# End task waits for all predecessors. Here, the engine monitors work item
+# count and auto-terminates when count = 0.
+#
+# Petri Net Semantics (YAWL-specific):
+# - Place(StartProcess): Entry place with 1 token
+# - Transition(StartProcess AND-split): Creates 3 tokens for A, B, C
+# - Place(TaskA/B/C): Concurrent task execution
+# - Transition(TaskA/B/C): Task completion (fires individually)
+# - End place(s): 3 separate paths to end (no synchronization)
+# - Engine detects: work item set empty AND no pending tasks
+# - Implicit fire: case termination transition fires automatically
+#
+# Work Item Semantics:
+# - StartProcess creates 3 work items (one per task: A, B, C)
+# - Each task (A, B, C) is independent (no dependencies)
+# - Completion order is arbitrary (race condition OK)
+# - When the last task completes, implicit termination triggers
+# - No deadlock possible (all paths lead to end)
+#
+# Advantages:
+# - Simpler net structure (fewer nodes)
+# - Natural for fork-join-free patterns
+# - Exception handling auto-propagates to end
+#
+# Limitations:
+# - Cannot express mandatory synchronization
+# - Implicit timing assumptions may hide bugs
+# - Requires careful task design (ensure all tasks complete)
 
 name: ImplicitTerminationPattern
 uri: implicit-termination.xml
@@ -9,28 +46,42 @@ variables:
   - name: activeTasks
     type: xs:integer
     default: 3
+    description: "Initial count of parallel tasks (TaskA, TaskB, TaskC)"
+  - name: taskAResult
+    type: xs:string
+    description: "Result from TaskA execution"
+  - name: taskBResult
+    type: xs:string
+    description: "Result from TaskB execution"
+  - name: taskCResult
+    type: xs:string
+    description: "Result from TaskC execution"
 
 tasks:
   - id: StartProcess
     flows: [TaskA, TaskB, TaskC]
     split: and
     join: xor
-    description: "Start parallel tasks"
+    description: "Start three independent parallel tasks via AND-split"
+    exitCondition: "Creates 3 work items (no join gate before completion)"
 
   - id: TaskA
     flows: [end]
     split: xor
     join: xor
-    description: "Independent task A"
+    description: "Independent task A. Completes without waiting for B or C."
+    assumption: "TaskA completion does NOT wait for TaskB or TaskC"
 
   - id: TaskB
     flows: [end]
     split: xor
     join: xor
-    description: "Independent task B"
+    description: "Independent task B. Completes without waiting for A or C."
+    assumption: "TaskB completion does NOT wait for TaskA or TaskC"
 
   - id: TaskC
     flows: [end]
     split: xor
     join: xor
-    description: "Independent task C"
+    description: "Independent task C. Completes without waiting for A or B."
+    assumption: "TaskC completion does NOT wait for TaskA or TaskB"

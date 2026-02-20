@@ -1,5 +1,29 @@
 # WCP-10: Structured Loop Pattern
 # Repeat task until condition is met
+#
+# Loop Control Semantics:
+# The loop executes ProcessItem repeatedly while counter < maxIterations.
+# Each iteration increments counter (implicitly via ProcessItem side-effect).
+# Loop termination occurs when:
+#   - counter >= maxIterations (default branch taken)
+#   - Exception raised in ProcessItem (propagates to end)
+#
+# Petri Net Semantics:
+# - Place(CheckCondition): Loop condition evaluation point
+# - Transition(CheckCondition XOR-split): condition: counter < maxIterations
+#   * True: token flows to ProcessItem (continue loop)
+#   * False: token flows to EndLoop (exit loop)
+# - Place(ProcessItem): Loop body execution
+# - Transition(ProcessItem): Performs one iteration
+# - Back-edge: ProcessItem -> CheckCondition creates loop
+# - Place(EndLoop): Termination point before end
+# - Final place: end (workflow termination)
+#
+# Explicit Termination Conditions:
+# 1. Loop condition negation: counter >= maxIterations
+# 2. Exception handling: RuntimeException exits loop immediately to catch
+# 3. Resource exhaustion: maxIterations prevents infinite loops (safety guarantee)
+# 4. External cancellation: Case cancel overrides loop execution
 
 name: StructuredLoopPattern
 uri: structured-loop.xml
@@ -9,11 +33,14 @@ variables:
   - name: counter
     type: xs:integer
     default: 0
+    description: "Loop iteration counter (incremented by ProcessItem)"
   - name: maxIterations
     type: xs:integer
     default: 10
+    description: "Maximum loop iterations (termination condition when counter >= maxIterations)"
   - name: result
     type: xs:string
+    description: "Result accumulated across iterations"
 
 tasks:
   - id: CheckCondition
@@ -22,16 +49,19 @@ tasks:
     default: EndLoop
     split: xor
     join: xor
-    description: "Check loop condition"
+    description: "Loop guard: Continue if counter < maxIterations, else exit."
+    exitCondition: "counter >= maxIterations OR exception in ProcessItem"
 
   - id: ProcessItem
     flows: [CheckCondition]
     split: xor
     join: xor
-    description: "Process one iteration"
+    description: "Execute one iteration. Implicitly increments counter. On exception, loop exits."
+    sideEffect: "counter := counter + 1"
 
   - id: EndLoop
     flows: [end]
     split: xor
     join: xor
-    description: "Exit loop"
+    description: "Loop exit point. Normal termination when counter >= maxIterations."
+    entry: "Reached when loop guard condition false OR early exit via exception"
