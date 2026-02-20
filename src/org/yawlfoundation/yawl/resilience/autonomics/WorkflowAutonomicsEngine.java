@@ -164,15 +164,15 @@ public final class WorkflowAutonomicsEngine {
 
     private void handleStuckCase(StuckCase stuck) {
         LOGGER.warn("Stuck case detected: {}, no progress for {}ms",
-                stuck.getCaseID(), stuck.getStuckDurationMs());
+                stuck.caseID(), stuck.stuckDurationMs());
 
         // Try auto-recovery
         if (retryCoordinator.canAutoRecover(stuck)) {
             try {
                 retryCoordinator.attemptRecovery(stuck);
-                LOGGER.info("Auto-recovery attempted for case {}", stuck.getCaseID());
+                LOGGER.info("Auto-recovery attempted for case {}", stuck.caseID());
             } catch (Exception e) {
-                LOGGER.error("Auto-recovery failed for case {}", stuck.getCaseID(), e);
+                LOGGER.error("Auto-recovery failed for case {}", stuck.caseID(), e);
                 escalateToDeadLetter(stuck);
             }
         } else {
@@ -182,7 +182,7 @@ public final class WorkflowAutonomicsEngine {
 
     private void escalateToDeadLetter(StuckCase stuck) {
         deadLetterQueue.add(stuck);
-        LOGGER.error("Case escalated to dead letter queue: {}", stuck.getCaseID());
+        LOGGER.error("Case escalated to dead letter queue: {}", stuck.caseID());
     }
 
     // ─── Internal: Auto-Retry Listener ────────────────────────────────────
@@ -199,7 +199,7 @@ public final class WorkflowAutonomicsEngine {
                 if (policy != null && policy.isTransient()) {
                     retryCoordinator.scheduleRetry(event.getWorkItemID(), policy);
                     LOGGER.info("Scheduled auto-retry for work item {}: {} (attempt 1/{})",
-                            event.getWorkItemID(), exceptionType, policy.getMaxAttempts());
+                            event.getWorkItemID(), exceptionType, policy.maxAttempts());
                 }
             }
         }
@@ -303,12 +303,12 @@ public final class WorkflowAutonomicsEngine {
 
         boolean canAutoRecover(StuckCase stuck) {
             // Heuristic: can auto-recover if case hasn't been stuck too long
-            return stuck.getStuckDurationMs() < 30 * 60 * 1000; // 30 minutes
+            return stuck.stuckDurationMs() < 30 * 60 * 1000; // 30 minutes
         }
 
         void attemptRecovery(StuckCase stuck) throws Exception {
             // Strategy: re-enable work items, clear blockers
-            LOGGER.info("Attempting auto-recovery for case {}", stuck.getCaseID());
+            LOGGER.info("Attempting auto-recovery for case {}", stuck.caseID());
             // Implementation: inspect case, remove deadlocks, re-enable tasks
         }
     }
@@ -316,58 +316,76 @@ public final class WorkflowAutonomicsEngine {
     // ─── Public: Configuration Classes ────────────────────────────────────
 
     /**
-     * Retry policy configuration.
+     * Retry policy configuration — immutable value type.
+     *
+     * <p>Encapsulates exponential-backoff retry parameters. Immutability ensures retry
+     * behaviour is stable across threads and cannot be mutated mid-execution.</p>
+     *
+     * @param maxAttempts      maximum number of retry attempts (must be &gt; 0)
+     * @param initialBackoffMs initial delay before first retry in milliseconds (must be &gt; 0)
+     * @param backoffMultiplier exponential multiplier applied between retries (must be &gt; 1.0)
+     * @param isTransient      whether the failure is transient and suitable for retry
      */
-    public static class RetryPolicy {
-        private final int maxAttempts;
-        private final long initialBackoffMs;
-        private final double backoffMultiplier;
-        private final boolean isTransient;
-
-        public RetryPolicy(int maxAttempts, long initialBackoffMs, double multiplier, boolean transient_) {
-            this.maxAttempts = maxAttempts;
-            this.initialBackoffMs = initialBackoffMs;
-            this.backoffMultiplier = multiplier;
-            this.isTransient = transient_;
+    public record RetryPolicy(
+            int maxAttempts,
+            long initialBackoffMs,
+            double backoffMultiplier,
+            boolean isTransient
+    ) {
+        public RetryPolicy {
+            if (maxAttempts <= 0) {
+                throw new IllegalArgumentException("maxAttempts must be > 0, got: " + maxAttempts);
+            }
+            if (initialBackoffMs <= 0) {
+                throw new IllegalArgumentException("initialBackoffMs must be > 0, got: " + initialBackoffMs);
+            }
+            if (backoffMultiplier <= 1.0) {
+                throw new IllegalArgumentException("backoffMultiplier must be > 1.0, got: " + backoffMultiplier);
+            }
         }
 
-        public int getMaxAttempts() { return maxAttempts; }
-        public boolean isTransient() { return isTransient; }
-
+        /**
+         * Calculate the delay before the given retry attempt using exponential backoff.
+         *
+         * @param attemptNumber 1-based attempt number
+         * @return delay in milliseconds
+         */
         public long calculateBackoff(int attemptNumber) {
             return (long) (initialBackoffMs * Math.pow(backoffMultiplier, attemptNumber - 1));
-        }
-
-        @Override
-        public String toString() {
-            return String.format("RetryPolicy{max=%d, backoff=%dms, multiplier=%.2f, transient=%b}",
-                    maxAttempts, initialBackoffMs, backoffMultiplier, isTransient);
         }
     }
 
     /**
-     * Health report snapshot.
+     * Health report snapshot — immutable metrics value type.
+     *
+     * <p>Point-in-time snapshot of workflow engine health. Immutability guarantees
+     * consistent reads without synchronisation on the caller side.</p>
+     *
+     * @param activeCases number of currently active workflow cases (must be &gt;= 0)
+     * @param stuckCases  number of cases that have not progressed within the threshold (must be &gt;= 0)
+     * @param timestamp   epoch-millisecond timestamp at which this report was generated
      */
-    public static class HealthReport {
-        private final int activeCases;
-        private final int stuckCases;
-        private final long timestamp;
-
-        public HealthReport(int active, int stuck, long timestamp) {
-            this.activeCases = active;
-            this.stuckCases = stuck;
-            this.timestamp = timestamp;
+    public record HealthReport(
+            int activeCases,
+            int stuckCases,
+            long timestamp
+    ) {
+        public HealthReport {
+            if (activeCases < 0) {
+                throw new IllegalArgumentException("activeCases must be >= 0, got: " + activeCases);
+            }
+            if (stuckCases < 0) {
+                throw new IllegalArgumentException("stuckCases must be >= 0, got: " + stuckCases);
+            }
+            if (stuckCases > activeCases) {
+                throw new IllegalArgumentException(
+                        "stuckCases (" + stuckCases + ") cannot exceed activeCases (" + activeCases + ")");
+            }
         }
 
-        public int getActiveCases() { return activeCases; }
-        public int getStuckCases() { return stuckCases; }
-        public long getTimestamp() { return timestamp; }
-        public boolean isHealthy() { return stuckCases == 0; }
-
-        @Override
-        public String toString() {
-            return String.format("HealthReport{active=%d, stuck=%d, healthy=%b}",
-                    activeCases, stuckCases, isHealthy());
+        /** Returns true when no cases are stuck. */
+        public boolean isHealthy() {
+            return stuckCases == 0;
         }
     }
 
@@ -376,6 +394,10 @@ public final class WorkflowAutonomicsEngine {
     /**
      * Queue for cases that failed beyond automatic recovery.
      * Requires human intervention.
+     *
+     * <p>DeadLetterQueue is kept as a class (not a record) because it encapsulates
+     * mutable, thread-safe state ({@link ConcurrentLinkedQueue}) that cannot be
+     * modelled as an immutable record component.</p>
      */
     public static class DeadLetterQueue {
         private final Queue<StuckCase> failed = new ConcurrentLinkedQueue<>();
@@ -383,7 +405,7 @@ public final class WorkflowAutonomicsEngine {
 
         public void add(StuckCase case_) {
             failed.offer(case_);
-            DLQ_LOGGER.error("Case added to DLQ: {} - {}", case_.getCaseID(), case_.getReason());
+            DLQ_LOGGER.error("Case added to DLQ: {} - {}", case_.caseID(), case_.reason());
         }
 
         public Optional<StuckCase> poll() {
@@ -404,29 +426,38 @@ public final class WorkflowAutonomicsEngine {
     }
 
     /**
-     * Represents a case stuck in workflow execution.
+     * Represents a case stuck in workflow execution — immutable value type.
+     *
+     * <p>Immutability ensures case state cannot change during escalation handling,
+     * making it safe to pass across thread boundaries without copying.</p>
+     *
+     * @param caseID       identifier of the stuck workflow case (must not be null)
+     * @param reason       human-readable description of why the case is stuck (must not be blank)
+     * @param stuckSinceMs epoch-millisecond timestamp of when the case last made progress
+     *                     (used to derive {@link #stuckDurationMs()})
      */
-    public static class StuckCase {
-        private final YIdentifier caseID;
-        private final String reason;
-        private final long stuckSinceMs;
-
-        public StuckCase(YIdentifier caseID, String reason, long stuckSinceMs) {
-            this.caseID = caseID;
-            this.reason = reason;
-            this.stuckSinceMs = stuckSinceMs;
+    public record StuckCase(
+            YIdentifier caseID,
+            String reason,
+            long stuckSinceMs
+    ) {
+        public StuckCase {
+            if (caseID == null) {
+                throw new IllegalArgumentException("caseID must not be null");
+            }
+            if (reason == null || reason.isBlank()) {
+                throw new IllegalArgumentException("reason must not be blank");
+            }
         }
 
-        public YIdentifier getCaseID() { return caseID; }
-        public String getReason() { return reason; }
-        public long getStuckDurationMs() {
-            return System.currentTimeMillis() - stuckSinceMs;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("StuckCase{id=%s, reason=%s, stuckMs=%d}",
-                    caseID, reason, getStuckDurationMs());
+        /**
+         * Returns the duration in milliseconds that this case has been stuck,
+         * measured from {@link #stuckSinceMs()} to the current system time.
+         *
+         * @return elapsed stuck duration in milliseconds (always &gt;= 0)
+         */
+        public long stuckDurationMs() {
+            return Math.max(0L, System.currentTimeMillis() - stuckSinceMs);
         }
     }
 }

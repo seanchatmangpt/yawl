@@ -1711,8 +1711,7 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");

@@ -535,7 +535,7 @@ public class YNetLocalVarVerifier {
          * @return true if this variable is optional
          */
         private boolean isOptionalParam(YTask task, String paramName) {
-            if (task instanceof YAtomicTask) {
+            if (task instanceof YAtomicTask atomicTask) {
                YDecomposition decomp = task.getDecompositionPrototype();
                 if (decomp != null) {
                     Map<String, YParameter> paramMap = decomp.getOutputParameters();

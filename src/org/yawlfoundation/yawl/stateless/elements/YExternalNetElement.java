@@ -293,7 +293,7 @@ public abstract class YExternalNetElement extends YNetElement implements YVerifi
 
     private void updateImplicitConditionID(YExternalNetElement element,
                                            String newID, boolean prior) {
-        if (element instanceof YCondition && ((YCondition) element).isImplicit()) {
+        if (element instanceof YCondition condition && condition.isImplicit()) {
             String oldID = element.getID();
 
             // an implicit condition will always have exactly 1 preset and 1 postset

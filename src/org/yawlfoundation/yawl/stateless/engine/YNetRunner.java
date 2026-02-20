@@ -73,8 +73,8 @@ public class YNetRunner {
 
     protected YNet _net;
     private Set<YTask> _netTasks;
-    private Set<YTask> _enabledTasks = new HashSet<>();
-    private Set<YTask> _busyTasks = new HashSet<>();
+    private Set<YTask> _enabledTasks = new LinkedHashSet<>();
+    private Set<YTask> _busyTasks = new LinkedHashSet<>();
     private YIdentifier _caseIDForNet;
     private YSpecificationID _specID;
     private YCompositeTask _containingCompositeTask;
@@ -148,7 +148,7 @@ public class YNetRunner {
         _netdata = new YNetData(_caseID);
         _net = (YNet) netPrototype.clone();
         _net.initializeDataStore(_netdata);
-        _netTasks = new HashSet<>(_net.getNetTasks());
+        _netTasks = new LinkedHashSet<>(_net.getNetTasks());
         _specID = _net.getSpecification().getSpecificationID();
         _startTime = System.currentTimeMillis();
         prepare();
@@ -167,11 +167,11 @@ public class YNetRunner {
 
 
     public Set<YWorkItemEvent> refreshAnnouncements() {
-        Set<YWorkItemEvent> current = new HashSet<>();
+        Set<YWorkItemEvent> current = new LinkedHashSet<>();
         if (_announcements != null) {
             current.addAll(_announcements);
         }
-        _announcements = new HashSet<>();
+        _announcements = new LinkedHashSet<>();
         return current;
     }
 
@@ -213,7 +213,7 @@ public class YNetRunner {
 
 
     public boolean addChildRunner(YNetRunner child) {
-        if (_children == null) _children = new HashSet<>();
+        if (_children == null) _children = new LinkedHashSet<>();
         return _children.add(child);
     }
 
@@ -240,7 +240,7 @@ public class YNetRunner {
         _net = net;
         _specID = net.getSpecification().getSpecificationID();
         _net.restoreData(_netdata);
-        _netTasks = new HashSet<>(_net.getNetTasks());
+        _netTasks = new LinkedHashSet<>(_net.getNetTasks());
     }
 
     public YNet getNet() {
@@ -437,7 +437,7 @@ public class YNetRunner {
     private boolean deadLocked() {
         for (YNetElement location : _caseIDForNet.getLocations()) {
             if (location instanceof YExternalNetElement extElement) {
-                if (!extElement.getPostsetElements().isEmpty()) {
+                if (extElement.getPostsetElements().size() > 0) {
                     return true;
                 }
             }
@@ -854,12 +854,12 @@ public class YNetRunner {
                     task.cancel();
                 }
             }
-            else if (netElement instanceof YCondition cond && cond.containsIdentifier()) {
-                cond.removeAll();
+            else if (netElement instanceof YCondition condition && condition.containsIdentifier()) {
+                condition.removeAll();
             }
         }
-        _enabledTasks = new HashSet<>();
-        _busyTasks = new HashSet<>();
+        _enabledTasks = new LinkedHashSet<>();
+        _busyTasks = new LinkedHashSet<>();
 
         if (_containingCompositeTask != null) {
             _announcer.announceLogEvent(new YLogEvent(YEventType.NET_CANCELLED,
@@ -906,11 +906,11 @@ public class YNetRunner {
 
     public boolean isEmpty() {
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (element instanceof YCondition cond) {
-                if (cond.containsIdentifier()) return false;
+            if (element instanceof YCondition condition) {
+                if (condition.containsIdentifier()) return false;
             }
-            else if (element instanceof YTask task && task.t_isBusy()) {
-                return false;
+            else if (element instanceof YTask task) {
+                if (task.t_isBusy()) return false;
             }
         }
         return true;
@@ -949,7 +949,7 @@ public class YNetRunner {
         List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
             if (! (element instanceof YOutputCondition)) {  // ignore end condition tokens
-                if (element instanceof YCondition cond && cond.containsIdentifier()) {
+                if (element instanceof YCondition condition && condition.containsIdentifier()) {
                     haveTokens.add(element);
                 }
                 else if (element instanceof YTask task && task.t_isBusy()) {
@@ -1049,11 +1049,11 @@ public class YNetRunner {
     /** returns the task id of the task that the specified task flows into
         In other words, gets the id of the next task in the process flow */
     private String getFlowsIntoTaskID(YTask task) {
-        if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
-            Element eTask = JDOMUtil.stringToElement(atomicTask.toXML());
+        if (task instanceof YAtomicTask) {
+            Element eTask = JDOMUtil.stringToElement(task.toXML());
             return eTask.getChild("flowsInto").getChild("nextElementRef").getAttributeValue("id");
         }
-        return null ;
+        return null;
     }
 
 
@@ -1061,7 +1061,7 @@ public class YNetRunner {
     
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
-        _timerStates = new HashMap<String, String>();
+        _timerStates = new LinkedHashMap<String, String>();
         for (YTask task : _netTasks) {
             if (task.getTimerVariable() != null) {
                 updateTimerState(task, State.dormant);

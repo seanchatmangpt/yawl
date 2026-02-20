@@ -724,10 +724,10 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
             }
             //remove tokens from cancellation set
             for (YExternalNetElement netElement : _removeSet) {
-                if (netElement instanceof YTask) {
-                    ((YTask) netElement).cancel();
-                } else if (netElement instanceof YCondition) {
-                    ((YCondition) netElement).removeAll();
+                if (netElement instanceof YTask removeTask) {
+                    removeTask.cancel();
+                } else if (netElement instanceof YCondition removeCondition) {
+                    removeCondition.removeAll();
                 }
             }
             purgeLocations();
@@ -1322,8 +1322,7 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
             boolean implicitElement = false;
-            if (netElement instanceof YCondition) {
-                YCondition maybeImplicit = (YCondition) netElement;
+            if (netElement instanceof YCondition maybeImplicit) {
                 if (maybeImplicit.isImplicit()) {
                     removeTokensFromFlow.append("<removesTokensFromFlow>");
                     YExternalNetElement pre = maybeImplicit.getPresetElements().iterator().next();
@@ -1526,8 +1525,7 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
             result.append(_decompositionPrototype.getAttributes().toXMLElements());
             result.append("</attributes>");
 
-            if (_decompositionPrototype instanceof YAWLServiceGateway) {
-                YAWLServiceGateway wsgw = (YAWLServiceGateway) _decompositionPrototype;
+            if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
                     result.append("<yawlService>");
