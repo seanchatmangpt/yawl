@@ -1061,7 +1061,7 @@ public class YNetRunner {
     
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
-        _timerStates = new HashMap<String, String>();
+        _timerStates = new LinkedHashMap<String, String>();
         for (YTask task : _netTasks) {
             if (task.getTimerVariable() != null) {
                 updateTimerState(task, State.dormant);

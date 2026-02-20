@@ -81,8 +81,8 @@ public class ConflictResolutionIntegrationService {
      * Registry for tracking autonomous agents.
      */
     public static class AgentRegistry {
-        private final Map<String, AutonomousAgent> agents = new HashMap<>();
-        private final Map<String, AgentStatus> agentStatus = new HashMap<>();
+        private final Map<String, AutonomousAgent> agents = new LinkedHashMap<>();
+        private final Map<String, AgentStatus> agentStatus = new LinkedHashMap<>();
 
         public void registerAgent(String agentId, AutonomousAgent agent) {
             agents.put(agentId, agent);

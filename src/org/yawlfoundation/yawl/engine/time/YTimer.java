@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.engine.time;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import javax.xml.datatype.Duration;
@@ -117,14 +118,14 @@ public class YTimer extends Timer {
     public long schedule(YTimedObject timee, long count, TimeUnit unit) {
         return switch (unit) {
             case YEAR -> {
-                Calendar date = Calendar.getInstance();
-                date.add(Calendar.MONTH, 12 * (int) count);
-                yield schedule(timee, date.getTime());
+                Date expiryDate = Date.from(
+                        ZonedDateTime.now().plusMonths(12L * count).toInstant());
+                yield schedule(timee, expiryDate);
             }
             case MONTH -> {
-                Calendar date = Calendar.getInstance();
-                date.add(Calendar.MONTH, (int) count);
-                yield schedule(timee, date.getTime());
+                Date expiryDate = Date.from(
+                        ZonedDateTime.now().plusMonths(count).toInstant());
+                yield schedule(timee, expiryDate);
             }
             case WEEK -> schedule(timee, 7L * 24 * 60 * 60 * 1000 * count);
             case DAY -> schedule(timee, 24L * 60 * 60 * 1000 * count);

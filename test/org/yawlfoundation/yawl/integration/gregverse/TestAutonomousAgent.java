@@ -56,7 +56,7 @@ public class TestAutonomousAgent {
         void agent_id_retrieved_via_status() {
             AgentStatus status = agent.getStatus();
             assertNotNull(status, "Status should not be null");
-            assertEquals("test-agent-001", status.getAgentID(), "Status should report correct agent ID");
+            assertEquals("test-agent-001", status.agentID(), "Status should report correct agent ID");
         }
 
         @Test
@@ -136,7 +136,7 @@ public class TestAutonomousAgent {
 
             // Status should reflect execution state
             AgentStatus status = agent.getStatus();
-            assertTrue(status.getCompletedCases() >= 0, "Completed cases count should be non-negative");
+            assertTrue(status.completedCases() >= 0, "Completed cases count should be non-negative");
         }
 
         @Test
@@ -148,14 +148,14 @@ public class TestAutonomousAgent {
 
             AgentStatus status = agent.getStatus();
             // Health score tracks performance issues
-            assertTrue(status.getHealthScore() >= 0.0 && status.getHealthScore() <= 1.0,
+            assertTrue(status.healthScore() >= 0.0 && status.healthScore() <= 1.0,
                     "Health score should be in range [0.0, 1.0]");
         }
 
         @Test
         void agent_health_score_reflects_issues() {
             AgentStatus status1 = agent.getStatus();
-            double initialHealth = status1.getHealthScore();
+            double initialHealth = status1.healthScore();
 
             // Initially healthy agent has high health score
             assertTrue(initialHealth > 0.5, "Initial health should be reasonably good");
@@ -186,7 +186,7 @@ public class TestAutonomousAgent {
             agent.executeWorkflow(spec, inputData);
 
             AgentStatus status = agent.getStatus();
-            assertTrue(status.getStuckCases() >= 0, "Stuck cases count should be non-negative");
+            assertTrue(status.stuckCases() >= 0, "Stuck cases count should be non-negative");
         }
 
         @Test
@@ -243,7 +243,7 @@ public class TestAutonomousAgent {
         void agent_status_visible_to_swarm() {
             AgentStatus status = agent.getStatus();
 
-            assertNotNull(status.getAgentID(), "Agent ID should be visible");
+            assertNotNull(status.agentID(), "Agent ID should be visible");
             assertNotNull(status.toString(), "Status should have string representation for swarm visibility");
         }
     }
@@ -283,7 +283,7 @@ public class TestAutonomousAgent {
             agent.executeWorkflow(createSimpleSpec(), new HashMap<>());
 
             AgentStatus status = agent.getStatus();
-            assertTrue(status.getCompletedCases() >= 0, "Status should report completed cases");
+            assertTrue(status.completedCases() >= 0, "Status should report completed cases");
         }
 
         @Test
@@ -291,7 +291,7 @@ public class TestAutonomousAgent {
             agent.executeWorkflow(createSimpleSpec(), new HashMap<>());
 
             AgentStatus status = agent.getStatus();
-            assertTrue(status.getStuckCases() >= 0, "Status should report stuck cases");
+            assertTrue(status.stuckCases() >= 0, "Status should report stuck cases");
         }
 
         @Test

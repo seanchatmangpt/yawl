@@ -18,8 +18,9 @@
 
 package org.yawlfoundation.yawl.logging.table;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -32,8 +33,11 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 public class YLogEvent {
 
-    private static final SimpleDateFormat SDF =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    private static final DateTimeFormatter SDF =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").withZone(ZoneId.systemDefault());
+
+    private static final DateTimeFormatter MID_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd' 'HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
     private long eventID;                   // PK - auto generated
     private long instanceID;                // FK to YLogTaskInstance OR YLogNetInstance
@@ -86,11 +90,11 @@ public class YLogEvent {
     }
 
     public String getTimestampString() {
-        return SDF.format(new Date(timestamp));
+        return SDF.format(Instant.ofEpochMilli(timestamp));
     }
 
     public String getTimestampMidString() {
-        return new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSS").format(new Date(timestamp));
+        return MID_FORMATTER.format(Instant.ofEpochMilli(timestamp));
     }
 
     public void setTimestamp(long timestamp) {

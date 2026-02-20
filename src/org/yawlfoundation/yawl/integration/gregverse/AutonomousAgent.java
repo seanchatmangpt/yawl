@@ -72,8 +72,8 @@ import java.util.concurrent.*;
  *
  * // Check agent status
  * AgentStatus status = agent.getStatus();
- * System.out.println("Cases: " + status.getCompletedCases());
- * System.out.println("Health: " + status.getHealthScore());
+ * System.out.println("Cases: " + status.completedCases());
+ * System.out.println("Health: " + status.healthScore());
  * }</pre>
  *
  * @author Claude Code / GODSPEED Protocol
@@ -348,24 +348,17 @@ public final class AutonomousAgent {
             // Simplified: 1.0 = perfect, 0.0 = critical
             int totalEvents = diagnosticLog.size();
             long errorEvents = diagnosticLog.stream()
-                .filter(e -> e.event.contains("error") || e.event.contains("stuck"))
+                .filter(e -> e.event().contains("error") || e.event().contains("stuck"))
                 .count();
 
             if (totalEvents == 0) return 1.0;
             return 1.0 - (double) errorEvents / totalEvents;
         }
 
-        private static class DiagnosticEvent {
-            final String event;
-            final String context;
-            final String details;
-            final long timestamp;
-
-            DiagnosticEvent(String event, String context, String details, long timestamp) {
-                this.event = event;
-                this.context = context;
-                this.details = details;
-                this.timestamp = timestamp;
+        private record DiagnosticEvent(String event, String context, String details, long timestamp) {
+            DiagnosticEvent {
+                if (event == null || event.isEmpty()) throw new IllegalArgumentException("event must not be empty");
+                if (timestamp < 0) throw new IllegalArgumentException("timestamp must not be negative");
             }
         }
     }
@@ -387,15 +380,11 @@ public final class AutonomousAgent {
             return !peerAgents.isEmpty();
         }
 
-        private static class PeerAgent {
-            final String peerID;
-            final int workload;
-            final double healthScore;
-
-            PeerAgent(String peerID, int workload, double healthScore) {
-                this.peerID = peerID;
-                this.workload = workload;
-                this.healthScore = healthScore;
+        private record PeerAgent(String peerID, int workload, double healthScore) {
+            PeerAgent {
+                if (peerID == null || peerID.isEmpty()) throw new IllegalArgumentException("peerID must not be empty");
+                if (workload < 0) throw new IllegalArgumentException("workload must not be negative");
+                if (healthScore < 0.0 || healthScore > 1.0) throw new IllegalArgumentException("healthScore must be in [0.0, 1.0]");
             }
         }
     }
@@ -444,30 +433,32 @@ public final class AutonomousAgent {
 
     /**
      * Agent status snapshot (for swarm awareness).
+     *
+     * <p>Immutable record capturing the observable state of an agent at a point in time.
+     * Instances are produced by {@link #getStatus()} and consumed by swarm coordinators
+     * and monitoring systems.</p>
      */
-    public static class AgentStatus {
-        private final String agentID;
-        private final int completedCases;
-        private final int stuckCases;
-        private final double healthScore;
+    public record AgentStatus(String agentID, int completedCases, int stuckCases, double healthScore) {
 
-        public AgentStatus(String agentID, int completed, int stuck, double health) {
-            this.agentID = agentID;
-            this.completedCases = completed;
-            this.stuckCases = stuck;
-            this.healthScore = health;
+        /** Compact constructor validates all fields on construction. */
+        public AgentStatus {
+            if (agentID == null || agentID.isEmpty()) {
+                throw new IllegalArgumentException("agentID must not be null or empty");
+            }
+            if (completedCases < 0) {
+                throw new IllegalArgumentException("completedCases must not be negative");
+            }
+            if (stuckCases < 0) {
+                throw new IllegalArgumentException("stuckCases must not be negative");
+            }
+            if (healthScore < 0.0 || healthScore > 1.0) {
+                throw new IllegalArgumentException("healthScore must be in range [0.0, 1.0]");
+            }
         }
 
-        public String getAgentID() { return agentID; }
-        public int getCompletedCases() { return completedCases; }
-        public int getStuckCases() { return stuckCases; }
-        public double getHealthScore() { return healthScore; }
-        public boolean isHealthy() { return stuckCases == 0 && healthScore > 0.8; }
-
-        @Override
-        public String toString() {
-            return String.format("AgentStatus{id=%s, completed=%d, stuck=%d, health=%.2f}",
-                    agentID, completedCases, stuckCases, healthScore);
+        /** Returns true when no cases are stuck and health score exceeds 0.8. */
+        public boolean isHealthy() {
+            return stuckCases == 0 && healthScore > 0.8;
         }
     }
 }
