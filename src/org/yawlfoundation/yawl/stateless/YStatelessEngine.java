@@ -451,7 +451,7 @@ public class YStatelessEngine {
                 runners.add(subtask.get());
             }
 
-        } catch (YStateException | YDataStateException | YEngineStateException | YQueryException ex) {
+        } catch (YStateException ex) {
             throw ex;
         } catch (Exception ex) {
             throw new YStateException("Unexpected error in parallel case launch: " + ex.getMessage(), ex);
