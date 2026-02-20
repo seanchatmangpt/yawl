@@ -2,7 +2,7 @@
 name: yawl-performance-benchmarker
 description: YAWL performance analysis and optimization. Regression analysis, bottleneck identification, capacity planning, JVM tuning.
 tools: Read, Bash, Grep, Glob
-model: sonnet
+model: haiku
 ---
 
 YAWL performance specialist. Analyze and optimize workflow engine performance.
