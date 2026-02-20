@@ -409,7 +409,7 @@ public class YEngine {
             _logger.debug("<-- startWorkItem");
         }
         catch (Exception e) {
-            throw new YStateException(e.getMessage());
+            throw new YStateException(e.getMessage(), e);
         }
 
         return startedItem;
@@ -698,7 +698,7 @@ public class YEngine {
             return workItem.getParent().createChild(id);                   //success!!!!
         }
         catch (Exception e) {
-            throw new YStateException(e.getMessage());
+            throw new YStateException(e.getMessage(), e);
         }
     }
 

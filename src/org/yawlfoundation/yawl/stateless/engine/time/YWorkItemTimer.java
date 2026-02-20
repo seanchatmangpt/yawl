@@ -165,7 +165,8 @@ public class YWorkItemTimer implements YTimedObject {
                     }
                 }
                 catch (Exception e) {
-                    // handle exc.
+                    throw new RuntimeException("Timer expiry failed for work item " +
+                            _owner.getIDString(), e);
                 }
             } finally {
                 engine.UNLOAD_MUTEX.unlock();
