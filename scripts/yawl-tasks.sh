@@ -16,23 +16,34 @@
 #   build                Compile changed modules only
 #   build all            Compile ALL modules
 #   clean                Reset to clean state (git clean, mvn clean)
-#   docs                 Build Javadocs + serve locally (http://localhost:8000)
+#   docs                 Build docs + Observatory facts + serve locally
 #   validate             Run static analysis (SpotBugs, PMD, Checkstyle)
+#   health               Run system health checks
+#   coverage             Show coverage dashboard (requires test run first)
+#   observatory          Generate code facts, diagrams, and analysis
 #   deploy-local         Start local Docker Compose (simple-test)
 #   deploy-full          Full Docker stack (prod setup)
 #   stop                 Stop running Docker services
 #   status               Show current build/test status and recent changes
 #   watch                Continuous build loop (compile on file changes)
+#   fast                 Fast workflow: compile + test changed modules
+#   all                  Full validation: compile + test + analyze + observatory
 #
 # Examples:
 #   ./scripts/yawl-tasks.sh test              # Run tests for changed code
 #   ./scripts/yawl-tasks.sh test all          # Run all tests
 #   ./scripts/yawl-tasks.sh build             # Compile changed modules
+#   ./scripts/yawl-tasks.sh build all         # Compile all modules
 #   ./scripts/yawl-tasks.sh clean             # Clean build artifacts
-#   ./scripts/yawl-tasks.sh docs              # Generate and serve Javadocs
+#   ./scripts/yawl-tasks.sh docs              # Build docs + Observatory + serve
 #   ./scripts/yawl-tasks.sh validate          # Run static analysis
+#   ./scripts/yawl-tasks.sh health            # Check system health
+#   ./scripts/yawl-tasks.sh coverage          # Show coverage dashboard
+#   ./scripts/yawl-tasks.sh observatory       # Generate code facts/diagrams
 #   ./scripts/yawl-tasks.sh deploy-local      # Start test Docker setup
-#   ./scripts/yawl-tasks.sh watch             # Continuous build
+#   ./scripts/yawl-tasks.sh watch             # Continuous build on file changes
+#   ./scripts/yawl-tasks.sh fast              # Compile + test changed modules
+#   ./scripts/yawl-tasks.sh all               # Full validation pipeline
 #
 # Environment variables:
 #   YAWL_FAST=1                Disable colors, progress output
@@ -183,53 +194,65 @@ cmd_clean() {
 
 # ── Command: docs ────────────────────────────────────────────────────
 cmd_docs() {
-    log_header "Building Javadocs"
+    log_header "Building & Serving Documentation"
 
     check_java || exit 1
 
-    local docs_dir="${REPO_ROOT}/target/site/apidocs"
+    local docs_dir="${REPO_ROOT}/docs/v6/latest"
 
-    log_info "Generating Javadocs with mvn javadoc:javadoc..."
+    log_info "Generating documentation (Observatory + Javadocs)..."
     local timer=$(timer_start)
-    mvn javadoc:javadoc -q -DskipTests -Djavadoc.skip=false
-    local elapsed=$(timer_stop "$timer")
 
-    if [[ ! -d "$docs_dir" ]]; then
-        log_error "Javadocs not generated at $docs_dir"
-        exit 1
+    # Generate Observatory facts (code analysis)
+    log_info "Running Observatory for code analysis..."
+    bash "${SCRIPT_DIR}/observatory/observatory.sh" 2>/dev/null || log_warn "Observatory generation had warnings"
+
+    # Check for mkdocs
+    if [[ -f "${REPO_ROOT}/mkdocs.yml" ]] && command -v mkdocs &>/dev/null; then
+        log_info "Building mkdocs site..."
+        mkdocs build -q || log_warn "mkdocs build had issues"
     fi
 
-    log_success "Javadocs generated in ${elapsed}s at: $docs_dir"
+    local elapsed=$(timer_stop "$timer")
+    log_success "Documentation generated in ${elapsed}s"
 
-    log_info "Starting local web server on http://localhost:8000..."
-    log_info "  Press Ctrl+C to stop"
-    echo ""
-
-    cd "$docs_dir"
-    python3 -m http.server 8000 --bind 127.0.0.1
+    # Serve locally
+    if [[ -d "$docs_dir" ]]; then
+        log_info "Serving documentation at http://localhost:8000..."
+        log_info "  Press Ctrl+C to stop"
+        echo ""
+        cd "$docs_dir"
+        python3 -m http.server 8000 --bind 127.0.0.1
+    else
+        log_warn "Documentation directory not found at $docs_dir"
+        log_info "To view facts, check: docs/v6/latest/INDEX.md"
+    fi
 }
 
 # ── Command: validate ────────────────────────────────────────────────
 cmd_validate() {
-    log_header "Running Static Analysis"
+    log_header "Running Static Analysis (SpotBugs, PMD, Checkstyle)"
 
     check_java || exit 1
 
     local timer=$(timer_start)
 
-    log_info "Running: mvn clean verify -P analysis"
-    mvn clean verify -P analysis -q -DskipTests || {
-        log_error "Static analysis failed"
-        exit 1
-    }
+    # Use validate-all.sh for comprehensive static analysis
+    if [[ -f "${SCRIPT_DIR}/validate-all.sh" ]]; then
+        log_info "Running: bash scripts/validate-all.sh --analysis"
+        bash "${SCRIPT_DIR}/validate-all.sh" --analysis
+    else
+        log_warn "validate-all.sh not found, falling back to mvn verify"
+        mvn clean verify -P analysis -q -DskipTests || {
+            log_error "Static analysis failed"
+            exit 1
+        }
+    fi
 
     local elapsed=$(timer_stop "$timer")
     log_success "Static analysis completed in ${elapsed}s"
 
-    log_info "See target/site/ for detailed reports:"
-    log_info "  - SpotBugs: target/site/spotbugs.html"
-    log_info "  - PMD: target/site/pmd.html"
-    log_info "  - Checkstyle: target/site/checkstyle.html"
+    log_info "Reports available in target/site/"
 }
 
 # ── Command: deploy-local ────────────────────────────────────────────
@@ -402,6 +425,98 @@ cmd_watch() {
     done
 }
 
+# ── Command: health ──────────────────────────────────────────────────
+cmd_health() {
+    log_header "System Health Check"
+
+    if [[ ! -f "${SCRIPT_DIR}/health-check.sh" ]]; then
+        log_error "health-check.sh not found"
+        exit 1
+    fi
+
+    bash "${SCRIPT_DIR}/health-check.sh" --verbose
+}
+
+# ── Command: coverage ────────────────────────────────────────────────
+cmd_coverage() {
+    log_header "Coverage Dashboard"
+
+    check_java || exit 1
+
+    if [[ ! -f "docs/v6/latest/facts/coverage.json" ]]; then
+        log_warn "Coverage facts not found. Run: mvn test && bash scripts/observatory/observatory.sh --facts"
+        return 0
+    fi
+
+    if [[ ! -f "${SCRIPT_DIR}/coverage-report.sh" ]]; then
+        log_error "coverage-report.sh not found"
+        exit 1
+    fi
+
+    bash "${SCRIPT_DIR}/coverage-report.sh"
+}
+
+# ── Command: observatory ────────────────────────────────────────────
+cmd_observatory() {
+    log_header "Code Observatory (Facts, Diagrams, Analysis)"
+
+    check_java || exit 1
+
+    if [[ ! -f "${SCRIPT_DIR}/observatory/observatory.sh" ]]; then
+        log_error "observatory.sh not found"
+        exit 1
+    fi
+
+    log_info "Generating code facts, diagrams, and static analysis..."
+    bash "${SCRIPT_DIR}/observatory/observatory.sh"
+
+    local exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+        log_success "Observatory facts generated"
+        log_info "See: docs/v6/latest/INDEX.md"
+    else
+        log_warn "Observatory completed with warnings (exit code: $exit_code)"
+    fi
+    return $exit_code
+}
+
+# ── Command: fast ───────────────────────────────────────────────────
+cmd_fast() {
+    log_header "Fast Workflow (Compile + Test Changed Modules)"
+
+    check_java || exit 1
+
+    local timer=$(timer_start)
+    bash "${SCRIPT_DIR}/dx.sh"
+    local elapsed=$(timer_stop "$timer")
+
+    log_success "Fast workflow completed in ${elapsed}s"
+}
+
+# ── Command: all ────────────────────────────────────────────────────
+cmd_all() {
+    log_header "Full Validation Pipeline (Compile, Test, Analysis, Observatory)"
+
+    check_java || exit 1
+
+    if [[ ! -f "${SCRIPT_DIR}/validate-all.sh" ]]; then
+        log_error "validate-all.sh not found"
+        exit 1
+    fi
+
+    local timer=$(timer_start)
+    bash "${SCRIPT_DIR}/validate-all.sh"
+    local exit_code=$?
+    local elapsed=$(timer_stop "$timer")
+
+    if [[ $exit_code -eq 0 ]]; then
+        log_success "Full validation passed in ${elapsed}s"
+    else
+        log_error "Full validation failed with exit code: $exit_code"
+    fi
+    return $exit_code
+}
+
 # ── Main Command Router ────────────────────────────────────────────
 main() {
     if [[ $# -eq 0 ]]; then
@@ -423,6 +538,11 @@ main() {
         stop)           cmd_stop "$@" ;;
         status)         cmd_status "$@" ;;
         watch)          cmd_watch "$@" ;;
+        health)         cmd_health "$@" ;;
+        coverage)       cmd_coverage "$@" ;;
+        observatory)    cmd_observatory "$@" ;;
+        fast)           cmd_fast "$@" ;;
+        all)            cmd_all "$@" ;;
         *)
             log_error "Unknown command: $cmd"
             echo ""
