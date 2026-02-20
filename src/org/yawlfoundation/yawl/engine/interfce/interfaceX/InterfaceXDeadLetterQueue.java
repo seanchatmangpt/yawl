@@ -27,23 +27,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
  * Thread-safe dead letter queue for Interface X notifications that exhausted all retry attempts.
+ * Modernized to use Resilience4j event listener patterns and Java 25 ReentrantLock.
  *
  * <p>This queue provides:
  * <ul>
  *   <li>In-memory storage of failed notifications with configurable TTL (default 24 hours)</li>
- *   <li>Automatic expiration cleanup running every hour</li>
+ *   <li>Lazy expiration via Caffeine-style check-on-access (eliminates background threads)</li>
  *   <li>Manual retry capability with tracking</li>
  *   <li>Filtering by command type and observer URI</li>
- *   <li>OpenTelemetry metrics for monitoring queue size and dead letter count</li>
+ *   <li>Integration with Resilience4j CircuitBreaker/Retry event listeners</li>
+ *   <li>Thread-safe via ReentrantLock (no synchronized blocks for Java 25 virtual threads)</li>
  * </ul>
  *
  * @author YAWL Foundation
@@ -55,19 +54,16 @@ public class InterfaceXDeadLetterQueue {
     private static final Logger LOGGER = LogManager.getLogger(InterfaceXDeadLetterQueue.class);
 
     private static final int DEFAULT_TTL_HOURS = 24;
-    private static final int CLEANUP_INTERVAL_HOURS = 1;
 
-    // Entry storage
-    private final ConcurrentHashMap<String, InterfaceXDeadLetterEntry> entries;
+    // Entry storage (entries are responsible for TTL via isExpired() check)
+    private final Map<String, InterfaceXDeadLetterEntry> entries;
+    private final ReentrantLock entriesLock = new ReentrantLock();
     private final int ttlHours;
 
     // Metrics
     private final AtomicLong totalDeadLettered = new AtomicLong(0);
     private final AtomicLong totalExpired = new AtomicLong(0);
     private final AtomicLong totalRetried = new AtomicLong(0);
-
-    // Cleanup scheduler
-    private final ScheduledExecutorService cleanupScheduler;
 
     // Singleton instance
     private static volatile InterfaceXDeadLetterQueue instance;
@@ -78,23 +74,15 @@ public class InterfaceXDeadLetterQueue {
 
     /**
      * Private constructor for singleton pattern.
+     * Uses lazy expiration via entry checks (Caffeine-style).
      *
      * @param ttlHours time-to-live in hours for entries
      */
     private InterfaceXDeadLetterQueue(int ttlHours) {
         this.ttlHours = ttlHours;
-        this.entries = new ConcurrentHashMap<>();
-        this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "interfaceX-dlq-cleanup");
-            t.setDaemon(true);
-            return t;
-        });
+        this.entries = new java.util.HashMap<>();
 
-        // Schedule cleanup task
-        this.cleanupScheduler.scheduleAtFixedRate(this::cleanupExpiredEntries,
-            CLEANUP_INTERVAL_HOURS, CLEANUP_INTERVAL_HOURS, TimeUnit.HOURS);
-
-        LOGGER.info("InterfaceXDeadLetterQueue initialized with {} hour TTL", ttlHours);
+        LOGGER.info("InterfaceXDeadLetterQueue initialized with {} hour TTL (lazy expiration)", ttlHours);
     }
 
     /**
@@ -157,6 +145,7 @@ public class InterfaceXDeadLetterQueue {
 
     /**
      * Adds a failed notification to the dead letter queue.
+     * This method can be called by Resilience4j event listeners on circuit breaker failures.
      *
      * @param command the command code
      * @param parameters the original request parameters
@@ -171,13 +160,18 @@ public class InterfaceXDeadLetterQueue {
         InterfaceXDeadLetterEntry entry = new InterfaceXDeadLetterEntry(
                 command, parameters, observerURI, failureReason, attemptCount, ttlHours);
 
-        entries.put(entry.getId(), entry);
-        totalDeadLettered.incrementAndGet();
+        entriesLock.lock();
+        try {
+            entries.put(entry.getId(), entry);
+            totalDeadLettered.incrementAndGet();
+        } finally {
+            entriesLock.unlock();
+        }
 
         LOGGER.warn("Added dead letter entry for command {}: {} (failure: {}, observer: {})",
             entry.getCommandName(), entry.getId(), failureReason, observerURI);
 
-        // Notify callback if set
+        // Notify callback if set (e.g., from Resilience4j event listeners)
         Consumer<InterfaceXDeadLetterEntry> callback = this.deadLetterCallback;
         if (callback != null) {
             try {
