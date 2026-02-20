@@ -573,17 +573,17 @@ public class YEngineRestorer {
                         }
                     }
 
-                    task.prepareDataDocsForTaskOutput(null);
+                    taskElement.prepareDataDocsForTaskOutput(null);
 
-                    if (task.isMultiInstance()) {
-                        String uniqueID = id.get_idString() + ":" + task.getID();
+                    if (taskElement.isMultiInstance()) {
+                        String uniqueID = id.get_idString() + ":" + taskElement.getID();
                         GroupedMIOutputData miOutputData = _miOutputDataLookupTable.get(uniqueID);
                         if (miOutputData != null) {
-                            task.setGroupedMultiInstanceOutputData(miOutputData);
+                            taskElement.setGroupedMultiInstanceOutputData(miOutputData);
                         }
                     }
 
-                    id.addLocation(null, task);
+                    id.addLocation(null, taskElement);
                 } else if (element instanceof YCondition condition) {
                     ((YConditionInterface) condition).add(_pmgr, id);
                 }

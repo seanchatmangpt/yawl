@@ -151,7 +151,7 @@ public class ResourcePool<T> {
                 T resource = factory.create();
                 PooledResource<T> pooled = new PooledResource<>(resource, System.currentTimeMillis());
                 available.addLast(pooled);
-                resourcesCreated.increment();
+                resourcesCreated.incrementAndGet();
                 gcEventsPrevented.addAndGet(100); // Estimate: 100x GC cost saved per resource
             } catch (Exception e) {
                 _logger.warn("Failed to pre-warm resource {}: {}", i, e.getMessage());
@@ -198,7 +198,7 @@ public class ResourcePool<T> {
                 try {
                     T resource = factory.create();
                     pooled = new PooledResource<>(resource, System.currentTimeMillis());
-                    resourcesCreated.increment();
+                    resourcesCreated.incrementAndGet();
                     break;
                 } catch (Exception e) {
                     _logger.warn("Failed to create new resource: {}", e.getMessage());
@@ -206,7 +206,7 @@ public class ResourcePool<T> {
             }
 
             // Wait for one to become available
-            waitsForAvailable.increment();
+            waitsForAvailable.incrementAndGet();
             try {
                 Thread.sleep(10);
                 attempts++;
@@ -221,12 +221,13 @@ public class ResourcePool<T> {
         }
 
         inUse.add(pooled);
-        borrowCount.increment();
+        borrowCount.incrementAndGet();
 
         long borrowTimeMs = System.currentTimeMillis() - borrowStartMs;
         totalAllocTimeMs.addAndGet(borrowTimeMs);
 
-        return new Resource<>(pooled.resource, () -> returnResource(pooled));
+        final PooledResource<T> finalPooled = pooled;
+        return new Resource<>(pooled.resource, () -> returnResource(finalPooled));
     }
 
     /**
@@ -238,7 +239,7 @@ public class ResourcePool<T> {
         inUse.remove(pooled);
         pooled.lastUsedMs = System.currentTimeMillis();
         available.addLast(pooled);
-        returnCount.increment();
+        returnCount.incrementAndGet();
     }
 
     /**
@@ -260,7 +261,7 @@ public class ResourcePool<T> {
             if (available.remove(pooled)) {
                 try {
                     cleanup.cleanup(pooled.resource);
-                    resourcesDestroyed.increment();
+                    resourcesDestroyed.incrementAndGet();
                     evicted++;
                 } catch (Exception e) {
                     _logger.warn("Error destroying stale resource: {}", e.getMessage());

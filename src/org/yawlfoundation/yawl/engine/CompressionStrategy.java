@@ -164,7 +164,7 @@ public class CompressionStrategy {
             return new CompressedData(data, false);
         }
 
-        compressionAttempts.increment();
+        compressionAttempts.incrementAndGet();
         bytesProcessed.addAndGet(data.length);
 
         // Skip tiny payloads
@@ -194,7 +194,7 @@ public class CompressionStrategy {
                 compressionTimeNanos.addAndGet(compressionNanos);
                 bytesOriginal.addAndGet(data.length);
                 bytesCompressed.addAndGet(compressedFull.length);
-                successfulCompressions.increment();
+                successfulCompressions.incrementAndGet();
 
                 double ratio = (double) compressedFull.length / data.length;
                 _logger.debug("Compressed {} bytes to {} ({:.1f}% ratio) in {:.2f}ms",
