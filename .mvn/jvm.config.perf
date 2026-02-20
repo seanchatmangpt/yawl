@@ -1,0 +1,63 @@
+# Performance-Optimized JVM Configuration
+# Tuned for maximum throughput, low-latency, and optimal virtual thread behavior
+-Xms2g
+-Xmx8g
+-XX:MetaspaceSize=256m
+-XX:MaxMetaspaceSize=512m
+
+# Java 25 Compact Object Headers - 5-10% throughput improvement
+-XX:+UseCompactObjectHeaders
+
+# GC Optimization: ZGC for ultra-low pause times (<1ms)
+# ZGC is optimized for applications with large heaps and virtual threads
+-XX:+UseZGC
+-XX:+UseStringDeduplication
+
+# Tiered compilation: C1 for startup, C2 for peak performance
+-XX:+TieredCompilation
+-XX:TieredStopAtLevel=4          # Enable C2 for peak performance
+-XX:CompileThreshold=10000       # Higher threshold for C2 profiling
+-XX:C2CompileThreshold=50000     # C2 recompilation threshold
+
+# Virtual Thread Tuning
+# Optimal scheduler parallelism for virtual thread execution
+-Djdk.virtualThreadScheduler.parallelism=auto
+-Djdk.virtualThreadScheduler.maxPoolSize=256
+-Djdk.virtualThreadScheduler.minRunnable=1
+
+# String and Object Optimizations
+-XX:+OptimizeStringConcat
+-XX:+UseCompressedOops
+-XX:+UseCompressedClassPointers
+-XX:+AlwaysPreTouch                # Pre-touch pages for predictable latency
+
+# Large pages for improved TLB hit rate
+-XX:+UseLargePages
+-XX:LargePageSizeInBytes=2m        # 2MB large pages
+
+# Low-latency tuning
+-XX:-UseBiasedLocking             # Disable biased locking (conflicts with virtual threads)
+-XX:InitiatingHeapOccupancyPercent=35
+-XX:G1RSetRegionEntries=More
+-XX:G1HeapRegionSize=8m
+
+# Parallelism
+-Djava.util.concurrent.ForkJoinPool.common.parallelism=24
+
+# Encoding
+-Dfile.encoding=UTF-8
+
+# Preview features for Java 25
+--enable-preview
+
+# Performance Monitoring
+-XX:+PrintGCDetails
+-XX:+PrintGCDateStamps
+-XX:+PrintGCTimeStamps
+-XX:+PrintTenuringDistribution
+-XX:PrintFLSStatistics=2
+
+# Monitoring and observability
+-Dotel.traces.sampler=parentbased_traceidratio
+-Dotel.traces.sampler.arg=0.05
+-Dotel.exporter.otlp.endpoint=http://otel-collector:4317

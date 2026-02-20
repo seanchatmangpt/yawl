@@ -109,12 +109,17 @@ public final class YSessionCache implements ISessionCache {
     /**
      * Creates a new session cache with default settings.
      * Initializes the timeout scheduler with virtual threads.
+     * Virtual threads are named for improved debugging and observability.
      */
     public YSessionCache() {
         this.sessions = new ConcurrentHashMap<>();
         this.timeoutTasks = new ConcurrentHashMap<>();
+        // Create virtual thread factory with descriptive naming for observability
+        // Thread names follow pattern: session-timeout-<counter> for identification in logs
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
-                Thread.ofVirtual().factory()
+                Thread.ofVirtual()
+                    .name("session-timeout-", 1)  // Named thread: session-timeout-1
+                    .factory()
         );
         this.shutdownRequested = new AtomicBoolean(false);
         this.rwLock = new ReentrantReadWriteLock();
