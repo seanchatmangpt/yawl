@@ -1,0 +1,36 @@
+# WCP-9: Discriminator Pattern
+# Only first completion proceeds, others are discarded
+
+name: DiscriminatorPattern
+uri: discriminator.xml
+first: Split
+
+variables:
+  - name: winner
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: Split
+    flows: [FastPath, SlowPath]
+    split: and
+    join: xor
+    description: "Start competing paths"
+
+  - id: FastPath
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Quick processing path"
+
+  - id: SlowPath
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Slower processing path"
+
+  - id: Merge
+    flows: [end]
+    split: xor
+    join: discriminator
+    description: "First to arrive continues"

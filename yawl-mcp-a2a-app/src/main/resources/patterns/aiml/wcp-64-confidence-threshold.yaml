@@ -1,0 +1,62 @@
+# WCP-64: Confidence Threshold Pattern
+# Route based on AI confidence level
+
+name: ConfidenceThresholdPattern
+uri: confidence-threshold.xml
+first: AnalyzeInput
+
+variables:
+  - name: input
+    type: xs:string
+  - name: confidence
+    type: xs:decimal
+    default: 0.0
+  - name: highThreshold
+    type: xs:decimal
+    default: 0.90
+  - name: lowThreshold
+    type: xs:decimal
+    default: 0.60
+
+tasks:
+  - id: AnalyzeInput
+    flows: [EvaluateConfidence]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      capabilities: [analysis]
+    description: "Analyze input with AI"
+
+  - id: EvaluateConfidence
+    flows: [AutoApprove, ManualReview, Reject]
+    condition: confidence >= highThreshold -> AutoApprove
+    condition: confidence >= lowThreshold -> ManualReview
+    default: Reject
+    split: xor
+    join: xor
+    description: "Evaluate confidence level"
+
+  - id: AutoApprove
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Auto-approve high confidence"
+
+  - id: ManualReview
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Manual review for medium"
+
+  - id: Reject
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Reject low confidence"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Processing complete"

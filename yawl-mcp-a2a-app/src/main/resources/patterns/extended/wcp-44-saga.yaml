@@ -1,0 +1,49 @@
+# WCP-44: Saga Orchestration Pattern
+# Distributed transaction with compensation
+
+name: SagaOrchestration
+uri: saga.xml
+first: TaskA
+
+variables:
+  - name: transactionId
+    type: xs:string
+  - name: status
+    type: xs:string
+    default: "started"
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: xor
+    compensation: compensateA
+    description: "Create resource"
+
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: xor
+    compensation: compensateB
+    description: "Process data"
+
+  - id: TaskC
+    flows: [TaskD]
+    split: xor
+    join: xor
+    compensation: compensateC
+    description: "Finalize transaction"
+
+  - id: TaskD
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete saga"
+
+compensations:
+  - id: compensateA
+    description: "Rollback resource creation"
+  - id: compensateB
+    description: "Undo data processing"
+  - id: compensateC
+    description: "Cancel transaction"

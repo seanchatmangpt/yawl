@@ -1,0 +1,63 @@
+# WCP-48: Retry Pattern
+# Retry failed operations with backoff
+
+name: RetryPattern
+uri: retry.xml
+first: AttemptOperation
+
+variables:
+  - name: retryCount
+    type: xs:integer
+    default: 0
+  - name: maxRetries
+    type: xs:integer
+    default: 3
+  - name: lastError
+    type: xs:string
+  - name: success
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: AttemptOperation
+    flows: [CheckResult]
+    split: xor
+    join: xor
+    description: "Attempt the operation"
+
+  - id: CheckResult
+    flows: [Succeed, CheckRetries]
+    condition: success == true -> Succeed
+    default: CheckRetries
+    split: xor
+    join: xor
+    description: "Check operation result"
+
+  - id: CheckRetries
+    flows: [WaitBackoff, Fail]
+    condition: retryCount < maxRetries -> WaitBackoff
+    default: Fail
+    split: xor
+    join: xor
+    description: "Check if retries remaining"
+
+  - id: WaitBackoff
+    flows: [AttemptOperation]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT${retryCount * 2}S
+    description: "Exponential backoff wait"
+
+  - id: Succeed
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Operation succeeded"
+
+  - id: Fail
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Operation failed after retries"

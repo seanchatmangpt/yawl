@@ -1,0 +1,70 @@
+# WCP-46: Two-Phase Commit Pattern
+# Distributed transaction with prepare and commit phases
+
+name: TwoPhaseCommitPattern
+uri: two-phase-commit.xml
+first: StartTransaction
+
+variables:
+  - name: transactionId
+    type: xs:string
+  - name: participantCount
+    type: xs:integer
+    default: 3
+  - name: allPrepared
+    type: xs:boolean
+    default: false
+  - name: anyAborted
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartTransaction
+    flows: [PreparePhase]
+    split: xor
+    join: xor
+    description: "Initialize transaction"
+
+  - id: PreparePhase
+    flows: [CollectVotes]
+    split: xor
+    join: and
+    multiInstance:
+      min: 3
+      max: 3
+      mode: static
+    description: "Prepare all participants"
+
+  - id: CollectVotes
+    flows: [CommitPhase, AbortPhase]
+    condition: allPrepared == true -> CommitPhase
+    default: AbortPhase
+    split: xor
+    join: xor
+    description: "Collect prepare votes"
+
+  - id: CommitPhase
+    flows: [TransactionComplete]
+    split: xor
+    join: and
+    multiInstance:
+      min: 3
+      max: 3
+      mode: static
+    description: "Commit all participants"
+
+  - id: AbortPhase
+    flows: [TransactionComplete]
+    split: xor
+    join: and
+    multiInstance:
+      min: 3
+      max: 3
+      mode: static
+    description: "Abort all participants"
+
+  - id: TransactionComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Transaction finished"

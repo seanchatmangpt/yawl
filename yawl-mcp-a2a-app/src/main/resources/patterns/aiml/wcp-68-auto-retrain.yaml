@@ -1,0 +1,107 @@
+# WCP-68: Auto-Retrain Pattern
+# Automatic model retraining workflow
+
+name: AutoRetrainPattern
+uri: auto-retrain.xml
+first: CheckTrigger
+
+variables:
+  - name: modelId
+    type: xs:string
+  - name: retrainTriggered
+    type: xs:boolean
+    default: false
+  - name: newDataAvailable
+    type: xs:boolean
+    default: false
+  - name: validationScore
+    type: xs:decimal
+    default: 0.0
+  - name: productionScore
+    type: xs:decimal
+    default: 0.92
+
+tasks:
+  - id: CheckTrigger
+    flows: [StartRetrain, WaitForTrigger]
+    condition: retrainTriggered == true -> StartRetrain
+    default: WaitForTrigger
+    split: xor
+    join: xor
+    description: "Check retrain trigger"
+
+  - id: WaitForTrigger
+    flows: [CheckTrigger]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT24H
+    description: "Wait for next check"
+
+  - id: StartRetrain
+    flows: [PrepareData]
+    split: xor
+    join: xor
+    description: "Start retraining"
+
+  - id: PrepareData
+    flows: [TrainModel]
+    split: xor
+    join: xor
+    description: "Prepare training data"
+
+  - id: TrainModel
+    flows: [ValidateModel]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      capabilities: [training]
+    description: "Train new model"
+
+  - id: ValidateModel
+    flows: [CheckScore, RollbackModel]
+    condition: validationScore >= productionScore -> CheckScore
+    default: RollbackModel
+    split: xor
+    join: xor
+    description: "Validate model"
+
+  - id: CheckScore
+    flows: [DeployModel, TuneHyperparams]
+    condition: validationScore > productionScore -> DeployModel
+    default: TuneHyperparams
+    split: xor
+    join: xor
+    description: "Check validation score"
+
+  - id: TuneHyperparams
+    flows: [TrainModel]
+    split: xor
+    join: xor
+    description: "Tune hyperparameters"
+
+  - id: DeployModel
+    flows: [RetrainComplete]
+    split: xor
+    join: xor
+    description: "Deploy new model"
+
+  - id: RollbackModel
+    flows: [AlertFailure]
+    split: xor
+    join: xor
+    description: "Rollback to previous"
+
+  - id: AlertFailure
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Alert on failure"
+
+  - id: RetrainComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Retraining complete"

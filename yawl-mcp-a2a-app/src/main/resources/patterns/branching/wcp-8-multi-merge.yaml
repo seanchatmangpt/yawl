@@ -1,0 +1,41 @@
+# WCP-8: Multi-Merge Pattern
+# Multiple branches merge without synchronization, each continues independently
+
+name: MultiMergePattern
+uri: multi-merge.xml
+first: Split
+
+variables:
+  - name: resultA
+    type: xs:string
+  - name: resultB
+    type: xs:string
+
+tasks:
+  - id: Split
+    flows: [TaskA, TaskB]
+    split: and
+    join: xor
+    description: "Start parallel branches"
+
+  - id: TaskA
+    flows: [Continue]
+    split: xor
+    join: xor
+    description: "Process branch A"
+
+  - id: TaskB
+    flows: [Continue]
+    split: xor
+    join: xor
+    description: "Process branch B"
+
+  - id: Continue
+    flows: [end]
+    split: xor
+    join: xor
+    multiInstance:
+      min: 1
+      max: 2
+      mode: dynamic
+    description: "Continue for each completed branch"

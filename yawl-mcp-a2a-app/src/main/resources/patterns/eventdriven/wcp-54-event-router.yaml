@@ -1,0 +1,61 @@
+# WCP-54: Event Router Pattern
+# Route events based on content or type
+
+name: EventRouterPattern
+uri: event-router.xml
+first: ReceiveEvent
+
+variables:
+  - name: eventType
+    type: xs:string
+  - name: eventPayload
+    type: xs:string
+  - name: routingKey
+    type: xs:string
+
+tasks:
+  - id: ReceiveEvent
+    flows: [AnalyzeEvent]
+    split: xor
+    join: xor
+    description: "Receive incoming event"
+
+  - id: AnalyzeEvent
+    flows: [RouteA, RouteB, RouteC, DefaultRoute]
+    condition: eventType == "typeA" -> RouteA
+    condition: eventType == "typeB" -> RouteB
+    condition: eventType == "typeC" -> RouteC
+    default: DefaultRoute
+    split: xor
+    join: xor
+    description: "Analyze and determine route"
+
+  - id: RouteA
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Route to handler A"
+
+  - id: RouteB
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Route to handler B"
+
+  - id: RouteC
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Route to handler C"
+
+  - id: DefaultRoute
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Default handler"
+
+  - id: ProcessComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Event processed"

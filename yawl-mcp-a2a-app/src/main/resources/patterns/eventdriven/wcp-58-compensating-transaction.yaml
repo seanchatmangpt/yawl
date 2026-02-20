@@ -1,0 +1,72 @@
+# WCP-58: Compensating Transaction Pattern
+# Undo completed work when transaction fails
+
+name: CompensatingTransactionPattern
+uri: compensating-transaction.xml
+first: StartTransaction
+
+variables:
+  - name: transactionId
+    type: xs:string
+  - name: step1Complete
+    type: xs:boolean
+    default: false
+  - name: step2Complete
+    type: xs:boolean
+    default: false
+  - name: failureOccurred
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartTransaction
+    flows: [Step1]
+    split: xor
+    join: xor
+    description: "Start transaction"
+
+  - id: Step1
+    flows: [Step2, CompensateStep1]
+    condition: failureOccurred == false -> Step2
+    default: CompensateStep1
+    split: xor
+    join: xor
+    description: "Execute step 1"
+
+  - id: Step2
+    flows: [Step3, CompensateStep2]
+    condition: failureOccurred == false -> Step3
+    default: CompensateStep2
+    split: xor
+    join: xor
+    description: "Execute step 2"
+
+  - id: Step3
+    flows: [Commit]
+    split: xor
+    join: xor
+    description: "Execute step 3"
+
+  - id: CompensateStep2
+    flows: [CompensateStep1]
+    split: xor
+    join: xor
+    description: "Undo step 2"
+
+  - id: CompensateStep1
+    flows: [Rollback]
+    split: xor
+    join: xor
+    description: "Undo step 1"
+
+  - id: Commit
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Transaction committed"
+
+  - id: Rollback
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Transaction rolled back"

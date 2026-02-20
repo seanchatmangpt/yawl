@@ -1,0 +1,57 @@
+# WCP-52: Outbox Pattern
+# Ensure reliable event publishing with database transaction
+
+name: OutboxPattern
+uri: outbox.xml
+first: ProcessBusinessLogic
+
+variables:
+  - name: businessData
+    type: xs:string
+  - name: eventPayload
+    type: xs:string
+  - name: eventId
+    type: xs:string
+
+tasks:
+  - id: ProcessBusinessLogic
+    flows: [WriteOutbox]
+    split: xor
+    join: xor
+    description: "Execute business logic"
+
+  - id: WriteOutbox
+    flows: [CommitTransaction]
+    split: xor
+    join: xor
+    description: "Write event to outbox table"
+
+  - id: CommitTransaction
+    flows: [PublishEvent]
+    split: xor
+    join: xor
+    description: "Commit database transaction"
+
+  - id: PublishEvent
+    flows: [MarkPublished, HandlePublishError]
+    split: xor
+    join: xor
+    description: "Publish event to broker"
+
+  - id: MarkPublished
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Mark event as published"
+
+  - id: HandlePublishError
+    flows: [RetryPublish]
+    split: xor
+    join: xor
+    description: "Handle publish failure"
+
+  - id: RetryPublish
+    flows: [PublishEvent]
+    split: xor
+    join: xor
+    description: "Retry event publishing"

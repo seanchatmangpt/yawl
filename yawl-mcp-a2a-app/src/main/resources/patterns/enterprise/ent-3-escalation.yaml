@@ -1,0 +1,76 @@
+# ENT-3: Escalation Pattern
+# Escalate if not resolved in time
+
+name: EscalationPattern
+uri: escalation.xml
+first: AssignTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: escalationLevel
+    type: xs:integer
+    default: 0
+  - name: maxEscalationLevel
+    type: xs:integer
+    default: 3
+  - name: resolved
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: AssignTask
+    flows: [Level1, MonitorEscalation]
+    split: and
+    join: xor
+    description: "Assign to level 1"
+
+  - id: MonitorEscalation
+    flows: [Escalate, TaskComplete]
+    condition: resolved == true -> TaskComplete
+    default: Escalate
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT1H
+    description: "Monitor for escalation"
+
+  - id: Level1
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Level 1 handling"
+
+  - id: Escalate
+    flows: [Level2, Level3, FinalEscalation]
+    condition: escalationLevel == 1 -> Level2
+    condition: escalationLevel == 2 -> Level3
+    default: FinalEscalation
+    split: xor
+    join: xor
+    description: "Escalate to next level"
+
+  - id: Level2
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Level 2 handling"
+
+  - id: Level3
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Level 3 handling"
+
+  - id: FinalEscalation
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Final escalation handling"
+
+  - id: TaskComplete
+    flows: [end]
+    split: xor
+    join: and
+    description: "Task resolved"

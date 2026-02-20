@@ -1,0 +1,40 @@
+# WCP-12: Multiple Instances without Synchronization
+# Create multiple instances of a task that complete independently
+
+name: MultipleInstancesNoSyncPattern
+uri: mi-no-sync.xml
+first: TaskA
+
+variables:
+  - name: batchId
+    type: xs:string
+  - name: items
+    type: xs:string
+  - name: itemCount
+    type: xs:integer
+    default: 3
+  - name: threshold
+    type: xs:integer
+    default: 1
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: xor
+    description: "Initialize batch processing"
+
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: xor
+    multiInstance: true
+    miCondition: itemCount
+    miThreshold: threshold
+    description: "Process each item in parallel without sync"
+
+  - id: TaskC
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Batch initiated - instances run independently"

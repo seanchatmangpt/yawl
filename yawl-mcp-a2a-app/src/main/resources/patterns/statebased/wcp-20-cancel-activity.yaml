@@ -1,0 +1,45 @@
+# WCP-20: Cancel Activity Pattern
+# Activity can be cancelled before completion
+
+name: CancelActivityPattern
+uri: cancel-activity.xml
+first: StartWork
+
+variables:
+  - name: cancelRequested
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartWork
+    flows: [DoWork, MonitorCancel]
+    split: and
+    join: xor
+    description: "Start work and monitor"
+
+  - id: DoWork
+    flows: [WorkComplete]
+    split: xor
+    join: xor
+    description: "Perform the work"
+
+  - id: MonitorCancel
+    flows: [CancelWork]
+    condition: cancelRequested == true -> CancelWork
+    default: WorkComplete
+    split: xor
+    join: xor
+    description: "Monitor for cancel request"
+
+  - id: CancelWork
+    flows: [end]
+    split: xor
+    join: xor
+    cancels: [DoWork]
+    description: "Cancel the work"
+
+  - id: WorkComplete
+    flows: [end]
+    split: xor
+    join: and
+    description: "Work completed normally"

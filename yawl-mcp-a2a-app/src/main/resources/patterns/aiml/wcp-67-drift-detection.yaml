@@ -1,0 +1,64 @@
+# WCP-67: Drift Detection Pattern
+# Monitor model performance drift
+
+name: DriftDetectionPattern
+uri: drift-detection.xml
+first: CollectMetrics
+
+variables:
+  - name: modelName
+    type: xs:string
+  - name: accuracy
+    type: xs:decimal
+    default: 0.95
+  - name: accuracyThreshold
+    type: xs:decimal
+    default: 0.90
+  - name: driftDetected
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: CollectMetrics
+    flows: [AnalyzeDrift]
+    split: xor
+    join: xor
+    description: "Collect model metrics"
+
+  - id: AnalyzeDrift
+    flows: [CheckThreshold]
+    split: xor
+    join: xor
+    description: "Analyze for drift"
+
+  - id: CheckThreshold
+    flows: [AlertDrift, ContinueMonitoring]
+    condition: accuracy < accuracyThreshold -> AlertDrift
+    default: ContinueMonitoring
+    split: xor
+    join: xor
+    description: "Check drift threshold"
+
+  - id: AlertDrift
+    flows: [TriggerRetrain]
+    split: xor
+    join: xor
+    description: "Alert on drift"
+
+  - id: TriggerRetrain
+    flows: [ScheduleRetrain]
+    split: xor
+    join: xor
+    description: "Trigger retraining"
+
+  - id: ScheduleRetrain
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Schedule model retraining"
+
+  - id: ContinueMonitoring
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Continue monitoring"

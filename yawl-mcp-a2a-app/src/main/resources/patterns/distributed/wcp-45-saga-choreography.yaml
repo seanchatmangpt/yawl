@@ -1,0 +1,63 @@
+# WCP-45: Saga Choreography Pattern
+# Distributed saga with event-driven coordination
+
+name: SagaChoreographyPattern
+uri: saga-choreography.xml
+first: StartSaga
+
+variables:
+  - name: sagaId
+    type: xs:string
+  - name: step
+    type: xs:integer
+    default: 0
+  - name: failed
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartSaga
+    flows: [ServiceA]
+    split: xor
+    join: xor
+    description: "Initiate distributed saga"
+
+  - id: ServiceA
+    flows: [ServiceB, CompensateA]
+    condition: failed == false -> ServiceB
+    default: CompensateA
+    split: xor
+    join: xor
+    description: "Service A operation"
+
+  - id: ServiceB
+    flows: [ServiceC, CompensateB]
+    condition: failed == false -> ServiceC
+    default: CompensateB
+    split: xor
+    join: xor
+    description: "Service B operation"
+
+  - id: ServiceC
+    flows: [SagaComplete]
+    split: xor
+    join: xor
+    description: "Service C operation"
+
+  - id: CompensateA
+    flows: [SagaComplete]
+    split: xor
+    join: xor
+    description: "Compensate service A"
+
+  - id: CompensateB
+    flows: [CompensateA]
+    split: xor
+    join: xor
+    description: "Compensate service B"
+
+  - id: SagaComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Saga completed"

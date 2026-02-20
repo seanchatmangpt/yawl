@@ -1,0 +1,71 @@
+# ENT-7: Four-Eyes Principle Pattern
+# Require two different people for sensitive actions
+
+name: FourEyesPrinciplePattern
+uri: four-eyes.xml
+first: InitiateAction
+
+variables:
+  - name: actionId
+    type: xs:string
+  - name: initiator
+    type: xs:string
+  - name: confirmer
+    type: xs:string
+  - name: confirmed
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: InitiateAction
+    flows: [RequestConfirmation]
+    split: xor
+    join: xor
+    description: "Initiate sensitive action"
+
+  - id: RequestConfirmation
+    flows: [ConfirmAction, TimeoutWait]
+    split: and
+    join: xor
+    description: "Request second confirmation"
+
+  - id: ConfirmAction
+    flows: [ValidateDifferentUsers]
+    split: xor
+    join: xor
+    description: "Second user confirms"
+
+  - id: ValidateDifferentUsers
+    flows: [ExecuteAction, RejectAction]
+    condition: initiator != confirmer -> ExecuteAction
+    default: RejectAction
+    split: xor
+    join: xor
+    description: "Validate different users"
+
+  - id: TimeoutWait
+    flows: [RejectAction]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT24H
+    description: "Wait for confirmation"
+
+  - id: ExecuteAction
+    flows: [ActionComplete]
+    split: xor
+    join: xor
+    description: "Execute the action"
+
+  - id: RejectAction
+    flows: [ActionComplete]
+    split: xor
+    join: xor
+    description: "Reject the action"
+
+  - id: ActionComplete
+    flows: [end]
+    split: xor
+    join: and
+    description: "Action processed"

@@ -1,0 +1,42 @@
+# WCP-7: Structured Synchronizing Merge Pattern
+# Wait for all activated branches to complete before continuing
+
+name: StructuredSyncMergePattern
+uri: sync-merge.xml
+first: Split
+
+variables:
+  - name: branchCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: Split
+    flows: [TaskA, TaskB, TaskC]
+    split: and
+    join: xor
+    description: "Fork into parallel branches"
+
+  - id: TaskA
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Branch A task"
+
+  - id: TaskB
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Branch B task"
+
+  - id: TaskC
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Branch C task"
+
+  - id: Merge
+    flows: [end]
+    split: xor
+    join: and
+    description: "Wait for all branches"

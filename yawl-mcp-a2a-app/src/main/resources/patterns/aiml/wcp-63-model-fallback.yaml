@@ -1,0 +1,58 @@
+# WCP-63: Model Fallback Pattern
+# Fallback from AI model to simpler approach
+
+name: ModelFallbackPattern
+uri: model-fallback.xml
+first: TryPrimaryModel
+
+variables:
+  - name: inputData
+    type: xs:string
+  - name: primaryResult
+    type: xs:string
+  - name: fallbackResult
+    type: xs:string
+  - name: modelAvailable
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: TryPrimaryModel
+    flows: [CheckResult, UseFallback]
+    condition: modelAvailable == true -> CheckResult
+    default: UseFallback
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      capabilities: [primary-model]
+    description: "Try primary AI model"
+
+  - id: CheckResult
+    flows: [UseResult, UseSecondaryModel]
+    condition: primaryResult != "" -> UseResult
+    default: UseSecondaryModel
+    split: xor
+    join: xor
+    description: "Check primary result"
+
+  - id: UseSecondaryModel
+    flows: [UseResult, UseFallback]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      capabilities: [secondary-model]
+    description: "Try secondary model"
+
+  - id: UseFallback
+    flows: [UseResult]
+    split: xor
+    join: xor
+    description: "Use rule-based fallback"
+
+  - id: UseResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Use obtained result"

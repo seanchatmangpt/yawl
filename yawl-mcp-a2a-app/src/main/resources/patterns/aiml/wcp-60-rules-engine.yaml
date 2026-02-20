@@ -1,0 +1,66 @@
+# WCP-60: Rules Engine Pattern
+# Business rules evaluation in workflow
+
+name: RulesEnginePattern
+uri: rules-engine.xml
+first: CollectFacts
+
+variables:
+  - name: factSet
+    type: xs:string
+  - name: rulesVersion
+    type: xs:string
+    default: "1.0"
+  - name: matchedRules
+    type: xs:string
+  - name: actions
+    type: xs:string
+
+tasks:
+  - id: CollectFacts
+    flows: [LoadRules]
+    split: xor
+    join: xor
+    description: "Gather business facts"
+
+  - id: LoadRules
+    flows: [EvaluateRules]
+    split: xor
+    join: xor
+    description: "Load rule definitions"
+
+  - id: EvaluateRules
+    flows: [ApplyActions]
+    split: xor
+    join: xor
+    description: "Execute rules engine"
+
+  - id: ApplyActions
+    flows: [ActionA, ActionB, ActionC]
+    split: or
+    join: xor
+    description: "Apply rule actions"
+
+  - id: ActionA
+    flows: [Complete]
+    split: xor
+    join: or
+    description: "Execute action A"
+
+  - id: ActionB
+    flows: [Complete]
+    split: xor
+    join: or
+    description: "Execute action B"
+
+  - id: ActionC
+    flows: [Complete]
+    split: xor
+    join: or
+    description: "Execute action C"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Rules processing complete"

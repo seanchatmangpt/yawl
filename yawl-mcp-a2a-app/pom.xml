@@ -33,6 +33,10 @@
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-stateless</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-elements</artifactId>
         </dependency>
         <dependency>
@@ -280,6 +284,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

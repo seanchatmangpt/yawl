@@ -1,0 +1,81 @@
+# WCP-66: ML Pipeline Pattern
+# Sequential ML processing stages
+
+name: MLPipelinePattern
+uri: ml-pipeline.xml
+first: IngestData
+
+variables:
+  - name: rawData
+    type: xs:string
+  - name: transformedData
+    type: xs:string
+  - name: predictions
+    type: xs:string
+  - name: outputFormat
+    type: xs:string
+    default: "json"
+
+tasks:
+  - id: IngestData
+    flows: [ValidateData]
+    split: xor
+    join: xor
+    description: "Ingest raw data"
+
+  - id: ValidateData
+    flows: [Preprocess, ValidationError]
+    split: xor
+    join: xor
+    description: "Validate input data"
+
+  - id: Preprocess
+    flows: [Transform]
+    split: xor
+    join: xor
+    description: "Preprocess data"
+
+  - id: Transform
+    flows: [FeatureEngineering]
+    split: xor
+    join: xor
+    description: "Transform data"
+
+  - id: FeatureEngineering
+    flows: [RunInference]
+    split: xor
+    join: xor
+    description: "Engineer features"
+
+  - id: RunInference
+    flows: [Postprocess]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      capabilities: [inference]
+    description: "Run ML inference"
+
+  - id: Postprocess
+    flows: [FormatOutput]
+    split: xor
+    join: xor
+    description: "Postprocess predictions"
+
+  - id: FormatOutput
+    flows: [PipelineComplete]
+    split: xor
+    join: xor
+    description: "Format output"
+
+  - id: ValidationError
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle validation error"
+
+  - id: PipelineComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Pipeline complete"

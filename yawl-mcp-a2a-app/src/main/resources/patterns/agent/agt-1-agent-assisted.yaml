@@ -1,0 +1,74 @@
+# AGT-1: Agent-Assisted Pattern
+# Human works with AI agent assistance
+
+name: AgentAssistedPattern
+uri: agent-assisted.xml
+first: StartTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: taskType
+    type: xs:string
+  - name: agentSuggestion
+    type: xs:string
+  - name: humanDecision
+    type: xs:string
+  - name: useAgentSuggestion
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartTask
+    flows: [AgentAnalyze, HumanWork]
+    split: and
+    join: xor
+    description: "Start agent-assisted task"
+
+  - id: AgentAnalyze
+    flows: [PresentSuggestion]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      binding: dynamic
+      capabilities: [analysis, suggestion]
+    description: "Agent analyzes task"
+
+  - id: PresentSuggestion
+    flows: [HumanDecision]
+    split: xor
+    join: xor
+    description: "Present agent suggestion"
+
+  - id: HumanWork
+    flows: [HumanDecision]
+    split: xor
+    join: xor
+    description: "Human works on task"
+
+  - id: HumanDecision
+    flows: [UseAgentResult, UseHumanResult]
+    condition: useAgentSuggestion == true -> UseAgentResult
+    default: UseHumanResult
+    split: xor
+    join: and
+    description: "Human decides approach"
+
+  - id: UseAgentResult
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Use agent suggestion"
+
+  - id: UseHumanResult
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Use human result"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Task completed"

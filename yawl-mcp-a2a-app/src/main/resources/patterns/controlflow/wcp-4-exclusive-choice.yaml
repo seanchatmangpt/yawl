@@ -1,0 +1,40 @@
+# WCP-4: Exclusive Choice Pattern
+# Choose one branch based on condition
+
+name: ExclusiveChoicePattern
+uri: exclusive-choice.xml
+first: TaskA
+
+variables:
+  - name: amount
+    type: xs:decimal
+  - name: priority
+    type: xs:string
+    default: "normal"
+
+tasks:
+  - id: TaskA
+    flows: [TaskB, TaskC]
+    condition: amount > 1000 -> TaskB
+    default: TaskC
+    split: xor
+    join: xor
+    description: "Check amount"
+
+  - id: TaskB
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "High priority processing"
+
+  - id: TaskC
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Normal processing"
+
+  - id: TaskD
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete processing"

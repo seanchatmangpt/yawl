@@ -1,0 +1,39 @@
+# WCP-16: Multiple Instances without Runtime Knowledge
+# Unknown number of instances, process until completion signal
+
+name: MIWithoutRuntimePattern
+uri: mi-without-runtime.xml
+first: StartProcessing
+
+variables:
+  - name: continueProcessing
+    type: xs:boolean
+    default: true
+  - name: batchComplete
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartProcessing
+    flows: [ProcessBatch]
+    split: xor
+    join: xor
+    description: "Start batch processing"
+
+  - id: ProcessBatch
+    flows: [CheckComplete]
+    split: xor
+    join: or
+    multiInstance:
+      min: 1
+      max: 999
+      mode: dynamic
+      threshold: 1
+    description: "Process unknown number of items"
+
+  - id: CheckComplete
+    flows: [end]
+    condition: batchComplete == true
+    split: xor
+    join: xor
+    description: "Check if all batches complete"

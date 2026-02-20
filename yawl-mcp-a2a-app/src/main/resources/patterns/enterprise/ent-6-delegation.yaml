@@ -1,0 +1,58 @@
+# ENT-6: Delegation Pattern
+# Delegate task to another user or role
+
+name: DelegationPattern
+uri: delegation.xml
+first: AssignTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: assignedTo
+    type: xs:string
+  - name: delegatedTo
+    type: xs:string
+  - name: delegationReason
+    type: xs:string
+  - name: requiresDelegation
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: AssignTask
+    flows: [CheckAvailability, DelegateTask]
+    condition: requiresDelegation == false -> CheckAvailability
+    default: DelegateTask
+    split: xor
+    join: xor
+    description: "Initial assignment"
+
+  - id: CheckAvailability
+    flows: [ExecuteTask, DelegateTask]
+    split: xor
+    join: xor
+    description: "Check assignee availability"
+
+  - id: DelegateTask
+    flows: [NotifyDelegate]
+    split: xor
+    join: xor
+    description: "Delegate to another"
+
+  - id: NotifyDelegate
+    flows: [ExecuteTask]
+    split: xor
+    join: xor
+    description: "Notify delegated user"
+
+  - id: ExecuteTask
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Execute the task"
+
+  - id: TaskComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Task completed"

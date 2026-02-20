@@ -1,0 +1,36 @@
+# WCP-11: Implicit Termination Pattern
+# Process ends when no active work items remain
+
+name: ImplicitTerminationPattern
+uri: implicit-termination.xml
+first: StartProcess
+
+variables:
+  - name: activeTasks
+    type: xs:integer
+    default: 3
+
+tasks:
+  - id: StartProcess
+    flows: [TaskA, TaskB, TaskC]
+    split: and
+    join: xor
+    description: "Start parallel tasks"
+
+  - id: TaskA
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Independent task A"
+
+  - id: TaskB
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Independent task B"
+
+  - id: TaskC
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Independent task C"

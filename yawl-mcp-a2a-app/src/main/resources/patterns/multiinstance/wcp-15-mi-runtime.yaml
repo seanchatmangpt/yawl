@@ -1,0 +1,37 @@
+# WCP-15: Multiple Instances with Runtime Knowledge
+# Instances created based on runtime data, can be added during execution
+
+name: MIRuntimePattern
+uri: mi-runtime.xml
+first: Initialize
+
+variables:
+  - name: dataSource
+    type: xs:string
+  - name: dynamicCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: Initialize
+    flows: [LoadData]
+    split: xor
+    join: xor
+    description: "Initialize runtime context"
+
+  - id: LoadData
+    flows: [ProcessDynamic]
+    split: xor
+    join: xor
+    description: "Load data to determine instance count"
+
+  - id: ProcessDynamic
+    flows: [end]
+    split: xor
+    join: and
+    multiInstance:
+      min: 1
+      max: dynamicCount
+      mode: dynamic
+      threshold: all
+    description: "Process runtime-determined instances"

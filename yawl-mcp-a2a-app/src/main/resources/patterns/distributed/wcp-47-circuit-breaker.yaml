@@ -1,0 +1,70 @@
+# WCP-47: Circuit Breaker Pattern
+# Prevent cascading failures by failing fast
+
+name: CircuitBreakerPattern
+uri: circuit-breaker.xml
+first: CheckCircuit
+
+variables:
+  - name: circuitState
+    type: xs:string
+    default: "closed"
+  - name: failureCount
+    type: xs:integer
+    default: 0
+  - name: failureThreshold
+    type: xs:integer
+    default: 5
+
+tasks:
+  - id: CheckCircuit
+    flows: [TryCall, ReturnFallback]
+    condition: circuitState == "closed" -> TryCall
+    default: ReturnFallback
+    split: xor
+    join: xor
+    description: "Check circuit state"
+
+  - id: TryCall
+    flows: [CallSuccess, CallFailed]
+    split: xor
+    join: xor
+    description: "Attempt service call"
+
+  - id: CallSuccess
+    flows: [ReturnResult]
+    split: xor
+    join: xor
+    description: "Call succeeded"
+
+  - id: CallFailed
+    flows: [CheckThreshold]
+    split: xor
+    join: xor
+    description: "Call failed"
+
+  - id: CheckThreshold
+    flows: [OpenCircuit, ReturnFallback]
+    condition: failureCount >= failureThreshold -> OpenCircuit
+    default: ReturnFallback
+    split: xor
+    join: xor
+    description: "Check failure threshold"
+
+  - id: OpenCircuit
+    flows: [ReturnFallback]
+    split: xor
+    join: xor
+    description: "Open the circuit"
+
+  - id: ReturnFallback
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return fallback response"
+
+  - id: ReturnResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return successful result"

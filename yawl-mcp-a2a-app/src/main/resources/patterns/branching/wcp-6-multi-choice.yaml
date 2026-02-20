@@ -1,0 +1,51 @@
+# WCP-6: Multi-Choice Pattern
+# Multiple outgoing flows can be activated simultaneously
+
+name: MultiChoicePattern
+uri: multi-choice.xml
+first: Decision
+
+variables:
+  - name: conditionA
+    type: xs:boolean
+    default: false
+  - name: conditionB
+    type: xs:boolean
+    default: false
+  - name: conditionC
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: Decision
+    flows: [TaskA, TaskB, TaskC]
+    split: or
+    join: xor
+    description: "Evaluate multiple conditions"
+
+  - id: TaskA
+    flows: [Merge]
+    condition: conditionA == true -> TaskA
+    split: xor
+    join: xor
+    description: "Path A execution"
+
+  - id: TaskB
+    flows: [Merge]
+    condition: conditionB == true -> TaskB
+    split: xor
+    join: xor
+    description: "Path B execution"
+
+  - id: TaskC
+    flows: [Merge]
+    condition: conditionC == true -> TaskC
+    split: xor
+    join: xor
+    description: "Path C execution"
+
+  - id: Merge
+    flows: [end]
+    split: xor
+    join: or
+    description: "Synchronize multiple paths"

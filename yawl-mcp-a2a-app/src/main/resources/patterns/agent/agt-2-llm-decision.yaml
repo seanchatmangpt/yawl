@@ -1,0 +1,61 @@
+# AGT-2: LLM Decision Pattern
+# Use LLM to make routing decisions based on context
+
+name: LlmDecisionPattern
+uri: llm-decision.xml
+first: TaskA
+
+variables:
+  - name: query
+    type: xs:string
+  - name: context
+    type: xs:string
+  - name: decision
+    type: xs:string
+    default: ""
+  - name: confidence
+    type: xs:decimal
+    default: 0.0
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: xor
+    description: "Receive query and prepare context"
+
+  - id: TaskB
+    flows: [TaskC, TaskD, TaskE]
+    llmDecision: true
+    prompt: "Analyze the query and determine the best action path"
+    model: default
+    split: xor
+    join: xor
+    description: "LLM analyzes and decides routing"
+
+  - id: TaskC
+    flows: [TaskF]
+    split: xor
+    join: xor
+    condition: decision == "technical"
+    description: "Technical support path"
+
+  - id: TaskD
+    flows: [TaskF]
+    split: xor
+    join: xor
+    condition: decision == "billing"
+    description: "Billing inquiry path"
+
+  - id: TaskE
+    flows: [TaskF]
+    split: xor
+    join: xor
+    condition: decision == "general"
+    description: "General inquiry path"
+
+  - id: TaskF
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete request handling"

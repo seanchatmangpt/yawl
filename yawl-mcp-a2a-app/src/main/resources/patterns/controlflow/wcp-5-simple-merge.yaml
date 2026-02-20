@@ -1,0 +1,42 @@
+# WCP-5: Simple Merge Pattern
+# Merge two alternative branches without synchronization
+
+name: SimpleMergePattern
+uri: simple-merge.xml
+first: TaskA
+
+variables:
+  - name: transactionId
+    type: xs:string
+  - name: amount
+    type: xs:decimal
+  - name: path
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: TaskA
+    flows: [TaskB, TaskC]
+    condition: amount > 500 -> TaskB
+    default: TaskC
+    split: xor
+    join: xor
+    description: "Route based on amount"
+
+  - id: TaskB
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "High value path"
+
+  - id: TaskC
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Standard path"
+
+  - id: TaskD
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Merge point - continue with single thread"
