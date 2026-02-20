@@ -9,8 +9,8 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
  * @author Michael Adams
  * @date 24/8/20
  */
-public class YExceptionEvent extends YEvent {
-    
+public final class YExceptionEvent extends YEvent {
+
     public YExceptionEvent(YEventType eType, YIdentifier id) {
         super(eType, id);
     }

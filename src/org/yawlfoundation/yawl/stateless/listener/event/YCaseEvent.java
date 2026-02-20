@@ -13,7 +13,7 @@ import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
  * @author Michael Adams
  * @date 24/8/20
  */
-public class YCaseEvent extends YEvent {
+public final class YCaseEvent extends YEvent {
 
     private Set<YTask> _deadlockedTasks;
     private YNetRunner _runner;

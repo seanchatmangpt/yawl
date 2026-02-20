@@ -10,7 +10,7 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
  * @author Michael Adams
  * @date 24/8/20
  */
-public class YTimerEvent extends YEvent {
+public final class YTimerEvent extends YEvent {
 
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")

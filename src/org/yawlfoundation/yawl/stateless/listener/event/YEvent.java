@@ -11,7 +11,7 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
  * @author Michael Adams
  * @date 24/8/20
  */
-public abstract class YEvent {
+public abstract sealed class YEvent permits YCaseEvent, YExceptionEvent, YLogEvent, YTimerEvent, YWorkItemEvent {
 
     private final Instant _timeStamp;
     private final YIdentifier _caseID;
