@@ -922,6 +922,13 @@
                 <version>${bouncycastle.version}</version>
             </dependency>
 
+            <!-- Jasypt Spring Boot Starter (AES-256 property encryption) -->
+            <dependency>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-spring-boot-starter</artifactId>
+                <version>${jasypt.version}</version>
+            </dependency>
+
             <!-- ============================================================== -->
             <!-- 12. REST                                                       -->
             <!-- ============================================================== -->
