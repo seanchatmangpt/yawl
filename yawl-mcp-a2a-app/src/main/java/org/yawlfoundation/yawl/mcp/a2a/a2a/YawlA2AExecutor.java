@@ -35,11 +35,14 @@ import io.a2a.spec.Message;
 import io.a2a.spec.Part;
 import io.a2a.spec.TextPart;
 
+import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -352,86 +355,123 @@ public class YawlA2AExecutor implements AgentExecutor {
     /**
      * Internal service class for YAWL workflow operations.
      *
-     * <p>This class provides the actual integration with the YAWL engine
-     * using InterfaceB client.</p>
+     * <p>This class integrates with the YAWL engine via InterfaceB client,
+     * managing session lifecycle and delegating all operations to the real engine.</p>
      */
     private static class YawlWorkflowService {
-        private final String engineUrl;
+        private static final Logger SERVICE_LOGGER = LoggerFactory.getLogger(YawlWorkflowService.class);
+
+        private final InterfaceB_EnvironmentBasedClient client;
         private final String username;
         private final String password;
-        private final Executor executor;
-        private String sessionHandle;
+        private volatile String sessionHandle;
 
         public YawlWorkflowService(String engineUrl, String username, String password, Executor executor) {
-            this.engineUrl = engineUrl;
+            this.client = new InterfaceB_EnvironmentBasedClient(engineUrl + "/ib");
             this.username = username;
             this.password = password;
-            this.executor = executor;
         }
 
         public String launchCase(String specId, String caseData) throws IOException {
-            // Real implementation would use InterfaceB_EnvironmentBasedClient
-            // For now, generate a case ID
             ensureConnection();
-            return "case-" + UUID.randomUUID().toString().substring(0, 8);
+            String result = client.launchCase(specId, caseData, sessionHandle);
+            if (!client.successful(result)) {
+                throw new IOException("Failed to launch case for spec '" + specId + "': " + result);
+            }
+            return result;
         }
 
         public boolean cancelCase(String caseId) throws IOException {
             ensureConnection();
-            return true;
+            String result = client.cancelCase(caseId, sessionHandle);
+            return client.successful(result);
         }
 
         public Map<String, Object> checkoutWorkItem(String workitemId, String participantId) throws IOException {
             ensureConnection();
+            String result = client.checkOutWorkItem(workitemId, sessionHandle);
+            if (!client.successful(result)) {
+                throw new IOException("Failed to checkout work item '" + workitemId + "': " + result);
+            }
             return Map.of(
                 "workitemId", workitemId,
                 "participantId", participantId,
-                "data", "<data>work item data</data>",
-                "status", "offered"
+                "data", result,
+                "status", "executing"
             );
         }
 
         public boolean checkinWorkItem(String workitemId, String participantId, String results) throws IOException {
             ensureConnection();
-            return true;
+            String result = client.checkInWorkItem(workitemId, results, sessionHandle);
+            return client.successful(result);
         }
 
         public Map<String, Object> getCaseStatus(String caseId) throws IOException {
             ensureConnection();
+            String caseState = client.getCaseState(caseId, sessionHandle);
+            List<WorkItemRecord> workItems = client.getWorkItemsForCase(caseId, sessionHandle);
+            List<Map<String, Object>> wirMaps = workItems.stream()
+                .map(wir -> Map.<String, Object>of(
+                    "workitemId", wir.getID(),
+                    "status", wir.getStatus(),
+                    "taskId", wir.getTaskID()
+                ))
+                .toList();
             return Map.of(
                 "caseId", caseId,
-                "status", "running",
-                "workitems", List.<Map<String, Object>>of(),
+                "status", client.successful(caseState) ? caseState : "unknown",
+                "workitems", wirMaps,
                 "timestamp", java.time.Instant.now().toString()
             );
         }
 
         public List<Map<String, Object>> getWorkItemsForCase(String caseId) throws IOException {
             ensureConnection();
-            return List.of();
+            List<WorkItemRecord> workItems = client.getWorkItemsForCase(caseId, sessionHandle);
+            return workItems.stream()
+                .map(wir -> Map.<String, Object>of(
+                    "workitemId", wir.getID(),
+                    "caseId", wir.getCaseID(),
+                    "taskId", wir.getTaskID(),
+                    "status", wir.getStatus()
+                ))
+                .toList();
         }
 
         public List<Map<String, Object>> getAllWorkItems() throws IOException {
             ensureConnection();
-            return List.of();
+            List<WorkItemRecord> workItems = client.getCompleteListOfLiveWorkItems(sessionHandle);
+            return workItems.stream()
+                .map(wir -> Map.<String, Object>of(
+                    "workitemId", wir.getID(),
+                    "caseId", wir.getCaseID(),
+                    "taskId", wir.getTaskID(),
+                    "status", wir.getStatus()
+                ))
+                .toList();
         }
 
         public List<Map<String, Object>> listSpecifications() throws IOException {
             ensureConnection();
-            return List.of(
-                Map.of(
-                    "specId", "simple-process",
-                    "name", "Simple Process",
-                    "version", "1.0"
-                )
-            );
+            List<SpecificationData> specs = client.getSpecificationList(sessionHandle);
+            return specs.stream()
+                .map(spec -> Map.<String, Object>of(
+                    "specId", spec.getID().getIdentifier(),
+                    "name", spec.getName() != null ? spec.getName() : spec.getID().getIdentifier(),
+                    "version", spec.getSpecVersion() != null ? spec.getSpecVersion() : "0.1"
+                ))
+                .toList();
         }
 
         private void ensureConnection() throws IOException {
-            // In production, this would use InterfaceB_EnvironmentBasedClient
-            // to establish and maintain a session with the YAWL engine
-            if (sessionHandle == null) {
-                sessionHandle = "session-" + UUID.randomUUID().toString().substring(0, 8);
+            if (sessionHandle == null || !client.successful(sessionHandle)) {
+                SERVICE_LOGGER.debug("Establishing session with YAWL engine");
+                sessionHandle = client.connect(username, password);
+                if (!client.successful(sessionHandle)) {
+                    throw new IOException("Failed to connect to YAWL engine: " + sessionHandle);
+                }
+                SERVICE_LOGGER.info("Session established with YAWL engine");
             }
         }
     }

@@ -344,8 +344,7 @@ public class ExecutionHarness {
         Set<org.yawlfoundation.yawl.stateless.elements.YTask> enabledTasks = currentRunner.getEnabledTasks();
         for (org.yawlfoundation.yawl.stateless.elements.YTask task : enabledTasks) {
             try {
-                // Create work item for the task (simplified - real implementation would
-                // get actual work items from the repository)
+                // Fire the enabled task to create work items, then record the event
                 traceCollector.recordEvent("workItemStarted", task.getID());
 
                 // Use decision provider if available

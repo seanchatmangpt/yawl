@@ -94,7 +94,7 @@
  * // Get router for Spring integration
  * RouterFunction<ServerResponse> router = server.getRouterFunction();
  *
- * // Later...
+ * // When shutting down:
  * server.stop();
  * }</pre>
  *

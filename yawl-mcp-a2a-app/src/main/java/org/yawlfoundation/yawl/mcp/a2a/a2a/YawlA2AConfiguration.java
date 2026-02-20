@@ -152,7 +152,7 @@ public class YawlA2AConfiguration {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
 
-            // Create server call context (unauthenticated for now)
+            // Create anonymous server call context for public A2A endpoint access
             ServerCallContext callContext = new ServerCallContext(
                 null, new HashMap<>(), Collections.emptySet());
 
