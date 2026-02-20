@@ -67,7 +67,7 @@ public class YawlYamlConverter {
     /** XML Schema Instance namespace */
     protected static final String XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
 
-    private final YAMLMapper yamlMapper;
+    protected final YAMLMapper yamlMapper;
 
     public YawlYamlConverter() {
         this.yamlMapper = new YAMLMapper();
@@ -101,7 +101,7 @@ public class YawlYamlConverter {
     /**
      * Strip markdown code block wrappers (```yaml ... ``` or ``` ... ```).
      */
-    private String stripMarkdownCodeBlock(String text) {
+    protected String stripMarkdownCodeBlock(String text) {
         String trimmed = text.trim();
 
         // Check for opening code fence
@@ -136,6 +136,7 @@ public class YawlYamlConverter {
 
         xml.append("<specificationSet xmlns=\"").append(NAMESPACE).append("\" ")
            .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
+           .append("xsi:schemaLocation=\"").append(NAMESPACE).append(" ").append(NAMESPACE).append("/YAWL_Schema4.0.xsd\" ")
            .append("version=\"4.0\">\n");
         xml.append("  <specification uri=\"").append(escapeXml(uri)).append("\">\n");
         xml.append("    <name>").append(escapeXml(name)).append("</name>\n");
@@ -176,7 +177,9 @@ public class YawlYamlConverter {
 
             for (String flow : flows) {
                 xml.append("          <flowsInto>\n");
-                xml.append("            <nextElementRef id=\"").append(escapeXml(flow)).append("\"/>\n");
+                // Map "end" to output condition id "o-top"
+                String targetId = "end".equals(flow) ? "o-top" : flow;
+                xml.append("            <nextElementRef id=\"").append(escapeXml(targetId)).append("\"/>\n");
 
                 // Check if this is the conditional flow
                 if (condition != null && condition.contains("->")) {
@@ -199,16 +202,12 @@ public class YawlYamlConverter {
                 xml.append("          </flowsInto>\n");
             }
 
-            // Join/Split
-            String join = getString(task, "join", null);
-            String split = getString(task, "split", null);
+            // Join/Split (REQUIRED by ExternalTaskFactsType, default to xor)
+            String join = getString(task, "join", "xor");
+            String split = getString(task, "split", "xor");
 
-            if (join != null) {
-                xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
-            }
-            if (split != null) {
-                xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
-            }
+            xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
+            xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
 
             // Decomposition
             xml.append("          <decomposesTo id=\"").append(escapeXml(taskId))
@@ -224,13 +223,15 @@ public class YawlYamlConverter {
         xml.append("      </processControlElements>\n");
         xml.append("    </decomposition>\n");
 
-        // Decomposition definitions
+        // Decomposition definitions (WebServiceGatewayFactsType)
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId != null) {
                 xml.append("    <decomposition id=\"")
                    .append(escapeXml(taskId)).append("Decomposition\" ")
-                   .append("xsi:type=\"WebServiceGatewayFactsType\"/>\n");
+                   .append("xsi:type=\"WebServiceGatewayFactsType\">\n");
+                xml.append("      <name>").append(escapeXml(taskId)).append("</name>\n");
+                xml.append("    </decomposition>\n");
             }
         }
 
@@ -242,7 +243,7 @@ public class YawlYamlConverter {
 
     // --- Helper methods ---
 
-    private String getString(Map<String, Object> map, String key, String defaultValue) {
+    protected String getString(Map<String, Object> map, String key, String defaultValue) {
         Object value = map.get(key);
         if (value == null) {
             return defaultValue;
@@ -251,7 +252,7 @@ public class YawlYamlConverter {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> getTasks(Map<String, Object> spec) {
+    protected List<Map<String, Object>> getTasks(Map<String, Object> spec) {
         Object tasksObj = spec.get("tasks");
         if (tasksObj instanceof List) {
             return (List<Map<String, Object>>) tasksObj;
@@ -260,7 +261,7 @@ public class YawlYamlConverter {
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> getStringList(Map<String, Object> map, String key) {
+    protected List<String> getStringList(Map<String, Object> map, String key) {
         Object value = map.get(key);
         if (value instanceof List) {
             List<?> list = (List<?>) value;
@@ -275,7 +276,7 @@ public class YawlYamlConverter {
         return new ArrayList<>();
     }
 
-    private String escapeXml(String s) {
+    protected String escapeXml(String s) {
         if (s == null) {
             throw new IllegalArgumentException("String to escape cannot be null");
         }

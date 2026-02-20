@@ -181,13 +181,95 @@ public class PatternRegistry {
         registerPattern("ENT-8", "Nomination", "Nomination-based task assignment",
             Difficulty.INTERMEDIATE, PatternCategory.ENTERPRISE, "enterprise/ent-8-nomination.yaml");
 
-        // Agent Patterns (AGT-1-3)
+        // Agent Patterns (AGT-1-5)
         registerPattern("AGT-1", "Agent Assisted", "Human works with AI agent assistance",
             Difficulty.INTERMEDIATE, PatternCategory.AGENT, "agent/agt-1-agent-assisted.yaml");
         registerPattern("AGT-2", "LLM Decision", "Decision made by LLM-based agent",
             Difficulty.INTERMEDIATE, PatternCategory.AGENT, "agent/agt-2-llm-decision.yaml");
         registerPattern("AGT-3", "Human-Agent Handoff", "Handoff between human and agent",
             Difficulty.ADVANCED, PatternCategory.AGENT, "agent/agt-3-human-agent-handoff.yaml");
+        registerPattern("AGT-4", "Agent-to-Agent Handoff", "Transfer work between specialized agents with context preservation",
+            Difficulty.ADVANCED, PatternCategory.AGENT, "agent/agt-4-handoff.yaml");
+        registerPattern("AGT-5", "Multi-Agent Orchestration", "Coordinate multiple agents working on complex tasks",
+            Difficulty.EXPERT, PatternCategory.AGENT, "agent/agt-5-orchestration.yaml");
+
+        // Cancellation Patterns - Control Flow variants (WCP-19-CF, WCP-20-CF, WCP-22, WCP-23, WCP-25)
+        registerPattern("WCP-19-CF", "Cancel Task (Control Flow)", "Cancel a specific task via control flow cancellation region",
+            Difficulty.INTERMEDIATE, PatternCategory.CANCELLATION, "controlflow/wcp-19-cancel-task.yaml");
+        registerPattern("WCP-20-CF", "Cancel Case (Control Flow)", "Cancel entire workflow case via control flow trigger",
+            Difficulty.INTERMEDIATE, PatternCategory.CANCELLATION, "controlflow/wcp-20-cancel-case.yaml");
+        registerPattern("WCP-22", "Cancel Region", "Cancel all tasks in a specific region of the workflow",
+            Difficulty.INTERMEDIATE, PatternCategory.CANCELLATION, "controlflow/wcp-22-cancel-region.yaml");
+        registerPattern("WCP-23", "Cancel Multiple Instances", "Cancel all instances of a multi-instance task",
+            Difficulty.ADVANCED, PatternCategory.CANCELLATION, "controlflow/wcp-23-cancel-mi.yaml");
+        registerPattern("WCP-25", "Cancel and Complete MI", "Cancel remaining instances and force-complete a multi-instance task",
+            Difficulty.ADVANCED, PatternCategory.CANCELLATION, "controlflow/wcp-25-cancel-complete-mi.yaml");
+
+        // Iteration Patterns - Control Flow variants (WCP-28, WCP-29, WCP-30, WCP-31)
+        registerPattern("WCP-28", "Structured Loop (Control Flow)", "Loop with explicit structure and entry/exit conditions",
+            Difficulty.INTERMEDIATE, PatternCategory.ITERATION, "controlflow/wcp-28-structured-loop.yaml");
+        registerPattern("WCP-29", "Loop with Cancel Task", "Structured loop with ability to cancel a task within an iteration",
+            Difficulty.ADVANCED, PatternCategory.ITERATION, "controlflow/wcp-29-loop-cancel.yaml");
+        registerPattern("WCP-30", "Loop with Cancel Region", "Structured loop with ability to cancel a region of tasks",
+            Difficulty.ADVANCED, PatternCategory.ITERATION, "controlflow/wcp-30-loop-cancel-region.yaml");
+        registerPattern("WCP-31", "Loop with Complete MI", "Structured loop with ability to force-complete multi-instance tasks",
+            Difficulty.ADVANCED, PatternCategory.ITERATION, "controlflow/wcp-31-loop-complete-mi.yaml");
+
+        // Advanced Branching - Discriminator variant (WCP-36)
+        registerPattern("WCP-36", "Discriminator with Complete MI", "Discriminator that force-completes remaining multi-instance tasks after first completion",
+            Difficulty.ADVANCED, PatternCategory.ADVANCED_BRANCHING, "controlflow/wcp-36-discriminator-complete.yaml");
+
+        // Event-Driven Trigger Patterns (WCP-37, WCP-38, WCP-39, WCP-40)
+        registerPattern("WCP-37", "Local Trigger", "Trigger a task from an external event within the workflow scope",
+            Difficulty.INTERMEDIATE, PatternCategory.EVENT_DRIVEN, "eventdriven/wcp-37-local-trigger.yaml");
+        registerPattern("WCP-38", "Global Trigger", "Trigger from a global event broadcast across all workflow instances",
+            Difficulty.INTERMEDIATE, PatternCategory.EVENT_DRIVEN, "eventdriven/wcp-38-global-trigger.yaml");
+        registerPattern("WCP-39", "Reset Trigger", "Reset workflow state to a checkpoint on external trigger",
+            Difficulty.ADVANCED, PatternCategory.EVENT_DRIVEN, "eventdriven/wcp-39-reset-trigger.yaml");
+        registerPattern("WCP-40", "Reset Trigger with Cancel Region", "Reset workflow to checkpoint and cancel an active region",
+            Difficulty.ADVANCED, PatternCategory.EVENT_DRIVEN, "eventdriven/wcp-40-reset-cancel.yaml");
+
+        // Extended Structural Patterns (WCP-41, WCP-42, WCP-43)
+        registerPattern("WCP-41", "Blocked And-Split", "And-split that blocks until all branches are ready to proceed simultaneously",
+            Difficulty.ADVANCED, PatternCategory.EXTENDED, "extended/wcp-41-blocked-split.yaml");
+        registerPattern("WCP-42", "Critical Section", "Protected region enforcing mutually exclusive concurrent access via semaphore",
+            Difficulty.ADVANCED, PatternCategory.EXTENDED, "extended/wcp-42-critical-section.yaml");
+        registerPattern("WCP-43", "Critical Section with Cancel", "Critical section with cancellation capability for the protected region",
+            Difficulty.EXPERT, PatternCategory.EXTENDED, "extended/wcp-43-critical-cancel.yaml");
+
+        // Multi-Instance Patterns (WCP-24, WCP-26, WCP-27)
+        registerPattern("WCP-24", "Complete Multiple Instances", "Force-complete all active instances of a multi-instance task simultaneously",
+            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-24-complete-mi.yaml");
+        registerPattern("WCP-26", "Sequential MI Without A Priori Knowledge", "Sequential multi-instance where item count is determined dynamically during execution",
+            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-26-sequential-mi.yaml");
+        registerPattern("WCP-27", "Concurrent MI Without A Priori Knowledge", "Concurrent multi-instance where item count is discovered at runtime",
+            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-27-concurrent-mi.yaml");
+
+        // State-Based Patterns (WCP-32, WCP-33, WCP-34, WCP-35)
+        registerPattern("WCP-32", "Synchronizing Merge with Cancel", "Synchronize multiple parallel branches with optional region cancellation",
+            Difficulty.ADVANCED, PatternCategory.STATE_BASED, "statebased/wcp-32-sync-cancel.yaml");
+        registerPattern("WCP-33", "Generalized And-Join", "And-join that handles dynamically created parallel branches",
+            Difficulty.ADVANCED, PatternCategory.STATE_BASED, "statebased/wcp-33-generalized-join.yaml");
+        registerPattern("WCP-34", "Static Partial Join", "Join that proceeds after a fixed threshold of branches complete, cancelling the rest",
+            Difficulty.ADVANCED, PatternCategory.STATE_BASED, "statebased/wcp-34-static-partial-join.yaml");
+        registerPattern("WCP-35", "Dynamic Partial Join", "Join that proceeds after a runtime-calculated percentage of branches complete",
+            Difficulty.EXPERT, PatternCategory.STATE_BASED, "statebased/wcp-35-dynamic-partial-join.yaml");
+
+        // AI/ML Supplementary Patterns (WCP-60-ML, WCP-62-PP, WCP-63-FE)
+        registerPattern("WCP-60-ML", "ML Pipeline", "End-to-end machine learning training pipeline with data ingestion, training, evaluation, and registration",
+            Difficulty.ADVANCED, PatternCategory.AI_ML, "aiml/wcp-60-ml-pipeline.yaml");
+        registerPattern("WCP-62-PP", "Data Preprocessing", "Data preprocessing pipeline with schema validation, cleaning, normalization, and encoding",
+            Difficulty.INTERMEDIATE, PatternCategory.AI_ML, "aiml/wcp-62-preprocessing.yaml");
+        registerPattern("WCP-63-FE", "Feature Engineering", "Feature engineering pipeline generating polynomial, interaction, time, and text features",
+            Difficulty.ADVANCED, PatternCategory.AI_ML, "aiml/wcp-63-features.yaml");
+
+        // Enterprise Supplementary Patterns (ENT-9, ENT-10, ENT-11)
+        registerPattern("ENT-9", "Approval Workflow", "Amount-threshold approval with manager and director escalation paths",
+            Difficulty.BASIC, PatternCategory.ENTERPRISE, "enterprise/ent-approval.yaml");
+        registerPattern("ENT-10", "Delegation Workflow", "Task delegation with validation, transfer, and dual-notification of original and delegate",
+            Difficulty.INTERMEDIATE, PatternCategory.ENTERPRISE, "enterprise/ent-delegation.yaml");
+        registerPattern("ENT-11", "Escalation Workflow", "Time-based escalation with multi-level reassignment up to emergency action",
+            Difficulty.INTERMEDIATE, PatternCategory.ENTERPRISE, "enterprise/ent-escalation.yaml");
     }
 
     /**
