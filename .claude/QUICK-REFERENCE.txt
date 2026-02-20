@@ -1,0 +1,63 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                   YAWL v6.0.0 - HAIKU SPEED REFERENCE                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ BUILD COMMANDS ──────────────────────────────────────────────────────────┐
+│ make fast      # Compile only (30s)                                       │
+│ make build     # Full build (2m)                                          │
+│ make test      # Run tests                                                │
+│ make verify    # Verify all 5 blockers                                    │
+│ make clean     # Remove build artifacts                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ GIT SHORTCUTS ───────────────────────────────────────────────────────────┐
+│ git s          # Status (short)                                           │
+│ git l          # Log (last 10)                                            │
+│ git cp 'msg'   # Commit + push                                            │
+│ git psh        # Push to current branch                                   │
+│ git undo       # Undo last commit (keep changes)                          │
+│ git verify     # Run marketplace verification                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TENANCY INTEGRATION ─────────────────────────────────────────────────────┐
+│ // Set tenant context for request                                        │
+│ TenantContext ctx = new TenantContext(tenantId);                        │
+│ YEngine.setTenantContext(ctx);                                           │
+│ try { ctx.registerCase(caseID); ... }                                   │
+│ finally { YEngine.clearTenantContext(); }                               │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUOTA ENFORCEMENT ───────────────────────────────────────────────────────┐
+│ // Quotas: 8.3 hours/month, 10K compute units/month                     │
+│ try { meter.recordWorkflowUsage(customerId, ...) }                      │
+│ catch (IllegalStateException e) { return 429 Too Many Requests }        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ KEY FILES ───────────────────────────────────────────────────────────────┐
+│ TenantContext.java          → Multi-tenancy isolation                   │
+│ UsageMeter.java             → Quota enforcement                         │
+│ YEngine.java                → Tenant validation checks                  │
+│ PRIVACY.md                  → GDPR compliance                           │
+│ SLA.md                       → Service guarantees                       │
+│ DPA.md                       → Data processing agreement                │
+│ .claude/DX-QUICK-START.md   → Full developer guide                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ VERIFICATION ────────────────────────────────────────────────────────────┐
+│ python3 scripts/verify-marketplace.py                                   │
+│ ✓ 18-point automated check                                              │
+│ ✓ All 5 blockers verified                                               │
+│ ✓ < 1 second execution                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUICK HELP ──────────────────────────────────────────────────────────────┐
+│ make help      # Show all targets                                        │
+│ git --version  # Check git                                               │
+│ mvn -v         # Check Maven                                             │
+│ java -version  # Check Java                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+STATUS: ✅ READY FOR GCP MARKETPLACE SUBMISSION
+BRANCH: claude/gcp-marketplace-launch-BLpij
+LAST UPDATED: 2026-02-20
+
