@@ -54,7 +54,11 @@ Pre-built templates for common business workflow scenarios.
 ## Agent Patterns
 
 Patterns for integrating autonomous agents and LLMs into YAWL workflows.
-These patterns require YAWL Schema 6.0 and the `<agentBinding>` element.
+> **STATUS:** Agent patterns require YAWL Schema 6.0 (PLANNED).
+> These patterns will be available when Schema 6.0 is implemented.
+
+These patterns enable integrating autonomous agents and LLMs into YAWL workflows.
+When YAWL Schema 6.0 is released, they will support the `<agentBinding>` element.
 
 | ID | Name | Complexity | Typical Use Case |
 |----|------|-----------|-----------------|
@@ -136,7 +140,8 @@ For the documentation standard used in each `README.md`, see
 
 New patterns must:
 1. Demonstrate a distinct workflow concern not covered by existing patterns
-2. Include a complete `template.yawl` that validates against `YAWL_Schema6.0.xsd`
+2. Include a complete `template.yawl` that validates against `YAWL_Schema4.0.xsd`
+   (Agent pattern templates will validate against YAWL_Schema6.0.xsd once released)
 3. Include at least one `example.yawl` and a `test-case.json`
 4. Be added to `registry.json` with all required fields
 5. Pass `mvn test -Dtest=PatternLibraryTest` before merging
@@ -148,7 +153,7 @@ New patterns must:
 - **Workflow Patterns Website**: https://www.workflowpatterns.com/
 - **van der Aalst et al. (2003)**: Workflow Patterns. LNCS 2626.
 - **YAWL Book (2009)**: Modern Business Process Automation. Springer.
-- **YAWL Schema 6.0**: [schema/YAWL_Schema6.0.xsd](../../schema/)
+- **YAWL Schema Reference**: [YAWL_Schema4.0.xsd](../../schema/YAWL_Schema4.0.xsd) (current production). See [ADR-013](../../architecture/decisions/ADR-013-schema-versioning-strategy.md) for planned Schema 6.0 roadmap.
 
 ---
 
