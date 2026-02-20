@@ -1,9 +1,52 @@
 # YAWL Spring Boot Actuator Configuration
 # Cloud-native health, readiness, and liveness endpoints
 
+# Jasypt Property Encryption Configuration
+jasypt:
+  encryptor:
+    algorithm: PBEWithHMACSHA512AndAES_256
+    password: ${JASYPT_ENCRYPTOR_PASSWORD:dev-password}
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+    key-obtention-iterations: 1000
+    pool-size: 8
+
 spring:
   application:
     name: yawl-engine
+
+  # Spring Cloud Sleuth configuration for distributed tracing
+  sleuth:
+    # Trace sampling: 10% by default (0.1), adjust for production
+    sampler:
+      probability: 0.1
+    # Propagation format: W3C standard + B3 legacy support
+    propagation:
+      type: W3C,B3
+    # Include trace ID and span ID in logs via MDC
+    span-in-logs: true
+    # Propagation keys to include in baggage
+    propagation-keys:
+      - trace_id
+      - span_id
+      - user_id
+
+  # OpenTelemetry configuration
+  otel:
+    sdk:
+      disabled: false
+    exporter:
+      otlp:
+        # OTLP collector endpoint (e.g., http://localhost:4317 for local Jaeger)
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+        # Timeout for OTLP exporter
+        timeout: 30s
+    service:
+      name: yawl-engine
+      version: 6.0.0
+    resource:
+      attributes:
+        service.namespace: org.yawlfoundation
+        deployment.environment: ${ENVIRONMENT:development}
 
 management:
   endpoints:
@@ -27,7 +70,7 @@ management:
           include: livenessHealthIndicator
           show-details: always
         readiness:
-          include: readinessHealthIndicator,yEngineHealthIndicator,yDatabaseHealthIndicator
+          include: readinessHealthIndicator,yEngineHealthIndicator,yDatabaseHealthIndicator,tracingHealthIndicator
           show-details: always
 
     metrics:

@@ -1,0 +1,159 @@
+# YAWL Spring Cloud Config - Shared Configuration
+# Applied to all profiles and environments
+# Override in application-{profile}.yml for profile-specific settings
+
+spring:
+  application:
+    name: yawl-engine
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate.format_sql: true
+      hibernate.use_sql_comments: true
+      hibernate.jdbc.batch_size: 20
+      hibernate.order_inserts: true
+      hibernate.order_updates: true
+
+  # Datasource Configuration
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# Management and Actuator Configuration
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,metrics,prometheus,info,env,refresh,configprops
+      path-mapping:
+        health: health
+    enabled-by-default: true
+
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+      show-components: always
+      probes:
+        enabled: true
+
+  health:
+    defaults:
+      enabled: true
+    diskspace:
+      threshold: 10MB
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        yawl.case.execution.time: true
+        yawl.workitem.execution.time: true
+
+# Server Configuration
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+
+# Logging Configuration (base - overridden in profiles)
+logging:
+  level:
+    root: INFO
+    org.yawlfoundation.yawl: INFO
+    org.springframework.boot: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Flyway Configuration
+flyway:
+  enabled: true
+  validate-on-migrate: true
+  baseline-on-migrate: false
+  out-of-order: false
+  schema-history-table: flyway_schema_history
+
+# Resilience4j Configuration - Rate Limiting
+resilience4j:
+  ratelimiter:
+    configs:
+      default:
+        limit-refresh-period: 1m
+        limit-for-period: 100
+        timeout-duration: 5s
+        register-health-indicator: true
+    instances:
+      yawl-api:
+        base-config: default
+        limit-for-period: 200
+      mcp-service:
+        base-config: default
+        limit-for-period: 50
+
+  # Circuit Breaker Configuration
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2000ms
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 30s
+        register-health-indicator: true
+    instances:
+      yawl-db:
+        base-config: default
+        failure-rate-threshold: 50
+      external-service:
+        base-config: default
+        failure-rate-threshold: 70
+
+  # Retry Configuration
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 100ms
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.ConnectException
+    instances:
+      yawl-api:
+        base-config: default
+        max-attempts: 3
+
+  # Bulkhead Configuration
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: 100
+        max-wait-duration: 10ms
+        register-health-indicator: true
+    instances:
+      yawl-executor:
+        base-config: default
+        max-concurrent-calls: 50
+
+# Config Server Properties (for clients connecting to config server)
+config:
+  server:
+    enabled: false
+    git-uri: .cloud/config
+    git-default-label: main
+    encryption-key: ${JASYPT_MASTER_KEY:}
+    security-enabled: false

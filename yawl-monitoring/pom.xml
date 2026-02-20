@@ -86,12 +86,37 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
-        <!-- micrometer-registry-prometheus:1.16.3 requires prometheus-metrics-exposition-textformats:1.4.3
-             which is not locally cached; excluded to allow offline builds -->
-        <!-- <dependency>
+        <!-- Resilience4j native Micrometer integration: registers resilience4j metrics automatically -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-micrometer</artifactId>
+        </dependency>
+        <!-- Resilience4j patterns (optional in this module, but needed for metrics binding) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-ratelimiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-bulkhead</artifactId>
+        </dependency>
+        <!-- micrometer-registry-prometheus: now available with prometheus-metrics-core -->
+        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency> -->
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-core</artifactId>
+        </dependency>
         <!-- opentelemetry-exporter-prometheus version 1.59.0-alpha requires OTEL 1.59.0
              but this project uses 1.52.0; prometheus export handled via micrometer instead -->
         <!-- <dependency>

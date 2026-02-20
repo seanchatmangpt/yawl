@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  YAWL v6.0 Logback Configuration with Logstash Integration
+  Spring Boot profile-aware configuration for JSON logging to ELK stack.
+
+  Features:
+  - LogstashEncoder for Logstash/ELK integration in production
+  - Sleuth trace ID and span ID integration
+  - Resilience4j event context enrichment
+  - MDC-based structured logging with application context
+  - Profile-conditional JSON output (production only)
+  - Backward compatible with existing console and file appenders
+
+  Profiles:
+  - production: JSON output for ELK stack ingestion
+  - development: Pattern-based console and file output (default)
+-->
+<configuration>
+    <!-- Import Spring Boot's default logback configuration for base setup -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Property definitions -->
+    <property name="LOG_DIR" value="${LOG_FILE_DIR:-${LOG_PATH:-${LOG_TEMP_DIR:-${java.io.tmpdir:-/tmp}}/spring.log}}/logs}"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- Spring profile definitions for conditional logging -->
+    <springProfile name="!production">
+        <!-- Development profile: traditional pattern-based logging -->
+
+        <!-- Console Appender (Development) -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <target>System.out</target>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>INFO</level>
+            </filter>
+        </appender>
+
+        <!-- Main File Appender (rotating) -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/yawl.log</file>
+            <append>true</append>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/yawl.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <!-- Error File Appender (errors only) -->
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/yawl-error.log</file>
+            <append>true</append>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/yawl-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>500MB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <!-- Async wrapper for performance -->
+        <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="FILE"/>
+            <queueSize>512</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <includeCallerData>false</includeCallerData>
+        </appender>
+
+        <!-- Root Logger Configuration (Development) -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+
+        <!-- YAWL Core -->
+        <logger name="org.yawlfoundation.yawl.engine" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="org.yawlfoundation.yawl.stateless" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.elements" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.exceptions" level="DEBUG"/>
+
+        <!-- Integration & Services -->
+        <logger name="org.yawlfoundation.yawl.integration" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.resourcing" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.worklet" level="INFO"/>
+
+        <!-- Observability -->
+        <logger name="org.yawlfoundation.yawl.observability" level="DEBUG"/>
+
+        <!-- Third-party Libraries -->
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="org.apache.commons" level="WARN"/>
+        <logger name="com.fasterxml.jackson" level="WARN"/>
+
+    </springProfile>
+
+    <!-- Production Profile: JSON logging for ELK/Logstash -->
+    <springProfile name="production">
+
+        <!-- Logstash JSON File Appender (Production) -->
+        <appender name="LOGSTASH_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/yawl-logstash.log</file>
+            <append>true</append>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- Version for Logstash pipeline compatibility -->
+                <version>1</version>
+
+                <!-- Include standard fields -->
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <version>@version</version>
+                    <message>message</message>
+                    <logger>logger_name</logger>
+                    <thread>thread_name</thread>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                </fieldNames>
+
+                <!-- Custom fields to include in every log entry -->
+                <customFields>
+                    {
+                        "service": "yawl-engine",
+                        "environment": "${ENVIRONMENT:-production}",
+                        "version": "6.0.0-Alpha"
+                    }
+                </customFields>
+
+                <!-- Include MDC fields (application context enrichment) -->
+                <includeMdcKeyName>true</includeMdcKeyName>
+
+                <!-- Include caller data for stack trace support -->
+                <includeCallerData>true</includeCallerData>
+
+                <!-- Include exception stack traces -->
+                <includeStackTrace>true</includeStackTrace>
+
+                <!-- Sleuth trace ID integration -->
+                <includeMdc>true</includeMdc>
+
+                <!-- Pretty print JSON for debugging (disable in production for performance) -->
+                <prettyPrint>false</prettyPrint>
+
+                <!-- Write newline after each log entry for streaming ingestion -->
+                <immediateFlush>true</immediateFlush>
+            </encoder>
+
+            <!-- Rolling policy for Logstash files -->
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/yawl-logstash.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>500MB</maxFileSize>
+                <maxHistory>60</maxHistory>
+                <totalSizeCap>5GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <!-- Async wrapper for Logstash appender (high-throughput) -->
+        <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="LOGSTASH_FILE"/>
+            <queueSize>1024</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <includeCallerData>false</includeCallerData>
+        </appender>
+
+        <!-- Console Appender (Production - minimal output) -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <target>System.out</target>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>WARN</level>
+            </filter>
+        </appender>
+
+        <!-- Root Logger Configuration (Production) -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_LOGSTASH"/>
+        </root>
+
+        <!-- YAWL Core -->
+        <logger name="org.yawlfoundation.yawl.engine" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.stateless" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.elements" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.exceptions" level="WARN"/>
+
+        <!-- Integration & Services -->
+        <logger name="org.yawlfoundation.yawl.integration" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.resourcing" level="INFO"/>
+        <logger name="org.yawlfoundation.yawl.worklet" level="INFO"/>
+
+        <!-- Observability -->
+        <logger name="org.yawlfoundation.yawl.observability" level="INFO"/>
+
+        <!-- Suppress verbose third-party logging in production -->
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.springframework.cloud" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        <logger name="org.apache.commons" level="ERROR"/>
+        <logger name="com.fasterxml.jackson" level="WARN"/>
+
+    </springProfile>
+
+</configuration>

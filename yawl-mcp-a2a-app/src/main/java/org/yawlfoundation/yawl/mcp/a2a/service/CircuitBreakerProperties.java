@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
  * Configuration properties for MCP client circuit breaker patterns.
  *
  * <p>Binds to {@code yawl.mcp.resilience.*} properties in application.yml.
- * Provides type-safe configuration for circuit breaker, retry, and fallback behaviors.</p>
+ * Provides type-safe configuration for circuit breaker, retry, timeout limiter, and fallback behaviors.</p>
  *
  * <h2>Configuration Example</h2>
  * <pre>{@code
@@ -31,6 +31,9 @@ import org.springframework.validation.annotation.Validated;
  *         wait-duration: 500ms
  *         exponential-backoff-multiplier: 2.0
  *         jitter-factor: 0.5
+ *       timeout:
+ *         enabled: true
+ *         timeout-seconds: 30
  *       fallback:
  *         enabled: true
  *         cache-ttl-seconds: 60
@@ -47,7 +50,7 @@ public record CircuitBreakerProperties(
     /**
      * Enable resilience patterns for MCP client.
      * When enabled, the MCP client wrapper applies circuit breaker,
-     * retry with jitter, and fallback strategies.
+     * retry with jitter, timeout limiter, and fallback strategies.
      *
      * @return true if resilience patterns are enabled
      */
@@ -62,6 +65,11 @@ public record CircuitBreakerProperties(
      * Retry configuration.
      */
     RetryConfig retry,
+
+    /**
+     * Timeout limiter configuration.
+     */
+    TimeoutConfig timeout,
 
     /**
      * Fallback configuration.
@@ -96,6 +104,7 @@ public record CircuitBreakerProperties(
             true,
             CircuitBreakerConfig.defaults(),
             RetryConfig.defaults(),
+            TimeoutConfig.defaults(),
             FallbackConfig.defaults()
         );
     }
@@ -110,6 +119,7 @@ public record CircuitBreakerProperties(
             false,
             CircuitBreakerConfig.defaults(),
             RetryConfig.defaults(),
+            TimeoutConfig.defaults(),
             FallbackConfig.disabled()
         );
     }
@@ -282,6 +292,40 @@ public record CircuitBreakerProperties(
                 DEFAULT_BACKOFF_MULTIPLIER,
                 DEFAULT_JITTER_FACTOR
             );
+        }
+    }
+
+    /**
+     * Timeout limiter specific configuration.
+     */
+    public record TimeoutConfig(
+        /**
+         * Enable timeout limiter pattern.
+         * When enabled, all MCP operations are bounded by an execution time limit.
+         * Default: true
+         *
+         * @return true if timeout limiter is enabled
+         */
+        boolean enabled,
+
+        /**
+         * Timeout duration in seconds for MCP client operations.
+         * Applies to entire operation chain (circuit breaker + retry + execution).
+         * Default: 30 seconds
+         *
+         * @return timeout duration in seconds
+         */
+        @Min(1) @Max(600)
+        int timeoutSeconds
+
+    ) {
+        /**
+         * Creates default timeout configuration.
+         *
+         * @return default TimeoutConfig instance
+         */
+        public static TimeoutConfig defaults() {
+            return new TimeoutConfig(true, 30);
         }
     }
 

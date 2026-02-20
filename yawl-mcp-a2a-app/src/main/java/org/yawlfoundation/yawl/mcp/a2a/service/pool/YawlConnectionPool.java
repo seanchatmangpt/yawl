@@ -18,6 +18,11 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.service.pool;
 
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.bulkhead.BulkheadConfig;
+import io.github.resilience4j.bulkhead.BulkheadRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
@@ -27,7 +32,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.mcp.a2a.service.metrics.MetricsService;
 
 import jakarta.annotation.PreDestroy;
 
@@ -38,24 +42,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Connection pool for YAWL InterfaceB clients.
+ * Connection pool for YAWL InterfaceB clients with Resilience4j Bulkhead protection.
  *
  * <p>This class provides a thread-safe connection pool for managing
- * YAWL client connections using Apache Commons Pool2. The pool
- * includes metrics integration and monitoring capabilities.</p>
+ * YAWL client connections using Apache Commons Pool2, with Resilience4j Bulkhead
+ * for concurrent access control and standardized metrics via Micrometer.</p>
  *
  * <h2>Pool Features</h2>
  * <ul>
  *   <li><strong>Object Pooling</strong>: Efficiently reuses YAWL connections</li>
+ *   <li><strong>Bulkhead Isolation</strong>: Limits concurrent borrows via Bulkhead semaphore</li>
  *   <li><strong>Validation</strong>: Validates connections on borrow and return</li>
  *   <li><strong>Eviction</strong>: Evicts idle connections to maintain pool health</li>
- *   <li><strong>Metrics</strong>: Tracks pool usage and performance</li>
+ *   <li><strong>Metrics</strong>: Exposes pool usage via Micrometer/Resilience4j</li>
  *   <li><strong>Monitoring</strong>: Provides health checks and statistics</li>
  * </ul>
  *
  * <h2>Usage Example</h2>
  * <pre>{@code
- * // Borrow a connection
+ * // Borrow a connection (wrapped with bulkhead)
  * InterfaceB_EnvironmentBasedClient client = connectionPool.borrowObject();
  *
  * // Use the connection
@@ -72,6 +77,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 6.0.0
  * @see GenericObjectPool
  * @see YawlPooledConnectionFactory
+ * @see Bulkhead
  */
 @Component
 public class YawlConnectionPool {
@@ -82,7 +88,7 @@ public class YawlConnectionPool {
     private PoolConfiguration poolConfiguration;
 
     @Autowired(required = false)
-    private MetricsService metricsService;
+    private MeterRegistry meterRegistry;
 
     @Value("${yawl.engine.url:http://localhost:8080/yawl}")
     private String yawlEngineUrl;
@@ -97,24 +103,24 @@ public class YawlConnectionPool {
     private int connectionTimeout;
 
     private final Map<String, GenericObjectPool<InterfaceB_EnvironmentBasedClient>> pools = new ConcurrentHashMap<>();
+    private final Map<String, Bulkhead> bulkheads = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> borrowCounts = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> returnCounts = new ConcurrentHashMap<>();
-    private final Map<String, AtomicLong> validationCounts = new ConcurrentHashMap<>();
     private final Map<String, Duration> totalBorrowTime = new ConcurrentHashMap<>();
     private volatile boolean initialized = false;
 
     /**
-     * Initializes the connection pool.
+     * Initializes the connection pool with Bulkhead protection.
      *
-     * <p>This method creates the object pool with the configured settings
-     * and prepares it for use.</p>
+     * <p>This method creates the object pool with configured settings
+     * and wraps it with a Resilience4j Bulkhead for concurrency control.</p>
      */
     public synchronized void initialize() {
         if (initialized) {
             return;
         }
 
-        LOGGER.info("Initializing YAWL connection pool");
+        LOGGER.info("Initializing YAWL connection pool with Bulkhead");
 
         // Create pool configuration
         GenericObjectPoolConfig<InterfaceB_EnvironmentBasedClient> poolConfig = createPoolConfig();
@@ -126,24 +132,49 @@ public class YawlConnectionPool {
         // Create pool
         GenericObjectPool<InterfaceB_EnvironmentBasedClient> pool = new GenericObjectPool<>(factory, poolConfig);
 
-        // Register pool
+        // Create bulkhead to limit concurrent borrows
+        BulkheadConfig bulkheadConfig = BulkheadConfig.custom()
+            .maxConcurrentCalls(poolConfig.getMaxTotal())
+            .maxWaitDuration(Duration.ofMillis(connectionTimeout))
+            .build();
+
+        BulkheadRegistry bulkheadRegistry = BulkheadRegistry.ofDefaults();
+        Bulkhead bulkhead = bulkheadRegistry.bulkhead("yawl-connection-pool", bulkheadConfig);
+
+        // Register bulkhead metrics if meter registry available
+        if (meterRegistry == null) {
+            meterRegistry = new SimpleMeterRegistry();
+        }
+
+        io.github.resilience4j.micrometer.tagged.TaggedBulkheadMetrics
+            .ofBulkheadRegistry(bulkheadRegistry)
+            .bindTo(meterRegistry);
+
+        // Register event listeners
+        bulkhead.getEventPublisher()
+            .onCallRejected(event ->
+                LOGGER.warn("Connection borrow rejected by bulkhead: {}", event.getBulkheadName()))
+            .onError(event ->
+                LOGGER.warn("Error in bulkhead: {}", event.getThrowable().getMessage()));
+
+        // Register pool and bulkhead
         pools.put("default", pool);
+        bulkheads.put("default", bulkhead);
         borrowCounts.put("default", new AtomicLong(0));
         returnCounts.put("default", new AtomicLong(0));
-        validationCounts.put("default", new AtomicLong(0));
         totalBorrowTime.put("default", Duration.ZERO);
 
         initialized = true;
 
-        LOGGER.info("YAWL connection pool initialized with config: maxTotal={}, maxIdle={}, minIdle={}",
-                   poolConfig.getMaxTotal(), poolConfig.getMaxIdle(), poolConfig.getMinIdle());
+        LOGGER.info("YAWL connection pool initialized with Bulkhead: maxTotal={}, maxConcurrent={}, timeout={}ms",
+                   poolConfig.getMaxTotal(), bulkheadConfig.getMaxConcurrentCalls(), connectionTimeout);
     }
 
     /**
-     * Borrows an InterfaceB_EnvironmentBasedClient from the pool.
+     * Borrows an InterfaceB_EnvironmentBasedClient from the pool with Bulkhead protection.
      *
      * @return an InterfaceB_EnvironmentBasedClient instance
-     * @throws Exception if unable to borrow an object
+     * @throws Exception if unable to borrow an object or bulkhead is full
      */
     public InterfaceB_EnvironmentBasedClient borrowObject() throws Exception {
         if (!initialized) {
@@ -151,12 +182,22 @@ public class YawlConnectionPool {
         }
 
         GenericObjectPool<InterfaceB_EnvironmentBasedClient> pool = pools.get("default");
+        Bulkhead bulkhead = bulkheads.get("default");
+
         if (pool == null) {
             throw new IllegalStateException("Connection pool not initialized");
         }
+        if (bulkhead == null) {
+            throw new IllegalStateException("Bulkhead not initialized");
+        }
 
+        // Wrap borrow in bulkhead
         Instant startTime = Instant.now();
-        InterfaceB_EnvironmentBasedClient client = pool.borrowObject();
+
+        InterfaceB_EnvironmentBasedClient client = Bulkhead.decorateCallable(
+            bulkhead,
+            pool::borrowObject
+        ).call();
 
         // Update metrics
         AtomicLong borrowCount = borrowCounts.get("default");
@@ -169,12 +210,8 @@ public class YawlConnectionPool {
             .plus(borrowDuration);
         totalBorrowTime.put("default", totalTime);
 
-        if (metricsService != null) {
-            metricsService.recordPoolConnectionCreated("default");
-            metricsService.recordPoolWaitDuration("default", borrowDuration);
-        }
-
-        LOGGER.debug("Borrowed InterfaceB_EnvironmentBasedClient, pool size: {}", pool.getNumActive());
+        LOGGER.debug("Borrowed InterfaceB_EnvironmentBasedClient, pool active: {}, available bulkhead: {}",
+                    pool.getNumActive(), bulkhead.getMetrics().getAvailableConcurrentCalls());
         return client;
     }
 
@@ -202,12 +239,12 @@ public class YawlConnectionPool {
                 returnCount.incrementAndGet();
             }
 
-            LOGGER.debug("Returned InterfaceB_EnvironmentBasedClient, pool size: {}", pool.getNumActive());
+            Bulkhead bulkhead = bulkheads.get("default");
+            LOGGER.debug("Returned InterfaceB_EnvironmentBasedClient, pool active: {}, bulkhead available: {}",
+                        pool.getNumActive(),
+                        bulkhead != null ? bulkhead.getMetrics().getAvailableConcurrentCalls() : "N/A");
         } catch (Exception e) {
             LOGGER.error("Failed to return InterfaceB_EnvironmentBasedClient to pool", e);
-            if (metricsService != null) {
-                metricsService.recordError("connection_pool", "return_failed");
-            }
         }
     }
 
@@ -263,7 +300,7 @@ public class YawlConnectionPool {
     }
 
     /**
-     * Clears the pool and destroys all objects.
+     * Clears the pool, bulkheads, and destroys all objects.
      */
     @PreDestroy
     public synchronized void close() {
@@ -278,10 +315,18 @@ public class YawlConnectionPool {
             }
         });
 
+        bulkheads.forEach((name, bulkhead) -> {
+            try {
+                LOGGER.info("Closed bulkhead: {}", name);
+            } catch (Exception e) {
+                LOGGER.error("Failed to close bulkhead: {}", name, e);
+            }
+        });
+
         pools.clear();
+        bulkheads.clear();
         borrowCounts.clear();
         returnCounts.clear();
-        validationCounts.clear();
         totalBorrowTime.clear();
         initialized = false;
 
@@ -289,9 +334,9 @@ public class YawlConnectionPool {
     }
 
     /**
-     * Gets pool statistics.
+     * Gets pool and bulkhead statistics.
      *
-     * @return map of pool statistics
+     * @return map of pool and concurrency statistics
      */
     public Map<String, Object> getStatistics() {
         Map<String, Object> stats = new ConcurrentHashMap<>();
@@ -304,6 +349,14 @@ public class YawlConnectionPool {
                 stats.put("maxTotal", pool.getMaxTotal());
                 stats.put("maxIdle", pool.getMaxIdle());
                 stats.put("minIdle", pool.getMinIdle());
+            }
+
+            Bulkhead bulkhead = bulkheads.get("default");
+            if (bulkhead != null) {
+                var metrics = bulkhead.getMetrics();
+                stats.put("bulkheadAvailableCalls", metrics.getAvailableConcurrentCalls());
+                stats.put("bulkheadMaxConcurrentCalls", metrics.getMaxConcurrentCalls());
+                stats.put("bulkheadWaitingThreads", metrics.getWaitingThreadsCount());
             }
 
             AtomicLong borrowCount = borrowCounts.get("default");

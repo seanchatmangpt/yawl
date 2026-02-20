@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -16,6 +18,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.decorators.Decorators;
+import io.github.resilience4j.timelimiter.TimeLimiter;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
@@ -25,7 +31,7 @@ import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
- * Resilient wrapper for MCP client with circuit breaker and retry patterns.
+ * Resilient wrapper for MCP client with circuit breaker, retry, and timeout patterns.
  *
  * <p>This wrapper provides fault tolerance for MCP client operations by implementing:</p>
  * <ul>
@@ -33,6 +39,8 @@ import io.modelcontextprotocol.spec.McpSchema;
  *       failing servers. Transitions through CLOSED, OPEN, and HALF_OPEN states.</li>
  *   <li><strong>Retry with Jitter</strong>: Retries transient failures with exponential
  *       backoff and randomized jitter to avoid thundering herd.</li>
+ *   <li><strong>Time Limiter</strong>: Enforces explicit timeout bounds on all operations,
+ *       applying to the entire decorator chain (circuit breaker + retry + execution).</li>
  *   <li><strong>Fallback Strategies</strong>: Provides degraded responses when circuits
  *       are open, including caching and stale-while-revalidate patterns.</li>
  *   <li><strong>Metrics</strong>: Exposes circuit breaker state and call statistics.</li>
@@ -82,6 +90,7 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
     private final Map<String, Boolean> connectionStatus;
     private final McpCircuitBreakerRegistry circuitBreakerRegistry;
     private final Map<String, McpRetryWithJitter> retryRegistry;
+    private final TimeLimiterRegistry timeLimiterRegistry;
     private final CircuitBreakerProperties properties;
     private final McpFallbackHandler fallbackHandler;
     private final JacksonMcpJsonMapper jsonMapper;
@@ -97,14 +106,15 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
         this.connectionStatus = new ConcurrentHashMap<>();
         this.circuitBreakerRegistry = new McpCircuitBreakerRegistry(properties);
         this.retryRegistry = new ConcurrentHashMap<>();
+        this.timeLimiterRegistry = createTimeLimiterRegistry();
         this.fallbackHandler = new McpFallbackHandler(
             properties.fallback() != null
                 ? properties.fallback()
                 : CircuitBreakerProperties.FallbackConfig.defaults());
         this.jsonMapper = new JacksonMcpJsonMapper(new ObjectMapper());
 
-        LOGGER.info("Initialized resilient MCP client wrapper with circuit breaker enabled: {}",
-                   properties.enabled());
+        LOGGER.info("Initialized resilient MCP client wrapper with circuit breaker enabled: {}, timeout enabled: {}",
+                   properties.enabled(), properties.timeout() != null && properties.timeout().enabled());
     }
 
     /**
@@ -453,26 +463,89 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
         }
 
         try {
-            T result = retry.execute(serverId, operation, () -> {
-                try {
-                    T r = supplier.get();
-                    circuitBreakerRegistry.recordSuccess(serverId);
-                    return r;
-                } catch (Exception e) {
-                    circuitBreakerRegistry.recordFailure(serverId, e.getMessage());
-                    throw e;
-                }
-            });
+            T result = executeWithTimeout(serverId, operation, () ->
+                retry.execute(serverId, operation, () -> {
+                    try {
+                        T r = supplier.get();
+                        circuitBreakerRegistry.recordSuccess(serverId);
+                        return r;
+                    } catch (Exception e) {
+                        circuitBreakerRegistry.recordFailure(serverId, e.getMessage());
+                        // Try fallback decorator for exception handling and cache lookup
+                        io.github.resilience4j.fallback.Fallback<T> fallbackDecorator =
+                            fallbackHandler.getFallbackDecorator(serverId, operation);
+                        try {
+                            return fallbackDecorator.execute(() -> { throw e; });
+                        } catch (Exception fallbackException) {
+                            LOGGER.warn("Fallback also failed for server={}, operation={}: {}",
+                                       serverId, operation, fallbackException.getMessage());
+                            throw fallbackException;
+                        }
+                    }
+                })
+            );
 
             // Cache successful result for potential fallback
             fallbackHandler.cacheResult(serverId, operation, result);
 
             return result;
+        } catch (TimeoutException e) {
+            LOGGER.error("MCP operation timed out: server={}, operation={}", serverId, operation);
+            circuitBreakerRegistry.recordFailure(serverId, "Operation timeout");
+            throw new McpClientException(
+                "Operation timed out after " + properties.timeout().timeoutSeconds() + " seconds",
+                serverId, operation, e);
         } catch (McpClientException e) {
             LOGGER.error("MCP operation failed after retries: server={}, operation={}, error={}",
                         serverId, operation, e.getMessage());
             throw e;
         }
+    }
+
+    private <T> T executeWithTimeout(String serverId, String operation, Callable<T> callable) throws TimeoutException {
+        TimeLimiter timeLimiter = getOrCreateTimeLimiter(serverId);
+        if (timeLimiter == null) {
+            try {
+                return callable.call();
+            } catch (TimeoutException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        try {
+            return timeLimiter.executeCallable(callable);
+        } catch (TimeoutException e) {
+            throw e;
+        } catch (Exception e) {
+            // Check if the cause is a timeout
+            if (e.getCause() instanceof TimeoutException) {
+                throw (TimeoutException) e.getCause();
+            }
+            // Otherwise wrap as RuntimeException
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TimeLimiterRegistry createTimeLimiterRegistry() {
+        CircuitBreakerProperties.TimeoutConfig timeoutConfig = properties.timeout() != null
+            ? properties.timeout()
+            : CircuitBreakerProperties.TimeoutConfig.defaults();
+
+        TimeLimiterConfig config = TimeLimiterConfig.custom()
+            .timeoutDuration(Duration.ofSeconds(timeoutConfig.timeoutSeconds()))
+            .cancelRunningFuture(true)
+            .build();
+
+        return TimeLimiterRegistry.of(config);
+    }
+
+    private TimeLimiter getOrCreateTimeLimiter(String serverId) {
+        if (!properties.enabled() || properties.timeout() == null || !properties.timeout().enabled()) {
+            return null;
+        }
+        return timeLimiterRegistry.timeLimiter(serverId);
     }
 
     private McpSyncClient getClientOrThrow(String serverId) {

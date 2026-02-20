@@ -41,15 +41,15 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CostOptimizationIntegrationTest {
 
     /**
-     * Test 1: VirtualThreadPool autonomous right-sizing.
+     * Test 1: VirtualThreadPool with Resilience4j Bulkhead.
      * Verifies that the pool:
      * - Starts and stops cleanly
-     * - Measures actual carrier thread usage
-     * - Estimates cost savings
+     * - Enforces concurrency limits via Bulkhead
+     * - Tracks task metrics and latency
      */
     @Test
     public void testVirtualThreadPoolAutoscaling() throws Exception {
-        VirtualThreadPool pool = new VirtualThreadPool("test-pool", 100, 1);
+        VirtualThreadPool pool = new VirtualThreadPool("test-pool", 50, java.time.Duration.ofSeconds(5));
         pool.start();
 
         try {
@@ -68,23 +68,23 @@ public class CostOptimizationIntegrationTest {
             Thread.sleep(2000);
 
             // Verify metrics
-            VirtualThreadPool.CostMetrics metrics = pool.getCostMetrics();
+            VirtualThreadPool.ConcurrencyMetrics metrics = pool.getMetrics();
             assertTrue(metrics.tasksSubmitted() > 0,
                       "Should have submitted tasks");
             assertTrue(metrics.tasksCompleted() > 0,
                       "Should have completed tasks");
-            assertTrue(metrics.costFactor() >= 0 && metrics.costFactor() <= 1,
-                      "Cost factor should be normalized 0-1");
-            assertTrue(metrics.costSavingsPercent() >= 0,
-                      "Should have cost savings");
+            assertTrue(metrics.utilizationPercent() >= 0 && metrics.utilizationPercent() <= 100,
+                      "Utilization should be 0-100%");
+            assertTrue(metrics.successRatePercent() > 0,
+                      "Should have successful tasks");
 
-            System.out.printf("VirtualThreadPool metrics: tasks=%d, carriers=%d/%d, " +
-                             "utilization=%.1f%%, costSavings=%.1f%%%n",
+            System.out.printf("VirtualThreadPool metrics: submitted=%d, completed=%d, " +
+                             "utilization=%.1f%%, successRate=%.1f%%, avgLatency=%.2fms%n",
+                             metrics.tasksSubmitted(),
                              metrics.tasksCompleted(),
-                             metrics.estimatedCarrierThreads(),
-                             metrics.maxCarrierThreads(),
-                             metrics.carrierUtilizationPercent(),
-                             metrics.costSavingsPercent());
+                             metrics.utilizationPercent(),
+                             metrics.successRatePercent(),
+                             metrics.avgLatencyMs());
 
         } finally {
             pool.shutdown();
@@ -275,16 +275,16 @@ public class CostOptimizationIntegrationTest {
     }
 
     /**
-     * Test 5: Combined cost optimization scenario.
-     * Tests realistic workflow with all optimizations:
-     * - Virtual thread pool handles concurrent work
+     * Test 5: Combined optimization scenario.
+     * Tests realistic workflow with multiple optimization patterns:
+     * - Virtual thread pool with Bulkhead handles concurrent work
      * - Work item batcher groups similar items
      * - Resource pool avoids allocation overhead
      * - Compression reduces transmission size
      */
     @Test
     public void testCombinedOptimizations() throws Exception {
-        VirtualThreadPool pool = new VirtualThreadPool("combined", 50, 1);
+        VirtualThreadPool pool = new VirtualThreadPool("combined", 50, Duration.ofSeconds(5));
         WorkItemBatcher batcher = new WorkItemBatcher("taskType", 50, Duration.ofMillis(100));
         ResourcePool<StringBuilder> resPool = new ResourcePool<>(
             "buffers",
@@ -337,14 +337,15 @@ public class CostOptimizationIntegrationTest {
                       "All tasks should complete");
 
             // Verify combined metrics
-            VirtualThreadPool.CostMetrics vtMetrics = pool.getCostMetrics();
+            VirtualThreadPool.ConcurrencyMetrics vtMetrics = pool.getMetrics();
             WorkItemBatcher.BatchMetrics batchMetrics = batcher.getMetrics();
             ResourcePool.PoolMetrics resMetrics = resPool.getMetrics();
             CompressionStrategy.CompressionMetrics compMetrics = compression.getMetrics();
 
             System.out.printf("Combined optimization results:%n");
-            System.out.printf("  VirtualThreadPool: %.1f%% cost savings%n",
-                             vtMetrics.costSavingsPercent());
+            System.out.printf("  VirtualThreadPool: utilization=%.1f%%, success=%.1f%%%n",
+                             vtMetrics.utilizationPercent(),
+                             vtMetrics.successRatePercent());
             System.out.printf("  WorkItemBatcher: %d batches, %.1f%% throughput gain%n",
                              batchMetrics.totalBatches(),
                              batchMetrics.throughputGainPercent());
@@ -355,7 +356,7 @@ public class CostOptimizationIntegrationTest {
                              compMetrics.bandwidthSavedMB());
 
             // Verify all optimizations working
-            assertTrue(vtMetrics.costSavingsPercent() >= 0);
+            assertTrue(vtMetrics.successRatePercent() > 0);
             assertTrue(batchMetrics.totalBatches() > 0);
             assertTrue(resMetrics.reuseEfficiency() > 1);
             assertTrue(compMetrics.compressionRatio() >= 0);
