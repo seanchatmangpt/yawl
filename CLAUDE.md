@@ -81,6 +81,50 @@ mvn clean verify -P analysis             # Static analysis (SpotBugs, PMD)
 
 **Rule**: No commit until `dx.sh all` is green. See `.claude/rules/build/dx-workflow.md`.
 
+## Λ.net (Network) — Maven Proxy in Claude Code Web
+
+**AUTO-DETECTION**: SessionStart hook detects egress proxy and activates Maven proxy workaround.
+
+### Web Environment (Claude Code Remote)
+
+When `CLAUDE_CODE_REMOTE=true`, SessionStart:
+1. Detects egress proxy via `https_proxy` environment variable
+2. Starts local Maven proxy bridge (`python3 maven-proxy-v2.py`)
+3. Configures Maven settings.xml to use local proxy
+4. Reports network status in environment summary
+
+**Network Bridge**:
+```
+Maven Client (on 127.0.0.1)
+  ↓
+Local Maven Proxy (127.0.0.1:3128)
+  ↓
+Egress Proxy (21.0.0.111:15004, JWT auth)
+  ↓
+Maven Central (repo.maven.apache.org)
+```
+
+**Proxy Scripts** (auto-selected):
+- `maven-proxy-v2.py` (preferred: improved error handling)
+- `maven-proxy.py` (fallback: simple CONNECT tunnel)
+
+**Result**: Transparent HTTPS CONNECT tunneling with automatic auth injection.
+
+### Local Environment
+
+No special setup required - Maven uses system DNS and direct access.
+
+### Manual Override
+
+Force proxy setup:
+```bash
+export https_proxy="http://user:token@proxy:port"
+python3 maven-proxy-v2.py &
+echo '[proxy]' >> ~/.m2/settings.xml
+```
+
+See `JAVA25-SETUP.md` for troubleshooting proxy issues.
+
 ## H (Guards) — ENFORCED BY HOOKS
 
 **H** = {TODO, FIXME, mock, stub, fake, empty_return, silent_fallback, lie}
