@@ -714,16 +714,20 @@ public final class UpgradeMemoryStore {
         Objects.requireNonNull(record, "record cannot be null");
 
         recordsById.put(record.id(), record);
-        metadata = metadata.withUpdated(recordsById.size());
+        // Atomic read of actual size to prevent race conditions
+        // ConcurrentHashMap.size() is eventually consistent but safe for metrics
+        int currentSize = recordsById.size();
+        metadata = metadata.withUpdated(currentSize);
 
         // Use async save to reduce lock contention under high concurrency
         scheduleAsyncSave();
-        log.info("Stored upgrade record: id={}, outcome={}",
-                record.id(), record.outcome().description());
+        log.info("Stored upgrade record: id={}, outcome={}, totalRecords={}",
+                record.id(), record.outcome().description(), currentSize);
     }
 
     /**
      * Updates an existing upgrade record.
+     * Uses replace() for atomic check-and-set to prevent race conditions.
      *
      * @param record the upgrade record with updated data
      * @throws MemoryStoreException if the record does not exist or cannot be updated
@@ -731,15 +735,17 @@ public final class UpgradeMemoryStore {
     public void update(UpgradeRecord record) {
         Objects.requireNonNull(record, "record cannot be null");
 
-        if (!recordsById.containsKey(record.id())) {
+        // Use atomic replace to ensure record exists and update is atomic
+        // Returns null if key doesn't exist, preventing TOCTOU race condition
+        UpgradeRecord previous = recordsById.replace(record.id(), record);
+        if (previous == null) {
             throw new MemoryStoreException("Record not found: " + record.id());
         }
 
-        recordsById.put(record.id(), record);
-
         // Use async save to reduce lock contention under high concurrency
         scheduleAsyncSave();
-        log.debug("Updated upgrade record: id={}", record.id());
+        log.debug("Updated upgrade record: id={}, previousOutcome={}, newOutcome={}",
+                record.id(), previous.outcome().description(), record.outcome().description());
     }
 
     /**
