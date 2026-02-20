@@ -20,6 +20,7 @@ import org.yawlfoundation.yawl.stateless.monitor.TestYCaseMonitor;
  * - TestYStatelessEngineExtended: Malformed XML, timeout config, multi-threaded announcements
  * - StatelessEngineCaseMonitorTest: Case monitoring, multi-threaded announcements, concurrent cases
  * - YStatelessEngineSuspendResumeTest: Suspend/resume, cancel, marshal/restore, listener management
+ * - YStatelessEngineParallelLaunchTest: StructuredTaskScope parallel launch, all-or-nothing semantics
  * - TestYCaseImporter: XML unmarshal, runner restoration, identifier hierarchy, work item reunification
  * - TestYCaseExporter: Marshal runner/work items, XML structure validation, timestamp handling
  * - TestYCaseImportExportService: File export, filtering, validation, compression, concurrent ops
@@ -35,6 +36,7 @@ import org.yawlfoundation.yawl.stateless.monitor.TestYCaseMonitor;
     TestYStatelessEngineExtended.class,
     StatelessEngineCaseMonitorTest.class,
     YStatelessEngineSuspendResumeTest.class,
+    YStatelessEngineParallelLaunchTest.class,
     TestYCaseImporter.class,
     TestYCaseExporter.class,
     TestYCaseImportExportService.class,

@@ -80,7 +80,7 @@ public class DeadlockDetectionAndResolution {
     private final AtomicBoolean escalated = new AtomicBoolean(false);
 
     private Set<String> lastEnabledTasks = new HashSet<>();
-    private Map<String, Long> taskStartTimes = new HashMap<>();
+    private Map<String, Long> taskStartTimes = new LinkedHashMap<>();
     private int monitoringCycleCount = 0;
 
     /**

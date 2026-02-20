@@ -561,8 +561,7 @@ public class YEngineRestorer {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask) {
-                    task = (YTask) element;
+                if (element instanceof YTask task) {
                     task.setI(id);
                     if (task.isMultiInstance()) {
                         _miTasks.add(task);
@@ -575,7 +574,7 @@ public class YEngineRestorer {
                     }
 
                     task.prepareDataDocsForTaskOutput(null);
-                    
+
                     if (task.isMultiInstance()) {
                         String uniqueID = id.get_idString() + ":" + task.getID();
                         GroupedMIOutputData miOutputData = _miOutputDataLookupTable.get(uniqueID);
@@ -585,8 +584,8 @@ public class YEngineRestorer {
                     }
 
                     id.addLocation(null, task);
-                } else if (element instanceof YCondition) {
-                    ((YConditionInterface) element).add(_pmgr, id);
+                } else if (element instanceof YCondition condition) {
+                    ((YConditionInterface) condition).add(_pmgr, id);
                 }
             }
         }
