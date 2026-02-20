@@ -40,6 +40,8 @@ import org.yawlfoundation.yawl.stateless.engine.util.LoopTerminationValidator;
  *   <li>Event-driven architecture with listener support</li>
  *   <li>Optional case monitoring with idle timeout detection</li>
  *   <li>Support for multi-threaded event announcements</li>
+ *   <li>Loop iteration tracking for workflow patterns WCP-28 to WCP-31</li>
+ *   <li>Loop termination validation and deadlock detection</li>
  * </ul>
  *
  * <h2>Basic Usage</h2>
@@ -634,6 +636,9 @@ public class YStatelessEngine {
             String caseXML = yCase.marshal();                        // ditto
             _engine.getAnnouncer().announceCaseEvent(
                     new YCaseEvent(YEventType.CASE_UNLOADED, yCase.getRunner()));
+            // Clean up loop tracking state for this case
+            _loopIterationTracker.clearCase(caseID);
+            _loopTerminationValidator.clearCase(caseID);
             return caseXML;
         } finally {
             _unloadLock.unlock();
