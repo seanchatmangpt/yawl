@@ -12,7 +12,8 @@ YELLOW='\033[1;33m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-if [[ -z "$TASK_DESCRIPTION" ]]; then
+# Check if empty or whitespace-only
+if [[ -z "${TASK_DESCRIPTION// /}" ]]; then
     exit 0
 fi
 
@@ -26,7 +27,7 @@ DETECTED=""
 
 desc_lower="${TASK_DESCRIPTION,,}"
 
-if [[ $desc_lower =~ (engine|ynetrunner|workflow|deadlock|state|task.completion) ]]; then
+if [[ $desc_lower =~ (engine|ynetrunner|deadlock|state|execution|task.completion) ]]; then
     ((QUANTUM_COUNT++))
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Engine Semantic (yawl/engine/**)\n"
 fi
