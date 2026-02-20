@@ -1,0 +1,134 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  YAWL v6.0.0 - AUTONOMICS QUICK REFERENCE                  ║
+║                  Autonomous Agents + Enterprise Workflows                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ 1-MINUTE SETUP ──────────────────────────────────────────────────────────┐
+│                                                                             │
+│ // A2A Server (Agent-to-Agent)                                            │
+│ YawlA2AServer server = new YawlA2AServer(9001);                          │
+│ server.registerAgent("approval-agent", (req) -> {                        │
+│     if (req.getDouble("amount") < 10000)                                 │
+│         return WorkflowResponse.success().put("approved", true);         │
+│     return WorkflowResponse.success().put("approved", false);            │
+│ });                                                                        │
+│ server.start();                                                            │
+│                                                                             │
+│ // Invoke Agent                                                            │
+│ A2AClient agent = new A2AClient("approval-agent");                       │
+│ WorkflowResponse res = agent.invoke(request);                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ KEY CLASSES ─────────────────────────────────────────────────────────────┐
+│ YawlMcpServer              → Claude integration (MCP protocol)             │
+│ YawlA2AServer              → Agent-to-agent communication                 │
+│ A2AClient                  → Client for invoking agents                   │
+│ WorkflowRequest            → Request payload with data                    │
+│ WorkflowResponse           → Response with results                        │
+│ AgentMetrics               → Track invocations, latency, confidence       │
+│ AgentHealthCheck           → Monitor success rate, detect degradation     │
+│ AgentPool                  → Load balancing across replicas               │
+│ TenantContext              → Isolate agent invocations per tenant         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ 7 PRODUCTION PATTERNS ───────────────────────────────────────────────────┐
+│ 1. Agent-Driven Approval      → Auto-approve + escalate if rejected      │
+│ 2. Multi-Agent Orchestration  → Invoke 3+ agents in parallel              │
+│ 3. Autonomous Escalation      → Confidence-based routing                  │
+│ 4. Agent Feedback Loop        → Learn from human feedback                │
+│ 5. Agent Chain               → Sequential agent composition               │
+│ 6. Timeout & Fallback        → Reliability + manual override              │
+│ 7. Agent Pool                → Load balancing + auto-scaling              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SHELL COMMANDS ──────────────────────────────────────────────────────────┐
+│ source .claude/shell-aliases.sh                                           │
+│ yagent        # Show agent integration example                            │
+│ yamcp         # Show MCP setup                                            │
+│ yaa2a         # Show A2A setup                                            │
+│ yauto         # Show autonomics architecture                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ MAKEFILE COMMANDS ───────────────────────────────────────────────────────┐
+│ make yagent   # Show agent integration quick setup                        │
+│ make yamcp    # Show MCP quick setup                                      │
+│ make yaa2a    # Show A2A quick setup                                      │
+│ make yauto    # Show full autonomics architecture                         │
+│ make ypatterns # Show 7 production patterns                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ COMMON PATTERNS ─────────────────────────────────────────────────────────┐
+│                                                                             │
+│ AUTO-APPROVE WITH ESCALATION:                                            │
+│ WorkflowResponse res = agent.invoke(request);                            │
+│ if (res.getBoolean("approved"))                                          │
+│     completeWorkItem(res.getData());                                     │
+│ else                                                                       │
+│     escalateToManual();                                                   │
+│                                                                             │
+│ MULTI-AGENT (PARALLEL):                                                  │
+│ CompletableFuture<WR> v = agent1.invokeAsync(data);                      │
+│ CompletableFuture<WR> e = agent2.invokeAsync(data);                      │
+│ CompletableFuture.allOf(v, e).join();                                    │
+│ process(v.join(), e.join());                                             │
+│                                                                             │
+│ AGENT CHAIN (SEQUENTIAL):                                                │
+│ WorkflowResponse v1 = validate.invoke(data);                             │
+│ WorkflowResponse v2 = enrich.invoke(merge(data, v1));                    │
+│ WorkflowResponse v3 = classify.invoke(merge(data, v1, v2));              │
+│                                                                             │
+│ TIMEOUT + FALLBACK:                                                       │
+│ try {                                                                      │
+│     return agent.invokeWithTimeout(req, Duration.ofSeconds(30));         │
+│ } catch (TimeoutException e) {                                           │
+│     return getDefaultDecision();                                         │
+│ }                                                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ MONITORING ──────────────────────────────────────────────────────────────┐
+│                                                                             │
+│ TRACK METRICS:                                                             │
+│ AgentMetrics m = new AgentMetrics("approval-agent");                     │
+│ m.recordSuccess(durationMs, confidence);                                 │
+│ System.out.println(m.getSuccessRate());   // %                           │
+│ System.out.println(m.getAvgDuration());   // ms                          │
+│                                                                             │
+│ HEALTH CHECK:                                                              │
+│ AgentHealthCheck h = new AgentHealthCheck("approval-agent");             │
+│ h.setSuccessThreshold(0.90);                                             │
+│ if (!h.isHealthy())                                                       │
+│     AlertService.send("Agent degraded");                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SECURITY ────────────────────────────────────────────────────────────────┐
+│ • A2A server validates JWT tokens                                         │
+│ • Tenant isolation enforced on all agent invocations                      │
+│ • Agent can only access data for its tenant                              │
+│ • Rate limiting per tenant (configurable)                                 │
+│ • All invocations logged for audit trail                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SCALING ─────────────────────────────────────────────────────────────────┐
+│ AgentPool pool = new AgentPool("approval-agent", 5);  // 5 replicas       │
+│ WorkflowResponse res = pool.invoke(request);        // Auto load-balance  │
+│ if (pool.getQueueDepth() > 100)                                          │
+│     pool.addAgent(2);                               // Dynamic scaling    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DOCUMENTATION ───────────────────────────────────────────────────────────┐
+│ .claude/AUTONOMICS-PATTERNS.md    → 7 production patterns (copy/paste)   │
+│ .claude/AGENT-INTEGRATION.md       → 5-minute setup guide                │
+│ .claude/AUTONOMICS-QUICK-REF.txt   → This reference card                 │
+│ yawl/integration/a2a/              → Protocol specification              │
+│ yawl/integration/mcp/              → MCP implementation                   │
+│ rules/integration/mcp-a2a-conventions.md → Convention rules              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+STATUS: ✅ PRODUCTION READY
+ENTRY POINTS: YawlMcpServer · YawlA2AServer · A2AClient
+PATTERNS: 7 (all copy/paste ready)
+DOCS: Complete with examples
+

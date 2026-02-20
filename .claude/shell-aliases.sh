@@ -91,6 +91,102 @@ try {
 QUOTA_EXAMPLE
 }
 
+# Function: Show agent integration example
+yagent() {
+    cat << 'AGENT_EXAMPLE'
+// Quick Agent Integration Pattern (A2A Protocol):
+
+A2AClient agent = new A2AClient("approval-agent");
+WorkflowResponse res = agent.invoke(
+    new WorkflowRequest()
+        .put("amount", 5000)
+        .put("requestor", "alice@company.com")
+);
+
+if (res.getBoolean("approved")) {
+    engine.completeWorkItem(workItem.getID(), res.getData());
+} else {
+    escalateToManual();
+}
+
+// See .claude/AGENT-INTEGRATION.md for full guide
+AGENT_EXAMPLE
+}
+
+# Function: Show MCP quick setup
+yamcp() {
+    cat << 'MCP_EXAMPLE'
+// Quick MCP Server Setup:
+
+YawlMcpServer mcp = new YawlMcpServer(9000);
+
+mcp.registerTool("list_cases", (args) -> {
+    return engine.getCaseList();
+});
+
+mcp.registerTool("complete_task", (args) -> {
+    return engine.completeWorkItem(
+        args.getString("task_id"),
+        args.getMap("data")
+    );
+});
+
+mcp.start();  // Server running on :9000
+
+// Now Claude can call YAWL via MCP protocol
+// See .claude/AUTONOMICS-PATTERNS.md for patterns
+MCP_EXAMPLE
+}
+
+# Function: Show A2A quick setup
+yaa2a() {
+    cat << 'A2A_EXAMPLE'
+// Quick A2A Server Setup:
+
+YawlA2AServer server = new YawlA2AServer(9001);
+
+server.registerAgent("approval-agent", (req) -> {
+    double amount = req.getDouble("amount");
+
+    if (amount < 10000) {
+        return WorkflowResponse.success()
+            .put("approved", true)
+            .put("confidence", 0.99);
+    } else {
+        return WorkflowResponse.success()
+            .put("approved", false)
+            .put("confidence", 0.95);
+    }
+});
+
+server.start();  // Server running on :9001
+
+// See .claude/AGENT-INTEGRATION.md for full guide
+A2A_EXAMPLE
+}
+
+# Function: Show autonomics architecture
+yauto() {
+    echo "YAWL v6.0.0 - Autonomics Architecture:"
+    echo ""
+    echo "Components:"
+    echo "  YawlMcpServer        - Model Context Protocol integration"
+    echo "  YawlA2AServer        - Agent-to-Agent communication"
+    echo "  A2AClient            - Client for invoking agents"
+    echo "  AgentMetrics         - Track agent performance"
+    echo "  AgentHealthCheck     - Monitor agent degradation"
+    echo ""
+    echo "Patterns:"
+    echo "  Agent-Driven Approval - Auto-approve with escalation"
+    echo "  Multi-Agent          - Parallel agent orchestration"
+    echo "  Agent Chain          - Sequential agent composition"
+    echo "  Feedback Loop        - Agent learning from feedback"
+    echo ""
+    echo "Documentation:"
+    echo "  .claude/AUTONOMICS-PATTERNS.md   - 7 production patterns"
+    echo "  .claude/AGENT-INTEGRATION.md     - 5-minute setup guide"
+}
+
 # Echo setup confirmation
 echo "✅ YAWL shell aliases loaded!"
 echo "   Run: yhelp     - Show Make targets"
@@ -98,3 +194,7 @@ echo "   Run: yref      - Show quick reference"
 echo "   Run: ystart    - Show quick start"
 echo "   Run: ytenancy  - Show tenant example"
 echo "   Run: yquota    - Show quota example"
+echo "   Run: yagent    - Show agent integration"
+echo "   Run: yamcp     - Show MCP setup"
+echo "   Run: yaa2a     - Show A2A setup"
+echo "   Run: yauto     - Show autonomics architecture"
