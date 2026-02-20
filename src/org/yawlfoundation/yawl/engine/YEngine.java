@@ -61,6 +61,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Lachlan Aldred
@@ -115,6 +116,8 @@ public class YEngine implements InterfaceADesign,
     private String _engineClassesRootFilePath;
     private boolean _allowGenericAdminID;
     private final YAWLTelemetry _telemetry = YAWLTelemetry.getInstance();
+    private final ReentrantLock _persistLock = new ReentrantLock();
+    private final ReentrantLock _pmgrAccessLock = new ReentrantLock();
 
     /********************************************************************************/
 
@@ -887,7 +890,8 @@ public class YEngine implements InterfaceADesign,
 
             Set<YWorkItem> removedItems = _workItemRepository.removeWorkItemsForCase(caseID);
             YNetRunner runner = _netRunnerRepository.get(caseID);
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 if (_persisting) clearWorkItemsFromPersistence(removedItems);
                 YTimer.getInstance().cancelTimersForCase(caseID.toString());
@@ -901,6 +905,8 @@ public class YEngine implements InterfaceADesign,
                 }
                 commitTransaction();
                 _announcer.announceCaseCancellation(caseID, getYAWLServices());
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
 
             span.setStatus(StatusCode.OK);
@@ -973,7 +979,8 @@ public class YEngine implements InterfaceADesign,
             checkEngineRunning();
 
             String resultCaseId = null;
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 try {
                     YIdentifier yCaseID = startCase(specID, caseParams, completionObserver,
@@ -1004,6 +1011,8 @@ public class YEngine implements InterfaceADesign,
                     span.recordException(ye);
                     ye.rethrow();
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
             _logger.debug("<-- launchCase");
             return null;
@@ -1158,7 +1167,8 @@ public class YEngine implements InterfaceADesign,
      */
     public void suspendCase(YIdentifier caseID)
             throws YPersistenceException, YStateException {
-        synchronized(_pmgr) {
+        _pmgrAccessLock.lock();
+        try {
             startTransaction();
             try {
                 suspendCase(_pmgr, caseID);
@@ -1169,6 +1179,8 @@ public class YEngine implements InterfaceADesign,
                 rollbackTransaction();
                 throw new YStateException("Could not suspend case (See log for details)");
             }
+                } finally {
+            _pmgrAccessLock.unlock();
         }
     }
 
@@ -1218,7 +1230,8 @@ public class YEngine implements InterfaceADesign,
      * @throws YStateException if case cannot be resumed
      */
     public void resumeCase(YIdentifier id) throws YPersistenceException, YStateException {
-        synchronized(_pmgr) {
+        _pmgrAccessLock.lock();
+        try {
             startTransaction();
             try {
                 resumeCase(_pmgr, id);
@@ -1231,6 +1244,8 @@ public class YEngine implements InterfaceADesign,
                 rollbackTransaction();
                 throw new YStateException("Could not resume case (See log for details)");
             }
+                } finally {
+            _pmgrAccessLock.unlock();
         }
     }
 
@@ -1343,7 +1358,8 @@ public class YEngine implements InterfaceADesign,
             throws YPersistenceException {
         YNetRunner runner = _netRunnerRepository.get(idStr);
         if (runner != null && data != null) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 try {
                     YNet net = runner.getNet();
@@ -1358,6 +1374,8 @@ public class YEngine implements InterfaceADesign,
                     rollbackTransaction();
                     _logger.error("Problem updating Case Data for case " + idStr, e);
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
         }
         return false ;
@@ -1511,7 +1529,8 @@ public class YEngine implements InterfaceADesign,
         try (Scope scope = span.makeCurrent()) {
             YWorkItem startedItem = null;
 
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 try {
                     YNetRunner netRunner = null;
@@ -1572,6 +1591,8 @@ public class YEngine implements InterfaceADesign,
                     span.recordException(e);
                     throw new YStateException(e.getMessage());
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
             return startedItem;
         } finally {
@@ -1657,7 +1678,8 @@ public class YEngine implements InterfaceADesign,
         long startTime = System.currentTimeMillis();
 
         try (Scope scope = span.makeCurrent()) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 try {
                     if (workItem != null) {
@@ -1712,6 +1734,8 @@ public class YEngine implements InterfaceADesign,
                     span.recordException(e);
                     throw new YStateException("Failed to complete workitem: " + e.getMessage(), e);
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
             _logger.debug("<-- completeWorkItem");
         } finally {
@@ -1914,7 +1938,8 @@ public class YEngine implements InterfaceADesign,
         YIdentifier siblingID = workItem.getCaseID();
         YNetRunner netRunner = getNetRunner(siblingID.getParent());
 
-        synchronized(_pmgr) {
+        _pmgrAccessLock.lock();
+        try {
             startTransaction();
             try {
                 Element paramValue = JDOMUtil.stringToElement(paramValueForMICreation);
@@ -1928,6 +1953,8 @@ public class YEngine implements InterfaceADesign,
                 rollbackTransaction();
                 throw new YStateException(e.getMessage());
             }
+                } finally {
+            _pmgrAccessLock.unlock();
         }
     }
 
@@ -1936,10 +1963,13 @@ public class YEngine implements InterfaceADesign,
             throws YStateException, YPersistenceException {
         YWorkItem workItem = _workItemRepository.get(workItemID);
         if ((workItem != null) && (workItem.hasLiveStatus())) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 workItem.setStatusToSuspended(_pmgr);
                 commitTransaction();
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
         }
         return workItem ;
@@ -1951,10 +1981,13 @@ public class YEngine implements InterfaceADesign,
         YWorkItem workItem = _workItemRepository.get(workItemID);
         if ((workItem != null) &&
                 (workItem.getStatus().equals(YWorkItemStatus.statusSuspended))) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 workItem.setStatusToUnsuspended(_pmgr);
                 commitTransaction();
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
         }
         return workItem ;
@@ -1966,7 +1999,8 @@ public class YEngine implements InterfaceADesign,
             throws YStateException, YPersistenceException {
         YWorkItem workItem = _workItemRepository.get(workItemID);
         if ((workItem != null) && workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 startTransaction();
                 workItem.rollBackStatus(_pmgr);
                 YNetRunner netRunner = getNetRunner(workItem.getCaseID().getParent());
@@ -1978,6 +2012,8 @@ public class YEngine implements InterfaceADesign,
                     throw new YStateException("Unable to rollback: work Item[" + workItemID +
                             "] is not in executing state.");
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
         }
         else throw new YStateException("Work Item[" + workItemID + "] not found.");
@@ -1993,7 +2029,8 @@ public class YEngine implements InterfaceADesign,
     public boolean updateWorkItemData(String workItemID, String data) {
         YWorkItem workItem = getWorkItem(workItemID);
         if (workItem != null) {
-            synchronized(_pmgr) {
+            _pmgrAccessLock.lock();
+            try {
                 try {
                     boolean localTransaction = startTransaction();
                     Element eleData = JDOMUtil.stringToElement(data);
@@ -2005,6 +2042,8 @@ public class YEngine implements InterfaceADesign,
                 catch (YPersistenceException e) {
                     return false ;
                 }
+                        } finally {
+                _pmgrAccessLock.unlock();
             }
         }
         return false ;
@@ -2015,7 +2054,8 @@ public class YEngine implements InterfaceADesign,
         try {
             if ((workItem != null) && workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
                 YNetRunner runner = getNetRunner(workItem.getCaseID().getParent());
-                synchronized(_pmgr) {
+                _pmgrAccessLock.lock();
+                try {
                     startTransaction();
                     workItem.setStatusToDeleted(_pmgr);
                     YWorkItem parent = workItem.getParent();
@@ -2028,6 +2068,8 @@ public class YEngine implements InterfaceADesign,
                     cleanupCompletedWorkItem(workItem, runner, null);
                     commitTransaction();
                     announceEvents(runner.getCaseID());
+                                } finally {
+                    _pmgrAccessLock.unlock();
                 }
             }
         }
@@ -2300,21 +2342,26 @@ public class YEngine implements InterfaceADesign,
     }
 
 
-    private synchronized void doPersistAction(Object obj, int action) throws YPersistenceException {
-        /* DEADLOCK FIX: Removed inner synchronized(_pmgr) block.
+    private void doPersistAction(Object obj, int action) throws YPersistenceException {
+        /* Uses ReentrantLock instead of synchronized to avoid virtual thread pinning.
          * Previously: doPersistAction held 'this' (YEngine) lock, then acquired _pmgr lock.
          * Any thread holding _pmgr lock and calling a synchronized YEngine method produced
-         * an ABBA deadlock. The outer 'synchronized' on this method already provides the
-         * required mutual exclusion for all persistence operations; the inner lock was
-         * redundant and created the inversion. */
-        if (isPersisting() && _pmgr != null) {
-            boolean isLocalTransaction = startTransaction();
-            switch (action) {
-                case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
-                case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
-                case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
+         * an ABBA deadlock. The _persistLock on this method already provides the
+         * required mutual exclusion for all persistence operations. ReentrantLock allows
+         * virtual threads to unmount while waiting for the lock, preserving scalability. */
+        _persistLock.lock();
+        try {
+            if (isPersisting() && _pmgr != null) {
+                boolean isLocalTransaction = startTransaction();
+                switch (action) {
+                    case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
+                    case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
+                    case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
+                }
+                if (isLocalTransaction) commitTransaction();
             }
-            if (isLocalTransaction) commitTransaction();
+        } finally {
+            _persistLock.unlock();
         }
     }
 
