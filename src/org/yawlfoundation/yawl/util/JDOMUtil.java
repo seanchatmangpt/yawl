@@ -38,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -53,6 +54,12 @@ import java.util.List;
 public class JDOMUtil {
 
     private static final Logger _log = LogManager.getLogger(JDOMUtil.class);
+
+    /**
+     * Lock for thread-safe SAXBuilder operations to avoid virtual thread pinning.
+     * SAXBuilder is not thread-safe, so we use ReentrantLock instead of synchronized.
+     */
+    private static final ReentrantLock BUILDER_LOCK = new ReentrantLock();
 
     /**
      * SAXBuilder instance using the default Java XML parser.
@@ -103,9 +110,10 @@ public class JDOMUtil {
 
     /****************************************************************************/
 
-    public synchronized static Document stringToDocument(String s) {
+    public static Document stringToDocument(String s) {
         if (s == null) return null;
         if (s.startsWith(UTF8_BOM)) s = s.substring(1);      // remove BOM if any
+        BUILDER_LOCK.lock();
         try {
             _builder.setIgnoringBoundaryWhitespace(true);
             return _builder.build(new StringReader(s));
@@ -115,19 +123,26 @@ public class JDOMUtil {
         }
         catch (IOException ioe) {
             _log.error("IOException converting to Document, String = " + s, ioe);
+        } finally {
+            BUILDER_LOCK.unlock();
         }
         return null ;
     }
 
 
-    public synchronized static Document stringToDocumentUncaught(String s)
+    public static Document stringToDocumentUncaught(String s)
             throws IOException, JDOMException {
         if (s == null) {
             throw new JDOMException("Attempt to convert null string to document");
         }
         if (s.startsWith(UTF8_BOM)) s = s.substring(1);   // remove BOM if any
-        _builder.setIgnoringBoundaryWhitespace(true);
-        return _builder.build(new StringReader(s));
+        BUILDER_LOCK.lock();
+        try {
+            _builder.setIgnoringBoundaryWhitespace(true);
+            return _builder.build(new StringReader(s));
+        } finally {
+            BUILDER_LOCK.unlock();
+        }
     }
 
 
@@ -146,7 +161,8 @@ public class JDOMUtil {
     }
 
 
-    public synchronized static Document fileToDocument(File file) {
+    public static Document fileToDocument(File file) {
+        BUILDER_LOCK.lock();
         try {
             return (file != null && file.exists()) ? _builder.build(file) : null ;
         }
@@ -157,6 +173,8 @@ public class JDOMUtil {
         catch (IOException ioe) {
             _log.error("IOException loading file into Document, filepath = " +
                     file.getAbsolutePath(), ioe);
+        } finally {
+            BUILDER_LOCK.unlock();
         }
         return null ;
     }

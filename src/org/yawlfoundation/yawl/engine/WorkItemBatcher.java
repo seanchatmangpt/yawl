@@ -21,9 +21,11 @@ package org.yawlfoundation.yawl.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Intelligent work item batching for autonomous throughput optimization.
@@ -90,6 +92,7 @@ public class WorkItemBatcher {
 
     // Batch accumulation
     private final Map<String, List<PendingItem>> batchMap = new ConcurrentHashMap<>();
+    private final Map<String, ReentrantLock> batchLocks = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // Metrics
@@ -136,18 +139,22 @@ public class WorkItemBatcher {
         String groupKey = extractGroupKey(workItem);
         PendingItem item = new PendingItem(workItem, handler);
 
-        // Add to batch
-        List<PendingItem> batch = batchMap.computeIfAbsent(groupKey, key -> new ArrayList<>());
-        synchronized (batch) {
+        // Add to batch with per-group lock to avoid virtual thread pinning
+        ReentrantLock groupLock = batchLocks.computeIfAbsent(groupKey, k -> new ReentrantLock());
+        groupLock.lock();
+        try {
+            List<PendingItem> batch = batchMap.computeIfAbsent(groupKey, key -> new ArrayList<>());
             batch.add(item);
 
             // Flush if batch is full
             if (batch.size() >= maxBatchSize) {
                 flushBatch(groupKey);
             }
+        } finally {
+            groupLock.unlock();
         }
 
-        itemsProcessed.increment();
+        itemsProcessed.getAndIncrement();
     }
 
     /**
@@ -213,7 +220,7 @@ public class WorkItemBatcher {
         }
 
         // Record metrics
-        totalBatches.increment();
+        totalBatches.getAndIncrement();
         totalBatchSize.addAndGet(batch.size());
         contextSwitchesAvoided.addAndGet(switchesAvoided);
 

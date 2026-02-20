@@ -159,12 +159,10 @@ public class SLAMonitor {
      * Gets total SLA violations.
      */
     public long getTotalViolations(String slaId) {
-        return meterRegistry.find("yawl.sla.violations")
+        Counter counter = meterRegistry.find("yawl.sla.violations")
                 .tag("sla_id", slaId)
-                .counter()
-                .map(Counter::count)
-                .orElse(0.0)
-                .longValue();
+                .counter();
+        return counter != null ? (long) counter.count() : 0L;
     }
 
     /**

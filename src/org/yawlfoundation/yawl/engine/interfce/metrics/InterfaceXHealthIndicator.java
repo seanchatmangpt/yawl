@@ -102,7 +102,7 @@ public class InterfaceXHealthIndicator implements HealthIndicator {
     }
 
     private void collectCircuitBreakerStatus(HealthStatusDetails details) {
-        details.circuitBreakerAvailable = circuitBreakerRegistry.getAllCircuitBreakers()
+        details.circuitBreakerAvailable = circuitBreakerRegistry.allCircuitBreakers()
                 .stream()
                 .anyMatch(cb -> cb.getName().contains("interfaceX") || cb.getName().contains("InterfaceX"));
 

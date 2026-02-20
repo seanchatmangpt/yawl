@@ -422,25 +422,22 @@ public class YStatelessEngine {
         }
 
         List<YNetRunner> runners = new ArrayList<>(caseParams.size());
+        List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
 
-        try (StructuredTaskScope.ShutdownOnFailure scope =
-                     new StructuredTaskScope.ShutdownOnFailure("yawl-parallel-launch",
-                             Thread.ofVirtual().factory())) {
+        try (var scope = StructuredTaskScope.open(
+                     StructuredTaskScope.Joiner.<YNetRunner>allSuccessfulOrThrow(),
+                     cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
 
-            // Fork one subtask per case; each runs on a named virtual thread
-            List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
+            // Fork one subtask per case; each runs on a virtual thread
             for (int i = 0; i < caseParams.size(); i++) {
                 final String caseID = caseIDs.get(i);
                 final String params  = caseParams.get(i);
-                StructuredTaskScope.Subtask<YNetRunner> subtask = scope.fork(() ->
-                        _engine.launchCase(spec, caseID, params, null));
-                subtasks.add(subtask);
+                subtasks.add(scope.fork(() -> _engine.launchCase(spec, caseID, params, null)));
             }
 
-            // Wait for all subtasks; propagate first failure if any
+            // Wait for all subtasks; Joiner.allSuccessfulOrThrow() will throw on first failure
             try {
-                scope.join().throwIfFailed(cause -> new YStateException(
-                        "Parallel case launch failed: " + cause.getMessage(), cause));
+                scope.join();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 throw new YStateException("Parallel case launch interrupted", ie);
@@ -451,9 +448,10 @@ public class YStatelessEngine {
                 runners.add(subtask.get());
             }
 
-        } catch (YStateException | YDataStateException | YEngineStateException | YQueryException ex) {
-            throw ex;
         } catch (Exception ex) {
+            if (ex instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             throw new YStateException("Unexpected error in parallel case launch: " + ex.getMessage(), ex);
         }
 

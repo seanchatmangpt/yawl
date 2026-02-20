@@ -129,7 +129,7 @@ public class ResilienceHealthIndicator implements HealthIndicator {
         int openCount = 0;
         int halfOpenCount = 0;
 
-        for (CircuitBreaker cb : circuitBreakerRegistry.getAllCircuitBreakers()) {
+        for (CircuitBreaker cb : circuitBreakerRegistry.allCircuitBreakers()) {
             total++;
             CircuitBreaker.State state = cb.getState();
             CircuitBreaker.Metrics metrics = cb.getMetrics();
@@ -161,7 +161,7 @@ public class ResilienceHealthIndicator implements HealthIndicator {
         int total = 0;
         int highRetryCount = 0;
 
-        for (Retry retry : retryRegistry.getAllRetries()) {
+        for (Retry retry : retryRegistry.allRetries()) {
             total++;
             Retry.Metrics metrics = retry.getMetrics();
 
@@ -192,7 +192,7 @@ public class ResilienceHealthIndicator implements HealthIndicator {
         int total = 0;
         int exhaustedCount = 0;
 
-        for (RateLimiter rateLimiter : rateLimiterRegistry.getAllRateLimiters()) {
+        for (RateLimiter rateLimiter : rateLimiterRegistry.allRateLimiters()) {
             total++;
             RateLimiter.Metrics metrics = rateLimiter.getMetrics();
 
@@ -217,7 +217,7 @@ public class ResilienceHealthIndicator implements HealthIndicator {
         int total = 0;
         int fullCount = 0;
 
-        for (Bulkhead bulkhead : bulkheadRegistry.getAllBulkheads()) {
+        for (Bulkhead bulkhead : bulkheadRegistry.allBulkheads()) {
             total++;
             Bulkhead.Metrics metrics = bulkhead.getMetrics();
 

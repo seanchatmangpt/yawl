@@ -577,7 +577,7 @@ public class YEngine implements InterfaceADesign,
     }
 
 
-    public String getNetData(String caseID) throws YStateException {
+    public String getNetData(String caseID) throws YStateException, UnauthorizedException {
 
         // if this is a root net case id, the net data is equivalent to the case data
         if (! caseID.contains(".")) return getCaseData(caseID);
@@ -1166,7 +1166,7 @@ public class YEngine implements InterfaceADesign,
 
 
 
-    public String getCaseData(String caseID) throws YStateException {
+    public String getCaseData(String caseID) throws YStateException, UnauthorizedException {
         // MULTI-TENANT: Validate tenant access before processing
         validateTenantAccess(caseID);
 

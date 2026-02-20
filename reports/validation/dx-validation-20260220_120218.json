@@ -1,0 +1,52 @@
+{
+    "validation_report": {
+        "timestamp": "2026-02-20T12:02:18-08:00",
+        "platform": "macOS",
+        "java_version": "25.0.2",
+        "maven_version": "3.9.12",
+        "fast_mode": true
+    },
+    "summary": {
+        "total_tests": 7,
+        "passed": 1,
+        "failed": 3,
+        "success_rate": 14.28,
+        "total_time_seconds": 32.00
+    },
+    "test_results": {
+        "dx_compile_single": {
+            "status": "unknown",
+            "duration_seconds": 0.000
+        }
+,
+        "dx_compile_all": {
+            "status": "unknown",
+            "duration_seconds": 0.000
+        }
+,
+        "dx_lint": {
+            "status": "failed",
+            "duration_seconds": 15.00
+        }
+,
+        "dx_security_scan": {
+            "status": "unknown",
+            "duration_seconds": 0.000
+        }
+,
+        "dx_benchmark": {
+            "status": "failed",
+            "duration_seconds": 17.00
+        }
+,
+        "dx_status": {
+            "status": "failed",
+            "duration_seconds": 0
+        }
+,
+        "dx_cache_operations": {
+            "status": "success",
+            "duration_seconds": 0
+        }
+    }
+}

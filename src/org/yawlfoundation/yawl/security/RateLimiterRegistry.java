@@ -20,7 +20,6 @@ package org.yawlfoundation.yawl.security;
 
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -126,9 +125,17 @@ public final class RateLimiterRegistry {
         String limiterName = CLIENT_LIMITER_PREFIX + clientId;
 
         try {
-            if (!registry.rateLimiters().containsKey(limiterName)) {
-                createClientLimiter(clientId, DEFAULT_CLIENT_PERMITS, DEFAULT_CLIENT_PERIOD_SECONDS);
-            }
+            // Use computeIfAbsent pattern - rateLimiter will create with default if not exists
+            RateLimiterConfig clientConfig = configs.computeIfAbsent(limiterName, k -> {
+                RateLimiterConfig config = RateLimiterConfig.custom()
+                        .limitRefreshPeriod(Duration.ofSeconds(DEFAULT_CLIENT_PERIOD_SECONDS))
+                        .limitForPeriod(DEFAULT_CLIENT_PERMITS)
+                        .timeoutDuration(Duration.ofMillis(TIMEOUT_MS))
+                        .build();
+                registry.rateLimiter(limiterName, config);
+                log.debug("Client rate limiter created: clientId={}", clientId);
+                return config;
+            });
 
             RateLimiter limiter = registry.rateLimiter(limiterName);
             return limiter.executeSupplier(() -> true);
@@ -156,11 +163,21 @@ public final class RateLimiterRegistry {
         }
 
         String limiterName = ENDPOINT_LIMITER_PREFIX + endpoint;
+        // Convert permits per minute to permits per period (6 second period)
+        int permitsPerPeriod = Math.max(1, permitsPerMinute / 10);
 
         try {
-            if (!registry.rateLimiters().containsKey(limiterName)) {
-                createEndpointLimiter(endpoint, permitsPerMinute);
-            }
+            RateLimiterConfig endpointConfig = configs.computeIfAbsent(limiterName, k -> {
+                RateLimiterConfig config = RateLimiterConfig.custom()
+                        .limitRefreshPeriod(Duration.ofSeconds(6))
+                        .limitForPeriod(permitsPerPeriod)
+                        .timeoutDuration(Duration.ofMillis(TIMEOUT_MS))
+                        .build();
+                registry.rateLimiter(limiterName, config);
+                log.debug("Endpoint rate limiter created: endpoint={}, permitsPerMinute={}",
+                        endpoint, permitsPerMinute);
+                return config;
+            });
 
             RateLimiter limiter = registry.rateLimiter(limiterName);
             return limiter.executeSupplier(() -> true);
@@ -266,7 +283,7 @@ public final class RateLimiterRegistry {
      * @return count of rate limiters
      */
     public int getLimiterCount() {
-        return registry.rateLimiters().size();
+        return registry.getAllRateLimiters().size();
     }
 
     /**
@@ -274,7 +291,15 @@ public final class RateLimiterRegistry {
      * Useful for testing or configuration changes.
      */
     public void resetAll() {
-        registry.rateLimiters().values().forEach(RateLimiter::reset);
+        // Resilience4j RateLimiters don't have a reset method.
+        // To reset, we need to remove and recreate limiters with their original configs.
+        for (String name : configs.keySet().toArray(new String[0])) {
+            RateLimiterConfig config = configs.get(name);
+            if (config != null) {
+                registry.remove(name);
+                registry.rateLimiter(name, config);
+            }
+        }
         log.info("All rate limiters reset");
     }
 }

@@ -157,9 +157,12 @@ public class ClaudeCodeExecutor {
         Instant start = Instant.now();
         String processKey = sessionId != null ? sessionId : "single-" + System.nanoTime();
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        List<StructuredTaskScope.Subtask<ClaudeExecutionResult>> subtasks = new ArrayList<>(1);
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<ClaudeExecutionResult>allSuccessfulOrThrow(),
+                cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
 
-            Future<ClaudeExecutionResult> future = scope.fork(() -> {
+            subtasks.add(scope.fork(() -> {
                 Process process = pb.start();
                 activeProcesses.put(processKey, process);
 
@@ -195,9 +198,9 @@ public class ClaudeCodeExecutor {
             });
 
             scope.join();
-            scope.throwIfFailed();
+            // Joiner.allSuccessfulOrThrow() throws on failure
 
-            return future.get();
+            return subtasks.get(0).get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

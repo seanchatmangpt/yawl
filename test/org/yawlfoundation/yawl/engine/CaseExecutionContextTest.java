@@ -249,7 +249,7 @@ class CaseExecutionContextTest {
         void callWhereBindsContextInsideScope() throws Exception {
             CaseExecutionContext ctx = CaseExecutionContext.of("case-10", "spec:1.0");
 
-            CaseExecutionContext observed = ScopedValue.callWhere(EXEC_CTX, ctx, () -> {
+            CaseExecutionContext observed = ScopedValue.where(EXEC_CTX, ctx).call(() -> {
                 assertTrue(EXEC_CTX.isBound(), "ScopedValue must be bound inside scope");
                 return EXEC_CTX.get();
             });
@@ -262,7 +262,7 @@ class CaseExecutionContextTest {
         void unboundOutsideScope() throws Exception {
             assertFalse(EXEC_CTX.isBound(), "ScopedValue must not be bound before callWhere");
 
-            ScopedValue.callWhere(EXEC_CTX, CaseExecutionContext.of("case-11", "spec:1.0"),
+            ScopedValue.where(EXEC_CTX, CaseExecutionContext.of("case-11", "spec:1.0")).call(() -> {
                     () -> null);
 
             assertFalse(EXEC_CTX.isBound(), "ScopedValue must not be bound after callWhere exits");
@@ -275,12 +275,11 @@ class CaseExecutionContextTest {
             AtomicReference<CaseExecutionContext> childObserved = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
 
-            ScopedValue.callWhere(EXEC_CTX, ctx, () -> {
+            ScopedValue.where(EXEC_CTX, ctx).run(() -> {
                 Thread.ofVirtual().name("child-vt").start(() -> {
                     childObserved.set(EXEC_CTX.orElse(null));
                     latch.countDown();
                 });
-                return null;
             });
 
             assertTrue(latch.await(5, TimeUnit.SECONDS), "Child thread must complete");
@@ -309,7 +308,7 @@ class CaseExecutionContextTest {
                     vte.submit(() -> {
                         try {
                             CaseExecutionContext c = contexts.get(idx);
-                            CaseExecutionContext seen = ScopedValue.callWhere(EXEC_CTX, c, () -> {
+                            CaseExecutionContext seen = ScopedValue.where(EXEC_CTX, c).call(() -> {
                                 // Yield to let other virtual threads interleave
                                 Thread.yield();
                                 return EXEC_CTX.get();
@@ -339,15 +338,13 @@ class CaseExecutionContextTest {
 
             CaseExecutionContext[] captured = new CaseExecutionContext[2];
 
-            ScopedValue.callWhere(EXEC_CTX, outer, () -> {
+            ScopedValue.where(EXEC_CTX, outer).run(() -> {
                 captured[0] = EXEC_CTX.get();
-                ScopedValue.callWhere(EXEC_CTX, inner, () -> {
+                ScopedValue.where(EXEC_CTX, inner).run(() -> {
                     captured[1] = EXEC_CTX.get();
-                    return null;
                 });
                 // outer binding should be restored after inner scope exits
                 assertEquals(outer, EXEC_CTX.get(), "Outer binding must be restored after inner scope");
-                return null;
             });
 
             assertEquals(outer, captured[0], "Outer scope must see outer context");
@@ -375,8 +372,8 @@ class CaseExecutionContextTest {
         void caseContextBindsString() throws Exception {
             String caseID = "case-production-99";
 
-            String observed = ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID,
-                    () -> YNetRunner.CASE_CONTEXT.get());
+            String observed = ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID)
+                    .call(() -> YNetRunner.CASE_CONTEXT.get());
 
             assertEquals(caseID, observed);
         }
@@ -395,12 +392,11 @@ class CaseExecutionContextTest {
             AtomicReference<String> childSeen = new AtomicReference<>();
             CountDownLatch done = new CountDownLatch(1);
 
-            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID, () -> {
+            ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID).run(() -> {
                 Thread.ofVirtual().name("vt-case-forked").start(() -> {
                     childSeen.set(YNetRunner.CASE_CONTEXT.orElse(null));
                     done.countDown();
                 });
-                return null;
             });
 
             assertTrue(done.await(5, TimeUnit.SECONDS));

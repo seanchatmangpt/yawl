@@ -189,7 +189,7 @@ class StructuredConcurrencyParallelCaseTest {
                 for (int i = 0; i < taskCount; i++) {
                     final String caseID = "case-" + i;
                     results.add(scope.fork(() ->
-                            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID, () -> {
+                            ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID).run(() -> {
                                 // Yield to encourage interleaving
                                 Thread.yield();
                                 return YNetRunner.CASE_CONTEXT.get();
@@ -210,7 +210,7 @@ class StructuredConcurrencyParallelCaseTest {
             String parentCaseID = "parent-case-99";
             AtomicInteger inheritCount = new AtomicInteger(0);
 
-            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, parentCaseID, () -> {
+            ScopedValue.where(YNetRunner.CASE_CONTEXT, parentCaseID).run(() -> {
                 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
                     scope.fork(() -> {
                         // Subtask inherits the parent ScopedValue

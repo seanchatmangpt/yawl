@@ -37,7 +37,7 @@ public class CircuitBreakerHealthIndicator {
         Map<String, CircuitBreakerStatus> circuitBreakers = new HashMap<>();
         boolean hasOpenCircuit = false;
 
-        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
+        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.allCircuitBreakers()) {
             String name = circuitBreaker.getName();
             CircuitBreaker.State state = circuitBreaker.getState();
             CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();

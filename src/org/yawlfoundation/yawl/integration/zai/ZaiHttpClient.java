@@ -337,18 +337,26 @@ public class ZaiHttpClient {
      * @throws IOException if any request fails
      */
     public List<String> createChatCompletionsBatch(List<ChatRequest> requests) throws IOException {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<String>> tasks = requests.stream()
-                    .map(req -> scope.fork(() -> executeWithRetry(req)))
-                    .toList();
+        List<StructuredTaskScope.Subtask<String>> subtasks = new ArrayList<>(requests.size());
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<String>allSuccessfulOrThrow(),
+                cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
+            for (ChatRequest req : requests) {
+                subtasks.add(scope.fork(() -> executeWithRetry(req)));
+            }
 
             scope.join();
-            scope.throwIfFailed(e -> new IOException("Batch Z.AI request failed", e));
-
-            return tasks.stream().map(StructuredTaskScope.Subtask::resultNow).toList();
+            // Joiner.allSuccessfulOrThrow() throws on failure
+            List<String> results = new ArrayList<>(subtasks.size());
+            for (StructuredTaskScope.Subtask<String> subtask : subtasks) {
+                results.add(subtask.get());
+            }
+            return results;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Batch Z.AI request interrupted", e);
+        } catch (Exception e) {
+            throw new IOException("Batch Z.AI request failed", e);
         }
     }
 

@@ -55,7 +55,7 @@ public class ResilienceMetricsCollector {
     public Map<String, CircuitBreakerMetrics> collectCircuitBreakerMetrics() {
         Map<String, CircuitBreakerMetrics> metrics = new HashMap<>();
 
-        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.getAllCircuitBreakers()) {
+        for (CircuitBreaker circuitBreaker : circuitBreakerRegistry.allCircuitBreakers()) {
             String name = circuitBreaker.getName();
             CircuitBreaker.Metrics cbMetrics = circuitBreaker.getMetrics();
 
@@ -86,7 +86,7 @@ public class ResilienceMetricsCollector {
     public Map<String, RetryMetrics> collectRetryMetrics() {
         Map<String, RetryMetrics> metrics = new HashMap<>();
 
-        for (Retry retry : retryRegistry.getAllRetries()) {
+        for (Retry retry : retryRegistry.allRetries()) {
             String name = retry.getName();
             Retry.Metrics retryMetrics = retry.getMetrics();
 
@@ -115,7 +115,7 @@ public class ResilienceMetricsCollector {
     public Map<String, RateLimiterMetrics> collectRateLimiterMetrics() {
         Map<String, RateLimiterMetrics> metrics = new HashMap<>();
 
-        for (RateLimiter rateLimiter : rateLimiterRegistry.getAllRateLimiters()) {
+        for (RateLimiter rateLimiter : rateLimiterRegistry.allRateLimiters()) {
             String name = rateLimiter.getName();
             RateLimiter.Metrics rlMetrics = rateLimiter.getMetrics();
 
@@ -138,7 +138,7 @@ public class ResilienceMetricsCollector {
     public Map<String, BulkheadMetrics> collectBulkheadMetrics() {
         Map<String, BulkheadMetrics> metrics = new HashMap<>();
 
-        for (Bulkhead bulkhead : bulkheadRegistry.getAllBulkheads()) {
+        for (Bulkhead bulkhead : bulkheadRegistry.allBulkheads()) {
             String name = bulkhead.getName();
             Bulkhead.Metrics bhMetrics = bulkhead.getMetrics();
 

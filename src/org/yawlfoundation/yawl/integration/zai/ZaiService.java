@@ -150,23 +150,27 @@ public class ZaiService {
         ensureInitialized();
         String model = defaultModel();
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            var task1 = scope.fork(() -> {
+        List<StructuredTaskScope.Subtask<String>> subtasks = new ArrayList<>(2);
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<String>allSuccessfulOrThrow(),
+                cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
+            subtasks.add(scope.fork(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message1));
                 return httpClient.createChatCompletionRecord(req).content();
-            });
-            var task2 = scope.fork(() -> {
+            }));
+            subtasks.add(scope.fork(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message2));
                 return httpClient.createChatCompletionRecord(req).content();
-            });
+            }));
 
             scope.join();
-            scope.throwIfFailed(e -> new IOException("Parallel Z.AI call failed", e));
-
-            return new String[]{ task1.resultNow(), task2.resultNow() };
+            // Joiner.allSuccessfulOrThrow() throws on failure
+            return new String[]{ subtasks.get(0).get(), subtasks.get(1).get() };
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Parallel chat interrupted", e);
+        } catch (Exception e) {
+            throw new IOException("Parallel Z.AI call failed", e);
         }
     }
 
@@ -182,8 +186,8 @@ public class ZaiService {
      */
     public String chatWithContext(String systemPromptOverride, String message) {
         ensureInitialized();
-        return ScopedValue.callWhere(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride,
-                () -> chat(message));
+        return ScopedValue.where(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride)
+                .call(() -> chat(message));
     }
 
     /**

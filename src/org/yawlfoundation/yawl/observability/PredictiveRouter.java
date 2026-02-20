@@ -256,6 +256,6 @@ public class PredictiveRouter {
 
     private void registerMetrics() {
         meterRegistry.gaugeCollectionSize("yawl.router.registered_agents",
-                java.util.Collections.emptyList(), agentMetrics);
+                java.util.Collections.emptyList(), agentMetrics.keySet());
     }
 }

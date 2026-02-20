@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.sql.DataSource;
 
@@ -273,18 +274,24 @@ public class DatabasePerformanceMonitor {
     }
 
     private static class QueryStats {
+        private final ReentrantLock lock = new ReentrantLock();
         long executionCount;
         long totalTimeMs;
         long maxTimeMs;
         long minTimeMs = Long.MAX_VALUE;
         long totalRows;
 
-        synchronized void record(long durationMs, int rows) {
-            executionCount++;
-            totalTimeMs += durationMs;
-            maxTimeMs = Math.max(maxTimeMs, durationMs);
-            minTimeMs = Math.min(minTimeMs, durationMs);
-            totalRows += rows;
+        void record(long durationMs, int rows) {
+            lock.lock();
+            try {
+                executionCount++;
+                totalTimeMs += durationMs;
+                maxTimeMs = Math.max(maxTimeMs, durationMs);
+                minTimeMs = Math.min(minTimeMs, durationMs);
+                totalRows += rows;
+            } finally {
+                lock.unlock();
+            }
         }
 
         double getAverageTimeMs() {
@@ -293,6 +300,7 @@ public class DatabasePerformanceMonitor {
     }
 
     private static class LatencyHistogram {
+        private final ReentrantLock lock = new ReentrantLock();
         private final long[] samples;
         private final int capacity;
         private int position;
@@ -303,25 +311,35 @@ public class DatabasePerformanceMonitor {
             this.samples = new long[capacity];
         }
 
-        synchronized void record(long valueMs) {
-            samples[position] = valueMs;
-            position = (position + 1) % capacity;
-            if (position == 0) {
-                filled = true;
+        void record(long valueMs) {
+            lock.lock();
+            try {
+                samples[position] = valueMs;
+                position = (position + 1) % capacity;
+                if (position == 0) {
+                    filled = true;
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
-        synchronized double getPercentile(int percentile) {
-            int size = filled ? capacity : position;
-            if (size == 0) {
-                return 0;
+        double getPercentile(int percentile) {
+            lock.lock();
+            try {
+                int size = filled ? capacity : position;
+                if (size == 0) {
+                    return 0;
+                }
+                long[] sorted = new long[size];
+                System.arraycopy(samples, 0, sorted, 0, size);
+                java.util.Arrays.sort(sorted);
+                int index = (int) Math.ceil(percentile / 100.0 * size) - 1;
+                index = Math.max(0, Math.min(index, size - 1));
+                return sorted[index];
+            } finally {
+                lock.unlock();
             }
-            long[] sorted = new long[size];
-            System.arraycopy(samples, 0, sorted, 0, size);
-            java.util.Arrays.sort(sorted);
-            int index = (int) Math.ceil(percentile / 100.0 * size) - 1;
-            index = Math.max(0, Math.min(index, size - 1));
-            return sorted[index];
         }
     }
 }

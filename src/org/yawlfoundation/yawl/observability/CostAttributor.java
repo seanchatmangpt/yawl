@@ -444,7 +444,7 @@ public class CostAttributor {
 
     private void registerMetrics() {
         meterRegistry.gaugeCollectionSize("yawl.cost.tracked_cases",
-                Collections.emptyList(), caseCosts);
+                Collections.emptyList(), caseCosts.keySet());
         meterRegistry.gauge("yawl.cost.total_cost",
                 Collections.emptyList(),
                 this,

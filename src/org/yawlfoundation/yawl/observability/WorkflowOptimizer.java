@@ -311,7 +311,7 @@ public class WorkflowOptimizer {
 
     private void registerMetrics() {
         meterRegistry.gaugeCollectionSize("yawl.optimizer.tracked_tasks",
-                Collections.emptyList(), taskMetrics);
+                Collections.emptyList(), taskMetrics.keySet());
         meterRegistry.gaugeCollectionSize("yawl.optimizer.active_suggestions",
                 Collections.emptyList(), suggestions);
     }

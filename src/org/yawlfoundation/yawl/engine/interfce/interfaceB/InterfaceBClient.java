@@ -80,7 +80,7 @@ public interface InterfaceBClient {
      * @param caseID to retrieve net data of
      * @return XML representation of the net
      */
-    String getCaseData(String caseID) throws YStateException;
+    String getCaseData(String caseID) throws YStateException, UnauthorizedException;
 
     /**
      * Starts an instance of a specification (known as a 'case') within the engine.<P>

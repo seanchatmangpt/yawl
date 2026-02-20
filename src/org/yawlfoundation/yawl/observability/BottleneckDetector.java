@@ -391,7 +391,7 @@ public class BottleneckDetector {
 
     private void registerMetrics() {
         meterRegistry.gaugeCollectionSize("yawl.bottleneck.active_bottlenecks",
-                Collections.emptyList(), currentBottlenecks);
+                Collections.emptyList(), currentBottlenecks.keySet());
         meterRegistry.gaugeCollectionSize("yawl.bottleneck.alert_history",
                 Collections.emptyList(), alertHistory);
     }

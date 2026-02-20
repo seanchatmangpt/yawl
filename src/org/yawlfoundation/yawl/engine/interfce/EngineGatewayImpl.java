@@ -36,6 +36,7 @@ import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.exceptions.UnauthorizedException;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.unmarshal.YMetaData;
@@ -1566,8 +1567,8 @@ public class EngineGatewayImpl implements EngineGateway {
             try {
                 return _engine.getNetData(caseID);
             }
-            catch (YStateException yse) {
-                return failureMessage(yse.getMessage());
+            catch (YStateException | UnauthorizedException e) {
+                return failureMessage(e.getMessage());
             }
         }
 

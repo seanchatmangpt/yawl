@@ -103,13 +103,19 @@ import java.util.concurrent.atomic.AtomicLong;
  * server uses {@link StructuredTaskScope}:</p>
  *
  * <pre>{@code
- * try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
- *     List<Subtask<WorkItemResult>> tasks = items.stream()
- *         .map(item -> scope.fork(() -> processWorkItem(item)))
- *         .toList();
- *     scope.join();
- *     scope.throwIfFailed();
- *     return tasks.stream().map(Subtask::resultNow).toList();
+ * List<Subtask<WorkItemResult>> subtasks = new ArrayList<>();
+ * try (var scope = StructuredTaskScope.open(
+ *         StructuredTaskScope.Joiner.<WorkItemResult>allSuccessfulOrThrow(),
+ *         cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
+ *     for (WorkItem item : items) {
+ *         subtasks.add(scope.fork(() -> processWorkItem(item)));
+ *     }
+ *     scope.join(); // throws on failure
+ *     List<WorkItemResult> results = new ArrayList<>();
+ *     for (Subtask<WorkItemResult> subtask : subtasks) {
+ *         results.add(subtask.get());
+ *     }
+ *     return results;
  * }
  * }</pre>
  *
@@ -821,16 +827,19 @@ public class VirtualThreadYawlA2AServer {
             StringBuilder errors = new StringBuilder();
 
             // Use structured concurrency for parallel processing
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-                List<StructuredTaskScope.Subtask<WorkItemResult>> tasks = processableItems.stream()
-                    .map(item -> scope.fork(() -> processWorkItemWithResult(item)))
-                    .toList();
+            List<StructuredTaskScope.Subtask<WorkItemResult>> subtasks = new ArrayList<>(processableItems.size());
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<WorkItemResult>allSuccessfulOrThrow(),
+                    cfg -> cfg.withThreadFactory(Thread.ofVirtual().factory()))) {
+                for (WorkItemRecord item : processableItems) {
+                    subtasks.add(scope.fork(() -> processWorkItemWithResult(item)));
+                }
 
                 scope.join();
-                scope.throwIfFailed();
+                // Joiner.allSuccessfulOrThrow() throws on failure
 
-                for (StructuredTaskScope.Subtask<WorkItemResult> task : tasks) {
-                    WorkItemResult result = task.resultNow();
+                for (StructuredTaskScope.Subtask<WorkItemResult> subtask : subtasks) {
+                    WorkItemResult result = subtask.get();
                     if (result.success()) {
                         processed++;
                     } else {
@@ -844,7 +853,7 @@ public class VirtualThreadYawlA2AServer {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return "Batch processing interrupted.";
-            } catch (ExecutionException e) {
+            } catch (Exception e) {
                 return "Batch processing failed: " + e.getCause().getMessage();
             }
 
