@@ -561,12 +561,12 @@ public class YEngineRestorer {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask task) {
-                    task.setI(id);
-                    if (task.isMultiInstance()) {
-                        _miTasks.add(task);
+                if (element instanceof YTask taskElement) {
+                    taskElement.setI(id);
+                    if (taskElement.isMultiInstance()) {
+                        _miTasks.add(taskElement);
                         try {
-                            task.determineHowManyInstancesToCreate();
+                            taskElement.determineHowManyInstancesToCreate();
                         }
                         catch (YDataStateException | YQueryException e) {
                             _log.warn("Failed to restore data for unstarted MI work items");

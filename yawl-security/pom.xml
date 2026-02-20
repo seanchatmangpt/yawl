@@ -91,6 +91,7 @@
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
+                        <exclude>**/test/**</exclude>
                     </excludes>
                     <!-- Restrict test compilation to security package only;
                          ../test has 70 visible tests from other modules that lack security deps -->

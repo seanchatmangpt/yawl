@@ -326,6 +326,7 @@
                     </testExcludes>
                     <!-- Disable annotation processing to prevent JMH from generating stale files -->
                     <compilerArgs>
+                        <arg>--enable-preview</arg>
                         <arg>-proc:none</arg>
                     </compilerArgs>
                 </configuration>
