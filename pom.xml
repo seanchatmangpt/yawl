@@ -443,6 +443,11 @@
                 <optional>true</optional>
             </dependency>
 
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-sleuth</artifactId>
+                <version>${spring-cloud.version}</version>
+            </dependency>
             <!-- ============================================================== -->
             <!-- 1. JAKARTA EE                                                  -->
             <!-- ============================================================== -->
@@ -1244,6 +1249,28 @@
                 <artifactId>pact-foundation</artifactId>
                 <version>${pact.version}</version>
                 <scope>test</scope>
+
+            <!-- WireMock for HTTP stubbing in resilience pattern tests -->
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Caffeine caching library for fallback pattern tests -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+                <scope>test</scope>
+            </dependency>
             </dependency>
 
         </dependencies>
