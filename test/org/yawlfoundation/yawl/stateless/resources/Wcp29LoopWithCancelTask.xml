@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WCP-29: Loop with Cancel Task
+  A loop that can be cancelled mid-execution via a cancel branch.
+  Structure:
+    start -> initialize -> loopEntry -> loopCheck --[continue]--> loopBody -> loopEntry
+                                            |
+                                         [cancel]-> handleCancel -> end
+                                            |
+                                         [exit] -> finalize -> end
+-->
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="Wcp29LoopWithCancelTask">
+    <metaData>
+      <title>WCP-29 Loop with Cancel Task</title>
+      <creator>YAWL Stateless Test</creator>
+      <description>WCP-29: Structured loop with the ability to cancel a specific task and exit the loop on a cancel signal. The loopCheck uses XOR-split: continue body, exit normally, or cancel and exit.</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wcp29Net" xsi:type="NetFactsType" isRootNet="true">
+      <name>WCP-29 Net</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="initialize"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="initialize">
+          <name>Initialize</name>
+          <documentation>Initialize loop variables and cancel flag</documentation>
+          <flowsInto>
+            <nextElementRef id="loopEntryCondition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="initializeGW"/>
+        </task>
+        <condition id="loopEntryCondition">
+          <name>Loop Entry</name>
+          <flowsInto>
+            <nextElementRef id="loopCheck"/>
+          </flowsInto>
+        </condition>
+        <!--
+          loopCheck: XOR-split with three branches:
+            default -> loopBody (continue iterating)
+            explicit -> handleCancel (cancel was requested)
+            explicit -> exitLoop (normal termination condition met)
+        -->
+        <task id="loopCheck">
+          <name>Check Loop and Cancel</name>
+          <documentation>Evaluate loop condition and cancel flag (XOR split: body, cancel, or exit)</documentation>
+          <flowsInto>
+            <nextElementRef id="loopBody"/>
+            <isDefaultFlow/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="handleCancel"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="exitLoop"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="loopCheckGW"/>
+        </task>
+        <task id="loopBody">
+          <name>Loop Body</name>
+          <documentation>Execute loop iteration work</documentation>
+          <flowsInto>
+            <nextElementRef id="loopEntryCondition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="loopBodyGW"/>
+        </task>
+        <task id="handleCancel">
+          <name>Handle Cancellation</name>
+          <documentation>Handle the task cancellation event and clean up</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="handleCancelGW"/>
+        </task>
+        <task id="exitLoop">
+          <name>Exit Loop</name>
+          <documentation>Exit the loop normally (condition no longer satisfied)</documentation>
+          <flowsInto>
+            <nextElementRef id="finalize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="exitLoopGW"/>
+        </task>
+        <task id="finalize">
+          <name>Finalize</name>
+          <documentation>Finalize loop results</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="finalizeGW"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="initializeGW" xsi:type="WebServiceGatewayFactsType">
+      <name>initializeGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="loopCheckGW" xsi:type="WebServiceGatewayFactsType">
+      <name>loopCheckGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="loopBodyGW" xsi:type="WebServiceGatewayFactsType">
+      <name>loopBodyGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="handleCancelGW" xsi:type="WebServiceGatewayFactsType">
+      <name>handleCancelGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="exitLoopGW" xsi:type="WebServiceGatewayFactsType">
+      <name>exitLoopGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="finalizeGW" xsi:type="WebServiceGatewayFactsType">
+      <name>finalizeGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+  </specification>
+</specificationSet>
