@@ -26,35 +26,58 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Strategy for discovering work items by autonomous agents.
+ * Abstract base class for work item discovery strategies by autonomous agents.
  *
- * <p>Work item discovery is not yet implemented. The method throws
- * {@link UnsupportedOperationException} to prevent the agent loop from
- * silently processing zero items. A concrete subclass must query the
- * YAWL engine for work items that match the agent's capabilities.</p>
+ * <p>Subclasses must implement {@link #discoverWorkItems} to query the YAWL engine
+ * for available work items that match agent capabilities. Discovery typically involves:
+ * <ol>
+ *   <li>Calling Interface B to get available work items</li>
+ *   <li>Filtering items based on agent eligibility criteria</li>
+ *   <li>Handling session expiry and authentication failures</li>
+ *   <li>Applying any load-balancing or priority-based filtering</li>
+ * </ol></p>
  *
  * @since YAWL 6.0
  */
-public class DiscoveryStrategy {
+public abstract class DiscoveryStrategy {
 
     /**
      * Discovers work items that this agent can handle.
      *
+     * <p>Subclasses must implement this method to query the engine for work items
+     * and return those eligible for the agent to process.</p>
+     *
      * @param client the Interface B client for engine communication
      * @param sessionHandle the session handle for authentication
-     * @return list of available work items
-     * @throws UnsupportedOperationException always — not yet implemented
-     * @throws IOException if communication with engine fails
+     * @return list of available and eligible work items (non-null, possibly empty)
+     * @throws IOException if communication with the engine fails
+     * @throws IllegalArgumentException if client or sessionHandle is null/invalid
      */
-    public List<WorkItemRecord> discoverWorkItems(InterfaceB_EnvironmentBasedClient client,
-                                                 String sessionHandle) throws IOException {
-        throw new UnsupportedOperationException(
-            "discoverWorkItems() is not implemented. Work item discovery requires:\n" +
-            "  1. Call client.getAvailableWorkItems(sessionHandle) via Interface B\n" +
-            "  2. Deserialise the XML response into List<WorkItemRecord>\n" +
-            "  3. Filter items against agent capabilities (see EligibilityReasoner)\n" +
-            "  4. Handle session expiry by re-authenticating and retrying once\n" +
-            "Create a concrete subclass of DiscoveryStrategy and inject it into the agent."
-        );
+    public abstract List<WorkItemRecord> discoverWorkItems(
+        InterfaceB_EnvironmentBasedClient client,
+        String sessionHandle) throws IOException;
+
+    /**
+     * Gets the maximum number of work items to discover per poll.
+     *
+     * <p>May be overridden to limit discovery batch size. Default implementation
+     * returns -1 (unlimited).</p>
+     *
+     * @return maximum item count, or -1 for unlimited
+     */
+    public int getMaxItemsPerDiscovery() {
+        return -1;
+    }
+
+    /**
+     * Gets the polling interval in milliseconds.
+     *
+     * <p>May be overridden to customize how frequently discovery is performed.
+     * Default implementation returns 5000 (5 seconds).</p>
+     *
+     * @return polling interval in milliseconds
+     */
+    public long getPollingIntervalMs() {
+        return 5000;
     }
 }

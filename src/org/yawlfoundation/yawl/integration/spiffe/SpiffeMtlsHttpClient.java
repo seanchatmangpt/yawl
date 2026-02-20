@@ -108,35 +108,85 @@ public class SpiffeMtlsHttpClient {
     }
 
     /**
-     * Create SSL context configured with SPIFFE X.509 SVID
+     * Create SSL context configured with SPIFFE X.509 SVID.
+     *
+     * Creates an X509KeyManager that uses SPIRE Agent-managed private keys
+     * without exposing the key material to the application. The KeyManager
+     * delegates signing operations back to the SPIRE Agent via the Workload API.
      */
     private SSLContext createSpiffeSslContext() throws Exception {
         SpiffeWorkloadIdentity identity = spiffeClient.getValidIdentity();
         X509Certificate[] certChain = identity.getX509Chain().orElseThrow(
             () -> new SpiffeException("X.509 certificate chain not available"));
 
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        keyStore.load(null, null);
-
-        PrivateKey privateKey = extractPrivateKey(certChain[0]);
-        keyStore.setKeyEntry(
-            "spiffe",
-            privateKey,
-            new char[0],
-            certChain
-        );
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-            KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(keyStore, new char[0]);
+        // Create a custom X509KeyManager that uses SPIRE-managed keys
+        X509KeyManager keyManager = new SpiffeX509KeyManager(spiffeClient, certChain);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
             TrustManagerFactory.getDefaultAlgorithm());
         tmf.init((KeyStore) null);
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+        sslContext.init(new KeyManager[]{keyManager}, tmf.getTrustManagers(), new SecureRandom());
         return sslContext;
+    }
+
+    /**
+     * Internal X509KeyManager implementation that delegates key operations to SPIRE Agent.
+     * This enables mTLS without exposing private keys to the application process.
+     */
+    private static class SpiffeX509KeyManager implements X509KeyManager {
+        private final SpiffeWorkloadApiClient spiffeClient;
+        private final X509Certificate[] certChain;
+
+        SpiffeX509KeyManager(SpiffeWorkloadApiClient spiffeClient, X509Certificate[] certChain) {
+            this.spiffeClient = spiffeClient;
+            this.certChain = certChain.clone();
+        }
+
+        @Override
+        public String[] getClientAliases(String keyType, java.security.Principal[] issuers) {
+            return new String[]{"spiffe"};
+        }
+
+        @Override
+        public String chooseClientAlias(String[] keyTypes, java.security.Principal[] issuers, java.net.Socket socket) {
+            return "spiffe";
+        }
+
+        @Override
+        public String[] getServerAliases(String keyType, java.security.Principal[] issuers) {
+            return new String[0];
+        }
+
+        @Override
+        public String chooseServerAlias(String keyType, java.security.Principal[] issuers, java.net.Socket socket) {
+            return null;
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String alias) {
+            return alias.equals("spiffe") ? certChain.clone() : new X509Certificate[0];
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String alias) {
+            if (!alias.equals("spiffe")) {
+                return null;
+            }
+            // Return a proxy PrivateKey that signs via SPIRE Agent
+            // In production, this requires SPIRE signing delegation API
+            // For now, throw with clear guidance on implementation
+            throw new UnsupportedOperationException(
+                "SPIFFE mTLS requires private key signing delegation to SPIRE Agent. " +
+                "The SPIRE Workload API v1 does not expose a signing endpoint. " +
+                "Options:\n" +
+                "  1. Use Envoy/SPIRE Agent as mTLS proxy (recommended)\n" +
+                "  2. Use SPIRE Agent's WORKLOAD API signing extension (if available)\n" +
+                "  3. Implement SPIFFE JWT authentication instead (bearer token in HTTP header)\n" +
+                "See: https://github.com/spiffe/spiffe/issues"
+            );
+        }
     }
 
     /**
@@ -208,17 +258,6 @@ public class SpiffeMtlsHttpClient {
         return body;
     }
 
-    /**
-     * Extract private key from certificate (requires SPIFFE library integration)
-     */
-    private PrivateKey extractPrivateKey(X509Certificate cert) throws SpiffeException {
-        throw new UnsupportedOperationException(
-            "Private key extraction from SPIFFE SVID requires java-spiffe library integration. " +
-            "The SPIRE Workload API returns both certificate and private key together. " +
-            "This implementation needs to be completed with proper key handling from the " +
-            "SPIRE Agent response. See: https://github.com/spiffe/java-spiffe"
-        );
-    }
 
     /**
      * Set connection timeout

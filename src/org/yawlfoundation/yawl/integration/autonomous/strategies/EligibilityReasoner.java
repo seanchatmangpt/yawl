@@ -21,32 +21,43 @@ package org.yawlfoundation.yawl.integration.autonomous.strategies;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
- * Reasons about whether a work item is eligible for processing by an agent.
+ * Abstract base class for reasoning about work item eligibility for agent processing.
  *
- * <p>Eligibility reasoning is not yet implemented. The method throws
- * {@link UnsupportedOperationException} to prevent the agent loop from
- * claiming all work items are eligible (which is incorrect). A concrete
- * subclass must supply real capability matching logic.</p>
+ * <p>Subclasses must implement {@link #isEligible} with capability matching logic.
+ * Eligibility reasoning typically involves:
+ * <ol>
+ *   <li>Extracting task name from {@link WorkItemRecord#getTaskName()}</li>
+ *   <li>Matching against agent's declared capabilities</li>
+ *   <li>Optional load checking (reject if agent overloaded)</li>
+ *   <li>Any domain-specific precondition checks</li>
+ * </ol></p>
  *
  * @since YAWL 6.0
  */
-public class EligibilityReasoner {
+public abstract class EligibilityReasoner {
 
     /**
-     * Determines if a work item is eligible for this agent.
+     * Determines if a work item is eligible for this agent to process.
+     *
+     * <p>Subclasses must implement this method with capability matching and any
+     * other domain-specific eligibility criteria.</p>
      *
      * @param workItem the work item to evaluate
-     * @return true if the work item can be processed by this agent
-     * @throws UnsupportedOperationException always — not yet implemented
+     * @return true if the work item can be processed by this agent, false otherwise
+     * @throws IllegalArgumentException if workItem is null
      */
-    public boolean isEligible(WorkItemRecord workItem) {
-        throw new UnsupportedOperationException(
-            "isEligible() is not implemented. Eligibility reasoning requires:\n" +
-            "  1. A capability model for the agent (set of task names or resource roles)\n" +
-            "  2. Extraction of task name / resource role from workItem.getTaskName()\n" +
-            "  3. Matching logic (exact, wildcard, or role-hierarchy)\n" +
-            "  4. Optional load check: reject if agent has too many active items\n" +
-            "Create a concrete subclass of EligibilityReasoner and inject it into the agent."
-        );
+    public abstract boolean isEligible(WorkItemRecord workItem);
+
+    /**
+     * Gets the priority or confidence level of this eligibility determination.
+     *
+     * <p>May be overridden to support prioritized agent selection when multiple
+     * agents are eligible. Default implementation returns 0 (equal priority).</p>
+     *
+     * @param workItem the work item for context
+     * @return priority score (higher = better), or 0 for equal priority
+     */
+    public int getEligibilityScore(WorkItemRecord workItem) {
+        return 0;
     }
 }
