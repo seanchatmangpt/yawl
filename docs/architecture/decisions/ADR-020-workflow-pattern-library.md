@@ -239,7 +239,7 @@ a visual designer could build on.
 
 ## Related ADRs
 
-- ADR-012: OpenAPI-First Design (pattern search API described in openapi-v6.yaml)
+- ADR-022: OpenAPI-First Design (pattern search API described in openapi-v6.yaml)
 - ADR-013: Schema Versioning (pattern templates must be updated for schema changes)
 - ADR-019: Autonomous Agent Framework (agent-patterns subcategory)
 

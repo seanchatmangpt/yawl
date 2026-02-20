@@ -1,0 +1,20 @@
+name: TestWorkflow
+uri: test.xml
+first: TaskA
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: and
+    description: "First task"
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: and
+    description: "Second task"
+  - id: TaskC
+    flows: []
+    split: xor
+    join: and
+    description: "Final task"

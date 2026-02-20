@@ -51,11 +51,17 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 | [ADR-023](ADR-023-mcp-a2a-cicd-deployment.md) | MCP/A2A CI/CD Deployment Architecture | ACCEPTED | 2026-02-18 | Deployment |
 | [ADR-024](ADR-024-multi-cloud-agent-deployment.md) | Multi-Cloud Agent Deployment Topology | ACCEPTED | 2026-02-18 | Cloud |
 
+### Security (Agent & Integration)
+
+| ADR | Title | Status | Date | Category |
+|-----|-------|--------|------|----------|
+| [ADR-012](ADR-012-a2a-authentication-architecture.md) | A2A Server Authentication Architecture | ACCEPTED | 2026-02-17 | Security |
+
 ### API Design & Documentation
 
 | ADR | Title | Status | Date | Category |
 |-----|-------|--------|------|----------|
-| [ADR-012](ADR-012-openapi-first-design.md) | OpenAPI-First API Design for v6.0.0 | ACCEPTED | 2026-02-17 | API Design |
+| [ADR-022](ADR-022-openapi-first-design.md) | OpenAPI-First API Design for v6.0.0 | ACCEPTED | 2026-02-17 | API Design |
 | [ADR-016](ADR-016-api-changelog-deprecation-policy.md) | API Changelog and Deprecation Policy | ACCEPTED | 2026-02-17 | API Governance |
 | [ADR-018](ADR-018-javadoc-to-openapi-generation.md) | JavaDoc-to-OpenAPI Documentation Generation | ACCEPTED | 2026-02-17 | Documentation |
 | [ADR-020](ADR-020-workflow-pattern-library.md) | Workflow Pattern Library Architecture | ACCEPTED | 2026-02-17 | Documentation |
@@ -112,6 +118,7 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 
 **Security:**
 - ADR-005: SPIFFE/SPIRE for Zero-Trust Identity
+- ADR-012: A2A Server Authentication Architecture (v6.0)
 - ADR-017: JWT Authentication and Session Management (v6.0)
 
 **Performance:**
@@ -125,7 +132,7 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 - ADR-024: Multi-Cloud Agent Deployment Topology (v6.1)
 
 **API Design:**
-- ADR-012: OpenAPI-First Design (v6.0)
+- ADR-022: OpenAPI-First Design (v6.0)
 - ADR-016: API Deprecation Policy (v6.0)
 - ADR-018: JavaDoc-to-OpenAPI Generation (v6.0)
 
@@ -166,19 +173,20 @@ ADRs are the authoritative record of _why_ the system is designed the way it is.
 8. ADR-008: Circuit Breaking
 
 **v6.0 additions (ADRs 012-025):**
-9. ADR-012: OpenAPI-First Design
-10. ADR-013: Schema Versioning
-11. ADR-015: Persistence Layer
-12. ADR-017: JWT Authentication
-13. ADR-019: Autonomous Agent Framework
-14. ADR-021: Engine Selection
-15. ADR-023: MCP/A2A CI/CD Deployment
-16. ADR-025: Agent Coordination Protocol
-17. ADR-014: Clustering (planned for v6.1)
-18. ADR-024: Multi-Cloud Agent Deployment (planned for v6.1)
-19. ADR-016: Deprecation Policy
-20. ADR-018: Doc Generation
-21. ADR-020: Pattern Library
+9. ADR-012: A2A Server Authentication
+10. ADR-022: OpenAPI-First Design
+11. ADR-013: Schema Versioning
+12. ADR-015: Persistence Layer
+13. ADR-017: JWT Authentication
+14. ADR-019: Autonomous Agent Framework
+15. ADR-021: Engine Selection
+16. ADR-023: MCP/A2A CI/CD Deployment
+17. ADR-025: Agent Coordination Protocol
+18. ADR-014: Clustering (planned for v6.1)
+19. ADR-024: Multi-Cloud Agent Deployment (planned for v6.1)
+20. ADR-016: Deprecation Policy
+21. ADR-018: Doc Generation
+22. ADR-020: Pattern Library
 
 ---
 

@@ -70,8 +70,8 @@ public class InterfaceXDeadLetterEntry {
         this.id = UUID.randomUUID().toString();
         this.command = command;
         this.parameters = parameters != null
-                ? Collections.unmodifiableMap(parameters)
-                : Collections.emptyMap();
+                ? Map.copyOf(parameters)
+                : Map.of();
         this.observerURI = observerURI;
         this.failureReason = failureReason;
         this.attemptCount = attemptCount;

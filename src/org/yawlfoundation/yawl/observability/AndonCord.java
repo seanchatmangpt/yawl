@@ -579,7 +579,7 @@ public final class AndonCord {
         updateHealthMatrixEntry("jwks", Severity.P0_CRITICAL, "STALE",
             String.format("Cache %ds old", cacheAgeSeconds));
 
-        return fireAlert(alert);
+        return fireAlert(alert, false);
     }
 
     /**
@@ -607,7 +607,7 @@ public final class AndonCord {
         updateHealthMatrixEntry(interfaceName, Severity.P1_HIGH, "OPEN",
             "Circuit breaker tripped");
 
-        return fireAlert(alert);
+        return fireAlert(alert, false);
     }
 
     /**
@@ -638,7 +638,7 @@ public final class AndonCord {
         updateHealthMatrixEntry("queue", Severity.P2_MEDIUM, "WARNING",
             String.format("%.1f%% full", percentage));
 
-        return fireAlert(alert);
+        return fireAlert(alert, false);
     }
 
     /**
@@ -739,7 +739,7 @@ public final class AndonCord {
         // Update health matrix
         updateHealthMatrixEntry("engine", Severity.P0_CRITICAL, "DOWN", reason);
 
-        return fireAlert(alert);
+        return fireAlert(alert, false);
     }
 
     /**
@@ -882,7 +882,7 @@ public final class AndonCord {
         healthMatrix.put("db", new HealthMatrixEntry("db", Severity.P3_LOW, "UP", "Connected"));
     }
 
-    private Alert fireAlert(Alert alert) {
+    private Alert fireAlert(Alert alert, boolean updateHealthMatrix) {
         // Store alert
         activeAlerts.put(alert.getId(), alert);
         escalationCount.put(alert.getId(), 0);
@@ -904,13 +904,19 @@ public final class AndonCord {
             // Notify listeners
             notifyListeners(alert);
 
-            // Update health matrix
-            updateHealthMatrixOnAlert(alert);
+            // Update health matrix only for generic alerts
+            if (updateHealthMatrix) {
+                updateHealthMatrixOnAlert(alert);
+            }
 
             return alert;
         } finally {
             span.end();
         }
+    }
+
+    private Alert fireAlert(Alert alert) {
+        return fireAlert(alert, true);
     }
 
     private Span createAlertSpan(Alert alert) {

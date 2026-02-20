@@ -1,7 +1,7 @@
 {
   "version": "6.0.0",
-  "lastUpdated": "2026-02-17",
-  "totalAdrs": 22,
+  "lastUpdated": "2026-02-19",
+  "totalAdrs": 25,
   "adrs": [
     {
       "id": "ADR-001",
@@ -265,6 +265,42 @@
       "tags": ["openapi", "api-first", "swagger", "redoc", "sdk-generation", "spectral"],
       "summary": "The canonical YAWL REST API contract is docs/api/openapi-v6.yaml (OpenAPI 3.1.0). All client SDK generation, documentation, and validation derive from this file.",
       "relatedAdrs": ["ADR-016", "ADR-018"],
+      "implementationStatus": "IN PROGRESS"
+    },
+    {
+      "id": "ADR-023",
+      "title": "MCP/A2A CI/CD Deployment Architecture",
+      "status": "ACCEPTED",
+      "date": "2026-02-18",
+      "category": "Deployment",
+      "path": "ADR-023-mcp-a2a-cicd-deployment.md",
+      "tags": ["mcp", "a2a", "cicd", "deployment", "kubernetes", "sidecar", "helm"],
+      "summary": "Defines deployment patterns for YawlMcpServer (STDIO sidecar) and YawlA2AServer (HTTP container) in CI/CD pipelines and production Kubernetes.",
+      "relatedAdrs": ["ADR-019", "ADR-024"],
+      "implementationStatus": "IN PROGRESS"
+    },
+    {
+      "id": "ADR-024",
+      "title": "Multi-Cloud Agent Deployment Topology",
+      "status": "ACCEPTED",
+      "date": "2026-02-18",
+      "category": "Cloud",
+      "path": "ADR-024-multi-cloud-agent-deployment.md",
+      "tags": ["multi-cloud", "agent-deployment", "cockroachdb", "federation", "dns", "geo-routing"],
+      "summary": "Federated agent registry using CockroachDB for cross-cloud agent discovery. GeoDNS routes A2A clients to nearest region. Planned for v6.1.0.",
+      "relatedAdrs": ["ADR-009", "ADR-023", "ADR-025"],
+      "implementationStatus": "PLANNED (v6.1.0)"
+    },
+    {
+      "id": "ADR-025",
+      "title": "Agent Coordination Protocol and Conflict Resolution",
+      "status": "ACCEPTED",
+      "date": "2026-02-18",
+      "category": "Agent Architecture",
+      "path": "ADR-025-agent-coordination-protocol.md",
+      "tags": ["agent-coordination", "conflict-resolution", "handoff", "partition", "lease"],
+      "summary": "Three-level protocol for multi-agent coordination: partition strategy (work item distribution), handoff protocol (capability transfer), conflict arbitration (disagreement resolution).",
+      "relatedAdrs": ["ADR-019", "ADR-023", "ADR-024"],
       "implementationStatus": "IN PROGRESS"
     }
   ]

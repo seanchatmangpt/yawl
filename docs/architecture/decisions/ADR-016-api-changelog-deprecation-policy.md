@@ -180,7 +180,7 @@ the API surface with explicit consumer-facing documentation.
 
 ## Related ADRs
 
-- ADR-012: OpenAPI-First Design (machine-readable deprecation markers)
+- ADR-022: OpenAPI-First Design (machine-readable deprecation markers)
 - ADR-013: Schema Versioning Strategy (parallel approach for XSD schema)
 
 ## Implementation Notes

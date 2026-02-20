@@ -181,7 +181,7 @@ YAWL specifications reliable. Explicit new elements in a versioned schema are pr
 
 - ADR-001: Dual Engine Architecture (both engines use the same schema)
 - ADR-011: Jakarta EE Migration (namespace changes affect schema targeting)
-- ADR-012: OpenAPI-First Design (API schemas for REST, YAWL Schema for specifications)
+- ADR-022: OpenAPI-First Design (API schemas for REST, YAWL Schema for specifications)
 - ADR-019: Agent Framework Architecture (defines `<agentBinding>` semantics)
 
 ## Implementation Notes

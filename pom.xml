@@ -73,6 +73,7 @@
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
+        <module>yawl-gregverse</module>
     </modules>
 
     <!-- ======================================================================
@@ -386,6 +387,11 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-mcp-a2a-app</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-gregverse</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

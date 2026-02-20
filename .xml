@@ -1,0 +1,69 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] Using the MultiThreadedBuilder implementation with a thread count of 24
+[INFO] 
+[INFO] ----------------< org.yawlfoundation:yawl-mcp-a2a-app >-----------------
+[INFO] Building YAWL MCP-A2A Application 6.0.0-Alpha
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- exec:3.6.3:java (default-cli) @ yawl-mcp-a2a-app ---
+=== YAML Input from: /private/tmp/test-workflow.yaml ===
+
+name: TestWorkflow
+uri: test.xml
+first: TaskA
+
+tasks:
+  - id: TaskA
+    name: Task A
+    description: First task
+    flows: [end]
+
+
+=== Extended XML Output ===
+
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema YAWL_Schema4.0.xsd" version="4.0">
+  <specification uri="test.xml">
+    <name>TestWorkflow</name>
+    <metaData/>
+    <decomposition id="TestWorkflowNet" isRootNet="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="NetFactsType">
+      <name>TestWorkflowNet</name>
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+          <flowsInto><nextElementRef id="TaskA"/></flowsInto>
+        </inputCondition>
+        <task id="TaskA">
+          <name>Task A</name>
+          <documentation>First task</documentation>
+          <flowsInto>
+            <nextElementRef id="o-top"/>
+          </flowsInto>
+          <decomposesTo id="TaskADecomposition"/>
+        </task>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="TaskADecomposition" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="WebServiceGatewayFactsType">
+      <name>First task</name>
+    </decomposition>
+  </specification>
+</specificationSet>
+
+=== Extended Features ===
+• Variables with types and defaults
+• Timers with duration
+• Agent tasks with capabilities
+• Multi-instance with dynamic mode
+• Compensations
+• Complex conditions
+• Business rules support
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.484 s (Wall Clock)
+[INFO] Finished at: 2026-02-19T21:19:00-08:00
+[INFO] ------------------------------------------------------------------------

@@ -320,6 +320,9 @@
                         <testExclude>**/*.class</testExclude>
                         <!-- CORS tests use org.mockito which requires mockito-core dependency not in local cache -->
                         <testExclude>**/engine/interfce/rest/TestCorsFilter*.java</testExclude>
+                        <!-- Health indicator tests reference excluded source classes (resilience4j not in cache) -->
+                        <testExclude>**/engine/interfce/metrics/*HealthIndicator*.java</testExclude>
+                        <testExclude>**/engine/interfce/metrics/InterfaceMetricsTest.java</testExclude>
                     </testExcludes>
                 </configuration>
                 <executions>

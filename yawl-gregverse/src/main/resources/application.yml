@@ -1,0 +1,101 @@
+# YAWL Gregverse Application Configuration
+# Spring Boot 3.5.x with Java 25
+
+spring:
+  application:
+    name: yawl-gregverse
+
+  # H2 Database Configuration (development)
+  datasource:
+    url: jdbc:h2:mem:gregverse;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA/Hibernate Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        generate_statistics: false
+
+  # H2 Console (development only)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # JSON Serialization
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+# Server Configuration
+server:
+  port: 8082
+  shutdown: graceful
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Spring Boot Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+# OpenTelemetry Configuration
+otel:
+  service:
+    name: ${spring.application.name}
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: otlp
+  logs:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://localhost:4317
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.yawlfoundation.yawl: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# YAWL Engine Configuration
+yawl:
+  engine:
+    enabled: true
+    base-url: http://localhost:8080/yawl
+    connection-timeout: 30000
+    read-timeout: 60000

@@ -188,7 +188,7 @@ embedding docs in the engine WAR is sufficient and simpler to deploy.
 
 ## Related ADRs
 
-- ADR-012: OpenAPI-First Design (establishes the OpenAPI YAML as source of truth)
+- ADR-022: OpenAPI-First Design (establishes the OpenAPI YAML as source of truth)
 - ADR-016: API Changelog and Deprecation Policy (CHANGELOG.md maintained alongside JavaDoc)
 
 ## Approval
