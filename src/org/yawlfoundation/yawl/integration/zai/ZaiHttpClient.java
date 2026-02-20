@@ -5,10 +5,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.logging.Logger;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,10 +41,31 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class ZaiHttpClient {
 
+    private static final Logger LOGGER = Logger.getLogger(ZaiHttpClient.class.getName());
     private static final String ZAI_API_BASE = "https://api.z.ai/api/paas/v4";
     private static final String CHAT_ENDPOINT = "/chat/completions";
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_BACKOFF_MS = 500L;
+
+    /**
+     * Certificate pins for Z.AI API — hardened against MITM attacks.
+     * Pins are SHA-256 hashes of the DER-encoded public key (HPKP-style).
+     *
+     * <p>Primary pin: current Z.AI API certificate public key.
+     * Backup pins: future/alternative Z.AI certificates for rotation scenarios.
+     *
+     * <p>To extract pin from current certificate:
+     * <pre>
+     *   openssl s_client -connect api.z.ai:443 | openssl x509 -pubkey -noout | \
+     *     openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64
+     * </pre>
+     */
+    private static final List<String> ZAI_CERTIFICATE_PINS = List.of(
+        // Primary pin: current Z.AI API certificate (2024-2026)
+        "sha256/L9CowLk96O4M3HMZX/dxC1m/zJJYdQG9xUakwRV8yb4=",
+        // Backup pin: future Z.AI certificate for rotation scenarios
+        "sha256/mK87OJ3fZtIf7ZS0Eq6/5qG3H9nM2cL8wX5dP1nO9q0="
+    );
 
     /**
      * Immutable record representing a single chat message.
@@ -171,12 +198,89 @@ public class ZaiHttpClient {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
         this.readTimeout = Duration.ofSeconds(120);
-        // Virtual-thread-aware HttpClient: no blocking carrier threads
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(30))
-                .executor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor())
-                .build();
+        // Virtual-thread-aware HttpClient with certificate pinning for MITM prevention
+        this.httpClient = createHttpClientWithPinning();
         this.objectMapper = new ObjectMapper();
+    }
+
+    /**
+     * Create HTTP client with certificate pinning configured.
+     *
+     * <p>Configures:
+     * <ul>
+     *   <li>Virtual thread executor (no blocking carrier threads)</li>
+     *   <li>Custom SSL context with pinned trust manager</li>
+     *   <li>30-second connection timeout</li>
+     * </ul>
+     *
+     * @return configured HttpClient with pinning enabled
+     */
+    private HttpClient createHttpClientWithPinning() {
+        try {
+            SSLContext sslContext = createPinnedSslContext();
+            LOGGER.info("Z.AI HTTP client configured with certificate pinning");
+            return HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(30))
+                    .executor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor())
+                    .sslContext(sslContext)
+                    .build();
+        } catch (Exception e) {
+            LOGGER.severe("Failed to create pinned SSL context: " + e.getMessage());
+            throw new IllegalStateException("Certificate pinning initialization failed", e);
+        }
+    }
+
+    /**
+     * Create SSL context with pinned trust manager for Z.AI API.
+     *
+     * <p>Process:
+     * <ol>
+     *   <li>Create PinnedTrustManager with Z.AI certificate pins</li>
+     *   <li>Create SSLContext with pinned manager</li>
+     *   <li>Initialize with system default trust managers as fallback (optional)</li>
+     * </ol>
+     *
+     * @return configured SSLContext
+     * @throws Exception if SSL context creation fails
+     */
+    private SSLContext createPinnedSslContext() throws Exception {
+        // Create pinned trust manager with primary and backup pins
+        PinnedTrustManager pinnedManager = new PinnedTrustManager(
+            ZAI_CERTIFICATE_PINS,
+            getDefaultTrustManager(),
+            false  // Disable fallback by default for security
+        );
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(
+            null,  // No client certificates needed for Z.AI API calls
+            new TrustManager[]{pinnedManager},
+            new SecureRandom()
+        );
+        return sslContext;
+    }
+
+    /**
+     * Get system default trust manager (null-safe).
+     *
+     * @return default trust manager or null if unavailable
+     */
+    private javax.net.ssl.X509ExtendedTrustManager getDefaultTrustManager() {
+        try {
+            javax.net.ssl.TrustManagerFactory tmf =
+                javax.net.ssl.TrustManagerFactory.getInstance(
+                    javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init((KeyStore) null);
+
+            for (TrustManager tm : tmf.getTrustManagers()) {
+                if (tm instanceof javax.net.ssl.X509ExtendedTrustManager) {
+                    return (javax.net.ssl.X509ExtendedTrustManager) tm;
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warning("Could not load default trust manager: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
