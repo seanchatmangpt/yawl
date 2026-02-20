@@ -36,8 +36,8 @@ public class YIdentifier {
 
     // a location may be a condition or a task
     private final List<YNetElement> _locations = new ArrayList<>();
-    private List<String> locationNames = new ArrayList<String>();
-    private List<YIdentifier> _children = new ArrayList<YIdentifier>();
+    private List<String> locationNames = new ArrayList<>();
+    private List<YIdentifier> _children = new ArrayList<>();
     private YIdentifier _parent;
     private String id = null;
     private String _idString;
@@ -101,7 +101,7 @@ public class YIdentifier {
 
 
     public Set<YIdentifier> getDescendants() {
-        Set<YIdentifier> descendants = new HashSet<YIdentifier>();
+        Set<YIdentifier> descendants = new HashSet<>();
         descendants.add(this);
 
         for (YIdentifier child : _children) {

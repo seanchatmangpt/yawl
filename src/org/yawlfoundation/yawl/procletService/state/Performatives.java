@@ -90,7 +90,7 @@ public class Performatives {
 	}
 	
 	public void deleteAllPerformatives () {
-		perfs = new ArrayList<Performative>();
+		perfs = new ArrayList<>();
 	}
 	
 	public static List<Performative> createPerformatives (List<List<List>> relationExtsList, List dataRels, WorkItemRecord wir) {
@@ -102,7 +102,7 @@ public class Performatives {
 			//String receiver = (String) relationExt.get(3);
 			// determine receivers
 			// 20022010
-			List<String> receivers = new ArrayList<String>();
+			List<String> receivers = new ArrayList<>();
 			for (List relationExt1 : rl) {
 				String receiver = (String) relationExt1.get(3);
 				// 09032010
@@ -164,7 +164,7 @@ public class Performatives {
 			dataList = dataList.clone();
 			myLog.debug("dataList:" + JDOMUtil.elementToString(dataList));
 			Element eidData = dataList.getChild("entities");
-			List<Element> eltsRemove = new ArrayList<Element>();
+			List<Element> eltsRemove = new ArrayList<>();
 			if (eidData != null) {
 				myLog.debug("have entities");
 				List<Element> children = eidData.getChildren("entity");
@@ -300,7 +300,7 @@ public class Performatives {
 		List<EntityID> eids1 = new ArrayList<EntityID> ();
 		eids1.add(new EntityID("1","1"));
 		eids1.add(new EntityID("1","2"));
-		List<String> receivers = new ArrayList<String>();
+		List<String> receivers = new ArrayList<>();
 		receivers.add("first");
 		receivers.add("second");
 		Performative perf1 = new Performative(
@@ -308,7 +308,7 @@ public class Performatives {
 		List<EntityID> eids = new ArrayList<EntityID> ();
 		eids.add(new EntityID("1","1"));
 		eids.add(new EntityID("1","2"));
-		List<String> receivers2 = new ArrayList<String>();
+		List<String> receivers2 = new ArrayList<>();
 		receivers2.add("third");
 		receivers2.add("fourth");
 		Performative perf2 = new Performative(

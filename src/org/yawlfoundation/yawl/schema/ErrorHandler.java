@@ -38,10 +38,10 @@ import org.xml.sax.SAXParseException;
 public class ErrorHandler implements org.xml.sax.ErrorHandler
 {
     // Contains all warnings since the last reset.
-    private List<String> warnings = new ArrayList<String>();
+    private List<String> warnings = new ArrayList<>();
 
     // Contains all errors since the last reset.
-    private List<String> errors = new ArrayList<String>();
+    private List<String> errors = new ArrayList<>();
 
 
     /**

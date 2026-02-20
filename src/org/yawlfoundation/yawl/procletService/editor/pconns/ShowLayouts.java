@@ -179,7 +179,7 @@ public class ShowLayouts extends JApplet {
             
         g_array[0] = TestGraphs.createTestGraph(false);
         g_array[1] = MixedRandomGraphGenerator.generateMixedRandomGraph(graphFactory, 
-        		vertexFactory, edgeFactory, new HashMap<Number,Number>(), 20, true, new HashSet<Integer>());
+        		vertexFactory, edgeFactory, new HashMap<Number,Number>(), 20, true, new HashSet<>());
         g_array[2] = TestGraphs.getDemoGraph();
         g_array[3] = TestGraphs.createDirectedAcyclicGraph(4, 4, 0.3);
         g_array[4] = TestGraphs.getOneComponentGraph();

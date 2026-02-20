@@ -155,7 +155,7 @@ public class InterfaceA_EnvironmentBasedClient extends Interface_Client {
      * @return the set of active yawl services
      */
     public Set<YAWLServiceReference> getRegisteredYAWLServices(String sessionHandle) {
-        Set<YAWLServiceReference> result = new HashSet<YAWLServiceReference>();
+        Set<YAWLServiceReference> result = new HashSet<>();
         try {
             String xml = getRegisteredYAWLServicesAsXML(sessionHandle);
             if (xml != null && successful(xml)) {
@@ -307,7 +307,7 @@ public class InterfaceA_EnvironmentBasedClient extends Interface_Client {
      * @throws IOException if bad connection.
      */
     public Set<YExternalClient> getClientAccounts(String sessionHandle) throws IOException {
-        Set<YExternalClient> accounts = new HashSet<YExternalClient>();
+        Set<YExternalClient> accounts = new HashSet<>();
         Map<String, String> params = prepareParamMap("getAccounts", sessionHandle);
         String result = executeGet(_backEndURIStr, params);
 

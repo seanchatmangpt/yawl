@@ -538,7 +538,9 @@ public class YNetRunner {
                     Set<YExternalNetElement> postset = element.getPostsetElements();
                     for (YExternalNetElement postsetElement : postset) {
                         if (! notified.contains(element)) {  // avoid looped element
-                            createDeadlockItem(pmgr, (YTask) postsetElement);
+                            if (postsetElement instanceof YTask taskElement) {
+                                createDeadlockItem(pmgr, taskElement);
+                            }
                             notified.add(element);
                         }
                     }
@@ -1166,8 +1168,8 @@ public class YNetRunner {
                     task.cancel(pmgr);
                 }
             }
-            else if (((YCondition) netElement).containsIdentifier()) {
-                ((YCondition) netElement).removeAll(pmgr);
+            else if (netElement instanceof YCondition cond && cond.containsIdentifier()) {
+                cond.removeAll(pmgr);
             }
         }
         _enabledTasks = new LinkedHashSet<>();
@@ -1252,8 +1254,8 @@ public class YNetRunner {
             if (element instanceof YCondition cond) {
                 if (cond.containsIdentifier()) return false;
             }
-            else {
-                if (((YTask) element).t_isBusy()) return false;
+            else if (element instanceof YTask task && task.t_isBusy()) {
+                return false;
             }
         }
         return true;
@@ -1304,11 +1306,11 @@ public class YNetRunner {
     private boolean warnIfNetNotEmpty() {
         List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (! (element instanceof YOutputCondition outputCond)) {  // ignore end condition tokens
-                if ((element instanceof YCondition cond) && cond.containsIdentifier()) {
+            if (! (element instanceof YOutputCondition)) {  // ignore end condition tokens
+                if (element instanceof YCondition cond && cond.containsIdentifier()) {
                     haveTokens.add(element);
                 }
-                else if ((element instanceof YTask task) && task.t_isBusy()) {
+                else if (element instanceof YTask task && task.t_isBusy()) {
                     haveTokens.add(element);
 
                     // flag and announce any executing workitems

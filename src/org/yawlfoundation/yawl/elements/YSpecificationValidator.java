@@ -206,7 +206,7 @@ public class YSpecificationValidator {
      * @return an immutable list of validation errors
      */
     public List<ValidationError> getErrors() {
-        return Collections.unmodifiableList(_errors);
+        return List.copyOf(_errors);
     }
 
     /**

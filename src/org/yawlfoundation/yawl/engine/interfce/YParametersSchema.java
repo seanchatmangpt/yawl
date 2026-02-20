@@ -35,8 +35,8 @@ import org.yawlfoundation.yawl.elements.data.YParameter;
  */
 public class YParametersSchema {
 
-    private Map<String, YParameter> _inputParams = new HashMap<String, YParameter>();
-    private Map<String, YParameter> _outputParams = new HashMap<String, YParameter>();
+    private Map<String, YParameter> _inputParams = new HashMap<>();
+    private Map<String, YParameter> _outputParams = new HashMap<>();
     private String _formalInputParam;
 
 
@@ -55,7 +55,7 @@ public class YParametersSchema {
 
 
     public List<YParameter> getInputOnlyParams() {
-        List<YParameter> inputOnlyList = new ArrayList<YParameter>();
+        List<YParameter> inputOnlyList = new ArrayList<>();
         for (YParameter param : getInputParams()) {
              if (! _outputParams.containsKey(param.getName())) {
                 inputOnlyList.add(param);
@@ -66,7 +66,7 @@ public class YParametersSchema {
 
 
     public List<YParameter> getOutputOnlyParams() {
-        List<YParameter> outputOnlyList = new ArrayList<YParameter>();
+        List<YParameter> outputOnlyList = new ArrayList<>();
         for (YParameter param : getOutputParams()) {
              if (! _inputParams.containsKey(param.getName())) {
                 outputOnlyList.add(param);
@@ -77,7 +77,7 @@ public class YParametersSchema {
 
 
     public List<YParameter> getInputOutputParams() {
-        List<YParameter> inputOutputList = new ArrayList<YParameter>();
+        List<YParameter> inputOutputList = new ArrayList<>();
         for (YParameter param : getInputParams()) {
              if (_outputParams.containsKey(param.getName())) {
                 inputOutputList.add(param);

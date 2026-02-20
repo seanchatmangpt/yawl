@@ -59,7 +59,7 @@ public final class CompositeAuthenticationProvider implements A2AAuthenticationP
         for (A2AAuthenticationProvider p : providers) {
             Objects.requireNonNull(p, "provider in list must not be null");
         }
-        this.providers = Collections.unmodifiableList(new ArrayList<>(providers));
+        this.providers = List.copyOf(new ArrayList<>(providers));
     }
 
     /**
@@ -79,7 +79,7 @@ public final class CompositeAuthenticationProvider implements A2AAuthenticationP
                 list.add(p);
             }
         }
-        this.providers = Collections.unmodifiableList(list);
+        this.providers = List.copyOf(list);
     }
 
     /**

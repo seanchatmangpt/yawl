@@ -286,7 +286,7 @@ public class SchemaHandler {
      */
     private void assembleMap() {
         if (typeMap == null) {
-            typeMap = new HashMap<String, Element>();
+            typeMap = new HashMap<>();
             if (schemaString != null) {
                 Element dataSchema = JDOMUtil.stringToElement(getSchema());
                 for (Element child : dataSchema.getChildren()) {

@@ -167,7 +167,7 @@ public final class TtyCommandQueue {
                 null,
                 Instant.now(),
                 null,
-                java.util.Collections.emptyMap()
+                java.util.Map.of()
             );
         }
 
@@ -191,7 +191,7 @@ public final class TtyCommandQueue {
                 safetyClass,
                 Instant.now(),
                 null,
-                java.util.Collections.emptyMap()
+                java.util.Map.of()
             );
         }
 
@@ -270,7 +270,7 @@ public final class TtyCommandQueue {
                     safetyClass,
                     Instant.now(),
                     correlationId,
-                    java.util.Collections.unmodifiableMap(new java.util.HashMap<>(metadata))
+                    java.util.Map.copyOf(new java.util.HashMap<>(metadata))
                 );
             }
         }

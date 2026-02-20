@@ -39,7 +39,7 @@ public class YTimer extends Timer {
 
     private YTimer() {
         super(true) ;
-        _runners = new HashMap<String, TimeKeeper>();
+        _runners = new HashMap<>();
     }
 
 
@@ -66,7 +66,7 @@ public class YTimer extends Timer {
     }
 
     public void cancelTimersForCase(String caseID) {
-        Set<String> toRemove = new HashSet<String>();
+        Set<String> toRemove = new HashSet<>();
         for (String itemID : _runners.keySet()) {
             if (itemID.startsWith(caseID + ":") || itemID.startsWith(caseID + ".")) {
                 toRemove.add(itemID);

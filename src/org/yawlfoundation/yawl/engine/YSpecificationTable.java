@@ -124,7 +124,7 @@ public class YSpecificationTable
 
 
     public Set<YSpecificationID> getSpecIDs() {
-        Set<YSpecificationID> set = new HashSet<YSpecificationID>();
+        Set<YSpecificationID> set = new HashSet<>();
         for (SpecList list : this.values()) {
             set.addAll(list.getSpecificationIDs());
         }
@@ -182,7 +182,7 @@ public class YSpecificationTable
 
 
         public Set<YSpecificationID> getSpecificationIDs() {
-            Set<YSpecificationID> set = new HashSet<YSpecificationID>();
+            Set<YSpecificationID> set = new HashSet<>();
             for (YSpecification ySpec : this) {
                 set.add(ySpec.getSpecificationID());
             }

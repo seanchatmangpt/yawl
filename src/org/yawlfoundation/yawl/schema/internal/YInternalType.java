@@ -48,7 +48,7 @@ public enum YInternalType {
     private final YDataType _type;
 
     private static Map<String, YInternalType> _fromStringMap =
-            new HashMap<String, YInternalType>();
+            new HashMap<>();
 
 
     static {

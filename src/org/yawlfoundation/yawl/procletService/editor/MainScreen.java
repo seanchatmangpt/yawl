@@ -518,7 +518,7 @@ public class MainScreen {
       public void actionPerformed(ActionEvent e) {
     	  // ask for which emid the graph should be shown
     	  // take from mem
-          java.util.List<EntityMID> emids = new ArrayList<EntityMID>();
+          java.util.List<EntityMID> emids = new ArrayList<>();
     	  InteractionGraphs igraphs = InteractionGraphs.getNewInstance();
     	  for (InteractionGraph graph : igraphs.getGraphs()) {
     		  EntityMID emid = graph.getEntityMID();

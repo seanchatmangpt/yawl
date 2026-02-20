@@ -273,7 +273,7 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
                                Set<YTask> tasks) {
         Map<String, String> paramsMap = prepareParamMap(CASE_DEADLOCKED);
         paramsMap.put("caseID", id.toString());
-        Set<String> list = new HashSet<String>();
+        Set<String> list = new HashSet<>();
         for (YTask task : tasks) list.add(task.getID());
         paramsMap.put("tasks", list.toString());
         for (YAWLServiceReference service : services) {
@@ -305,8 +305,8 @@ public class InterfaceB_EngineBasedClient extends Interface_Client implements Ob
      */
     public YParameter[] getRequiredParamsForService(YAWLServiceReference yawlService)
                                                      throws IOException, JDOMException {
-        List<YParameter> paramResults = new ArrayList<YParameter>();
-        Map<String, String> paramMap = new HashMap<String, String>();
+        List<YParameter> paramResults = new ArrayList<>();
+        Map<String, String> paramMap = new HashMap<>();
         paramMap.put("action", "ParameterInfoRequest");
         String parametersAsString = executeGet(yawlService.getURI(), paramMap);
 

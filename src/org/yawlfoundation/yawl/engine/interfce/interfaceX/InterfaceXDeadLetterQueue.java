@@ -282,7 +282,7 @@ public class InterfaceXDeadLetterQueue {
                 result.add(entry);
             }
         }
-        return Collections.unmodifiableList(result);
+        return List.copyOf(result);
     }
 
     /**
@@ -298,7 +298,7 @@ public class InterfaceXDeadLetterQueue {
                 result.add(entry);
             }
         }
-        return Collections.unmodifiableList(result);
+        return List.copyOf(result);
     }
 
     /**

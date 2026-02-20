@@ -40,13 +40,13 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
  */
 public class IBControllerCache {
     private Map<String, WorkItemRecord> _workItemCache =
-            new HashMap<String, WorkItemRecord>();
+            new HashMap<>();
     private Map<String, TaskInformation> _taskInfoCache =
-            new HashMap<String, TaskInformation>();
+            new HashMap<>();
     private Map<String, String> _itemIDToDataMap =
-            new HashMap<String, String>();
+            new HashMap<>();
     private Map<String, SpecificationData> _specDataCache =
-            new HashMap<String, SpecificationData>();
+            new HashMap<>();
 
 
     public IBControllerCache() { }
@@ -77,7 +77,7 @@ public class IBControllerCache {
 
     public void unloadTaskInformation(YSpecificationID specID) {
         String specKey = specID.toKeyString() + ":";
-        List<String> toRemove = new ArrayList<String>();
+        List<String> toRemove = new ArrayList<>();
         for (String key : _taskInfoCache.keySet()) {
             if (key.startsWith(specKey)) {
                 toRemove.add(key);            // avoid concurrency exceptions

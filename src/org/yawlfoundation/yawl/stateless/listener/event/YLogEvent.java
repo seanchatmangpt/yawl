@@ -11,7 +11,7 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
  * @author Michael Adams
  * @date 24/8/20
  */
-public class YLogEvent extends YEvent {
+public final class YLogEvent extends YEvent {
 
     private YLogDataItemList _logData;
     private YWorkItem _workItem;

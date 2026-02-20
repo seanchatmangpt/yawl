@@ -99,7 +99,7 @@ public class BlockEditFrame extends JDialog {
         if (!this.blockIDpv.equals("")) {
         	blockIDtextField.setText(blockIDpv);
         }
-        java.util.List<String> values = new ArrayList<String>();
+        java.util.List<String> values = new ArrayList<>();
         values.add("INBOX");
         values.add("OUTBOX");
         values.add("CONFIGURATION");

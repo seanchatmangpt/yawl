@@ -86,7 +86,7 @@ public final class YCompositeTask extends YTask {
 
 
     public synchronized void cancel() {
-//        List<YNetRunner> cancelledRunners = new ArrayList<YNetRunner>();
+//        List<YNetRunner> cancelledRunners = new ArrayList<>();
         YIdentifier thisI = _i;
         if (_i != null) {
              for (YIdentifier identifier : _mi_active.getIdentifiers()) {

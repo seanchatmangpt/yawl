@@ -419,7 +419,9 @@ public class YNetRunner {
                     }
                     Set<YExternalNetElement> postset = element.getPostsetElements();
                     for (YExternalNetElement postsetElement : postset) {
-                        deadlockedTasks.add((YTask) postsetElement);
+                        if (postsetElement instanceof YTask taskElement) {
+                            deadlockedTasks.add(taskElement);
+                        }
                     }
                 }
             }

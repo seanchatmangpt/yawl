@@ -109,7 +109,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @see YMultiInstanceAttributes
  * @see YDecomposition
  */
-public abstract class YTask extends YExternalNetElement implements IMarkingTask {
+public abstract sealed class YTask extends YExternalNetElement implements IMarkingTask permits YAtomicTask, YCompositeTask {
 
     //class members
     private static final Random _random = new Random(new Date().getTime());

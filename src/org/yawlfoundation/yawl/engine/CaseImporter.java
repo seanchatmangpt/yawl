@@ -50,8 +50,8 @@ public class CaseImporter {
 
     public int add(String caseListXML) throws YEngineStateException, YPersistenceException {
         XNode root = parse(caseListXML);
-        List<YNetRunner> runners = new ArrayList<YNetRunner>();
-        List<YWorkItem> workitems = new ArrayList<YWorkItem>();
+        List<YNetRunner> runners = new ArrayList<>();
+        List<YWorkItem> workitems = new ArrayList<>();
         for (XNode caseNode : root.getChildren()) {
             runners.addAll(makeRunnerList(caseNode));
             workitems.addAll(makeWorkItemList(caseNode));
@@ -95,8 +95,8 @@ public class CaseImporter {
         if (nRunnerList == null) {
             throw new YEngineStateException("No net runners found to import for case");
         }
-        List<YNetRunner> allRunners = new ArrayList<YNetRunner>();
-        List<YIdentifier> parents = new ArrayList<YIdentifier>();
+        List<YNetRunner> allRunners = new ArrayList<>();
+        List<YIdentifier> parents = new ArrayList<>();
         Map<String, Set<YIdentifier>> parentChildMap =
                 new HashMap<String, Set<YIdentifier>>();
         for (XNode nRunner : nRunnerList.getChildren()) {
@@ -139,8 +139,8 @@ public class CaseImporter {
             throw new YEngineStateException("No workitems found to import for case");
         }
         Map<String, Set<YWorkItem>> parentChildMap = new HashMap<String, Set<YWorkItem>>();
-        Set<YWorkItem> parents = new HashSet<YWorkItem>();
-        List<YWorkItem> allItems = new ArrayList<YWorkItem>();
+        Set<YWorkItem> parents = new HashSet<>();
+        List<YWorkItem> allItems = new ArrayList<>();
         for (XNode nItem : nWIList.getChildren()) {
             YWorkItem item = makeWorkItem(nItem);
             allItems.add(item);
@@ -180,7 +180,7 @@ public class CaseImporter {
         if (parentID != null) {
             Set<T> children = parentChildMap.get(parentID);
             if (children == null) {
-                children = new HashSet<T>();
+                children = new HashSet<>();
                 parentChildMap.put(parentID, children);
             }
             children.add(child);
@@ -240,7 +240,7 @@ public class CaseImporter {
 
 
     private Map<String,String> makeTimerStates(XNode nStates) {
-        Map<String,String> stateMap = new HashMap<String, String>();
+        Map<String,String> stateMap = new HashMap<>();
         for (XNode nState : nStates.getChildren()) {
              stateMap.put(nState.getChildText("taskName"),
                      nState.getChildText("state"));
@@ -252,7 +252,7 @@ public class CaseImporter {
     private YIdentifier makeIdentifier(XNode nIdentifier) {
         YIdentifier id = new YIdentifier(nIdentifier.getAttributeValue("id"));
         XNode nLocations = nIdentifier.getChild("locations");
-        List<String> locations = new ArrayList<String>();
+        List<String> locations = new ArrayList<>();
         for (XNode nLocation : nLocations.getChildren()) {
             locations.add(nLocation.getText());
         }
@@ -260,7 +260,7 @@ public class CaseImporter {
 
         XNode nChildren = nIdentifier.getChild("children");
         if (nChildren != null) {
-            List<YIdentifier> list = new ArrayList<YIdentifier>();
+            List<YIdentifier> list = new ArrayList<>();
             for (XNode nChild : nChildren.getChildren()) {
                 YIdentifier childID = makeIdentifier(nChild);
                 childID.set_parent(id);
@@ -315,7 +315,7 @@ public class CaseImporter {
 
 
     private Set<String> toSet(XNode node) {
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         for (XNode child : node.getChildren()) {
             set.add(child.getText());
         }
@@ -324,7 +324,7 @@ public class CaseImporter {
 
 
     private Set<String> getBusyTaskNames(XNode node) {
-        Set<String> taskNames = new HashSet<String>();
+        Set<String> taskNames = new HashSet<>();
         for (XNode nTask : node.getChildren()) {
             taskNames.add(nTask.getChild("name").getText());
 

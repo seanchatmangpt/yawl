@@ -271,7 +271,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
      * @return a map of them.
      */
     public Map<String, YParameter> getStateSpaceBypassParams() {
-        Map<String, YParameter> result = new HashMap<String, YParameter>();
+        Map<String, YParameter> result = new HashMap<>();
         for (YParameter parameter : _outputParameters.values()) {
             if (parameter.bypassesDecompositionStateSpace()) {
                 result.put(parameter.getPreferredName(), parameter);
@@ -290,7 +290,7 @@ public abstract class YDecomposition implements Cloneable, YVerifiable {
 
     public Object clone() throws CloneNotSupportedException {
         YDecomposition copy = (YDecomposition) super.clone();
-        copy._inputParameters = new HashMap<String, YParameter>();
+        copy._inputParameters = new HashMap<>();
         for (YParameter parameter : _inputParameters.values()) {
             YParameter copyParam = (YParameter) parameter.clone();
             copy.addInputParameter(copyParam);

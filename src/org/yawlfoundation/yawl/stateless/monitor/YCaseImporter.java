@@ -153,7 +153,7 @@ public class YCaseImporter {
     
     private <T> void addChild(Map<String, Set<T>> parentChildMap, String parentID, T child) {
         if (parentID != null) {
-            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<T>());
+            Set<T> children = parentChildMap.computeIfAbsent(parentID, k -> new HashSet<>());
             children.add(child);
         }
     }
@@ -192,7 +192,7 @@ public class YCaseImporter {
     private YIdentifier unmarshalIdentifier(Element nIdentifier) {
         YIdentifier id = new YIdentifier(nIdentifier.getAttributeValue("id"));
         Element nLocations = nIdentifier.getChild("locations");
-        List<String> locations = new ArrayList<String>();
+        List<String> locations = new ArrayList<>();
         for (Element nLocation : nLocations.getChildren()) {
             locations.add(nLocation.getText());
         }

@@ -7,7 +7,7 @@ import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
  * @author Michael Adams
  * @date 24/8/20
  */
-public class YWorkItemEvent extends YEvent {
+public final class YWorkItemEvent extends YEvent {
 
     private YWorkItemStatus _prevStatus;
 

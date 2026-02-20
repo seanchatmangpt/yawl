@@ -150,10 +150,10 @@ public class YWorkItemStatusIndex {
      * @return an unmodifiable snapshot of matching item IDs; never null
      */
     public Set<String> getItemIdsWithStatus(YWorkItemStatus status) {
-        if (status == null) return Collections.emptySet();
+        if (status == null) return Set.of();
         _indexedLookups++;
         Set<String> bucket = _index.get(status);
-        if (bucket == null) return Collections.emptySet();
+        if (bucket == null) return Set.of();
         // Return a snapshot to avoid ConcurrentModificationException in callers
         return new HashSet<>(bucket);
     }

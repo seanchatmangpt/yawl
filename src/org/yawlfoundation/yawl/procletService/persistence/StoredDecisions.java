@@ -50,7 +50,7 @@ public class StoredDecisions {
     
     
     public List getDecisionsAsList() {
-        List decisions = new ArrayList<String>();
+        List decisions = new ArrayList<>();
         decisions.add(decision0);
         decisions.add(decision1);
         decisions.add(decision2);

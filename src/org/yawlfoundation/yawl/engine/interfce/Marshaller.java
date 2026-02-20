@@ -154,7 +154,7 @@ public class Marshaller {
      */
     public static List<SpecificationData> unmarshalSpecificationSummary(
             String specificationSummaryListXML) {
-        List<SpecificationData> specSummaryList = new ArrayList<SpecificationData>();
+        List<SpecificationData> specSummaryList = new ArrayList<>();
 
         Element specElem = JDOMUtil.stringToElement(specificationSummaryListXML);
         for (Element specElement : specElem.getChildren()) {
@@ -273,7 +273,7 @@ public class Marshaller {
     }
 
     public static List<String> unmarshalCaseIDs(String casesAsXML) {
-        List<String> cases = new ArrayList<String>();
+        List<String> cases = new ArrayList<>();
         Element casesElem = JDOMUtil.stringToElement(casesAsXML);
         for (Element caseElem : casesElem.getChildren()) {
             String caseID = caseElem.getText();

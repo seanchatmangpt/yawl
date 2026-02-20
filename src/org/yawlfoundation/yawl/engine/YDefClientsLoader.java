@@ -55,8 +55,8 @@ public class YDefClientsLoader {
 
     public YDefClientsLoader() {
         _log = LogManager.getLogger(this.getClass());
-        _clients = new HashSet<YExternalClient>();
-        _services = new HashSet<YAWLServiceReference>();
+        _clients = new HashSet<>();
+        _services = new HashSet<>();
         load();
     }
 
@@ -66,7 +66,7 @@ public class YDefClientsLoader {
     public Set<YAWLServiceReference> getLoadedServices() { return _services; }
 
     public Set<YClient> getAllLoaded() {
-        Set<YClient> allLoaded = new HashSet<YClient>();
+        Set<YClient> allLoaded = new HashSet<>();
         allLoaded.addAll(_clients);
         allLoaded.addAll(_services);
         return allLoaded;

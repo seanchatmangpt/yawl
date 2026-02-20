@@ -399,9 +399,9 @@ public final class YSpecification implements Cloneable, YVerifiable {
         Set<YExternalNetElement> relevantTasks = new HashSet<>();
         for (YDecomposition decomposition : relevantNets) {
             relevantTasks.addAll(unfoldNetChildren(decomposition,
-                                 new HashSet<YDecomposition>(), "emptyTasks"));
+                                 new HashSet<>(), "emptyTasks"));
             relevantTasks.addAll(unfoldNetChildren(decomposition,
-                                 new HashSet<YDecomposition>(), "decomposedTasks"));
+                                 new HashSet<>(), "decomposedTasks"));
         }
         return relevantTasks;
     }
