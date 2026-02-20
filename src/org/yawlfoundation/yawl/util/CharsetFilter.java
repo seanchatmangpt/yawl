@@ -64,5 +64,11 @@ public class CharsetFilter implements Filter {
         next.doFilter(request, response);
     }
 
-    public void destroy() {}
+    /**
+     * No cleanup required - this filter holds no external resources.
+     * The encoding string is a primitive wrapper and requires no explicit cleanup.
+     */
+    public void destroy() {
+        // No-op: charsets and string references are automatically managed by JVM
+    }
 }

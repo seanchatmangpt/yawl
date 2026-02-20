@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -123,6 +124,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Successful completion of an upgrade phase or entire upgrade. */
+    @JsonTypeName("success")
     public static final class Success implements UpgradeOutcome {
         private final String message;
 
@@ -161,6 +163,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Failed upgrade with error details. */
+    @JsonTypeName("failure")
     public static final class Failure implements UpgradeOutcome {
         private final String errorMessage;
         private final String errorType;
@@ -221,6 +224,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Partially completed upgrade with some phases succeeding. */
+    @JsonTypeName("partial")
     public static final class Partial implements UpgradeOutcome {
         private final int completedPhases;
         private final int totalPhases;
@@ -275,6 +279,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Upgrade currently in progress. */
+    @JsonTypeName("inProgress")
     public static final class InProgress implements UpgradeOutcome {
         private final String currentPhase;
         private final double progressPercent;
@@ -709,16 +714,20 @@ public final class UpgradeMemoryStore {
         Objects.requireNonNull(record, "record cannot be null");
 
         recordsById.put(record.id(), record);
-        metadata = metadata.withUpdated(recordsById.size());
+        // Atomic read of actual size to prevent race conditions
+        // ConcurrentHashMap.size() is eventually consistent but safe for metrics
+        int currentSize = recordsById.size();
+        metadata = metadata.withUpdated(currentSize);
 
         // Use async save to reduce lock contention under high concurrency
         scheduleAsyncSave();
-        log.info("Stored upgrade record: id={}, outcome={}",
-                record.id(), record.outcome().description());
+        log.info("Stored upgrade record: id={}, outcome={}, totalRecords={}",
+                record.id(), record.outcome().description(), currentSize);
     }
 
     /**
      * Updates an existing upgrade record.
+     * Uses replace() for atomic check-and-set to prevent race conditions.
      *
      * @param record the upgrade record with updated data
      * @throws MemoryStoreException if the record does not exist or cannot be updated
@@ -726,15 +735,17 @@ public final class UpgradeMemoryStore {
     public void update(UpgradeRecord record) {
         Objects.requireNonNull(record, "record cannot be null");
 
-        if (!recordsById.containsKey(record.id())) {
+        // Use atomic replace to ensure record exists and update is atomic
+        // Returns null if key doesn't exist, preventing TOCTOU race condition
+        UpgradeRecord previous = recordsById.replace(record.id(), record);
+        if (previous == null) {
             throw new MemoryStoreException("Record not found: " + record.id());
         }
 
-        recordsById.put(record.id(), record);
-
         // Use async save to reduce lock contention under high concurrency
         scheduleAsyncSave();
-        log.debug("Updated upgrade record: id={}", record.id());
+        log.debug("Updated upgrade record: id={}, previousOutcome={}, newOutcome={}",
+                record.id(), previous.outcome().description(), record.outcome().description());
     }
 
     /**

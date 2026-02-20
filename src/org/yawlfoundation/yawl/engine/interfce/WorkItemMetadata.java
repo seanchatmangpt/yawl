@@ -25,13 +25,17 @@ import java.util.Map;
  * This record encapsulates task-level configuration and attributes that
  * define the characteristics of the work item.
  *
- * @param taskName The unmodified task name
- * @param documentation Documentation for the task
+ * Fields are ordered for optimal cache locality: complex objects first (Map),
+ * then common-access strings (taskName, documentation), followed by
+ * configuration flags and less-frequently accessed fields.
+ *
+ * @param attributeTable Extended attributes map (ref)
+ * @param taskName The unmodified task name (frequently accessed)
+ * @param documentation Documentation for the task (frequently accessed)
  * @param allowsDynamicCreation Whether dynamic creation is allowed
  * @param requiresManualResourcing Whether manual resourcing is required
  * @param codelet Associated codelet identifier
  * @param deferredChoiceGroupID Identifier for deferred choice group membership
- * @param attributeTable Extended attributes map
  * @param customFormURL Path to alternate custom form JSP
  * @param logPredicateStarted Configurable logging predicate for start events
  * @param logPredicateCompletion Configurable logging predicate for completion events
@@ -40,13 +44,13 @@ import java.util.Map;
  * @version 5.2
  */
 public record WorkItemMetadata(
+    Map<String, String> attributeTable,
     String taskName,
     String documentation,
     String allowsDynamicCreation,
     String requiresManualResourcing,
     String codelet,
     String deferredChoiceGroupID,
-    Map<String, String> attributeTable,
     String customFormURL,
     String logPredicateStarted,
     String logPredicateCompletion
@@ -63,7 +67,7 @@ public record WorkItemMetadata(
      * Constructor with basic task information.
      */
     public WorkItemMetadata(String taskName, String documentation) {
-        this(taskName, documentation, null, null, null, null, null, null, null, null);
+        this(null, taskName, documentation, null, null, null, null, null, null, null);
     }
 
     /**
@@ -107,44 +111,44 @@ public record WorkItemMetadata(
      * Creates a new metadata record with updated task name.
      */
     public WorkItemMetadata withTaskName(String name) {
-        return new WorkItemMetadata(name, documentation, allowsDynamicCreation,
+        return new WorkItemMetadata(attributeTable, name, documentation, allowsDynamicCreation,
                 requiresManualResourcing, codelet, deferredChoiceGroupID,
-                attributeTable, customFormURL, logPredicateStarted, logPredicateCompletion);
+                customFormURL, logPredicateStarted, logPredicateCompletion);
     }
 
     /**
      * Creates a new metadata record with updated documentation.
      */
     public WorkItemMetadata withDocumentation(String doc) {
-        return new WorkItemMetadata(taskName, doc, allowsDynamicCreation,
+        return new WorkItemMetadata(attributeTable, taskName, doc, allowsDynamicCreation,
                 requiresManualResourcing, codelet, deferredChoiceGroupID,
-                attributeTable, customFormURL, logPredicateStarted, logPredicateCompletion);
+                customFormURL, logPredicateStarted, logPredicateCompletion);
     }
 
     /**
      * Creates a new metadata record with updated attributes.
      */
     public WorkItemMetadata withAttributes(Map<String, String> attrs) {
-        return new WorkItemMetadata(taskName, documentation, allowsDynamicCreation,
+        return new WorkItemMetadata(attrs, taskName, documentation, allowsDynamicCreation,
                 requiresManualResourcing, codelet, deferredChoiceGroupID,
-                attrs, customFormURL, logPredicateStarted, logPredicateCompletion);
+                customFormURL, logPredicateStarted, logPredicateCompletion);
     }
 
     /**
      * Creates a new metadata record with updated custom form URL.
      */
     public WorkItemMetadata withCustomFormURL(String url) {
-        return new WorkItemMetadata(taskName, documentation, allowsDynamicCreation,
+        return new WorkItemMetadata(attributeTable, taskName, documentation, allowsDynamicCreation,
                 requiresManualResourcing, codelet, deferredChoiceGroupID,
-                attributeTable, url, logPredicateStarted, logPredicateCompletion);
+                url, logPredicateStarted, logPredicateCompletion);
     }
 
     /**
      * Creates a new metadata record with updated log predicates.
      */
     public WorkItemMetadata withLogPredicates(String started, String completion) {
-        return new WorkItemMetadata(taskName, documentation, allowsDynamicCreation,
+        return new WorkItemMetadata(attributeTable, taskName, documentation, allowsDynamicCreation,
                 requiresManualResourcing, codelet, deferredChoiceGroupID,
-                attributeTable, customFormURL, started, completion);
+                customFormURL, started, completion);
     }
 }

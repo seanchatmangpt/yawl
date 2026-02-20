@@ -58,8 +58,14 @@ public class TwitterService extends InterfaceBWebsideController {
         }
     }
 
-    // have to implement abstract method, but have no need for this event
-    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {  }
+    /**
+     * Intentionally empty - TwitterService only processes enabled work items.
+     * Cancelled items do not trigger Twitter status updates by design.
+     * Implementation required by abstract superclass InterfaceBWebsideController.
+     */
+    public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        // No-op: Twitter service does not post status updates for cancelled items
+    }
 
 
     // these parameters are automatically inserted (in the Editor) into a task
