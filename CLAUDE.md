@@ -26,14 +26,16 @@ Before ANY tool call (Bash|Task|Read|Glob|Grep|Write|Edit):
 
 ```
 1. Ψ gate:    [ ] Stale facts? Run observatory.sh | [ ] Pick 1 quantum (module + path)?
-2. Λ context: [ ] Which rule file activates? | [ ] DX loop ready?
-3. H filter:  [ ] Will hook block this? (search H = {TODO,mock,stub,fake,empty,lie})
-4. Q check:   [ ] Real impl ∨ throw? | [ ] No silent fallback?
-5. Ω guard:   [ ] emit channel? | [ ] Session ID set? | [ ] Specific files, not git add .
+2. Fanout:    [ ] N independent quantums? (N ≤ 8) | [ ] Zero file overlap? (check shared-src.json)
+3. Λ context: [ ] Which rule file activates? | [ ] DX loop ready?
+4. H filter:  [ ] Will hook block this? (search H = {TODO,mock,stub,fake,empty,lie})
+5. Q check:   [ ] Real impl ∨ throw? | [ ] No silent fallback?
+6. Ω guard:   [ ] emit channel? | [ ] Session ID set? | [ ] Specific files, not git add .
 ```
 
 **Decision Tree**:
 - Ψ facts stale? → `bash scripts/observatory/observatory.sh` + re-read fact file
+- Multiple orthogonal quantums? → Spawn agents (Fanout) instead of sequential work
 - Cannot pick 1 quantum? → STOP. Read `Ψ.facts/modules.json` + `gates.json`
 - H blocks? → Fix violation for real (don't work around hook)
 - Ω uncertain? → Ask user before Write/Edit outside emit
@@ -148,6 +150,91 @@ bash scripts/observatory/observatory.sh  # Sync facts with codebase
 Task(prompt, agent) ∈ μ(O) | See `.claude/agents/` for specifications.
 Task(a₁,...,aₙ) ∈ single_message ∧ max_agents=8 | Keep sessions under 70% context.
 
+---
+
+## ⚡ GODSPEED!!! Fanout — Horizontal Parallelization
+
+**Fanout** = spawn n agents in parallel, each running Ψ→Λ→H→Q→Ω with ONE quantum per agent. Max 8 agents. Coordinate via facts, not messages.
+
+### PreFanout Checklist
+
+Before spawning agents:
+
+```
+[ ] Facts fresh? Run bash scripts/observatory/observatory.sh
+[ ] Pick N quantums (N ≤ 8, each orthogonal)
+[ ] Map each quantum → 1 agent (no overlapping files)
+[ ] No multi-axis changes per agent (1 axis = 1 quantum per agent)
+[ ] Verify zero file conflicts in Ψ.facts/shared-src.json
+```
+
+**Fanout Axiom**: Agent independence = zero coordination overhead. If agents need to negotiate, fanout is too wide.
+
+### Agent-to-Quantum Mapping
+
+| Quantum Axis | Best Agent | Rationale |
+|--------------|-----------|-----------|
+| **Toolchain** (Java25/Maven/JUnit) | validator | Verify compile + test gates |
+| **Dependency** (one family) | architect | Check deps-conflicts.json |
+| **Schema** (XSD path) | engineer | Edit + validate schema path |
+| **Engine semantic** (one pattern) | engineer | Core logic fix in yawl/engine/** |
+| **MCP/A2A** (one endpoint) | integrator | Endpoint contract + tests |
+| **Resourcing** (allocation logic) | engineer | Workqueue/resource allocation |
+| **Test coverage** (one module) | tester | Add tests, run coverage gates |
+| **Observability** (one metric) | prod-val | Add monitoring/observability |
+
+### Fanout Circuit (Agent i executes this)
+
+```
+Agent_i picks quantum_i
+
+Ψ: read Ψ.facts/modules.json + gates.json (shared read-only)
+   ↓
+Λ: bash scripts/dx.sh -pl <module_i>  (isolated compile)
+   ↓ red?     → fix code_i
+   ↓ green?   → proceed
+   ↓
+H: hook guard (same H ∩ content = ∅ rule)
+   ↓
+Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie
+   ↓
+Ω_i: emit { <specific files for quantum_i> }  (stage only YOUR files)
+     (do NOT commit yet — wait for consolidation)
+```
+
+**Key**: Agent_i only touches `files_i`. Verify no overlaps in `.claude/facts/shared-src.json` pre-spawn.
+
+### PostFanout Consolidation (Main Session)
+
+After all agents complete:
+
+```
+1. Collect emit{file_i} from all agents
+2. Verify ∩(emit{i}) = ∅  (no file overlaps)
+3. Verify ∧(result_i = green)  (all agents passed Λ)
+4. bash scripts/dx.sh all  (final full compile gate)
+   ↓ red? → identify failing agent_i, resume with fix
+   ↓ green? → proceed
+5. git add <all emit files>  (atomic stage)
+6. git commit -m "..."  (one logical change across agents)
+7. git push -u origin claude/<fanout>-<sessionId>
+```
+
+**Atomicity**: Fanout only commits if ALL agents green + full DX passes.
+
+### Fanout Patterns
+
+| Pattern | Example | Agents | Constraint |
+|---------|---------|--------|-----------|
+| **Module parallel** | Fix 3 modules | 3 | Each agent fixes 1 module |
+| **Quantum parallel** | Schema + Engine + MCP | 3 | Each axis independent |
+| **Test parallel** | Unit + Integration + E2E | 3 | Each test module separate |
+| **Multi-module schema** | Fix XSD in 2 modules | 2 | Schema changes don't conflict |
+
+**Constraint**: Zero shared-src overlap. Use `Ψ.facts/shared-src.json` to verify.
+
+---
+
 ## Π (Skills)
 
 **Π** = {/yawl-build, /yawl-test, /yawl-validate, /yawl-deploy, /yawl-review, /yawl-integrate, /yawl-spec, /yawl-pattern}
@@ -256,9 +343,10 @@ Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie?
 
 **Automation**:
 - PreToolUse (Ψ→Λ→H→Q→Ω checklist) — keeps session aligned
+- Fanout (n agents, each 1 quantum, coordinate via facts) — horizontal scaling without coordination overhead
 - PostToolUse (hook validation) — enforces H at write time
 - Stop conditions — re-anchor if uncertain
 - Rules (path-scoped) — context-aware governance
 - Facts (observable only) — 100× token compression
 
-**Result**: Zero configuration drift. Compile ≺ Test ≺ Validate ≺ Deploy. ✈️⚡
+**Result**: Zero configuration drift. Single-session and multi-agent scaling. Compile ≺ Test ≺ Validate ≺ Deploy. ✈️⚡
