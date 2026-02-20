@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.claude;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 public class ClaudeSessionManager {
 
     private static final Logger LOGGER = Logger.getLogger(ClaudeSessionManager.class.getName());
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /** Default session timeout */
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMinutes(30);
@@ -225,11 +227,22 @@ public class ClaudeSessionManager {
     }
 
     /**
-     * Generates a unique session ID.
+     * Generates a cryptographically secure unique session ID.
+     *
+     * <p>Uses {@link SecureRandom} to produce an unpredictable session identifier.
+     * {@code Math.random()} is not used because it is predictable and must not
+     * be used in security-sensitive contexts (session IDs are bearer tokens).</p>
+     *
+     * @return a unique, cryptographically-random session ID
      */
     private String generateSessionId() {
-        return "claude-" + System.currentTimeMillis() + "-" +
-               Long.toHexString(Double.doubleToLongBits(Math.random()));
+        byte[] bytes = new byte[16];
+        SECURE_RANDOM.nextBytes(bytes);
+        StringBuilder hex = new StringBuilder(32);
+        for (byte b : bytes) {
+            hex.append(String.format("%02x", b));
+        }
+        return "claude-" + System.currentTimeMillis() + "-" + hex;
     }
 
     /**

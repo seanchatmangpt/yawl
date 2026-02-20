@@ -3,7 +3,8 @@ package org.yawlfoundation.yawl.engine.interfce.rest;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,21 +12,25 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for CorsFilter SOC2 security fixes.
+ * JUnit 5 security-focused tests for CorsFilter SOC2 security fixes.
  *
- * Verifies that:
- *   - Wildcard origin is rejected at init time
- *   - Only whitelisted origins receive CORS headers
- *   - Non-whitelisted origins are rejected (no headers set)
- *   - Credentials flag reflects configuration
- *   - Preflight OPTIONS is handled correctly
+ * <p>Uses real concrete servlet stub objects (no mocking framework).
+ * Covers JUnit 5 nested test structure over the same CorsFilter as
+ * {@link TestCorsFilterValidation} but emphasises edge cases and
+ * security invariants with @Nested/@DisplayName annotation style.
+ *
+ * <p>Chicago TDD: every request and response object is a concrete
+ * in-process implementation that accurately captures filter behaviour.
+ * UnsupportedOperationException is thrown for any method CorsFilter
+ * does not call, making unexpected calls immediately visible.
  *
  * @author YAWL Foundation
  * @since 5.2
@@ -33,27 +38,10 @@ import static org.mockito.Mockito.*;
 public class TestCorsFilterSecurity {
 
     private CorsFilter filter;
-    private HttpServletRequest request;
-    private HttpServletResponse response;
-    private FilterChain chain;
-    private Map<String, String> responseHeaders;
 
     @BeforeEach
     void setUp() {
         filter = new CorsFilter();
-        request = mock(HttpServletRequest.class);
-        response = mock(HttpServletResponse.class);
-        chain = mock(FilterChain.class);
-        responseHeaders = new HashMap<>();
-
-        // Capture headers set on response
-        doAnswer(inv -> {
-            responseHeaders.put(inv.getArgument(0), inv.getArgument(1));
-            return null;
-        }).when(response).setHeader(anyString(), anyString());
-
-        when(request.getMethod()).thenReturn("GET");
-        when(request.getRequestURI()).thenReturn("/api/v1/cases");
     }
 
     // =========================================================================
@@ -117,84 +105,86 @@ public class TestCorsFilterSecurity {
         @Test
         @DisplayName("Whitelisted origin receives Access-Control-Allow-Origin header")
         void whitelistedOrigin_receivesHeader() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
-
-            filter.doFilter(request, response, chain);
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response,
+                    new PassThroughFilterChain());
 
             assertEquals("https://app.example.com",
-                    responseHeaders.get("Access-Control-Allow-Origin"),
+                    response.getHeader("Access-Control-Allow-Origin"),
                     "Whitelisted origin must be reflected exactly in ACAO header");
         }
 
         @Test
         @DisplayName("Whitelisted origin receives Vary: Origin header")
         void whitelistedOrigin_receivesVaryOrigin() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response,
+                    new PassThroughFilterChain());
 
-            filter.doFilter(request, response, chain);
-
-            assertEquals("Origin", responseHeaders.get("Vary"),
+            assertEquals("Origin", response.getHeader("Vary"),
                     "Vary: Origin must be set for CORS responses to prevent caching across origins");
         }
 
         @Test
         @DisplayName("Non-whitelisted origin does NOT receive CORS headers")
         void nonWhitelistedOrigin_noHeaders() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://evil.example.com");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://evil.example.com"), response,
+                    new PassThroughFilterChain());
 
-            filter.doFilter(request, response, chain);
-
-            assertNull(responseHeaders.get("Access-Control-Allow-Origin"),
+            assertNull(response.getHeader("Access-Control-Allow-Origin"),
                     "Non-whitelisted origin must not receive ACAO header");
         }
 
         @Test
         @DisplayName("Request without Origin header proceeds without CORS headers")
         void noOriginHeader_noCorsHeaders() throws Exception {
-            when(request.getHeader("Origin")).thenReturn(null);
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            PassThroughFilterChain chain = new PassThroughFilterChain();
+            filter.doFilter(buildGetRequest(null), response, chain);
 
-            filter.doFilter(request, response, chain);
-
-            assertNull(responseHeaders.get("Access-Control-Allow-Origin"),
+            assertNull(response.getHeader("Access-Control-Allow-Origin"),
                     "Same-origin request (no Origin header) must not get CORS headers");
-            verify(chain).doFilter(request, response);
+            assertTrue(chain.wasInvoked(), "Filter chain must be invoked for same-origin requests");
         }
 
         @Test
         @DisplayName("Access-Control-Allow-Credentials is not set when allowCredentials=false")
         void credentialsFalse_headerNotSet() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response,
+                    new PassThroughFilterChain());
 
-            filter.doFilter(request, response, chain);
-
-            assertNull(responseHeaders.get("Access-Control-Allow-Credentials"),
+            assertNull(response.getHeader("Access-Control-Allow-Credentials"),
                     "ACAC header must not be set when allowCredentials=false");
         }
 
         @Test
         @DisplayName("Access-Control-Allow-Credentials is 'true' when configured")
         void credentialsTrue_headerIsTrue() throws Exception {
+            filter.destroy();
+            filter = new CorsFilter();
             FilterConfig cfg = buildConfig(
                     "allowedOrigins", "https://app.example.com",
                     "allowCredentials", "true");
             filter.init(cfg);
 
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response,
+                    new PassThroughFilterChain());
 
-            filter.doFilter(request, response, chain);
-
-            assertEquals("true", responseHeaders.get("Access-Control-Allow-Credentials"),
+            assertEquals("true", response.getHeader("Access-Control-Allow-Credentials"),
                     "ACAC header must be 'true' when configured and origin is allowed");
         }
 
         @Test
         @DisplayName("Wildcard is never set as Access-Control-Allow-Origin value")
         void aCAOisNeverWildcard() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response,
+                    new PassThroughFilterChain());
 
-            filter.doFilter(request, response, chain);
-
-            String acao = responseHeaders.get("Access-Control-Allow-Origin");
+            String acao = response.getHeader("Access-Control-Allow-Origin");
             assertNotEquals("*", acao,
                     "Wildcard must never appear as Access-Control-Allow-Origin (SOC2 CRITICAL)");
         }
@@ -202,41 +192,84 @@ public class TestCorsFilterSecurity {
         @Test
         @DisplayName("OPTIONS preflight returns 200 without invoking chain")
         void optionsPreflight_returns200() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
-            when(request.getMethod()).thenReturn("OPTIONS");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            PassThroughFilterChain chain = new PassThroughFilterChain();
+            filter.doFilter(buildOptionsRequest("https://app.example.com"), response, chain);
 
-            filter.doFilter(request, response, chain);
-
-            verify(response).setStatus(HttpServletResponse.SC_OK);
-            verify(chain, never()).doFilter(any(), any());
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus(),
+                    "OPTIONS preflight must return HTTP 200");
+            assertFalse(chain.wasInvoked(),
+                    "Filter chain must NOT be invoked for OPTIONS preflight");
         }
 
         @Test
         @DisplayName("Filter chain is invoked for non-OPTIONS requests with valid origin")
         void validOriginNonOptions_chainInvoked() throws Exception {
-            when(request.getHeader("Origin")).thenReturn("https://app.example.com");
-            when(request.getMethod()).thenReturn("GET");
+            RecordingHttpResponse response = new RecordingHttpResponse();
+            PassThroughFilterChain chain = new PassThroughFilterChain();
+            filter.doFilter(buildGetRequest("https://app.example.com"), response, chain);
 
-            filter.doFilter(request, response, chain);
-
-            verify(chain).doFilter(request, response);
+            assertTrue(chain.wasInvoked(),
+                    "Filter chain must be invoked for GET with whitelisted origin");
         }
     }
 
     // =========================================================================
-    // Helpers
+    // Real (no-mock) servlet helpers
     // =========================================================================
 
+    /**
+     * Builds a concrete in-process FilterConfig. No mocking framework.
+     * Odd-indexed keyValues are parameter names; even-indexed are values.
+     * A null value skips the entry (parameter is absent).
+     */
     private FilterConfig buildConfig(String... keyValues) {
-        FilterConfig cfg = mock(FilterConfig.class);
-        Map<String, String> params = new HashMap<>();
+        final Map<String, String> params = new LinkedHashMap<>();
         for (int i = 0; i + 1 < keyValues.length; i += 2) {
-            if (keyValues[i] != null) {
+            if (keyValues[i] != null && keyValues[i + 1] != null) {
                 params.put(keyValues[i], keyValues[i + 1]);
             }
         }
-        when(cfg.getInitParameter(anyString())).thenAnswer(inv ->
-                params.get(inv.getArgument(0).toString()));
-        return cfg;
+        return new FilterConfig() {
+            @Override public String getFilterName() { return "CorsFilter"; }
+            @Override public String getInitParameter(String name) { return params.get(name); }
+            @Override public Enumeration<String> getInitParameterNames() {
+                return Collections.enumeration(params.keySet());
+            }
+            @Override public jakarta.servlet.ServletContext getServletContext() {
+                return new TestCorsFilterValidation.TestOnlyServletContext();
+            }
+        };
+    }
+
+    private TestCorsFilterValidation.MinimalHttpServletRequest buildGetRequest(String origin) {
+        return new TestCorsFilterValidation.MinimalHttpServletRequest("GET", "/api/v1/cases", origin);
+    }
+
+    private TestCorsFilterValidation.MinimalHttpServletRequest buildOptionsRequest(String origin) {
+        return new TestCorsFilterValidation.MinimalHttpServletRequest("OPTIONS", "/api/v1/cases", origin);
+    }
+
+    /**
+     * Records headers and status set by CorsFilter using only real Java data structures.
+     * No mocking framework involved.
+     */
+    static final class RecordingHttpResponse extends TestCorsFilterValidation.RecordingHttpResponse {
+        // Inherits all real implementations from TestCorsFilterValidation.RecordingHttpResponse
+    }
+
+    /**
+     * Concrete FilterChain that records invocation and passes through.
+     */
+    static final class PassThroughFilterChain implements FilterChain {
+        private boolean invoked = false;
+
+        @Override
+        public void doFilter(ServletRequest request, ServletResponse response)
+                throws IOException, ServletException {
+            this.invoked = true;
+        }
+
+        public boolean wasInvoked() { return invoked; }
     }
 }
