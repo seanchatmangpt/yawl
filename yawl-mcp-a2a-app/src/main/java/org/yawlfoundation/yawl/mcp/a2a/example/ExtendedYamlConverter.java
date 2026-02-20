@@ -16,8 +16,6 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.example;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
 import java.util.*;
 
 /**
@@ -39,16 +37,8 @@ import java.util.*;
  */
 public class ExtendedYamlConverter extends YawlYamlConverter {
 
-    /** YAWL Schema 4.0 namespace */
-    private static final String NAMESPACE = "http://www.yawlfoundation.org/yawlschema";
-
-    /** XML Schema Instance namespace */
-    private static final String XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
-
-    private final YAMLMapper yamlMapper;
-
     public ExtendedYamlConverter() {
-        this.yamlMapper = new YAMLMapper();
+        super();
     }
 
     /**
@@ -414,88 +404,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             return typeName.substring(colonIndex + 1);
         }
         return typeName;
-    }
-
-    // --- Helper methods (private in parent, so reimplemented here) ---
-
-    /**
-     * Strip markdown code block wrappers (```yaml ... ``` or ``` ... ```).
-     */
-    private String stripMarkdownCodeBlock(String text) {
-        String trimmed = text.trim();
-
-        // Check for opening code fence
-        if (trimmed.startsWith("```")) {
-            int newlineIndex = trimmed.indexOf('\n');
-            if (newlineIndex > 0) {
-                // Skip the opening fence line (```yaml or ```)
-                trimmed = trimmed.substring(newlineIndex + 1);
-            }
-
-            // Remove closing fence
-            int closingFence = trimmed.lastIndexOf("```");
-            if (closingFence > 0) {
-                trimmed = trimmed.substring(0, closingFence);
-            }
-        }
-
-        return trimmed.trim();
-    }
-
-    /**
-     * Get a string value from a map with a default.
-     */
-    private String getString(Map<String, Object> map, String key, String defaultValue) {
-        Object value = map.get(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        return value.toString();
-    }
-
-    /**
-     * Get a list of strings from a map.
-     */
-    @SuppressWarnings("unchecked")
-    private List<String> getStringList(Map<String, Object> map, String key) {
-        Object value = map.get(key);
-        if (value instanceof List) {
-            List<?> list = (List<?>) value;
-            List<String> result = new ArrayList<>();
-            for (Object item : list) {
-                if (item != null) {
-                    result.add(item.toString());
-                }
-            }
-            return result;
-        }
-        return new ArrayList<>();
-    }
-
-    /**
-     * Escape special XML characters.
-     */
-    private String escapeXml(String s) {
-        if (s == null) {
-            throw new IllegalArgumentException("String to escape cannot be null");
-        }
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&apos;");
-    }
-
-    /**
-     * Get the list of tasks from a specification.
-     */
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> getTasks(Map<String, Object> spec) {
-        Object tasksObj = spec.get("tasks");
-        if (tasksObj instanceof List) {
-            return (List<Map<String, Object>>) tasksObj;
-        }
-        return new ArrayList<>();
     }
 
     /**

@@ -67,7 +67,7 @@ public class YawlYamlConverter {
     /** XML Schema Instance namespace */
     protected static final String XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
 
-    private final YAMLMapper yamlMapper;
+    protected final YAMLMapper yamlMapper;
 
     public YawlYamlConverter() {
         this.yamlMapper = new YAMLMapper();
@@ -101,7 +101,7 @@ public class YawlYamlConverter {
     /**
      * Strip markdown code block wrappers (```yaml ... ``` or ``` ... ```).
      */
-    private String stripMarkdownCodeBlock(String text) {
+    protected String stripMarkdownCodeBlock(String text) {
         String trimmed = text.trim();
 
         // Check for opening code fence
@@ -243,7 +243,7 @@ public class YawlYamlConverter {
 
     // --- Helper methods ---
 
-    private String getString(Map<String, Object> map, String key, String defaultValue) {
+    protected String getString(Map<String, Object> map, String key, String defaultValue) {
         Object value = map.get(key);
         if (value == null) {
             return defaultValue;
@@ -252,7 +252,7 @@ public class YawlYamlConverter {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> getTasks(Map<String, Object> spec) {
+    protected List<Map<String, Object>> getTasks(Map<String, Object> spec) {
         Object tasksObj = spec.get("tasks");
         if (tasksObj instanceof List) {
             return (List<Map<String, Object>>) tasksObj;
@@ -261,7 +261,7 @@ public class YawlYamlConverter {
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> getStringList(Map<String, Object> map, String key) {
+    protected List<String> getStringList(Map<String, Object> map, String key) {
         Object value = map.get(key);
         if (value instanceof List) {
             List<?> list = (List<?>) value;
@@ -276,7 +276,7 @@ public class YawlYamlConverter {
         return new ArrayList<>();
     }
 
-    private String escapeXml(String s) {
+    protected String escapeXml(String s) {
         if (s == null) {
             throw new IllegalArgumentException("String to escape cannot be null");
         }
