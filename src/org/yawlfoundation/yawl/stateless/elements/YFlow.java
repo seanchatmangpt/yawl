@@ -108,8 +108,7 @@ public class YFlow implements Comparable<YFlow> {
                     _priorElement + "] to any Element [" + _nextElement + "] " +
                     "must occur with the bounds of the same net.");
         }
-        if (_priorElement instanceof YTask) {
-            YTask priorElement = (YTask) _priorElement;
+        if (_priorElement instanceof YTask priorElement) {
             int priorElementSplitType = priorElement.getSplitType();
             if (priorElementSplitType == YTask._AND) {
                 if (_xpathPredicate != null) {
