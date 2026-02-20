@@ -116,6 +116,100 @@ Lead: Synthesizes all findings into review summary, categorizes by severity.
 
 **Cost**: ~$2-3C | **ROI**: Catches cross-cutting issues that single reviewer misses.
 
+### Pattern 4: Observability & Monitoring (2 engineers)
+
+**Scenario**: Add logging, metrics, and distributed tracing to YAWL engine execution.
+
+```
+Lead: "Instrument YNetRunner for production observability. 2 engineers:"
+  - Engineer A: Observability engineer (logging, metrics, tracing)
+  - Engineer B: Engine engineer (integration points, instrumentation)
+
+Circuit:
+  - A: Designs observability schema (prometheus metrics, log structure, trace context)
+     Adds metrics collectors for task queue, execution time, resource usage
+     Messages B: "Metrics schema ready: engine_task_duration_ms, queue_depth, executor_threads"
+  - B: Integrates metrics into YNetRunner.executeTask(), YWorkItem state transitions
+     Adds trace context propagation to async operations
+     Runs local benchmarks, messages A: "Verified 2% overhead. Metrics flowing correctly."
+
+Message flow:
+  - A: "Defined 8 core metrics. Schema at observability/schemas/engine-metrics.json"
+  - B: "Integrated all 8 metrics. Engine fires events correctly in tests."
+  - A: "Confirmed Prometheus scrape targets working in integration test."
+
+Lead: Consolidates both changes, runs full DX, validates metrics output in test suite.
+```
+
+**Modules**: yawl/observability/**, yawl/engine/**
+**Cost**: ~$2-3C | **ROI**: Enables production debugging without code changes.
+
+### Pattern 5: Performance Optimization (2-3 engineers)
+
+**Scenario**: Improve throughput and latency in a critical YAWL subsystem.
+
+```
+Lead: "Optimize task queue with lock-free data structures. 3 engineers:"
+  - Engineer A: Performance engineer (profiling, benchmarking)
+  - Engineer B: Engine engineer (task queue, YWorkItem allocation)
+  - Engineer C: Tester (regression tests, concurrency verification)
+
+Circuit:
+  - A: Profiles current task queue, identifies contention at queue.take()
+     Runs JMH benchmarks, establishes baseline: 50K tasks/sec, 2ms p99 latency
+     Messages B & C: "Bottleneck: synchronized queue. Lock-free list/queue candidates identified."
+  - B: Replaces java.util.Queue with com.lmax.disruptor.RingBuffer
+     Implements YWorkItem pooling to reduce GC pressure
+     Runs local tests, messages A & C: "Ready for benchmarking. GC time down 40%."
+  - C: Runs full concurrency test suite (100K+ task transitions)
+     Validates no lost tasks, no state corruption
+     Messages A: "All tests pass. No regression in correctness."
+
+Message flow:
+  - A: "Lock-free baseline: 150K tasks/sec, 0.5ms p99. 3× improvement target reached."
+  - B: "Object pooling + ring buffer integrated. Memory stable at 500MB."
+  - C: "Stress tests (10 threads, 100K tasks each) pass. No deadlocks."
+
+Lead: Consolidates changes, runs full DX + perf validation, commits with benchmark results.
+```
+
+**Modules**: yawl/engine/**, yawl/stateless/** (task allocation), src/test/**
+**Cost**: ~$3-4C | **ROI**: 3× throughput gain justifies optimization investment.
+
+### Pattern 6: Autonomous Agent Integration (2-3 engineers)
+
+**Scenario**: Add new MCP endpoint or A2A protocol handler for case monitoring.
+
+```
+Lead: "Integrate autonomous agents for case monitoring. 3 engineers:"
+  - Engineer A: Integrator (MCP/A2A protocol, endpoint design)
+  - Engineer B: Engine engineer (YStatelessEngine, case monitoring API)
+  - Engineer C: Tester (protocol compliance, integration tests)
+
+Circuit:
+  - A: Designs new MCP endpoint: tools/cases/monitor, tools/cases/subscribe
+     Defines JSON schema for case state events
+     Messages B: "MCP schema ready. Expecting CaseStateUpdate events from engine."
+  - B: Extends YStatelessEngine.getCaseMonitor() to emit case state changes
+     Implements CaseStateEvent publisher interface
+     Integrates with A's MCP endpoint registration
+     Messages A & C: "Case monitor events flowing. Ready for protocol binding."
+  - C: Writes protocol compliance tests (MCP message format, ordering, error cases)
+     Tests autonomous agent can receive and act on case updates
+     Messages A: "Protocol tests pass. Agent receives updates within 50ms."
+
+Message flow:
+  - A: "MCP schema v1 published. Endpoint /yawl/cases/monitor listening."
+  - B: "YStatelessEngine publishes CaseStateUpdate on every state change."
+  - C: "Protocol verification: 100 case updates, 0 delivery failures, 0 corruption."
+  - A: "Autonomous agent successfully subscribed and responded to case updates."
+
+Lead: Consolidates changes, validates MCP endpoint in standalone test, commits.
+```
+
+**Modules**: yawl/integration/autonomous/**, yawl/engine/**, yawl/stateless/**, src/test/**
+**Cost**: ~$3-4C | **ROI**: Enables autonomous agents to monitor and react to cases in real time.
+
 ## Avoiding Team Overuse
 
 **Anti-pattern**: Summoning a team for every task.

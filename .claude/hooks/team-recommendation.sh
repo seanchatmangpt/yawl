@@ -41,7 +41,7 @@ if [[ $desc_lower =~ (integration|mcp|a2a|endpoint|event|publisher) ]]; then
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Integration (yawl/integration/**)\n"
 fi
 
-if [[ $desc_lower =~ (resource|allocation|pool|workqueue|queue) ]]; then
+if [[ $desc_lower =~ (resource|resourc|allocation|pool|workqueue|queue) ]]; then
     ((QUANTUM_COUNT++))
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Resourcing (yawl/resourcing/**)\n"
 fi
@@ -98,7 +98,7 @@ elif [[ $QUANTUM_COUNT -gt 5 ]]; then
     exit 2
 
 else
-    echo -e "${YELLOW}ℹ️  Could not detect clear quantums. Analyze manually.${NC}"
+    echo -e "${YELLOW}⚠️  Could not detect clear quantums. Provide task with specific quantum keywords.${NC}"
     echo ""
-    exit 0
+    exit 2
 fi
