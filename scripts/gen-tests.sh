@@ -96,73 +96,72 @@ if [[ -f "$OUTPUT_FILE" ]]; then
 fi
 
 # ── Extract public methods ────────────────────────────────────────────────
-# Regex captures: visibility + return type + method name + params
-# Skips synthetic methods, getters/setters, overrides
+# Uses Python for robust AST-like parsing
+# Falls back to grep-based extraction if Python unavailable
 extract_methods() {
     local file="$1"
-    local methods=()
-    local current_method=""
-    local in_javadoc=0
 
-    while IFS= read -r line; do
-        # Track javadoc
-        if [[ "$line" =~ /\*\* ]]; then
-            in_javadoc=1
-        fi
-        if [[ "$in_javadoc" == 1 && "$line" =~ \*/ ]]; then
-            in_javadoc=0
+    # Try Python first (more robust)
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$file" <<'PYTHON'
+import re
+import sys
+
+methods = []
+try:
+    filepath = sys.argv[1]
+    with open(filepath, 'r') as f:
+        content = f.read()
+
+    # Remove comments and javadoc
+    content = re.sub(r'/\*\*.*?\*/', '', content, flags=re.DOTALL)
+    content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
+
+    # Find public methods: public [modifiers] return-type name(params)
+    # Matches: public, public static, public abstract, etc.
+    pattern = r'public\s+(?:static\s+)?(?:abstract\s+)?(?:synchronized\s+)?([a-zA-Z_][a-zA-Z0-9_<>?\[\],\s]*?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)'
+
+    for match in re.finditer(pattern, content):
+        return_type = match.group(1).strip()
+        method_name = match.group(2)
+        params = match.group(3).strip()
+
+        # Skip private/protected (shouldn't happen with public pattern, but safe)
+        if 'private' in return_type or 'protected' in return_type:
             continue
-        fi
-        if [[ $in_javadoc -eq 1 ]]; then
-            continue
-        fi
 
-        # Skip annotations
-        if [[ "$line" =~ ^[[:space:]]*@ ]]; then
-            continue
-        fi
-
-        # Skip private/protected/static final methods
-        if [[ "$line" =~ private|protected|static ]]; then
-            continue
-        fi
-
-        # Match public method signatures (simplified, multiline safe)
-        # Pattern: public [optional-modifiers] return-type method-name (
-        if [[ "$line" =~ "public " ]] && [[ "$line" =~ "(" ]]; then
-            # Extract method name: last identifier before opening paren
-            local before_paren="${line%%(*}"
-            local method_name=$(echo "$before_paren" | awk '{print $NF}')
-
-            # Skip if no method name found
-            if [[ -z "$method_name" ]]; then
-                continue
-            fi
-
-            # Skip constructors if configured
-            if [[ "$method_name" == "$CLASS_NAME" && $SKIP_CONSTRUCTORS -eq 1 ]]; then
-                continue
-            fi
-
-            # Extract return type (word before method name)
-            local return_type=$(echo "$before_paren" | awk '{print $(NF-1)}')
-            if [[ "$return_type" == "static" ]] || [[ "$return_type" == "final" ]] || [[ "$return_type" == "abstract" ]]; then
-                return_type=$(echo "$before_paren" | awk '{print $(NF-2)}')
-            fi
-
-            # Extract parameter list (may span lines)
-            local params=$(echo "$line" | sed 's/.*(\([^)]*\).*/\1/')
-            if [[ ! "$line" =~ ")" ]]; then
-                # Parameters span multiple lines, just use what we have
-                params=$(echo "$line" | sed 's/.*(//')
-            fi
-
-            methods+=("$return_type $method_name|$params")
-        fi
-    done < "$file"
+        methods.append(f"{return_type} {method_name}|{params}")
 
     # Remove duplicates and print
-    printf '%s\n' "${methods[@]}" | sort -u
+    for method in sorted(set(methods)):
+        print(method)
+
+except Exception as e:
+    print(f"Error parsing {filepath}: {e}", file=sys.stderr)
+    sys.exit(1)
+PYTHON
+        return
+    fi
+
+    # Fallback: grep-based extraction
+    grep -E "^\s*public\s+.*\(" "$file" | \
+        grep -v "^\s*//" | \
+        sed 's/^[[:space:]]*//' | \
+        while read -r line; do
+            # Extract method signature
+            if [[ "$line" =~ public[[:space:]]+(abstract[[:space:]]+)?(static[[:space:]]+)?(synchronized[[:space:]]+)?(.*)$ ]]; then
+                local signature="${BASH_REMATCH[4]}"
+                # Extract return type and method name
+                local before_paren="${signature%%(*}"
+                local method_name=$(echo "$before_paren" | awk '{print $NF}')
+                local return_type=$(echo "$before_paren" | sed 's/ *'$method_name'$//')
+
+                # Extract params
+                local params=$(echo "$signature" | sed 's/.*(\([^)]*\).*/\1/')
+
+                echo "$return_type $method_name|$params"
+            fi
+        done | sort -u
 }
 
 METHODS=$(extract_methods "$SOURCE_FILE")

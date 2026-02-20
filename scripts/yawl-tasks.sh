@@ -519,7 +519,8 @@ cmd_all() {
 
 # ── Main Command Router ────────────────────────────────────────────
 main() {
-    if [[ $# -eq 0 ]]; then
+    # Handle no args or help flags
+    if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
         cmd_help
     fi
 
