@@ -48,6 +48,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Resilience4j Rate Limiting (for RateLimitFilter) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-ratelimiter</artifactId>
+        </dependency>
+
         <!-- Testing - JUnit 4 (for V6SecurityTest extending TestCase) -->
         <dependency>
             <groupId>junit</groupId>

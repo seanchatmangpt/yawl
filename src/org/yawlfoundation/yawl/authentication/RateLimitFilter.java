@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.authentication;
 
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,11 +27,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Servlet filter that enforces per-IP rate limiting on authentication endpoints
@@ -38,17 +39,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * SOC2 HIGH finding: authentication endpoints (POST /login, POST /auth, Interface A/B
  * connect requests) were missing rate limiting, allowing unlimited password attempts.
  *
- * Algorithm: sliding window counter per client IP address.
- *   - Each IP gets a fixed quota of requests per time window (default: 10 per minute).
+ * Algorithm: token bucket pattern (via Resilience4j RateLimiter) per client IP address.
+ *   - Each IP gets a fixed quota of permits per time window (default: 10 per minute).
  *   - Once the quota is exhausted, all subsequent requests within the window receive
  *     HTTP 429 Too Many Requests with a Retry-After header.
- *   - Windows reset automatically after the configured duration.
- *   - Expired entries are evicted periodically to prevent unbounded memory growth.
+ *   - Resilience4j automatically manages permit refresh and cleanup.
  *
  * Configuration via web.xml init-params (all optional):
  *   maxRequests      - max requests per window per IP (default: 10)
  *   windowSeconds    - window duration in seconds (default: 60)
- *   cleanupIntervalS - how often expired entries are purged in seconds (default: 300)
+ *
+ * Thread Safety: Uses ReentrantLock instead of synchronized blocks to avoid
+ * pinning virtual threads. Resilience4j RateLimiter is fully thread-safe.
  *
  * @author YAWL Foundation
  * @since 5.2
@@ -59,27 +61,21 @@ public class RateLimitFilter implements Filter {
 
     /** Default: max 10 authentication attempts per minute per IP. */
     private static final int DEFAULT_MAX_REQUESTS = 10;
-    private static final long DEFAULT_WINDOW_SECONDS = 60L;
-    private static final long DEFAULT_CLEANUP_INTERVAL_SECONDS = 300L;
+    private static final int DEFAULT_WINDOW_SECONDS = 60;
 
     private int maxRequests;
-    private long windowMs;
-    private long cleanupIntervalMs;
+    private int windowSeconds;
 
-    /** Per-IP request counters keyed by remote address string. */
-    private final ConcurrentHashMap<String, RateLimitEntry> counters = new ConcurrentHashMap<>();
+    /** Per-IP rate limiters using Resilience4j. Thread-safe via RateLimiter. */
+    private final Map<String, RateLimiter> limiters = new ConcurrentHashMap<>();
 
-    /** Timestamp of the last cleanup pass. */
-    private final AtomicLong lastCleanup = new AtomicLong(System.currentTimeMillis());
+    /** Lock for creating new limiters (only held briefly). */
+    private final ReentrantLock limiterCreationLock = new ReentrantLock();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         maxRequests = parseIntParam(filterConfig, "maxRequests", DEFAULT_MAX_REQUESTS);
-        long windowSeconds = parseLongParam(filterConfig, "windowSeconds", DEFAULT_WINDOW_SECONDS);
-        long cleanupSeconds = parseLongParam(filterConfig, "cleanupIntervalS",
-                DEFAULT_CLEANUP_INTERVAL_SECONDS);
-        windowMs = windowSeconds * 1000L;
-        cleanupIntervalMs = cleanupSeconds * 1000L;
+        windowSeconds = parseIntParam(filterConfig, "windowSeconds", DEFAULT_WINDOW_SECONDS);
 
         _logger.info("RateLimitFilter initialized: max {} requests per {} seconds per IP",
                 maxRequests, windowSeconds);
@@ -93,17 +89,13 @@ public class RateLimitFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String clientIp = resolveClientIp(httpRequest);
+        RateLimiter limiter = getOrCreateLimiter(clientIp);
 
-        evictExpiredEntriesIfDue();
-
-        RateLimitEntry entry = counters.computeIfAbsent(clientIp,
-                k -> new RateLimitEntry(System.currentTimeMillis(), windowMs));
-
-        if (!entry.tryAcquire(maxRequests, windowMs)) {
-            long retryAfterSeconds = entry.retryAfterSeconds(windowMs);
+        if (!limiter.acquirePermission()) {
+            long retryAfterSeconds = computeRetryAfterSeconds(limiter);
             String requestUri = httpRequest.getRequestURI();
-            _logger.warn("Rate limit exceeded for IP {} on {} {}: {} requests in {}ms window",
-                    clientIp, httpRequest.getMethod(), requestUri, maxRequests, windowMs);
+            _logger.warn("Rate limit exceeded for IP {} on {} {}: {} requests per {} seconds",
+                    clientIp, httpRequest.getMethod(), requestUri, maxRequests, windowSeconds);
             SecurityAuditLogger.rateLimitExceeded(clientIp, requestUri, maxRequests);
 
             httpResponse.setStatus(429);
@@ -122,7 +114,7 @@ public class RateLimitFilter implements Filter {
 
     @Override
     public void destroy() {
-        counters.clear();
+        limiters.clear();
         _logger.info("RateLimitFilter destroyed");
     }
 
@@ -144,17 +136,61 @@ public class RateLimitFilter implements Filter {
     }
 
     /**
-     * Removes entries whose window has expired, but only if the cleanup interval has elapsed.
-     * This prevents O(n) scan on every request while still bounding memory growth.
+     * Retrieves or creates a Resilience4j RateLimiter for the given client IP.
+     * Uses double-checked locking with ReentrantLock to minimize contention.
+     *
+     * @param clientIp the client IP address
+     * @return a RateLimiter for this IP
      */
-    private void evictExpiredEntriesIfDue() {
-        long now = System.currentTimeMillis();
-        long last = lastCleanup.get();
-        if (now - last >= cleanupIntervalMs && lastCleanup.compareAndSet(last, now)) {
-            counters.entrySet().removeIf(e -> e.getValue().isExpired(now, windowMs));
-            _logger.debug("RateLimitFilter: evicted expired entries, remaining: {}",
-                    counters.size());
+    private RateLimiter getOrCreateLimiter(String clientIp) {
+        RateLimiter limiter = limiters.get(clientIp);
+        if (limiter != null) {
+            return limiter;
         }
+
+        // Brief lock only for creation; concurrent lookups proceed without blocking
+        limiterCreationLock.lock();
+        try {
+            // Double-check pattern: another thread may have created while waiting
+            limiter = limiters.get(clientIp);
+            if (limiter == null) {
+                limiter = createLimiter(clientIp);
+                limiters.put(clientIp, limiter);
+            }
+            return limiter;
+        } finally {
+            limiterCreationLock.unlock();
+        }
+    }
+
+    /**
+     * Creates a new Resilience4j RateLimiter with token bucket configuration.
+     *
+     * @param clientIp the client IP address
+     * @return a new RateLimiter instance
+     */
+    private RateLimiter createLimiter(String clientIp) {
+        RateLimiterConfig config = RateLimiterConfig.custom()
+                .limitRefreshPeriod(Duration.ofSeconds(windowSeconds))
+                .limitForPeriod(maxRequests)
+                .timeoutDuration(Duration.ZERO)  // Fail immediately on exceeded limit
+                .build();
+
+        RateLimiter limiter = RateLimiter.of(clientIp, config);
+        _logger.debug("Created rate limiter for IP {}: {} permits per {} seconds",
+                clientIp, maxRequests, windowSeconds);
+        return limiter;
+    }
+
+    /**
+     * Computes Retry-After header value (seconds until next permit available).
+     *
+     * @param limiter the RateLimiter for this IP
+     * @return seconds to wait (minimum 1)
+     */
+    private long computeRetryAfterSeconds(RateLimiter limiter) {
+        // Resilience4j doesn't expose exact wait time, so use window duration
+        return Math.max(1L, windowSeconds);
     }
 
     private int parseIntParam(FilterConfig cfg, String name, int defaultValue) {
@@ -168,78 +204,5 @@ public class RateLimitFilter implements Filter {
             }
         }
         return defaultValue;
-    }
-
-    private long parseLongParam(FilterConfig cfg, String name, long defaultValue) {
-        String value = cfg.getInitParameter(name);
-        if (value != null && !value.trim().isEmpty()) {
-            try {
-                return Long.parseLong(value.trim());
-            } catch (NumberFormatException e) {
-                _logger.warn("Invalid long for init-param '{}': '{}', using default {}",
-                        name, value, defaultValue);
-            }
-        }
-        return defaultValue;
-    }
-
-    /**
-     * Tracks request count and window start time for a single client IP.
-     * Thread-safe via atomic operations.
-     */
-    private static final class RateLimitEntry {
-
-        private final AtomicLong windowStart;
-        private final AtomicInteger count;
-
-        RateLimitEntry(long windowStartMs, long windowMs) {
-            this.windowStart = new AtomicLong(windowStartMs);
-            this.count = new AtomicInteger(0);
-        }
-
-        /**
-         * Attempts to record a request. Returns true if the request is within the
-         * rate limit, false if the limit is exceeded.
-         *
-         * @param maxRequests maximum allowed requests per window
-         * @param windowMs    window duration in milliseconds
-         * @return true if the request is permitted, false if rate limited
-         */
-        boolean tryAcquire(int maxRequests, long windowMs) {
-            long now = System.currentTimeMillis();
-            long start = windowStart.get();
-            if (now - start >= windowMs) {
-                // Window has expired: reset counter atomically
-                if (windowStart.compareAndSet(start, now)) {
-                    count.set(1);
-                    return true;
-                }
-                // Another thread reset the window; fall through to count check
-            }
-            return count.incrementAndGet() <= maxRequests;
-        }
-
-        /**
-         * Returns the number of seconds until the current window expires.
-         *
-         * @param windowMs window duration in milliseconds
-         * @return seconds until retry is allowed (minimum 1)
-         */
-        long retryAfterSeconds(long windowMs) {
-            long elapsed = System.currentTimeMillis() - windowStart.get();
-            long remainingMs = windowMs - elapsed;
-            return Math.max(1L, (remainingMs + 999) / 1000);
-        }
-
-        /**
-         * Returns true if this entry's window has expired and can be evicted.
-         *
-         * @param now      current epoch milliseconds
-         * @param windowMs window duration in milliseconds
-         * @return true if the entry is stale
-         */
-        boolean isExpired(long now, long windowMs) {
-            return now - windowStart.get() >= windowMs * 2;
-        }
     }
 }

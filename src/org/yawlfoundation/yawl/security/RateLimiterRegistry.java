@@ -28,7 +28,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Thread-safe rate limiter registry for API endpoints.
@@ -40,6 +40,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * - Global limit: 1000 permits per 60 seconds (default)
  * - Per-client limit: 100 permits per 60 seconds (default)
  * - Timeout: 50ms (fail immediately if limit exceeded)
+ *
+ * Thread Safety: Java 25 patterns
+ * - ReentrantReadWriteLock for configuration access (many readers, few writers)
+ * - ConcurrentHashMap for thread-safe limiter storage
+ * - No synchronized blocks (prevents virtual thread pinning)
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -59,17 +64,19 @@ public final class RateLimiterRegistry {
     private static final int DEFAULT_CLIENT_PERIOD_SECONDS = 60;
     private static final long TIMEOUT_MS = 50L;
 
-    private final io.github.resilience4j.ratelimiter.RateLimiterRegistry registry;
+    private final RateLimiterRegistry registry;
     private final Map<String, RateLimiterConfig> configs;
-    private final AtomicReference<Boolean> globalLimiterEnabled;
+    private final ReentrantReadWriteLock globalLimiterLock;
+    private volatile boolean globalLimiterEnabled;
 
     /**
      * Creates a new RateLimiterRegistry with default configurations.
      */
     public RateLimiterRegistry() {
-        this.registry = io.github.resilience4j.ratelimiter.RateLimiterRegistry.ofDefaults();
+        this.registry = RateLimiterRegistry.ofDefaults();
         this.configs = new ConcurrentHashMap<>();
-        this.globalLimiterEnabled = new AtomicReference<>(true);
+        this.globalLimiterLock = new ReentrantReadWriteLock();
+        this.globalLimiterEnabled = true;
 
         initializeGlobalLimiter();
     }
@@ -97,16 +104,21 @@ public final class RateLimiterRegistry {
      * @return true if permit was acquired, false if rate limit exceeded
      */
     public boolean acquireGlobal() {
-        if (!globalLimiterEnabled.get()) {
-            return true;
-        }
-
+        globalLimiterLock.readLock().lock();
         try {
-            RateLimiter limiter = registry.rateLimiter(GLOBAL_LIMITER);
-            return limiter.executeSupplier(() -> true);
-        } catch (Exception e) {
-            log.warn("Global rate limit exceeded");
-            return false;
+            if (!globalLimiterEnabled) {
+                return true;
+            }
+
+            try {
+                RateLimiter limiter = registry.rateLimiter(GLOBAL_LIMITER);
+                return limiter.executeSupplier(() -> true);
+            } catch (Exception e) {
+                log.warn("Global rate limit exceeded");
+                return false;
+            }
+        } finally {
+            globalLimiterLock.readLock().unlock();
         }
     }
 
@@ -237,8 +249,13 @@ public final class RateLimiterRegistry {
      * @param enabled true to enable, false to disable
      */
     public void setGlobalLimiterEnabled(boolean enabled) {
-        globalLimiterEnabled.set(enabled);
-        log.info("Global rate limiter: {}", enabled ? "ENABLED" : "DISABLED");
+        globalLimiterLock.writeLock().lock();
+        try {
+            globalLimiterEnabled = enabled;
+            log.info("Global rate limiter: {}", enabled ? "ENABLED" : "DISABLED");
+        } finally {
+            globalLimiterLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -247,7 +264,12 @@ public final class RateLimiterRegistry {
      * @return true if enabled, false otherwise
      */
     public boolean isGlobalLimiterEnabled() {
-        return globalLimiterEnabled.get();
+        globalLimiterLock.readLock().lock();
+        try {
+            return globalLimiterEnabled;
+        } finally {
+            globalLimiterLock.readLock().unlock();
+        }
     }
 
     /**
