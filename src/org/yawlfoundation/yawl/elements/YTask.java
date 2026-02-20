@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.elements;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -115,6 +116,9 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     public static final int _AND = 95;
     public static final int _OR = 103;
     public static final int _XOR = 126;
+
+    //virtual thread safety lock (prevents pinning)
+    private final ReentrantLock _taskStateLock = new ReentrantLock();
 
     //internal state nodes
     protected YIdentifier _i;
@@ -353,68 +357,73 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
         }
     }
 
-    public synchronized List<YIdentifier> t_fire(YPersistenceManager pmgr)
+    public List<YIdentifier> t_fire(YPersistenceManager pmgr)
             throws YStateException, YDataStateException, YQueryException,
             YPersistenceException {
-        YIdentifier id = getI();
+        _taskStateLock.lock();
+        try {
+            YIdentifier id = getI();
 
-        if (!t_enabled(id)) {
-            throw new YStateException(this + " cannot fire due to not being enabled");
-        }
-        _i = id;
-        _i.addLocation(pmgr, this);
-        long numToSpawn = determineHowManyInstancesToCreate();
-        List<YIdentifier> childIdentifiers = new ArrayList<YIdentifier>();
-        for (int i = 0; i < numToSpawn; i++) {
-            YIdentifier childID = createFiredIdentifier(pmgr);
-
-            try {
-                prepareDataForInstanceStarting(childID);
-            } catch (Exception e) {
-
-                //if there was a problem firing the task then roll back the case.
-                rollbackFired(childID, pmgr);
-
-                if (e instanceof YDataStateException dataEx)
-                    throw dataEx;
-                else if (e instanceof YStateException stateEx)
-                    throw stateEx;
-                else if (e instanceof YQueryException queryEx)
-                    throw queryEx;
+            if (!t_enabled(id)) {
+                throw new YStateException(this + " cannot fire due to not being enabled");
             }
+            _i = id;
+            _i.addLocation(pmgr, this);
+            long numToSpawn = determineHowManyInstancesToCreate();
+            List<YIdentifier> childIdentifiers = new ArrayList<YIdentifier>();
+            for (int i = 0; i < numToSpawn; i++) {
+                YIdentifier childID = createFiredIdentifier(pmgr);
 
-            childIdentifiers.add(childID);
-        }
-        prepareDataDocsForTaskOutput(pmgr);
+                try {
+                    prepareDataForInstanceStarting(childID);
+                } catch (Exception e) {
 
-        // contract: all task presetElements are conditions
-        switch (_joinType) {
-            case YTask._AND:
-                for (YExternalNetElement preSetElement : getPresetElements()) {
-                    ((YConditionInterface) preSetElement).removeOne(pmgr);
+                    //if there was a problem firing the task then roll back the case.
+                    rollbackFired(childID, pmgr);
+
+                    if (e instanceof YDataStateException dataEx)
+                        throw dataEx;
+                    else if (e instanceof YStateException stateEx)
+                        throw stateEx;
+                    else if (e instanceof YQueryException queryEx)
+                        throw queryEx;
                 }
-                break;
-            case YTask._OR:
-                for (YExternalNetElement preSetElement : getPresetElements()) {
-                    YConditionInterface condition = ((YConditionInterface) preSetElement);
-                    if (condition.containsIdentifier()) condition.removeOne(pmgr);
-                }
-                break;
-            case YTask._XOR:
-                List<YExternalNetElement> conditions =
-                        new ArrayList<YExternalNetElement>(getPresetElements());
-                boolean done = false;
-                do {
-                    int i = Math.abs(_random.nextInt()) % conditions.size();
-                    YConditionInterface condition = (YConditionInterface) conditions.get(i);
-                    if (condition.containsIdentifier()) {
-                        condition.removeOne(pmgr);
-                        done = true;
+
+                childIdentifiers.add(childID);
+            }
+            prepareDataDocsForTaskOutput(pmgr);
+
+            // contract: all task presetElements are conditions
+            switch (_joinType) {
+                case YTask._AND:
+                    for (YExternalNetElement preSetElement : getPresetElements()) {
+                        ((YConditionInterface) preSetElement).removeOne(pmgr);
                     }
-                } while (!done);
-                break;
+                    break;
+                case YTask._OR:
+                    for (YExternalNetElement preSetElement : getPresetElements()) {
+                        YConditionInterface condition = ((YConditionInterface) preSetElement);
+                        if (condition.containsIdentifier()) condition.removeOne(pmgr);
+                    }
+                    break;
+                case YTask._XOR:
+                    List<YExternalNetElement> conditions =
+                            new ArrayList<YExternalNetElement>(getPresetElements());
+                    boolean done = false;
+                    do {
+                        int i = Math.abs(_random.nextInt()) % conditions.size();
+                        YConditionInterface condition = (YConditionInterface) conditions.get(i);
+                        if (condition.containsIdentifier()) {
+                            condition.removeOne(pmgr);
+                            done = true;
+                        }
+                    } while (!done);
+                    break;
+            }
+            return childIdentifiers;
+        } finally {
+            _taskStateLock.unlock();
         }
-        return childIdentifiers;
     }
 
     /*changed to public for persistence*/
@@ -433,21 +442,26 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    public synchronized YIdentifier t_add(YPersistenceManager pmgr,
+    public YIdentifier t_add(YPersistenceManager pmgr,
                                           YIdentifier siblingWithPermission, Element newInstanceData)
             throws YDataStateException, YStateException, YQueryException, YPersistenceException {
-        if (!YMultiInstanceAttributes.CREATION_MODE_DYNAMIC.equals(_multiInstAttr.getCreationMode())) {
-            throw new RuntimeException(this + " does not allow dynamic instance creation.");
+        _taskStateLock.lock();
+        try {
+            if (!YMultiInstanceAttributes.CREATION_MODE_DYNAMIC.equals(_multiInstAttr.getCreationMode())) {
+                throw new RuntimeException(this + " does not allow dynamic instance creation.");
+            }
+            if (t_addEnabled(siblingWithPermission)) {
+                List<Content> newData = new ArrayList<>();
+                newData.add(newInstanceData);
+                _multiInstanceSpecificParamsIterator = newData.iterator();
+                YIdentifier newInstance = createFiredIdentifier(pmgr);
+                prepareDataForInstanceStarting(newInstance);
+                return newInstance;
+            }
+            return null;
+        } finally {
+            _taskStateLock.unlock();
         }
-        if (t_addEnabled(siblingWithPermission)) {
-            List<Content> newData = new ArrayList<>();
-            newData.add(newInstanceData);
-            _multiInstanceSpecificParamsIterator = newData.iterator();
-            YIdentifier newInstance = createFiredIdentifier(pmgr);
-            prepareDataForInstanceStarting(newInstance);
-            return newInstance;
-        }
-        return null;
     }
 
 
@@ -549,23 +563,30 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    public synchronized boolean t_isExitEnabled() {
-        return t_isBusy() &&
-                ((
-                        _mi_active.getIdentifiers().containsAll(_mi_complete.getIdentifiers()) &&
-                                _mi_complete.getIdentifiers().containsAll(_mi_active.getIdentifiers())
-                ) || (
-                        _mi_complete.getIdentifiers().size() >= _multiInstAttr.getThreshold()
-                ));
+    public boolean t_isExitEnabled() {
+        _taskStateLock.lock();
+        try {
+            return t_isBusy() &&
+                    ((
+                            _mi_active.getIdentifiers().containsAll(_mi_complete.getIdentifiers()) &&
+                                    _mi_complete.getIdentifiers().containsAll(_mi_active.getIdentifiers())
+                    ) || (
+                            _mi_complete.getIdentifiers().size() >= _multiInstAttr.getThreshold()
+                    ));
+        } finally {
+            _taskStateLock.unlock();
+        }
     }
 
 
-    public synchronized boolean t_complete(YPersistenceManager pmgr, YIdentifier childID,
+    public boolean t_complete(YPersistenceManager pmgr, YIdentifier childID,
                                            Document decompositionOutputData)
             throws YDataStateException, YStateException, YQueryException,
             YPersistenceException {
-        if (t_isBusy()) {
-            YSpecification spec = _net.getSpecification();
+        _taskStateLock.lock();
+        try {
+            if (t_isBusy()) {
+                YSpecification spec = _net.getSpecification();
             YDataValidator validator = spec.getDataValidator();
             validateOutputs(validator, decompositionOutputData);
 
@@ -640,12 +661,15 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
                 t_exit(pmgr);
                 return true;
             }
-            return false;
-        } else {
-            throw new RuntimeException(
-                    "This task [" +
-                            (getName() != null ? getName() : getID()) +
-                            "] is not active, and therefore cannot be completed.");
+                return false;
+            } else {
+                throw new RuntimeException(
+                        "This task [" +
+                                (getName() != null ? getName() : getID()) +
+                                "] is not active, and therefore cannot be completed.");
+            }
+        } finally {
+            _taskStateLock.unlock();
         }
     }
 
@@ -775,11 +799,16 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    public synchronized void t_start(YPersistenceManager pmgr, YIdentifier child)
+    public void t_start(YPersistenceManager pmgr, YIdentifier child)
             throws YDataStateException, YPersistenceException,
             YQueryException, YStateException {
-        if (t_isBusy()) {
-            startOne(pmgr, child);
+        _taskStateLock.lock();
+        try {
+            if (t_isBusy()) {
+                startOne(pmgr, child);
+            }
+        } finally {
+            _taskStateLock.unlock();
         }
     }
 
@@ -795,53 +824,58 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    private synchronized void t_exit(YPersistenceManager pmgr)
+    private void t_exit(YPersistenceManager pmgr)
             throws YDataStateException, YStateException, YQueryException,
             YPersistenceException {
-        if (!t_isExitEnabled()) {
-            throw new RuntimeException(this + "_exit() is not enabled.");
-        }
-        performDataAssignmentsAccordingToOutputExpressions(pmgr);
-
-        if (getTimerVariable() != null) {
-            getTimerVariable().setState(YWorkItemTimer.State.closed);
-        }
-
-        YIdentifier i = _i;
-        if (this instanceof YCompositeTask compositeTask) {
-            cancel(pmgr);
-        }
-        //remove tokens from cancellation set
-        for (YExternalNetElement netElement : _removeSet) {
-            if (netElement instanceof YTask task) {
-                task.cancel(pmgr);
-            } else if (netElement instanceof YCondition cond) {
-                cond.removeAll(pmgr);
+        _taskStateLock.lock();
+        try {
+            if (!t_isExitEnabled()) {
+                throw new RuntimeException(this + "_exit() is not enabled.");
             }
+            performDataAssignmentsAccordingToOutputExpressions(pmgr);
+
+            if (getTimerVariable() != null) {
+                getTimerVariable().setState(YWorkItemTimer.State.closed);
+            }
+
+            YIdentifier i = _i;
+            if (this instanceof YCompositeTask compositeTask) {
+                cancel(pmgr);
+            }
+            //remove tokens from cancellation set
+            for (YExternalNetElement netElement : _removeSet) {
+                if (netElement instanceof YTask task) {
+                    task.cancel(pmgr);
+                } else if (netElement instanceof YCondition cond) {
+                    cond.removeAll(pmgr);
+                }
+            }
+            purgeLocations(pmgr);
+            switch (_splitType) {
+                case YTask._AND:
+                    doAndSplit(pmgr, i);
+                    break;
+                case YTask._OR:
+                    doOrSplit(pmgr, i);
+                    break;
+                case YTask._XOR:
+                    doXORSplit(pmgr, i);
+                    break;
+            }
+            i.removeLocation(pmgr, this);
+            _caseToDataMap.remove(i);
+            if (_groupedMultiInstanceOutputData != null && pmgr != null) {
+                pmgr.deleteObjectFromExternal(_groupedMultiInstanceOutputData);
+            }
+            if (logger.isDebugEnabled()) {
+                logger.debug("YTask::{}.exit() caseID({}) " +
+                                "_parentDecomposition.getInternalDataDocument() = {}",
+                        getID(), _i, JDOMUtil.documentToString(_net.getInternalDataDocument()));
+            }
+            _i = null;
+        } finally {
+            _taskStateLock.unlock();
         }
-        purgeLocations(pmgr);
-        switch (_splitType) {
-            case YTask._AND:
-                doAndSplit(pmgr, i);
-                break;
-            case YTask._OR:
-                doOrSplit(pmgr, i);
-                break;
-            case YTask._XOR:
-                doXORSplit(pmgr, i);
-                break;
-        }
-        i.removeLocation(pmgr, this);
-        _caseToDataMap.remove(i);
-        if (_groupedMultiInstanceOutputData != null && pmgr != null) {
-            pmgr.deleteObjectFromExternal(_groupedMultiInstanceOutputData);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("YTask::{}.exit() caseID({}) " +
-                            "_parentDecomposition.getInternalDataDocument() = {}",
-                    getID(), _i, JDOMUtil.documentToString(_net.getInternalDataDocument()));
-        }
-        _i = null;
     }
 
 
@@ -1052,29 +1086,33 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    public synchronized boolean t_enabled(YIdentifier id) {
+    public boolean t_enabled(YIdentifier id) {
+        _taskStateLock.lock();
+        try {
+            if (_i != null) return false;     // busy tasks are never enabled
 
-        if (_i != null) return false;     // busy tasks are never enabled
-
-        switch (_joinType) {
-            case YTask._AND:
-                for (YExternalNetElement condition : getPresetElements()) {
-                    if (!((YCondition) condition).containsIdentifier()) {
-                        return false;
+            switch (_joinType) {
+                case YTask._AND:
+                    for (YExternalNetElement condition : getPresetElements()) {
+                        if (!((YCondition) condition).containsIdentifier()) {
+                            return false;
+                        }
                     }
-                }
-                return true;
-            case YTask._OR:
-                return _net.orJoinEnabled(this, id);
-            case YTask._XOR:
-                for (YExternalNetElement condition : getPresetElements()) {
-                    if (((YCondition) condition).containsIdentifier()) {
-                        return true;
+                    return true;
+                case YTask._OR:
+                    return _net.orJoinEnabled(this, id);
+                case YTask._XOR:
+                    for (YExternalNetElement condition : getPresetElements()) {
+                        if (((YCondition) condition).containsIdentifier()) {
+                            return true;
+                        }
                     }
-                }
-                return false;
-            default:
-                return false;
+                    return false;
+                default:
+                    return false;
+            }
+        } finally {
+            _taskStateLock.unlock();
         }
     }
 
@@ -1318,27 +1356,42 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
     }
 
 
-    public synchronized boolean t_isBusy() {
-        return _i != null;
-    }
-
-
-    public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
-        purgeLocations(pmgr);
-        if (_i != null) {
-            _i.removeLocation(pmgr, this);
-            _caseToDataMap.remove(_i);
-            _i = null;
+    public boolean t_isBusy() {
+        _taskStateLock.lock();
+        try {
+            return _i != null;
+        } finally {
+            _taskStateLock.unlock();
         }
     }
 
-    public synchronized void rollbackFired(YIdentifier childID, YPersistenceManager pmgr)
+
+    public void cancel(YPersistenceManager pmgr) throws YPersistenceException {
+        _taskStateLock.lock();
+        try {
+            purgeLocations(pmgr);
+            if (_i != null) {
+                _i.removeLocation(pmgr, this);
+                _caseToDataMap.remove(_i);
+                _i = null;
+            }
+        } finally {
+            _taskStateLock.unlock();
+        }
+    }
+
+    public void rollbackFired(YIdentifier childID, YPersistenceManager pmgr)
             throws YPersistenceException {
-        _mi_active.removeAll(pmgr);
-        _mi_entered.removeAll(pmgr);
-        _i.removeChild(childID);
-        _i.removeLocation(pmgr, this);
-        _i = null;
+        _taskStateLock.lock();
+        try {
+            _mi_active.removeAll(pmgr);
+            _mi_entered.removeAll(pmgr);
+            _i.removeChild(childID);
+            _i.removeLocation(pmgr, this);
+            _i = null;
+        } finally {
+            _taskStateLock.unlock();
+        }
     }
 
 
