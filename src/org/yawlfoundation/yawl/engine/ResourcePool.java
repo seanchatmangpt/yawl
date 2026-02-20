@@ -227,7 +227,7 @@ public class ResourcePool<T> {
         totalAllocTimeMs.addAndGet(borrowTimeMs);
 
         final PooledResource<T> finalPooled = pooled;
-        return new Resource<>(pooled.resource, () -> returnResource(finalPooled));
+        return new Resource<>(finalPooled.resource, () -> returnResource(finalPooled));
     }
 
     /**
