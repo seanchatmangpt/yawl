@@ -1,6 +1,15 @@
 # YAWL Spring Boot Actuator Configuration
 # Cloud-native health, readiness, and liveness endpoints
 
+# Jasypt Property Encryption Configuration
+jasypt:
+  encryptor:
+    algorithm: PBEWithHMACSHA512AndAES_256
+    password: ${JASYPT_ENCRYPTOR_PASSWORD:dev-password}
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+    key-obtention-iterations: 1000
+    pool-size: 8
+
 spring:
   application:
     name: yawl-engine

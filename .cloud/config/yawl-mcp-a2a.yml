@@ -1,0 +1,223 @@
+# YAWL MCP and A2A Integration Configuration
+# Applied for MCP/A2A components
+# Overridable per profile via yawl-mcp-a2a-{profile}.yml
+
+# MCP (Model Context Protocol) Configuration
+mcp:
+  server:
+    # Server binding
+    enabled: true
+    host: 0.0.0.0
+    port: 3001
+    base-path: /mcp
+
+    # Protocol Configuration
+    protocol:
+      version: '2024-11-05'
+      supported-transports:
+        - stdio
+        - http
+      message-encoding: json
+
+    # Tool Registry
+    tools:
+      enable-tool-discovery: true
+      max-tools-per-server: 100
+      tool-timeout-ms: 30000
+      enable-tool-validation: true
+      validation-level: STRICT
+
+    # Resource Management
+    resources:
+      enable-resource-listing: true
+      max-resources: 10000
+      resource-cache-ttl-minutes: 30
+
+    # Prompt Templates
+    prompts:
+      enable-prompt-library: true
+      max-prompt-size-bytes: 1048576  # 1MB
+      enable-dynamic-prompts: true
+
+    # Performance
+    performance:
+      max-concurrent-requests: 100
+      request-queue-size: 500
+      thread-pool-size: 20
+      enable-request-batching: true
+      batch-timeout-ms: 100
+
+    # Security
+    security:
+      enable-authentication: true
+      auth-type: JWT
+      enable-rate-limiting: true
+      requests-per-minute: 1000
+      enable-request-signing: true
+      signature-algorithm: HS256
+
+    # Observability
+    observability:
+      enable-request-logging: true
+      enable-error-tracking: true
+      enable-performance-metrics: true
+      slow-request-threshold-ms: 5000
+      log-request-bodies: false
+      log-response-bodies: false
+
+  client:
+    # Client Configuration for connecting to MCP servers
+    enabled: true
+
+    # Connection pooling
+    connection-pool:
+      min-size: 5
+      max-size: 50
+      max-idle-time-minutes: 10
+      enable-keep-alive: true
+      keep-alive-interval-seconds: 30
+
+    # Resilience
+    resilience:
+      enable-circuit-breaker: true
+      enable-retry: true
+      max-retries: 3
+      enable-timeout: true
+      timeout-ms: 30000
+      enable-fallback: true
+
+    # Caching
+    caching:
+      enable-response-cache: true
+      cache-ttl-minutes: 60
+      max-cache-entries: 10000
+      cache-eviction-policy: LRU
+
+# A2A (Agent-to-Agent) Configuration
+a2a:
+  server:
+    # Server Configuration
+    enabled: true
+    host: 0.0.0.0
+    port: 3002
+    base-path: /a2a
+
+    # Agent Registry
+    agent-registry:
+      enable-agent-discovery: true
+      discovery-interval-seconds: 60
+      enable-heartbeat: true
+      heartbeat-interval-seconds: 30
+      max-agents: 1000
+      agent-timeout-seconds: 300
+
+    # Handoff Protocol
+    handoff:
+      enable-handoff: true
+      max-concurrent-handoffs: 100
+      handoff-timeout-ms: 60000
+      enable-handoff-validation: true
+      validation-level: STRICT
+
+    # Agent Capabilities
+    capabilities:
+      enable-capability-negotiation: true
+      enable-capability-versioning: true
+      max-capability-cache-entries: 5000
+      capability-cache-ttl-minutes: 60
+
+    # Message Exchange
+    messaging:
+      enable-message-queuing: true
+      max-queue-size: 10000
+      message-retention-minutes: 1440  # 24 hours
+      enable-message-compression: true
+      compression-threshold-bytes: 1024
+
+    # Performance
+    performance:
+      max-concurrent-agents: 100
+      thread-pool-size: 20
+      request-queue-size: 500
+      enable-connection-pooling: true
+      pool-size: 50
+
+    # Security
+    security:
+      enable-authentication: true
+      auth-type: OAUTH2
+      enable-encryption: true
+      encryption-algorithm: AES-256-GCM
+      enable-agent-signing: true
+      enable-mutual-tls: false
+
+    # Observability
+    observability:
+      enable-agent-logging: true
+      enable-handoff-tracking: true
+      enable-capability-metrics: true
+      enable-message-tracing: true
+      log-message-payloads: false
+      trace-sample-rate: 0.1
+
+  client:
+    # Client Configuration for A2A agents
+    enabled: true
+
+    # Connection Configuration
+    connection:
+      enable-keep-alive: true
+      keep-alive-interval-seconds: 30
+      max-idle-time-minutes: 10
+      enable-connection-pooling: true
+      pool-size: 20
+
+    # Handoff Configuration
+    handoff:
+      enable-handoff-requests: true
+      handoff-timeout-ms: 60000
+      max-parallel-handoffs: 10
+      enable-handoff-retry: true
+      max-handoff-retries: 3
+
+    # Discovery Configuration
+    discovery:
+      enable-agent-discovery: true
+      discovery-servers:
+        - 'http://yawl-discovery:8080'
+      discovery-interval-seconds: 60
+      enable-local-cache: true
+      cache-ttl-minutes: 30
+
+    # Resilience
+    resilience:
+      enable-circuit-breaker: true
+      failure-threshold: 50
+      wait-duration-seconds: 30
+      enable-retry: true
+      max-retries: 3
+      backoff-multiplier: 2.0
+
+# Shared Integration Configuration
+integration:
+  # Contract Management
+  contracts:
+    enable-pact-verification: true
+    pact-broker-url: 'http://localhost:9292'
+    enable-version-validation: true
+    compatibility-mode: FORWARD_COMPATIBLE
+
+  # Monitoring
+  monitoring:
+    enable-integration-metrics: true
+    enable-error-tracking: true
+    enable-performance-analysis: true
+    slow-call-threshold-ms: 5000
+    error-threshold-percentage: 5
+
+  # Logging
+  logging:
+    enable-debug-logging: false
+    enable-message-logging: false
+    enable-error-logging: true
+    log-level: INFO

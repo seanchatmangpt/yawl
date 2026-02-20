@@ -1,0 +1,166 @@
+# YAWL Spring Cloud Config - Production Profile
+# Overrides application.yml for production environments
+# Activated with: spring.profiles.active=prod
+# NOTE: Sensitive values are encrypted with Jasypt: {cipher}...
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate.format_sql: false
+      hibernate.generate_statistics: false
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:yawldb}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:postgres}
+    password: '{cipher}AQBFEHnGQjyxDVQZqnPwvL9kK...'  # Encrypted DB password
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 10000
+      idle-timeout: 900000
+      max-lifetime: 1800000
+      auto-commit: true
+      leak-detection-threshold: 60000
+
+# Production Logging - INFO level only, JSON format for log aggregation
+logging:
+  level:
+    root: WARN
+    org.yawlfoundation.yawl: INFO
+    org.yawlfoundation.yawl.engine: INFO
+    org.springframework: WARN
+    org.springframework.cloud.config: INFO
+    org.hibernate: WARN
+  file:
+    name: /var/log/yawl/yawl-prod.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 5GB
+  pattern:
+    file: '{"time":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%-5level","thread":"%thread","logger":"%logger{36}","msg":"%msg"}%n'
+
+# Production Resilience4j - Conservative thresholds for stability
+resilience4j:
+  ratelimiter:
+    instances:
+      yawl-api:
+        limit-for-period: 100  # Conservative
+        limit-refresh-period: 1m
+        timeout-duration: 5s
+      mcp-service:
+        limit-for-period: 30   # Very conservative for external service
+        timeout-duration: 10s
+
+  circuitbreaker:
+    instances:
+      yawl-db:
+        failure-rate-threshold: 30   # Very sensitive to failures
+        slow-call-duration-threshold: 3000ms
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 60s  # Longer recovery time
+      external-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 120s
+
+  retry:
+    instances:
+      yawl-api:
+        max-attempts: 2  # Limited retries to fail fast
+        wait-duration: 200ms
+
+  bulkhead:
+    instances:
+      yawl-executor:
+        max-concurrent-calls: 50  # Conservative for stability
+        max-wait-duration: 1s
+
+# Production Server
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-binding-errors: false
+    include-stacktrace: never
+    include-exception: false
+  compression:
+    enabled: true
+    min-response-size: 1024
+  ssl:
+    enabled: true
+    key-store: '{cipher}AQBFEHnGQjyxDVQZqnPwvL9kK...'  # Path to encrypted keystore
+    key-store-password: '{cipher}AQBFEHnGQjyxDVQZqnPwvL9kK...'
+    key-store-type: PKCS12
+
+# Flyway - Strict validation in production
+flyway:
+  enabled: true
+  validate-on-migrate: true
+  baseline-on-migrate: false
+  out-of-order: false
+
+# Actuator - Minimal exposure in production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized  # Only show to authorized users
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+
+# Security - TLS and authentication required
+security:
+  require-https: true
+  allowed-origins: ${ALLOWED_ORIGINS:https://yawl.example.com}
+  cors:
+    allowed-methods: GET,POST,PUT,DELETE
+    allowed-headers: Content-Type,Authorization
+    max-age: 3600
+
+# Config Server - Use remote Git in production
+config:
+  server:
+    enabled: false
+    git-uri: https://github.com/yawl-foundation/yawl-config.git
+    git-default-label: main
+    git-username: ${GIT_USERNAME}
+    git-password: '{cipher}AQBFEHnGQjyxDVQZqnPwvL9kK...'
+    encryption-key: ${JASYPT_MASTER_KEY}
+    security-enabled: true
+    security-username: ${CONFIG_SERVER_USER}
+    security-password: '{cipher}AQBFEHnGQjyxDVQZqnPwvL9kK...'
+
+# Distributed Tracing for Production Debugging
+management:
+  tracing:
+    sampling:
+      probability: 0.1  # Sample 10% of requests in production
+
+# Application-specific Production Settings
+yawl:
+  engine:
+    max-case-cache-size: 10000
+    enable-persistence: true
+    persistence-interval-ms: 60000
+    max-concurrent-cases: 1000
+
+  integration:
+    mcp:
+      timeout-ms: 30000
+      max-retries: 2
+    a2a:
+      timeout-ms: 20000
+      max-concurrent-agents: 100

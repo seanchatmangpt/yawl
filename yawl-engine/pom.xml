@@ -217,6 +217,14 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- ArchUnit for architecture compliance testing (Phase 2 modernization) -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.3.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -269,6 +277,13 @@
                     <include>*.properties</include>
                 </includes>
             </testResource>
+            <!-- ArchUnit documentation and architecture rules -->
+            <testResource>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>ARCHITECTURE-RULES.md</include>
+                </includes>
+            </testResource>
         </testResources>
 
         <plugins>
@@ -311,6 +326,7 @@
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/patternmatching/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/architecture/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
@@ -370,6 +386,8 @@
                         <include>**/org/yawlfoundation/yawl/patternmatching/**</include>
                         <!-- OAuth2 integration tests -->
                         <include>**/org/yawlfoundation/yawl/integration/oauth2/**</include>
+                        <!-- Architecture compliance tests (ArchUnit) -->
+                        <include>**/org/yawlfoundation/yawl/architecture/**</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

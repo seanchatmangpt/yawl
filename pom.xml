@@ -218,6 +218,11 @@
         <jmh.version>1.37</jmh.version>
 
         <!-- ================================================================ -->
+        <!-- Contract Testing (Pact)                                            -->
+        <!-- ================================================================ -->
+        <pact.version>4.6.11</pact.version>
+
+        <!-- ================================================================ -->
         <!-- Build plugins (pinned for reproducibility)                        -->
         <!-- ================================================================ -->
         <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
@@ -1216,6 +1221,28 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>mysql</artifactId>
                 <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- ============================================================== -->
+            <!-- Pact (Contract Testing)                                       -->
+            <!-- ============================================================== -->
+            <dependency>
+                <groupId>au.com.dius</groupId>
+                <artifactId>pact-jvm-consumer-junit5</artifactId>
+                <version>${pact.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>au.com.dius</groupId>
+                <artifactId>pact-jvm-provider-junit5</artifactId>
+                <version>${pact.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>au.com.dius</groupId>
+                <artifactId>pact-foundation</artifactId>
+                <version>${pact.version}</version>
                 <scope>test</scope>
             </dependency>
 

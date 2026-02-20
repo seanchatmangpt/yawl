@@ -1,0 +1,99 @@
+# YAWL Engine-Specific Configuration
+# Applied in addition to application.yml
+# Overridable per profile via yawl-engine-{profile}.yml
+
+# YAWL Engine Core Settings
+yawl:
+  engine:
+    # Case Management
+    case:
+      max-cache-size: 5000
+      cache-ttl-minutes: 60
+      enable-persistence: true
+      persistence-interval-ms: 30000
+      max-concurrent-cases: 500
+
+    # Work Item Processing
+    workitem:
+      enable-jit-enablement: true
+      enable-dynamic-resourcing: true
+      max-queue-size: 10000
+      processing-thread-pool-size: 20
+      queue-poll-interval-ms: 1000
+
+    # Specification Management
+    specification:
+      enable-validation: true
+      validation-strict: true
+      enable-caching: true
+      cache-eviction-policy: LRU
+      max-cached-specs: 500
+      spec-version-support: '6.0.0'
+
+    # Performance Tuning
+    performance:
+      enable-lazy-evaluation: true
+      expression-cache-size: 1000
+      query-optimization-level: AGGRESSIVE
+      batch-work-item-updates: true
+      batch-size: 100
+
+    # Monitoring and Observability
+    observability:
+      enable-traces: true
+      enable-metrics: true
+      enable-logs: true
+      trace-sample-rate: 0.5
+      metrics-export-interval-s: 60
+      slow-query-threshold-ms: 1000
+      slow-case-execution-threshold-ms: 10000
+
+    # Resilience Patterns
+    resilience:
+      # Circuit breaker for database operations
+      db-circuit-breaker:
+        enabled: true
+        failure-threshold-percentage: 50
+        wait-duration-seconds: 30
+        half-open-max-calls: 3
+
+      # Rate limiting for API endpoints
+      api-rate-limiter:
+        enabled: true
+        requests-per-minute: 1000
+        burst-capacity: 500
+
+      # Bulkhead for work item processing
+      workitem-bulkhead:
+        enabled: true
+        max-concurrent-calls: 100
+        max-wait-queue-size: 500
+
+      # Retry for transient failures
+      default-retry:
+        enabled: true
+        max-attempts: 3
+        wait-duration-ms: 100
+        backoff-multiplier: 2.0
+        max-backoff-ms: 5000
+
+    # Event Processing
+    events:
+      enable-event-publishing: true
+      event-queue-size: 5000
+      event-processor-threads: 5
+      event-batch-size: 50
+
+    # Resource Management
+    resources:
+      enable-resource-allocation: true
+      resource-cache-ttl-minutes: 30
+      resource-update-batch-size: 10
+
+    # Audit Trail
+    audit:
+      enable-audit-logging: true
+      audit-log-level: INFO
+      capture-case-data: true
+      capture-workitem-data: true
+      purge-old-audits-days: 90
