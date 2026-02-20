@@ -25,21 +25,21 @@ tasks:
 
   - id: TaskA
     flows: [Merge]
-    condition: conditionA == true -> TaskA
+    condition: conditionA == true -> Merge
     split: xor
     join: xor
     description: "Path A execution"
 
   - id: TaskB
     flows: [Merge]
-    condition: conditionB == true -> TaskB
+    condition: conditionB == true -> Merge
     split: xor
     join: xor
     description: "Path B execution"
 
   - id: TaskC
     flows: [Merge]
-    condition: conditionC == true -> TaskC
+    condition: conditionC == true -> Merge
     split: xor
     join: xor
     description: "Path C execution"
@@ -48,4 +48,4 @@ tasks:
     flows: [end]
     split: xor
     join: or
-    description: "Synchronize multiple paths"
+    description: "Synchronize multiple paths (OR-join fires when any path completes)"

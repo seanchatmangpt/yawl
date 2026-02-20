@@ -8,6 +8,7 @@ first: TaskA
 variables:
   - name: orderId
     type: xs:string
+    default: ""
 
 tasks:
   - id: TaskA
@@ -31,5 +32,5 @@ tasks:
   - id: TaskD
     flows: [end]
     split: xor
-    join: xor
-    description: "Synchronize results"
+    join: and
+    description: "Synchronize results (AND-join waits for both TaskB and TaskC)"

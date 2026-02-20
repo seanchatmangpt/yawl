@@ -8,11 +8,13 @@ first: TaskA
 variables:
   - name: transactionId
     type: xs:string
+    default: ""
   - name: amount
     type: xs:decimal
+    default: "0.0"
   - name: path
     type: xs:string
-    default: ""
+    default: "none"
 
 tasks:
   - id: TaskA
@@ -21,22 +23,22 @@ tasks:
     default: TaskC
     split: xor
     join: xor
-    description: "Route based on amount"
+    description: "Route based on amount (high-value if > 500, standard if <= 500)"
 
   - id: TaskB
     flows: [TaskD]
     split: xor
     join: xor
-    description: "High value path"
+    description: "High value path (updates path variable to 'high')"
 
   - id: TaskC
     flows: [TaskD]
     split: xor
     join: xor
-    description: "Standard path"
+    description: "Standard path (updates path variable to 'standard')"
 
   - id: TaskD
     flows: [end]
     split: xor
     join: xor
-    description: "Merge point - continue with single thread"
+    description: "Merge point - continue with single thread (no synchronization, fires immediately)"

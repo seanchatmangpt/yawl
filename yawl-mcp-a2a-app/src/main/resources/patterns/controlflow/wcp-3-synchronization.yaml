@@ -8,12 +8,10 @@ first: TaskA
 variables:
   - name: requestId
     type: xs:string
+    default: ""
   - name: parallelCount
     type: xs:integer
     default: 2
-  - name: syncStatus
-    type: xs:string
-    default: "pending"
 
 tasks:
   - id: TaskA
@@ -38,4 +36,4 @@ tasks:
     flows: [end]
     split: xor
     join: and
-    description: "Synchronize all branches"
+    description: "Synchronize all branches (AND-join waits for both TaskB and TaskC)"

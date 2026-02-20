@@ -8,6 +8,7 @@ first: TaskA
 variables:
   - name: amount
     type: xs:decimal
+    default: "0.0"
   - name: priority
     type: xs:string
     default: "normal"
@@ -19,7 +20,7 @@ tasks:
     default: TaskC
     split: xor
     join: xor
-    description: "Check amount"
+    description: "Check amount (high priority if > 1000, normal if <= 1000)"
 
   - id: TaskB
     flows: [TaskD]
@@ -37,4 +38,4 @@ tasks:
     flows: [end]
     split: xor
     join: xor
-    description: "Complete processing"
+    description: "Complete processing (XOR-join merges high/normal paths)"
