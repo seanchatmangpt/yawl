@@ -5,7 +5,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
@@ -49,24 +52,24 @@ public class YawlResourceProvider {
      * Creates all static resource specifications backed by real YAWL engine calls.
      *
      * @param client the YAWL InterfaceB client connected to the engine
-     * @param sessionHandle the authenticated YAWL session handle
+     * @param sessionHandleSupplier supplier of the authenticated YAWL session handle
      * @return list of sync resource specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncResourceSpecification> createAllResources(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
         if (client == null) {
             throw new IllegalArgumentException(
                 "InterfaceB_EnvironmentBasedClient is required to create YAWL MCP resources");
         }
-        if (sessionHandle == null || sessionHandle.isEmpty()) {
+        if (sessionHandleSupplier == null) {
             throw new IllegalArgumentException(
-                "A valid YAWL session handle is required to create YAWL MCP resources");
+                "sessionHandleSupplier is required - provide a Supplier that returns the active session handle");
         }
 
         List<McpServerFeatures.SyncResourceSpecification> resources = new ArrayList<>();
-        resources.add(createSpecificationsResource(client, sessionHandle));
-        resources.add(createCasesResource(client, sessionHandle));
-        resources.add(createWorkItemsResource(client, sessionHandle));
+        resources.add(createSpecificationsResource(client, sessionHandleSupplier.get()));
+        resources.add(createCasesResource(client, sessionHandleSupplier.get()));
+        resources.add(createWorkItemsResource(client, sessionHandleSupplier.get()));
         return resources;
     }
 
@@ -78,20 +81,20 @@ public class YawlResourceProvider {
      * @return list of sync resource template specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncResourceTemplateSpecification> createAllResourceTemplates(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
         if (client == null) {
             throw new IllegalArgumentException(
                 "InterfaceB_EnvironmentBasedClient is required to create YAWL MCP resource templates");
         }
-        if (sessionHandle == null || sessionHandle.isEmpty()) {
+        if (sessionHandleSupplier == null) {
             throw new IllegalArgumentException(
-                "A valid YAWL session handle is required to create YAWL MCP resource templates");
+                "sessionHandleSupplier is required - provide a Supplier that returns the active session handle");
         }
 
         List<McpServerFeatures.SyncResourceTemplateSpecification> templates = new ArrayList<>();
-        templates.add(createCaseDetailsTemplate(client, sessionHandle));
-        templates.add(createCaseDataTemplate(client, sessionHandle));
-        templates.add(createWorkItemDetailsTemplate(client, sessionHandle));
+        templates.add(createCaseDetailsTemplate(client, sessionHandleSupplier.get()));
+        templates.add(createCaseDataTemplate(client, sessionHandleSupplier.get()));
+        templates.add(createWorkItemDetailsTemplate(client, sessionHandleSupplier.get()));
         return templates;
     }
 
@@ -104,7 +107,7 @@ public class YawlResourceProvider {
      * Calls client.getSpecificationList() and formats each spec as JSON.
      */
     private static McpServerFeatures.SyncResourceSpecification createSpecificationsResource(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.Resource resource = new McpSchema.Resource(
             "yawl://specifications",
@@ -154,7 +157,7 @@ public class YawlResourceProvider {
      * Calls client.getAllRunningCases() and returns the XML response as JSON-wrapped text.
      */
     private static McpServerFeatures.SyncResourceSpecification createCasesResource(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.Resource resource = new McpSchema.Resource(
             "yawl://cases",
@@ -189,7 +192,7 @@ public class YawlResourceProvider {
      * Calls client.getCompleteListOfLiveWorkItems() and formats each work item as JSON.
      */
     private static McpServerFeatures.SyncResourceSpecification createWorkItemsResource(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.Resource resource = new McpSchema.Resource(
             "yawl://workitems",
@@ -250,7 +253,7 @@ public class YawlResourceProvider {
      * client.getWorkItemsForCase() to return combined case information.
      */
     private static McpServerFeatures.SyncResourceTemplateSpecification createCaseDetailsTemplate(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.ResourceTemplate template = new McpSchema.ResourceTemplate(
             "yawl://cases/{caseId}",
@@ -274,9 +277,9 @@ public class YawlResourceProvider {
                     caseId = caseId.substring(0, caseId.indexOf('/'));
                 }
 
-                String caseState = client.getCaseState(caseId, sessionHandle);
+                String caseState = client.getCaseState(caseId, sessionHandleSupplier.get());
 
-                List<WorkItemRecord> workItems = client.getWorkItemsForCase(caseId, sessionHandle);
+                List<WorkItemRecord> workItems = client.getWorkItemsForCase(caseId, sessionHandleSupplier.get());
                 List<Map<String, Object>> itemList = new ArrayList<>();
                 if (workItems != null) {
                     for (WorkItemRecord wir : workItems) {
@@ -318,7 +321,7 @@ public class YawlResourceProvider {
      * the case's variable data.
      */
     private static McpServerFeatures.SyncResourceTemplateSpecification createCaseDataTemplate(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.ResourceTemplate template = new McpSchema.ResourceTemplate(
             "yawl://cases/{caseId}/data",
@@ -338,7 +341,7 @@ public class YawlResourceProvider {
                         "Case ID is required in the URI (e.g. yawl://cases/42/data)");
                 }
 
-                String caseData = client.getCaseData(caseId, sessionHandle);
+                String caseData = client.getCaseData(caseId, sessionHandleSupplier.get());
 
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("caseId", caseId);
@@ -362,7 +365,7 @@ public class YawlResourceProvider {
      * the full XML representation of the work item.
      */
     private static McpServerFeatures.SyncResourceTemplateSpecification createWorkItemDetailsTemplate(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier) {
 
         McpSchema.ResourceTemplate template = new McpSchema.ResourceTemplate(
             "yawl://workitems/{workItemId}",
@@ -381,7 +384,7 @@ public class YawlResourceProvider {
                         "Work item ID is required in the URI (e.g. yawl://workitems/42:TaskA)");
                 }
 
-                String workItemXml = client.getWorkItem(workItemId, sessionHandle);
+                String workItemXml = client.getWorkItem(workItemId, sessionHandleSupplier.get());
 
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("workItemId", workItemId);
@@ -469,76 +472,13 @@ public class YawlResourceProvider {
      * @param map the data to serialize
      * @return JSON string representation
      */
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     private static String toJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append('{');
-        boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (!first) {
-                sb.append(',');
-            }
-            first = false;
-            sb.append('"').append(escapeJson(entry.getKey())).append("\":");
-            appendJsonValue(sb, entry.getValue());
+        try {
+            return JSON_MAPPER.writeValueAsString(map);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize map to JSON", e);
         }
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void appendJsonValue(StringBuilder sb, Object value) {
-        if (value == null) {
-            sb.append("null");
-        } else if (value instanceof String str) {
-            sb.append('"').append(escapeJson(str)).append('"');
-        } else if (value instanceof Number num) {
-            sb.append(num);
-        } else if (value instanceof Boolean bool) {
-            sb.append(bool);
-        } else if (value instanceof List<?> list) {
-            sb.append('[');
-            boolean first = true;
-            for (Object item : list) {
-                if (!first) {
-                    sb.append(',');
-                }
-                first = false;
-                appendJsonValue(sb, item);
-            }
-            sb.append(']');
-        } else if (value instanceof Map<?, ?> map) {
-            sb.append(toJson((Map<String, Object>) map));
-        } else {
-            sb.append('"').append(escapeJson(value.toString())).append('"');
-        }
-    }
-
-    private static String escapeJson(String text) {
-        if (text == null) {
-            throw new IllegalArgumentException(
-                "Cannot JSON-escape a null string. Callers must handle null values " +
-                "before invoking escapeJson (use appendJsonValue for null-safe serialization).");
-        }
-        StringBuilder sb = new StringBuilder(text.length());
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            switch (c) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> {
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        }
-        return sb.toString();
     }
 }

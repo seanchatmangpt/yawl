@@ -3,7 +3,7 @@ package org.yawlfoundation.yawl.integration.mcp;
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
@@ -128,15 +128,15 @@ public class YawlMcpServer {
                 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
             .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle))
+                interfaceBClient, interfaceAClient, () -> sessionHandle))
             .resources(YawlResourceProvider.createAllResources(
-                interfaceBClient, sessionHandle))
+                interfaceBClient, () -> sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
-                interfaceBClient, sessionHandle))
+                interfaceBClient, () -> sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(
                 interfaceBClient, () -> sessionHandle))
             .completions(YawlCompletionSpecifications.createAll(
-                interfaceBClient, sessionHandle))
+                interfaceBClient, () -> sessionHandle))
             .build();
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
@@ -204,6 +204,7 @@ public class YawlMcpServer {
         if (sessionHandle != null) {
             try {
                 interfaceBClient.disconnect(sessionHandle);
+                interfaceAClient.disconnect(sessionHandle);
             } catch (IOException e) {
                 System.err.println(
                     "Warning: failed to disconnect from YAWL engine: "

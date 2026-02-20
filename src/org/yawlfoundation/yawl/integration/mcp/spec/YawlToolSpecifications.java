@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
@@ -40,13 +41,13 @@ public final class YawlToolSpecifications {
      *
      * @param interfaceBClient the YAWL InterfaceB client for runtime operations
      * @param interfaceAClient the YAWL InterfaceA client for design-time operations
-     * @param sessionHandle    the active YAWL session handle
+     * @param sessionHandleSupplier    supplier of the active YAWL session handle
      * @return list of all YAWL tool specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncToolSpecification> createAll(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
             InterfaceA_EnvironmentBasedClient interfaceAClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         if (interfaceBClient == null) {
             throw new IllegalArgumentException(
@@ -56,29 +57,28 @@ public final class YawlToolSpecifications {
             throw new IllegalArgumentException(
                 "interfaceAClient is required - provide a connected InterfaceA_EnvironmentBasedClient");
         }
-        if (sessionHandle == null || sessionHandle.isEmpty()) {
+        if (sessionHandleSupplier == null) {
             throw new IllegalArgumentException(
-                "sessionHandle is required - connect to the YAWL engine first via " +
-                "InterfaceB_EnvironmentBasedClient.connect(username, password)");
+                "sessionHandleSupplier is required - provide a Supplier that returns the active session handle");
         }
 
         List<McpServerFeatures.SyncToolSpecification> tools = new ArrayList<>();
 
-        tools.add(createLaunchCaseTool(interfaceBClient, sessionHandle));
-        tools.add(createGetCaseStatusTool(interfaceBClient, sessionHandle));
-        tools.add(createCancelCaseTool(interfaceBClient, sessionHandle));
-        tools.add(createListSpecificationsTool(interfaceBClient, sessionHandle));
-        tools.add(createGetSpecificationTool(interfaceBClient, sessionHandle));
-        tools.add(createUploadSpecificationTool(interfaceAClient, sessionHandle));
-        tools.add(createGetWorkItemsTool(interfaceBClient, sessionHandle));
-        tools.add(createGetWorkItemsForCaseTool(interfaceBClient, sessionHandle));
-        tools.add(createCheckoutWorkItemTool(interfaceBClient, sessionHandle));
-        tools.add(createCheckinWorkItemTool(interfaceBClient, sessionHandle));
-        tools.add(createGetRunningCasesTool(interfaceBClient, sessionHandle));
-        tools.add(createGetCaseDataTool(interfaceBClient, sessionHandle));
-        tools.add(createSuspendCaseTool(interfaceBClient, sessionHandle));
-        tools.add(createResumeCaseTool(interfaceBClient, sessionHandle));
-        tools.add(createSkipWorkItemTool(interfaceBClient, sessionHandle));
+        tools.add(createLaunchCaseTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createGetCaseStatusTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createCancelCaseTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createListSpecificationsTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createGetSpecificationTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createUploadSpecificationTool(interfaceAClient, sessionHandleSupplier));
+        tools.add(createGetWorkItemsTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createGetWorkItemsForCaseTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createCheckoutWorkItemTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createCheckinWorkItemTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createGetRunningCasesTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createGetCaseDataTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createSuspendCaseTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createResumeCaseTool(interfaceBClient, sessionHandleSupplier));
+        tools.add(createSkipWorkItemTool(interfaceBClient, sessionHandleSupplier));
 
         return tools;
     }
@@ -89,7 +89,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createLaunchCaseTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("specIdentifier", Map.of(
@@ -127,7 +127,7 @@ public final class YawlToolSpecifications {
                         specId, specVersion, specUri);
 
                     String caseId = interfaceBClient.launchCase(
-                        ySpecId, caseData, null, sessionHandle);
+                        ySpecId, caseData, null, sessionHandleSupplier.get());
 
                     if (caseId == null || caseId.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -153,7 +153,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetCaseStatusTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -173,7 +173,7 @@ public final class YawlToolSpecifications {
             (exchange, args) -> {
                 try {
                     String caseId = requireStringArg(args, "caseId");
-                    String state = interfaceBClient.getCaseState(caseId, sessionHandle);
+                    String state = interfaceBClient.getCaseState(caseId, sessionHandleSupplier.get());
 
                     if (state == null || state.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -197,7 +197,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createCancelCaseTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -218,7 +218,7 @@ public final class YawlToolSpecifications {
             (exchange, args) -> {
                 try {
                     String caseId = requireStringArg(args, "caseId");
-                    String result = interfaceBClient.cancelCase(caseId, sessionHandle);
+                    String result = interfaceBClient.cancelCase(caseId, sessionHandleSupplier.get());
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -242,7 +242,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createListSpecificationsTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
@@ -307,7 +307,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetSpecificationTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("specIdentifier", Map.of(
@@ -340,7 +340,7 @@ public final class YawlToolSpecifications {
                     YSpecificationID ySpecId = new YSpecificationID(
                         specId, specVersion, specUri);
 
-                    String spec = interfaceBClient.getSpecification(ySpecId, sessionHandle);
+                    String spec = interfaceBClient.getSpecification(ySpecId, sessionHandleSupplier.get());
 
                     if (spec == null || spec.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -364,7 +364,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createUploadSpecificationTool(
             InterfaceA_EnvironmentBasedClient interfaceAClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("specXml", Map.of(
@@ -387,7 +387,7 @@ public final class YawlToolSpecifications {
                     String specXml = requireStringArg(args, "specXml");
 
                     String result = interfaceAClient.uploadSpecification(
-                        specXml, sessionHandle);
+                        specXml, sessionHandleSupplier.get());
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -411,7 +411,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetWorkItemsTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
@@ -468,7 +468,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetWorkItemsForCaseTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -490,7 +490,7 @@ public final class YawlToolSpecifications {
                     String caseId = requireStringArg(args, "caseId");
 
                     List<WorkItemRecord> items =
-                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandleSupplier.get());
 
                     if (items == null || items.isEmpty()) {
                         return new McpSchema.CallToolResult(
@@ -525,7 +525,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createCheckoutWorkItemTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("workItemId", Map.of(
@@ -548,7 +548,7 @@ public final class YawlToolSpecifications {
                     String workItemId = requireStringArg(args, "workItemId");
 
                     String result = interfaceBClient.checkOutWorkItem(
-                        workItemId, sessionHandle);
+                        workItemId, sessionHandleSupplier.get());
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -573,7 +573,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createCheckinWorkItemTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("workItemId", Map.of(
@@ -601,7 +601,7 @@ public final class YawlToolSpecifications {
                     String outputData = optionalStringArg(args, "outputData", null);
 
                     String result = interfaceBClient.checkInWorkItem(
-                        workItemId, outputData, null, sessionHandle);
+                        workItemId, outputData, null, sessionHandleSupplier.get());
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -626,7 +626,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetRunningCasesTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
@@ -664,7 +664,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createGetCaseDataTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -685,7 +685,7 @@ public final class YawlToolSpecifications {
             (exchange, args) -> {
                 try {
                     String caseId = requireStringArg(args, "caseId");
-                    String data = interfaceBClient.getCaseData(caseId, sessionHandle);
+                    String data = interfaceBClient.getCaseData(caseId, sessionHandleSupplier.get());
 
                     if (data == null || data.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
@@ -708,7 +708,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createSuspendCaseTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -731,7 +731,7 @@ public final class YawlToolSpecifications {
                     String caseId = requireStringArg(args, "caseId");
 
                     List<WorkItemRecord> items =
-                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandleSupplier.get());
 
                     if (items == null || items.isEmpty()) {
                         return new McpSchema.CallToolResult(
@@ -745,7 +745,7 @@ public final class YawlToolSpecifications {
 
                     for (WorkItemRecord item : items) {
                         String result = interfaceBClient.suspendWorkItem(
-                            item.getID(), sessionHandle);
+                            item.getID(), sessionHandleSupplier.get());
                         if (result != null && !result.contains("<failure>")) {
                             suspendedCount++;
                             sb.append("  Suspended work item: ").append(item.getID()).append("\n");
@@ -774,7 +774,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createResumeCaseTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("caseId", Map.of(
@@ -797,7 +797,7 @@ public final class YawlToolSpecifications {
                     String caseId = requireStringArg(args, "caseId");
 
                     List<WorkItemRecord> items =
-                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+                        interfaceBClient.getWorkItemsForCase(caseId, sessionHandleSupplier.get());
 
                     if (items == null || items.isEmpty()) {
                         return new McpSchema.CallToolResult(
@@ -811,7 +811,7 @@ public final class YawlToolSpecifications {
 
                     for (WorkItemRecord item : items) {
                         String result = interfaceBClient.unsuspendWorkItem(
-                            item.getID(), sessionHandle);
+                            item.getID(), sessionHandleSupplier.get());
                         if (result != null && !result.contains("<failure>")) {
                             resumedCount++;
                             sb.append("  Resumed work item: ").append(item.getID()).append("\n");
@@ -840,7 +840,7 @@ public final class YawlToolSpecifications {
 
     private static McpServerFeatures.SyncToolSpecification createSkipWorkItemTool(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
-            String sessionHandle) {
+            Supplier<String> sessionHandleSupplier) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("workItemId", Map.of(
@@ -863,7 +863,7 @@ public final class YawlToolSpecifications {
                     String workItemId = requireStringArg(args, "workItemId");
 
                     String result = interfaceBClient.skipWorkItem(
-                        workItemId, sessionHandle);
+                        workItemId, sessionHandleSupplier.get());
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
