@@ -525,7 +525,13 @@ Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie?
 | Tempted to spawn team for single quantum? | Don't. Use single session. Teams add 3-5× cost. | τ |
 | Team has >5 teammates? | Reduce scope or split into sequential phases. | τ |
 | Team never needs to message each other? | Use subagents instead (cheaper, simpler). | τ |
+| **Teammate idle >30 min (team execution)** | **Message teammate, await response (5 min). If no response → crash (section 3.1, error-recovery.md)** | **τ** |
+| **Task timeout >2 hours (team execution)** | **Message teammate for status. If no response → reassign (section 6.2.1, error-recovery.md)** | **τ** |
+| **Circular dependency detected (team execution)** | **Lead breaks tie via task ordering (section 2.1, error-recovery.md). Do NOT proceed without resolution.** | **τ** |
+| **Lead DX fails after teammates GREEN (consolidation)** | **Identify incompatibility, assign fix, re-run (section 3.2, error-recovery.md)** | **Λ** |
+| **Message timeout >15 min (critical, team execution)** | **Resend [URGENT], await 5 min. If no response → crash (section 1.3, error-recovery.md)** | **τ** |
 | Hook blocked Write\|Edit? | Fix violation for real. Don't work around. | H |
+| **Hook detects Q violation mid-team execution** | **Teammate fixes locally, re-runs dx.sh -pl <module>. If still fails → reassign (section 5.1, error-recovery.md)** | **H** |
 | Unsure file in emit vs ⊗? | Ask user before touching. | Ω |
 | Context usage >70%? | Checkpoint + summarize. Batch remaining. | Meta |
 | Tempted "for now" / "later"? | Throw UnsupportedOperationException. | Q |

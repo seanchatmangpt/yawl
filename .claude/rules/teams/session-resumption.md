@@ -1,4 +1,4 @@
-# Team Session Resumption — Phase 3 Architecture
+# Session Resumption Architecture — Team State Persistence (Phase 3)
 
 **Problem**: Team state is ephemeral. If lead times out, all team context (task_list, mailbox, teammate_ids) is lost. Teammates orphaned. Expensive work abandoned.
 
@@ -8,132 +8,129 @@
 
 ## 1. State Persistence Model
 
-### 1.1 Team State Definition
+### 1.1 Team State Inventory
 
-**Minimal state to persist**:
-
-```yaml
-team_session:
-  id: "team-<quantums>-<sessionId>"  # UUID, immutable
-  created_at: "2026-02-20T14:23:45Z"
-  status: {pending, active, consolidating, complete}
-  lead_session_id: "claude-<leadId>"
-
-  teammates: [
-    {
-      id: "tm_1",
-      name: "Engineer A",
-      quantum: "engine",
-      status: {idle, in_progress, blocked, complete},
-      claimed_task_id: "task_engine_001",
-      context_window_usage: 45,  # %
-      last_heartbeat: "2026-02-20T14:25:12Z",
-      last_message_seq: 42
-    }
-  ]
-
-  tasks:
-    pending: ["task_schema_001", "task_integration_001"]
-    in_progress: [
-      {
-        id: "task_engine_001",
-        quantum: "engine",
-        assigned_to: "tm_1",
-        description: "Fix YNetRunner deadlock",
-        dependencies: [],
-        status: in_progress,
-        created_at: "2026-02-20T14:20:00Z"
-      }
-    ]
-    completed: ["task_test_001"]
-
-  mailbox: [
-    {
-      seq: 40,
-      from: "tm_1",
-      to: "tm_2",
-      timestamp: "2026-02-20T14:24:18Z",
-      type: {info, question, challenge, resolution},
-      body: "Found race in executor.advance() line 427"
-    }
-  ]
-
-  shared_facts:
-    modules_json_sha: "abc123def456",
-    gates_json_sha: "xyz789uvw012",
-    shared_src_json_sha: "pqr345stu678"
-
-  metadata:
-    N: 3,  # teammate count
-    divergence_detected: false,
-    lead_last_seen: "2026-02-20T14:25:30Z"
-```
-
-### 1.2 Persistence Targets
-
-**Option A (Primary): Git branch**
-- Store state in `.claude/teams/<team-id>/state.json`
-- Append-only mailbox: `.claude/teams/<team-id>/mailbox.log` (JSONL)
-- Task history: `.claude/teams/<team-id>/tasks.jsonl`
-- Advantages: Version control, searchable, audit trail
-- Risk: Git overhead if high message frequency
-
-**Option B (Fallback): Temp directory**
-- `~/.claude/teams/<team-id>/state.json` (persistent across sessions)
-- Fast writes, no git overhead
-- Risk: Lost if temp cleared (mitigated by Option A)
-
-**Hybrid (Recommended)**:
-- Real-time state → Option B (low latency)
-- Checkpoint every 30 sec → Option A (git commit)
-- On-demand checkpoint: `claude ... --checkpoint-team <team-id>`
-
-### 1.3 File Format & Serialization
+**Complete state to persist**:
 
 ```json
 {
-  "version": "1.0",
-  "team_id": "team-engine+schema+test-iDs6b",
-  "checkpoint_sequence": 127,
-  "created_utc_ms": 1740069825000,
-  "updated_utc_ms": 1740069945000,
-  "lead_session_id": "claude-lead-ABC123",
-  "status": "active",
-  "teammate_count": 3,
-  "teammates": [
+  "schema_version": "1.0",
+  "team_metadata": {
+    "team_id": "τ-engine+schema+test-iDs6b",
+    "created_at": "2026-02-20T14:32:00Z",
+    "lead_session_id": "claude-lead-ABC123",
+    "status": "active|suspended|consolidating|completed",
+    "teammate_count": 3,
+    "last_heartbeat": "2026-02-20T14:45:32Z"
+  },
+  "task_list": [
     {
-      "id": "tm_1",
-      "index": 0,
-      "role": "engineer",
-      "quantum": "engine",
-      "status": "in_progress",
-      "task_claimed": "task_engine_001",
-      "context_usage_percent": 45,
-      "heartbeat_utc_ms": 1740069912000,
-      "last_message_seq": 42,
-      "last_checkpoint_seq": 127
+      "task_id": "task-engine-001",
+      "quantum": "Engine semantic",
+      "assigned_to": "Engineer A",
+      "status": "pending|in_progress|blocked|completed",
+      "dependencies": ["task-schema-001"],
+      "created_at": "2026-02-20T14:23:00Z",
+      "started_at": "2026-02-20T14:34:00Z",
+      "completed_at": null,
+      "checkpoint": {
+        "last_progress_at": "2026-02-20T14:44:00Z",
+        "files_modified": ["yawl/engine/YNetRunner.java"],
+        "local_dx_status": "green|red|pending",
+        "checkpoint_seq": 127
+      }
     }
   ],
-  "task_queue": {
-    "pending": ["task_schema_001", "task_int_001"],
-    "in_progress": [
-      {
-        "id": "task_engine_001",
-        "quantum": "engine",
-        "assigned_to": "tm_1",
-        "dependencies": [],
-        "status": "in_progress",
-        "created_utc_ms": 1740069800000,
-        "description": "Fix YNetRunner deadlock"
-      }
-    ],
-    "completed": ["task_test_001"]
-  },
-  "mailbox_seq": 45,
-  "facts_checksums": {
-    "modules": "abc123",
-    "gates": "xyz789",
-    "shared_src": "pqr345"
+  "mailbox": [
+    {
+      "msg_id": "msg-001",
+      "seq": 42,
+      "from": "Engineer A",
+      "to": "Engineer B|*",
+      "timestamp": "2026-02-20T14:43:15Z",
+      "type": "info|question|challenge|resolution",
+      "subject": "State machine finding",
+      "body": "Found deadlock at line 427...",
+      "acked_by": ["Engineer B", "lead"]
+    }
+  ],
+  "teammate_state": [
+    {
+      "name": "Engineer A",
+      "session_id": "claude-tm-DEF456",
+      "status": "active|idle|suspended|disconnected",
+      "role": "engineer|validator|tester|integrator",
+      "last_seen": "2026-02-20T14:45:30Z",
+      "last_heartbeat_seq": 87,
+      "current_task": "task-engine-001",
+      "local_changes": {
+        "staged": ["yawl/engine/YNetRunner.java"],
+        "unstaged": [],
+        "branch": "claude/task-engine-001-DEF456"
+      },
+      "context_usage_percent": 45
+    }
+  ],
+  "session_log": {
+    "messages_count": 12,
+    "tasks_completed": 1,
+    "tasks_in_progress": 2,
+    "session_duration_seconds": 847,
+    "next_checkpoint_at": "2026-02-20T15:00:00Z",
+    "last_action": "task_assignment|message_sent|checkpoint_saved|consolidation_started",
+    "last_action_at": "2026-02-20T14:45:00Z"
+  }
+}
+```
+
+**Size estimate**: 50-100 KB per team (even with 1000+ messages).
+
+### 1.2 Persistence Locations (Hybrid Strategy)
+
+**Primary: Git branch** (durable, auditable)
+```
+.team-state/<team-id>/
+  ├─ metadata.json           # Team metadata + task_list
+  ├─ mailbox.jsonl           # Append-only message log
+  ├─ teammates.json          # Teammate session references
+  └─ checkpoints/
+     └─ checkpoint-<seq>.json # Periodic snapshots
+```
+
+**Secondary: Temp files** (fast access during active session)
+```
+/tmp/yawl-team-<team-id>/
+  ├─ state.json              # Live runtime state
+  ├─ messages.log            # Append-only message log
+  ├─ heartbeats/
+  │  ├─ engineer-a.txt       # Last heartbeat timestamp
+  │  └─ engineer-b.txt
+  └─ checkpoints/
+     └─ task-001-<seq>.json  # Teammate auto-saves
+```
+
+**Rationale**:
+- **Git**: Durable, searchable, version-controllable
+- **Temp**: Fast I/O, no git overhead during collaboration
+- **Hybrid**: Eventual consistency (sync every 30s)
+
+### 1.3 Format: JSON (Flat Structure, Schema Versioning)
+
+**Why JSON?**
+- Native to agent frameworks
+- Easy diff/merge in git
+- Queryable via jq
+- Version-controllable
+
+**Schema versioning**:
+```json
+{
+  "schema_version": "1.0",
+  "schema_date": "2026-02-20",
+  "compatibility": {
+    "v1.0": "initial",
+    "v1.1": "adds checkpoint_seq field",
+    "upgrade_rule": "v1.0 → v1.1: auto-assigns checkpoint_seq = 0"
   }
 }
 ```
@@ -142,476 +139,566 @@ team_session:
 
 ## 2. Resume Protocol
 
-### 2.1 Lead Re-Attachment
+### 2.1 Lead Re-Attachment Command
 
-**Command**:
+**CLI syntax**:
 ```bash
-# List all dormant teams
+# Resume specific team
+claude ... --resume-team τ-engine+schema+test-iDs6b
+
+# List resumable teams
 claude ... --list-teams
 
-# Resume specific team (lead reconnects)
-claude ... --resume-team team-engine+schema+test-iDs6b
-
-# Verify team is still alive before resuming
-claude ... --probe-team team-engine+schema+test-iDs6b
+# Probe team liveness before resume
+claude ... --probe-team τ-engine+schema+test-iDs6b
 ```
 
-### 2.2 Resume Validation Sequence
+### 2.2 Resume Validation Sequence (Lead Perspective)
 
 ```
-Lead calls: --resume-team <team-id>
+Lead invokes: --resume-team τ-abc123
     ↓
-1. Load state.json from ~/.claude/teams/<team-id>/
-   ✓ Team found? Proceed.
-   ✗ Not found? Error: "Team <team-id> not found. Use --list-teams"
-    ↓
-2. Check team_status
-   ✓ active? Proceed.
-   ✓ consolidating? Warn: "Team in consolidation. Wait for completion."
-   ✗ complete? Error: "Team is complete. Use --review-team <team-id>"
-   ✗ pending? Error: "Team not initialized. Spawn with --create-team"
-    ↓
-3. Verify lead_session_id matches current session
-   ✓ Match? Proceed (re-attachment).
-   ✗ Mismatch? Allow only if old session timed out (>30 min stale).
-   ⚠ Different lead? Warn: "Different lead detected. Coordinator override needed."
-    ↓
-4. Probe all teammates (check heartbeats)
-   For each tm_i:
-     timestamp_now = current UTC
-     stale_threshold = 10 minutes
-     ✓ heartbeat_utc_ms > (timestamp_now - 10min) → Online
-     ✗ heartbeat_utc_ms < (timestamp_now - 10min) → Offline (see section 3)
-    ↓
-5. Verify facts checksums match (observatory hasn't invalidated state)
-   ✓ All checksums match? Proceed.
-   ✗ Mismatch? Warn: "Facts stale. Run `bash scripts/observatory/observatory.sh`"
-    ↓
-6. Load mailbox from mailbox.log (append-only)
-   Reconstruct full conversation history
-   Display last 10 messages to lead
-    ↓
-7. Display team status summary + task queue
-   ✓ Ready to consolidate / continue / monitor
+1. DISCOVERY (0.5 sec)
+   Load .team-state/τ-abc123/metadata.json
+   ✓ File exists? Continue.
+   ✗ Not found? Error: "Team not found. Use --list-teams"
+
+2. VERIFY TEAM STATUS (1 sec)
+   Check: status field
+   ✓ "active" or "suspended"? Continue.
+   ✗ "consolidating"? Warn: "Team mid-consolidation. Wait or abort?"
+   ✗ "completed"? Error: "Team complete. Use --review-team"
+
+3. VALIDATE LEAD SESSION (1 sec)
+   Check: lead_session_id
+   ✓ Matches current session? Fast-path.
+   ⚠ Different session but >30 min old? Allow re-attach.
+   ✗ Current session active elsewhere? Error: "Lead already attached"
+
+4. PROBE TEAMMATES (2-10 sec)
+   For each teammate:
+     hb_file = /tmp/yawl-team-<team-id>/heartbeat-<name>.txt
+     ✓ Exists AND fresh (<10 min)? Status = "online"
+     ⚠ Exists BUT stale (10-30 min)? Status = "idle"
+     ✗ Missing OR >30 min old? Status = "offline"
+
+5. VERIFY FACTS (1 sec)
+   Load .team-state/τ-abc123/metadata.json → facts_checksums
+   Compare to current: bash scripts/observatory/observatory.sh --checksum
+   ✓ Match? Continue.
+   ⚠ Mismatch? Warn: "Facts stale. Observatory changed. Safe to proceed but run observatory?"
+
+6. LOAD MAILBOX (2 sec)
+   Read .team-state/τ-abc123/mailbox.jsonl
+   Reconstruct conversation (100 lines max)
+   Display last 5 messages to lead
+
+7. DISPLAY SUMMARY (1 sec)
+   Status:
+     • Team ID: τ-abc123
+     • Created: 847 seconds ago
+     • Tasks: 1 completed, 2 in_progress, 1 pending
+     • Teammates: 3 online, 0 idle, 0 offline
+     • Last activity: 2 min ago (message from Engineer A)
+     • Next checkpoint: scheduled for 14:50
+
+   Ready for: continue, consolidate, or message teammates
 
 Exit codes:
-  0 = success, team re-attached
-  1 = transient error (retry)
+  0 = success, team attached, ready to proceed
+  1 = transient error (retry logic)
   2 = permanent error (team unrecoverable)
 ```
 
-### 2.3 Lead Session State
+**Elapsed time**: ~20 seconds total (well under 5-min SLA).
 
-After re-attachment, lead inherits:
+### 2.3 Team Liveness Verification
 
-```yaml
-resume_context:
-  team_id: "team-..."
-  lead_session_new: "claude-lead-XYZ789"  # current session
-  lead_session_old: "claude-lead-ABC123"  # previous (timed out)
+**Heartbeat freshness logic**:
 
-  visible_state:
-    - task_queue (all tasks, not just lead's assignments)
-    - mailbox (last 50 messages, full history in .log)
-    - teammate_status (online/offline, context usage, last heartbeat)
-    - progress_metrics (tasks completed %, ETA)
+```
+for each teammate:
+  last_hb = read(heartbeat-<name>.txt)
+  elapsed = now - last_hb
 
-  actions_available:
-    - message <teammate>: send direct message
-    - broadcast: announce to all teammates
-    - checkpoint: save state to git branch
-    - force-reassign <task> <new_tm>: if original assigned teammate offline
-    - graceful-shutdown: mark team for consolidation
-    - abort-team: kill all teammates (emergency)
+  if elapsed < 10 min:
+    status = "online"      → can message immediately
+  elif elapsed < 30 min:
+    status = "idle"        → send wake-up, wait 30s
+  elif elapsed < 60 min:
+    status = "suspended"   → can reassign task
+  else:
+    status = "stale"       → fail resume, recommend new team
 ```
 
 ---
 
 ## 3. Teammate Reconnection
 
-### 3.1 Heartbeat Protocol
+### 3.1 Teammate Heartbeat Mechanism
 
-**Teammate heartbeat**: Every 30 seconds, teammates emit:
+**Every 60 seconds**, each teammate emits:
 
-```json
-{
-  "heartbeat": {
-    "teammate_id": "tm_1",
-    "timestamp_utc_ms": 1740069945000,
-    "task_claimed": "task_engine_001",
-    "context_usage_percent": 47,
-    "status": "in_progress",
-    "message_seq": 43,
-    "checkpoint_seq": 127
-  }
-}
+```bash
+# In teammate session (post-edit hook):
+echo "$(date +%s)" > /tmp/yawl-team-<team-id>/heartbeat-<name>.txt
 ```
 
-**Detection**:
-- Teammate alive if: `now - heartbeat_utc_ms < 10 minutes`
-- Teammate offline if: `now - heartbeat_utc_ms > 10 minutes`
+**Content**: Unix timestamp (monotonic, clock-skew safe).
 
-### 3.2 Detecting Lead Timeout
+**Lead monitoring** (every 30 sec):
+```bash
+for teammate in $(ls /tmp/yawl-team-<team-id>/heartbeat-*.txt 2>/dev/null); do
+  last_hb=$(cat "$teammate" 2>/dev/null || echo 0)
+  elapsed=$(($(date +%s) - last_hb))
 
-**Teammate detects lead gone**:
-```
-Teammate's periodic check (every 60 sec):
-  ↓
-  1. Read state.json
-  2. Check: now - lead_last_seen > timeout_threshold (5 min)
-  3. ✓ Lead online → Continue
-  4. ✗ Lead offline → Enter ZOMBIE mode
-     - Mark state.json: "lead_timeout_detected_utc_ms"
-     - Pause new messages to mailbox
-     - Continue running local task (no blocking)
-     - Auto-save checkpoints to temp every 30 sec
-     - Wait for lead to resume OR timeout_max (30 min)
+  if [ $elapsed -gt 600 ]; then  # 10 min
+    mark_teammate_idle "$teammate"
+  fi
+done
 ```
 
-**Resolution**:
-```
-Lead resumes:
-  ↓
-  1. Read state.json, detect "lead_timeout_detected_utc_ms"
-  2. Replay mailbox from last_checkpoint_seq
-  3. Message all teammates: "Lead resumed. Proceed or wait?"
-  4. Mark state: lead_last_seen = now
-  5. Sync any teammate auto-saves
+### 3.2 Teammate Detects Lead Timeout (ZOMBIE Mode)
+
+**Teammate's periodic check** (every 60 sec):
+
+```bash
+# In teammate session:
+team_state_file=.team-state/<team-id>/metadata.json
+lead_last_seen=$(jq -r '.session_log.lead_last_seen_at' "$team_state_file")
+elapsed=$(($(date +%s) - lead_last_seen))
+
+if [ $elapsed -gt 300 ]; then  # 5 min
+  # Lead offline, enter ZOMBIE mode
+  jq '.session_log.lead_timeout_detected_at = "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"' \
+    "$team_state_file" > "$team_state_file.tmp"
+  mv "$team_state_file.tmp" "$team_state_file"
+
+  # Continue work but pause new messages
+  echo "[ZOMBIE] Lead offline. Continuing task locally. Checkpoints every 30s."
+
+  # Auto-checkpoint every 30s (non-blocking)
+  while [ $elapsed -gt 300 ]; do
+    bash .claude/hooks/checkpoint-team.sh <team-id> <task-id> &
+    sleep 30
+    elapsed=$(($(date +%s) - lead_last_seen))
+  done
+fi
 ```
 
 ### 3.3 Teammate In-Progress Recovery
 
-**Task interrupted mid-work**:
+**Task interrupted mid-execution**:
 
 ```
-Scenario: Teammate tm_1 compiling at line 427, lead times out.
-
-tm_1 detects lead offline:
-  ✓ Keep compiling (no blocking on lead)
-  ✓ Write checkpoint to ~/.claude/teams/<team-id>/tm_1_checkpoint.json
-    - file_edits: [...pending writes...]
-    - compile_state: {...partial compile output...}
-    - last_good_state: {...previous working state...}
-  ✓ Enter ZOMBIE mode (poll lead every 60 sec)
-
-Lead resumes:
-  ✓ Read state.json, detect tm_1 in_progress
-  ✓ Read tm_1_checkpoint.json
-  ✓ Message tm_1: "Detected you were interrupted. Status?"
-  ✓ tm_1 replies: "Compiled 60%, found 3 warnings in engine module"
-  ✓ Lead decides: continue or rollback?
-    - Continue: tm_1 resumes from checkpoint
-    - Rollback: git checkout <module>, restart task
+Teammate executing task-engine-001
+  ↓
+Lead timeout detected (>5 min stale)
+  ↓
+Teammate enters ZOMBIE:
+  • Continues running local DX
+  • Auto-saves checkpoint to /tmp/yawl-team-<team-id>/task-001-<seq>.json
+  • Checkpoint includes:
+    - files_modified: [list of changed files]
+    - dx_status: "green|red|pending"
+    - git_branch: current branch state
+    - last_progress: timestamp
+  ↓
+Lead resumes: --resume-team τ-abc123
+  ↓
+Lead reads metadata.json:
+  • Detects lead_timeout_detected_at
+  • Loads latest checkpoint from checkpoints/
+  • Messages Teammate: "Detected ZOMBIE at 14:42. Status?"
+  ↓
+Teammate responds (in live session):
+  "Fixed guard logic, tests passing. Ready to proceed or commit?"
+  ↓
+Lead decides:
+  A) Continue: Teammate resumes from checkpoint
+  B) Commit: Lead runs dx.sh all, commits changes
+  C) Rollback: git reset --hard, start task over
 ```
 
 ---
 
-## 4. Failure Scenarios
+## 4. Failure Scenarios & Recovery
 
-### 4.1 Lead Dies Mid-Consolidation
+### 4.1 Lead Timeout (Mid-Consolidation)
 
-**State**: Lead in PostTeam consolidation, has called `git add <files>`, not yet `git commit`.
-
+**Scenario**: Lead at PostTeam consolidation step.
 ```
-Scenario:
-  Lead staged 5 files (engine, schema, tests, integration, stateless)
-  Git status: added 5 files
-  Lead: typing commit message... [TIMEOUT]
+Lead: git add yawl/engine/** schema/** yawl/integration/** [DONE]
+Lead: Typing commit message... [TIMEOUT - no more input]
+```
 
-Detection (next session):
+**Detection**:
+```
+Next session (lead resumes):
   ↓
-  1. Check git status: unstaged files present?
-  2. Check state.json: consolidating = true?
-  3. ✓ Both = interrupted consolidation
-
-Recovery:
-  Lead resumes:
-    ↓
-    1. Load state.json
-    2. Message teammates: "Consolidation interrupted. Verify your changes?"
-    3. Each teammate confirms: "My edits OK" / "Need to fix"
-    4. Lead re-runs: bash scripts/dx.sh all (full compile)
-    5. Re-runs hooks (H gate)
-    6. Either commits (Ω) OR aborts (rollback git)
+  1. Check git status:
+     git status → "Changes to be committed: [5 files]"
+  ↓
+  2. Check state.json:
+     status = "consolidating"
+     last_action = "consolidation_started"
+     last_action_at = "2026-02-20T14:42:00Z" (was 8 minutes ago)
+  ↓
+  3. Conclusion: Partial consolidation detected
 ```
 
-**Prevention**: `--checkpoint-team` before consolidation.
-
-### 4.2 Teammate Dies Mid-Task
-
-**State**: Teammate tm_1 claimed task_engine_001, made file edits, then orphaned.
-
+**Recovery options**:
 ```
-Detection:
-  1. Lead monitor: heartbeat_utc_ms stale for tm_1 > 10 min
-  2. Load state.json: tm_1.status = in_progress, tm_1.task_claimed = task_engine_001
-  3. Check git: any unstaged changes in tm_1's files?
-    ✓ Yes → auto-save checkpoint
-    ✗ No → proceed to reassign
-
-Recovery (3 options):
-  a) Wait 5 min (auto-restart): Claude SDK may restart teammate
-  b) Manual reassign: --force-reassign task_engine_001 tm_2
-     - tm_2 takes over, inherits checkpoint from tm_1
-  c) Rollback: git checkout <files>, return task to pending queue
-```
-
-### 4.3 Network Partition (Lead ↔ Teammate)
-
-**State**: Lead + teammates mutually visible to engine, but communication severed.
-
-```
-Scenario:
-  Lead sends: message tm_1 "What's your status?"
-  Message queue: [PENDING, not delivered for 5 min]
-  Lead sees: tm_1.heartbeat_utc_ms fresh, but no message ACK
-
-Detection:
-  Lead's message timeout: 5 minutes
-  Message marked: UNDELIVERED
-  Lead decides:
-    a) Retry: resend message
-    b) Assume stale: tm_1 offline, reassign task
-    c) Wait: network may heal
-
-Guarantee:
-  No duplicate execution (idempotent messaging).
-  If tm_1 already received message once, mark as ACK'd in mailbox.
-  Use seq numbers: mailbox[i].seq is monotonic, idempotent key.
+Lead resumes → Resume hook detects dirty state
+  ↓
+Prompt lead: "Last session was consolidating. Action?"
+  ↓
+  A) RETRY: Run consolidation again
+     → Re-run: bash scripts/dx.sh all (verify green)
+     → Re-run: hook check (verify H gate clear)
+     → Commit with original message
+  ↓
+  B) ABORT: Rollback to last known good
+     → git reset --hard <last-good-commit>
+     → Reopen all tasks for team to redo
+  ↓
+  C) INSPECT: Show me what's staged
+     → Display: git diff --cached
+     → Manual intervention on each file
 ```
 
-### 4.4 Clock Skew
+**Prevention**: Auto-checkpoint before consolidation (`--checkpoint-team`).
 
-**Problem**: Timestamps unreliable across distributed lead + teammates.
+### 4.2 Teammate Timeout (Mid-Task)
+
+**Scenario**: Engineer A executing task-engine-001, session dies mid-DX.
 
 ```
-Mitigation:
-  1. Use UTC milliseconds (not local time)
-  2. Sync check on resume:
-     - Load state.json: created_utc_ms
-     - Compute elapsed = now - created_utc_ms
-     - If elapsed < 0 → clock skew detected
-     ✓ Warn user, don't fail
-     ✓ Use relative timestamps (seq numbers) for ordering
-
-  3. Mailbox ordering:
-     - Primary key: message.seq (monotonic, assigned by lead)
-     - Secondary: message.timestamp (for human readability)
-     - Teammate messages: include lead-assigned seq in ACK
+Teammate: bash scripts/dx.sh -pl yawl-engine [33% complete]
+          Then [TIMEOUT - network hiccup, session ends]
 ```
+
+**Detection**:
+```
+Lead monitoring (every 30s):
+  ↓
+  1. Check heartbeat for Engineer A:
+     last_hb = /tmp/yawl-team-<team-id>/heartbeat-engineer-a.txt
+     stale >15 min? → Mark offline
+  ↓
+  2. Load state.json:
+     Engineer A.status = "in_progress"
+     Engineer A.current_task = "task-engine-001"
+  ↓
+  3. Check for auto-checkpoint:
+     ls .team-state/<team-id>/checkpoints/task-engine-001-*.json
+     Found? → Checkpoint exists (good!)
+```
+
+**Recovery (3 options)**:
+
+```
+A) AUTO-RESTART (preferred):
+   Lead waits 5 min for teammate to auto-restart
+   Teammate re-attaches: claude ... --resume-team <team-id> --task task-engine-001
+   Teammate loads checkpoint from disk
+   Teammate resumes DX from last known state
+
+B) MANUAL REASSIGN:
+   Lead: --force-reassign task-engine-001 Engineer-B
+   Engineer B claims task
+   Engineer B: --resume-team <team-id> --task task-engine-001
+   Engineer B inherits checkpoint from Engineer A
+   Engineer B verifies checkpoint state, continues
+
+C) ROLLBACK:
+   Lead: git reset --hard <last-good-commit>
+   Task returned to pending queue
+   New teammate starts from scratch
+```
+
+### 4.3 Network Partition (Lead ↔ Teammate Isolated)
+
+**Scenario**: Lead can't reach teammates (but both alive, TCP/IP broken).
+
+```
+Lead sends: message Engineer-A "What's your status?"
+Message queued locally: /tmp/yawl-team-<team-id>/outbox/msg-001.json
+[Network hiccup, no delivery for 5 min]
+
+Meanwhile, Engineer A:
+  • Still executing task-engine-001
+  • Unaware of lead's message
+  • Auto-checkpointing every 30s
+  • Heartbeat updating every 60s
+```
+
+**Detection** (in lead):
+```
+Lead checks message delivery status (after 5 min):
+  outbox/msg-001.json.status = "PENDING"
+  ↓
+  Decision:
+    A) Retry: resend message
+    B) Assume offline: reassign task
+    C) Wait: network may heal
+```
+
+**Guarantee**: Idempotent messaging (seq numbers prevent duplicates).
+
+### 4.4 Clock Skew (Unreliable Timestamps)
+
+**Scenario**: Lead clock differs from teammate clock by 5 minutes.
+
+```
+Heartbeat logic fails:
+  Lead: now = 14:45
+  Teammate HB: now = 14:40 (5 min behind)
+  elapsed = 14:45 - 14:40 = 5 min (appears fresh, but really offline 30+ min!)
+```
+
+**Mitigation**:
+
+1. **Use UTC milliseconds** (not local time)
+   ```json
+   "timestamp_ms": 1740069825000,  // Canonical
+   "timestamp_iso": "2026-02-20T14:45:30Z"  // Human-readable only
+   ```
+
+2. **Use monotonic sequence numbers** (immune to clock)
+   ```json
+   "seq": 127,  // Ordering key, not tied to wall clock
+   "timestamp_ms": null  // Ignored if seq newer
+   ```
+
+3. **Warn on negative elapsed**:
+   ```bash
+   elapsed=$((current_ts - hb_ts))
+   if [ $elapsed -lt -30000 ]; then  # More than 30s skew
+     echo "⚠️  Clock skew detected: $(abs($elapsed))ms"
+     use_seq_for_ordering  # Switch to seq-based ordering
+   fi
+   ```
 
 ---
 
 ## 5. Checkpointing Strategy
 
-### 5.1 Checkpoint Frequency
+### 5.1 Checkpoint Frequency (Event-Driven + Time-Based)
 
-```yaml
-checkpoint_policy:
-  task_completion:
-    trigger: Teammate marks task complete (before messaging)
-    action: Save state.json + commit to git branch
-    latency: <5 sec
+**Triggers**:
 
-  message_received:
-    trigger: Every message from any teammate
-    action: Append to mailbox.log
-    batch_flush: every 30 sec OR 10 messages
-    latency: <30 sec
-
-  milestone:
-    trigger: Every 30 sec of elapsed time
-    action: Save full state.json snapshot
-    latency: 30 sec
-
-  consolidation_gate:
-    trigger: Before lead consolidates (git add)
-    action: Full checkpoint + verify all teammates green
-    latency: <10 sec
-
-  manual:
-    trigger: claude ... --checkpoint-team <team-id>
-    action: Force checkpoint now
-    latency: <5 sec
-```
+| Trigger | Frequency | Action | Latency | Destination |
+|---------|-----------|--------|---------|-------------|
+| Task status change | per state transition | Save task + metadata | <5 sec | .team-state/ + /tmp/ |
+| Message sent/received | every 5 messages OR 30s | Append to mailbox.jsonl | <30 sec | .team-state/ |
+| DX run complete | on-demand | Snapshot state.json | <5 sec | .team-state/ |
+| Periodic timer | every 5 min | Full state backup | <10 sec | .team-state/ + git commit |
+| Explicit --checkpoint-team | on-demand | Force checkpoint now | <5 sec | .team-state/ + git |
+| Pre-consolidation | before git add | Verify all tasks green | <10 sec | .team-state/ |
 
 ### 5.2 Minimal State to Restore
 
-**Critical state** (required to resume):
+**Critical state** (required to resume, ~10 KB):
+```json
+{
+  "team_id": "τ-abc123",
+  "status": "active",
+  "lead_session_id": "current-session",
 
-```yaml
-minimal_state:
-  team_id: "team-..."
-  status: active
-  lead_session_id: "current-session"
+  "task_queue": {
+    "pending": ["task-id-1"],
+    "in_progress": [
+      {
+        "id": "task-001",
+        "assigned_to": "Engineer A",
+        "status": "in_progress"
+      }
+    ],
+    "completed": ["task-id-0"]
+  },
 
-  # Enough to continue work
-  task_queue_current: [pending, in_progress] tasks only
-  mailbox_tail: [last 50 messages]
-  teammate_roster: [id, status, heartbeat]
+  "teammate_roster": [
+    {
+      "name": "Engineer A",
+      "session_id": "claude-tm-DEF456",
+      "status": "online",
+      "last_heartbeat": "2026-02-20T14:45:30Z"
+    }
+  ],
 
-  # Enough to verify nothing broke
-  git_commit_sha: "abc123def456"  # last known good
-  facts_checksums: {...}
+  "checkpoint_info": {
+    "last_checkpoint_seq": 127,
+    "last_checkpoint_at": "2026-02-20T14:44:00Z"
+  }
+}
 ```
 
-**Size**: ~50 KB per team (vs 5 MB full codebase).
-**Storage**: `.claude/teams/<team-id>/state.json` (git tracked).
+**Size**: ~5-10 KB (vs 500 MB+ full codebase).
 
-### 5.3 Recovery Time Target
+### 5.3 Recovery Time Target: <5 Minutes
 
-**Goal**: Restore team in <5 minutes.
-
-```
-Timeline:
-  1. Lead calls --resume-team (0 sec)
-  2. Load state.json (0.5 sec)
-  3. Probe all teammates (2 sec per tm, max 10 sec for 5 teammates)
-  4. Replay mailbox (5 sec)
-  5. Verify facts checksums (1 sec)
-  6. Display summary (0.5 sec)
-  ────────────────────────────
-  Total: ~20 seconds
-  Target met: < 5 min ✓
-```
-
----
-
-## 6. Architecture Diagram
+**Timeline breakdown**:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ Lead Session (Session 1)                                        │
-│  • Creates team, spawns teammates                               │
-│  • Reads state.json, sends tasks to mailbox                     │
-│  • [TIMEOUT after 30 min of inactivity]                         │
-└────┬────────────────────────────────────────────────────────────┘
-     │
-     ↓ Team state persists
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Persistent Storage Layer                                        │
-│                                                                 │
-│  ~/.claude/teams/team-<id>/                                     │
-│    state.json             [Latest checkpoint]                  │
-│    mailbox.log            [Append-only message log]            │
-│    tasks.jsonl            [Task history]                       │
-│    tm_1_checkpoint.json   [Teammate auto-save]                │
-│    ...                                                         │
-│                                                                 │
-│  .claude/teams/team-<id>/                                       │
-│    state.json             [Git-tracked backup]                 │
-└────┬────────────────────────────────────────────────────────────┘
-     │
-     ↓ Lead resumes (Session 2)
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Lead Session (Session 2 - RESUME)                               │
-│  • Call: claude ... --resume-team team-<id>                     │
-│  • Validate: state, teammates alive?, facts current?            │
-│  • Replay mailbox, display summary                              │
-│  • Option: continue work OR consolidate                         │
-│  • Update lead_session_id = current session                     │
-│  • Mark: lead_last_seen = now                                   │
-└────┬────────────────────────────────────────────────────────────┘
-     │
-     ↓ Lead messages teammates
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Teammate Sessions (Always alive, polling for lead)              │
-│  • tm_1: in_progress on task_engine_001                         │
-│  • tm_2: idle, waiting for task                                 │
-│  • tm_3: complete, idle                                         │
-│                                                                 │
-│  Each teammate:                                                 │
-│   - Heartbeat every 30 sec (update state.json)                 │
-│   - Poll mailbox every 60 sec for lead messages                 │
-│   - On lead timeout: ZOMBIE mode (continue work, pause msgs)   │
-│   - On lead resume: sync + proceed                             │
-└─────────────────────────────────────────────────────────────────┘
+[  0s ] Lead invokes: --resume-team τ-abc123
+[  1s ] Load metadata.json from disk
+[  3s ] Probe teammate heartbeats (2s each × 1 tm)
+[ 10s ] Replay mailbox (5s) + verify facts (1s)
+[ 15s ] Display summary + ready to proceed
+       ↓
+Total elapsed: ~15 seconds ✓
+SLA target: <5 min (achieved!)
 ```
 
 ---
 
-## 7. State Machine
+## 6. Architecture Diagram (ASCII)
 
 ```
-TEAM LIFECYCLE
-──────────────
+PERSISTENT LAYER (Git + /tmp)                RUNTIME LAYER (Teammates)
 
-[INIT] → --create-team
-    ↓ state.json created, teammates spawned
+Lead Session 1 (ACTIVE)            ┌─────────────────────────────────┐
+├─ Execute Ψ→Λ→H→Q→Ω            │ Teammate 1 (Engineer A)         │
+├─ Manage team (task_list)         │ ├─ Task: task-engine-001       │
+├─ Monitor via mailbox             │ ├─ Status: in_progress          │
+│                                 │ ├─ Heartbeat: <10 min old      │
+└─ [TIMEOUT after 30 min idle]   │ └─ Auto-checkpoint every 30s    │
+   ↓                              └─────────────────────────────────┘
+[STATE PERSISTED]                 ┌─────────────────────────────────┐
+                                  │ Teammate 2 (Engineer B)         │
+.team-state/τ-abc123/             │ ├─ Task: task-schema-001       │
+├─ metadata.json                   │ ├─ Status: idle                │
+│  ├─ team_id                     │ ├─ Heartbeat: <2 min old       │
+│  ├─ task_list                   │ └─ Waiting for task            │
+│  ├─ teammate_state              │ └─────────────────────────────────┘
+│  └─ session_log                 ┌─────────────────────────────────┐
+│     └─ last_action="task_assigned"                             │ Teammate 3 (Tester C)    │
+│                                 │ ├─ Task: task-test-001         │
+├─ mailbox.jsonl                  │ ├─ Status: idle                │
+│  └─ [seq 40-42: recent msgs]   │ └─ [WAITING FOR ENGINE FIX]     │
+│                                 └─────────────────────────────────┘
+├─ checkpoints/
+│  ├─ checkpoint-126.json         /tmp/yawl-team-<team-id>/
+│  └─ checkpoint-127.json         ├─ heartbeat-engineer-a.txt
+│     └─ [backed up to git]       ├─ heartbeat-engineer-b.txt
+│                                 ├─ heartbeat-engineer-c.txt
+   ↓ [3 min later]                └─ state.json (symlink to .team-state)
 
-[PENDING] → all teammates online?
-    ↓ yes → transition
-
-[ACTIVE] → teammates execute Ψ→Λ→H→Q→Ω
-    ├─ Lead ONLINE: monitor via mailbox
-    ├─ Lead TIMEOUT: teammates enter ZOMBIE, auto-checkpoint
-    └─ Lead RESUME: --resume-team <id>
-       ↓ validate, replay mailbox
-       ↓ update lead_last_seen
-       ↓ continue [ACTIVE]
-
-[CONSOLIDATING] → all teammates mark complete
-    ├─ Lead calling: git add, compile check, hook check
-    ├─ Lead TIMEOUT: state saved as "partial_consolidation"
-    └─ Lead RESUME: verify git status, retry consolidation
-       ↓ all green? → git commit
-       ↓ red? → message teammates, fix, retry
-
-[COMPLETE] → git push successful
-    ├─ All tasks done, mailbox archived
-    ├─ State: .claude/teams/<id>/COMPLETED (immutable)
-    └─ Lead can: --review-team <id> (read-only)
-
-TEAMMATE LIFECYCLE (per tm_i)
-──────────────────────────────
-
-[IDLE] → claim or wait for task
-    ↓ lead assigns → [IN_PROGRESS]
-
-[IN_PROGRESS] → execute Ψ→Λ→H→Q→Ω
-    ├─ Lead online: send messages, mark task complete
-    ├─ Lead offline: ZOMBIE mode
-    │  ├─ Keep executing locally
-    │  ├─ Auto-checkpoint every 30 sec
-    │  └─ Pause mailbox updates
-    └─ Compile red: fix locally, re-run Λ, then proceed
-
-[BLOCKED] → waiting for peer or lead decision
-    ├─ Lead online: message for direction
-    ├─ Lead offline: auto-timeout after 10 min
-    │  └─ Return task to pending queue
-    └─ Lead resume: message resolve
-
-[COMPLETE] → task marked done, findings in mailbox
-    ├─ Idle for new task OR
-    ├─ Auto-idle if no more pending tasks OR
-    └─ Await lead shutdown
-
-[ZOMBIE] → lead timeout detected
-    ├─ Heartbeat continues (every 30 sec)
-    ├─ Auto-checkpoint every 30 sec
-    ├─ No new mailbox updates (paused)
-    └─ On lead resume: sync checkpoint + proceed
-
-[SHUTDOWN] → lead calls --abort-team OR timeout_max (30 min)
+Lead Session 2 (RESUME)            ┌─────────────────────────────────┐
+├─ --resume-team τ-abc123         │ Teammate 1 (STILL ALIVE)       │
+├─ Load metadata.json              │ ├─ Heartbeat: fresh           │
+├─ Validate teammates              │ ├─ Task: task-engine-001       │
+├─ Replay mailbox (last 5 msgs)   │ ├─ Status: in_progress        │
+├─ Ready to consolidate            │ └─ Awaiting lead message       │
+│                                 └─────────────────────────────────┘
+└─ Continue Ψ→Λ→H→Q→Ω
+   on PostTeam consolidation
 ```
 
 ---
 
-## 8. Failure Recovery Checklist
+## 7. State Machine (Team Lifecycle)
 
-| Failure | Detection | Action | Recovery Time |
-|---------|-----------|--------|---|
-| **Lead timeout** | heartbeat_utc_ms stale | teammates → ZOMBIE | <5 min on resume |
-| **Teammate timeout** | tm_i heartbeat > 10 min | reassign task to tm_j | <2 min |
-| **Partial consolidation** | git status + state.json | replay, retry consolidation | <3 min |
-| **Network partition** | message delivery timeout | retry OR assume offline | <10 min |
-| **Clock skew** | elapsed < 0 | use seq numbers, warn | <1 min |
-| **Facts stale** | checksum mismatch | warn, recommend observatory | <30 sec |
-| **Zombie teammate** | >10 min idle in ZOMBIE | auto-timeout, reassign | <15 min |
+```
+┌───────────────────────────────────────────────────────────────────┐
+│ TEAM STATE TRANSITIONS                                             │
+└───────────────────────────────────────────────────────────────────┘
+
+[INIT]
+  └─ create-team <quantum-1> <quantum-2> ... <quantum-N>
+      └─ status := "pending"
+      └─ Generate team_id
+      └─ Spawn N teammates
+      ↓
+
+[PENDING]
+  └─ All teammates online?
+      ├─ NO (>10 min timeout) → error, retry
+      └─ YES → transition
+      ↓
+
+[ACTIVE]
+  └─ status := "active"
+  └─ Teammates execute tasks, send messages
+  │
+  ├─ Lead ONLINE (last_seen <5 min):
+  │  └─ Monitor via mailbox
+  │  └─ Assign new tasks
+  │  └─ Message teammates
+  │  └─ [normal operation]
+  │
+  ├─ Lead TIMEOUT (last_seen >5 min, <30 min):
+  │  └─ Teammates enter ZOMBIE mode
+  │  └─ Auto-checkpoint every 30s
+  │  └─ Continue work (non-blocking)
+  │  └─ Await lead resume
+  │  └─ [can survive 30 min timeout]
+  │
+  └─ Lead RESUME:
+      └─ --resume-team τ-abc123
+      └─ Validate, load state, display summary
+      └─ Resume [ACTIVE] or proceed to [CONSOLIDATING]
+      ↓
+
+[CONSOLIDATING]
+  └─ status := "consolidating"
+  └─ Lead: compile all (bash scripts/dx.sh all)
+  └─ Lead: hook check (H gate)
+  └─ Lead: git add <files>
+  │
+  ├─ All green → transition
+  └─ Red OR hook blocked:
+      ├─ Message teammates: "Fix needed"
+      ├─ Teammates: fix, re-run local DX
+      ├─ Teammates: "Ready to retry"
+      └─ Lead: retry consolidation
+      ↓
+
+[COMPLETE]
+  └─ status := "completed"
+  └─ git commit + git push
+  └─ Mailbox archived
+  └─ .team-state/τ-abc123/ marked IMMUTABLE
+  └─ Lead: --review-team (read-only)
+```
+
+---
+
+## 8. Implementation Checklist
+
+**Core**:
+- [ ] Create `.team-state/` schema + validation script
+- [ ] Implement `resume-team-validation.sh` hook
+- [ ] Implement `checkpoint-team.sh` hook
+- [ ] Extend `session-start.sh` to handle `--resume-team`
+- [ ] Add heartbeat monitor to `post-edit.sh`
+- [ ] Implement `--list-teams` discovery command
+- [ ] Implement `--probe-team` liveness check
+
+**Teammate side**:
+- [ ] Auto-emit heartbeat every 60s
+- [ ] Detect lead timeout (ZOMBIE mode)
+- [ ] Auto-checkpoint every 30s (non-blocking)
+- [ ] Implement `--resume-team <id> --task <task-id>` re-attachment
+
+**Recovery**:
+- [ ] Detect partial consolidation (dirty git state)
+- [ ] Idempotent consolidation retry (post-consolidation.sh)
+- [ ] Task reassignment (--force-reassign)
+- [ ] Checkpoint recovery from /tmp/
+
+**Testing**:
+- [ ] Test 1: Resume after 5 min timeout (happy path)
+- [ ] Test 2: Resume after 60 min timeout (ZOMBIE mode)
+- [ ] Test 3: Teammate offline, reassign task
+- [ ] Test 4: Partial consolidation recovery
+- [ ] Test 5: Network partition + message delivery timeout
+- [ ] Test 6: Clock skew (negative elapsed) handling
+
+**Documentation**:
+- [ ] Add to CLAUDE.md "Deep References" section
+- [ ] Create `.claude/TEAM_RESUMPTION_GUIDE.md` (user-facing)
 
 ---
 
@@ -619,26 +706,24 @@ TEAMMATE LIFECYCLE (per tm_i)
 
 | Term | Definition |
 |------|-----------|
-| **Team ID** | Immutable UUID, generated at team creation |
-| **Lead session** | Main orchestration session (Claude Code lead agent) |
-| **Teammate** | Collaborating agent, one per quantum, own context window |
-| **Task** | Atomic work unit, assigned to one teammate, dependencies tracked |
-| **Mailbox** | Append-only message log, shared read-only across all agents |
-| **Checkpoint** | Snapshot of state.json, persisted to git + temp |
-| **ZOMBIE mode** | Teammate state when lead offline but teammate still executing |
-| **Consolidation** | Lead final phase: compile all, hook check, git commit |
-| **Stale state** | state.json older than facts checksums (facts changed) |
-| **Heartbeat** | Periodic ping from teammate, includes status + context usage |
+| **Team ID** | Immutable UUID (τ-quantums-sessionId) |
+| **Lead session** | Main orchestration session (lead agent) |
+| **Teammate** | Collaborating agent (1 per quantum) |
+| **Task** | Atomic work unit (assigned to 1 teammate) |
+| **Mailbox** | Append-only message log (JSONL) |
+| **Checkpoint** | Snapshot of state.json (git-backed) |
+| **Heartbeat** | Periodic ping from teammate (30-60s interval) |
+| **ZOMBIE mode** | Teammate state when lead offline (>5 min) |
+| **Consolidation** | Lead final phase (compile, hook check, commit) |
+| **Stale state** | state.json older than facts checksums |
+| **Seq number** | Monotonic message/checkpoint counter (clock-immune) |
 
 ---
 
-## 10. Implementation Roadmap
+## 10. Reference
 
-**Phase 3a (This PR)**: Architecture design (DONE)
-**Phase 3b**: Implement state.json persistence layer
-**Phase 3c**: Implement heartbeat + probe protocol
-**Phase 3d**: Implement --resume-team command
-**Phase 3e**: Implement ZOMBIE mode detection + auto-checkpoint
-**Phase 3f**: Integration tests (lead timeout + resume scenarios)
-**Phase 3g**: Production enable (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=2)
+- CLAUDE.md: "⚡ GODSPEED!!! Teams" section
+- Team Decision Framework: `.claude/rules/teams/team-decision-framework.md`
+- Related hooks: `session-start.sh`, `post-edit.sh`, `session-end.sh`, `post-consolidation.sh`
+- Next phase: `.claude/TEAM_RESUMPTION_GUIDE.md` (implementation guide)
 
