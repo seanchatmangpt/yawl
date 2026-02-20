@@ -186,16 +186,15 @@ public class GregVerseSimulation {
         LOGGER.info("Running single skill: agent={}, skill={}",
             config.singleAgentId(), config.singleSkillId());
 
-        GregVerseAgent agent = resolveAgent(config.singleAgentId());
-        if (agent == null) {
-            LOGGER.error("Agent not found: {}", config.singleAgentId());
+        try {
+            GregVerseAgent agent = resolveAgent(config.singleAgentId());
+            AgentResult result = executeAgentSkill(agent, config.singleSkillId(), config.skillInput());
+            agentResults.put(result.agentId(), result);
+            return buildReport(startTime);
+        } catch (AgentInitializationException e) {
+            LOGGER.error("Failed to resolve agent for skill execution", e);
             return buildEmptyReport(startTime);
         }
-
-        AgentResult result = executeAgentSkill(agent, config.singleSkillId(), config.skillInput());
-        agentResults.put(result.agentId(), result);
-
-        return buildReport(startTime);
     }
 
     /**
@@ -211,18 +210,20 @@ public class GregVerseSimulation {
 
         if (config.hasAgentFilter()) {
             for (String agentId : config.agentIds()) {
-                GregVerseAgent agent = resolveAgent(agentId);
-                if (agent != null) {
+                try {
+                    GregVerseAgent agent = resolveAgent(agentId);
                     agents.add(agent);
-                } else {
-                    LOGGER.warn("Requested agent not found in registry: {}", agentId);
+                } catch (AgentInitializationException e) {
+                    LOGGER.warn("Failed to resolve requested agent: {}", agentId);
                 }
             }
         } else {
             for (Map.Entry<String, AgentSupplier> entry : AGENT_REGISTRY.entrySet()) {
-                GregVerseAgent agent = resolveAgent(entry.getKey());
-                if (agent != null) {
+                try {
+                    GregVerseAgent agent = resolveAgent(entry.getKey());
                     agents.add(agent);
+                } catch (AgentInitializationException e) {
+                    LOGGER.warn("Failed to resolve agent: {}", entry.getKey());
                 }
             }
         }
@@ -234,20 +235,20 @@ public class GregVerseSimulation {
      * Resolves a single agent by ID.
      *
      * @param agentId the agent identifier
-     * @return the agent instance, or null if not found or instantiation fails
+     * @return the agent instance
+     * @throws AgentInitializationException if agent not found or instantiation fails
      */
     private GregVerseAgent resolveAgent(String agentId) {
         AgentSupplier supplier = AGENT_REGISTRY.get(agentId);
         if (supplier == null) {
-            LOGGER.warn("No supplier registered for agent: {}", agentId);
-            return null;
+            throw new AgentInitializationException("No supplier registered for agent: " + agentId);
         }
 
         try {
             return supplier.get();
         } catch (Exception e) {
-            LOGGER.error("Failed to instantiate agent {}: {}", agentId, e.getMessage());
-            return null;
+            throw new AgentInitializationException(
+                "Failed to instantiate agent " + agentId + ": " + e.getMessage(), e);
         }
     }
 
