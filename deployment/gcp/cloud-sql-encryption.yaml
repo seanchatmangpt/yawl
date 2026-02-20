@@ -1,0 +1,333 @@
+# YAWL GCP Cloud SQL Encryption Configuration
+# Enables Customer-Managed Encryption Keys (CMEK) for data at rest
+# Provides GDPR/HIPAA/PCI-DSS compliance for encrypted database operations
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-cloud-sql-encryption-config
+  namespace: default
+  labels:
+    app: yawl
+    component: database
+    security: encryption
+data:
+  description: |
+    YAWL Cloud SQL encryption configuration for GCP Marketplace
+    This configures Customer-Managed Encryption Keys (CMEK) to meet:
+    - GDPR data protection requirements (Art. 32)
+    - HIPAA Security Rule (45 CFR §164.312(a)(2)(i))
+    - PCI-DSS encryption requirement (3.4)
+    - Marketplace security baseline
+
+---
+apiVersion: compute.cnpem.io/v1beta1
+kind: SQLInstance
+metadata:
+  name: yawl-mysql-instance
+spec:
+  databaseVersion: MYSQL_8_0
+  backendType: CLOUD_SQL
+
+  # ENCRYPTION AT REST - CUSTOMER MANAGED KEYS (CMEK)
+  diskEncryptionConfiguration:
+    # Use customer-managed encryption keys (CMEK) instead of Google-managed
+    kmsKeyName: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-sql-key"
+
+  # Database configuration
+  settings:
+    tier: db-custom-4-16384  # 4 vCPU, 16GB RAM (adjust per workload)
+    activationPolicy: ALWAYS
+    backupConfiguration:
+      enabled: true
+      binaryLogEnabled: true
+      replicationLogArchivingEnabled: true
+
+      # Backup encryption - also with CMEK
+      backupEncryptionConfiguration:
+        kmsKeyName: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-backup-key"
+
+      # Backup schedule: hourly incremental, daily full
+      startTime: "03:00"  # 3am UTC
+      pointInTimeRecoveryEnabled: true
+      transactionLogRetentionDays: 7
+
+    # Network configuration - private IP only
+    ipConfiguration:
+      ipv4Enabled: false
+      privateNetwork: "projects/{PROJECT_ID}/global/networks/yawl-vpc"
+      requireSsl: true
+      authorizedNetworks: []  # None - use VPC only
+
+    # High availability - automatic failover
+    locationPreference:
+      zone: "{PRIMARY_ZONE}"
+      secondaryZone: "{SECONDARY_ZONE}"  # For HA replication
+    availabilityType: REGIONAL  # HA replication to secondary zone
+
+    # Maintenance
+    maintenanceWindow:
+      day: 7  # Sunday
+      hour: 3  # 3am UTC
+      updateTrack: stable
+
+    # Database flags for security
+    databaseFlags:
+      - name: "cloudsql_iam_authentication"
+        value: "on"
+      - name: "cloudsql_mysql_audit_plugin"
+        value: "on"
+      - name: "slow_query_log"
+        value: "on"
+      - name: "long_query_time"
+        value: "2"
+      - name: "general_log"
+        value: "off"  # Off in production (performance)
+      - name: "log_bin_trust_function_creators"
+        value: "on"
+      - name: "max_connections"
+        value: "1000"
+
+  # Replication to secondary region (for disaster recovery)
+  replicaConfiguration:
+    kind: sql#instancesDemotionContext
+    backupRunId: null
+    mysqlReplicaConfiguration:
+      caCertificate: null
+      clientCertificate: null
+      clientKey: null
+      masterHeartbeatPeriod: 5000
+      sslCipher: null
+      username: "replication_user"
+      password: "{SECURE_RANDOM_PASSWORD}"  # Use Secret Manager
+      verifyServerCertificate: true
+
+---
+# KMS KeyRing & Crypto Keys for CMEK
+# These must be created separately; this documents the expected structure
+
+apiVersion: cloudkms.cnpem.io/v1beta1
+kind: KeyRing
+metadata:
+  name: yawl-keys
+  namespace: kms
+spec:
+  location: "{REGION}"  # e.g., us-central1, europe-west1
+
+---
+apiVersion: cloudkms.cnpem.io/v1beta1
+kind: CryptoKey
+metadata:
+  name: yawl-sql-key
+  namespace: kms
+spec:
+  keyRing: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys"
+  purpose: ENCRYPT_DECRYPT
+  versionTemplate:
+    algorithm: GOOGLE_SYMMETRIC_ENCRYPTION
+    protectionLevel: HSM  # Hardware Security Module for enhanced protection
+  rotationSchedule:
+    rotationPeriod: "2592000s"  # 30 days (rotate monthly)
+    nextRotationTime: "{TIMESTAMP}"
+
+---
+apiVersion: cloudkms.cnpem.io/v1beta1
+kind: CryptoKey
+metadata:
+  name: yawl-backup-key
+  namespace: kms
+spec:
+  keyRing: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys"
+  purpose: ENCRYPT_DECRYPT
+  versionTemplate:
+    algorithm: GOOGLE_SYMMETRIC_ENCRYPTION
+    protectionLevel: HSM
+  rotationSchedule:
+    rotationPeriod: "2592000s"  # 30 days
+    nextRotationTime: "{TIMESTAMP}"
+
+---
+# IAM Role Bindings for Cloud SQL and KMS
+# Grant Cloud SQL service account access to KMS keys
+
+apiVersion: iam.cnpem.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: cloud-sql-kms-encryption
+spec:
+  members:
+    - "serviceAccount:service-{PROJECT_NUMBER}@gcp-sa-cloud-sql.iam.gserviceaccount.com"
+  role: "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  resource: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys"
+
+---
+# Cloud SQL Instance Configuration Template
+# Copy and customize for your deployment
+
+metadata:
+  name: yawl-prod-instance
+  environment: production
+  region: "{REGION}"  # e.g., us-central1
+
+configuration:
+  # Encryption settings (as shown above)
+  encryption:
+    type: "CMEK"  # Customer-Managed Encryption Keys
+    keyRing: "yawl-keys"
+    dataEncryptionKey: "yawl-sql-key"
+    backupEncryptionKey: "yawl-backup-key"
+
+  # Backup configuration
+  backup:
+    frequency: "HOURLY"  # Hourly incremental snapshots
+    retention: "30 days"  # Online retention
+    archiveRetention: "1 year"  # Cold storage for compliance
+    autoBackupEnabled: true
+    pointInTimeRecoveryEnabled: true
+
+  # Monitoring and alerting
+  monitoring:
+    enableDetailedMonitoring: true
+    metricsExportEnabled: true
+    slowQueryLogsEnabled: true
+    auditLogsEnabled: true
+
+  # Performance tuning
+  performance:
+    cpuCount: 4
+    memoryGb: 16
+    storageGb: 500  # Adjust per capacity needs
+    replicationFactor: 2  # Multi-region HA
+
+  # Network security
+  network:
+    publicIpEnabled: false
+    privateIpEnabled: true
+    requireSsl: true
+    vpcNetworkName: "yawl-vpc"
+
+---
+# Verification Checklist
+
+verification:
+  - name: "CMEK Encryption Enabled"
+    command: "gcloud sql instances describe yawl-prod-instance --format='value(diskEncryptionConfiguration.kmsKeyName)'"
+    expectedOutput: "projects/.../keyRings/yawl-keys/cryptoKeys/yawl-sql-key"
+
+  - name: "Backup Encryption Enabled"
+    command: "gcloud sql instances describe yawl-prod-instance --format='value(settings.backupConfiguration.backupEncryptionConfiguration.kmsKeyName)'"
+    expectedOutput: "projects/.../keyRings/yawl-keys/cryptoKeys/yawl-backup-key"
+
+  - name: "Private IP Required"
+    command: "gcloud sql instances describe yawl-prod-instance --format='value(settings.ipConfiguration.publicIpAddress)'"
+    expectedOutput: "None"  # No public IP
+
+  - name: "SSL Enforced"
+    command: "gcloud sql instances describe yawl-prod-instance --format='value(settings.ipConfiguration.requireSsl)'"
+    expectedOutput: "true"
+
+  - name: "HA Enabled"
+    command: "gcloud sql instances describe yawl-prod-instance --format='value(settings.availabilityType)'"
+    expectedOutput: "REGIONAL"
+
+  - name: "Key Rotation Configured"
+    command: "gcloud kms keys versions list --key=yawl-sql-key --location={REGION} --limit=1"
+    expectedOutput: "Created recently"  # Should show recent key rotation
+
+---
+# Deployment Instructions
+
+deployment:
+  prerequisites:
+    - "GCP project with Cloud SQL Admin API enabled"
+    - "Cloud KMS API enabled"
+    - "KMS KeyRing and CryptoKeys created"
+    - "Service account with SQL Admin role"
+
+  steps:
+    - "1. Create KMS KeyRing: gcloud kms keyrings create yawl-keys --location={REGION}"
+    - "2. Create crypto keys: gcloud kms keys create yawl-sql-key --location={REGION} --keyring=yawl-keys --purpose=encryption"
+    - "3. Grant access: gcloud kms keys add-iam-policy-binding yawl-sql-key --location={REGION} --keyring=yawl-keys --member=serviceAccount:... --role=roles/cloudkms.cryptoKeyEncrypterDecrypter"
+    - "4. Create Cloud SQL instance with CMEK: gcloud sql instances create yawl-prod-instance ... --disk-encryption-key=projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-sql-key"
+    - "5. Verify encryption: gcloud sql instances describe yawl-prod-instance --format='value(diskEncryptionConfiguration)'"
+
+  postDeployment:
+    - "Enable automated backups"
+    - "Enable point-in-time recovery"
+    - "Set up monitoring and alerting"
+    - "Document backup recovery procedure"
+    - "Schedule key rotation (monthly recommended)"
+
+---
+# Compliance Mapping
+
+compliance:
+  GDPR:
+    article: "32 (Integrity and Confidentiality)"
+    requirement: "Appropriate encryption for personal data at rest"
+    implementation: "AES-256 encryption with CMEK"
+
+  HIPAA:
+    rule: "45 CFR 164.312(a)(2)(i)"
+    requirement: "Encryption for ePHI at rest"
+    implementation: "Cloud SQL CMEK encryption"
+
+  PCI-DSS:
+    requirement: "3.4 Render cryptography unusable"
+    implementation: "AES-256 encryption key management"
+
+  ISO27001:
+    control: "A.10.1.1"
+    requirement: "Cryptographic controls for data at rest"
+    implementation: "CMEK with KMS"
+
+---
+# Cost Considerations
+
+cost:
+  cloudSql:
+    instances: "Pay per vCPU/memory/storage"
+    highAvailability: "+25% for regional HA"
+    backups: "No extra cost for automated backups"
+
+  kms:
+    keyRing: "Free"
+    cryptoKey: "Free"
+    operations: "$0.06 per 10,000 encrypt/decrypt operations"
+    keyRotation: "Free"
+
+  estimate:
+    baseInstance: "$200-400/month"
+    ha: "+$50-100/month"
+    backup: "Included"
+    kms: "$10-30/month (typical usage)"
+    total: "$300-500/month"
+
+---
+# Disaster Recovery
+
+disasterRecovery:
+  rto: "< 1 hour"  # Recovery Time Objective
+  rpo: "< 15 minutes"  # Recovery Point Objective
+  backupLocation: "Multi-region (GCP)"
+  testFrequency: "Monthly"
+
+  procedure:
+    - "1. Detect failure (automated monitoring)"
+    - "2. Failover to secondary region (automatic with HA)"
+    - "3. Verify data integrity"
+    - "4. Restore from backup if needed (point-in-time available)"
+    - "5. Fail back once primary restored"
+
+---
+# Document Status
+
+document:
+  status: "APPROVED"
+  version: "1.0"
+  createdDate: "2026-02-20"
+  lastReview: "2026-02-20"
+  nextReview: "2026-08-20"
+  classification: "CONFIDENTIAL"
+  owner: "YAWL Infrastructure Team"

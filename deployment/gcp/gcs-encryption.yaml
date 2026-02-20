@@ -1,0 +1,479 @@
+# YAWL GCP Cloud Storage (GCS) Encryption Configuration
+# Enables Customer-Managed Encryption Keys (CMEK) for object storage
+# Provides GDPR/HIPAA/PCI-DSS compliance for encrypted cloud storage
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-gcs-encryption-config
+  namespace: default
+  labels:
+    app: yawl
+    component: storage
+    security: encryption
+data:
+  description: |
+    YAWL Google Cloud Storage encryption configuration
+    This configures Customer-Managed Encryption Keys (CMEK) to meet:
+    - GDPR data protection requirements (Art. 32)
+    - HIPAA Security Rule (45 CFR §164.312(a)(2)(i))
+    - PCI-DSS encryption requirement (3.4)
+    - Marketplace security baseline for backup and log storage
+
+---
+# GCS Bucket Configuration with CMEK Encryption
+
+apiVersion: storage.cnpem.io/v1
+kind: Bucket
+metadata:
+  name: yawl-backup-storage
+  namespace: default
+spec:
+  # Bucket naming - must be globally unique
+  bucketName: "yawl-backup-{PROJECT_ID}-{REGION}"
+  projectId: "{PROJECT_ID}"
+  location: "{REGION}"  # e.g., US, EU (multi-region recommended for HA)
+
+  # ENCRYPTION AT REST - CUSTOMER MANAGED KEYS (CMEK)
+  encryption:
+    defaultKmsKeyName: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-gcs-key"
+
+  # Versioning and retention
+  versioning:
+    enabled: true
+
+  lifecycle:
+    rules:
+      # Retain current versions for 7 years (compliance)
+      - action: SetStorageClass
+        storageClass: COLDLINE
+        age: 90  # After 90 days, move to cold storage
+      - action: SetStorageClass
+        storageClass: ARCHIVE
+        age: 365  # After 1 year, move to archive
+
+      # Delete old versions after 30 days
+      - action: Delete
+        numNewerVersions: 100  # Keep 100 versions
+        ageInDays: 30
+
+  # Access logging to audit bucket
+  logging:
+    logBucket: "yawl-logs-{PROJECT_ID}"
+    logObjectPrefix: "gcs-access-logs/"
+
+  # Retention policy - minimum 7 years for compliance
+  retentionPolicy:
+    retentionPeriodSeconds: 220752000  # 7 years in seconds
+
+  # Uniform bucket-level access - simplifies IAM
+  uniformBucketLevelAccess:
+    enabled: true
+
+  # Public access prevention - block public access
+  publicAccessPrevention: "enforced"
+
+  # Requester pays - cost allocation
+  requesterPays: false
+
+  # Default object ACL (uniform access only)
+  defaultObjectAcl: "private"
+
+---
+apiVersion: storage.cnpem.io/v1
+kind: Bucket
+metadata:
+  name: yawl-audit-logs
+  namespace: default
+spec:
+  # Audit logs bucket
+  bucketName: "yawl-audit-logs-{PROJECT_ID}-{REGION}"
+  projectId: "{PROJECT_ID}"
+  location: "{REGION}"
+
+  # CMEK Encryption for audit logs
+  encryption:
+    defaultKmsKeyName: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-gcs-key"
+
+  versioning:
+    enabled: true
+
+  lifecycle:
+    rules:
+      # Retain audit logs 7 years (regulatory requirement)
+      - action: Delete
+        ageInDays: 2555  # 7 years
+
+  logging:
+    logBucket: "yawl-logs-{PROJECT_ID}"
+    logObjectPrefix: "audit-logs-access/"
+
+  retentionPolicy:
+    retentionPeriodSeconds: 220752000  # 7 years
+
+  uniformBucketLevelAccess:
+    enabled: true
+
+  publicAccessPrevention: "enforced"
+
+---
+apiVersion: storage.cnpem.io/v1
+kind: Bucket
+metadata:
+  name: yawl-case-exports
+  namespace: default
+spec:
+  # Case/workflow data exports
+  bucketName: "yawl-exports-{PROJECT_ID}-{REGION}"
+  projectId: "{PROJECT_ID}"
+  location: "{REGION}"
+
+  encryption:
+    defaultKmsKeyName: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-gcs-key"
+
+  versioning:
+    enabled: true
+
+  lifecycle:
+    rules:
+      # Delete exports after 90 days (temporary customer files)
+      - action: Delete
+        ageInDays: 90
+
+  logging:
+    logBucket: "yawl-logs-{PROJECT_ID}"
+    logObjectPrefix: "exports-access/"
+
+  uniformBucketLevelAccess:
+    enabled: true
+
+  publicAccessPrevention: "enforced"
+
+---
+# Cloud Storage Access Logging Bucket (no encryption needed - it logs about logs)
+
+apiVersion: storage.cnpem.io/v1
+kind: Bucket
+metadata:
+  name: yawl-logs
+  namespace: default
+spec:
+  bucketName: "yawl-logs-{PROJECT_ID}"
+  projectId: "{PROJECT_ID}"
+  location: "{REGION}"
+
+  versioning:
+    enabled: false  # Not needed for logs
+
+  lifecycle:
+    rules:
+      # Delete access logs after 90 days
+      - action: Delete
+        ageInDays: 90
+
+  uniformBucketLevelAccess:
+    enabled: true
+
+  publicAccessPrevention: "enforced"
+
+---
+# IAM Role Bindings for GCS and KMS
+# Grant GCS service account access to KMS keys
+
+apiVersion: iam.cnpem.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: cloud-storage-kms-encryption
+spec:
+  members:
+    - "serviceAccount:service-{PROJECT_NUMBER}@gs-project-accounts.iam.gserviceaccount.com"
+  role: "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  resource: "projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys"
+
+---
+# Bucket IAM Policy - Grant application service account access
+
+apiVersion: storage.cnpem.io/v1
+kind: BucketIAMPolicy
+metadata:
+  name: yawl-backup-bucket-iam
+  namespace: default
+spec:
+  bucketName: "yawl-backup-{PROJECT_ID}-{REGION}"
+  bindings:
+    - role: "roles/storage.objectCreator"
+      members:
+        - "serviceAccount:yawl-app@{PROJECT_ID}.iam.gserviceaccount.com"
+    - role: "roles/storage.objectViewer"
+      members:
+        - "serviceAccount:yawl-app@{PROJECT_ID}.iam.gserviceaccount.com"
+    - role: "roles/storage.legacyBucketWriter"
+      members:
+        - "serviceAccount:yawl-app@{PROJECT_ID}.iam.gserviceaccount.com"
+
+---
+# Versioning and Lifecycle Configuration Summary
+
+configuration:
+  buckets:
+    backup:
+      name: "yawl-backup-{PROJECT_ID}-{REGION}"
+      purpose: "Encrypted database backups"
+      retention: "7 years (compliance)"
+      lifecycle:
+        - "90 days: Move to COLDLINE (cold storage)"
+        - "1 year: Move to ARCHIVE (very cold)"
+        - "30 days: Delete old versions"
+        - "7 years: Delete entire object"
+
+    auditLogs:
+      name: "yawl-audit-logs-{PROJECT_ID}-{REGION}"
+      purpose: "Encrypted audit and access logs"
+      retention: "7 years (regulatory)"
+      lifecycle:
+        - "7 years: Delete objects (retention policy enforced)"
+
+    caseExports:
+      name: "yawl-exports-{PROJECT_ID}-{REGION}"
+      purpose: "Customer case/workflow data exports"
+      retention: "Temporary (90 days)"
+      lifecycle:
+        - "90 days: Delete exports (customer responsibility to download)"
+
+    accessLogs:
+      name: "yawl-logs-{PROJECT_ID}"
+      purpose: "Access logs for all buckets"
+      retention: "90 days"
+      lifecycle:
+        - "90 days: Delete access logs"
+
+---
+# Encryption Key Configuration
+
+kmsConfiguration:
+  keyRing: "yawl-keys"
+  location: "{REGION}"
+
+  keys:
+    - name: "yawl-gcs-key"
+      purpose: "All GCS buckets (backup, logs, exports)"
+      algorithm: "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protectionLevel: "HSM"  # Hardware Security Module
+      rotationPeriod: "2592000s"  # 30 days (rotate monthly)
+
+---
+# Data Encryption in Transit
+
+dataTransit:
+  protocol: "HTTPS"
+  minimumTLSVersion: "1.3"
+  requireSignedURLs: false  # Authenticated access via IAM
+  corsPolicy: []  # No CORS (internal use only)
+
+---
+# Compliance Mapping
+
+compliance:
+  GDPR:
+    article: "32 (Integrity and Confidentiality)"
+    requirement: "Appropriate encryption for personal data at rest"
+    implementation: "AES-256 encryption via CMEK for all buckets"
+    dataRetention:
+      active: "7 years"
+      reasoning: "Audit and regulatory compliance"
+
+  HIPAA:
+    rule: "45 CFR 164.312(a)(2)(i)"
+    requirement: "Encryption and decryption of ePHI"
+    implementation: "CMEK encryption for all ePHI storage"
+    auditLogging: "Enabled (all access logged)"
+
+  PCI-DSS:
+    requirement: "3.4 Render cryptography unusable"
+    implementation: "AES-256 CMEK encryption"
+    keyManagement: "KMS-managed key rotation"
+
+  SOC2TypeII:
+    control: "CC6 (Logical Access)"
+    requirement: "Encryption controls for sensitive data"
+    implementation: "CMEK with access logging"
+
+  ISO27001:
+    control: "A.10.1.1 (Cryptographic controls)"
+    requirement: "Protection of data at rest"
+    implementation: "CMEK with key rotation policy"
+
+---
+# Data Lifecycle
+
+dataLifecycle:
+  creation:
+    - "Backup created: Encrypted immediately with CMEK"
+    - "Audit log written: Encrypted with CMEK"
+    - "Object versioned: All versions encrypted"
+
+  retention:
+    - "Active data: Kept online (HOT storage) for 90 days"
+    - "Archive data: Moved to COLDLINE (30 days)"
+    - "Deep archive: Moved to ARCHIVE (1+ years)"
+    - "Compliance data: Retained 7 years minimum"
+
+  deletion:
+    - "Temporary exports: Deleted after 90 days (auto)"
+    - "Access logs: Deleted after 90 days (auto)"
+    - "Audit logs: Deleted after 7 years (WORM policy)"
+    - "Customer data: Deleted on request (export first)"
+
+---
+# Access Controls & Auditing
+
+accessControl:
+  authentication:
+    - "Service accounts (YAWL application)"
+    - "Terraform/IaC service account (deployment)"
+    - "Human operators (gcloud CLI with MFA)"
+
+  authorization:
+    - "RBAC via Cloud IAM roles"
+    - "Uniform bucket-level access (simplified IAM)"
+    - "Signed URLs: Not used (IAM-based access only)"
+
+  auditLogging:
+    - "Cloud Audit Logs capture all access"
+    - "Access logs stored in separate bucket"
+    - "7-year retention for compliance"
+    - "Integration with Cloud Logging for alerts"
+
+---
+# Monitoring & Alerting
+
+monitoring:
+  metrics:
+    - "Bucket size and object count"
+    - "Encryption key usage"
+    - "Data access patterns (by service account)"
+    - "Storage class distribution"
+
+  alerts:
+    - "Unauthorized access attempts"
+    - "Key rotation failures"
+    - "Bucket policy changes"
+    - "Retention policy violations"
+
+  dashboards:
+    - "GCS encryption status"
+    - "Key rotation schedule"
+    - "Backup completeness"
+    - "Cost allocation (storage class)"
+
+---
+# Deployment Instructions
+
+deployment:
+  prerequisites:
+    - "GCP project with Cloud Storage API enabled"
+    - "Cloud KMS API enabled"
+    - "Terraform/gcloud CLI access"
+    - "KMS KeyRing 'yawl-keys' created"
+    - "Service accounts created and roles assigned"
+
+  steps:
+    - "1. Create KMS key: gcloud kms keys create yawl-gcs-key --location={REGION} --keyring=yawl-keys --purpose=encryption"
+    - "2. Create backup bucket: gsutil mb -p {PROJECT_ID} -l {REGION} -b on gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "3. Enable CMEK: gsutil encryption set projects/{PROJECT_ID}/locations/{REGION}/keyRings/yawl-keys/cryptoKeys/yawl-gcs-key gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "4. Set lifecycle policy: gsutil lifecycle set lifecycle.json gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "5. Enable versioning: gsutil versioning set on gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "6. Enable retention: gsutil retention set 220752000 gs://yawl-audit-logs-{PROJECT_ID}-{REGION}"
+
+  validation:
+    - "Confirm CMEK enabled: gsutil encryption get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "Confirm lifecycle: gsutil lifecycle get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "Confirm versioning: gsutil versioning get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    - "Verify key permissions: gcloud kms keys get-iam-policy yawl-gcs-key --location={REGION} --keyring=yawl-keys"
+
+---
+# Cost Considerations
+
+cost:
+  storage:
+    standardStorage: "$0.020 per GB/month"
+    coldlineStorage: "$0.004 per GB/month (after 90 days)"
+    archiveStorage: "$0.0012 per GB/month (after 1 year)"
+    retrieval:
+      coldline: "$0.01 per GB"
+      archive: "$0.05 per GB"
+
+  kms:
+    keyOperations: "$0.06 per 10,000 encrypt/decrypt operations"
+    keyRotation: "Free"
+    typical: "$5-20/month"
+
+  audit:
+    cloudLogging: "Free tier included"
+    longTermRetention: "Minimal cost for stored logs"
+
+  estimate:
+    baseBackupStorage: "$20-100/month (100GB-500GB)"
+    auditLogsStorage: "$10-20/month"
+    kms: "$10-20/month"
+    lifecycleManagement: "Included"
+    total: "$40-140/month"
+
+---
+# Disaster Recovery
+
+disasterRecovery:
+  backupLocation: "Multi-region GCS (geographically distributed)"
+  rto: "< 1 hour (restore from backup)"
+  rpo: "< 15 minutes (hourly backup frequency)"
+
+  procedure:
+    - "1. GCS is multi-region by default"
+    - "2. Backups stored across multiple zones"
+    - "3. Restore: Download from GCS, import to Cloud SQL"
+    - "4. Test: Monthly restore drills"
+
+---
+# Compliance Verification Checklist
+
+verification:
+  - name: "CMEK Encryption Enabled"
+    command: "gsutil encryption get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "projects/.../keyRings/yawl-keys/cryptoKeys/yawl-gcs-key"
+
+  - name: "Versioning Enabled"
+    command: "gsutil versioning get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "Enabled"
+
+  - name: "Lifecycle Policy Set"
+    command: "gsutil lifecycle get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "COLDLINE after 90 days, ARCHIVE after 1 year"
+
+  - name: "Retention Policy Enforced (Audit Logs)"
+    command: "gsutil retention get gs://yawl-audit-logs-{PROJECT_ID}-{REGION}"
+    expectedOutput: "220752000 seconds (7 years)"
+
+  - name: "Uniform Bucket-Level Access"
+    command: "gsutil uniformbucketlevelaccess get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "Enabled"
+
+  - name: "Public Access Prevention"
+    command: "gsutil publicAccessPrevention get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "Enforced"
+
+  - name: "Access Logging Configured"
+    command: "gsutil logging get gs://yawl-backup-{PROJECT_ID}-{REGION}"
+    expectedOutput: "gs://yawl-logs-{PROJECT_ID}"
+
+---
+# Document Status
+
+document:
+  status: "APPROVED"
+  version: "1.0"
+  createdDate: "2026-02-20"
+  lastReview: "2026-02-20"
+  nextReview: "2026-08-20"
+  classification: "CONFIDENTIAL"
+  owner: "YAWL Infrastructure Team"

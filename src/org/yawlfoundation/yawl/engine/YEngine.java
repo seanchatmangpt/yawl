@@ -119,6 +119,9 @@ public class YEngine implements InterfaceADesign,
     private final ReentrantLock _persistLock = new ReentrantLock();
     private final ReentrantLock _pmgrAccessLock = new ReentrantLock();
 
+    // MULTI-TENANT ISOLATION - Tenant context for current request/thread
+    private static final ThreadLocal<TenantContext> _currentTenant = new ThreadLocal<>();
+
     /********************************************************************************/
 
     /**
@@ -225,6 +228,51 @@ public class YEngine implements InterfaceADesign,
                (_thisInstance.getEngineStatus() == Status.Running) ;
     }
 
+    /**
+     * Sets the tenant context for the current thread/request.
+     * IMPORTANT: Must be called at the start of any operation requiring tenant isolation.
+     *
+     * @param tenantContext The tenant context to set
+     */
+    public static void setTenantContext(TenantContext tenantContext) {
+        if (tenantContext == null) {
+            _currentTenant.remove();
+        } else {
+            _currentTenant.set(tenantContext);
+        }
+    }
+
+    /**
+     * Gets the tenant context for the current thread/request.
+     *
+     * @return the current tenant context, or null if not set
+     */
+    public static TenantContext getTenantContext() {
+        return _currentTenant.get();
+    }
+
+    /**
+     * Clears the tenant context (call at end of request).
+     */
+    public static void clearTenantContext() {
+        _currentTenant.remove();
+    }
+
+    /**
+     * Validates that the current tenant has access to a case.
+     * Throws UnauthorizedException if not authorized.
+     *
+     * @param caseID The case identifier to check
+     * @throws UnauthorizedException if not authorized
+     */
+    private static void validateTenantAccess(String caseID) throws UnauthorizedException {
+        TenantContext context = getTenantContext();
+        if (context != null && !context.isAuthorized(caseID)) {
+            logger.warn("Tenant {} attempted unauthorized access to case {}",
+                    context.getTenantId(), caseID);
+            throw new UnauthorizedException("Access denied: not authorized for case " + caseID);
+        }
+    }
 
     public void promote() throws YPersistenceException {
         restore(false);
@@ -724,11 +772,16 @@ public class YEngine implements InterfaceADesign,
      */
     public Set<YIdentifier> getCasesForSpecification(YSpecificationID specID) {
         Set<YIdentifier> resultSet = new HashSet<YIdentifier>();
+        TenantContext tenantContext = getTenantContext();
+
         if (_specifications.contains(specID)) {
             for (YIdentifier caseID : _runningCaseIDToSpecMap.keySet()) {
                 YSpecification specForCaseID = _runningCaseIDToSpecMap.get(caseID);
                 if (specForCaseID.getSpecificationID().equals(specID)) {
-                    resultSet.add(caseID);
+                    // MULTI-TENANT: Only return cases authorized for current tenant
+                    if (tenantContext == null || tenantContext.isAuthorized(caseID)) {
+                        resultSet.add(caseID);
+                    }
                 }
             }
         }
@@ -1114,6 +1167,8 @@ public class YEngine implements InterfaceADesign,
 
 
     public String getCaseData(String caseID) throws YStateException {
+        // MULTI-TENANT: Validate tenant access before processing
+        validateTenantAccess(caseID);
 
         // if this is for a sub-net, act accordingly
         if (caseID.contains(".")) return getNetData(caseID) ;

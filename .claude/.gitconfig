@@ -1,0 +1,45 @@
+# Git Aliases for YAWL Development - Haiku Speed
+# Add to ~/.gitconfig or local .git/config with: 
+# git config --local include.path ../.claude/.gitconfig
+
+[alias]
+    # Fast status checks
+    s = status -s
+    st = status
+    
+    # Quick commit + push
+    cp = "!git add -A && git commit -m \"$1\" && git push"
+    
+    # View recent work
+    l = log --oneline -10
+    lg = log --oneline --graph -20
+    
+    # Diff shortcuts
+    d = diff
+    ds = diff --stat
+    
+    # Branch management
+    b = branch
+    bn = "!git branch -a && echo '---' && git rev-parse --abbrev-ref HEAD"
+    
+    # Quick rebase
+    rb = rebase
+    rbi = rebase -i
+    
+    # Undo last commit (keep changes)
+    undo = reset --soft HEAD~1
+    
+    # Verify marketplace (custom)
+    verify = "!python3 scripts/verify-marketplace.py"
+    
+    # View all uncommitted changes
+    changes = diff --stat HEAD
+    
+    # Commit with detailed message
+    cm = commit -m
+    
+    # Push to current branch
+    psh = "!git push -u origin $(git rev-parse --abbrev-ref HEAD)"
+    
+    # Fetch and rebase
+    fr = fetch && rebase
