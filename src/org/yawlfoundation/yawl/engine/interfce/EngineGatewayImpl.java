@@ -98,7 +98,7 @@ public class EngineGatewayImpl implements EngineGateway {
 
     public EngineGatewayImpl(Class<? extends YEngine> engine, boolean persist,
                              boolean gatherHbnStats) throws YPersistenceException {
-        this(null, persist, gatherHbnStats, false);
+        this(engine, persist, gatherHbnStats, false);
     }
 
 
@@ -111,14 +111,14 @@ public class EngineGatewayImpl implements EngineGateway {
         // attempt to instantiate the YEngine subclass passed in
         if (engine != null) {
             try {
-                Method method = engine.getDeclaredMethod("getInstance",
+                Method method = engine.getMethod("getInstance",
                         boolean.class, boolean.class, boolean.class);
-                if (method == null) throw new Exception();
                 _engine = engine.cast(method.invoke(null, persist,
                         gatherHbnStats, redundantMode));
             }
             catch (Exception e) {
-                _logger.warn("Failed to instantiate extended YEngine class", e);
+                _logger.warn("Failed to instantiate extended YEngine class: " +
+                        engine.getName(), e);
             }
         }
 
