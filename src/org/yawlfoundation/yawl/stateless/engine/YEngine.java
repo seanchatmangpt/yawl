@@ -200,27 +200,41 @@ public class YEngine {
 
         checkEngineRunning();
 
-         // initialise case identifier - if caseID is null, a new one is supplied
+        // initialise case identifier - if caseID is null, a new one is supplied
         YIdentifier yCaseID = new YIdentifier(caseID);
 
         // init case monitoring for this case
         _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_STARTING, yCaseID));
 
-        try {
-            // check & format case data params (if any)
-            Element data = formatCaseParams(caseParams, spec);
+        // Bind WorkflowContext as a ScopedValue for the duration of this case launch.
+        // All virtual threads spawned within this scope (e.g. event announcements via
+        // StructuredTaskScope) inherit the context without explicit parameter passing.
+        WorkflowContext ctx = WorkflowContext.of(
+                yCaseID.toString(),
+                spec.getSpecificationID().toKeyString(),
+                _engineNbr);
 
-            YNetRunner runner = new YNetRunner(spec.getRootNet(), data, yCaseID);
-            runner.setAnnouncer(_announcer);
-            runner.continueIfPossible();
-            runner.start();
-            announceEvents(runner);
-            logCaseStarted(spec, runner, caseParams, logData);
-            return runner;
+        try {
+            return ScopedValue.callWhere(WORKFLOW_CONTEXT, ctx, () -> {
+                // check & format case data params (if any)
+                Element data = formatCaseParams(caseParams, spec);
+
+                YNetRunner runner = new YNetRunner(spec.getRootNet(), data, yCaseID);
+                runner.setAnnouncer(_announcer);
+                runner.continueIfPossible();
+                runner.start();
+                announceEvents(runner);
+                logCaseStarted(spec, runner, caseParams, logData);
+                return runner;
+            });
         }
         catch (YStateException | YDataStateException | YQueryException ex) {
             _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_START_FAILED, yCaseID));
             throw ex;
+        }
+        catch (Exception ex) {
+            _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_START_FAILED, yCaseID));
+            throw new YStateException("Unexpected error launching case: " + ex.getMessage(), ex);
         }
     }
 
