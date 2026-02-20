@@ -85,8 +85,6 @@ public class HttpTransportProvider {
         isRunning = true;
         _logger.info("HTTP transport provider started on port {}", httpPort);
 
-        // In a real implementation, this would start an HTTP server
-        // For now, we'll create the server instance for MCP
         startServer();
     }
 
@@ -179,15 +177,15 @@ public class HttpTransportProvider {
      * This would typically use a web framework like Spring Boot or Netty.
      */
     private void startServer() {
-        // In a real implementation, this would start an HTTP server
-        // For now, we'll just log the start
-        _logger.info("HTTP server would start on port {}", httpPort);
-
-        // Example endpoint implementations would go here:
-        // POST /mcp/call_tool
-        // POST /mcp/subscribe
-        // GET /mcp/session/{id}
-        // SSE /mcp/stream/{id}
+        throw new UnsupportedOperationException(
+            "startServer() is not implemented. HTTP server startup requires:\n" +
+            "  1. An HTTP server framework (Jetty, Netty, or Spring Boot embedded)\n" +
+            "  2. Route bindings for: POST /mcp/call_tool, POST /mcp/subscribe,\n" +
+            "     GET /mcp/session/{id}, SSE /mcp/stream/{id}\n" +
+            "  3. Request parsing and dispatch to MCPRequestHandler\n" +
+            "  4. Session lifecycle management via ClientSession\n" +
+            "See YawlMcpHttpServer.java for a complete Spring-based implementation."
+        );
     }
 
     /**
@@ -215,9 +213,14 @@ public class HttpTransportProvider {
             if (!isActive) {
                 throw new IllegalStateException("Session is not active");
             }
-            // In a real implementation, this would send the message over HTTP
-            // For now, we'll just log it
-            _logger.debug("Sending message to client {}: {}", clientId, message);
+            throw new UnsupportedOperationException(
+                "sendMessage() is not implemented. HTTP message sending requires:\n" +
+                "  1. An active HTTP connection or SSE stream to the client\n" +
+                "  2. Serialisation of message to JSON-RPC 2.0 format\n" +
+                "  3. Writing to the underlying transport channel\n" +
+                "  4. Error handling for broken connections (remove dead sessions)\n" +
+                "Implement by injecting an AsyncContext (Servlet) or a Flux (WebFlux)."
+            );
         }
 
         public void deactivate() {

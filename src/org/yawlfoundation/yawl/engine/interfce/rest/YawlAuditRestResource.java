@@ -40,8 +40,9 @@ import java.util.*;
  * - GET /audit/verify/{caseId} - chain integrity check
  * - GET /audit/case/{caseId}/time-range - query by timestamp
  *
- * Security: all endpoints require capability.audit.read (not implemented here).
- * Future: add signing, compliance reports, incident response exports.
+ * Security: UNIMPLEMENTED — these endpoints are currently unauthenticated and must
+ * NOT be exposed on a public interface. Deploy behind an authenticated reverse proxy
+ * or add session-handle validation before production use.
  */
 @Path("/audit")
 @Produces(MediaType.APPLICATION_JSON)

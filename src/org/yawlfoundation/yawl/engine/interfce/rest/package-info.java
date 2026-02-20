@@ -29,12 +29,12 @@
  *       Application configuration registered at /api</li>
  *   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.InterfaceBRestResource} -
  *       Client API for work item and case operations (fully implemented)</li>
- *   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.InterfaceARestResource} -
- *       Design API for specification management (stub, uses legacy servlet)</li>
+*   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.InterfaceARestResource} -
+ *       Design API for specification management (delegating to EngineGateway)</li>
  *   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.InterfaceERestResource} -
- *       Events API for subscriptions (stub, uses legacy servlet)</li>
+ *       Events API for log queries (delegating to YLogServer and EngineGateway)</li>
  *   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.InterfaceXRestResource} -
- *       Extended API for advanced operations (stub, uses legacy servlet)</li>
+ *       Extended API for advanced operations (delegating to EngineGateway)</li>
  *   <li>{@link org.yawlfoundation.yawl.engine.interfce.rest.YawlExceptionMapper} -
  *       Exception mapper for consistent error handling</li>
  * </ul>

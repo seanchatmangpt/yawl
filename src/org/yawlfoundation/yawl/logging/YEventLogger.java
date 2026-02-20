@@ -475,10 +475,20 @@ public class YEventLogger {
 
         YLogSpecification specEntry = _keyCache.specEntries.get(ySpecID);
         if (specEntry == null) {
-            String where = String.format("%s='%s' AND tbl.version='%s'", field,
-                    ySpecID.getKey(), ySpecID.getVersionAsString());
-            specEntry = (YLogSpecification) selectScalarWhere(
-                    "YLogSpecification", where);
+            // Use named parameters to prevent HQL injection from user-supplied spec identifiers.
+            String hql = String.format(
+                    "from YLogSpecification as tbl where tbl.%s = :key AND tbl.version = :version",
+                    field);
+            try {
+                jakarta.persistence.Query query = getDb().createQuery(hql);
+                query.setParameter("key", ySpecID.getKey());
+                query.setParameter("version", ySpecID.getVersionAsString());
+                @SuppressWarnings("unchecked")
+                java.util.List<YLogSpecification> results = query.getResultList();
+                specEntry = results.isEmpty() ? null : results.get(0);
+            } catch (org.hibernate.HibernateException he) {
+                _log.error("Error querying YLogSpecification for specID: " + ySpecID, he);
+            }
             if (specEntry != null) _keyCache.specEntries.put(ySpecID, specEntry);
         }
         return specEntry;
