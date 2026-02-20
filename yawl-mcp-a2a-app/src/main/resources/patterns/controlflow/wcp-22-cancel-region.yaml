@@ -55,12 +55,14 @@ tasks:
     cancelRegion: [TaskA, TaskB, TaskC]
     description: "Cancel all tasks in the region (TaskA, TaskB, TaskC). Emits cancellation event."
 
-  # NORMAL PATH: Execute region tasks (any or all depending on strategy)
+  # NORMAL PATH: Parallel execution of region tasks
+  # AND-split creates one token per output flow (TaskA, TaskB, TaskC).
+  # All three tasks will execute concurrently and independently flow to RegionJoin.
   - id: NormalPath
     flows: [TaskA, TaskB, TaskC]
     split: and
     join: xor
-    description: "Normal path: execute region tasks in parallel. AND-split creates tokens for each task."
+    description: "Normal path: AND-split creates concurrent tokens for region tasks (A, B, C)."
 
   # Region tasks (can complete independently or be cancelled)
   - id: TaskA
@@ -82,12 +84,19 @@ tasks:
     description: "Region task C. Flows to RegionJoin regardless of cancel status."
 
   # SYNCHRONIZATION POINT: Join all paths before completion
-  # AND-join ensures single token propagation to end
-  # Receives exactly 1 token from: CancelRegion OR all of (TaskA, TaskB, TaskC)
+  # CRITICAL: This is a mixed-input join.
+  # - From CancelRegion path: 1 token arrives
+  # - From NormalPath (A, B, C): 3 tokens arrive
+  # Solution: Use explicit threshold join or OR-join semantics.
+  # The join fires when ANY path completes (XOR-join-like) OR when all region tasks complete (AND-like).
+  # In YAWL, this is typically a discriminator or multi-merge junction.
+  # For semantic correctness with single output token: use threshold join with incoming set {CancelRegion} OR {TaskA,TaskB,TaskC}
   - id: RegionJoin
     flows: [end]
     split: xor
-    join: and
-    description: "Consolidation point. Joins cancel path (1 token) or normal path (3 tokens). Produces 1 token."
+    join: or
+    description: "Consolidation point. Either cancel path (1 token) or all normal path tasks (3 tokens) trigger exit. Produces 1 token."
+    threshold: "1"
+    joinCondition: "CancelRegion completed OR (TaskA AND TaskB AND TaskC completed)"
 
   # END: Workflow completion

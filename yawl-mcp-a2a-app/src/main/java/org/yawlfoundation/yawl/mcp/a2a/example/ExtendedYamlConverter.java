@@ -76,6 +76,12 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
      *       removesTokens*, removesTokensFromFlow*, startingMappings?, completedMappings?,
      *       enablementMappings?, timer?, resourcing?, customForm?, decomposesTo?</li>
      * </ul></p>
+     *
+     * <p>Supports XPath cardinality evaluation for WCP-13..WCP-18 multi-instance patterns:
+     * - WCP-13: Static design-time cardinality (min/max as integers)
+     * - WCP-14: Runtime cardinality from variables (min/max as XPath queries)
+     * - WCP-15: Continuation mode for dynamic instance creation
+     * - WCP-16..18: Advanced patterns via explicit configuration</p>
      */
     @SuppressWarnings("unchecked")
     private String generateExtendedXml(Map<String, Object> spec) {
@@ -289,15 +295,27 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
 
             // For multi-instance tasks: minimum, maximum, threshold, creationMode, miDataInput
             if (isMiTask) {
-                String min = getString(multiInstance, "min", "1");
-                String max = getString(multiInstance, "max", "1");
+                String minStr = getString(multiInstance, "min", "1");
+                String maxStr = getString(multiInstance, "max", "1");
                 String threshold = getString(multiInstance, "threshold", "1");
                 String mode = getString(multiInstance, "mode", "static");
+                boolean isContinuation = "continuation".equalsIgnoreCase(mode);
 
-                xml.append("          <minimum>").append(min).append("</minimum>\n");
-                xml.append("          <maximum>").append(max).append("</maximum>\n");
-                xml.append("          <threshold>").append(threshold).append("</threshold>\n");
-                xml.append("          <creationMode code=\"").append(escapeXml(mode)).append("\"/>\n");
+                // Emit cardinality as XPath query if it contains '/' or is non-numeric,
+                // otherwise emit as static integer
+                String minEmit = emitCardinality(minStr);
+                String maxEmit = emitCardinality(maxStr);
+                String thresholdEmit = emitCardinality(threshold);
+
+                xml.append("          <minimum>").append(minEmit).append("</minimum>\n");
+                xml.append("          <maximum>").append(maxEmit).append("</maximum>\n");
+                xml.append("          <threshold>").append(thresholdEmit).append("</threshold>\n");
+
+                // For continuation mode, use creationMode code="continuation" (WCP-15)
+                String modeCode = isContinuation ? "continuation" : (
+                    "dynamic".equalsIgnoreCase(mode) ? "dynamic" : "static"
+                );
+                xml.append("          <creationMode code=\"").append(escapeXml(modeCode)).append("\"/>\n");
 
                 // miDataInput is required for MI tasks - generate minimal valid structure
                 String miVar = getString(multiInstance, "variable", "item");
@@ -404,6 +422,46 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             return typeName.substring(colonIndex + 1);
         }
         return typeName;
+    }
+
+    /**
+     * Emit cardinality value: if it's a valid integer, emit as-is; if it's an XPath
+     * expression (contains '/' or variable reference), emit as query attribute.
+     *
+     * <p>Supports WCP-14 dynamic cardinality from variables:
+     * <ul>
+     *   <li>"5" -> "5" (static)</li>
+     *   <li>"/net/data/itemCount" -> query="/net/data/itemCount" attribute</li>
+     *   <li>"$itemCount" -> query="$itemCount" attribute</li>
+     * </ul></p>
+     *
+     * @param value the cardinality value (integer or XPath query)
+     * @return the properly formatted cardinality emission
+     */
+    private String emitCardinality(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "1"; // default
+        }
+
+        String trimmed = value.trim();
+
+        // Check if it's a pure integer (static cardinality)
+        if (trimmed.matches("\\d+")) {
+            return trimmed;
+        }
+
+        // If it contains '/' or starts with '$', treat as XPath/variable reference
+        if (trimmed.contains("/") || trimmed.startsWith("$")) {
+            return "query=\"" + escapeXml(trimmed) + "\"";
+        }
+
+        // Check if it's a known keyword like 'all' or 'unbounded'
+        if (trimmed.equalsIgnoreCase("all") || trimmed.equalsIgnoreCase("unbounded")) {
+            return trimmed.toLowerCase(Locale.ROOT);
+        }
+
+        // Fallback: assume it's a static value
+        return trimmed;
     }
 
     /**
