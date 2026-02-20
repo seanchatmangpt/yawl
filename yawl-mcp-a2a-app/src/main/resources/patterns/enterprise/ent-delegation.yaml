@@ -1,0 +1,98 @@
+# ENT-3: Delegation Pattern
+# Task delegation pattern for workflow
+
+name: DelegationPattern
+uri: delegation.xml
+first: StartTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: originalAssignee
+    type: xs:string
+  - name: delegatedTo
+    type: xs:string
+  - name: delegationReason
+    type: xs:string
+  - name: delegationAllowed
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: StartTask
+    flows: [AssignOriginal]
+    split: xor
+    join: xor
+    description: "Start delegation workflow"
+
+  - id: AssignOriginal
+    flows: [CheckDelegation, CompleteTask]
+    condition: delegationRequested == true -> CheckDelegation
+    default: CompleteTask
+    split: xor
+    join: xor
+    description: "Assign to original user"
+
+  - id: CheckDelegation
+    flows: [ValidateDelegation, CompleteTask]
+    condition: delegationAllowed == true -> ValidateDelegation
+    default: CompleteTask
+    split: xor
+    join: xor
+    description: "Check if delegation allowed"
+
+  - id: ValidateDelegation
+    flows: [SelectDelegate, RejectDelegation]
+    condition: delegateValid == true -> SelectDelegate
+    default: RejectDelegation
+    split: xor
+    join: xor
+    description: "Validate delegation target"
+
+  - id: RejectDelegation
+    flows: [AssignOriginal]
+    split: xor
+    join: xor
+    description: "Reject delegation request"
+
+  - id: SelectDelegate
+    flows: [TransferTask]
+    split: xor
+    join: xor
+    description: "Select delegate"
+
+  - id: TransferTask
+    flows: [NotifyOriginal, NotifyDelegate]
+    split: and
+    join: xor
+    description: "Transfer task to delegate"
+
+  - id: NotifyOriginal
+    flows: [WaitForCompletion]
+    split: xor
+    join: xor
+    description: "Notify original assignee"
+
+  - id: NotifyDelegate
+    flows: [WaitForCompletion]
+    split: xor
+    join: xor
+    description: "Notify delegate"
+
+  - id: WaitForCompletion
+    flows: [CompleteTask]
+    split: xor
+    join: and
+    description: "Wait for task completion"
+
+  - id: CompleteTask
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Complete task"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize workflow"

@@ -34,10 +34,19 @@ import java.util.stream.Collectors;
  * - Business rules
  * - Complex conditions</p>
  *
+ * <p>Generates schema-compliant YAWL XML 4.0 using namespace
+ * http://www.yawlfoundation.org/yawlschema</p>
+ *
  * @author YAWL Foundation
  * @version 6.0.0
  */
 public class ExtendedYamlConverter extends YawlYamlConverter {
+
+    /** YAWL Schema 4.0 namespace */
+    private static final String NAMESPACE = "http://www.yawlfoundation.org/yawlschema";
+
+    /** XML Schema Instance namespace */
+    private static final String XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
 
     private final YAMLMapper yamlMapper;
 
@@ -81,14 +90,77 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         List<Map<String, Object>> variables = getVariables(spec);
         List<Map<String, Object>> compensations = getCompensations(spec);
 
-        xml.append("<specificationSet xmlns=\"http://www.citi.qut.edu.au/yawl\" ")
-           .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+        xml.append("<specificationSet xmlns=\"").append(NAMESPACE).append("\" ")
+           .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
+           .append("xsi:schemaLocation=\"").append(NAMESPACE).append(" YAWL_Schema4.0.xsd\" ")
+           .append("version=\"4.0\">\n");
         xml.append("  <specification uri=\"").append(escapeXml(uri)).append("\">\n");
-        xml.append("    <rootNet id=\"top\">\n");
+
+        // Add name element (required by schema)
+        xml.append("    <name>").append(escapeXml(name)).append("</name>\n");
+
+        // Add documentation if available
+        String specDescription = getString(spec, "description", null);
+        if (specDescription != null) {
+            xml.append("    <documentation>").append(escapeXml(specDescription)).append("</documentation>\n");
+        }
+
+        // Add metaData (required by schema)
+        xml.append("    <metaData/>\n");
+
+        // Root net as decomposition with isRootNet="true"
+        xml.append("    <decomposition id=\"").append(escapeXml(name)).append("Net\" ")
+           .append("isRootNet=\"true\" ")
+           .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
+           .append("xsi:type=\"NetFactsType\">\n");
+
+        // decomposition/name element (required by schema before other child elements)
+        xml.append("      <name>").append(escapeXml(name)).append("Net</name>\n");
+
+        // Variable declarations as inputParam/localVariable BEFORE processControlElements
+        // Per YAWL 4.0 schema, variables must be inside decomposition, not inside processControlElements
+        if (variables != null && !variables.isEmpty()) {
+            int index = 0;
+            for (Map<String, Object> var : variables) {
+                String varName = getString(var, "name", null);
+                String varType = getString(var, "type", "xs:string");
+                String defaultValue = getString(var, "default", null);
+                boolean isInputParam = getBoolean(var, "input", true);
+
+                if (varName == null) {
+                    continue;
+                }
+
+                if (isInputParam) {
+                    // inputParam for variables passed into the workflow
+                    xml.append("      <inputParam>\n");
+                    xml.append("        <index>").append(index).append("</index>\n");
+                    xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
+                    xml.append("        <type>").append(escapeXml(varType)).append("</type>\n");
+                    if (defaultValue != null) {
+                        xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
+                    }
+                    xml.append("      </inputParam>\n");
+                } else {
+                    // localVariable for internal workflow state
+                    xml.append("      <localVariable>\n");
+                    xml.append("        <index>").append(index).append("</index>\n");
+                    xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
+                    xml.append("        <type>").append(escapeXml(varType)).append("</type>\n");
+                    if (defaultValue != null) {
+                        xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
+                    }
+                    xml.append("      </localVariable>\n");
+                }
+                index++;
+            }
+        }
+
         xml.append("      <processControlElements>\n");
 
         // Input condition (start)
         xml.append("        <inputCondition id=\"i-top\">\n");
+        xml.append("          <name>start</name>\n");
         if (firstTask != null) {
             xml.append("          <flowsInto><nextElementRef id=\"")
                .append(escapeXml(firstTask)).append("\"/></flowsInto>\n");
@@ -102,25 +174,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         }
         xml.append("        </inputCondition>\n");
 
-        // Variable declarations
-        if (variables != null && !variables.isEmpty()) {
-            xml.append("        <variableDeclarations>\n");
-            for (Map<String, Object> var : variables) {
-                String varId = getString(var, "name", null);
-                String varType = getString(var, "type", "xs:string");
-                String defaultValue = getString(var, "default", null);
-
-                xml.append("          <variable id=\"").append(escapeXml(varId)).append("\">\n");
-                xml.append("            <typeDeclaration>").append(escapeXml(varType)).append("</typeDeclaration>\n");
-                if (defaultValue != null) {
-                    xml.append("            <defaultValue>").append(escapeXml(defaultValue)).append("</defaultValue>\n");
-                }
-                xml.append("          </variable>\n");
-            }
-            xml.append("        </variableDeclarations>\n");
-        }
-
-        // Tasks
+        // Tasks - ordered per YAWL schema 4.0: name, documentation, flowsInto, join/split, other elements
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId == null) {
@@ -129,20 +183,26 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
 
             xml.append("        <task id=\"").append(escapeXml(taskId)).append("\">\n");
 
-            // Task description
+            // 1. Name first (required by schema)
+            String taskName = getString(task, "name", taskId);
+            xml.append("          <name>").append(escapeXml(taskName)).append("</name>\n");
+
+            // 2. Documentation second (optional)
             String description = getString(task, "description", null);
             if (description != null) {
-                xml.append("          <description>").append(escapeXml(description)).append("</description>\n");
+                xml.append("          <documentation>").append(escapeXml(description)).append("</documentation>\n");
             }
 
-            // Flow definitions
+            // 3. flowsInto elements third
             List<String> flows = getStringList(task, "flows");
             String condition = getString(task, "condition", null);
             String defaultFlow = getString(task, "default", null);
 
             for (String flow : flows) {
                 xml.append("          <flowsInto>\n");
-                xml.append("            <nextElementRef id=\"").append(escapeXml(flow)).append("\"/>\n");
+                // Map "end" to output condition id "o-top"
+                String targetId = "end".equals(flow) ? "o-top" : flow;
+                xml.append("            <nextElementRef id=\"").append(escapeXml(targetId)).append("\"/>\n");
 
                 // Check if this is the conditional flow
                 if (condition != null && condition.contains("->")) {
@@ -164,6 +224,19 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
 
                 xml.append("          </flowsInto>\n");
             }
+
+            // 4. Join/Split fourth
+            String join = getString(task, "join", null);
+            String split = getString(task, "split", null);
+
+            if (join != null) {
+                xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
+            }
+            if (split != null) {
+                xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
+            }
+
+            // 5. Other elements: multiInstance, timer, cancellation, agent, approval, businessRules, decomposesTo
 
             // Multi-instance configuration
             Map<String, Object> multiInstance = getMap(task, "multiInstance");
@@ -243,17 +316,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("          <approvalType>").append(approvalType).append("</approvalType>\n");
             }
 
-            // Join/Split
-            String join = getString(task, "join", null);
-            String split = getString(task, "split", null);
-
-            if (join != null) {
-                xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
-            }
-            if (split != null) {
-                xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
-            }
-
             // Business rules
             List<String> businessRules = getStringList(task, "businessRules");
             if (!businessRules.isEmpty()) {
@@ -271,18 +333,24 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         }
 
         // Output condition (end)
-        xml.append("        <outputCondition id=\"o-top\"/>\n");
+        xml.append("        <outputCondition id=\"o-top\">\n");
+        xml.append("          <name>end</name>\n");
+        xml.append("        </outputCondition>\n");
 
         xml.append("      </processControlElements>\n");
-        xml.append("    </rootNet>\n");
+        xml.append("    </decomposition>\n");
 
-        // Decomposition definitions
+        // Task decomposition definitions (must have proper structure with name element)
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId != null) {
+                String taskDescription = getString(task, "description", taskId);
                 xml.append("    <decomposition id=\"")
                    .append(escapeXml(taskId)).append("Decomposition\" ")
-                   .append("xsi:type=\"WebServiceGatewayFactsType\"/>\n");
+                   .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
+                   .append("xsi:type=\"WebServiceGatewayFactsType\">\n");
+                xml.append("      <name>").append(escapeXml(taskDescription)).append("</name>\n");
+                xml.append("    </decomposition>\n");
             }
         }
 
@@ -428,72 +496,91 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
     }
 
     /**
-     * Test method to demonstrate extended YAML conversion
+     * Test method to demonstrate extended YAML conversion.
+     * Accepts an optional file path argument to convert a YAML file.
+     * If no argument is provided, uses the built-in example.
+     *
+     * @param args optional first argument is the path to a YAML file to convert
      */
     public static void main(String[] args) {
-        // Extended YAML example
-        String extendedYaml = """
-            name: ExtendedWorkflow
-            uri: extended.xml
-            first: StartProcess
+        String extendedYaml;
 
-            variables:
-              - name: customerId
-                type: xs:string
-              - name: orderValue
-                type: xs:decimal
-                default: 0.0
+        if (args.length > 0) {
+            // Read YAML from file
+            String filePath = args[0];
+            try {
+                extendedYaml = java.nio.file.Files.readString(java.nio.file.Path.of(filePath));
+                System.out.println("=== YAML Input from: " + filePath + " ===\n");
+            } catch (java.io.IOException e) {
+                System.err.println("Error reading file: " + filePath + " - " + e.getMessage());
+                System.exit(1);
+                return;
+            }
+        } else {
+            // Extended YAML example
+            extendedYaml = """
+                name: ExtendedWorkflow
+                uri: extended.xml
+                first: StartProcess
 
-            tasks:
-              - id: StartProcess
-                flows: [CheckOrder]
-                split: xor
-                join: and
-                description: "Start order processing"
+                variables:
+                  - name: customerId
+                    type: xs:string
+                  - name: orderValue
+                    type: xs:decimal
+                    default: 0.0
 
-              - id: CheckOrder
-                flows: [ProcessOrder, CancelOrder]
-                condition: orderValue > 0 -> ProcessOrder
-                default: CancelOrder
-                split: xor
-                join: xor
-                timer:
-                  trigger: onEnabled
-                  duration: PT10M
+                tasks:
+                  - id: StartProcess
+                    flows: [CheckOrder]
+                    split: xor
+                    join: and
+                    description: "Start order processing"
 
-              - id: ProcessOrder
-                flows: [ShipItems]
-                split: xor
-                join: and
-                agent:
-                  type: human
-                  binding: dynamic
-                  capabilities: [order-processing]
-                description: "Process customer order"
+                  - id: CheckOrder
+                    flows: [ProcessOrder, CancelOrder]
+                    condition: orderValue > 0 -> ProcessOrder
+                    default: CancelOrder
+                    split: xor
+                    join: xor
+                    timer:
+                      trigger: onEnabled
+                      duration: PT10M
 
-              - id: ShipItems
-                flows: [end]
-                multiInstance:
-                  min: 1
-                  max: count(/items/item)
-                  mode: dynamic
-                  threshold: all
-                split: xor
-                join: and
-                description: "Ship order items"
+                  - id: ProcessOrder
+                    flows: [ShipItems]
+                    split: xor
+                    join: and
+                    agent:
+                      type: human
+                      binding: dynamic
+                      capabilities: [order-processing]
+                    description: "Process customer order"
 
-              - id: CancelOrder
-                flows: [end]
-                split: xor
-                join: xor
-                description: "Cancel order"
+                  - id: ShipItems
+                    flows: [end]
+                    multiInstance:
+                      min: 1
+                      max: count(/items/item)
+                      mode: dynamic
+                      threshold: all
+                    split: xor
+                    join: and
+                    description: "Ship order items"
 
-            compensations:
-              - id: compensateShip
-                description: "Reverse shipment"
-            """;
+                  - id: CancelOrder
+                    flows: [end]
+                    split: xor
+                    join: xor
+                    description: "Cancel order"
 
-        System.out.println("=== Extended YAML Input ===\n");
+                compensations:
+                  - id: compensateShip
+                    description: "Reverse shipment"
+                """;
+            System.out.println("=== Extended YAML Input ===\n");
+        }
+
         System.out.println(extendedYaml);
 
         ExtendedYamlConverter converter = new ExtendedYamlConverter();

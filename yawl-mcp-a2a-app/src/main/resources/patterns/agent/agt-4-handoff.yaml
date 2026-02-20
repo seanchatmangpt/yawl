@@ -1,0 +1,111 @@
+# AGT-4: Agent-to-Agent Handoff Pattern
+# Transfer work between specialized agents with context preservation
+
+name: AgentToAgentHandoffPattern
+uri: agent-handoff.xml
+first: ReceiveTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: taskContext
+    type: xs:string
+  - name: sourceAgent
+    type: xs:string
+  - name: targetAgent
+    type: xs:string
+  - name: handoffReason
+    type: xs:string
+  - name: handoffCount
+    type: xs:integer
+    default: 0
+  - name: maxHandoffs
+    type: xs:integer
+    default: 5
+  - name: result
+    type: xs:string
+  - name: requiresSpecialist
+    type: xs:boolean
+    default: false
+  - name: specialistType
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: ReceiveTask
+    flows: [InitializeContext]
+    split: xor
+    join: xor
+    description: "Receive incoming task with context"
+
+  - id: InitializeContext
+    flows: [SelectAgent]
+    split: xor
+    join: xor
+    description: "Initialize task context and metadata"
+
+  - id: SelectAgent
+    flows: [ExecuteAgent]
+    split: xor
+    join: xor
+    agent:
+      type: router
+      binding: capability-based
+      capabilities: [routing, agent-selection]
+    description: "Select appropriate agent based on task requirements"
+
+  - id: ExecuteAgent
+    flows: [CheckCompletion, DetermineHandoff]
+    condition: result != "" -> CheckCompletion
+    default: DetermineHandoff
+    split: xor
+    join: xor
+    agent:
+      type: dynamic
+      binding: ${targetAgent}
+      capabilities: [execution, analysis]
+    description: "Execute task with selected agent"
+
+  - id: CheckCompletion
+    flows: [Complete, DetermineHandoff]
+    condition: result == "completed" -> Complete
+    default: DetermineHandoff
+    split: xor
+    join: xor
+    description: "Check if task is completed"
+
+  - id: DetermineHandoff
+    flows: [PrepareHandoff, EscalateToHuman]
+    condition: requiresSpecialist == true && handoffCount < maxHandoffs -> PrepareHandoff
+    default: EscalateToHuman
+    split: xor
+    join: xor
+    description: "Determine if handoff to another agent is needed"
+
+  - id: PrepareHandoff
+    flows: [TransferContext]
+    split: xor
+    join: xor
+    description: "Prepare handoff package with context"
+
+  - id: TransferContext
+    flows: [SelectAgent]
+    split: xor
+    join: xor
+    agent:
+      type: coordinator
+      binding: dynamic
+      capabilities: [context-transfer, state-serialization]
+    description: "Transfer context to target agent"
+
+  - id: EscalateToHuman
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Escalate to human when agent handoff limit reached"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Task completed successfully"

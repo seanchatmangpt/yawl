@@ -1,0 +1,177 @@
+# AGT-5: Multi-Agent Orchestration Pattern
+# Coordinate multiple agents working on complex tasks
+
+name: MultiAgentOrchestrationPattern
+uri: agent-orchestration.xml
+first: ReceiveOrchestrationRequest
+
+variables:
+  - name: orchestrationId
+    type: xs:string
+  - name: workflowType
+    type: xs:string
+  - name: agentPool
+    type: xs:string
+    default: "default"
+  - name: parallelExecution
+    type: xs:boolean
+    default: true
+  - name: maxConcurrency
+    type: xs:integer
+    default: 4
+  - name: timeout
+    type: xs:duration
+    default: PT30M
+  - name: subTaskCount
+    type: xs:integer
+    default: 0
+  - name: completedCount
+    type: xs:integer
+    default: 0
+  - name: failedCount
+    type: xs:integer
+    default: 0
+  - name: aggregationStrategy
+    type: xs:string
+    default: "merge"
+  - name: finalResult
+    type: xs:string
+
+tasks:
+  - id: ReceiveOrchestrationRequest
+    flows: [DecomposeTask]
+    split: xor
+    join: xor
+    description: "Receive orchestration request"
+
+  - id: DecomposeTask
+    flows: [AssignAgents]
+    split: xor
+    join: xor
+    agent:
+      type: planner
+      binding: static
+      capabilities: [task-decomposition, planning]
+    description: "Decompose complex task into subtasks"
+
+  - id: AssignAgents
+    flows: [ParallelExecution, SequentialExecution]
+    condition: parallelExecution == true -> ParallelExecution
+    default: SequentialExecution
+    split: xor
+    join: xor
+    agent:
+      type: scheduler
+      binding: dynamic
+      capabilities: [agent-assignment, load-balancing]
+    description: "Assign agents to subtasks"
+
+  - id: ParallelExecution
+    flows: [Agent1Task, Agent2Task, Agent3Task, Agent4Task]
+    split: and
+    join: xor
+    description: "Execute subtasks in parallel"
+
+  - id: Agent1Task
+    flows: [AggregateResults]
+    split: xor
+    join: and
+    agent:
+      type: worker
+      binding: capability-based
+      capabilities: [execution, processing]
+    description: "Agent 1 executes assigned subtask"
+
+  - id: Agent2Task
+    flows: [AggregateResults]
+    split: xor
+    join: and
+    agent:
+      type: worker
+      binding: capability-based
+      capabilities: [execution, processing]
+    description: "Agent 2 executes assigned subtask"
+
+  - id: Agent3Task
+    flows: [AggregateResults]
+    split: xor
+    join: and
+    agent:
+      type: worker
+      binding: capability-based
+      capabilities: [execution, processing]
+    description: "Agent 3 executes assigned subtask"
+
+  - id: Agent4Task
+    flows: [AggregateResults]
+    split: xor
+    join: and
+    agent:
+      type: worker
+      binding: capability-based
+      capabilities: [execution, processing]
+    description: "Agent 4 executes assigned subtask"
+
+  - id: SequentialExecution
+    flows: [SequentialAgentTask]
+    split: xor
+    join: xor
+    description: "Execute subtasks sequentially"
+
+  - id: SequentialAgentTask
+    flows: [AggregateResults, SequentialAgentTask]
+    condition: completedCount < subTaskCount -> SequentialAgentTask
+    default: AggregateResults
+    split: xor
+    join: xor
+    agent:
+      type: worker
+      binding: round-robin
+      capabilities: [execution, processing]
+    description: "Execute next sequential subtask"
+
+  - id: AggregateResults
+    flows: [ValidateResults, HandleFailures]
+    condition: failedCount == 0 -> ValidateResults
+    default: HandleFailures
+    split: xor
+    join: xor
+    agent:
+      type: aggregator
+      binding: static
+      capabilities: [result-aggregation, merge, synthesis]
+    description: "Aggregate results from all agents"
+
+  - id: ValidateResults
+    flows: [Complete, RetryOrchestration]
+    condition: finalResult != "" -> Complete
+    default: RetryOrchestration
+    split: xor
+    join: xor
+    description: "Validate aggregated results"
+
+  - id: HandleFailures
+    flows: [RetryOrchestration, PartialCompletion]
+    condition: completedCount > 0 -> PartialCompletion
+    default: RetryOrchestration
+    split: xor
+    join: xor
+    description: "Handle partial failures"
+
+  - id: RetryOrchestration
+    flows: [AssignAgents]
+    split: xor
+    join: xor
+    description: "Retry failed subtasks"
+
+  - id: PartialCompletion
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Complete with partial results"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Orchestration completed"

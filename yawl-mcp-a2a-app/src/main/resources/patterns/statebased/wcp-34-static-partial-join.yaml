@@ -1,0 +1,68 @@
+# WCP-34: Static Partial Join Pattern
+# Join with partial synchronization (fixed threshold)
+
+name: StaticPartialJoinPattern
+uri: static-partial-join.xml
+first: StartTask
+
+variables:
+  - name: branchCount
+    type: xs:integer
+    default: 5
+  - name: threshold
+    type: xs:integer
+    default: 3
+  - name: completedCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [Branch1, Branch2, Branch3, Branch4, Branch5]
+    split: and
+    join: xor
+    description: "Start parallel branches"
+
+  - id: Branch1
+    flows: [PartialJoin]
+    split: xor
+    join: xor
+    description: "Branch 1"
+
+  - id: Branch2
+    flows: [PartialJoin]
+    split: xor
+    join: xor
+    description: "Branch 2"
+
+  - id: Branch3
+    flows: [PartialJoin]
+    split: xor
+    join: xor
+    description: "Branch 3"
+
+  - id: Branch4
+    flows: [PartialJoin]
+    split: xor
+    join: xor
+    description: "Branch 4"
+
+  - id: Branch5
+    flows: [PartialJoin]
+    split: xor
+    join: xor
+    description: "Branch 5"
+
+  - id: PartialJoin
+    flows: [Complete]
+    split: xor
+    join: partial
+    threshold: 3
+    remaining: cancel
+    description: "Partial join with 3 of 5 threshold"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete after partial join"

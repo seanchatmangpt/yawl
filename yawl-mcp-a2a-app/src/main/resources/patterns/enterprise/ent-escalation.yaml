@@ -1,0 +1,103 @@
+# ENT-2: Escalation Pattern
+# Escalation on timeout or condition
+
+name: EscalationPattern
+uri: escalation.xml
+first: StartTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: assignee
+    type: xs:string
+  - name: escalationLevel
+    type: xs:integer
+    default: 0
+  - name: maxEscalationLevel
+    type: xs:integer
+    default: 3
+  - name: timeoutDuration
+    type: xs:duration
+    default: PT1H
+
+tasks:
+  - id: StartTask
+    flows: [AssignTask]
+    split: xor
+    join: xor
+    description: "Start escalation workflow"
+
+  - id: AssignTask
+    flows: [WaitForCompletion]
+    split: xor
+    join: xor
+    description: "Assign task to user"
+
+  - id: WaitForCompletion
+    flows: [CheckTimeout, TaskComplete]
+    condition: timedOut == true -> CheckTimeout
+    default: TaskComplete
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT1H
+    description: "Wait for task completion"
+
+  - id: CheckTimeout
+    flows: [Escalate, TaskComplete]
+    condition: timedOut == true -> Escalate
+    default: TaskComplete
+    split: xor
+    join: xor
+    description: "Check if timeout occurred"
+
+  - id: Escalate
+    flows: [CheckMaxLevel, NotifyManager]
+    condition: escalationLevel >= maxEscalationLevel -> CheckMaxLevel
+    default: NotifyManager
+    split: xor
+    join: xor
+    description: "Escalate task"
+
+  - id: NotifyManager
+    flows: [ReassignTask]
+    split: xor
+    join: xor
+    description: "Notify manager"
+
+  - id: ReassignTask
+    flows: [WaitForCompletion]
+    split: xor
+    join: xor
+    description: "Reassign to higher level"
+
+  - id: CheckMaxLevel
+    flows: [MaxEscalationReached]
+    split: xor
+    join: xor
+    description: "Check max escalation"
+
+  - id: MaxEscalationReached
+    flows: [EmergencyAction]
+    split: xor
+    join: xor
+    description: "Max escalation reached"
+
+  - id: EmergencyAction
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Take emergency action"
+
+  - id: TaskComplete
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Task completed"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize workflow"

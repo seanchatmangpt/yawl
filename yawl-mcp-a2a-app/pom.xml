@@ -18,6 +18,11 @@
     <name>YAWL MCP-A2A Application</name>
     <description>Spring Boot application providing MCP server and A2A agent capabilities for YAWL workflow engine integration</description>
 
+    <properties>
+        <!-- Override parent's maven.test.skip to run tests in this module -->
+        <maven.test.skip>false</maven.test.skip>
+    </properties>
+
     <dependencies>
         <!-- ============================================================== -->
         <!-- YAWL INTER-MODULE DEPENDENCIES                                 -->
@@ -457,17 +462,34 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
-                    <includes>
-                        <include>**/org/yawlfoundation/yawl/mcp/a2a/**/*.java</include>
-                        <include>**/org/yawlfoundation/yawl/resilience/**/*.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/*Test.java</exclude>
-                        <exclude>**/*Tests.java</exclude>
-                        <exclude>**/benchmarks/**/*.java</exclude>
-                        <exclude>**/jmh/**/*.java</exclude>
-                    </excludes>
                 </configuration>
+                <executions>
+                    <!-- Main compile: only include specific packages -->
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <includes>
+                                <include>**/org/yawlfoundation/yawl/mcp/a2a/**/*.java</include>
+                                <include>**/org/yawlfoundation/yawl/resilience/**/*.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                                <exclude>**/*Tests.java</exclude>
+                                <exclude>**/benchmarks/**/*.java</exclude>
+                                <exclude>**/jmh/**/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- Test compile: compile all test sources -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Surefire Plugin for unit tests -->

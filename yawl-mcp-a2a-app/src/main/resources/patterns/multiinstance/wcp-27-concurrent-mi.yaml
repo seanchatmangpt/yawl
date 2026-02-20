@@ -1,0 +1,68 @@
+# WCP-27: Concurrent MI Without A Priori Knowledge Pattern
+# Concurrent instances where count is determined during execution
+
+name: ConcurrentMIPattern
+uri: concurrent-mi.xml
+first: StartTask
+
+variables:
+  - name: items
+    type: xs:string
+  - name: maxConcurrency
+    type: xs:integer
+    default: 5
+  - name: results
+    type: xs:string
+  - name: errorCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [DiscoverItems]
+    split: xor
+    join: xor
+    description: "Start concurrent processing"
+
+  - id: DiscoverItems
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Discover items at runtime"
+
+  - id: ProcessItems
+    flows: [AggregateResults]
+    split: and
+    join: and
+    multiInstance:
+      mode: concurrent
+      query: items
+      maxInstances: 5
+      threshold: all
+    description: "Process items concurrently"
+
+  - id: AggregateResults
+    flows: [CheckErrors, Finalize]
+    condition: errorCount > 0 -> CheckErrors
+    default: Finalize
+    split: xor
+    join: xor
+    description: "Aggregate all results"
+
+  - id: CheckErrors
+    flows: [HandleErrors]
+    split: xor
+    join: xor
+    description: "Check for processing errors"
+
+  - id: HandleErrors
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Handle any errors"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize concurrent processing"

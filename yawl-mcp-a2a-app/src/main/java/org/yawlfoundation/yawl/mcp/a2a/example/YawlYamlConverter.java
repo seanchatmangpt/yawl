@@ -27,6 +27,9 @@ import java.util.Map;
  *
  * <p>This reduces token generation by ~60-70% compared to full XML.</p>
  *
+ * <p>Generates schema-compliant YAWL XML 4.0 using namespace
+ * http://www.yawlfoundation.org/yawlschema</p>
+ *
  * <h2>Compact YAML Format</h2>
  * <pre>{@code
  * name: OrderFulfillment
@@ -57,6 +60,12 @@ import java.util.Map;
  * @version 6.0.0
  */
 public class YawlYamlConverter {
+
+    /** YAWL Schema 4.0 namespace */
+    protected static final String NAMESPACE = "http://www.yawlfoundation.org/yawlschema";
+
+    /** XML Schema Instance namespace */
+    protected static final String XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
 
     private final YAMLMapper yamlMapper;
 
@@ -125,13 +134,18 @@ public class YawlYamlConverter {
         String firstTask = getString(spec, "first", null);
         List<Map<String, Object>> tasks = getTasks(spec);
 
-        xml.append("<specificationSet xmlns=\"http://www.citi.qut.edu.au/yawl\">\n");
+        xml.append("<specificationSet xmlns=\"").append(NAMESPACE).append("\" ")
+           .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
+           .append("version=\"4.0\">\n");
         xml.append("  <specification uri=\"").append(escapeXml(uri)).append("\">\n");
-        xml.append("    <rootNet id=\"top\">\n");
+        xml.append("    <name>").append(escapeXml(name)).append("</name>\n");
+        xml.append("    <metaData/>\n");
+        xml.append("    <decomposition id=\"WorkflowNet\" isRootNet=\"true\" xsi:type=\"NetFactsType\">\n");
         xml.append("      <processControlElements>\n");
 
         // Input condition (start)
         xml.append("        <inputCondition id=\"i-top\">\n");
+        xml.append("          <name>start</name>\n");
         if (firstTask != null) {
             xml.append("          <flowsInto><nextElementRef id=\"")
                .append(escapeXml(firstTask)).append("\"/></flowsInto>\n");
@@ -153,6 +167,7 @@ public class YawlYamlConverter {
             }
 
             xml.append("        <task id=\"").append(escapeXml(taskId)).append("\">\n");
+            xml.append("          <name>").append(escapeXml(taskId)).append("</name>\n");
 
             // Flow definitions
             List<String> flows = getStringList(task, "flows");
@@ -202,10 +217,12 @@ public class YawlYamlConverter {
         }
 
         // Output condition (end)
-        xml.append("        <outputCondition id=\"o-top\"/>\n");
+        xml.append("        <outputCondition id=\"o-top\">\n");
+        xml.append("          <name>end</name>\n");
+        xml.append("        </outputCondition>\n");
 
         xml.append("      </processControlElements>\n");
-        xml.append("    </rootNet>\n");
+        xml.append("    </decomposition>\n");
 
         // Decomposition definitions
         for (Map<String, Object> task : tasks) {

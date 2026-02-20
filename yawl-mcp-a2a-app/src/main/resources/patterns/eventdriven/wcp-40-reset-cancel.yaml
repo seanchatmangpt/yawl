@@ -1,0 +1,80 @@
+# WCP-40: Reset Trigger + Cancel Region Pattern
+# Reset with cancellation of a region
+
+name: ResetCancelPattern
+uri: reset-cancel.xml
+first: StartTask
+
+variables:
+  - name: resetRequested
+    type: xs:boolean
+    default: false
+  - name: cancelRegion
+    type: xs:boolean
+    default: false
+  - name: resetPoint
+    type: xs:string
+    default: "AfterInit"
+
+tasks:
+  - id: StartTask
+    flows: [Initialize]
+    split: xor
+    join: xor
+    description: "Start workflow"
+
+  - id: Initialize
+    flows: [AfterInit]
+    split: xor
+    join: xor
+    description: "Initialize workflow"
+
+  - id: AfterInit
+    flows: [RegionA, RegionB]
+    split: and
+    join: xor
+    description: "Checkpoint after init"
+
+  - id: RegionA
+    flows: [CheckResetCancel]
+    split: xor
+    join: xor
+    description: "Region A task"
+
+  - id: RegionB
+    flows: [CheckResetCancel]
+    split: xor
+    join: xor
+    description: "Region B task"
+
+  - id: CheckResetCancel
+    flows: [ResetAndCancel, Continue]
+    condition: resetRequested == true -> ResetAndCancel
+    default: Continue
+    split: xor
+    join: and
+    trigger:
+      type: reset
+      event: reset_cancel_signal
+    description: "Check for reset with cancel"
+
+  - id: ResetAndCancel
+    flows: [AfterInit]
+    split: xor
+    join: xor
+    reset: currentState
+    resetPoint: AfterInit
+    cancelRegion: [RegionA, RegionB]
+    description: "Reset and cancel region"
+
+  - id: Continue
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Continue normal flow"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete workflow"

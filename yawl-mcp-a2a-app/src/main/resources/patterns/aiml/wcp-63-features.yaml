@@ -1,0 +1,103 @@
+# WCP-63: Feature Engineering Pattern
+# Feature engineering pipeline for ML
+
+name: FeatureEngineeringPattern
+uri: features.xml
+first: StartEngineering
+
+variables:
+  - name: datasetPath
+    type: xs:string
+  - name: featureConfig
+    type: xs:string
+  - name: selectedFeatures
+    type: xs:string
+  - name: featureImportance
+    type: xs:string
+
+tasks:
+  - id: StartEngineering
+    flows: [LoadDataset]
+    split: xor
+    join: xor
+    description: "Start feature engineering"
+
+  - id: LoadDataset
+    flows: [AnalyzeFeatures]
+    split: xor
+    join: xor
+    description: "Load preprocessed dataset"
+
+  - id: AnalyzeFeatures
+    flows: [GenerateFeatures]
+    split: xor
+    join: xor
+    description: "Analyze existing features"
+
+  - id: GenerateFeatures
+    flows: [PolynomialFeatures, InteractionFeatures, TimeFeatures, TextFeatures]
+    split: and
+    join: xor
+    description: "Generate feature candidates"
+
+  - id: PolynomialFeatures
+    flows: [CombineFeatures]
+    split: xor
+    join: xor
+    description: "Generate polynomial features"
+
+  - id: InteractionFeatures
+    flows: [CombineFeatures]
+    split: xor
+    join: xor
+    description: "Generate interaction features"
+
+  - id: TimeFeatures
+    flows: [CombineFeatures]
+    split: xor
+    join: xor
+    description: "Generate time-based features"
+
+  - id: TextFeatures
+    flows: [CombineFeatures]
+    split: xor
+    join: xor
+    description: "Generate text features"
+
+  - id: CombineFeatures
+    flows: [SelectFeatures]
+    split: xor
+    join: and
+    description: "Combine all generated features"
+
+  - id: SelectFeatures
+    flows: [ValidateFeatures]
+    split: xor
+    join: xor
+    description: "Select best features"
+
+  - id: ValidateFeatures
+    flows: [SaveFeatures, RegenerateFeatures]
+    condition: featuresValid == true -> SaveFeatures
+    default: RegenerateFeatures
+    split: xor
+    join: xor
+    description: "Validate feature quality"
+
+  - id: RegenerateFeatures
+    flows: [GenerateFeatures]
+    split: xor
+    join: xor
+    description: "Regenerate features"
+
+  - id: SaveFeatures
+    flows: [EngineeringComplete]
+    split: xor
+    join: xor
+    description: "Save feature set"
+
+  - id: EngineeringComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Feature engineering complete"

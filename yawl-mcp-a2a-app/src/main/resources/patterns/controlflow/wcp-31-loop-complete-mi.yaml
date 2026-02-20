@@ -1,0 +1,107 @@
+# WCP-31: Structured Loop + Complete MI Pattern
+# Loop with ability to complete multi-instance tasks
+
+name: LoopCompleteMIPattern
+uri: loop-complete-mi.xml
+first: StartTask
+
+variables:
+  - name: maxIterations
+    type: xs:integer
+    default: 10
+  - name: currentIteration
+    type: xs:integer
+    default: 0
+  - name: continueLoop
+    type: xs:boolean
+    default: true
+  - name: completeMI
+    type: xs:boolean
+    default: false
+  - name: itemCount
+    type: xs:integer
+    default: 5
+
+tasks:
+  - id: StartTask
+    flows: [Initialize]
+    split: xor
+    join: xor
+    description: "Start loop with MI complete"
+
+  - id: Initialize
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Initialize loop"
+
+  - id: CheckCondition
+    flows: [CheckCompleteMI, LoopBody, ExitLoop]
+    condition: completeMI == true -> CheckCompleteMI
+    condition: continueLoop == true && currentIteration < maxIterations -> LoopBody
+    default: ExitLoop
+    split: xor
+    join: xor
+    description: "Check conditions"
+
+  - id: CheckCompleteMI
+    flows: [CompleteInstances, ContinueProcessing]
+    condition: completeMI == true -> CompleteInstances
+    default: ContinueProcessing
+    split: xor
+    join: xor
+    description: "Check if MI complete needed"
+
+  - id: CompleteInstances
+    flows: [ProceedToNext]
+    split: xor
+    join: xor
+    completeMI: ProcessItems
+    description: "Complete all instances"
+
+  - id: ContinueProcessing
+    flows: [LoopBody]
+    split: xor
+    join: xor
+    description: "Continue processing"
+
+  - id: LoopBody
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Start loop body"
+
+  - id: ProcessItems
+    flows: [ProceedToNext]
+    split: and
+    join: xor
+    multiInstance:
+      min: 1
+      max: 5
+      mode: dynamic
+      threshold: all
+    description: "Process multiple items"
+
+  - id: ProceedToNext
+    flows: [IncrementCounter]
+    split: xor
+    join: xor
+    description: "Proceed to next step"
+
+  - id: IncrementCounter
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Increment counter"
+
+  - id: ExitLoop
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Exit loop"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize"

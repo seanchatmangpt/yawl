@@ -1,0 +1,113 @@
+# WCP-43: Critical Section + Cancel Region Pattern
+# Critical section with cancellation capability
+
+name: CriticalSectionCancelPattern
+uri: critical-cancel.xml
+first: StartTask
+
+variables:
+  - name: semaphore
+    type: xs:integer
+    default: 1
+  - name: cancelRequested
+    type: xs:boolean
+    default: false
+  - name: resourceAvailable
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: StartTask
+    flows: [RequestAccess]
+    split: xor
+    join: xor
+    description: "Start critical section with cancel"
+
+  - id: RequestAccess
+    flows: [AcquireLock, Wait]
+    condition: resourceAvailable == true -> AcquireLock
+    default: Wait
+    split: xor
+    join: xor
+    description: "Request access"
+
+  - id: Wait
+    flows: [RequestAccess]
+    split: xor
+    join: xor
+    description: "Wait for lock"
+
+  - id: AcquireLock
+    flows: [CheckCancel, EnterCritical]
+    condition: cancelRequested == true -> CheckCancel
+    default: EnterCritical
+    split: xor
+    join: xor
+    semaphore: acquire
+    description: "Acquire lock"
+
+  - id: CheckCancel
+    flows: [CancelCritical, ProceedCritical]
+    condition: cancelRequested == true -> CancelCritical
+    default: ProceedCritical
+    split: xor
+    join: xor
+    description: "Check for cancellation"
+
+  - id: CancelCritical
+    flows: [ReleaseAndExit]
+    split: xor
+    join: xor
+    cancelRegion: [CriticalTaskA, CriticalTaskB]
+    description: "Cancel critical region"
+
+  - id: ProceedCritical
+    flows: [EnterCritical]
+    split: xor
+    join: xor
+    description: "Proceed to critical section"
+
+  - id: EnterCritical
+    flows: [CriticalTaskA]
+    split: xor
+    join: xor
+    criticalSection: true
+    description: "Enter critical section"
+
+  - id: CriticalTaskA
+    flows: [CriticalTaskB]
+    split: xor
+    join: xor
+    description: "Critical task A"
+
+  - id: CriticalTaskB
+    flows: [ReleaseLock]
+    split: xor
+    join: xor
+    description: "Critical task B"
+
+  - id: ReleaseLock
+    flows: [Complete]
+    split: xor
+    join: xor
+    semaphore: release
+    description: "Release lock"
+
+  - id: ReleaseAndExit
+    flows: [HandleCancel]
+    split: xor
+    join: xor
+    semaphore: release
+    description: "Release and exit"
+
+  - id: HandleCancel
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle cancellation"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete"

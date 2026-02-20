@@ -1,0 +1,75 @@
+# WCP-32: Synchronizing Merge + Cancel Region Pattern
+# Synchronize multiple branches with cancellation capability
+
+name: SyncMergeCancelPattern
+uri: sync-merge-cancel.xml
+first: StartTask
+
+variables:
+  - name: branchCount
+    type: xs:integer
+    default: 3
+  - name: cancelRegion
+    type: xs:boolean
+    default: false
+  - name: completedBranches
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [BranchA, BranchB, BranchC]
+    split: and
+    join: xor
+    description: "Start parallel branches"
+
+  - id: BranchA
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Branch A processing"
+
+  - id: BranchB
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Branch B processing"
+
+  - id: BranchC
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Branch C processing"
+
+  - id: SyncPoint
+    flows: [CheckCancel, Complete]
+    condition: cancelRegion == true -> CheckCancel
+    default: Complete
+    split: xor
+    join: and
+    description: "Synchronizing merge point"
+
+  - id: CheckCancel
+    flows: [CancelRegionTasks]
+    split: xor
+    join: xor
+    description: "Check for cancellation"
+
+  - id: CancelRegionTasks
+    flows: [HandleCancel]
+    split: xor
+    join: xor
+    cancelRegion: [BranchA, BranchB, BranchC]
+    description: "Cancel region tasks"
+
+  - id: HandleCancel
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle cancellation"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Normal completion"

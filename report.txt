@@ -1,6 +1,6 @@
 [1m[36m======================================================================
   YAWL PATTERN DEMO REPORT
-  Generated: 2026-02-20T03:36:22Z
+  Generated: 2026-02-20T04:01:17Z
 ======================================================================
 [0m
 [1mSUMMARY[0m
@@ -9,7 +9,7 @@
   Successful:      [32m0[0m
   Failed:          [31m1[0m
   Success Rate:    [31m0.0%[0m
-  Total Duration:  472 ms
+  Total Duration:  518 ms
 
 [1mTOKEN SAVINGS (YAML vs XML)[0m
 ----------------------------------------
@@ -22,12 +22,12 @@
 ----------------------------------------
   Category               Count Success   Avg Time  Savings
   --------------------------------------------------------
-  [32mBasic Control Flow    [0m     1    0.0%     472 ms    71.4%
+  [32mBasic Control Flow    [0m     1    0.0%     518 ms    71.4%
 
 [1mPATTERN RESULTS[0m
 ----------------------------------------
   [31m[FAIL][0m Sequence
-        Duration: 472 ms | Work Items: 0
+        Duration: 518 ms | Work Items: 0
         Tokens: 136 (YAML) vs 476 (XML) = 71% saved
 
 [1m[31mFAILURES[0m
@@ -45,5 +45,5 @@ Error: 46:15: cvc-identity-constraint.4.3: Key 'Flows_ToInnerKeyRef1' with value
 
 [90m----------------------------------------------------------------------
   YAWL Foundation - Yet Another Workflow Language v6.0.0
-  Report generated at: 2026-02-20 03:36:22
+  Report generated at: 2026-02-20 04:01:17
 [0m

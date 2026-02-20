@@ -1,0 +1,60 @@
+# WCP-26: Sequential MI Without A Priori Knowledge Pattern
+# Sequential instances where count is determined during execution
+
+name: SequentialMIPattern
+uri: sequential-mi.xml
+first: StartTask
+
+variables:
+  - name: items
+    type: xs:string
+  - name: currentIndex
+    type: xs:integer
+    default: 0
+  - name: hasMore
+    type: xs:boolean
+    default: true
+  - name: result
+    type: xs:string
+
+tasks:
+  - id: StartTask
+    flows: [CheckForItems]
+    split: xor
+    join: xor
+    description: "Start sequential processing"
+
+  - id: CheckForItems
+    flows: [ProcessNextItem, AllDone]
+    condition: hasMore == true -> ProcessNextItem
+    default: AllDone
+    split: xor
+    join: xor
+    description: "Check if more items to process"
+
+  - id: ProcessNextItem
+    flows: [UpdateIndex]
+    split: xor
+    join: xor
+    multiInstance:
+      mode: sequential
+      query: items
+    description: "Process current item sequentially"
+
+  - id: UpdateIndex
+    flows: [CheckForItems]
+    split: xor
+    join: xor
+    description: "Update index and check for more"
+
+  - id: AllDone
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "All items processed"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize sequential processing"

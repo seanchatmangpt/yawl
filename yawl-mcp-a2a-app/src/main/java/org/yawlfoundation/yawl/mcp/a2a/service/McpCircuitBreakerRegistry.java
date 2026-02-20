@@ -46,6 +46,7 @@ public class McpCircuitBreakerRegistry {
     private final CircuitBreakerRegistry resilience4jRegistry;
     private final Map<String, AtomicReference<McpCircuitBreakerState>> stateMap;
     private final CircuitBreakerProperties properties;
+    private final CircuitBreakerProperties.CircuitBreakerConfig circuitBreakerConfig;
 
     /**
      * Creates a new MCP circuit breaker registry with the given properties.
@@ -54,6 +55,9 @@ public class McpCircuitBreakerRegistry {
      */
     public McpCircuitBreakerRegistry(CircuitBreakerProperties properties) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
+        this.circuitBreakerConfig = properties.circuitBreaker() != null
+            ? properties.circuitBreaker()
+            : CircuitBreakerProperties.CircuitBreakerConfig.defaults();
         this.stateMap = new ConcurrentHashMap<>();
         this.resilience4jRegistry = createResilience4jRegistry();
     }
@@ -106,7 +110,7 @@ public class McpCircuitBreakerRegistry {
 
         ref.updateAndGet(current -> switch (current) {
             case McpCircuitBreakerState.Closed closed -> {
-                int windowSize = properties.circuitBreaker().slidingWindowSize();
+                int windowSize = circuitBreakerConfig.slidingWindowSize();
                 yield closed.recordSuccess(windowSize);
             }
             case McpCircuitBreakerState.HalfOpen halfOpen -> {
@@ -136,14 +140,14 @@ public class McpCircuitBreakerRegistry {
 
         ref.updateAndGet(current -> switch (current) {
             case McpCircuitBreakerState.Closed closed -> {
-                int windowSize = properties.circuitBreaker().slidingWindowSize();
+                int windowSize = circuitBreakerConfig.slidingWindowSize();
                 McpCircuitBreakerState.Closed updated = closed.recordFailure(windowSize);
-                if (updated.currentFailureRate() >= properties.circuitBreaker().failureRateThreshold()) {
+                if (updated.currentFailureRate() >= circuitBreakerConfig.failureRateThreshold()) {
                     LOGGER.warn("Circuit breaker for MCP server {} transitioning to OPEN (failure rate: {}%)",
                                serverName, updated.currentFailureRate());
                     yield McpCircuitBreakerState.Open.create(
                         serverName,
-                        Duration.ofSeconds(properties.circuitBreaker().waitDurationOpenStateSeconds()).toMillis(),
+                        Duration.ofSeconds(circuitBreakerConfig.waitDurationOpenStateSeconds()).toMillis(),
                         updated.failureCount(),
                         errorMessage);
                 }
@@ -155,7 +159,7 @@ public class McpCircuitBreakerRegistry {
                            serverName);
                 yield McpCircuitBreakerState.Open.create(
                     serverName,
-                    Duration.ofSeconds(properties.circuitBreaker().waitDurationOpenStateSeconds()).toMillis(),
+                    Duration.ofSeconds(circuitBreakerConfig.waitDurationOpenStateSeconds()).toMillis(),
                     halfOpen.permittedCalls(),
                     errorMessage);
             }
@@ -240,7 +244,7 @@ public class McpCircuitBreakerRegistry {
                            serverName);
                 return McpCircuitBreakerState.HalfOpen.create(
                     serverName,
-                    properties.circuitBreaker().permittedNumberOfCallsInHalfOpenState());
+                    circuitBreakerConfig.permittedNumberOfCallsInHalfOpenState());
             }
             return current;
         });
@@ -272,18 +276,16 @@ public class McpCircuitBreakerRegistry {
     }
 
     private CircuitBreakerConfig buildCircuitBreakerConfig(String serverName) {
-        CircuitBreakerProperties.CircuitBreakerConfig cbProps = properties.circuitBreaker();
-
         return CircuitBreakerConfig.custom()
-            .failureRateThreshold(cbProps.failureRateThreshold())
-            .slowCallRateThreshold(cbProps.slowCallRateThreshold())
-            .slowCallDurationThreshold(Duration.ofSeconds(cbProps.slowCallDurationSeconds()))
-            .waitDurationInOpenState(Duration.ofSeconds(cbProps.waitDurationOpenStateSeconds()))
+            .failureRateThreshold(circuitBreakerConfig.failureRateThreshold())
+            .slowCallRateThreshold(circuitBreakerConfig.slowCallRateThreshold())
+            .slowCallDurationThreshold(Duration.ofSeconds(circuitBreakerConfig.slowCallDurationSeconds()))
+            .waitDurationInOpenState(Duration.ofSeconds(circuitBreakerConfig.waitDurationOpenStateSeconds()))
             .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
-            .slidingWindowSize(cbProps.slidingWindowSize())
-            .minimumNumberOfCalls(cbProps.minimumNumberOfCalls())
-            .permittedNumberOfCallsInHalfOpenState(cbProps.permittedNumberOfCallsInHalfOpenState())
-            .automaticTransitionFromOpenToHalfOpenEnabled(cbProps.automaticTransitionFromOpenToHalfOpen())
+            .slidingWindowSize(circuitBreakerConfig.slidingWindowSize())
+            .minimumNumberOfCalls(circuitBreakerConfig.minimumNumberOfCalls())
+            .permittedNumberOfCallsInHalfOpenState(circuitBreakerConfig.permittedNumberOfCallsInHalfOpenState())
+            .automaticTransitionFromOpenToHalfOpenEnabled(circuitBreakerConfig.automaticTransitionFromOpenToHalfOpen())
             .recordExceptions(IOException.class, TimeoutException.class)
             .ignoreExceptions(IllegalArgumentException.class, IllegalStateException.class)
             .build();
