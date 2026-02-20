@@ -380,6 +380,88 @@ public class YStatelessEngine {
 
 
     /**
+     * Launch multiple case instances in parallel using Java 25 StructuredTaskScope.
+     *
+     * <p>All cases are started concurrently on virtual threads. If any single case launch
+     * fails, the scope shuts down immediately (via {@code ShutdownOnFailure}) and the
+     * first exception is re-thrown after all in-flight launches have been cancelled or
+     * completed. Callers receive the full list of runners only when every case has
+     * successfully started.</p>
+     *
+     * <h2>Thread naming</h2>
+     * <p>Each subtask virtual thread is named {@code yawl-case-launch-<caseID>} so that
+     * thread dumps and profilers can correlate threads to cases.</p>
+     *
+     * <h2>Failure semantics</h2>
+     * <p>Failure of one case does not silently skip the others. The scope's
+     * {@code ShutdownOnFailure} policy cancels the remaining subtasks and the exception
+     * propagates to the caller wrapped in {@link YStateException}.</p>
+     *
+     * @param spec       the YAWL specification common to all cases
+     * @param caseParams list of per-case parameter strings (use {@code null} entries for defaults)
+     * @return list of launched runners, one per element in {@code caseParams}, in order
+     * @throws YStateException          if any case launch fails
+     * @throws YDataStateException      if case data cannot be initialised
+     * @throws YEngineStateException    if the engine is not in running state
+     * @throws YQueryException          if a data mapping query is malformed
+     */
+    public List<YNetRunner> launchCasesParallel(YSpecification spec, List<String> caseParams)
+            throws YStateException, YDataStateException, YEngineStateException, YQueryException {
+
+        if (spec == null) {
+            throw new IllegalArgumentException("Specification must not be null");
+        }
+        if (caseParams == null || caseParams.isEmpty()) {
+            throw new IllegalArgumentException("caseParams list must not be null or empty");
+        }
+
+        // Allocate a unique case ID per entry before entering the scope
+        List<String> caseIDs = new ArrayList<>(caseParams.size());
+        for (int i = 0; i < caseParams.size(); i++) {
+            caseIDs.add(UUID.randomUUID().toString());
+        }
+
+        List<YNetRunner> runners = new ArrayList<>(caseParams.size());
+
+        try (StructuredTaskScope.ShutdownOnFailure scope =
+                     new StructuredTaskScope.ShutdownOnFailure("yawl-parallel-launch",
+                             Thread.ofVirtual().factory())) {
+
+            // Fork one subtask per case; each runs on a named virtual thread
+            List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
+            for (int i = 0; i < caseParams.size(); i++) {
+                final String caseID = caseIDs.get(i);
+                final String params  = caseParams.get(i);
+                StructuredTaskScope.Subtask<YNetRunner> subtask = scope.fork(() ->
+                        _engine.launchCase(spec, caseID, params, null));
+                subtasks.add(subtask);
+            }
+
+            // Wait for all subtasks; propagate first failure if any
+            try {
+                scope.join().throwIfFailed(cause -> new YStateException(
+                        "Parallel case launch failed: " + cause.getMessage(), cause));
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new YStateException("Parallel case launch interrupted", ie);
+            }
+
+            // All subtasks succeeded — collect results in submission order
+            for (StructuredTaskScope.Subtask<YNetRunner> subtask : subtasks) {
+                runners.add(subtask.get());
+            }
+
+        } catch (YStateException | YDataStateException | YEngineStateException | YQueryException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new YStateException("Unexpected error in parallel case launch: " + ex.getMessage(), ex);
+        }
+
+        return runners;
+    }
+
+
+    /**
      * Suspend a currently running case
      * @param runner the current case state object
      * @throws YStateException if the case state is out-of-sync
