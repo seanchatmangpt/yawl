@@ -1,0 +1,157 @@
+# Newsletter Structure Skill
+# Design engaging newsletter formats and content architecture
+
+id: newsletter-structure
+name: Newsletter Structure Design
+description: |
+  Designs optimal newsletter structure and content architecture for maximum
+  engagement. Analyzes audience preferences, content goals, and industry
+  best practices to create templates that drive opens, clicks, and conversions.
+  Includes section planning, content hierarchy, and call-to-action placement.
+
+agent: content-architect
+
+input_schema:
+  type: object
+  properties:
+    newsletter_name:
+      type: string
+      description: Name of the newsletter
+    audience_description:
+      type: string
+      description: Target audience characteristics
+    primary_goal:
+      type: string
+      enum: [engagement, sales, education, community, thought_leadership]
+      description: Primary objective of the newsletter
+    frequency:
+      type: string
+      enum: [daily, weekly, biweekly, monthly]
+      description: Publication frequency
+    content_types_available:
+      type: array
+      items:
+        type: string
+        enum: [articles, curated_links, product_updates, events, tips, interviews, case_studies]
+      description: Types of content to include
+    current_metrics:
+      type: object
+      properties:
+        open_rate: { type: number }
+        click_rate: { type: number }
+        unsubscribe_rate: { type: number }
+      description: Current performance metrics if available
+    competitor_newsletters:
+      type: array
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          strengths: { type: array }
+    brand_voice:
+      type: string
+      description: Brand personality and tone guidelines
+    content_length_preference:
+      type: string
+      enum: [brief, moderate, in_depth]
+      default: moderate
+  required:
+    - newsletter_name
+    - audience_description
+    - primary_goal
+
+output_format:
+  type: object
+  properties:
+    recommended_structure:
+      type: object
+      properties:
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              purpose: { type: string }
+              word_count_range: { type: string }
+              placement: { type: string }
+              priority: { type: string }
+        estimated_read_time:
+          type: string
+        total_sections:
+          type: integer
+    content_template:
+      type: object
+      properties:
+        subject_line_templates:
+          type: array
+          items: { type: string }
+        preview_text_templates:
+          type: array
+          items: { type: string }
+        opening_hook:
+          type: string
+          description: Recommended opening approach
+        closing_cta:
+          type: object
+          properties:
+            type: { type: string }
+            placement: { type: string }
+            suggested_text: { type: string }
+    engagement_optimizations:
+      type: array
+      items:
+        type: object
+        properties:
+          element: { type: string }
+          recommendation: { type: string }
+          expected_impact: { type: string }
+    content_calendar_suggestion:
+      type: object
+      properties:
+        recurring_segments: { type: array }
+        content_rotation: { type: string }
+        special_editions: { type: array }
+    a_b_test_recommendations:
+      type: array
+      items:
+        type: object
+        properties:
+          element: { type: string }
+          variant_a: { type: string }
+          variant_b: { type: string }
+          hypothesis: { type: string }
+    performance_benchmarks:
+      type: object
+      properties:
+        target_open_rate: { type: number }
+        target_click_rate: { type: number }
+        industry_benchmarks: { type: object }
+
+examples:
+  - input:
+      newsletter_name: "Tech Founder Weekly"
+      audience_description: "Early-stage tech founders looking for growth tactics"
+      primary_goal: "thought_leadership"
+      frequency: "weekly"
+      content_types_available:
+        - articles
+        - curated_links
+        - tips
+        - case_studies
+      brand_voice: "Casual but authoritative, like a smart friend"
+    description: B2B newsletter for founders
+
+  - input:
+      newsletter_name: "Morning Market Brief"
+      audience_description: "Retail investors and finance enthusiasts"
+      primary_goal: "engagement"
+      frequency: "daily"
+      content_types_available:
+        - curated_links
+        - tips
+      current_metrics:
+        open_rate: 28
+        click_rate: 4.2
+      content_length_preference: "brief"
+    description: Daily finance newsletter optimization

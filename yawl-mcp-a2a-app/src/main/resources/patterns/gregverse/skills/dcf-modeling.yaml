@@ -1,0 +1,324 @@
+# DCF Modeling Skill
+# Discounted Cash Flow financial modeling and valuation
+
+id: dcf-modeling
+name: DCF Financial Modeling
+description: |
+  Performs Discounted Cash Flow analysis for business valuation and investment
+  decisions. Projects future cash flows, calculates present value, and provides
+  sensitivity analysis. Includes terminal value calculations, WACC estimation,
+  and scenario modeling for comprehensive valuation analysis.
+
+agent: financial-analyst
+
+input_schema:
+  type: object
+  properties:
+    company_name:
+      type: string
+      description: Name of the company being valued
+    valuation_date:
+      type: string
+      format: date
+      description: Date of valuation
+    financials:
+      type: object
+      properties:
+        revenue:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              amount: { type: number }
+        ebitda:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              amount: { type: number }
+        operating_cash_flow:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              amount: { type: number }
+        capex:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              amount: { type: number }
+        net_working_capital:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              amount: { type: number }
+    projection_assumptions:
+      type: object
+      properties:
+        revenue_growth_rate:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              rate: { type: number }
+        ebitda_margin:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              margin: { type: number }
+        tax_rate:
+          type: number
+          description: Corporate tax rate as decimal
+        depreciation_percent_of_sales:
+          type: number
+        capex_percent_of_sales:
+          type: number
+        nwc_percent_of_sales:
+          type: number
+    discount_rate_inputs:
+      type: object
+      properties:
+        risk_free_rate:
+          type: number
+          description: Risk-free rate (e.g., 10-year Treasury)
+        market_risk_premium:
+          type: number
+        beta:
+          type: number
+        cost_of_debt:
+          type: number
+        debt_to_capital:
+          type: number
+        company_specific_risk:
+          type: number
+    terminal_value:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [perpetuity_growth, exit_multiple]
+        perpetuity_growth_rate:
+          type: number
+        exit_multiple:
+          type: number
+        exit_multiple_type:
+          type: string
+          enum: [ev_ebitda, ev_revenue, p_e]
+    projection_years:
+      type: integer
+      description: Number of years to project
+      default: 5
+    scenarios:
+      type: object
+      properties:
+        base_case:
+          type: object
+          description: Base case assumptions
+        upside_case:
+          type: object
+          description: Upside scenario adjustments
+        downside_case:
+          type: object
+          description: Downside scenario adjustments
+  required:
+    - company_name
+    - financials
+    - projection_assumptions
+    - discount_rate_inputs
+
+output_format:
+  type: object
+  properties:
+    enterprise_value:
+      type: object
+      properties:
+        pv_projected_fcf:
+          type: number
+          description: Present value of projected free cash flows
+        pv_terminal_value:
+          type: number
+          description: Present value of terminal value
+        total_enterprise_value:
+          type: number
+        per_share_value:
+          type: number
+          description: If shares outstanding provided
+    free_cash_flow_projections:
+      type: array
+      items:
+        type: object
+        properties:
+          year: { type: integer }
+          revenue: { type: number }
+          ebitda: { type: number }
+          ebit: { type: number }
+          taxes: { type: number }
+          depreciation: { type: number }
+          capex: { type: number }
+          delta_nwc: { type: number }
+          free_cash_flow: { type: number }
+          discount_factor: { type: number }
+          present_value: { type: number }
+    wacc_calculation:
+      type: object
+      properties:
+        cost_of_equity: { type: number }
+        cost_of_debt_after_tax: { type: number }
+        weights: { type: object }
+        wacc: { type: number }
+        calculation_breakdown: { type: string }
+    terminal_value_analysis:
+      type: object
+      properties:
+        method_used: { type: string }
+        terminal_value: { type: number }
+        present_value: { type: number }
+        percentage_of_total: { type: number }
+        assumption_sensitivity: { type: array }
+    scenario_analysis:
+      type: object
+      properties:
+        base_case:
+          type: object
+          properties:
+            enterprise_value: { type: number }
+            key_assumptions: { type: array }
+        upside_case:
+          type: object
+          properties:
+            enterprise_value: { type: number }
+            key_assumptions: { type: array }
+        downside_case:
+          type: object
+          properties:
+            enterprise_value: { type: number }
+            key_assumptions: { type: array }
+    sensitivity_analysis:
+      type: object
+      properties:
+        wacc_sensitivity:
+          type: array
+          description: Enterprise value at different WACC rates
+        growth_sensitivity:
+          type: array
+          description: Enterprise value at different growth rates
+        matrix:
+          type: object
+          description: 2D sensitivity matrix
+    valuation_multiples:
+      type: object
+      properties:
+        ev_ebitda: { type: number }
+        ev_revenue: { type: number }
+        implied_perpetuity_growth: { type: number }
+    key_drivers:
+      type: array
+      items:
+        type: object
+        properties:
+          driver: { type: string }
+          impact_on_value: { type: string }
+          current_assumption: { type: number }
+    risks_and_limitations:
+      type: array
+      items:
+        type: object
+        properties:
+          risk: { type: string }
+          mitigation: { type: string }
+          impact: { type: string }
+    model_assumptions_summary:
+      type: object
+      properties:
+        key_assumptions: { type: array }
+        data_sources: { type: array }
+        confidence_level: { type: string }
+
+examples:
+  - input:
+      company_name: "TechCo Inc."
+      valuation_date: "2024-01-01"
+      financials:
+        revenue:
+          - year: 2021
+            amount: 50000000
+          - year: 2022
+            amount: 65000000
+          - year: 2023
+            amount: 82000000
+        ebitda:
+          - year: 2021
+            amount: 5000000
+          - year: 2022
+            amount: 7800000
+          - year: 2023
+            amount: 11480000
+      projection_assumptions:
+        revenue_growth_rate:
+          - year: 2024
+            rate: 0.25
+          - year: 2025
+            rate: 0.20
+          - year: 2026
+            rate: 0.15
+        tax_rate: 0.21
+        depreciation_percent_of_sales: 0.03
+        capex_percent_of_sales: 0.04
+        nwc_percent_of_sales: 0.10
+      discount_rate_inputs:
+        risk_free_rate: 0.04
+        market_risk_premium: 0.06
+        beta: 1.3
+        cost_of_debt: 0.06
+        debt_to_capital: 0.20
+      terminal_value:
+        method: "perpetuity_growth"
+        perpetuity_growth_rate: 0.025
+      projection_years: 5
+    description: Full DCF for technology company
+
+  - input:
+      company_name: "SaaS Startup"
+      financials:
+        revenue:
+          - year: 2023
+            amount: 5000000
+      projection_assumptions:
+        revenue_growth_rate:
+          - year: 2024
+            rate: 0.80
+          - year: 2025
+            rate: 0.60
+        ebitda_margin:
+          - year: 2024
+            margin: 0.15
+          - year: 2025
+            margin: 0.22
+        tax_rate: 0.21
+      discount_rate_inputs:
+        risk_free_rate: 0.04
+        market_risk_premium: 0.07
+        beta: 1.8
+        company_specific_risk: 0.03
+      terminal_value:
+        method: "exit_multiple"
+        exit_multiple: 15
+        exit_multiple_type: "ev_ebitda"
+      scenarios:
+        base_case:
+          growth_adjustment: 0
+        upside_case:
+          growth_adjustment: 0.10
+        downside_case:
+          growth_adjustment: -0.15
+    description: DCF for high-growth startup with scenarios

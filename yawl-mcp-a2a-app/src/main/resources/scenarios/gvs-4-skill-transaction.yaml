@@ -1,0 +1,89 @@
+id: gvs-4-skill-transaction
+name: Skill Creation and Pricing
+description: |
+  Skill marketplace flow: Nicolas creates a new skill, Justin determines optimal
+  pricing, and Greg advises on market positioning and fit.
+version: "1.0.0"
+
+agents:
+  - nicolas-cole
+  - justin-welsh
+  - greg-isenberg
+
+steps:
+  - id: create-skill
+    agentId: nicolas-cole
+    skillId: skill-architect
+    input:
+      category: productivity
+      complexity: medium
+      includeExamples: true
+      documentation: comprehensive
+    required: true
+    timeout: 900000
+    output:
+      to: skill-package
+
+  - id: price-skill
+    agentId: justin-welsh
+    skillId: pricing-optimizer
+    input:
+      source: skill-package
+      pricingModel:
+        - one-time
+        - subscription
+        - usage-based
+      marketAnalysis: competitive
+    required: true
+    timeout: 600000
+    output:
+      to: pricing-strategy
+
+  - id: market-fit-analysis
+    agentId: greg-isenberg
+    skillId: market-fit-advisor
+    input:
+      source: pricing-strategy
+      analysis:
+        - target-audience
+        - competitive-landscape
+        - positioning
+        - go-to-market
+    required: true
+    timeout: 600000
+    output:
+      to: market-recommendation
+
+dependencies:
+  - from: create-skill
+    to: price-skill
+    condition: output.skillValidated == true
+  - from: price-skill
+    to: market-fit-analysis
+    condition: output.pricingSet == true
+
+compensation:
+  onFailure: unpublish-skill
+  steps:
+    - id: unpublish-skill
+      agentId: nicolas-cole
+      skillId: skill-unpublish
+      input:
+        skillId: skill-package.id
+        reason: transaction-failed
+    - id: refund-transactions
+      agentId: justin-welsh
+      skillId: transaction-refund
+      input:
+        skillId: skill-package.id
+        notifyCustomers: true
+
+metadata:
+  createdAt: "2026-02-19T00:00:00Z"
+  author: gregverse-system
+  tags:
+    - skill
+    - marketplace
+    - pricing
+    - market-fit
+  estimatedDuration: 2100000

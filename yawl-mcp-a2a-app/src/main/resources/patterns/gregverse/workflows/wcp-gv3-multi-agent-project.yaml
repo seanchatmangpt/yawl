@@ -1,0 +1,282 @@
+# WCP-GV3: Multi-Agent Project Pattern
+# Multiple agents collaborate on shared project with orchestration
+
+name: MultiAgentProjectPattern
+uri: multi-agent-project.xml
+first: InitializeProject
+
+variables:
+  - name: projectId
+    type: xs:string
+  - name: projectName
+    type: xs:string
+  - name: orchestratorId
+    type: xs:string
+  - name: agentIds
+    type: xs:string
+  - name: projectRequirements
+    type: xs:string
+  - name: taskAssignments
+    type: xs:string
+  - name: agentOutputs
+    type: xs:string
+  - name: integrationResult
+    type: xs:string
+  - name: reviewStatus
+    type: xs:string
+    default: "pending"
+  - name: reviewComments
+    type: xs:string
+  - name: iterationCount
+    type: xs:integer
+    default: 0
+  - name: maxIterations
+    type: xs:integer
+    default: 3
+  - name: projectStatus
+    type: xs:string
+    default: "initialized"
+
+tasks:
+  - id: InitializeProject
+    flows: [AnalyzeRequirements]
+    split: xor
+    join: xor
+    description: "Initialize multi-agent project"
+
+  - id: AnalyzeRequirements
+    flows: [DecomposeTasks]
+    split: xor
+    join: xor
+    description: "Analyze and parse project requirements"
+
+  - id: DecomposeTasks
+    flows: [AssignTasks]
+    split: xor
+    join: xor
+    description: "Decompose project into assignable tasks"
+
+  - id: AssignTasks
+    flows: [SelectAgents]
+    split: xor
+    join: xor
+    description: "Assign tasks to agents"
+
+  - id: SelectAgents
+    flows: [ReserveAgents, NoAgentsAvailable]
+    condition: agentsAvailable == true -> ReserveAgents
+    default: NoAgentsAvailable
+    split: xor
+    join: xor
+    description: "Select appropriate agents for tasks"
+
+  - id: ReserveAgents
+    flows: [CoordinateWork]
+    split: xor
+    join: xor
+    description: "Reserve agents for project duration"
+
+  - id: NoAgentsAvailable
+    flows: [ProjectFailed]
+    split: xor
+    join: xor
+    description: "No suitable agents available"
+
+  - id: CoordinateWork
+    flows: [ExecuteParallelWork, ExecuteSequentialWork]
+    condition: parallelExecutionPossible == true -> ExecuteParallelWork
+    default: ExecuteSequentialWork
+    split: xor
+    join: xor
+    description: "Coordinate work distribution"
+
+  - id: ExecuteParallelWork
+    flows: [Agent1Work, Agent2Work, Agent3Work]
+    split: and
+    join: xor
+    description: "Execute work in parallel"
+
+  - id: ExecuteSequentialWork
+    flows: [Agent1Work]
+    split: xor
+    join: xor
+    description: "Execute work sequentially"
+
+  - id: Agent1Work
+    flows: [CollectOutputs]
+    split: xor
+    join: and
+    description: "Agent 1 executes assigned task"
+
+  - id: Agent2Work
+    flows: [CollectOutputs]
+    split: xor
+    join: and
+    description: "Agent 2 executes assigned task"
+
+  - id: Agent3Work
+    flows: [CollectOutputs]
+    split: xor
+    join: and
+    description: "Agent 3 executes assigned task"
+
+  - id: CollectOutputs
+    flows: [ValidateOutputs]
+    split: xor
+    join: and
+    description: "Collect all agent outputs"
+
+  - id: ValidateOutputs
+    flows: [Integration, HandleValidationFailure]
+    condition: outputsValid == true -> Integration
+    default: HandleValidationFailure
+    split: xor
+    join: xor
+    description: "Validate individual agent outputs"
+
+  - id: HandleValidationFailure
+    flows: [RequestRevisions, ProjectFailed]
+    condition: retryPossible == true -> RequestRevisions
+    default: ProjectFailed
+    split: xor
+    join: xor
+    description: "Handle output validation failure"
+
+  - id: RequestRevisions
+    flows: [CoordinateWork]
+    split: xor
+    join: xor
+    description: "Request revisions from agents"
+
+  - id: Integration
+    flows: [MergeOutputs]
+    split: xor
+    join: xor
+    description: "Integrate agent outputs"
+
+  - id: MergeOutputs
+    flows: [ResolveConflicts, ProceedToIntegration]
+    condition: conflictsDetected == true -> ResolveConflicts
+    default: ProceedToIntegration
+    split: xor
+    join: xor
+    description: "Merge agent outputs"
+
+  - id: ResolveConflicts
+    flows: [NotifyConflictAgents, ApplyResolution, ProceedToIntegration]
+    split: and
+    join: xor
+    description: "Resolve merge conflicts"
+
+  - id: NotifyConflictAgents
+    flows: [ProceedToIntegration]
+    split: xor
+    join: and
+    description: "Notify agents about conflicts"
+
+  - id: ApplyResolution
+    flows: [ProceedToIntegration]
+    split: xor
+    join: and
+    description: "Apply conflict resolution"
+
+  - id: ProceedToIntegration
+    flows: [BuildIntegratedResult]
+    split: xor
+    join: and
+    description: "Proceed with integration"
+
+  - id: BuildIntegratedResult
+    flows: [ReviewResult]
+    split: xor
+    join: xor
+    description: "Build integrated project result"
+
+  - id: ReviewResult
+    flows: [AcceptResult, RequestChanges, RejectResult]
+    condition: resultMeetsRequirements == true -> AcceptResult
+    condition: improvementsPossible == true -> RequestChanges
+    default: RejectResult
+    split: xor
+    join: xor
+    description: "Review integrated result"
+
+  - id: RequestChanges
+    flows: [IncrementIteration, CheckIterationLimit]
+    split: xor
+    join: xor
+    description: "Request changes to result"
+
+  - id: IncrementIteration
+    flows: [CheckIterationLimit]
+    split: xor
+    join: xor
+    description: "Increment iteration counter"
+
+  - id: CheckIterationLimit
+    flows: [RedistributeWork, ProjectFailed]
+    condition: iterationCount < maxIterations -> RedistributeWork
+    default: ProjectFailed
+    split: xor
+    join: xor
+    description: "Check iteration limit"
+
+  - id: RedistributeWork
+    flows: [CoordinateWork]
+    split: xor
+    join: xor
+    description: "Redistribute work based on review"
+
+  - id: AcceptResult
+    flows: [FinalizeProject]
+    split: xor
+    join: xor
+    description: "Accept the integrated result"
+
+  - id: RejectResult
+    flows: [ProjectFailed]
+    split: xor
+    join: xor
+    description: "Reject result and fail project"
+
+  - id: FinalizeProject
+    flows: [ArchiveProject, ReleaseAgents, NotifyCompletion, end]
+    split: and
+    join: xor
+    description: "Finalize project"
+
+  - id: ArchiveProject
+    flows: [end]
+    split: xor
+    join: and
+    description: "Archive project artifacts"
+
+  - id: ReleaseAgents
+    flows: [end]
+    split: xor
+    join: and
+    description: "Release reserved agents"
+
+  - id: NotifyCompletion
+    flows: [end]
+    split: xor
+    join: and
+    description: "Notify project completion"
+
+  - id: ProjectFailed
+    flows: [CleanupProject, NotifyFailure, end]
+    split: and
+    join: xor
+    description: "Handle project failure"
+
+  - id: CleanupProject
+    flows: [end]
+    split: xor
+    join: and
+    description: "Cleanup failed project resources"
+
+  - id: NotifyFailure
+    flows: [end]
+    split: xor
+    join: and
+    description: "Notify project failure"

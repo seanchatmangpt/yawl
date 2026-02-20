@@ -1,0 +1,96 @@
+id: gvs-1-startup-idea
+name: Startup Idea to Launch
+description: |
+  Full startup validation flow: Greg qualifies the idea, Leo builds the MVP,
+  James positions it in the market, and Nicolas creates the delivery skill.
+version: "1.0.0"
+
+agents:
+  - greg-isenberg
+  - leo-leojrr
+  - james
+  - nicolas-cole
+
+steps:
+  - id: qualify-idea
+    agentId: greg-isenberg
+    skillId: idea-qualifier
+    input:
+      framework: velocity
+      minScore: 0.7
+    required: true
+    timeout: 300000
+    output:
+      to: qualify-result
+
+  - id: build-mvp
+    agentId: leo-leojrr
+    skillId: mvp-builder
+    input:
+      source: qualify-result
+      deliveryTime: 48h
+      techStack: minimal
+    required: true
+    timeout: 172800000
+    output:
+      to: mvp-artifacts
+
+  - id: position-product
+    agentId: james
+    skillId: positioning-expert
+    input:
+      source: mvp-artifacts
+      marketAnalysis: true
+      competitorResearch: true
+    required: true
+    timeout: 600000
+    output:
+      to: positioning-strategy
+
+  - id: create-skill
+    agentId: nicolas-cole
+    skillId: skill-creator
+    input:
+      source: positioning-strategy
+      deliverable: packaged-skill
+      includeDocs: true
+    required: true
+    timeout: 600000
+    output:
+      to: final-skill
+
+dependencies:
+  - from: qualify-idea
+    to: build-mvp
+    condition: output.score >= 0.7
+  - from: build-mvp
+    to: position-product
+    condition: output.status == "complete"
+  - from: position-product
+    to: create-skill
+    condition: output.approved == true
+
+compensation:
+  onFailure: rollback-skill
+  steps:
+    - id: rollback-skill
+      agentId: nicolas-cole
+      skillId: skill-rollback
+      input:
+        skillId: final-skill.id
+        reason: workflow-failure
+    - id: notify-failure
+      agentId: greg-isenberg
+      skillId: failure-notification
+      input:
+        workflowId: gvs-1-startup-idea
+        failedStep: ${failedStepId}
+
+metadata:
+  createdAt: "2026-02-19T00:00:00Z"
+  author: gregverse-system
+  tags:
+    - startup
+    - mvp
+    - idea-validation
+  estimatedDuration: 173700000

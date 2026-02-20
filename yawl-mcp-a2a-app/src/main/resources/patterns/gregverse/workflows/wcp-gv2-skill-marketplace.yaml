@@ -1,0 +1,255 @@
+# WCP-GV2: Skill Marketplace Pattern
+# Agent discovers and invokes another agent's skill through marketplace
+
+name: SkillMarketplacePattern
+uri: skill-marketplace.xml
+first: InitializeMarketplace
+
+variables:
+  - name: marketplaceId
+    type: xs:string
+  - name: requesterAgentId
+    type: xs:string
+  - name: providerAgentId
+    type: xs:string
+  - name: skillName
+    type: xs:string
+  - name: skillCategory
+    type: xs:string
+  - name: inputParameters
+    type: xs:string
+  - name: outputResult
+    type: xs:string
+  - name: priceOffered
+    type: xs:decimal
+  - name: priceRequested
+    type: xs:decimal
+  - name: finalPrice
+    type: xs:decimal
+  - name: transactionId
+    type: xs:string
+  - name: rating
+    type: xs:integer
+    default: 0
+  - name: review
+    type: xs:string
+  - name: executionStatus
+    type: xs:string
+    default: "pending"
+  - name: paymentStatus
+    type: xs:string
+    default: "pending"
+
+tasks:
+  - id: InitializeMarketplace
+    flows: [RegisterRequest, DiscoverSkills]
+    split: and
+    join: xor
+    description: "Initialize marketplace session"
+
+  - id: RegisterRequest
+    flows: [DiscoverSkills]
+    split: xor
+    join: and
+    description: "Register skill request in marketplace"
+
+  - id: DiscoverSkills
+    flows: [FilterByCategory, FilterByPrice, FilterByRating]
+    split: and
+    join: xor
+    description: "Search for available skills"
+
+  - id: FilterByCategory
+    flows: [MatchSkills]
+    split: xor
+    join: and
+    description: "Filter skills by category"
+
+  - id: FilterByPrice
+    flows: [MatchSkills]
+    split: xor
+    join: and
+    description: "Filter skills by price range"
+
+  - id: FilterByRating
+    flows: [MatchSkills]
+    split: xor
+    join: and
+    description: "Filter skills by provider rating"
+
+  - id: MatchSkills
+    flows: [SelectProvider, NoMatchFound]
+    condition: matchingSkillsFound == true -> SelectProvider
+    default: NoMatchFound
+    split: xor
+    join: and
+    description: "Match skills to request"
+
+  - id: SelectProvider
+    flows: [RequestPricing]
+    split: xor
+    join: xor
+    description: "Select best matching provider"
+
+  - id: RequestPricing
+    flows: [EvaluatePrice]
+    split: xor
+    join: xor
+    description: "Request pricing from provider"
+
+  - id: EvaluatePrice
+    flows: [NegotiatePrice, AcceptPrice, RejectPrice]
+    condition: priceAcceptable == true -> AcceptPrice
+    condition: negotiationPossible == true -> NegotiatePrice
+    default: RejectPrice
+    split: xor
+    join: xor
+    description: "Evaluate offered price"
+
+  - id: NegotiatePrice
+    flows: [PriceNegotiationRound]
+    split: xor
+    join: xor
+    description: "Negotiate pricing"
+
+  - id: PriceNegotiationRound
+    flows: [AcceptPrice, RejectPrice]
+    condition: priceAgreed == true -> AcceptPrice
+    default: RejectPrice
+    split: xor
+    join: xor
+    description: "Complete price negotiation round"
+
+  - id: AcceptPrice
+    flows: [InitiateTransaction]
+    split: xor
+    join: xor
+    description: "Accept provider pricing"
+
+  - id: RejectPrice
+    flows: [SelectProvider, MarketPlaceFailed]
+    condition: alternativeProvidersAvailable == true -> SelectProvider
+    default: MarketPlaceFailed
+    split: xor
+    join: xor
+    description: "Reject pricing and try alternatives"
+
+  - id: InitiateTransaction
+    flows: [EscrowPayment]
+    split: xor
+    join: xor
+    description: "Initialize transaction record"
+
+  - id: EscrowPayment
+    flows: [ExecuteSkill]
+    split: xor
+    join: xor
+    description: "Place payment in escrow"
+
+  - id: ExecuteSkill
+    flows: [ValidateOutput, HandleExecutionError]
+    condition: executionSuccessful == true -> ValidateOutput
+    default: HandleExecutionError
+    split: xor
+    join: xor
+    description: "Provider executes the skill"
+
+  - id: ValidateOutput
+    flows: [ReleasePayment, HandleExecutionError]
+    condition: outputValid == true -> ReleasePayment
+    default: HandleExecutionError
+    split: xor
+    join: xor
+    description: "Validate skill execution output"
+
+  - id: HandleExecutionError
+    flows: [RefundPayment, LogError, MarketPlaceFailed]
+    split: and
+    join: xor
+    description: "Handle execution failure"
+
+  - id: RefundPayment
+    flows: [end]
+    split: xor
+    join: and
+    description: "Refund payment to requester"
+
+  - id: LogError
+    flows: [end]
+    split: xor
+    join: and
+    description: "Log execution error"
+
+  - id: ReleasePayment
+    flows: [RequestRating]
+    split: xor
+    join: xor
+    description: "Release escrow to provider"
+
+  - id: RequestRating
+    flows: [SubmitRating, SkipRating]
+    condition: ratingRequested == true -> SubmitRating
+    default: SkipRating
+    split: xor
+    join: xor
+    description: "Request rating from requester"
+
+  - id: SubmitRating
+    flows: [UpdateProviderScore, RecordReview]
+    split: and
+    join: xor
+    description: "Submit rating and review"
+
+  - id: UpdateProviderScore
+    flows: [CompleteTransaction]
+    split: xor
+    join: and
+    description: "Update provider reputation score"
+
+  - id: RecordReview
+    flows: [CompleteTransaction]
+    split: xor
+    join: and
+    description: "Record review in marketplace"
+
+  - id: SkipRating
+    flows: [CompleteTransaction]
+    split: xor
+    join: xor
+    description: "Skip rating step"
+
+  - id: CompleteTransaction
+    flows: [ArchiveTransaction, NotifyParties, end]
+    split: and
+    join: xor
+    description: "Complete marketplace transaction"
+
+  - id: ArchiveTransaction
+    flows: [end]
+    split: xor
+    join: and
+    description: "Archive transaction record"
+
+  - id: NotifyParties
+    flows: [end]
+    split: xor
+    join: and
+    description: "Notify requester and provider"
+
+  - id: NoMatchFound
+    flows: [MarketPlaceFailed]
+    split: xor
+    join: xor
+    description: "No matching skills found"
+
+  - id: MarketPlaceFailed
+    flows: [CleanupTransaction, end]
+    split: xor
+    join: xor
+    description: "Marketplace transaction failed"
+
+  - id: CleanupTransaction
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Cleanup failed transaction"

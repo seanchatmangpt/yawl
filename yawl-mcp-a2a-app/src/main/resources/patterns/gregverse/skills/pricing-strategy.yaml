@@ -1,0 +1,205 @@
+# Pricing Strategy Skill
+# Data-driven pricing optimization and strategy development
+
+id: pricing-strategy
+name: Pricing Strategy Optimization
+description: |
+  Develops and optimizes pricing strategies for products and services. Analyzes
+  market positioning, customer willingness-to-pay, competitive pricing, and
+  value metrics to recommend optimal pricing structures. Includes tier design,
+  packaging strategy, and monetization model evaluation.
+
+agent: pricing-strategist
+
+input_schema:
+  type: object
+  properties:
+    product_name:
+      type: string
+      description: Name of the product or service
+    product_description:
+      type: string
+      description: Detailed description of the product
+    product_type:
+      type: string
+      enum: [saas, marketplace, ecommerce, services, subscription_box, digital_product, enterprise_software]
+      description: Category of product
+    current_pricing:
+      type: object
+      properties:
+        model: { type: string, enum: [flat_rate, tiered, usage_based, freemium, per_seat, hybrid] }
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              price: { type: number }
+              features: { type: array }
+        currency: { type: string }
+    cost_structure:
+      type: object
+      properties:
+        cogs: { type: number, description: "Cost of goods sold as percentage" }
+        marginal_cost_per_user: { type: number }
+        fixed_costs_monthly: { type: number }
+    customer_data:
+      type: object
+      properties:
+        average_revenue_per_user: { type: number }
+        churn_rate_monthly: { type: number }
+        customer_segments: { type: array }
+        price_sensitivity: { type: string }
+    competitive_landscape:
+      type: array
+      items:
+        type: object
+        properties:
+          competitor: { type: string }
+          pricing_model: { type: string }
+          price_range: { type: string }
+          market_share: { type: number }
+    value_metrics:
+      type: array
+      items: { type: string }
+      description: "What customers pay for (e.g., users, API calls, storage)"
+    business_goals:
+      type: object
+      properties:
+        primary_goal: { type: string, enum: [revenue_maximization, market_share, profitability, growth] }
+        target_margin: { type: number }
+        growth_rate_target: { type: number }
+    market_context:
+      type: object
+      properties:
+        geographic_markets: { type: array }
+        industry_vertical: { type: string }
+        stage: { type: string, enum: [early_stage, growth, mature] }
+  required:
+    - product_name
+    - product_description
+    - product_type
+
+output_format:
+  type: object
+  properties:
+    pricing_model_recommendation:
+      type: object
+      properties:
+        recommended_model:
+          type: string
+          enum: [flat_rate, tiered, usage_based, freemium, per_seat, hybrid]
+        rationale:
+          type: string
+        alternative_models:
+          type: array
+          items: { type: string }
+    tier_structure:
+      type: array
+      items:
+        type: object
+        properties:
+          tier_name: { type: string }
+          price: { type: number }
+          billing_period: { type: string }
+          target_segment: { type: string }
+          features: { type: array }
+          limitations: { type: array }
+          conversion_probability: { type: number }
+    pricing_table_copy:
+      type: object
+      properties:
+        headlines: { type: array }
+        feature_comparison: { type: object }
+        call_to_action: { type: object }
+    value_metric_analysis:
+      type: object
+      properties:
+        primary_metric: { type: string }
+        secondary_metrics: { type: array }
+        scaling_recommendations: { type: string }
+    competitive_positioning:
+      type: object
+      properties:
+        position: { type: string, enum: [premium, market_rate, value, penetration] }
+        differentiation_points: { type: array }
+        price_anchor_strategy: { type: string }
+    monetization_opportunities:
+      type: array
+      items:
+        type: object
+        properties:
+          opportunity: { type: string }
+          estimated_impact: { type: string }
+          implementation_effort: { type: string }
+    price_optimization:
+      type: object
+      properties:
+        a_b_test_recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              element: { type: string }
+              variant_a: { type: string }
+              variant_b: { type: string }
+        psychological_pricing:
+          type: array
+          items: { type: string }
+        discount_strategy:
+          type: object
+          properties:
+            annual_discount: { type: number }
+            promotional_guidelines: { type: array }
+    financial_projections:
+      type: object
+      properties:
+        expected_arpu: { type: number }
+        expected_conversion_rate: { type: number }
+        revenue_impact: { type: string }
+        margin_analysis: { type: object }
+    implementation_roadmap:
+      type: array
+      items:
+        type: object
+        properties:
+          phase: { type: string }
+          actions: { type: array }
+          timeline: { type: string }
+
+examples:
+  - input:
+      product_name: "CloudAnalytics"
+      product_description: "Business intelligence and analytics platform"
+      product_type: "saas"
+      current_pricing:
+        model: "tiered"
+        tiers:
+          - name: "Starter"
+            price: 49
+            features: ["5 users", "Basic dashboards"]
+          - name: "Pro"
+            price: 149
+            features: ["25 users", "Advanced analytics"]
+      customer_data:
+        average_revenue_per_user: 127
+        churn_rate_monthly: 4.5
+      business_goals:
+        primary_goal: "revenue_maximization"
+        target_margin: 75
+    description: SaaS pricing optimization
+
+  - input:
+      product_name: "DesignKit Pro"
+      product_description: "UI component library and design system"
+      product_type: "digital_product"
+      value_metrics:
+        - "Number of developers"
+        - "Number of projects"
+      competitive_landscape:
+        - competitor: "ComponentLib A"
+          pricing_model: "per_seat"
+          price_range: "$15-30/dev/month"
+      market_context:
+        stage: "early_stage"
+    description: New product pricing strategy

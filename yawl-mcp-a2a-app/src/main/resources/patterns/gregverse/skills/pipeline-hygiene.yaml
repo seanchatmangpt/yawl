@@ -1,0 +1,228 @@
+# Pipeline Hygiene Skill
+# Sales pipeline analysis, cleanup, and optimization
+
+id: pipeline-hygiene
+name: Sales Pipeline Hygiene
+description: |
+  Analyzes and optimizes sales pipeline health by identifying stale deals,
+  inconsistent data, and process gaps. Provides actionable recommendations
+  for improving pipeline accuracy, forecast reliability, and conversion rates.
+  Includes deal scoring, stage validation, and CRM data quality assessment.
+
+agent: sales-operations
+
+input_schema:
+  type: object
+  properties:
+    pipeline_data:
+      type: object
+      properties:
+        total_deals: { type: number }
+        total_value: { type: number }
+        stages:
+          type: array
+          items:
+            type: object
+            properties:
+              stage_name: { type: string }
+              deal_count: { type: number }
+              deal_value: { type: number }
+              average_days_in_stage: { type: number }
+        deals:
+          type: array
+          items:
+            type: object
+            properties:
+              deal_id: { type: string }
+              name: { type: string }
+              value: { type: number }
+              stage: { type: string }
+              days_in_stage: { type: number }
+              close_date: { type: string }
+              owner: { type: string }
+              last_activity: { type: string }
+              next_step: { type: string }
+              contact_count: { type: number }
+    sales_cycle_benchmark:
+      type: number
+      description: Expected average sales cycle in days
+    stage_criteria:
+      type: object
+      description: Exit criteria for each stage
+      additionalProperties:
+        type: array
+        items: { type: string }
+    conversion_history:
+      type: object
+      properties:
+        stage_to_stage_rates: { type: object }
+        win_rate: { type: number }
+        average_deal_size: { type: number }
+    team_metrics:
+      type: array
+      items:
+        type: object
+        properties:
+          rep_name: { type: string }
+          pipeline_value: { type: number }
+          quota: { type: number }
+          deals_in_pipeline: { type: number }
+    hygiene_rules:
+      type: object
+      properties:
+        stale_days_threshold: { type: number }
+        required_fields: { type: array }
+        activity_frequency_days: { type: number }
+  required:
+    - pipeline_data
+
+output_format:
+  type: object
+  properties:
+    pipeline_health_score:
+      type: object
+      properties:
+        overall:
+          type: integer
+          minimum: 0
+          maximum: 100
+        breakdown:
+          type: object
+          properties:
+            data_quality: { type: integer }
+            velocity: { type: integer }
+            balance: { type: integer }
+            accuracy: { type: integer }
+    stale_deals:
+      type: array
+      items:
+        type: object
+        properties:
+          deal_id: { type: string }
+          deal_name: { type: string }
+          days_stale: { type: number }
+          value: { type: number }
+          owner: { type: string }
+          recommendation: { type: string }
+          action_required: { type: string }
+    data_quality_issues:
+      type: array
+      items:
+        type: object
+        properties:
+          issue_type: { type: string }
+          affected_deals: { type: number }
+          affected_value: { type: number }
+          fields_missing: { type: array }
+          fix_recommendation: { type: string }
+    stage_analysis:
+      type: array
+      items:
+        type: object
+        properties:
+          stage_name: { type: string }
+          deal_count: { type: number }
+          deal_value: { type: number }
+          avg_days: { type: number }
+          bottleneck_score: { type: number }
+          deals_exceeding_benchmark: { type: number }
+          recommendations: { type: array }
+    forecast_accuracy:
+      type: object
+      properties:
+        weighted_pipeline: { type: number }
+        expected_close_value: { type: number }
+        confidence_range: { type: object }
+        risk_deals: { type: array }
+    velocity_optimization:
+      type: object
+      properties:
+        current_avg_cycle: { type: number }
+        optimized_cycle_target: { type: number }
+        bottleneck_stages: { type: array }
+        acceleration_recommendations: { type: array }
+    team_performance:
+      type: array
+      items:
+        type: object
+        properties:
+          rep_name: { type: string }
+          pipeline_health: { type: integer }
+          stale_deals_count: { type: number }
+          data_completeness: { type: number }
+          coaching_recommendations: { type: array }
+    cleanup_checklist:
+      type: array
+      items:
+        type: object
+        properties:
+          priority: { type: string }
+          action: { type: string }
+          affected_items: { type: number }
+          estimated_time: { type: string }
+    process_recommendations:
+      type: array
+      items:
+        type: object
+        properties:
+          area: { type: string }
+          current_state: { type: string }
+          recommendation: { type: string }
+          expected_impact: { type: string }
+
+examples:
+  - input:
+      pipeline_data:
+        total_deals: 127
+        total_value: 2450000
+        stages:
+          - stage_name: "Discovery"
+            deal_count: 45
+            deal_value: 850000
+            average_days_in_stage: 12
+          - stage_name: "Qualification"
+            deal_count: 32
+            deal_value: 620000
+            average_days_in_stage: 18
+          - stage_name: "Proposal"
+            deal_count: 28
+            deal_value: 540000
+            average_days_in_stage: 25
+          - stage_name: "Negotiation"
+            deal_count: 22
+            deal_value: 440000
+            average_days_in_stage: 15
+        deals:
+          - deal_id: "D-001"
+            name: "Acme Corp"
+            value: 45000
+            stage: "Proposal"
+            days_in_stage: 45
+            last_activity: "2024-01-15"
+      sales_cycle_benchmark: 45
+      hygiene_rules:
+        stale_days_threshold: 14
+        activity_frequency_days: 7
+    description: Full pipeline hygiene audit
+
+  - input:
+      pipeline_data:
+        total_deals: 50
+        total_value: 750000
+        stages:
+          - stage_name: "Lead"
+            deal_count: 20
+            deal_value: 300000
+            average_days_in_stage: 5
+          - stage_name: "Opportunity"
+            deal_count: 15
+            deal_value: 250000
+            average_days_in_stage: 12
+          - stage_name: "Close"
+            deal_count: 15
+            deal_value: 200000
+            average_days_in_stage: 8
+      conversion_history:
+        win_rate: 0.28
+        average_deal_size: 15000
+    description: Pipeline analysis for small team
