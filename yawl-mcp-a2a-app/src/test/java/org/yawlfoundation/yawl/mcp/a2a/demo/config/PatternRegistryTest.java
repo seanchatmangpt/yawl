@@ -39,13 +39,25 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>Tests verify:
  * <ul>
- *   <li>Catalog completeness for WCP 1-21 (the original van der Aalst patterns)</li>
- *   <li>Extended pattern coverage (WCP 44-68, ENT, AGT series)</li>
+ *   <li>Catalog completeness for WCP 1-43 (the original van der Aalst patterns)</li>
+ *   <li>Extended pattern coverage (WCP 44-68 plus supplementary variants)</li>
+ *   <li>Enterprise patterns (ENT-1 through ENT-11)</li>
+ *   <li>Agent patterns (AGT-1 through AGT-5)</li>
  *   <li>Category coverage — every populated category returns patterns</li>
  *   <li>Pattern access semantics — ID lookup, case-insensitivity, null safety</li>
  *   <li>Similarity search — Levenshtein-based suggestions</li>
  *   <li>YAML resource integrity — every registered path resolves on the classpath</li>
  *   <li>Registry structural invariants — uniqueness, completeness, count consistency</li>
+ * </ul>
+ *
+ * <p>The registry registers 89 patterns covering:
+ * <ul>
+ *   <li>Van der Aalst WCPs 1-43 (control flow, MI, state-based, cancellation, iteration)</li>
+ *   <li>Extended WCPs 44-68 (saga, distributed, event-driven, AI/ML)</li>
+ *   <li>Supplementary WCP variants (WCP-19-CF, WCP-20-CF, WCP-36, WCP-37..40,
+ *       WCP-41..43, WCP-60-ML, WCP-62-PP, WCP-63-FE)</li>
+ *   <li>Enterprise patterns ENT-1 through ENT-11</li>
+ *   <li>Agent patterns AGT-1 through AGT-5</li>
  * </ul>
  *
  * @author YAWL Foundation
@@ -54,11 +66,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("PatternRegistry Tests")
 class PatternRegistryTest {
 
-    // Total number of patterns registered in PatternRegistry.initializePatterns()
-    // WCP-1..5 (5) + WCP-6..11 (6) + WCP-12..17 (6) + WCP-18..21 (4)
-    // + WCP-44 (1) + WCP-45..50 (6) + WCP-51..59 (9) + WCP-60..68 (9)
-    // + ENT-1..8 (8) + AGT-1..3 (3) = 57
-    private static final int EXPECTED_TOTAL_PATTERNS = 57;
+    // Ground-truth total: verified against the running PatternRegistry.
+    // Breakdown: 5 (BASIC) + 4 (ADVANCED_BRANCHING core) + 5 (iter) + 1 (structural)
+    //   + 8 (MI) + 7 (state) + 7 (cancel) + 4 (extended) + 6 (distributed)
+    //   + 13 (event-driven) + 12 (AI/ML) + 11 (enterprise) + 5 (agent) + 1 (WCP-36)
+    private static final int EXPECTED_TOTAL_PATTERNS = 89;
 
     private PatternRegistry registry;
 
@@ -186,7 +198,7 @@ class PatternRegistryTest {
         @DisplayName("Multi-instance WCP-12 through WCP-16 all exist")
         void testMultiInstanceWcp12To16() {
             assertAll(
-                "Multi-instance patterns must all be registered",
+                "Core multi-instance patterns must all be registered",
                 () -> assertTrue(registry.hasPattern("WCP-12"),
                     "WCP-12 (MI Without Synchronization) must be registered"),
                 () -> assertTrue(registry.hasPattern("WCP-13"),
@@ -246,6 +258,69 @@ class PatternRegistryTest {
         }
 
         @Test
+        @DisplayName("Extended WCP-41 through WCP-43 cover critical section and blocked split patterns")
+        void testExtendedWcp41To43() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-41"),
+                    "WCP-41 (Blocked And-Split) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-42"),
+                    "WCP-42 (Critical Section) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-43"),
+                    "WCP-43 (Critical Section with Cancel) must be registered")
+            );
+        }
+
+        @Test
+        @DisplayName("WCP-24, WCP-26, WCP-27 cover additional MI patterns")
+        void testAdditionalMultiInstancePatterns() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-24"),
+                    "WCP-24 (Complete Multiple Instances) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-26"),
+                    "WCP-26 (Sequential MI Without A Priori Knowledge) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-27"),
+                    "WCP-27 (Concurrent MI Without A Priori Knowledge) must be registered")
+            );
+        }
+
+        @Test
+        @DisplayName("Cancellation variants WCP-22, WCP-23, WCP-25 exist")
+        void testAdditionalCancellationPatterns() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-22"),
+                    "WCP-22 (Cancel Region) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-23"),
+                    "WCP-23 (Cancel Multiple Instances) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-25"),
+                    "WCP-25 (Cancel and Complete MI) must be registered")
+            );
+        }
+
+        @Test
+        @DisplayName("Control-flow cancellation variants WCP-19-CF and WCP-20-CF exist")
+        void testControlFlowCancellationVariants() {
+            assertTrue(registry.hasPattern("WCP-19-CF"),
+                "WCP-19-CF (Cancel Task Control Flow variant) must be registered");
+            assertTrue(registry.hasPattern("WCP-20-CF"),
+                "WCP-20-CF (Cancel Case Control Flow variant) must be registered");
+        }
+
+        @Test
+        @DisplayName("State-based patterns WCP-32 through WCP-35 exist")
+        void testStateBasedWcp32To35() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-32"),
+                    "WCP-32 (Synchronizing Merge with Cancel) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-33"),
+                    "WCP-33 (Generalized And-Join) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-34"),
+                    "WCP-34 (Static Partial Join) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-35"),
+                    "WCP-35 (Dynamic Partial Join) must be registered")
+            );
+        }
+
+        @Test
         @DisplayName("Total registered pattern count meets minimum van der Aalst baseline")
         void testMinimumPatternCount() {
             assertTrue(registry.getPatternCount() >= 21,
@@ -254,7 +329,7 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("All 57 expected patterns are registered")
+        @DisplayName("All 89 expected patterns are registered")
         void testExactPatternCount() {
             assertEquals(EXPECTED_TOTAL_PATTERNS, registry.getPatternCount(),
                 "Registry must contain exactly " + EXPECTED_TOTAL_PATTERNS + " patterns");
@@ -294,20 +369,73 @@ class PatternRegistryTest {
 
         @ParameterizedTest(name = "Pattern {0} exists")
         @ValueSource(strings = {
-            "ENT-1", "ENT-2", "ENT-3", "ENT-4", "ENT-5", "ENT-6", "ENT-7", "ENT-8"
+            "ENT-1", "ENT-2", "ENT-3", "ENT-4", "ENT-5",
+            "ENT-6", "ENT-7", "ENT-8", "ENT-9", "ENT-10", "ENT-11"
         })
-        @DisplayName("Enterprise ENT-1 through ENT-8 all exist")
+        @DisplayName("Enterprise ENT-1 through ENT-11 all exist")
         void testEnterprisePatterns(String patternId) {
             assertTrue(registry.hasPattern(patternId),
                 patternId + " must be registered in the enterprise patterns section");
         }
 
         @ParameterizedTest(name = "Pattern {0} exists")
-        @ValueSource(strings = {"AGT-1", "AGT-2", "AGT-3"})
-        @DisplayName("Agent AGT-1 through AGT-3 all exist")
+        @ValueSource(strings = {"AGT-1", "AGT-2", "AGT-3", "AGT-4", "AGT-5"})
+        @DisplayName("Agent AGT-1 through AGT-5 all exist")
         void testAgentPatterns(String patternId) {
             assertTrue(registry.hasPattern(patternId),
                 patternId + " must be registered in the agent patterns section");
+        }
+
+        @Test
+        @DisplayName("AI/ML supplementary variants WCP-60-ML, WCP-62-PP, WCP-63-FE exist")
+        void testAiMlSupplementaryVariants() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-60-ML"),
+                    "WCP-60-ML (ML Pipeline) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-62-PP"),
+                    "WCP-62-PP (Data Preprocessing) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-63-FE"),
+                    "WCP-63-FE (Feature Engineering) must be registered")
+            );
+        }
+
+        @Test
+        @DisplayName("WCP-36 Discriminator with Complete MI exists as advanced branching variant")
+        void testWcp36DiscriminatorVariant() {
+            assertTrue(registry.hasPattern("WCP-36"),
+                "WCP-36 (Discriminator with Complete MI) must be registered");
+            PatternInfo info = registry.getPattern("WCP-36").orElseThrow();
+            assertEquals(Difficulty.ADVANCED, info.difficulty());
+        }
+
+        @Test
+        @DisplayName("Trigger patterns WCP-37 through WCP-40 exist as event-driven patterns")
+        void testTriggerPatterns() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-37"),
+                    "WCP-37 (Local Trigger) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-38"),
+                    "WCP-38 (Global Trigger) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-39"),
+                    "WCP-39 (Reset Trigger) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-40"),
+                    "WCP-40 (Reset Trigger with Cancel Region) must be registered")
+            );
+        }
+
+        @Test
+        @DisplayName("Iteration patterns WCP-28 through WCP-31 exist")
+        void testIterationVariants() {
+            assertAll(
+                () -> assertTrue(registry.hasPattern("WCP-28"),
+                    "WCP-28 (Structured Loop CF) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-29"),
+                    "WCP-29 (Loop with Cancel Task) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-30"),
+                    "WCP-30 (Loop with Cancel Region) must be registered"),
+                () -> assertTrue(registry.hasPattern("WCP-31"),
+                    "WCP-31 (Loop with Complete MI) must be registered")
+            );
         }
     }
 
@@ -346,20 +474,33 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("ADVANCED_BRANCHING category contains exactly 4 patterns (WCP-6 through WCP-9)")
+        @DisplayName("ADVANCED_BRANCHING category contains exactly 5 patterns (WCP-6..9 and WCP-36)")
         void testAdvancedBranchingCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.ADVANCED_BRANCHING);
-            assertEquals(4, patterns.size(),
-                "ADVANCED_BRANCHING must have exactly 4 patterns (WCP-6..9), found: " + patterns.size());
+            assertEquals(5, patterns.size(),
+                "ADVANCED_BRANCHING must have exactly 5 patterns (WCP-6..9, WCP-36), found: "
+                    + patterns.size());
         }
 
         @Test
-        @DisplayName("ITERATION category contains exactly 1 pattern (WCP-10)")
+        @DisplayName("ITERATION category contains exactly 5 patterns (WCP-10, WCP-28..31)")
         void testIterationCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.ITERATION);
-            assertEquals(1, patterns.size(),
-                "ITERATION must have exactly 1 pattern (WCP-10), found: " + patterns.size());
-            assertEquals("WCP-10", patterns.get(0).id());
+            assertEquals(5, patterns.size(),
+                "ITERATION must have exactly 5 patterns (WCP-10, WCP-28..31), found: "
+                    + patterns.size());
+        }
+
+        @Test
+        @DisplayName("ITERATION category contains WCP-10 as the core structured loop")
+        void testIterationCategoryContainsWcp10() {
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.ITERATION);
+            Set<String> ids = new HashSet<>();
+            for (PatternInfo p : patterns) {
+                ids.add(p.id());
+            }
+            assertTrue(ids.contains("WCP-10"),
+                "ITERATION must contain WCP-10 (Structured Loop)");
         }
 
         @Test
@@ -372,25 +513,43 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("MULTIINSTANCE category contains exactly 5 patterns (WCP-12 through WCP-16)")
+        @DisplayName("MULTIINSTANCE category contains exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27)")
         void testMultiInstanceCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTIINSTANCE);
-            assertEquals(5, patterns.size(),
-                "MULTIINSTANCE must have exactly 5 patterns (WCP-12..16), found: " + patterns.size());
-        }
-
-        @Test
-        @DisplayName("STATE_BASED category contains exactly 3 patterns (WCP-17, WCP-18, WCP-19)")
-        void testStateBasedCategoryCount() {
-            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.STATE_BASED);
-            assertEquals(3, patterns.size(),
-                "STATE_BASED must have exactly 3 patterns (WCP-17, WCP-18, WCP-19), found: "
+            assertEquals(8, patterns.size(),
+                "MULTIINSTANCE must have exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27), found: "
                     + patterns.size());
         }
 
         @Test
-        @DisplayName("STATE_BASED category contains WCP-17, WCP-18, WCP-19")
-        void testStateBasedCategoryContents() {
+        @DisplayName("MULTIINSTANCE category contains the 5 core MI patterns")
+        void testMultiInstanceContainsCorePatternsWcp12To16() {
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTIINSTANCE);
+            Set<String> ids = new HashSet<>();
+            for (PatternInfo p : patterns) {
+                ids.add(p.id());
+            }
+            assertAll(
+                () -> assertTrue(ids.contains("WCP-12"), "MULTIINSTANCE must contain WCP-12"),
+                () -> assertTrue(ids.contains("WCP-13"), "MULTIINSTANCE must contain WCP-13"),
+                () -> assertTrue(ids.contains("WCP-14"), "MULTIINSTANCE must contain WCP-14"),
+                () -> assertTrue(ids.contains("WCP-15"), "MULTIINSTANCE must contain WCP-15"),
+                () -> assertTrue(ids.contains("WCP-16"), "MULTIINSTANCE must contain WCP-16")
+            );
+        }
+
+        @Test
+        @DisplayName("STATE_BASED category contains exactly 7 patterns")
+        void testStateBasedCategoryCount() {
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.STATE_BASED);
+            assertEquals(7, patterns.size(),
+                "STATE_BASED must have exactly 7 patterns (WCP-17..19, WCP-32..35), found: "
+                    + patterns.size());
+        }
+
+        @Test
+        @DisplayName("STATE_BASED category contains core van der Aalst state patterns")
+        void testStateBasedCategoryContainsCorePatterns() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.STATE_BASED);
             Set<String> ids = new HashSet<>();
             for (PatternInfo p : patterns) {
@@ -399,17 +558,26 @@ class PatternRegistryTest {
             assertAll(
                 () -> assertTrue(ids.contains("WCP-17"), "STATE_BASED must contain WCP-17"),
                 () -> assertTrue(ids.contains("WCP-18"), "STATE_BASED must contain WCP-18"),
-                () -> assertTrue(ids.contains("WCP-19"), "STATE_BASED must contain WCP-19")
+                () -> assertTrue(ids.contains("WCP-19"), "STATE_BASED must contain WCP-19"),
+                () -> assertTrue(ids.contains("WCP-32"), "STATE_BASED must contain WCP-32"),
+                () -> assertTrue(ids.contains("WCP-33"), "STATE_BASED must contain WCP-33"),
+                () -> assertTrue(ids.contains("WCP-34"), "STATE_BASED must contain WCP-34"),
+                () -> assertTrue(ids.contains("WCP-35"), "STATE_BASED must contain WCP-35")
             );
         }
 
         @Test
-        @DisplayName("CANCELLATION category contains exactly 2 patterns (WCP-20, WCP-21)")
+        @DisplayName("CANCELLATION category contains exactly 7 patterns")
         void testCancellationCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.CANCELLATION);
-            assertEquals(2, patterns.size(),
-                "CANCELLATION must have exactly 2 patterns (WCP-20, WCP-21), found: "
-                    + patterns.size());
+            assertEquals(7, patterns.size(),
+                "CANCELLATION must have exactly 7 patterns, found: " + patterns.size());
+        }
+
+        @Test
+        @DisplayName("CANCELLATION category contains WCP-20 and WCP-21 (van der Aalst originals)")
+        void testCancellationContainsOriginalPatterns() {
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.CANCELLATION);
             Set<String> ids = new HashSet<>();
             for (PatternInfo p : patterns) {
                 ids.add(p.id());
@@ -419,13 +587,23 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("EXTENDED category contains at least 1 pattern (WCP-44)")
-        void testExtendedCategory() {
+        @DisplayName("EXTENDED category contains exactly 4 patterns (WCP-41..44)")
+        void testExtendedCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.EXTENDED);
-            assertFalse(patterns.isEmpty(), "EXTENDED category must not be empty");
-            assertEquals(1, patterns.size(),
-                "EXTENDED must have exactly 1 pattern (WCP-44), found: " + patterns.size());
-            assertEquals("WCP-44", patterns.get(0).id());
+            assertEquals(4, patterns.size(),
+                "EXTENDED must have exactly 4 patterns (WCP-41..44), found: " + patterns.size());
+        }
+
+        @Test
+        @DisplayName("EXTENDED category contains WCP-44 Saga pattern")
+        void testExtendedContainsSaga() {
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.EXTENDED);
+            Set<String> ids = new HashSet<>();
+            for (PatternInfo p : patterns) {
+                ids.add(p.id());
+            }
+            assertTrue(ids.contains("WCP-44"),
+                "EXTENDED must contain WCP-44 (Saga Pattern)");
         }
 
         @Test
@@ -437,41 +615,41 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("EVENT_DRIVEN category contains exactly 9 patterns (WCP-51 through WCP-59)")
+        @DisplayName("EVENT_DRIVEN category contains exactly 13 patterns (WCP-37..40 plus WCP-51..59)")
         void testEventDrivenCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.EVENT_DRIVEN);
-            assertEquals(9, patterns.size(),
-                "EVENT_DRIVEN must have exactly 9 patterns (WCP-51..59), found: " + patterns.size());
+            assertEquals(13, patterns.size(),
+                "EVENT_DRIVEN must have exactly 13 patterns, found: " + patterns.size());
         }
 
         @Test
-        @DisplayName("AI_ML category contains exactly 9 patterns (WCP-60 through WCP-68)")
+        @DisplayName("AI_ML category contains exactly 12 patterns (WCP-60..68 plus 3 variants)")
         void testAiMlCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.AI_ML);
-            assertEquals(9, patterns.size(),
-                "AI_ML must have exactly 9 patterns (WCP-60..68), found: " + patterns.size());
+            assertEquals(12, patterns.size(),
+                "AI_ML must have exactly 12 patterns, found: " + patterns.size());
         }
 
         @Test
-        @DisplayName("ENTERPRISE category contains exactly 8 patterns (ENT-1 through ENT-8)")
+        @DisplayName("ENTERPRISE category contains exactly 11 patterns (ENT-1..11)")
         void testEnterpriseCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.ENTERPRISE);
-            assertEquals(8, patterns.size(),
-                "ENTERPRISE must have exactly 8 patterns (ENT-1..8), found: " + patterns.size());
+            assertEquals(11, patterns.size(),
+                "ENTERPRISE must have exactly 11 patterns (ENT-1..11), found: " + patterns.size());
         }
 
         @Test
-        @DisplayName("AGENT category contains exactly 3 patterns (AGT-1 through AGT-3)")
+        @DisplayName("AGENT category contains exactly 5 patterns (AGT-1..5)")
         void testAgentCategoryCount() {
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.AGENT);
-            assertEquals(3, patterns.size(),
-                "AGENT must have exactly 3 patterns (AGT-1..3), found: " + patterns.size());
+            assertEquals(5, patterns.size(),
+                "AGENT must have exactly 5 patterns (AGT-1..5), found: " + patterns.size());
         }
 
         @Test
         @DisplayName("getPatternsByCategory returns empty list for category with no registered patterns")
         void testEmptyCategoryReturnsEmptyList() {
-            // BRANCHING, MULTI_INSTANCE, TERMINATION, UNCLASSIFIED are not used in initializePatterns()
+            // BRANCHING (legacy enum) is not used in initializePatterns() — ADVANCED_BRANCHING is used instead
             List<PatternInfo> branching = registry.getPatternsByCategory(PatternCategory.BRANCHING);
             assertNotNull(branching, "getPatternsByCategory must never return null");
             assertTrue(branching.isEmpty(),
@@ -481,6 +659,7 @@ class PatternRegistryTest {
         @Test
         @DisplayName("getPatternsByCategory for MULTI_INSTANCE returns empty list")
         void testMultiInstanceLegacyEnumReturnsEmpty() {
+            // MULTI_INSTANCE (legacy) is not used in initializePatterns() — MULTIINSTANCE is used instead
             List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTI_INSTANCE);
             assertNotNull(patterns, "getPatternsByCategory must never return null");
             assertTrue(patterns.isEmpty(),
@@ -649,15 +828,16 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("getAllPatterns returns a mutable list independent of the registry")
+        @DisplayName("getAllPatterns returns a defensive copy independent of the registry")
         void testGetAllPatternsMutability() {
             List<PatternInfo> allPatterns = registry.getAllPatterns();
-            int sizeBeforeModification = allPatterns.size();
+            assertFalse(allPatterns.isEmpty(), "getAllPatterns must not return empty list");
+            assertEquals(EXPECTED_TOTAL_PATTERNS, allPatterns.size(),
+                "getAllPatterns must return all " + EXPECTED_TOTAL_PATTERNS + " registered patterns");
+            // Clear the returned list and verify the registry is unaffected
             allPatterns.clear();
             assertEquals(EXPECTED_TOTAL_PATTERNS, registry.getPatternCount(),
                 "Modifying the returned list must not affect registry state");
-            assertEquals(sizeBeforeModification, EXPECTED_TOTAL_PATTERNS,
-                "getAllPatterns must return all registered patterns");
         }
     }
 
@@ -714,7 +894,7 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("findSimilarPatterns(ENT-1) returns 3 results with ENT-1 first")
+        @DisplayName("findSimilarPatterns(ENT-1) returns 3 results with ENT-1 included")
         void testFindSimilarPatternsEnterprisePattern() {
             List<String> similar = registry.findSimilarPatterns("ENT-1");
             assertEquals(3, similar.size(),
@@ -751,9 +931,9 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("findSimilarPatterns result list is never larger than 3")
+        @DisplayName("findSimilarPatterns result list is never larger than 3 for any probe")
         void testFindSimilarPatternsMaxResultsInvariant() {
-            String[] probes = {"WCP-1", "ENT-5", "AGT-2", "FOOBAR", "WCP-99"};
+            String[] probes = {"WCP-1", "ENT-5", "AGT-2", "FOOBAR", "WCP-99", "WCP-19-CF"};
             for (String probe : probes) {
                 List<String> results = registry.findSimilarPatterns(probe);
                 assertTrue(results.size() <= 3,
@@ -979,24 +1159,35 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("All WCP pattern IDs match the WCP-N format")
-        void testWcpPatternIdFormat() {
+        @DisplayName("All pattern IDs are non-blank")
+        void testAllPatternIdsAreNonBlank() {
+            Set<String> ids = registry.getAllPatternIds();
+            for (String id : ids) {
+                assertFalse(id.isBlank(),
+                    "Every registered pattern ID must be non-blank");
+            }
+        }
+
+        @Test
+        @DisplayName("All WCP pattern IDs contain a hyphen and start with 'WCP'")
+        void testWcpPatternIdStructure() {
             Set<String> ids = registry.getAllPatternIds();
             for (String id : ids) {
                 if (id.startsWith("WCP-")) {
-                    String numericPart = id.substring(4);
-                    assertFalse(numericPart.isBlank(),
-                        "WCP pattern ID " + id + " must have a numeric part after 'WCP-'");
-                    assertTrue(numericPart.matches("\\d+"),
-                        "WCP pattern ID " + id + " numeric part must be digits only, was: "
-                            + numericPart);
+                    // After "WCP-", expect digits optionally followed by a hyphen suffix (e.g. "60-ML")
+                    String rest = id.substring(4);
+                    assertFalse(rest.isBlank(),
+                        "WCP pattern ID " + id + " must have content after 'WCP-'");
+                    // Must start with a digit
+                    assertTrue(Character.isDigit(rest.charAt(0)),
+                        "WCP pattern ID " + id + " must have digits after 'WCP-', got: " + rest);
                 }
             }
         }
 
         @Test
-        @DisplayName("All ENT pattern IDs match the ENT-N format")
-        void testEntPatternIdFormat() {
+        @DisplayName("All ENT pattern IDs follow ENT-N or ENT-NN format")
+        void testEntPatternIdStructure() {
             Set<String> ids = registry.getAllPatternIds();
             for (String id : ids) {
                 if (id.startsWith("ENT-")) {
@@ -1008,8 +1199,8 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("All AGT pattern IDs match the AGT-N format")
-        void testAgtPatternIdFormat() {
+        @DisplayName("All AGT pattern IDs follow AGT-N format")
+        void testAgtPatternIdStructure() {
             Set<String> ids = registry.getAllPatternIds();
             for (String id : ids) {
                 if (id.startsWith("AGT-")) {
@@ -1070,16 +1261,46 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("getPatternsByCategory returns a different list object on each call")
-        void testGetPatternsByCategoryReturnsFreshList() {
+        @DisplayName("getPatternsByCategory returns consistent list size on repeated calls")
+        void testGetPatternsByCategoryConsistency() {
             List<PatternInfo> first = registry.getPatternsByCategory(PatternCategory.BASIC);
             List<PatternInfo> second = registry.getPatternsByCategory(PatternCategory.BASIC);
-            // Contents must be equal but they may be the same object (from getOrDefault)
-            // The key invariant is that the list is not null and has the same contents
             assertNotNull(first);
             assertNotNull(second);
             assertEquals(first.size(), second.size(),
                 "Repeated calls to getPatternsByCategory must return same-sized list");
+        }
+
+        @Test
+        @DisplayName("EXPERT difficulty patterns are present in the registry")
+        void testExpertDifficultyPatternsExist() {
+            List<PatternInfo> allPatterns = registry.getAllPatterns();
+            long expertCount = allPatterns.stream()
+                .filter(p -> p.difficulty() == Difficulty.EXPERT)
+                .count();
+            assertTrue(expertCount > 0,
+                "Registry must contain at least one EXPERT difficulty pattern");
+        }
+
+        @Test
+        @DisplayName("All four difficulty levels are represented in the registry")
+        void testAllDifficultyLevelsRepresented() {
+            List<PatternInfo> allPatterns = registry.getAllPatterns();
+            Set<Difficulty> difficulties = new HashSet<>();
+            for (PatternInfo info : allPatterns) {
+                difficulties.add(info.difficulty());
+            }
+            assertAll(
+                "All four difficulty levels must be represented",
+                () -> assertTrue(difficulties.contains(Difficulty.BASIC),
+                    "Registry must contain at least one BASIC pattern"),
+                () -> assertTrue(difficulties.contains(Difficulty.INTERMEDIATE),
+                    "Registry must contain at least one INTERMEDIATE pattern"),
+                () -> assertTrue(difficulties.contains(Difficulty.ADVANCED),
+                    "Registry must contain at least one ADVANCED pattern"),
+                () -> assertTrue(difficulties.contains(Difficulty.EXPERT),
+                    "Registry must contain at least one EXPERT pattern")
+            );
         }
     }
 }
