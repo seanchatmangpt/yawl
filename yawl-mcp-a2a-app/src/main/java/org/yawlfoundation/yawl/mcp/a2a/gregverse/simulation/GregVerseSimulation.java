@@ -19,6 +19,7 @@ package org.yawlfoundation.yawl.mcp.a2a.gregverse.simulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.GregVerseAgentCache;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.BlakeAndersonAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DanRomeroAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DickieBushAgent;
@@ -111,6 +112,7 @@ public class GregVerseSimulation {
     private final Collection<AgentInteraction> interactions;
     private final Collection<SkillTransaction> transactions;
     private final Map<String, AgentResult> agentResults;
+    private final GregVerseAgentCache agentCache;  // Cache to avoid agent reconstruction
 
     /**
      * Functional interface for creating agent instances.
@@ -132,6 +134,7 @@ public class GregVerseSimulation {
         this.interactions = new ConcurrentLinkedQueue<>();
         this.transactions = new ConcurrentLinkedQueue<>();
         this.agentResults = new ConcurrentHashMap<>();
+        this.agentCache = new GregVerseAgentCache();
     }
 
     /**
@@ -232,10 +235,13 @@ public class GregVerseSimulation {
     }
 
     /**
-     * Resolves a single agent by ID.
+     * Resolves a single agent by ID, using cache to avoid reconstruction.
+     *
+     * <p>Agents are cached per simulation instance to avoid expensive re-instantiation.
+     * This amortizes initialization costs across multiple simulation runs.</p>
      *
      * @param agentId the agent identifier
-     * @return the agent instance
+     * @return the agent instance (cached or newly created)
      * @throws AgentInitializationException if agent not found or instantiation fails
      */
     private GregVerseAgent resolveAgent(String agentId) {
@@ -245,7 +251,8 @@ public class GregVerseSimulation {
         }
 
         try {
-            return supplier.get();
+            // Use cache to avoid agent reconstruction
+            return agentCache.getOrCreate(agentId, unused -> supplier.get());
         } catch (Exception e) {
             throw new AgentInitializationException(
                 "Failed to instantiate agent " + agentId + ": " + e.getMessage(), e);
