@@ -177,9 +177,9 @@ public class WorkItemRecord implements Cloneable {
      */
     public WorkItemMetadata metadata() {
         if (metadata == null) {
-            metadata = new WorkItemMetadata(_taskName, _documentation, _allowsDynamicCreation,
+            metadata = new WorkItemMetadata(_attributeTable, _taskName, _documentation, _allowsDynamicCreation,
                                            _requiresManualResourcing, _codelet, _deferredChoiceGroupID,
-                                           _attributeTable, _customFormURL, _logPredicateStarted,
+                                           _customFormURL, _logPredicateStarted,
                                            _logPredicateCompletion);
         }
         return metadata;
