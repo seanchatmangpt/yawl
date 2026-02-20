@@ -2,7 +2,7 @@
 name: yawl-reviewer
 description: YAWL code reviewer and standards enforcer. Pre-commit reviews, PR analysis, HYPER_STANDARDS, security audits.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: haiku
 ---
 
 YAWL code reviewer enforcing HYPER_STANDARDS and Fortune 5 production quality.

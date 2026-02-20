@@ -2,7 +2,7 @@
 name: engineer
 description: Implement features, write code, create tests
 tools: Read, Write, Edit, Grep, Glob, Bash
-model: sonnet
+model: haiku
 ---
 
 Senior Java engineer for YAWL workflow system. Production-quality code only.
