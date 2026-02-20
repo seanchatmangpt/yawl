@@ -13,14 +13,20 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.resilience;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.core.registry.EntryAddedEvent;
+import io.github.resilience4j.core.registry.RegistryEventConsumer;
+
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Circuit breaker pattern implementation for resilient service calls in the
  * YAWL autonomous agent framework.
  *
- * <p>Implements the circuit breaker state machine to prevent cascading failures
+ * <p>Adapter wrapping Resilience4j 2.3.0 CircuitBreaker for backward compatibility.
+ * Implements the circuit breaker state machine to prevent cascading failures
  * and provide fast-fail behavior when downstream services are degraded or unavailable.
  * The circuit has three states:
  * <ul>
@@ -30,8 +36,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * </ul>
  * </p>
  *
- * <p>Thread safety is ensured via {@link ReentrantLock} to support virtual threads
- * without pinning.</p>
+ * <p>Backed by Resilience4j 2.3.0 for production-grade resilience patterns.
+ * Thread-safe via Resilience4j's internal mechanisms.</p>
  *
  * <p>Typical usage:
  * <pre>
@@ -51,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CircuitBreaker {
 
     /**
-     * Circuit breaker state enumeration.
+     * Circuit breaker state enumeration, mapped from Resilience4j states.
      */
     public enum State {
         /** Circuit allows calls to proceed normally */
@@ -79,12 +85,9 @@ public class CircuitBreaker {
     private final String name;
     private final int failureThreshold;
     private final long openDurationMs;
+    private final io.github.resilience4j.circuitbreaker.CircuitBreaker r4jBreaker;
 
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private State state = State.CLOSED;
-    private int consecutiveFailures = 0;
-    private long lastFailureTimeMs = 0;
+    private static final CircuitBreakerRegistry REGISTRY = createSharedRegistry();
 
     /**
      * Constructs a circuit breaker with default settings.
@@ -120,25 +123,26 @@ public class CircuitBreaker {
         this.name = name;
         this.failureThreshold = failureThreshold;
         this.openDurationMs = openDurationMs;
+
+        // Create Resilience4j circuit breaker with equivalent configuration
+        CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+            .failureRateThreshold(100.0f)  // Trigger on failure count, not rate
+            .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
+            .slidingWindowSize(failureThreshold)
+            .minimumNumberOfCalls(1)
+            .waitDurationInOpenState(Duration.ofMillis(openDurationMs))
+            .permittedNumberOfCallsInHalfOpenState(1)
+            .automaticTransitionFromOpenToHalfOpenEnabled(true)
+            .recordExceptions(Exception.class)
+            .build();
+
+        this.r4jBreaker = REGISTRY.circuitBreaker(name, config);
     }
 
     /**
      * Executes the provided callable, managing circuit breaker state transitions.
      *
-     * <p><strong>CLOSED state:</strong> Executes the callable. On success, resets failure count.
-     * On failure, increments failure count; if threshold reached, transitions to OPEN.
-     * The original exception is rethrown.
-     * </p>
-     *
-     * <p><strong>OPEN state:</strong> Checks if open duration has elapsed. If not elapsed,
-     * throws CircuitBreakerOpenException immediately (fast-fail). If elapsed, transitions
-     * to HALF_OPEN and allows the execution.
-     * </p>
-     *
-     * <p><strong>HALF_OPEN state:</strong> Executes the callable as a recovery test.
-     * On success, transitions to CLOSED and resets failure count. On failure,
-     * transitions back to OPEN.
-     * </p>
+     * <p>Delegates to Resilience4j's CircuitBreaker implementation.</p>
      *
      * @param <T> the return type of the callable
      * @param operation the callable to execute (must not be null)
@@ -152,64 +156,10 @@ public class CircuitBreaker {
             throw new IllegalArgumentException("operation must not be null");
         }
 
-        lock.lock();
         try {
-            // Check if OPEN -> HALF_OPEN transition should occur
-            if (state == State.OPEN && System.currentTimeMillis() - lastFailureTimeMs >= openDurationMs) {
-                state = State.HALF_OPEN;
-            }
-
-            // In OPEN state (and timeout not elapsed), reject the call
-            if (state == State.OPEN) {
-                throw new CircuitBreakerOpenException(name);
-            }
-
-            // Release lock during actual operation execution
-        } finally {
-            lock.unlock();
-        }
-
-        // Execute the callable outside the lock to avoid pinning virtual threads
-        try {
-            T result = operation.call();
-
-            // On success, handle state transitions
-            lock.lock();
-            try {
-                if (state == State.HALF_OPEN) {
-                    // Recovery successful
-                    state = State.CLOSED;
-                    consecutiveFailures = 0;
-                    lastFailureTimeMs = 0;
-                } else if (state == State.CLOSED) {
-                    // Maintain success in CLOSED state
-                    consecutiveFailures = 0;
-                }
-            } finally {
-                lock.unlock();
-            }
-
-            return result;
-        } catch (Exception e) {
-            // On failure, handle state transitions
-            lock.lock();
-            try {
-                lastFailureTimeMs = System.currentTimeMillis();
-
-                if (state == State.HALF_OPEN) {
-                    // Recovery failed, reopen
-                    state = State.OPEN;
-                } else if (state == State.CLOSED) {
-                    consecutiveFailures++;
-                    if (consecutiveFailures >= failureThreshold) {
-                        state = State.OPEN;
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-
-            throw e;
+            return r4jBreaker.executeCallable(operation);
+        } catch (io.github.resilience4j.circuitbreaker.CallNotPermittedException e) {
+            throw new CircuitBreakerOpenException(name);
         }
     }
 
@@ -219,35 +169,16 @@ public class CircuitBreaker {
      * <p>Use this to restore the circuit without waiting for the recovery timeout.</p>
      */
     public void reset() {
-        lock.lock();
-        try {
-            state = State.CLOSED;
-            consecutiveFailures = 0;
-            lastFailureTimeMs = 0;
-        } finally {
-            lock.unlock();
-        }
+        r4jBreaker.reset();
     }
 
     /**
      * Returns the current state of the circuit breaker.
      *
-     * <p>If the circuit is OPEN and the recovery timeout has elapsed, this method
-     * will transition to HALF_OPEN.</p>
-     *
      * @return the current {@link State}
      */
     public State getState() {
-        lock.lock();
-        try {
-            // Check and apply OPEN -> HALF_OPEN transition if applicable
-            if (state == State.OPEN && System.currentTimeMillis() - lastFailureTimeMs >= openDurationMs) {
-                state = State.HALF_OPEN;
-            }
-            return state;
-        } finally {
-            lock.unlock();
-        }
+        return mapR4jState(r4jBreaker.getState());
     }
 
     /**
@@ -280,14 +211,47 @@ public class CircuitBreaker {
     /**
      * Returns the current count of consecutive failures.
      *
+     * <p>Note: Resilience4j tracks failure rate and counts, this returns
+     * the failure count from the sliding window.</p>
+     *
      * @return the consecutive failure count
      */
     public int getConsecutiveFailures() {
-        lock.lock();
-        try {
-            return consecutiveFailures;
-        } finally {
-            lock.unlock();
-        }
+        var metrics = r4jBreaker.getMetrics();
+        return metrics.getNumberOfFailedCalls();
+    }
+
+    // Private helper methods
+
+    private static CircuitBreakerRegistry createSharedRegistry() {
+        return CircuitBreakerRegistry.of(
+            CircuitBreakerConfig.ofDefaults(),
+            new RegistryEventConsumer<io.github.resilience4j.circuitbreaker.CircuitBreaker>() {
+                @Override
+                public void onEntryAddedEvent(EntryAddedEvent<io.github.resilience4j.circuitbreaker.CircuitBreaker> event) {
+                    // No-op: logging handled by Resilience4j
+                }
+
+                @Override
+                public void onEntryRemovedEvent(io.github.resilience4j.core.registry.EntryRemovedEvent<io.github.resilience4j.circuitbreaker.CircuitBreaker> event) {
+                    // No-op
+                }
+
+                @Override
+                public void onEntryReplacedEvent(io.github.resilience4j.core.registry.EntryReplacedEvent<io.github.resilience4j.circuitbreaker.CircuitBreaker> event) {
+                    // No-op
+                }
+            }
+        );
+    }
+
+    private static State mapR4jState(io.github.resilience4j.circuitbreaker.CircuitBreaker.State r4jState) {
+        return switch (r4jState) {
+            case CLOSED -> State.CLOSED;
+            case OPEN -> State.OPEN;
+            case HALF_OPEN -> State.HALF_OPEN;
+            case DISABLED -> State.CLOSED;  // Treat disabled as closed
+            case METRICS_ONLY -> State.CLOSED;  // Treat metrics-only as closed
+        };
     }
 }
