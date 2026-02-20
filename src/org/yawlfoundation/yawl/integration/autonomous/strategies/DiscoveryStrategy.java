@@ -22,35 +22,51 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Strategy for discovering work items by autonomous agents.
+ * Functional interface for discovering work items available for processing by autonomous agents.
  *
- * <p>This is a stub implementation that returns no work items.
- * In a real implementation, this would query the YAWL engine
- * for work items that match the agent's capabilities.</p>
+ * <p>Implementers of this interface are responsible for querying the YAWL engine
+ * and filtering work items based on agent capabilities and availability.
+ * Implementations should:</p>
+ * <ul>
+ *   <li>Query the engine for enabled work items using the provided client</li>
+ *   <li>Filter results based on agent expertise and current load</li>
+ *   <li>Return only work items suitable for agent processing</li>
+ * </ul>
+ *
+ * <p>This is a functional interface and can be implemented using lambda expressions:</p>
+ * <pre>{@code
+ * DiscoveryStrategy strategy = (client, session) ->
+ *     client.getWorkItems(session);
+ * }</pre>
  *
  * @since YAWL 6.0
  */
-public class DiscoveryStrategy {
+@FunctionalInterface
+public interface DiscoveryStrategy {
 
     /**
-     * Discovers work items that this agent can handle.
+     * Discovers work items available for processing by this agent.
      *
-     * @param client the Interface B client for engine communication
-     * @param sessionHandle the session handle for authentication
-     * @return list of available work items, empty if none
-     * @throws IOException if communication with engine fails
+     * <p>This method queries the YAWL engine via the provided Interface B client
+     * and returns a list of work items that the agent can potentially process.
+     * The discovery process typically involves:
+     * <ol>
+     *   <li>Authenticating with the engine using the provided session handle</li>
+     *   <li>Retrieving all enabled work items</li>
+     *   <li>Filtering based on agent capabilities, expertise domains, and availability</li>
+     *   <li>Returning the filtered list of eligible work items</li>
+     * </ol></p>
+     *
+     * @param client the Interface B client for communicating with the YAWL engine
+     * @param sessionHandle the session handle for authentication and authorization
+     * @return a list of work items available for processing; empty list if none are available
+     * @throws IOException if communication with the engine fails or network issues occur
      */
-    public List<WorkItemRecord> discoverWorkItems(InterfaceB_EnvironmentBasedClient client,
-                                                 String sessionHandle) throws IOException {
-        // Stub implementation - return no work items
-        // In a real implementation, this would:
-        // 1. Query the engine for enabled work items
-        // 2. Filter based on agent capabilities
-        // 3. Return matching work items
-        return Collections.emptyList();
-    }
+    List<WorkItemRecord> discoverWorkItems(
+            InterfaceB_EnvironmentBasedClient client,
+            String sessionHandle
+    ) throws IOException;
 }

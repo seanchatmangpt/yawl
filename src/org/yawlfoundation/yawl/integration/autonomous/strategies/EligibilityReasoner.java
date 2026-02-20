@@ -21,34 +21,44 @@ package org.yawlfoundation.yawl.integration.autonomous.strategies;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
 /**
- * Reasons about whether a work item is eligible for processing by an agent.
+ * Functional interface for reasoning about work item eligibility for autonomous agents.
  *
- * <p>This is a stub implementation that considers all work items eligible.
- * In a real implementation, this would check:</p>
+ * <p>Implementers of this interface evaluate whether a work item is suitable for
+ * processing by a specific autonomous agent. Evaluations typically consider:
  * <ul>
  *   <li>Agent capabilities vs task requirements</li>
- *   <li>Work item data vs agent expertise</li>
- *   <li>Agent load and availability</li>
- *   <li>Business rules for task assignment</li>
+ *   <li>Work item data vs agent expertise domains</li>
+ *   <li>Agent current load and availability</li>
+ *   <li>Business rules and assignment constraints</li>
  * </ul>
+ *
+ * <p>This is a functional interface and can be implemented using lambda expressions:</p>
+ * <pre>{@code
+ * EligibilityReasoner reasoner = workItem ->
+ *     workItem.getTaskName().equals("ApprovalTask");
+ * }</pre>
  *
  * @since YAWL 6.0
  */
-public class EligibilityReasoner {
+@FunctionalInterface
+public interface EligibilityReasoner {
 
     /**
-     * Determines if a work item is eligible for this agent.
+     * Determines whether a work item is eligible for processing by the agent.
      *
-     * @param workItem the work item to evaluate
-     * @return true if the work item can be processed by this agent
+     * <p>This method performs an eligibility check to determine if the agent
+     * can and should process the given work item. The evaluation criteria are
+     * implementation-specific but typically include:
+     * <ol>
+     *   <li>Verification that the agent has required capabilities</li>
+     *   <li>Validation of work item data against agent expertise</li>
+     *   <li>Assessment of agent availability and workload</li>
+     *   <li>Application of business rules and assignment policies</li>
+     * </ol></p>
+     *
+     * @param workItem the work item to evaluate for eligibility
+     * @return {@code true} if the work item is eligible for processing by this agent;
+     *         {@code false} if the work item cannot be processed by this agent
      */
-    public boolean isEligible(WorkItemRecord workItem) {
-        // Stub implementation - consider all work items eligible
-        // In a real implementation, this would:
-        // 1. Check agent capabilities against task requirements
-        // 2. Validate work item data against agent expertise
-        // 3. Check agent availability and load
-        // 4. Apply business rules for assignment
-        return true;
-    }
+    boolean isEligible(WorkItemRecord workItem);
 }
