@@ -259,6 +259,13 @@
             <artifactId>wiremock-standalone</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Caffeine caching library for fallback pattern tests -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

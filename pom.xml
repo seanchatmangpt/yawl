@@ -97,6 +97,8 @@
         <opentelemetry-instrumentation.version>2.18.1</opentelemetry-instrumentation.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.21.3</testcontainers.version>
+        <wiremock.version>3.0.0</wiremock.version>
+        <caffeine.version>3.1.8</caffeine.version>
         <jackson.version>2.19.4</jackson.version>
 
         <!-- ================================================================ -->
@@ -1271,6 +1273,28 @@
                 <version>${caffeine.version}</version>
                 <scope>test</scope>
             </dependency>
+            </dependency>
+
+            <!-- WireMock for HTTP stubbing in resilience pattern tests -->
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Caffeine caching library for fallback pattern tests -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+                <scope>test</scope>
             </dependency>
 
         </dependencies>
