@@ -823,8 +823,9 @@ class YawlYamlConverterTest {
         @Test
         @DisplayName("Should escape XML special characters: < > & in content")
         void shouldEscapeXmlSpecialCharactersInContent() {
+            // Use YAML quoted strings to ensure special chars are parsed as literals
             String yamlWithSpecialChars = """
-                name: Workflow<Test>&Check
+                name: "Workflow<Test>&Check"
                 uri: test.xml
                 first: TaskA
                 tasks:
